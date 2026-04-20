@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  cashctrl:
+    image: ghcr.io/jerem-gt/cashctrl:latest
+    container_name: cashctrl
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATA_DIR=/data
+      # ⚠️  À modifier avant le premier démarrage
+      - SESSION_SECRET=remplacez-par-openssl-rand-hex-32
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=remplacez-par-votre-mot-de-passe
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower-cashctrl
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+    command: --scope cashctrl cashctrl
