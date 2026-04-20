@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 
 # ─── Install deps (root workspace) ───────────────────────────────────────────
@@ -20,7 +20,7 @@ COPY server/ ./server/
 RUN npm run build --workspace=server
 
 # ─── Production image ─────────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
