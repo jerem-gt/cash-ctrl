@@ -43,7 +43,7 @@ export function Sidebar({ username }: Props) {
             key={to}
             to={to}
             end={to === '/'}
-            className={({ isActive }) =>
+            className={({ isActive }: { isActive: boolean }) =>
               `flex items-center gap-3 px-6 py-2.5 text-sm border-l-2 transition-all duration-100 ${
                 isActive
                   ? 'text-[#F4F1EB] border-[#8BBF5A] bg-white/6 font-medium'
