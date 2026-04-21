@@ -9,7 +9,7 @@ accountsRouter.use(requireAuth);
 const accountSchema = z.object({
   name: z.string().min(1).max(100),
   bank: z.string().max(100).default(''),
-  type: z.enum(['Courant', 'Epargne', 'Livret', 'Credit', 'Autre']),
+  type: z.string().min(1).max(50),
   initial_balance: z.number().default(0),
 });
 

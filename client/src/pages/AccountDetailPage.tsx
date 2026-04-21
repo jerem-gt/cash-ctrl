@@ -5,10 +5,10 @@ import { useTransactions, useCreateTransaction, useDeleteTransaction, useCreateT
 import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, ConfirmModal, showToast } from '@/components/ui';
 import { fmtDec, fmtDate, today } from '@/lib/format';
 import { useCategories } from '@/hooks/useCategories';
-import { ACCOUNT_TYPE_LABELS } from '@/types';
-import type { Transaction, AccountType } from '@/types';
+import { useAccountTypes } from '@/hooks/useAccountTypes';
+import { useBanks } from '@/hooks/useBanks';
 
-const ACCOUNT_TYPES: AccountType[] = ['Courant', 'Epargne', 'Livret', 'Credit', 'Autre'];
+import type { Transaction } from '@/types';
 
 function TxItem({ tx, onDelete }: { tx: Transaction; onDelete: (id: number) => void }) {
   const isTransfer = tx.transfer_peer_id !== null;
@@ -46,6 +46,8 @@ export function AccountDetailPage() {
 
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
+  const { data: accountTypes = [] } = useAccountTypes();
+  const { data: banks = [] } = useBanks();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const { data: transactions = [], isLoading } = useTransactions({ account_id: accountId });
@@ -81,7 +83,7 @@ export function AccountDetailPage() {
   const [deleteTxId, setDeleteTxId] = useState<number | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', bank: '', type: 'Courant' as AccountType, initial_balance: '' });
+  const [editForm, setEditForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
 
   const handleTxSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -180,8 +182,12 @@ export function AccountDetailPage() {
         <button onClick={() => navigate('/accounts')} className="text-xs text-stone-400 hover:text-stone-600 transition-colors mb-3 block">← Comptes</button>
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-serif text-2xl tracking-tight">{account?.name ?? '…'}</h2>
-            <p className="text-sm text-stone-400 mt-0.5">{account ? ACCOUNT_TYPE_LABELS[account.type] : ''}{account?.bank ? ` · ${account.bank}` : ''}</p>
+            <div className="flex items-center gap-2">
+              {account?.bank && (() => { const logo = banks.find(b => b.name === account.bank)?.logo; return logo ? <img src={logo} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} /> : null; })()}
+              <h2 className="font-serif text-2xl tracking-tight">{account?.name ?? '…'}</h2>
+              {account?.bank && <span className="text-stone-400 text-base">({account.bank})</span>}
+            </div>
+            <p className="text-sm text-stone-400 mt-0.5">{account?.type ?? ''}</p>
           </div>
           <div className="text-right">
             <p className={`font-serif text-3xl ${balance < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(balance)}</p>
@@ -207,11 +213,14 @@ export function AccountDetailPage() {
                 <Input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nom" className="min-w-44" />
               </FormGroup>
               <FormGroup label="Banque">
-                <Input type="text" value={editForm.bank} onChange={e => setEditForm(f => ({ ...f, bank: e.target.value }))} placeholder="Ex : BNP Paribas" className="min-w-36" />
+                <Select value={editForm.bank} onChange={e => setEditForm(f => ({ ...f, bank: e.target.value }))}>
+                  <option value="">— Aucune —</option>
+                  {banks.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                </Select>
               </FormGroup>
               <FormGroup label="Type">
-                <Select value={editForm.type} onChange={e => setEditForm(f => ({ ...f, type: e.target.value as AccountType }))}>
-                  {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t]}</option>)}
+                <Select value={editForm.type || accountTypes[0]?.name} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}>
+                  {accountTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                 </Select>
               </FormGroup>
               <FormGroup label="Solde initial (€)">
@@ -290,7 +299,7 @@ export function AccountDetailPage() {
                   <FormGroup label="Vers">
                     <Select value={transferForm.to_account_id} onChange={e => setTransferForm(f => ({ ...f, to_account_id: e.target.value }))}>
                       <option value="">— Choisir —</option>
-                      {otherAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      {otherAccounts.map(a => <option key={a.id} value={a.id}>{a.name}{a.bank ? ` (${a.bank})` : ''}</option>)}
                     </Select>
                   </FormGroup>
                   <FormGroup label="Montant (€)">

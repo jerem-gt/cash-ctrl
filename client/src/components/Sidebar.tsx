@@ -2,14 +2,9 @@ import { NavLink } from 'react-router-dom';
 import { useLogout } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
-import type { Account, Transaction } from '@/types';
-
-function computeBalance(account: Account, transactions: Transaction[]): number {
-  return transactions
-    .filter(t => t.account_id === account.id)
-    .reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, account.initial_balance);
-}
+import { computeBalance } from '@/lib/account';
 
 const NAV_ITEMS = [
   { to: '/',             label: 'Tableau de bord', icon: '◈' },
@@ -27,6 +22,7 @@ export function Sidebar({ username }: Props) {
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [] } = useTransactions();
+  const { data: banks = [] } = useBanks();
 
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-[#141210] text-[#F4F1EB] flex flex-col z-50">
@@ -61,14 +57,21 @@ export function Sidebar({ username }: Props) {
       {accounts.length > 0 && (
         <div className="px-6 py-4 border-t border-white/[0.07]">
           <p className="text-[10px] uppercase tracking-widest text-white/25 mb-2.5">Comptes</p>
-          {accounts.slice(0, 4).map(acc => (
-            <div key={acc.id} className="flex justify-between py-1">
-              <span className="text-xs text-white/45 truncate max-w-25">{acc.name}</span>
-              <span className="text-xs text-white/80 font-medium tabular-nums">
-                {fmt(computeBalance(acc, transactions))}
-              </span>
-            </div>
-          ))}
+          {accounts.slice(0, 4).map(acc => {
+            const logo = acc.bank ? (banks.find(b => b.name === acc.bank)?.logo ?? null) : null;
+            return (
+              <div key={acc.id} className="flex justify-between items-center py-1 gap-2">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  {logo && <img src={logo} alt="" className="w-3.5 h-3.5 object-contain rounded shrink-0 opacity-70" onError={e => (e.currentTarget.style.display = 'none')} />}
+                  <span className="text-xs text-white/45 truncate">{acc.name}</span>
+                  {acc.bank && <span className="text-[10px] text-white/25 shrink-0">({acc.bank})</span>}
+                </span>
+                <span className="text-xs text-white/80 font-medium tabular-nums shrink-0">
+                  {fmt(computeBalance(acc, transactions))}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import path from 'path';
 import fs from 'fs';
 
-const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
+export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 export const DB_PATH = path.join(DATA_DIR, 'cashctrl.db');
@@ -37,6 +37,18 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS account_types (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT UNIQUE NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS banks (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT UNIQUE NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS transactions (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -54,11 +66,12 @@ db.exec(`
 // Migrations
 try { db.exec('ALTER TABLE transactions ADD COLUMN transfer_peer_id INTEGER'); } catch { /* already exists */ }
 try { db.exec("ALTER TABLE accounts ADD COLUMN bank TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE banks ADD COLUMN logo TEXT'); } catch { /* already exists */ }
 
-// Migration: normalize account types (remove accents from stored enum values)
+// Migration: restore accents in account types (previously stripped for enum compat)
 try {
-  db.exec(`UPDATE accounts SET type = 'Epargne' WHERE type = 'Épargne'`);
-  db.exec(`UPDATE accounts SET type = 'Credit'  WHERE type = 'Crédit'`);
+  db.exec(`UPDATE accounts SET type = 'Épargne' WHERE type = 'Epargne'`);
+  db.exec(`UPDATE accounts SET type = 'Crédit'  WHERE type = 'Credit'`);
 } catch { /* ignore */ }
 
 // Migration: drop user_id from categories if it exists (table was initially created with it)
@@ -76,6 +89,23 @@ if (catColumns.includes('user_id')) {
     DROP TABLE categories;
     ALTER TABLE categories_new RENAME TO categories;
   `);
+}
+
+// Seed default banks (INSERT OR IGNORE so new defaults are added on each restart)
+const DEFAULT_BANKS = ['BoursoBank', 'Fortuneo', 'Crédit Agricole', 'Linxea', 'Amundi', 'BNP Paribas', 'Société Générale', 'Revolut', 'N26'];
+{
+  const insertBank = db.prepare('INSERT OR IGNORE INTO banks (name, logo) VALUES (?, NULL)');
+  const seedBanks = db.transaction(() => { for (const b of DEFAULT_BANKS) insertBank.run(b); });
+  seedBanks();
+}
+
+// Seed default account types if table is empty
+const DEFAULT_ACCOUNT_TYPES = ['Courant', 'Épargne', 'Livret', 'Crédit', 'Autre'];
+const atCount = (db.prepare('SELECT COUNT(*) as n FROM account_types').get() as { n: number }).n;
+if (atCount === 0) {
+  const insertAt = db.prepare('INSERT INTO account_types (name) VALUES (?)');
+  const seedAt = db.transaction(() => { for (const t of DEFAULT_ACCOUNT_TYPES) insertAt.run(t); });
+  seedAt();
 }
 
 // Seed default categories if table is empty
@@ -109,6 +139,19 @@ if (!existing) {
 }
 
 // ─── Typed query helpers ──────────────────────────────────────────────────────
+
+export interface BankRecord {
+  id: number;
+  name: string;
+  logo: string | null;
+  created_at: string;
+}
+
+export interface AccountTypeRecord {
+  id: number;
+  name: string;
+  created_at: string;
+}
 
 export interface Category {
   id: number;
@@ -149,6 +192,18 @@ export interface Transaction {
 }
 
 export const queries = {
+  getBanks: db.prepare<[], BankRecord>('SELECT * FROM banks ORDER BY name'),
+  getBankById: db.prepare<[number], BankRecord>('SELECT * FROM banks WHERE id = ?'),
+  insertBank: db.prepare<[string, string | null]>('INSERT INTO banks (name, logo) VALUES (?, ?)'),
+  updateBank: db.prepare<[string, string | null, number]>('UPDATE banks SET name = ?, logo = ? WHERE id = ?'),
+  deleteBank: db.prepare<[number]>('DELETE FROM banks WHERE id = ?'),
+
+  getAccountTypes: db.prepare<[], AccountTypeRecord>('SELECT * FROM account_types ORDER BY created_at'),
+  getAccountTypeById: db.prepare<[number], AccountTypeRecord>('SELECT * FROM account_types WHERE id = ?'),
+  insertAccountType: db.prepare<[string]>('INSERT INTO account_types (name) VALUES (?)'),
+  updateAccountType: db.prepare<[string, number]>('UPDATE account_types SET name = ? WHERE id = ?'),
+  deleteAccountType: db.prepare<[number]>('DELETE FROM account_types WHERE id = ?'),
+
   getCategories: db.prepare<[], Category>('SELECT * FROM categories ORDER BY created_at'),
   getCategoryById: db.prepare<[number], Category>('SELECT * FROM categories WHERE id = ?'),
   insertCategory: db.prepare<[string, string]>('INSERT INTO categories (name, color) VALUES (?, ?)'),
@@ -178,6 +233,9 @@ export const queries = {
   ),
   insertTransaction: db.prepare<[number, number, string, number, string, string, string]>(
     'INSERT INTO transactions (user_id, account_id, type, amount, description, category, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ),
+  updateTransaction: db.prepare<[number, string, number, string, string, string, number, number]>(
+    'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category = ?, date = ? WHERE id = ? AND user_id = ?'
   ),
   deleteTransaction: db.prepare<[number, number]>('DELETE FROM transactions WHERE id = ? AND user_id = ?'),
   getTransactionById: db.prepare<[number, number], Transaction>(

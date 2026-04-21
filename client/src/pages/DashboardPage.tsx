@@ -6,23 +6,25 @@ import {
 import { useAccounts } from '@/hooks/useAccounts';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
+import { useBanks } from '@/hooks/useBanks';
 import { Card, CardTitle, Metric, Empty } from '@/components/ui';
+import { AccountBadge } from '@/components/AccountBadge';
 import { fmt, fmtDec, fmtDateShort, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
-import type { Account, Transaction } from '@/types';
+import { computeBalance } from '@/lib/account';
+import type { Account, Bank, Transaction } from '@/types';
 
-function computeBalance(account: Account, transactions: Transaction[]): number {
-  return transactions
-    .filter(t => t.account_id === account.id)
-    .reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, account.initial_balance);
-}
-
-function TxRow({ tx }: { tx: Transaction }) {
+function TxRow({ tx, accounts, banks }: { tx: Transaction; accounts: Account[]; banks: Bank[] }) {
+  const account = accounts.find(a => a.id === tx.account_id);
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/4 last:border-0">
       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${tx.type === 'income' ? 'bg-green-500' : 'bg-red-400'}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{tx.description}</p>
-        <p className="text-[11px] text-stone-400">{tx.category} · {tx.account_name} · {fmtDateShort(tx.date)}</p>
+        <p className="text-[11px] text-stone-400 flex items-center gap-1 flex-wrap">
+          <span>{tx.category} ·</span>
+          <AccountBadge name={tx.account_name} bank={account?.bank} banks={banks} />
+          <span>· {fmtDateShort(tx.date)}</span>
+        </p>
       </div>
       <span className={`text-sm font-medium tabular-nums ${tx.type === 'income' ? 'text-green-800' : 'text-red-700'}`}>
         {tx.type === 'income' ? '+' : '−'}{fmtDec(tx.amount)}
@@ -35,6 +37,7 @@ export function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [] } = useTransactions();
   const { data: categories = [] } = useCategories();
+  const { data: banks = [] } = useBanks();
 
   const colorMap = useMemo(
     () => Object.fromEntries(categories.map(c => [c.name, c.color])),
@@ -137,7 +140,7 @@ export function DashboardPage() {
         <CardTitle>Dernières transactions</CardTitle>
         {recent.length === 0
           ? <Empty>Aucune transaction</Empty>
-          : recent.map(t => <TxRow key={t.id} tx={t} />)
+          : recent.map(t => <TxRow key={t.id} tx={t} accounts={accounts} banks={banks} />)
         }
       </Card>
     </div>

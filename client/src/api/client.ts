@@ -1,4 +1,4 @@
-import type { Account, Category, Transaction, TransactionFilters } from '@/types';
+import type { Account, AccountType, Bank, Category, Transaction, TransactionFilters } from '@/types';
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -20,6 +20,30 @@ export const authApi = {
   logout: () => request<{ ok: boolean }>('POST', '/api/auth/logout'),
   changePassword: (current: string, next: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/change-password', { current, next }),
+};
+
+// Banks
+export const banksApi = {
+  list: () => request<Bank[]>('GET', '/api/banks'),
+  create: (payload: { name: string }) => request<Bank>('POST', '/api/banks', payload),
+  update: (id: number, payload: { name: string }) => request<Bank>('PUT', `/api/banks/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/banks/${id}`),
+  uploadLogo: async (id: number, file: File): Promise<Bank> => {
+    const fd = new FormData();
+    fd.append('logo', file);
+    const res = await fetch(`/api/banks/${id}/logo`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Upload failed');
+    return data as Bank;
+  },
+};
+
+// Account types
+export const accountTypesApi = {
+  list: () => request<AccountType[]>('GET', '/api/account-types'),
+  create: (payload: { name: string }) => request<AccountType>('POST', '/api/account-types', payload),
+  update: (id: number, payload: { name: string }) => request<AccountType>('PUT', `/api/account-types/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
 
 // Accounts
@@ -64,5 +88,13 @@ export const transactionsApi = {
     category: string;
     date: string;
   }) => request<Transaction>('POST', '/api/transactions', payload),
+  update: (id: number, payload: {
+    account_id: number;
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transactions/${id}`),
 };

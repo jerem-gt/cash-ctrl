@@ -1,12 +1,16 @@
-export type AccountType = 'Courant' | 'Epargne' | 'Livret' | 'Credit' | 'Autre';
+export interface Bank {
+  id: number;
+  name: string;
+  logo: string | null;
+  created_at: string;
+}
 
-export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  Courant: 'Courant',
-  Epargne: 'Épargne',
-  Livret:  'Livret',
-  Credit:  'Crédit',
-  Autre:   'Autre',
-};
+export interface AccountType {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
 export type TransactionType = 'income' | 'expense';
 
 export interface Category {
@@ -21,7 +25,7 @@ export interface Account {
   user_id: number;
   name: string;
   bank: string;
-  type: AccountType;
+  type: string;
   initial_balance: number;
   created_at: string;
 }
