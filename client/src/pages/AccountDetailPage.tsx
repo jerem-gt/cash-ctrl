@@ -1,47 +1,23 @@
 import { useState, type SubmitEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
-import { useTransactions, useCreateTransaction, useDeleteTransaction, useCreateTransfer } from '@/hooks/useTransactions';
-import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, ConfirmModal, showToast } from '@/components/ui';
-import { fmtDec, fmtDate, today } from '@/lib/format';
+import { useTransactions, useCreateTransaction, useDeleteTransaction, useCreateTransfer, useUpdateTransaction } from '@/hooks/useTransactions';
+import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, showToast } from '@/components/ui';
+import { fmtDec, today } from '@/lib/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
+import { BankSelect } from '@/components/BankSelect';
+import { TransactionsList } from '@/components/TransactionsList';
+import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
+import { DeleteTxModal } from '@/components/DeleteTxModal';
 
-import type { Transaction } from '@/types';
-
-function TxItem({ tx, onDelete }: { tx: Transaction; onDelete: (id: number) => void }) {
-  const isTransfer = tx.transfer_peer_id !== null;
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-white border border-black/[0.07] rounded-xl hover:border-black/[0.13] transition-colors">
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${tx.type === 'income' ? 'bg-green-500' : 'bg-red-400'}`} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{tx.description}</p>
-          {isTransfer && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium flex-shrink-0">
-              ↔ Transfert
-            </span>
-          )}
-        </div>
-        <p className="text-[11px] text-stone-400 mt-0.5">{tx.category} · {fmtDate(tx.date)}</p>
-      </div>
-      <span className={`text-sm font-medium tabular-nums ${tx.type === 'income' ? 'text-green-800' : 'text-red-700'}`}>
-        {tx.type === 'income' ? '+' : '−'}{fmtDec(tx.amount)}
-      </span>
-      <button
-        onClick={() => onDelete(tx.id)}
-        className="text-stone-300 hover:text-red-400 transition-colors text-lg leading-none px-1"
-      >×</button>
-    </div>
-  );
-}
 
 type FormMode = 'transaction' | 'transfer';
 
 export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const accountId = parseInt(id ?? '0');
+  const accountId = Number.parseInt(id ?? '0');
   const navigate = useNavigate();
 
   const { data: accounts = [] } = useAccounts();
@@ -52,7 +28,8 @@ export function AccountDetailPage() {
   const updateAccount = useUpdateAccount();
   const { data: transactions = [], isLoading } = useTransactions({ account_id: accountId });
   const createTx = useCreateTransaction();
-  const deleteTx = useDeleteTransaction();
+  const deleteTxMutation = useDeleteTransaction();
+  const updateTx = useUpdateTransaction();
   const createTransfer = useCreateTransfer();
 
   const account = accounts.find(a => a.id === accountId);
@@ -80,7 +57,8 @@ export function AccountDetailPage() {
     date: today(),
   });
 
-  const [deleteTxId, setDeleteTxId] = useState<number | null>(null);
+  const [editTx, setEditTx] = useState<(typeof transactions)[0] | null>(null);
+  const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
@@ -93,7 +71,7 @@ export function AccountDetailPage() {
     }
     createTx.mutate({
       type: txForm.type,
-      amount: parseFloat(txForm.amount),
+      amount: Number.parseFloat(txForm.amount),
       description: txForm.description,
       category: txForm.category || categories[0]?.name || 'Autre',
       account_id: accountId,
@@ -115,8 +93,8 @@ export function AccountDetailPage() {
     }
     createTransfer.mutate({
       from_account_id: accountId,
-      to_account_id: parseInt(transferForm.to_account_id),
-      amount: parseFloat(transferForm.amount),
+      to_account_id: Number.parseInt(transferForm.to_account_id),
+      amount: Number.parseFloat(transferForm.amount),
       description: transferForm.description || 'Transfert',
       date: transferForm.date,
     }, {
@@ -129,13 +107,25 @@ export function AccountDetailPage() {
   };
 
   const handleDeleteTx = () => {
-    if (!deleteTxId) return;
-    const tx = transactions.find(t => t.id === deleteTxId);
-    deleteTx.mutate(deleteTxId, {
+    if (!deleteTx) return;
+    deleteTxMutation.mutate(deleteTx.id, {
       onSuccess: () => {
-        setDeleteTxId(null);
-        showToast(tx?.transfer_peer_id ? 'Transfert supprimé' : 'Transaction supprimée');
+        setDeleteTx(null);
+        showToast(deleteTx.transfer_peer_id ? 'Transfert supprimé' : 'Transaction supprimée');
       },
+    });
+  };
+
+  const handleUpdateTx = (data: TxFormState) => {
+    if (!editTx) return;
+    const payload = editTx.transfer_peer_id
+      ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
+          type: editTx.type, account_id: editTx.account_id, category: editTx.category }
+      : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
+          category: data.category, account_id: Number.parseInt(data.account_id), date: data.date };
+    updateTx.mutate(payload, {
+      onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
+      onError: (e) => showToast(e.message),
     });
   };
 
@@ -154,12 +144,13 @@ export function AccountDetailPage() {
   const handleEditSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!editForm.name.trim()) { showToast('Le nom est requis.'); return; }
+    if (!editForm.bank) { showToast('La banque est requise.'); return; }
     updateAccount.mutate({
       id: accountId,
       name: editForm.name.trim(),
       bank: editForm.bank.trim(),
       type: editForm.type,
-      initial_balance: parseFloat(editForm.initial_balance) || 0,
+      initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
     }, {
       onSuccess: () => { setEditOpen(false); showToast('Compte mis à jour ✓'); },
       onError: err => showToast(err.message),
@@ -213,10 +204,7 @@ export function AccountDetailPage() {
                 <Input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nom" className="min-w-44" />
               </FormGroup>
               <FormGroup label="Banque">
-                <Select value={editForm.bank} onChange={e => setEditForm(f => ({ ...f, bank: e.target.value }))}>
-                  <option value="">— Aucune —</option>
-                  {banks.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
-                </Select>
+                <BankSelect value={editForm.bank} onChange={v => setEditForm(f => ({ ...f, bank: v }))} banks={banks} />
               </FormGroup>
               <FormGroup label="Type">
                 <Select value={editForm.type || accountTypes[0]?.name} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}>
@@ -327,22 +315,29 @@ export function AccountDetailPage() {
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Transactions</p>
           <span className="text-xs text-stone-400">{transactions.length} transaction(s)</span>
         </div>
-        {isLoading
-          ? <p className="text-sm text-stone-400">Chargement…</p>
-          : transactions.length === 0
-            ? <Empty>Aucune transaction sur ce compte</Empty>
-            : <div className="flex flex-col gap-2">{transactions.map(t => <TxItem key={t.id} tx={t} onDelete={setDeleteTxId} />)}</div>
-        }
+        <TransactionsList
+          isLoading={isLoading}
+          transactions={transactions}
+          accounts={accounts}
+          banks={banks}
+          onEdit={setEditTx}
+          onDelete={setDeleteTx}
+          emptyMessage="Aucune transaction sur ce compte"
+        />
       </div>
 
-      {deleteTxId && (
-        <ConfirmModal
-          title={transactions.find(t => t.id === deleteTxId)?.transfer_peer_id ? 'Supprimer le transfert' : 'Supprimer la transaction'}
-          body={transactions.find(t => t.id === deleteTxId)?.transfer_peer_id
-            ? 'Les deux côtés du transfert seront supprimés. Cette action est irréversible.'
-            : 'Cette action est irréversible. Confirmer la suppression ?'}
-          onConfirm={handleDeleteTx}
-          onCancel={() => setDeleteTxId(null)}
+      {deleteTx && (
+        <DeleteTxModal tx={deleteTx} onConfirm={handleDeleteTx} onCancel={() => setDeleteTx(null)} />
+      )}
+      {editTx && (
+        <EditTxModal
+          tx={editTx}
+          accounts={accounts}
+          banks={banks}
+          categories={categories}
+          onSave={handleUpdateTx}
+          onCancel={() => setEditTx(null)}
+          isPending={updateTx.isPending}
         />
       )}
       {confirmDeleteAccount && (

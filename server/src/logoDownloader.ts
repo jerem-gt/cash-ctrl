@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { DATA_DIR, db, queries } from './db.js';
 
 const BANK_CONFIG: { name: string; domain: string }[] = [
@@ -15,7 +15,7 @@ const BANK_CONFIG: { name: string; domain: string }[] = [
 ];
 
 // Normalize for accent-insensitive matching
-const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const normalize = (s: string) => s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export const LOGOS_DIR = path.join(DATA_DIR, 'logos');
 

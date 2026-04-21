@@ -30,7 +30,7 @@ const querySchema = z.object({
 transactionsRouter.get('/', (req, res) => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: z.treeifyError(parsed.error) });
     return;
   }
 
@@ -56,7 +56,7 @@ transactionsRouter.get('/', (req, res) => {
 transactionsRouter.post('/', (req, res) => {
   const parsed = transactionSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: z.treeifyError(parsed.error) });
     return;
   }
 
@@ -82,7 +82,7 @@ transactionsRouter.post('/', (req, res) => {
 });
 
 transactionsRouter.put('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   const userId = req.session.userId!;
 
   const tx = queries.getTransactionById.get(id, userId);
@@ -90,7 +90,7 @@ transactionsRouter.put('/:id', (req, res) => {
 
   if (tx.transfer_peer_id) {
     const parsed = transferUpdateSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
     const { amount, description, date } = parsed.data;
     const updateShared = db.prepare(
       'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ? AND user_id = ?'
@@ -101,7 +101,7 @@ transactionsRouter.put('/:id', (req, res) => {
     })();
   } else {
     const parsed = transactionSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
     const { account_id, type, amount, description, category, date } = parsed.data;
     const account = queries.getAccountById.get(account_id, userId);
     if (!account) { res.status(403).json({ error: 'Account not found or does not belong to user' }); return; }
@@ -118,7 +118,7 @@ transactionsRouter.put('/:id', (req, res) => {
 });
 
 transactionsRouter.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   const userId = req.session.userId!;
   const tx = queries.getTransactionById.get(id, userId);
   if (!tx) {

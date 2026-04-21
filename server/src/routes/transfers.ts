@@ -23,7 +23,7 @@ const TX_QUERY = `
 transfersRouter.post('/', (req, res) => {
   const parsed = transferSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: z.treeifyError(parsed.error) });
     return;
   }
 

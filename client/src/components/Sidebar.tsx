@@ -18,7 +18,7 @@ interface Props {
   username: string;
 }
 
-export function Sidebar({ username }: Props) {
+export function Sidebar({ username }: Readonly<Props>) {
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
   const { data: transactions = [] } = useTransactions();

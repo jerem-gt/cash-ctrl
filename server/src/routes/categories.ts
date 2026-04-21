@@ -17,7 +17,7 @@ categoriesRouter.get('/', (_req, res) => {
 
 categoriesRouter.post('/', (req, res) => {
   const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+  if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
 
   const { name, color } = parsed.data;
   const result = queries.insertCategory.run(name.trim(), color);
@@ -25,11 +25,11 @@ categoriesRouter.post('/', (req, res) => {
 });
 
 categoriesRouter.put('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   if (!queries.getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
 
   const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+  if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
 
   const { name, color } = parsed.data;
   queries.updateCategory.run(name.trim(), color, id);
@@ -37,7 +37,7 @@ categoriesRouter.put('/:id', (req, res) => {
 });
 
 categoriesRouter.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   if (!queries.getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
   queries.deleteCategory.run(id);
   res.json({ ok: true });

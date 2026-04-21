@@ -1,0 +1,95 @@
+import { useState, type SubmitEvent } from 'react';
+import type { Account, Bank, Transaction } from '@/types';
+import { Button, Input, Select, FormGroup, showToast } from '@/components/ui';
+import { AccountSelect } from '@/components/AccountSelect';
+
+export type TxFormState = {
+  type: 'income' | 'expense';
+  amount: string;
+  description: string;
+  category: string;
+  account_id: string;
+  date: string;
+};
+
+interface Props {
+  tx: Transaction;
+  accounts: Account[];
+  banks: Bank[];
+  categories: { id: number; name: string }[];
+  onSave: (data: TxFormState) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}
+
+export function EditTxModal({ tx, accounts, banks, categories, onSave, onCancel, isPending }: Readonly<Props>) {
+  const [form, setForm] = useState<TxFormState>({
+    type: tx.type,
+    amount: String(tx.amount),
+    description: tx.description,
+    category: tx.category,
+    account_id: String(tx.account_id),
+    date: tx.date,
+  });
+
+  const isTransfer = tx.transfer_peer_id !== null;
+
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!form.amount || !form.description || (!isTransfer && !form.account_id)) {
+      showToast('Veuillez remplir tous les champs.');
+      return;
+    }
+    onSave(form);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl">
+        <h3 className="font-serif text-xl mb-1">Modifier la transaction</h3>
+        {isTransfer
+          ? <p className="text-[11px] text-stone-400 mb-4">Transfert — montant, date et description appliqués aux deux legs.</p>
+          : <div className="mb-5" />}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex gap-3 flex-wrap">
+            {!isTransfer && (
+              <FormGroup label="Type">
+                <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as 'income' | 'expense' }))}>
+                  <option value="expense">Dépense</option>
+                  <option value="income">Revenu</option>
+                </Select>
+              </FormGroup>
+            )}
+            <FormGroup label="Montant (€)">
+              <Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" min="0" step="0.01" />
+            </FormGroup>
+            <FormGroup label="Description">
+              <Input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Ex : Courses Leclerc" />
+            </FormGroup>
+          </div>
+          <div className="flex gap-3 flex-wrap items-end">
+            {!isTransfer && (
+              <>
+                <FormGroup label="Catégorie">
+                  <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </Select>
+                </FormGroup>
+                <FormGroup label="Compte">
+                  <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} banks={banks} />
+                </FormGroup>
+              </>
+            )}
+            <FormGroup label="Date">
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            </FormGroup>
+          </div>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button type="button" onClick={onCancel}>Annuler</Button>
+            <Button type="submit" variant="primary" disabled={isPending}>{isPending ? '…' : 'Enregistrer'}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -26,8 +26,11 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-wider text-stone-400">Identifiant</label>
+            <label htmlFor="username" className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+              Identifiant
+            </label>
             <Input
+              id="username"
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -37,8 +40,11 @@ export function LoginPage() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-wider text-stone-400">Mot de passe</label>
+            <label htmlFor="password" className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+              Mot de passe
+            </label>
             <Input
+              id="password"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}

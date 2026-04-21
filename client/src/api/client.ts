@@ -4,7 +4,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -78,7 +78,8 @@ export const transactionsApi = {
     if (filters?.type)       params.set('type', filters.type);
     if (filters?.category)   params.set('category', filters.category);
     const qs = params.toString();
-    return request<Transaction[]>('GET', `/api/transactions${qs ? `?${qs}` : ''}`);
+    const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
+    return request<Transaction[]>('GET', url);
   },
   create: (payload: {
     account_id: number;

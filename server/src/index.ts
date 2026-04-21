@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
 import ConnectSQLite from 'connect-sqlite3';
-import path from 'path';
+import path from 'node:path';
 import { DB_PATH } from './db.js';
 import { LOGOS_DIR, downloadDefaultBankLogos } from './logoDownloader.js';
 import { authRouter } from './routes/auth.js';
@@ -16,7 +16,7 @@ import { banksRouter } from './routes/banks.js';
 
 const SQLiteStore = ConnectSQLite(session);
 
-const PORT = parseInt(process.env.PORT ?? '3000');
+const PORT = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -24,6 +24,14 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Static files served before session middleware (no session needed)
+app.use('/logos', express.static(LOGOS_DIR));
+if (IS_PROD) {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*splat', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
 
 app.use(session({
   store: new SQLiteStore({ db: 'sessions.db', dir: path.dirname(DB_PATH) }) as session.Store,
@@ -38,9 +46,6 @@ app.use(session({
   },
 }));
 
-// Logos (static files, public)
-app.use('/logos', express.static(LOGOS_DIR));
-
 // API routes
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountsRouter);
@@ -51,14 +56,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/account-types', accountTypesRouter);
 app.use('/api/banks', banksRouter);
 
-// Serve React build in production
-if (IS_PROD) {
-  const clientDist = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientDist));
-  app.get('*splat', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
-}
-
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})`);
-  downloadDefaultBankLogos().catch(console.error);
+  process.stdout.write(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})\n`);
+  downloadDefaultBankLogos().catch((err: unknown) => { process.stderr.write(`${String(err)}\n`); });
 });

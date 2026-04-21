@@ -6,11 +6,11 @@ import { useBanks, useCreateBank, useUpdateBank, useUploadBankLogo, useDeleteBan
 import { Card, CardTitle, Button, Input, FormGroup, ConfirmModal, showToast } from '@/components/ui';
 import type { Category, AccountType, Bank } from '@/types';
 
-function CategoryRow({ cat, onSaved, onDelete }: {
+function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
   cat: Category;
   onSaved: () => void;
   onDelete: (id: number) => void;
-}) {
+}>) {
   const updateCategory = useUpdateCategory();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: cat.name, color: cat.color });
@@ -68,11 +68,11 @@ function CategoryRow({ cat, onSaved, onDelete }: {
   );
 }
 
-function BankRow({ bank, onSaved, onDelete }: {
+function BankRow({ bank, onSaved, onDelete }: Readonly<{
   bank: Bank;
   onSaved: () => void;
   onDelete: (id: number) => void;
-}) {
+}>) {
   const updateBank = useUpdateBank();
   const uploadLogo = useUploadBankLogo();
   const [editing, setEditing] = useState(false);
@@ -145,11 +145,11 @@ function BankRow({ bank, onSaved, onDelete }: {
   );
 }
 
-function AccountTypeRow({ at, onSaved, onDelete }: {
+function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
   at: AccountType;
   onSaved: () => void;
   onDelete: (id: number) => void;
-}) {
+}>) {
   const updateAccountType = useUpdateAccountType();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
@@ -365,12 +365,15 @@ export function SettingsPage() {
         </div>
         <form onSubmit={handleAddCategory} className="flex gap-2 items-end flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-stone-500 font-medium">Couleur</label>
+            <label htmlFor="color" className="text-xs text-stone-500 font-medium">
+              Couleur
+            </label>
             <input
-              type="color"
-              value={newCat.color}
-              onChange={e => setNewCat(f => ({ ...f, color: e.target.value }))}
-              className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5"
+                id="color"
+                type="color"
+                value={newCat.color}
+                onChange={e => setNewCat(f => ({ ...f, color: e.target.value }))}
+                className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5"
             />
           </div>
           <FormGroup label="Nom">

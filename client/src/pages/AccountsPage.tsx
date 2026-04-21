@@ -6,6 +6,7 @@ import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, showToast } from '@/components/ui';
 import { AccountBadge } from '@/components/AccountBadge';
+import { BankSelect } from '@/components/BankSelect';
 import { fmtDec } from '@/lib/format';
 import { computeBalance } from '@/lib/account';
 
@@ -22,11 +23,12 @@ export function AccountsPage() {
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!form.name.trim()) { showToast('Donnez un nom au compte.'); return; }
+    if (!form.bank) { showToast('Choisissez une banque.'); return; }
     createAccount.mutate({
       name: form.name.trim(),
       bank: form.bank.trim(),
       type: form.type,
-      initial_balance: parseFloat(form.initial_balance) || 0,
+      initial_balance: Number.parseFloat(form.initial_balance) || 0,
     }, {
       onSuccess: () => {
         setForm({ name: '', bank: '', type: accountTypes[0]?.name ?? '', initial_balance: '' });
@@ -78,10 +80,7 @@ export function AccountsPage() {
               <Input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Compte courant" className="min-w-44" />
             </FormGroup>
             <FormGroup label="Banque">
-              <Select value={form.bank} onChange={e => setForm(f => ({ ...f, bank: e.target.value }))}>
-                <option value="">— Aucune —</option>
-                {banks.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
-              </Select>
+              <BankSelect value={form.bank} onChange={v => setForm(f => ({ ...f, bank: v }))} banks={banks} />
             </FormGroup>
             <FormGroup label="Type">
               <Select value={form.type || accountTypes[0]?.name} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>

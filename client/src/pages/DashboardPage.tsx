@@ -13,7 +13,7 @@ import { fmt, fmtDec, fmtDateShort, isThisMonth, monthLabel, isSameMonth } from 
 import { computeBalance } from '@/lib/account';
 import type { Account, Bank, Transaction } from '@/types';
 
-function TxRow({ tx, accounts, banks }: { tx: Transaction; accounts: Account[]; banks: Bank[] }) {
+function TxRow({ tx, accounts, banks }: Readonly<{ tx: Transaction; accounts: Account[]; banks: Bank[] }>) {
   const account = accounts.find(a => a.id === tx.account_id);
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/4 last:border-0">
@@ -98,7 +98,7 @@ export function DashboardPage() {
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={catData} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} />
-                  <Tooltip formatter={(v) => v != null ? fmtDec(Number(v)) : ''} />
+                  <Tooltip formatter={(v) => v == null ? '' : fmtDec(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
@@ -127,7 +127,7 @@ export function DashboardPage() {
             <BarChart data={barData} barGap={4}>
               <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v)} width={70} />
-              <Tooltip formatter={(v) => v != null ? fmtDec(Number(v)) : ''} />
+              <Tooltip formatter={(v) => v == null ? '' : fmtDec(Number(v))} />
               <Bar dataKey="Revenus"  name="Revenus"  fill="#7DBB4A" radius={[3,3,0,0]} />
               <Bar dataKey="Depenses" name="Dépenses" fill="#D46060" radius={[3,3,0,0]} />
             </BarChart>

@@ -21,7 +21,7 @@ exportRouter.get('/csv', (req, res) => {
   const lines = rows.map(r => [
     r.date,
     r.type === 'income' ? 'Revenu' : 'Dépense',
-    `"${r.description.replace(/"/g, '""')}"`,
+    `"${r.description.replaceAll('"', '""')}"`,
     r.category,
     r.account,
     (r.type === 'expense' ? -r.amount : r.amount).toFixed(2),

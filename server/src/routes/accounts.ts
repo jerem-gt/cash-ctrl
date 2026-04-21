@@ -8,7 +8,7 @@ accountsRouter.use(requireAuth);
 
 const accountSchema = z.object({
   name: z.string().min(1).max(100),
-  bank: z.string().max(100).default(''),
+  bank: z.string().min(1).max(100),
   type: z.string().min(1).max(50),
   initial_balance: z.number().default(0),
 });
@@ -21,7 +21,7 @@ accountsRouter.get('/', (req, res) => {
 accountsRouter.post('/', (req, res) => {
   const parsed = accountSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: z.treeifyError(parsed.error) });
     return;
   }
 
@@ -32,7 +32,7 @@ accountsRouter.post('/', (req, res) => {
 });
 
 accountsRouter.put('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   const existing = queries.getAccountById.get(id, req.session.userId!);
   if (!existing) {
     res.status(404).json({ error: 'Account not found' });
@@ -41,7 +41,7 @@ accountsRouter.put('/:id', (req, res) => {
 
   const parsed = accountSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: z.treeifyError(parsed.error) });
     return;
   }
 
@@ -52,7 +52,7 @@ accountsRouter.put('/:id', (req, res) => {
 });
 
 accountsRouter.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   const account = queries.getAccountById.get(id, req.session.userId!);
   if (!account) {
     res.status(404).json({ error: 'Account not found' });

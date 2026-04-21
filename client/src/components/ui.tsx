@@ -2,7 +2,7 @@ import { type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes, ty
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps { children: ReactNode; className?: string; }
-export function Card({ children, className = '' }: CardProps) {
+export function Card({ children, className = '' }: Readonly<CardProps>) {
   return (
     <div className={`bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm ${className}`}>
       {children}
@@ -10,13 +10,13 @@ export function Card({ children, className = '' }: CardProps) {
   );
 }
 
-export function CardTitle({ children }: { children: ReactNode }) {
+export function CardTitle({ children }: Readonly<{ children: ReactNode }>) {
   return <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">{children}</p>;
 }
 
 // ─── Metric ───────────────────────────────────────────────────────────────────
 interface MetricProps { label: string; value: string; sub?: string; variant?: 'default' | 'positive' | 'negative'; }
-export function Metric({ label, value, sub, variant = 'default' }: MetricProps) {
+export function Metric({ label, value, sub, variant = 'default' }: Readonly<MetricProps>) {
   const colors = { default: 'text-stone-900', positive: 'text-green-800', negative: 'text-red-800' };
   return (
     <div className="bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm">
@@ -32,7 +32,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'primary' | 'danger' | 'export';
   size?: 'sm' | 'md';
 }
-export function Button({ variant = 'default', size = 'md', className = '', ...props }: ButtonProps) {
+export function Button({ variant = 'default', size = 'md', className = '', ...props }: Readonly<ButtonProps>) {
   const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed';
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm' };
   const variants = {
@@ -45,7 +45,7 @@ export function Button({ variant = 'default', size = 'md', className = '', ...pr
 }
 
 // ─── Input ────────────────────────────────────────────────────────────────────
-export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className = '', ...props }: Readonly<InputHTMLAttributes<HTMLInputElement>>) {
   return (
     <input
       className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all ${className}`}
@@ -55,7 +55,7 @@ export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInpu
 }
 
 // ─── Select ───────────────────────────────────────────────────────────────────
-export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className = '', ...props }: Readonly<SelectHTMLAttributes<HTMLSelectElement>>) {
   return (
     <select
       className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all ${className}`}
@@ -65,7 +65,7 @@ export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSe
 }
 
 // ─── FormGroup ────────────────────────────────────────────────────────────────
-export function FormGroup({ label, children }: { label: string; children: ReactNode }) {
+export function FormGroup({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="flex flex-col gap-1.5 flex-1 min-w-25">
       <label className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{label}</label>
@@ -75,7 +75,7 @@ export function FormGroup({ label, children }: { label: string; children: ReactN
 }
 
 // ─── Empty ────────────────────────────────────────────────────────────────────
-export function Empty({ children }: { children: ReactNode }) {
+export function Empty({ children }: Readonly<{ children: ReactNode }>) {
   return <div className="text-center py-12 text-stone-300 text-sm">{children}</div>;
 }
 
@@ -110,7 +110,7 @@ interface ModalProps {
   onConfirm: () => void;
   onCancel: () => void;
 }
-export function ConfirmModal({ title, body, onConfirm, onCancel }: ModalProps) {
+export function ConfirmModal({ title, body, onConfirm, onCancel }: Readonly<ModalProps>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-sm shadow-xl">
