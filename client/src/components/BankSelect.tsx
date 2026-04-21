@@ -40,7 +40,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
           <button
             type="button"
             onClick={() => { onChange(''); setOpen(false); }}
-            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors"
+            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors text-left"
           >
             — Choisir —
           </button>
@@ -49,7 +49,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
               key={b.id}
               type="button"
               onClick={() => { onChange(b.name); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors ${b.name === value ? 'bg-stone-50 font-medium' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${b.name === value ? 'bg-stone-50 font-medium' : ''}`}
             >
               {b.logo
                 ? <img src={b.logo} alt="" className="w-4 h-4 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />

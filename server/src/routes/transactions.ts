@@ -13,6 +13,9 @@ const transactionSchema = z.object({
   description: z.string().min(1).max(200),
   category: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  payment_method: z.string().min(1).max(100),
+  notes: z.string().max(1000).nullable().default(null),
+  validated: z.boolean().default(false),
 });
 
 const transferUpdateSchema = z.object({
@@ -60,7 +63,7 @@ transactionsRouter.post('/', (req, res) => {
     return;
   }
 
-  const { account_id, type, amount, description, category, date } = parsed.data;
+  const { account_id, type, amount, description, category, date, payment_method, notes } = parsed.data;
 
   const account = queries.getAccountById.get(account_id, req.session.userId!);
   if (!account) {
@@ -69,7 +72,7 @@ transactionsRouter.post('/', (req, res) => {
   }
 
   const result = queries.insertTransaction.run(
-    req.session.userId!, account_id, type, amount, description.trim(), category, date
+    req.session.userId!, account_id, type, amount, description.trim(), category, date, payment_method, notes
   );
 
   const tx = db.prepare(`
@@ -102,11 +105,31 @@ transactionsRouter.put('/:id', (req, res) => {
   } else {
     const parsed = transactionSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    const { account_id, type, amount, description, category, date } = parsed.data;
+    const { account_id, type, amount, description, category, date, payment_method, notes, validated } = parsed.data;
     const account = queries.getAccountById.get(account_id, userId);
     if (!account) { res.status(403).json({ error: 'Account not found or does not belong to user' }); return; }
-    queries.updateTransaction.run(account_id, type, amount, description.trim(), category, date, id, userId);
+    queries.updateTransaction.run(account_id, type, amount, description.trim(), category, date, payment_method, notes, validated ? 1 : 0, id, userId);
   }
+
+  const updated = db.prepare(`
+    SELECT t.*, a.name as account_name
+    FROM transactions t JOIN accounts a ON t.account_id = a.id
+    WHERE t.id = ?
+  `).get(id);
+
+  res.json(updated);
+});
+
+transactionsRouter.patch('/:id/validate', (req, res) => {
+  const id = Number.parseInt(req.params.id);
+  const userId = req.session.userId!;
+  const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+
+  const tx = queries.getTransactionById.get(id, userId);
+  if (!tx) { res.status(404).json({ error: 'Transaction not found' }); return; }
+
+  queries.setValidated.run(parsed.data.validated ? 1 : 0, id, userId);
 
   const updated = db.prepare(`
     SELECT t.*, a.name as account_name

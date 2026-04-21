@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import type { Account, Bank, Transaction } from '@/types';
+import type { Account, Bank, PaymentMethod, Transaction } from '@/types';
 import { Button, Input, Select, FormGroup, showToast } from '@/components/ui';
 import { AccountSelect } from '@/components/AccountSelect';
 
@@ -10,6 +10,9 @@ export type TxFormState = {
   category: string;
   account_id: string;
   date: string;
+  payment_method: string;
+  notes: string;
+  validated: boolean;
 };
 
 interface Props {
@@ -17,12 +20,13 @@ interface Props {
   accounts: Account[];
   banks: Bank[];
   categories: { id: number; name: string }[];
+  paymentMethods: PaymentMethod[];
   onSave: (data: TxFormState) => void;
   onCancel: () => void;
   isPending: boolean;
 }
 
-export function EditTxModal({ tx, accounts, banks, categories, onSave, onCancel, isPending }: Readonly<Props>) {
+export function EditTxModal({ tx, accounts, banks, categories, paymentMethods, onSave, onCancel, isPending }: Readonly<Props>) {
   const [form, setForm] = useState<TxFormState>({
     type: tx.type,
     amount: String(tx.amount),
@@ -30,14 +34,17 @@ export function EditTxModal({ tx, accounts, banks, categories, onSave, onCancel,
     category: tx.category,
     account_id: String(tx.account_id),
     date: tx.date,
+    payment_method: tx.payment_method ?? '',
+    notes: tx.notes ?? '',
+    validated: !!tx.validated,
   });
 
   const isTransfer = tx.transfer_peer_id !== null;
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!form.amount || !form.description || (!isTransfer && !form.account_id)) {
-      showToast('Veuillez remplir tous les champs.');
+    if (!form.amount || !form.description || (!isTransfer && !form.account_id) || (!isTransfer && !form.payment_method)) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
     onSave(form);
@@ -83,7 +90,33 @@ export function EditTxModal({ tx, accounts, banks, categories, onSave, onCancel,
             <FormGroup label="Date">
               <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </FormGroup>
+            {!isTransfer && (
+              <FormGroup label="Moyen de paiement">
+                <Select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                  <option value="">— Aucun —</option>
+                  {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                </Select>
+              </FormGroup>
+            )}
           </div>
+          <FormGroup label="Notes">
+            <textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Informations complémentaires…"
+              rows={2}
+              className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+            />
+          </FormGroup>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.validated}
+              onChange={e => setForm(f => ({ ...f, validated: e.target.checked }))}
+              className="w-4 h-4 accent-green-500"
+            />
+            <span className="text-sm text-stone-700">Transaction validée</span>
+          </label>
           <div className="flex gap-2 justify-end pt-2">
             <Button type="button" onClick={onCancel}>Annuler</Button>
             <Button type="submit" variant="primary" disabled={isPending}>{isPending ? '…' : 'Enregistrer'}</Button>

@@ -46,6 +46,14 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS banks (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     name       TEXT UNIQUE NOT NULL,
+    logo       TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS payment_methods (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT UNIQUE NOT NULL,
+    icon       TEXT NOT NULL DEFAULT '',
     created_at TEXT DEFAULT (datetime('now'))
   );
 
@@ -59,37 +67,21 @@ db.exec(`
     category         TEXT NOT NULL,
     date             TEXT NOT NULL,
     transfer_peer_id INTEGER,
+    validated        INTEGER NOT NULL DEFAULT 0,
+    payment_method   TEXT NOT NULL DEFAULT '',
+    notes            TEXT,
     created_at       TEXT DEFAULT (datetime('now'))
   );
 `);
 
-// Migrations
+// Migrations pour DBs créées avant l'ajout de ces colonnes
 try { db.exec('ALTER TABLE transactions ADD COLUMN transfer_peer_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE transactions ADD COLUMN validated INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
+try { db.exec("ALTER TABLE transactions ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE transactions ADD COLUMN notes TEXT'); } catch { /* already exists */ }
 try { db.exec("ALTER TABLE accounts ADD COLUMN bank TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE banks ADD COLUMN logo TEXT'); } catch { /* already exists */ }
-
-// Migration: restore accents in account types (previously stripped for enum compat)
-try {
-  db.exec(`UPDATE accounts SET type = 'Épargne' WHERE type = 'Epargne'`);
-  db.exec(`UPDATE accounts SET type = 'Crédit'  WHERE type = 'Credit'`);
-} catch { /* ignore */ }
-
-// Migration: drop user_id from categories if it exists (table was initially created with it)
-const catColumns = (db.prepare('PRAGMA table_info(categories)').all() as { name: string }[]).map(c => c.name);
-if (catColumns.includes('user_id')) {
-  db.exec(`
-    CREATE TABLE categories_new (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      color TEXT NOT NULL DEFAULT '#9E9A92',
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-    INSERT INTO categories_new (id, name, color, created_at)
-      SELECT id, name, color, created_at FROM categories GROUP BY name;
-    DROP TABLE categories;
-    ALTER TABLE categories_new RENAME TO categories;
-  `);
-}
+try { db.exec("ALTER TABLE payment_methods ADD COLUMN icon TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
 
 // Seed default banks (INSERT OR IGNORE so new defaults are added on each restart)
 const DEFAULT_BANKS = ['BoursoBank', 'Fortuneo', 'Crédit Agricole', 'Linxea', 'Amundi', 'BNP Paribas', 'Société Générale', 'Revolut', 'N26'];
@@ -101,9 +93,8 @@ const DEFAULT_BANKS = ['BoursoBank', 'Fortuneo', 'Crédit Agricole', 'Linxea', '
 
 // Seed default account types if table is empty
 const DEFAULT_ACCOUNT_TYPES = ['Courant', 'Épargne', 'Livret', 'Crédit', 'Autre'];
-const atCount = (db.prepare('SELECT COUNT(*) as n FROM account_types').get() as { n: number }).n;
-if (atCount === 0) {
-  const insertAt = db.prepare('INSERT INTO account_types (name) VALUES (?)');
+{
+  const insertAt = db.prepare('INSERT OR IGNORE INTO account_types (name) VALUES (?)');
   const seedAt = db.transaction(() => { for (const t of DEFAULT_ACCOUNT_TYPES) insertAt.run(t); });
   seedAt();
 }
@@ -120,11 +111,24 @@ const DEFAULT_CATEGORIES = [
   { name: 'Épargne',      color: '#4A7F5E' },
   { name: 'Autre',        color: '#9E9A92' },
 ];
-const catCount = (db.prepare('SELECT COUNT(*) as n FROM categories').get() as { n: number }).n;
-if (catCount === 0) {
-  const insertCat = db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)');
+{
+  const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)');
   const seedAll = db.transaction(() => { for (const c of DEFAULT_CATEGORIES) insertCat.run(c.name, c.color); });
   seedAll();
+}
+
+// Seed default payment methods if table is empty
+const DEFAULT_PAYMENT_METHODS = [
+  { name: 'Chèque',         icon: '📝' },
+  { name: 'Virement',       icon: '↔️' },
+  { name: 'Carte Bancaire', icon: '💳' },
+  { name: 'Prélèvement',    icon: '↕️' },
+  { name: 'Transfert',      icon: '🔄' },
+];
+{
+  const insertPm = db.prepare('INSERT OR IGNORE INTO payment_methods (name, icon) VALUES (?, ?)');
+  const seedPm = db.transaction(() => { for (const m of DEFAULT_PAYMENT_METHODS) insertPm.run(m.name, m.icon); });
+  seedPm();
 }
 
 // Seed admin user
@@ -150,6 +154,13 @@ export interface BankRecord {
 export interface AccountTypeRecord {
   id: number;
   name: string;
+  created_at: string;
+}
+
+export interface PaymentMethodRecord {
+  id: number;
+  name: string;
+  icon: string;
   created_at: string;
 }
 
@@ -187,6 +198,9 @@ export interface Transaction {
   category: string;
   date: string;
   transfer_peer_id: number | null;
+  validated: number; // 0 | 1
+  payment_method: string;
+  notes: string | null;
   created_at: string;
   account_name?: string;
 }
@@ -203,6 +217,12 @@ export const queries = {
   insertAccountType: db.prepare<[string]>('INSERT INTO account_types (name) VALUES (?)'),
   updateAccountType: db.prepare<[string, number]>('UPDATE account_types SET name = ? WHERE id = ?'),
   deleteAccountType: db.prepare<[number]>('DELETE FROM account_types WHERE id = ?'),
+
+  getPaymentMethods: db.prepare<[], PaymentMethodRecord>('SELECT * FROM payment_methods ORDER BY created_at'),
+  getPaymentMethodById: db.prepare<[number], PaymentMethodRecord>('SELECT * FROM payment_methods WHERE id = ?'),
+  insertPaymentMethod: db.prepare<[string, string]>('INSERT INTO payment_methods (name, icon) VALUES (?, ?)'),
+  updatePaymentMethod: db.prepare<[string, string, number]>('UPDATE payment_methods SET name = ?, icon = ? WHERE id = ?'),
+  deletePaymentMethod: db.prepare<[number]>('DELETE FROM payment_methods WHERE id = ?'),
 
   getCategories: db.prepare<[], Category>('SELECT * FROM categories ORDER BY created_at'),
   getCategoryById: db.prepare<[number], Category>('SELECT * FROM categories WHERE id = ?'),
@@ -231,11 +251,11 @@ export const queries = {
      WHERE t.user_id = ?
      ORDER BY t.date DESC, t.created_at DESC`
   ),
-  insertTransaction: db.prepare<[number, number, string, number, string, string, string]>(
-    'INSERT INTO transactions (user_id, account_id, type, amount, description, category, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  insertTransaction: db.prepare<[number, number, string, number, string, string, string, string, string | null]>(
+    'INSERT INTO transactions (user_id, account_id, type, amount, description, category, date, payment_method, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ),
-  updateTransaction: db.prepare<[number, string, number, string, string, string, number, number]>(
-    'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category = ?, date = ? WHERE id = ? AND user_id = ?'
+  updateTransaction: db.prepare<[number, string, number, string, string, string, string, string | null, number, number, number]>(
+    'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category = ?, date = ?, payment_method = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?'
   ),
   deleteTransaction: db.prepare<[number, number]>('DELETE FROM transactions WHERE id = ? AND user_id = ?'),
   getTransactionById: db.prepare<[number, number], Transaction>(
@@ -251,5 +271,8 @@ export const queries = {
 
   setPeerTransfer: db.prepare<[number, number]>(
     'UPDATE transactions SET transfer_peer_id = ? WHERE id = ?'
+  ),
+  setValidated: db.prepare<[number, number, number]>(
+    'UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?'
   ),
 };

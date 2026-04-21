@@ -38,38 +38,19 @@ export function AccountsPage() {
     });
   };
 
+  const groups = accountTypes
+    .map(t => ({
+      type: t,
+      accounts: accounts.filter(a => a.type === t.name),
+    }))
+    .filter(g => g.accounts.length > 0);
+
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-serif text-2xl tracking-tight">Comptes</h2>
         <p className="text-sm text-stone-400 mt-0.5">Cliquez sur un compte pour voir ses transactions</p>
       </div>
-
-      {/* Accounts grid */}
-      {accounts.length === 0
-        ? <Empty>Aucun compte. Créez-en un ci-dessous.</Empty>
-        : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accounts.map(acc => {
-              const bal = computeBalance(acc, transactions);
-              return (
-                <button
-                  key={acc.id}
-                  onClick={() => navigate(`/accounts/${acc.id}`)}
-                  className="bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm text-left hover:border-black/18 hover:shadow-md transition-all duration-150 group"
-                >
-                  <div className="flex justify-between items-start mb-3 gap-2">
-                    <AccountBadge name={acc.name} bank={acc.bank} banks={banks} className="text-sm font-medium" />
-                    <span className="text-stone-300 group-hover:text-stone-500 transition-colors text-sm shrink-0">→</span>
-                  </div>
-                  <p className={`font-serif text-3xl ${bal < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(bal)}</p>
-                  <p className="text-[11px] text-stone-300 mt-2 uppercase tracking-wider">{acc.type}</p>
-                </button>
-              );
-            })}
-          </div>
-        )
-      }
 
       {/* Create form */}
       <Card>
@@ -96,6 +77,44 @@ export function AccountsPage() {
           </div>
         </form>
       </Card>
+
+      {/* Accounts grouped by type */}
+      {accounts.length === 0
+        ? <Empty>Aucun compte pour l'instant.</Empty>
+        : (
+          <div className="space-y-6">
+            {groups.map(({ type, accounts: groupAccounts }) => {
+              const subtotal = groupAccounts.reduce((sum, acc) => sum + computeBalance(acc, transactions), 0);
+              return (
+                <div key={type.id}>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-stone-400">{type.name}</span>
+                    <span className={`font-serif text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}>{fmtDec(subtotal)}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groupAccounts.map(acc => {
+                      const bal = computeBalance(acc, transactions);
+                      return (
+                        <button
+                          key={acc.id}
+                          onClick={() => navigate(`/accounts/${acc.id}`)}
+                          className="bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm text-left hover:border-black/18 hover:shadow-md transition-all duration-150 group"
+                        >
+                          <div className="flex justify-between items-start mb-3 gap-2">
+                            <AccountBadge name={acc.name} bank={acc.bank} banks={banks} className="text-sm font-medium" />
+                            <span className="text-stone-300 group-hover:text-stone-500 transition-colors text-sm shrink-0">→</span>
+                          </div>
+                          <p className={`font-serif text-3xl ${bal < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(bal)}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      }
     </div>
   );
 }

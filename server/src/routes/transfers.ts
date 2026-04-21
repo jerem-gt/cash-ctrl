@@ -44,11 +44,11 @@ transfersRouter.post('/', (req, res) => {
 
   const createPair = db.transaction(() => {
     const expenseId = Number(queries.insertTransaction.run(
-      userId, from_account_id, 'expense', amount, description.trim(), 'Transfert', date
+      userId, from_account_id, 'expense', amount, description.trim(), 'Transfert', date, 'Transfert', null
     ).lastInsertRowid);
 
     const incomeId = Number(queries.insertTransaction.run(
-      userId, to_account_id, 'income', amount, description.trim(), 'Transfert', date
+      userId, to_account_id, 'income', amount, description.trim(), 'Transfert', date, 'Transfert', null
     ).lastInsertRowid);
 
     queries.setPeerTransfer.run(incomeId, expenseId);

@@ -9,12 +9,14 @@ import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
 import { TransactionsList } from '@/components/TransactionsList';
 import { today } from '@/lib/format';
 import { useCategories } from '@/hooks/useCategories';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import type { Transaction, TransactionFilters } from '@/types';
 
 export function TransactionsPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
+  const { data: paymentMethods = [] } = usePaymentMethods();
   const [filters, setFilters] = useState<TransactionFilters>({});
   const { data: transactions = [], isLoading } = useTransactions(filters);
   const createTx = useCreateTransaction();
@@ -28,14 +30,15 @@ export function TransactionsPage() {
     category: '',
     account_id: '',
     date: today(),
+    payment_method: '',
   });
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!form.amount || !form.description || !form.account_id) {
-      showToast('Veuillez remplir tous les champs.');
+    if (!form.amount || !form.description || !form.account_id || !form.payment_method) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
     createTx.mutate({
@@ -45,6 +48,7 @@ export function TransactionsPage() {
       category: form.category || categories[0]?.name || 'Autre',
       account_id: Number.parseInt(form.account_id),
       date: form.date,
+      payment_method: form.payment_method,
     }, {
       onSuccess: () => {
         setForm(f => ({ ...f, amount: '', description: '' }));
@@ -58,9 +62,11 @@ export function TransactionsPage() {
     if (!editTx) return;
     const payload = editTx.transfer_peer_id
       ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
-          type: editTx.type, account_id: editTx.account_id, category: editTx.category }
+          type: editTx.type, account_id: editTx.account_id, category: editTx.category,
+          payment_method: editTx.payment_method, notes: editTx.notes, validated: !!editTx.validated }
       : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
-          category: data.category || categories[0]?.name || 'Autre', account_id: Number.parseInt(data.account_id), date: data.date };
+          category: data.category || categories[0]?.name || 'Autre', account_id: Number.parseInt(data.account_id), date: data.date,
+          payment_method: data.payment_method, notes: data.notes || null, validated: data.validated };
     updateTx.mutate(payload, {
       onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
       onError: (e) => showToast(e.message),
@@ -108,6 +114,12 @@ export function TransactionsPage() {
             <FormGroup label="Compte">
               <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} banks={banks} />
             </FormGroup>
+            <FormGroup label="Moyen de paiement">
+              <Select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                <option value="">— Choisir —</option>
+                {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
+              </Select>
+            </FormGroup>
             <FormGroup label="Date">
               <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </FormGroup>
@@ -120,10 +132,15 @@ export function TransactionsPage() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap items-center">
-        <Select className="flex-1 min-w-32.5 max-w-50" value={filters.account_id ?? ''} onChange={e => setFilters(f => ({ ...f, account_id: e.target.value ? Number.parseInt(e.target.value) : undefined }))}>
-          <option value="">Tous les comptes</option>
-          {accounts.map(a => <option key={a.id} value={a.id}>{a.name}{a.bank ? ` (${a.bank})` : ''}</option>)}
-        </Select>
+        <div className="flex-1 min-w-32.5 max-w-50">
+          <AccountSelect
+            value={String(filters.account_id ?? '')}
+            onChange={v => setFilters(f => ({ ...f, account_id: v ? Number.parseInt(v) : undefined }))}
+            accounts={accounts}
+            banks={banks}
+            placeholder="Tous les comptes"
+          />
+        </div>
         <Select className="flex-1 min-w-32.5 max-w-50" value={filters.category ?? ''} onChange={e => setFilters(f => ({ ...f, category: e.target.value || undefined }))}>
           <option value="">Toutes catégories</option>
           {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -152,6 +169,7 @@ export function TransactionsPage() {
           accounts={accounts}
           banks={banks}
           categories={categories}
+          paymentMethods={paymentMethods}
           onSave={handleUpdate}
           onCancel={() => setEditTx(null)}
           isPending={updateTx.isPending}

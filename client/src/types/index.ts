@@ -40,8 +40,18 @@ export interface Transaction {
   category: string;
   date: string;
   transfer_peer_id: number | null;
+  validated: boolean;
+  payment_method: string;
+  notes: string | null;
   created_at: string;
   account_name: string;
+}
+
+export interface PaymentMethod {
+  id: number;
+  name: string;
+  icon: string;
+  created_at: string;
 }
 
 export interface TransactionFilters {

@@ -1,4 +1,4 @@
-import type { Account, AccountType, Bank, Category, Transaction, TransactionFilters } from '@/types';
+import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters } from '@/types';
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -64,6 +64,14 @@ export const categoriesApi = {
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
 };
 
+// Payment methods
+export const paymentMethodsApi = {
+  list: () => request<PaymentMethod[]>('GET', '/api/payment-methods'),
+  create: (payload: { name: string; icon: string }) => request<PaymentMethod>('POST', '/api/payment-methods', payload),
+  update: (id: number, payload: { name: string; icon: string }) => request<PaymentMethod>('PUT', `/api/payment-methods/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/payment-methods/${id}`),
+};
+
 // Transfers
 export const transfersApi = {
   create: (payload: { from_account_id: number; to_account_id: number; amount: number; description: string; date: string }) =>
@@ -88,6 +96,8 @@ export const transactionsApi = {
     description: string;
     category: string;
     date: string;
+    payment_method?: string;
+    notes?: string | null;
   }) => request<Transaction>('POST', '/api/transactions', payload),
   update: (id: number, payload: {
     account_id: number;
@@ -96,6 +106,11 @@ export const transactionsApi = {
     description: string;
     category: string;
     date: string;
+    payment_method: string;
+    notes: string | null;
+    validated: boolean;
   }) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),
+  validate: (id: number, validated: boolean) =>
+    request<Transaction>('PATCH', `/api/transactions/${id}/validate`, { validated }),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transactions/${id}`),
 };

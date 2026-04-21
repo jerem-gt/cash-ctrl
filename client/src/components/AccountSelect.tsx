@@ -47,7 +47,7 @@ export function AccountSelect({ value, onChange, accounts, banks, placeholder = 
           <button
             type="button"
             onClick={() => { onChange(''); setOpen(false); }}
-            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors"
+            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors text-left"
           >
             {placeholder}
           </button>
@@ -56,7 +56,7 @@ export function AccountSelect({ value, onChange, accounts, banks, placeholder = 
               key={a.id}
               type="button"
               onClick={() => { onChange(String(a.id)); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors ${String(a.id) === value ? 'bg-stone-50 font-medium' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${String(a.id) === value ? 'bg-stone-50 font-medium' : ''}`}
             >
               <Logo bank={a.bank} banks={banks} />
               <span className="flex-1 truncate">{a.name}</span>

@@ -3,8 +3,9 @@ import { useChangePassword } from '@/hooks/useAuth';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useAccountTypes, useCreateAccountType, useUpdateAccountType, useDeleteAccountType } from '@/hooks/useAccountTypes';
 import { useBanks, useCreateBank, useUpdateBank, useUploadBankLogo, useDeleteBank } from '@/hooks/useBanks';
+import { usePaymentMethods, useCreatePaymentMethod, useUpdatePaymentMethod, useDeletePaymentMethod } from '@/hooks/usePaymentMethods';
 import { Card, CardTitle, Button, Input, FormGroup, ConfirmModal, showToast } from '@/components/ui';
-import type { Category, AccountType, Bank } from '@/types';
+import type { Category, AccountType, Bank, PaymentMethod } from '@/types';
 
 function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
   cat: Category;
@@ -200,6 +201,51 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
   );
 }
 
+function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
+  pm: PaymentMethod;
+  onSaved: () => void;
+  onDelete: (id: number) => void;
+}>) {
+  const updatePm = useUpdatePaymentMethod();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
+
+  const handleSave = (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    updatePm.mutate({ id: pm.id, name: form.name.trim(), icon: form.icon }, {
+      onSuccess: () => { setEditing(false); onSaved(); },
+      onError: err => showToast(err.message),
+    });
+  };
+
+  if (editing) {
+    return (
+      <form onSubmit={handleSave} className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0">
+        <Input
+          type="text"
+          value={form.icon}
+          onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
+          className="w-14 text-center text-lg"
+          placeholder="🔸"
+        />
+        <Input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="flex-1 text-sm" autoFocus />
+        <Button type="submit" variant="primary" size="sm" disabled={updatePm.isPending}>{updatePm.isPending ? '…' : 'OK'}</Button>
+        <Button type="button" size="sm" onClick={() => { setEditing(false); setForm({ name: pm.name, icon: pm.icon }); }}>Annuler</Button>
+      </form>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
+      <span className="w-5 text-center text-base leading-none">{pm.icon}</span>
+      <span className="flex-1 text-sm">{pm.name}</span>
+      <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
+      <button onClick={() => onDelete(pm.id)} className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">×</button>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -219,9 +265,15 @@ export function SettingsPage() {
   const deleteBank = useDeleteBank();
   const [newBankName, setNewBankName] = useState('');
 
+  const { data: paymentMethods = [] } = usePaymentMethods();
+  const createPaymentMethod = useCreatePaymentMethod();
+  const deletePaymentMethod = useDeletePaymentMethod();
+  const [newPm, setNewPm] = useState({ name: '', icon: '' });
+
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteAtId, setDeleteAtId] = useState<number | null>(null);
   const [deleteBankId, setDeleteBankId] = useState<number | null>(null);
+  const [deletePmId, setDeletePmId] = useState<number | null>(null);
 
   const handlePasswordSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -287,6 +339,22 @@ export function SettingsPage() {
     });
   };
 
+  const handleAddPaymentMethod = (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!newPm.name.trim()) { showToast('Donnez un nom au moyen de paiement.'); return; }
+    createPaymentMethod.mutate({ name: newPm.name.trim(), icon: newPm.icon }, {
+      onSuccess: () => { setNewPm({ name: '', icon: '' }); showToast('Moyen de paiement ajouté ✓'); },
+      onError: err => showToast(err.message),
+    });
+  };
+
+  const handleDeletePmConfirm = () => {
+    if (!deletePmId) return;
+    deletePaymentMethod.mutate(deletePmId, {
+      onSuccess: () => { setDeletePmId(null); showToast('Moyen de paiement supprimé'); },
+    });
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -343,6 +411,30 @@ export function SettingsPage() {
           </FormGroup>
           <Button type="submit" variant="primary" disabled={createAccountType.isPending}>
             {createAccountType.isPending ? '…' : 'Ajouter'}
+          </Button>
+        </form>
+      </Card>
+
+      {/* Payment methods */}
+      <Card>
+        <CardTitle>Moyens de paiement</CardTitle>
+        <div className="mb-4">
+          {paymentMethods.length === 0
+            ? <p className="text-sm text-stone-400 py-2">Aucun moyen de paiement.</p>
+            : paymentMethods.map(pm => (
+                <PaymentMethodRow key={pm.id} pm={pm} onSaved={() => showToast('Moyen de paiement mis à jour ✓')} onDelete={setDeletePmId} />
+              ))
+          }
+        </div>
+        <form onSubmit={handleAddPaymentMethod} className="flex gap-2 items-end flex-wrap">
+          <FormGroup label="Icône">
+            <Input type="text" value={newPm.icon} onChange={e => setNewPm(f => ({ ...f, icon: e.target.value }))} placeholder="💶" className="w-16 text-center text-lg" />
+          </FormGroup>
+          <FormGroup label="Nom">
+            <Input type="text" value={newPm.name} onChange={e => setNewPm(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Espèces" className="min-w-44" />
+          </FormGroup>
+          <Button type="submit" variant="primary" disabled={createPaymentMethod.isPending}>
+            {createPaymentMethod.isPending ? '…' : 'Ajouter'}
           </Button>
         </form>
       </Card>
@@ -434,6 +526,15 @@ export function SettingsPage() {
           body="Les comptes existants garderont leur banque actuelle. Confirmer ?"
           onConfirm={handleDeleteBankConfirm}
           onCancel={() => setDeleteBankId(null)}
+        />
+      )}
+
+      {deletePmId && (
+        <ConfirmModal
+          title="Supprimer le moyen de paiement"
+          body="Les transactions existantes garderont leur moyen de paiement actuel. Confirmer ?"
+          onConfirm={handleDeletePmConfirm}
+          onCancel={() => setDeletePmId(null)}
         />
       )}
     </div>

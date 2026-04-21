@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionsApi, transfersApi } from '@/api/client';
-import type { TransactionFilters } from '@/types';
+import type { Transaction, TransactionFilters } from '@/types';
 
-type UpdatePayload = { id: number; account_id: number; type: 'income' | 'expense'; amount: number; description: string; category: string; date: string };
+type UpdatePayload = { id: number; account_id: number; type: 'income' | 'expense'; amount: number; description: string; category: string; date: string; payment_method: string; notes: string | null; validated: boolean };
 
 export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
@@ -23,7 +23,16 @@ export function useUpdateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onSuccess: (updated) => {
+      qc.setQueriesData<Transaction[]>({ queryKey: ['transactions'] }, old =>
+        old?.map(tx => {
+          if (tx.id === updated.id) return updated;
+          if (updated.transfer_peer_id && tx.id === updated.transfer_peer_id)
+            return { ...tx, amount: updated.amount, description: updated.description, date: updated.date };
+          return tx;
+        })
+      );
+    },
   });
 }
 
@@ -32,6 +41,19 @@ export function useDeleteTransaction() {
   return useMutation({
     mutationFn: transactionsApi.remove,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+  });
+}
+
+export function useValidateTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, validated }: { id: number; validated: boolean }) =>
+      transactionsApi.validate(id, validated),
+    onSuccess: (updated) => {
+      qc.setQueriesData<Transaction[]>({ queryKey: ['transactions'] }, old =>
+        old?.map(tx => tx.id === updated.id ? updated : tx)
+      );
+    },
   });
 }
 

@@ -7,6 +7,7 @@ import { fmtDec, today } from '@/lib/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { BankSelect } from '@/components/BankSelect';
 import { TransactionsList } from '@/components/TransactionsList';
 import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
@@ -24,6 +25,7 @@ export function AccountDetailPage() {
   const { data: categories = [] } = useCategories();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
+  const { data: paymentMethods = [] } = usePaymentMethods();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const { data: transactions = [], isLoading } = useTransactions({ account_id: accountId });
@@ -48,6 +50,7 @@ export function AccountDetailPage() {
     description: '',
     category: '',
     date: today(),
+    payment_method: '',
   });
 
   const [transferForm, setTransferForm] = useState({
@@ -65,8 +68,8 @@ export function AccountDetailPage() {
 
   const handleTxSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!txForm.amount || !txForm.description) {
-      showToast('Veuillez remplir tous les champs.');
+    if (!txForm.amount || !txForm.description || !txForm.payment_method) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
     createTx.mutate({
@@ -76,6 +79,7 @@ export function AccountDetailPage() {
       category: txForm.category || categories[0]?.name || 'Autre',
       account_id: accountId,
       date: txForm.date,
+      payment_method: txForm.payment_method,
     }, {
       onSuccess: () => {
         setTxForm(f => ({ ...f, amount: '', description: '' }));
@@ -120,9 +124,11 @@ export function AccountDetailPage() {
     if (!editTx) return;
     const payload = editTx.transfer_peer_id
       ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
-          type: editTx.type, account_id: editTx.account_id, category: editTx.category }
+          type: editTx.type, account_id: editTx.account_id, category: editTx.category,
+          payment_method: editTx.payment_method, notes: editTx.notes, validated: !!editTx.validated }
       : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
-          category: data.category, account_id: Number.parseInt(data.account_id), date: data.date };
+          category: data.category, account_id: Number.parseInt(data.account_id), date: data.date,
+          payment_method: data.payment_method, notes: data.notes || null, validated: data.validated };
     updateTx.mutate(payload, {
       onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
       onError: (e) => showToast(e.message),
@@ -267,6 +273,12 @@ export function AccountDetailPage() {
                     {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </Select>
                 </FormGroup>
+                <FormGroup label="Moyen de paiement">
+                  <Select value={txForm.payment_method} onChange={e => setTxForm(f => ({ ...f, payment_method: e.target.value }))}>
+                    <option value="">— Choisir —</option>
+                    {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
+                  </Select>
+                </FormGroup>
                 <FormGroup label="Date">
                   <Input type="date" value={txForm.date} onChange={e => setTxForm(f => ({ ...f, date: e.target.value }))} />
                 </FormGroup>
@@ -335,6 +347,7 @@ export function AccountDetailPage() {
           accounts={accounts}
           banks={banks}
           categories={categories}
+          paymentMethods={paymentMethods}
           onSave={handleUpdateTx}
           onCancel={() => setEditTx(null)}
           isPending={updateTx.isPending}
