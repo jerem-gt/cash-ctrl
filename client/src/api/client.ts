@@ -1,15 +1,18 @@
 import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters } from '@/types';
 
-async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
-  const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-
+async function parseResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Request failed');
   return data as T;
+}
+
+async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  return parseResponse<T>(res);
 }
 
 // Auth
@@ -32,9 +35,7 @@ export const banksApi = {
     const fd = new FormData();
     fd.append('logo', file);
     const res = await fetch(`/api/banks/${id}/logo`, { method: 'POST', body: fd });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Upload failed');
-    return data as Bank;
+    return parseResponse<Bank>(res);
   },
 };
 
@@ -75,16 +76,16 @@ export const paymentMethodsApi = {
 // Transfers
 export const transfersApi = {
   create: (payload: { from_account_id: number; to_account_id: number; amount: number; description: string; date: string }) =>
-    request<{ expense: unknown; income: unknown }>('POST', '/api/transfers', payload),
+    request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
 };
 
 // Transactions
 export const transactionsApi = {
   list: (filters?: TransactionFilters) => {
     const params = new URLSearchParams();
-    if (filters?.account_id) params.set('account_id', String(filters.account_id));
-    if (filters?.type)       params.set('type', filters.type);
-    if (filters?.category)   params.set('category', filters.category);
+    if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
+    if (filters?.type != null)       params.set('type', filters.type);
+    if (filters?.category != null)   params.set('category', filters.category);
     const qs = params.toString();
     const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
     return request<Transaction[]>('GET', url);

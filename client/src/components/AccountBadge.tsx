@@ -1,14 +1,11 @@
-import type { Bank } from '@/types';
-
 interface Props {
   name: string;
   bank?: string | null;
-  banks: Bank[];
+  logo?: string | null;
   className?: string;
 }
 
-export function AccountBadge({ name, bank, banks, className = '' }: Readonly<Props>) {
-  const logo = bank ? (banks.find(b => b.name === bank)?.logo ?? null) : null;
+export function AccountBadge({ name, bank, logo, className = '' }: Readonly<Props>) {
   return (
     <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
       {logo

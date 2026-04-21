@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, useMemo, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccounts, useCreateAccount } from '@/hooks/useAccounts';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -16,6 +16,7 @@ export function AccountsPage() {
   const { data: transactions = [] } = useTransactions();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
+  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
   const createAccount = useCreateAccount();
 
   const [form, setForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
@@ -101,7 +102,7 @@ export function AccountsPage() {
                           className="bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm text-left hover:border-black/18 hover:shadow-md transition-all duration-150 group"
                         >
                           <div className="flex justify-between items-start mb-3 gap-2">
-                            <AccountBadge name={acc.name} bank={acc.bank} banks={banks} className="text-sm font-medium" />
+                            <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} className="text-sm font-medium" />
                             <span className="text-stone-300 group-hover:text-stone-500 transition-colors text-sm shrink-0">→</span>
                           </div>
                           <p className={`font-serif text-3xl ${bal < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(bal)}</p>

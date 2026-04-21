@@ -99,6 +99,14 @@ const DEFAULT_ACCOUNT_TYPES = ['Courant', 'Épargne', 'Livret', 'Crédit', 'Autr
   seedAt();
 }
 
+// Migration: dédupliquer les catégories et ajouter l'index unique manquant
+db.exec(`
+  DELETE FROM categories WHERE id NOT IN (
+    SELECT MIN(id) FROM categories GROUP BY name
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
+`);
+
 // Seed default categories if table is empty
 const DEFAULT_CATEGORIES = [
   { name: 'Alimentation', color: '#7DBB4A' },

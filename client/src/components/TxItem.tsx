@@ -1,4 +1,4 @@
-import type { Account, Bank, Transaction } from '@/types';
+import type { Account, Transaction } from '@/types';
 import { fmtDate, fmtDec } from '@/lib/format';
 import { AccountBadge } from '@/components/AccountBadge';
 import { useValidateTransaction } from '@/hooks/useTransactions';
@@ -7,15 +7,16 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 interface Props {
   tx: Transaction;
   accounts?: Account[];
-  banks?: Bank[];
+  logoMap?: Record<string, string | null>;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
 }
 
-export function TxItem({ tx, accounts, banks, onEdit, onDelete }: Readonly<Props>) {
+export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Props>) {
   const isTransfer = tx.transfer_peer_id !== null;
   const validated = !!tx.validated;
   const account = accounts?.find(a => a.id === tx.account_id);
+  const logo = account?.bank ? (logoMap?.[account.bank] ?? null) : null;
   const validate = useValidateTransaction();
   const { data: paymentMethods = [] } = usePaymentMethods();
 
@@ -45,10 +46,10 @@ export function TxItem({ tx, accounts, banks, onEdit, onDelete }: Readonly<Props
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{tx.category} ·</span>
-          {accounts && banks
-            ? <AccountBadge name={tx.account_name} bank={account?.bank} banks={banks} />
+          {accounts && logoMap
+            ? <AccountBadge name={tx.account_name ?? ''} bank={account?.bank} logo={logo} />
             : null}
-          {accounts && banks && <span>·</span>}
+          {accounts && logoMap && <span>·</span>}
           <span>{fmtDate(tx.date)}</span>
           {tx.payment_method && <><span>·</span><span>{tx.payment_method}</span></>}
         </p>

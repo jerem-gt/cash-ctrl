@@ -1,14 +1,16 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
 import { useLogin } from '@/hooks/useAuth';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, FormGroup } from '@/components/ui';
+import { SyntheticEvent } from "react";
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
 
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    login.reset();
     login.mutate({ username, password });
   };
 
@@ -25,10 +27,7 @@ export function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="username" className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
-              Identifiant
-            </label>
+          <FormGroup label="Identifiant" htmlFor="username" className="flex-none min-w-0">
             <Input
               id="username"
               type="text"
@@ -36,13 +35,11 @@ export function LoginPage() {
               onChange={e => setUsername(e.target.value)}
               autoComplete="username"
               placeholder="admin"
+              autoFocus
               required
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
-              Mot de passe
-            </label>
+          </FormGroup>
+          <FormGroup label="Mot de passe" htmlFor="password" className="flex-none min-w-0">
             <Input
               id="password"
               type="password"
@@ -52,12 +49,12 @@ export function LoginPage() {
               placeholder="••••••••"
               required
             />
-          </div>
+          </FormGroup>
           <Button
             type="submit"
             variant="primary"
             className="w-full mt-2"
-            disabled={login.isPending}
+            disabled={!username || !password || login.isPending}
           >
             {login.isPending ? 'Connexion…' : 'Se connecter'}
           </Button>

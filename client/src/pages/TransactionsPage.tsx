@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, useMemo, type SubmitEvent } from 'react';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useTransactions, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { useBanks } from '@/hooks/useBanks';
@@ -16,6 +16,7 @@ export function TransactionsPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
+  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const [filters, setFilters] = useState<TransactionFilters>({});
   const { data: transactions = [], isLoading } = useTransactions(filters);
@@ -137,7 +138,7 @@ export function TransactionsPage() {
             value={String(filters.account_id ?? '')}
             onChange={v => setFilters(f => ({ ...f, account_id: v ? Number.parseInt(v) : undefined }))}
             accounts={accounts}
-            banks={banks}
+            logoMap={logoMap}
             placeholder="Tous les comptes"
           />
         </div>
@@ -158,7 +159,7 @@ export function TransactionsPage() {
           isLoading={isLoading}
           transactions={transactions}
           accounts={accounts}
-          banks={banks}
+          logoMap={logoMap}
           onEdit={setEditTx}
           onDelete={setDeleteTx}
       />
@@ -167,7 +168,7 @@ export function TransactionsPage() {
         <EditTxModal
           tx={editTx}
           accounts={accounts}
-          banks={banks}
+          logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
           onSave={handleUpdate}

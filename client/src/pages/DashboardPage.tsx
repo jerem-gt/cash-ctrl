@@ -11,10 +11,11 @@ import { Card, CardTitle, Metric, Empty } from '@/components/ui';
 import { AccountBadge } from '@/components/AccountBadge';
 import { fmt, fmtDec, fmtDateShort, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
 import { computeBalance } from '@/lib/account';
-import type { Account, Bank, Transaction } from '@/types';
+import type { Account, Transaction } from '@/types';
 
-function TxRow({ tx, accounts, banks }: Readonly<{ tx: Transaction; accounts: Account[]; banks: Bank[] }>) {
+function TxRow({ tx, accounts, logoMap }: Readonly<{ tx: Transaction; accounts: Account[]; logoMap: Record<string, string | null> }>) {
   const account = accounts.find(a => a.id === tx.account_id);
+  const logo = account?.bank ? (logoMap[account.bank] ?? null) : null;
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/4 last:border-0">
       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${tx.type === 'income' ? 'bg-green-500' : 'bg-red-400'}`} />
@@ -22,7 +23,7 @@ function TxRow({ tx, accounts, banks }: Readonly<{ tx: Transaction; accounts: Ac
         <p className="text-sm font-medium truncate">{tx.description}</p>
         <p className="text-[11px] text-stone-400 flex items-center gap-1 flex-wrap">
           <span>{tx.category} ·</span>
-          <AccountBadge name={tx.account_name} bank={account?.bank} banks={banks} />
+          <AccountBadge name={tx.account_name ?? ''} bank={account?.bank} logo={logo} />
           <span>· {fmtDateShort(tx.date)}</span>
         </p>
       </div>
@@ -38,6 +39,7 @@ export function DashboardPage() {
   const { data: transactions = [] } = useTransactions();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
+  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
 
   const colorMap = useMemo(
     () => Object.fromEntries(categories.map(c => [c.name, c.color])),
@@ -140,7 +142,7 @@ export function DashboardPage() {
         <CardTitle>Dernières transactions</CardTitle>
         {recent.length === 0
           ? <Empty>Aucune transaction</Empty>
-          : recent.map(t => <TxRow key={t.id} tx={t} accounts={accounts} banks={banks} />)
+          : recent.map(t => <TxRow key={t.id} tx={t} accounts={accounts} logoMap={logoMap} />)
         }
       </Card>
     </div>

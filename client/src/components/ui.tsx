@@ -65,10 +65,10 @@ export function Select({ className = '', ...props }: Readonly<SelectHTMLAttribut
 }
 
 // ─── FormGroup ────────────────────────────────────────────────────────────────
-export function FormGroup({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+export function FormGroup({ label, htmlFor, className = '', children }: Readonly<{ label: string; htmlFor?: string; className?: string; children: ReactNode }>) {
   return (
-    <div className="flex flex-col gap-1.5 flex-1 min-w-25">
-      <label className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{label}</label>
+    <div className={`flex flex-col gap-1.5 flex-1 min-w-25 ${className}`}>
+      <label htmlFor={htmlFor} className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{label}</label>
       {children}
     </div>
   );
@@ -109,16 +109,19 @@ interface ModalProps {
   body: string;
   onConfirm: () => void;
   onCancel: () => void;
+  isPending?: boolean;
 }
-export function ConfirmModal({ title, body, onConfirm, onCancel }: Readonly<ModalProps>) {
+export function ConfirmModal({ title, body, onConfirm, onCancel, isPending }: Readonly<ModalProps>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-sm shadow-xl">
         <h3 className="font-serif text-xl mb-2">{title}</h3>
         <p className="text-sm text-stone-500 leading-relaxed mb-6">{body}</p>
         <div className="flex gap-2 justify-end">
-          <Button onClick={onCancel}>Annuler</Button>
-          <Button variant="primary" onClick={onConfirm}>Confirmer</Button>
+          <Button onClick={onCancel} disabled={isPending}>Annuler</Button>
+          <Button variant="primary" onClick={onConfirm} disabled={isPending}>
+            {isPending ? '…' : 'Confirmer'}
+          </Button>
         </div>
       </div>
     </div>

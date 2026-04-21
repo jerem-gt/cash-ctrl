@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, ChangeEvent, SyntheticEvent } from 'react';
 import { useChangePassword } from '@/hooks/useAuth';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useAccountTypes, useCreateAccountType, useUpdateAccountType, useDeleteAccountType } from '@/hooks/useAccountTypes';
@@ -6,6 +6,27 @@ import { useBanks, useCreateBank, useUpdateBank, useUploadBankLogo, useDeleteBan
 import { usePaymentMethods, useCreatePaymentMethod, useUpdatePaymentMethod, useDeletePaymentMethod } from '@/hooks/usePaymentMethods';
 import { Card, CardTitle, Button, Input, FormGroup, ConfirmModal, showToast } from '@/components/ui';
 import type { Category, AccountType, Bank, PaymentMethod } from '@/types';
+
+type PendingDelete = { title: string; body: string; onConfirm: () => void };
+
+function RowActions({ onEdit, onDelete }: Readonly<{ onEdit: () => void; onDelete: () => void }>) {
+  return (
+    <>
+      <button
+        onClick={onEdit}
+        className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+      >
+        Modifier
+      </button>
+      <button
+        onClick={onDelete}
+        className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+      >
+        ×
+      </button>
+    </>
+  );
+}
 
 function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
   cat: Category;
@@ -16,7 +37,7 @@ function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: cat.name, color: cat.color });
 
-  const handleSave = (e: SubmitEvent) => {
+  const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     updateCategory.mutate({ id: cat.id, name: form.name.trim(), color: form.color }, {
@@ -53,18 +74,10 @@ function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <div className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ background: cat.color }} />
       <span className="flex-1 text-sm">{cat.name}</span>
-      <button
-        onClick={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }}
-        className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
-      >
-        Modifier
-      </button>
-      <button
-        onClick={() => onDelete(cat.id)}
-        className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-      >
-        ×
-      </button>
+      <RowActions
+        onEdit={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }}
+        onDelete={() => onDelete(cat.id)}
+      />
     </div>
   );
 }
@@ -81,23 +94,21 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
+    setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return f ? URL.createObjectURL(f) : null; });
     setFile(f);
-    setPreview(f ? URL.createObjectURL(f) : null);
   };
 
-  const handleSave = async (e: SubmitEvent) => {
+  const handleSave = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
-    const isPending = updateBank.isPending || uploadLogo.isPending;
-    if (isPending) return;
     try {
       if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
       await updateBank.mutateAsync({ id: bank.id, name: name.trim() });
       setEditing(false);
       setFile(null);
-      setPreview(null);
+      setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
       onSaved();
     } catch (err) {
       showToast((err as Error).message);
@@ -108,7 +119,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     setEditing(false);
     setName(bank.name);
     setFile(null);
-    setPreview(null);
+    setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
   };
 
   if (editing) {
@@ -140,8 +151,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
         : <div className="w-5 h-5 rounded bg-stone-100 shrink-0" />
       }
       <span className="flex-1 text-sm">{bank.name}</span>
-      <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      <button onClick={() => onDelete(bank.id)} className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">×</button>
+      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(bank.id)} />
     </div>
   );
 }
@@ -155,7 +165,7 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
 
-  const handleSave = (e: SubmitEvent) => {
+  const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     updateAccountType.mutate({ id: at.id, name: name.trim() }, {
@@ -185,18 +195,7 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <span className="flex-1 text-sm">{at.name}</span>
-      <button
-        onClick={() => setEditing(true)}
-        className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
-      >
-        Modifier
-      </button>
-      <button
-        onClick={() => onDelete(at.id)}
-        className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-      >
-        ×
-      </button>
+      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
     </div>
   );
 }
@@ -210,7 +209,7 @@ function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
 
-  const handleSave = (e: SubmitEvent) => {
+  const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     updatePm.mutate({ id: pm.id, name: form.name.trim(), icon: form.icon }, {
@@ -240,8 +239,7 @@ function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <span className="w-5 text-center text-base leading-none">{pm.icon}</span>
       <span className="flex-1 text-sm">{pm.name}</span>
-      <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      <button onClick={() => onDelete(pm.id)} className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">×</button>
+      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(pm.id)} />
     </div>
   );
 }
@@ -270,12 +268,10 @@ export function SettingsPage() {
   const deletePaymentMethod = useDeletePaymentMethod();
   const [newPm, setNewPm] = useState({ name: '', icon: '' });
 
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [deleteAtId, setDeleteAtId] = useState<number | null>(null);
-  const [deleteBankId, setDeleteBankId] = useState<number | null>(null);
-  const [deletePmId, setDeletePmId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handlePasswordSubmit = (e: SubmitEvent) => {
+  const handlePasswordSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (pwForm.next !== pwForm.confirm) { showToast('Les mots de passe ne correspondent pas.'); return; }
     if (pwForm.next.length < 8) { showToast('Minimum 8 caractères.'); return; }
@@ -288,7 +284,7 @@ export function SettingsPage() {
     });
   };
 
-  const handleAddCategory = (e: SubmitEvent) => {
+  const handleAddCategory = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newCat.name.trim()) { showToast('Donnez un nom à la catégorie.'); return; }
     createCategory.mutate({ name: newCat.name.trim(), color: newCat.color }, {
@@ -300,14 +296,7 @@ export function SettingsPage() {
     });
   };
 
-  const handleDeleteConfirm = () => {
-    if (!deleteId) return;
-    deleteCategory.mutate(deleteId, {
-      onSuccess: () => { setDeleteId(null); showToast('Catégorie supprimée'); },
-    });
-  };
-
-  const handleAddAccountType = (e: SubmitEvent) => {
+  const handleAddAccountType = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newAtName.trim()) { showToast('Donnez un nom au type.'); return; }
     createAccountType.mutate({ name: newAtName.trim() }, {
@@ -316,14 +305,7 @@ export function SettingsPage() {
     });
   };
 
-  const handleDeleteAccountTypeConfirm = () => {
-    if (!deleteAtId) return;
-    deleteAccountType.mutate(deleteAtId, {
-      onSuccess: () => { setDeleteAtId(null); showToast('Type supprimé'); },
-    });
-  };
-
-  const handleAddBank = (e: SubmitEvent) => {
+  const handleAddBank = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newBankName.trim()) { showToast('Donnez un nom à la banque.'); return; }
     createBank.mutate({ name: newBankName.trim() }, {
@@ -332,26 +314,12 @@ export function SettingsPage() {
     });
   };
 
-  const handleDeleteBankConfirm = () => {
-    if (!deleteBankId) return;
-    deleteBank.mutate(deleteBankId, {
-      onSuccess: () => { setDeleteBankId(null); showToast('Banque supprimée'); },
-    });
-  };
-
-  const handleAddPaymentMethod = (e: SubmitEvent) => {
+  const handleAddPaymentMethod = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newPm.name.trim()) { showToast('Donnez un nom au moyen de paiement.'); return; }
     createPaymentMethod.mutate({ name: newPm.name.trim(), icon: newPm.icon }, {
       onSuccess: () => { setNewPm({ name: '', icon: '' }); showToast('Moyen de paiement ajouté ✓'); },
       onError: err => showToast(err.message),
-    });
-  };
-
-  const handleDeletePmConfirm = () => {
-    if (!deletePmId) return;
-    deletePaymentMethod.mutate(deletePmId, {
-      onSuccess: () => { setDeletePmId(null); showToast('Moyen de paiement supprimé'); },
     });
   };
 
@@ -369,7 +337,16 @@ export function SettingsPage() {
           {banks.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucune banque.</p>
             : banks.map(b => (
-                <BankRow key={b.id} bank={b} onSaved={() => showToast('Banque mise à jour ✓')} onDelete={setDeleteBankId} />
+                <BankRow
+                  key={b.id}
+                  bank={b}
+                  onSaved={() => showToast('Banque mise à jour ✓')}
+                  onDelete={id => setPendingDelete({
+                    title: 'Supprimer la banque',
+                    body: 'Les comptes existants garderont leur banque actuelle. Confirmer ?',
+                    onConfirm: () => { setIsDeleting(true); deleteBank.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Banque supprimée'); }, onError: () => setIsDeleting(false) }); },
+                  })}
+                />
               ))
           }
         </div>
@@ -394,7 +371,11 @@ export function SettingsPage() {
                   key={at.id}
                   at={at}
                   onSaved={() => showToast('Type mis à jour ✓')}
-                  onDelete={setDeleteAtId}
+                  onDelete={id => setPendingDelete({
+                    title: 'Supprimer le type de compte',
+                    body: 'Les comptes existants garderont leur type actuel. Confirmer ?',
+                    onConfirm: () => { setIsDeleting(true); deleteAccountType.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Type supprimé'); }, onError: () => setIsDeleting(false) }); },
+                  })}
                 />
               ))
           }
@@ -422,7 +403,16 @@ export function SettingsPage() {
           {paymentMethods.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucun moyen de paiement.</p>
             : paymentMethods.map(pm => (
-                <PaymentMethodRow key={pm.id} pm={pm} onSaved={() => showToast('Moyen de paiement mis à jour ✓')} onDelete={setDeletePmId} />
+                <PaymentMethodRow
+                  key={pm.id}
+                  pm={pm}
+                  onSaved={() => showToast('Moyen de paiement mis à jour ✓')}
+                  onDelete={id => setPendingDelete({
+                    title: 'Supprimer le moyen de paiement',
+                    body: 'Les transactions existantes garderont leur moyen de paiement actuel. Confirmer ?',
+                    onConfirm: () => { setIsDeleting(true); deletePaymentMethod.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Moyen de paiement supprimé'); }, onError: () => setIsDeleting(false) }); },
+                  })}
+                />
               ))
           }
         </div>
@@ -450,7 +440,11 @@ export function SettingsPage() {
                   key={cat.id}
                   cat={cat}
                   onSaved={() => showToast('Catégorie mise à jour ✓')}
-                  onDelete={setDeleteId}
+                  onDelete={id => setPendingDelete({
+                    title: 'Supprimer la catégorie',
+                    body: 'Les transactions existantes garderont leur catégorie actuelle. Confirmer ?',
+                    onConfirm: () => { setIsDeleting(true); deleteCategory.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Catégorie supprimée'); }, onError: () => setIsDeleting(false) }); },
+                  })}
                 />
               ))
           }
@@ -502,39 +496,13 @@ export function SettingsPage() {
         </form>
       </Card>
 
-      {deleteId && (
+      {pendingDelete && (
         <ConfirmModal
-          title="Supprimer la catégorie"
-          body="Les transactions existantes garderont leur catégorie actuelle. Confirmer ?"
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeleteId(null)}
-        />
-      )}
-
-      {deleteAtId && (
-        <ConfirmModal
-          title="Supprimer le type de compte"
-          body="Les comptes existants garderont leur type actuel. Confirmer ?"
-          onConfirm={handleDeleteAccountTypeConfirm}
-          onCancel={() => setDeleteAtId(null)}
-        />
-      )}
-
-      {deleteBankId && (
-        <ConfirmModal
-          title="Supprimer la banque"
-          body="Les comptes existants garderont leur banque actuelle. Confirmer ?"
-          onConfirm={handleDeleteBankConfirm}
-          onCancel={() => setDeleteBankId(null)}
-        />
-      )}
-
-      {deletePmId && (
-        <ConfirmModal
-          title="Supprimer le moyen de paiement"
-          body="Les transactions existantes garderont leur moyen de paiement actuel. Confirmer ?"
-          onConfirm={handleDeletePmConfirm}
-          onCancel={() => setDeletePmId(null)}
+          title={pendingDelete.title}
+          body={pendingDelete.body}
+          onConfirm={pendingDelete.onConfirm}
+          onCancel={() => setPendingDelete(null)}
+          isPending={isDeleting}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, useMemo, type SubmitEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
 import { useTransactions, useCreateTransaction, useDeleteTransaction, useCreateTransfer, useUpdateTransaction } from '@/hooks/useTransactions';
@@ -25,6 +25,7 @@ export function AccountDetailPage() {
   const { data: categories = [] } = useCategories();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
+  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
@@ -180,7 +181,7 @@ export function AccountDetailPage() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              {account?.bank && (() => { const logo = banks.find(b => b.name === account.bank)?.logo; return logo ? <img src={logo} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} /> : null; })()}
+              {account?.bank && logoMap[account.bank] && <img src={logoMap[account.bank]!} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />}
               <h2 className="font-serif text-2xl tracking-tight">{account?.name ?? '…'}</h2>
               {account?.bank && <span className="text-stone-400 text-base">({account.bank})</span>}
             </div>
@@ -331,7 +332,7 @@ export function AccountDetailPage() {
           isLoading={isLoading}
           transactions={transactions}
           accounts={accounts}
-          banks={banks}
+          logoMap={logoMap}
           onEdit={setEditTx}
           onDelete={setDeleteTx}
           emptyMessage="Aucune transaction sur ce compte"
@@ -345,7 +346,7 @@ export function AccountDetailPage() {
         <EditTxModal
           tx={editTx}
           accounts={accounts}
-          banks={banks}
+          logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
           onSave={handleUpdateTx}
