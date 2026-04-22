@@ -31,9 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static files served before session middleware (no session needed)
 app.use('/logos', express.static(LOGOS_DIR));
 if (IS_PROD) {
-  const clientDist = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientDist));
-  app.get('*splat', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  app.use(express.static(path.join(__dirname, '../../client/dist')));
 }
 
 app.use(session({
@@ -61,6 +59,11 @@ app.use('/api/banks', banksRouter);
 app.use('/api/payment-methods', paymentMethodsRouter);
 app.use('/api/scheduled', scheduledRouter);
 app.use('/api/settings', settingsRouter);
+
+// SPA fallback — after API routes so /api/* requests are never caught
+if (IS_PROD) {
+  app.get('*splat', (_req, res) => res.sendFile(path.join(__dirname, '../../client/dist', 'index.html')));
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   process.stdout.write(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})\n`);
