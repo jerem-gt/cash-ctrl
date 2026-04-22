@@ -50,6 +50,7 @@ Application de suivi de comptes bancaires personnels.
 - Gestion des catégories de transactions (nom + couleur)
 - Gestion des types de compte
 - Gestion des banques (nom + logo)
+- Gestion des moyens de paiement (nom + icône emoji)
 
 ### Affichage uniforme des comptes
 Partout dans l'interface, un compte est affiché sous la forme **logo + nom + (banque)** grâce au composant `AccountBadge`.
@@ -85,6 +86,7 @@ cashctrl/
 │       │   ├── useAccountTypes.ts
 │       │   ├── useBanks.ts
 │       │   ├── useCategories.ts
+│       │   ├── usePaymentMethods.ts
 │       │   └── useTransactions.ts
 │       ├── lib/             # Utilitaires (format, dates)
 │       ├── pages/           # Dashboard, Transactions, Accounts, Settings, Export
@@ -99,8 +101,10 @@ cashctrl/
 │           ├── accounts.ts
 │           ├── account-types.ts
 │           ├── transactions.ts
+│           ├── transfers.ts
 │           ├── banks.ts     # CRUD banques + upload logo (Multer)
 │           ├── categories.ts
+│           ├── payment-methods.ts
 │           └── export.ts
 ├── .github/workflows/ci.yml
 ├── Dockerfile
@@ -136,6 +140,10 @@ cashctrl/
 | POST | `/api/categories` | Créer |
 | PUT | `/api/categories/:id` | Modifier |
 | DELETE | `/api/categories/:id` | Supprimer |
+| GET | `/api/payment-methods` | Liste des moyens de paiement |
+| POST | `/api/payment-methods` | Créer |
+| PUT | `/api/payment-methods/:id` | Modifier |
+| DELETE | `/api/payment-methods/:id` | Supprimer |
 | GET | `/api/export/csv` | Export CSV des transactions |
 | GET | `/logos/:filename` | Fichiers logo statiques |
 

@@ -36,7 +36,7 @@ CashCtrl est une application de suivi de finances personnelles en monorepo npm w
 - `useXxx()` → `useQuery`
 - `useCreateXxx()`, `useUpdateXxx()`, `useDeleteXxx()` → `useMutation` + `invalidateQueries`
 
-**`components/AccountBadge.tsx`** — Composant canonique pour afficher un compte. Toujours utiliser ce composant (pas d'affichage inline du nom/banque). Signature : `{ name, bank?, banks[], className? }`.
+**`components/AccountBadge.tsx`** — Composant canonique pour afficher un compte. Toujours utiliser ce composant (pas d'affichage inline du nom/banque). Signature : `{ name, bank?, logo?, className? }`. Le logo est résolu en amont via `logoMap`.
 
 **`components/ui/`** — Primitives UI (Card, Button, Input, Select, FormGroup, Empty, ConfirmModal, showToast). Utiliser ces composants, ne pas créer de nouveaux éléments HTML bruts.
 
@@ -57,12 +57,13 @@ CashCtrl est une application de suivi de finances personnelles en monorepo npm w
 - Le logo d'une banque est stocké localement dans `data/logos/bank-{id}.png`
 - L'URL servie est `/logos/bank-{id}.png` (proxy Vite en dev, Express static en prod)
 - La correspondance banque ↔ domaine pour le téléchargement auto est dans `logoDownloader.ts` (tableau `BANK_CONFIG`, clés sans accents)
-- La correspondance nom de compte → logo se fait par `banks.find(b => b.name === account.bank)?.logo` dans les composants
+- Dans les pages, construire un `logoMap` une seule fois via `useMemo` : `Object.fromEntries(banks.map(b => [b.name, b.logo]))`. Passer ce `Record<string, string | null>` aux composants plutôt que le tableau `banks[]` pour éviter les `.find()` répétés.
 
 ### Types configurables en base
 - Types de compte : table `account_types`, route `/api/account-types`
 - Banques : table `banks`, route `/api/banks`
 - Catégories : table `categories`, route `/api/categories`
+- Moyens de paiement : table `payment_methods`, route `/api/payment-methods`
 - Ne pas hard-coder ces valeurs dans le code client
 
 ### Tailwind CSS 4
