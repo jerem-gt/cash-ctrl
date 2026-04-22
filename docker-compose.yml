@@ -1,6 +1,7 @@
 services:
   cashctrl:
     image: ghcr.io/jerem-gt/cash-ctrl:latest
+    user: "${PUID}:${PGID}"
     container_name: cash-ctrl
     restart: unless-stopped
     ports:
@@ -14,5 +15,10 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       - ADMIN_USER=admin
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - PUID=${PUID}
-      - PGID=${PGID}
+networks:
+  mynet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+          gateway: 172.18.0.1

@@ -2,8 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
 import ConnectSQLite from 'connect-sqlite3';
+import fs from 'node:fs';
 import path from 'node:path';
-import { DB_PATH } from './db.js';
+import { db, DB_PATH } from './db.js';
 import { LOGOS_DIR, downloadDefaultBankLogos } from './logoDownloader.js';
 import { authRouter } from './routes/auth.js';
 import { accountsRouter } from './routes/accounts.js';
@@ -46,6 +47,24 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
 }));
+
+// Health check — no auth, checks DB + frontend bundle
+app.get('/api/health', (_req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+  } catch {
+    res.status(503).json({ ok: false, reason: 'db' });
+    return;
+  }
+  if (IS_PROD) {
+    const indexPath = path.join(__dirname, '../../client/dist', 'index.html');
+    if (!fs.existsSync(indexPath)) {
+      res.status(503).json({ ok: false, reason: 'frontend' });
+      return;
+    }
+  }
+  res.json({ ok: true });
+});
 
 // API routes
 app.use('/api/auth', authRouter);
