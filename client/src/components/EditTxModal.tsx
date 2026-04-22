@@ -93,7 +93,7 @@ export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods,
             {!isTransfer && (
               <FormGroup label="Moyen de paiement">
                 <Select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
-                  <option value="">— Aucun —</option>
+                  <option value="">— Choisir —</option>
                   {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </Select>
               </FormGroup>

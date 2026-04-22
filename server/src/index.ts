@@ -14,6 +14,8 @@ import { categoriesRouter } from './routes/categories.js';
 import { accountTypesRouter } from './routes/account-types.js';
 import { banksRouter } from './routes/banks.js';
 import { paymentMethodsRouter } from './routes/payment-methods.js';
+import { scheduledRouter } from './routes/scheduled.js';
+import { settingsRouter } from './routes/settings.js';
 
 const SQLiteStore = ConnectSQLite(session);
 
@@ -57,6 +59,8 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/account-types', accountTypesRouter);
 app.use('/api/banks', banksRouter);
 app.use('/api/payment-methods', paymentMethodsRouter);
+app.use('/api/scheduled', scheduledRouter);
+app.use('/api/settings', settingsRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
   process.stdout.write(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})\n`);

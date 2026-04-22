@@ -1,4 +1,4 @@
-import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters } from '@/types';
+import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters, ScheduledTransaction, UserSettings } from '@/types';
 
 function extractError(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -91,6 +91,39 @@ export const paymentMethodsApi = {
 export const transfersApi = {
   create: (payload: { from_account_id: number; to_account_id: number; amount: number; description: string; date: string }) =>
     request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
+};
+
+// Scheduled transactions
+export type ScheduledPayload = {
+  account_id: number;
+  to_account_id: number | null;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  category: string;
+  payment_method: string;
+  notes: string | null;
+  recurrence_unit: 'day' | 'week' | 'month' | 'year';
+  recurrence_interval: number;
+  recurrence_day: number | null;
+  recurrence_month: number | null;
+  weekend_handling: 'allow' | 'before' | 'after';
+  start_date: string;
+  end_date: string | null;
+  active: boolean;
+};
+
+export const scheduledApi = {
+  list: () => request<ScheduledTransaction[]>('GET', '/api/scheduled'),
+  create: (payload: ScheduledPayload) => request<ScheduledTransaction>('POST', '/api/scheduled', payload),
+  update: (id: number, payload: ScheduledPayload) => request<ScheduledTransaction>('PUT', `/api/scheduled/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/scheduled/${id}`),
+};
+
+// User settings
+export const settingsApi = {
+  get: () => request<UserSettings>('GET', '/api/settings'),
+  update: (payload: UserSettings) => request<UserSettings>('PUT', '/api/settings', payload),
 };
 
 // Transactions

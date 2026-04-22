@@ -1,5 +1,5 @@
 import type { Account, Transaction } from '@/types';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtDate, fmtDec, today } from '@/lib/format';
 import { AccountBadge } from '@/components/AccountBadge';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
@@ -14,6 +14,8 @@ interface Props {
 
 export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Props>) {
   const isTransfer = tx.transfer_peer_id !== null;
+  const isScheduled = tx.scheduled_id !== null;
+  const isFuture = tx.date > today();
   const validated = !!tx.validated;
   const account = accounts?.find(a => a.id === tx.account_id);
   const logo = account?.bank ? (logoMap?.[account.bank] ?? null) : null;
@@ -27,7 +29,13 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Pro
   return (
     <div
       title={tx.notes || undefined}
-      className={`flex items-center gap-3 px-4 py-3 bg-white border rounded-xl transition-colors ${validated ? 'border-green-200 hover:border-green-300' : 'border-black/[0.07] hover:border-black/[0.13]'}`}
+      className={`flex items-center gap-3 px-4 py-3 border rounded-xl transition-colors ${
+        validated
+          ? 'bg-white border-green-200 hover:border-green-300'
+          : isScheduled && isFuture
+            ? 'bg-indigo-50/60 border-indigo-100 hover:border-indigo-200'
+            : 'bg-white border-black/[0.07] hover:border-black/[0.13]'
+      }`}
     >
       <span className="text-base leading-none shrink-0 w-4 text-center">{pmIcon}</span>
       <div className="flex-1 min-w-0">
@@ -37,6 +45,14 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Pro
             <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">
               ↔ Transfert
             </span>
+          )}
+          {isScheduled && isFuture && (
+            <span className="text-[10px] bg-indigo-50 text-indigo-500 border border-indigo-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+              ↻ À venir
+            </span>
+          )}
+          {isScheduled && !isFuture && (
+            <span className="text-[10px] text-stone-300 shrink-0" title="Transaction planifiée">↻</span>
           )}
           {validated && (
             <span className="text-[10px] bg-green-50 text-green-600 border border-green-200 rounded px-1.5 py-0.5 font-medium shrink-0">

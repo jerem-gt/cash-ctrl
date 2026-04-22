@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { db, queries } from '../db.js';
 import { requireAuth } from '../middleware.js';
+import { generateScheduledTransactions } from '../lib/generateScheduled.js';
 
 export const transactionsRouter = Router();
 transactionsRouter.use(requireAuth);
@@ -31,6 +32,8 @@ const querySchema = z.object({
 });
 
 transactionsRouter.get('/', (req, res) => {
+  generateScheduledTransactions(req.session.userId!);
+
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: z.treeifyError(parsed.error) });

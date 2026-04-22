@@ -43,6 +43,14 @@ Application de suivi de comptes bancaires personnels.
 - Histogramme revenus vs dépenses sur 6 mois
 - Liste des dernières transactions
 
+### Transactions planifiées
+- Définir des transactions récurrentes : tous les X jours / semaines / mois / années
+- Génération automatique à l'horizon configuré (`lead_days`, par défaut 30 jours)
+- Support des transferts planifiés (crée les deux legs à chaque occurrence)
+- Gestion week-end : autoriser, déplacer au vendredi précédent, ou au lundi suivant
+- Idempotent : plusieurs appels ne dupliquent pas les occurrences déjà générées
+- Les transactions générées conservent leur `scheduled_id` pour traçabilité
+
 ### Export
 - Export CSV des transactions avec filtres
 
@@ -87,25 +95,36 @@ cashctrl/
 │       │   ├── useBanks.ts
 │       │   ├── useCategories.ts
 │       │   ├── usePaymentMethods.ts
-│       │   └── useTransactions.ts
+│       │   ├── useTransactions.ts
+│       │   ├── useScheduled.ts
+│       │   └── useSettings.ts
 │       ├── lib/             # Utilitaires (format, dates)
-│       ├── pages/           # Dashboard, Transactions, Accounts, Settings, Export
+│       ├── pages/           # Dashboard, Transactions, Accounts, Settings, Export, Scheduled
 │       └── types/           # Types partagés
 ├── server/                  # Express + TypeScript
 │   └── src/
 │       ├── db.ts            # SQLite + queries typées
 │       ├── logoDownloader.ts # Téléchargement des logos de banques au démarrage
 │       ├── middleware.ts    # Auth guard
-│       └── routes/
-│           ├── auth.ts
-│           ├── accounts.ts
-│           ├── account-types.ts
-│           ├── transactions.ts
-│           ├── transfers.ts
-│           ├── banks.ts     # CRUD banques + upload logo (Multer)
-│           ├── categories.ts
-│           ├── payment-methods.ts
-│           └── export.ts
+│       ├── lib/
+│       │   ├── scheduledLogic.ts  # Fonctions pures de calcul de récurrence
+│       │   └── generateScheduled.ts # Génération des transactions planifiées
+│       ├── routes/
+│       │   ├── auth.ts
+│       │   ├── accounts.ts
+│       │   ├── account-types.ts
+│       │   ├── transactions.ts
+│       │   ├── transfers.ts
+│       │   ├── banks.ts     # CRUD banques + upload logo (Multer)
+│       │   ├── categories.ts
+│       │   ├── payment-methods.ts
+│       │   ├── scheduled.ts # CRUD transactions planifiées
+│       │   ├── settings.ts  # lead_days par utilisateur
+│       │   └── export.ts
+│       └── tests/           # Vitest — TU et TI
+│           ├── scheduledLogic.test.ts
+│           ├── generateScheduled.test.ts
+│           └── helpers/testDb.ts
 ├── .github/workflows/ci.yml
 ├── Dockerfile
 ├── docker-compose.yml
@@ -146,6 +165,12 @@ cashctrl/
 | DELETE | `/api/payment-methods/:id` | Supprimer |
 | GET | `/api/export/csv` | Export CSV des transactions |
 | GET | `/logos/:filename` | Fichiers logo statiques |
+| GET | `/api/scheduled` | Liste des transactions planifiées |
+| POST | `/api/scheduled` | Créer une planification |
+| PUT | `/api/scheduled/:id` | Modifier (regénère les occurrences futures) |
+| DELETE | `/api/scheduled/:id` | Supprimer (supprime les occurrences futures non validées) |
+| GET | `/api/settings` | Paramètres utilisateur (lead_days) |
+| PUT | `/api/settings` | Modifier les paramètres |
 
 ## Données persistées
 

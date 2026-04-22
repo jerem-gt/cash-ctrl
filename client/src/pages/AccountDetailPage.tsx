@@ -1,16 +1,16 @@
 import { useState, useMemo, type SubmitEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
-import { useTransactions, useCreateTransaction, useDeleteTransaction, useCreateTransfer, useUpdateTransaction } from '@/hooks/useTransactions';
+import { useTransactions, useDeleteTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, showToast } from '@/components/ui';
-import { fmtDec, today } from '@/lib/format';
+import { fmtDec } from '@/lib/format';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { BankSelect } from '@/components/BankSelect';
-import { AccountSelect } from '@/components/AccountSelect';
 import { TransactionsList } from '@/components/TransactionsList';
+import { AddTxForm } from '@/components/AddTxForm';
 import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
 import { DeleteTxModal } from '@/components/DeleteTxModal';
 
@@ -29,79 +29,21 @@ export function AccountDetailPage() {
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const { data: transactions = [], isLoading } = useTransactions({ account_id: accountId });
-  const createTx = useCreateTransaction();
   const deleteTxMutation = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
-  const createTransfer = useCreateTransfer();
 
   const account = accounts.find(a => a.id === accountId);
-  const otherAccounts = accounts.filter(a => a.id !== accountId);
 
   const balance = transactions.reduce(
     (sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount,
     account?.initial_balance ?? 0
   );
 
-  const [txForm, setTxForm] = useState({
-    type: 'expense' as 'income' | 'expense',
-    amount: '',
-    description: '',
-    category: '',
-    date: today(),
-    payment_method: '',
-    to_account_id: '',
-  });
-
-  const isTransfer = txForm.payment_method === 'Transfert';
-
   const [editTx, setEditTx] = useState<(typeof transactions)[0] | null>(null);
   const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
-
-  const handleTxSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (isTransfer) {
-      if (!txForm.amount || !txForm.to_account_id) {
-        showToast('Veuillez remplir tous les champs.');
-        return;
-      }
-      createTransfer.mutate({
-        from_account_id: accountId,
-        to_account_id: Number.parseInt(txForm.to_account_id),
-        amount: Number.parseFloat(txForm.amount),
-        description: txForm.description || 'Transfert',
-        date: txForm.date,
-      }, {
-        onSuccess: () => {
-          setTxForm(f => ({ ...f, amount: '', description: '', to_account_id: '' }));
-          showToast('Transfert effectué ✓');
-        },
-        onError: e => showToast(e.message),
-      });
-    } else {
-      if (!txForm.amount || !txForm.description || !txForm.payment_method) {
-        showToast('Veuillez remplir tous les champs obligatoires.');
-        return;
-      }
-      createTx.mutate({
-        type: txForm.type,
-        amount: Number.parseFloat(txForm.amount),
-        description: txForm.description,
-        category: txForm.category || categories[0]?.name || 'Autre',
-        account_id: accountId,
-        date: txForm.date,
-        payment_method: txForm.payment_method,
-      }, {
-        onSuccess: () => {
-          setTxForm(f => ({ ...f, amount: '', description: '' }));
-          showToast('Transaction ajoutée ✓');
-        },
-        onError: e => showToast(e.message),
-      });
-    }
-  };
 
   const handleDeleteTx = () => {
     if (!deleteTx) return;
@@ -224,84 +166,13 @@ export function AccountDetailPage() {
         </Card>
       )}
 
-      {/* Form card */}
-      <Card>
-        <CardTitle>{isTransfer ? 'Transfert vers un autre compte' : 'Nouvelle transaction'}</CardTitle>
-        {isTransfer && otherAccounts.length === 0 ? (
-          <p className="text-sm text-stone-400">Vous n'avez pas d'autre compte.</p>
-        ) : (
-          <form onSubmit={handleTxSubmit} className="space-y-3">
-            <div className="flex gap-3 flex-wrap">
-              {!isTransfer && (
-                <FormGroup label="Type">
-                  <Select value={txForm.type} onChange={e => setTxForm(f => ({ ...f, type: e.target.value as 'income' | 'expense' }))}>
-                    <option value="expense">Dépense</option>
-                    <option value="income">Revenu</option>
-                  </Select>
-                </FormGroup>
-              )}
-              <FormGroup label="Montant (€)">
-                <Input type="number" value={txForm.amount} onChange={e => setTxForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" min="0" step="0.01" />
-              </FormGroup>
-              <FormGroup label="Description">
-                <Input type="text" value={txForm.description} onChange={e => setTxForm(f => ({ ...f, description: e.target.value }))} placeholder={isTransfer ? 'Transfert' : 'Ex : Courses Leclerc'} className="min-w-[180px]" />
-              </FormGroup>
-            </div>
-            <div className="flex gap-3 flex-wrap items-end">
-              {isTransfer ? (
-                <FormGroup label="Vers">
-                  <AccountSelect
-                    value={txForm.to_account_id}
-                    onChange={v => {
-                      const dest = otherAccounts.find(a => String(a.id) === v);
-                      setTxForm(f => ({
-                        ...f,
-                        to_account_id: v,
-                        description: dest
-                          ? `${account?.name ?? ''} → ${dest.name}`
-                          : `${account?.name ?? ''} →`,
-                      }));
-                    }}
-                    accounts={otherAccounts}
-                    logoMap={logoMap}
-                    placeholder="— Choisir —"
-                  />
-                </FormGroup>
-              ) : (
-                <FormGroup label="Catégorie">
-                  <Select value={txForm.category} onChange={e => setTxForm(f => ({ ...f, category: e.target.value }))}>
-                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </Select>
-                </FormGroup>
-              )}
-              <FormGroup label="Moyen de paiement">
-                <Select
-                  value={txForm.payment_method}
-                  onChange={e => {
-                    const pm = e.target.value;
-                    const nowTransfer = pm === 'Transfert';
-                    setTxForm(f => ({
-                      ...f,
-                      payment_method: pm,
-                      description: nowTransfer ? `${account?.name ?? ''} →` : f.payment_method === 'Transfert' ? '' : f.description,
-                      to_account_id: nowTransfer ? f.to_account_id : '',
-                    }));
-                  }}
-                >
-                  <option value="">— Choisir —</option>
-                  {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
-                </Select>
-              </FormGroup>
-              <FormGroup label="Date">
-                <Input type="date" value={txForm.date} onChange={e => setTxForm(f => ({ ...f, date: e.target.value }))} />
-              </FormGroup>
-              <Button type="submit" variant="primary" disabled={createTx.isPending || createTransfer.isPending}>
-                {createTx.isPending || createTransfer.isPending ? '…' : isTransfer ? 'Transférer' : 'Ajouter'}
-              </Button>
-            </div>
-          </form>
-        )}
-      </Card>
+      <AddTxForm
+        accounts={accounts}
+        logoMap={logoMap}
+        categories={categories}
+        paymentMethods={paymentMethods}
+        fixedAccountId={accountId}
+      />
 
       {/* Transaction list */}
       <div>

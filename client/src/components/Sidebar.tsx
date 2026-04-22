@@ -13,6 +13,7 @@ type GroupBy = 'bank' | 'type';
 const NAV_MAIN = [
   { to: '/',             label: 'Tableau de bord', icon: '◈' },
   { to: '/transactions', label: 'Transactions',    icon: '↕' },
+  { to: '/scheduled',    label: 'Planifiées',      icon: '↻' },
 ];
 
 const NAV_BOTTOM = [

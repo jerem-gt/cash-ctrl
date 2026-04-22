@@ -12,6 +12,7 @@ const AccountsPage     = lazy(() => import('@/pages/AccountsPage').then(m => ({ 
 const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage').then(m => ({ default: m.AccountDetailPage })));
 const ExportPage       = lazy(() => import('@/pages/ExportPage').then(m => ({ default: m.ExportPage })));
 const SettingsPage     = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ScheduledPage    = lazy(() => import('@/pages/ScheduledPage').then(m => ({ default: m.ScheduledPage })));
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ function AppShell() {
             <Route path="/accounts"     element={<AccountsPage />} />
             <Route path="/accounts/:id" element={<AccountDetailPage />} />
             <Route path="/export"       element={<ExportPage />} />
+            <Route path="/scheduled"    element={<ScheduledPage />} />
             <Route path="/settings"     element={<SettingsPage />} />
             <Route path="*"             element={<Navigate to="/" replace />} />
           </Routes>

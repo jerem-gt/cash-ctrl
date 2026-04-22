@@ -13,6 +13,34 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS scheduled_transactions (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id              INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    account_id           INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    type                 TEXT NOT NULL CHECK(type IN ('income','expense')),
+    amount               REAL NOT NULL CHECK(amount > 0),
+    description          TEXT NOT NULL,
+    category             TEXT NOT NULL,
+    payment_method       TEXT NOT NULL DEFAULT '',
+    notes                TEXT,
+    recurrence_unit      TEXT NOT NULL CHECK(recurrence_unit IN ('day','week','month','year')),
+    recurrence_interval  INTEGER NOT NULL DEFAULT 1 CHECK(recurrence_interval > 0),
+    recurrence_day       INTEGER,
+    recurrence_month     INTEGER,
+    to_account_id        INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+    weekend_handling     TEXT NOT NULL DEFAULT 'allow' CHECK(weekend_handling IN ('allow','before','after')),
+    start_date           TEXT NOT NULL,
+    end_date             TEXT,
+    active               INTEGER NOT NULL DEFAULT 1,
+    last_generated_until TEXT,
+    created_at           TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS user_settings (
+    user_id   INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    lead_days INTEGER NOT NULL DEFAULT 30
+  );
+
   CREATE TABLE IF NOT EXISTS users (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     username    TEXT UNIQUE NOT NULL,
@@ -75,6 +103,8 @@ db.exec(`
 `);
 
 // Migrations pour DBs créées avant l'ajout de ces colonnes
+try { db.exec('ALTER TABLE scheduled_transactions ADD COLUMN to_account_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE transactions ADD COLUMN scheduled_id INTEGER REFERENCES scheduled_transactions(id) ON DELETE SET NULL'); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE transactions ADD COLUMN transfer_peer_id INTEGER'); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE transactions ADD COLUMN validated INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
 try { db.exec("ALTER TABLE transactions ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
@@ -206,11 +236,41 @@ export interface Transaction {
   category: string;
   date: string;
   transfer_peer_id: number | null;
+  scheduled_id: number | null;
   validated: number; // 0 | 1
   payment_method: string;
   notes: string | null;
   created_at: string;
   account_name?: string;
+}
+
+export interface ScheduledTransaction {
+  id: number;
+  user_id: number;
+  account_id: number;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  category: string;
+  payment_method: string;
+  notes: string | null;
+  recurrence_unit: 'day' | 'week' | 'month' | 'year';
+  recurrence_interval: number;
+  recurrence_day: number | null;
+  recurrence_month: number | null;
+  to_account_id: number | null;
+  weekend_handling: 'allow' | 'before' | 'after';
+  start_date: string;
+  end_date: string | null;
+  active: number; // 0 | 1
+  last_generated_until: string | null;
+  created_at: string;
+  account_name?: string;
+}
+
+export interface UserSettings {
+  user_id: number;
+  lead_days: number;
 }
 
 export const queries = {
