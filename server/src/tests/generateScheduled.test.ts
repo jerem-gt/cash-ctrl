@@ -87,7 +87,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('generates correct number of daily occurrences within horizon', () => {
-    // Start yesterday, daily, 3-day horizon → expect 4 occurrences (yesterday, today, +1, +2)
+    // Start yesterday, daily, lead=3 → yesterday, today, +1, +2, +3 = 5 occurrences
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().split('T')[0];
@@ -326,36 +326,24 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('monthly recurrence with recurrence_day=31 clamps to month end in Feb', () => {
+    // end_date limits to Feb so March is never generated even with large lead_days.
+    // last_generated_until pre-set to 2026-01-31 so the first (and only) next
+    // occurrence is nextOccurrence(2026-01-31) = 2026-02-28 (day=31 clamped).
     const id = insertSchedule(f, {
       recurrence_unit: 'month',
       recurrence_interval: 1,
       recurrence_day: 31,
       start_date: '2026-01-01',
+      end_date: '2026-02-28',
     });
-    setLeadDays(f, 0);
 
-    // Simulate: last_generated_until = 2026-01-31, next call should produce 2026-02-28
     f.db.prepare('UPDATE scheduled_transactions SET last_generated_until = ? WHERE id = ?').run('2026-01-31', id);
 
-    // Fix horizon to cover Feb 28 but not March
-    const horizon = new Date('2026-02-28T23:59:59');
-    const realHorizon = new Date();
-    realHorizon.setDate(realHorizon.getDate());
-
-    // We can't override the horizon inside generateScheduledTransactions directly,
-    // so use a lead_days that yields a horizon covering 2026-02-28.
-    // This test works if today ≤ 2026-02-27 — skip it dynamically otherwise.
-    const todayStr = new Date().toISOString().split('T')[0];
-    if (todayStr > '2026-02-28') return;
-
-    const daysUntilFeb28 = Math.ceil((new Date('2026-02-28').getTime() - new Date().getTime()) / 86400000);
-    if (daysUntilFeb28 < 0) return;
-
-    setLeadDays(f, daysUntilFeb28);
+    setLeadDays(f, 30);
     generateScheduledTransactions(f.userId, f.db);
 
     const txs = getTx(f, id);
-    const febTx = txs.find(t => t.date.startsWith('2026-02'));
-    expect(febTx?.date).toBe('2026-02-28');
+    expect(txs).toHaveLength(1);
+    expect(txs[0].date).toBe('2026-02-28');
   });
 });
