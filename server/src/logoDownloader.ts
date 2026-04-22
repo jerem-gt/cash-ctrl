@@ -39,7 +39,7 @@ export async function downloadDefaultBankLogos(): Promise<void> {
 
     try {
       const res = await fetch(
-        `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=64`
+        `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
       );
       if (!res.ok) { console.warn(`[logos] ${bank.name}: HTTP ${res.status}`); continue; }
       fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
