@@ -80,7 +80,7 @@ export function Sidebar({ username }: Readonly<Props>) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 overflow-y-auto flex flex-col">
+      <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden flex flex-col">
         <div className="flex-1">
           {NAV_MAIN.map(({ to, label, icon }) => (
             <NavLink key={to} to={to} end={to === '/'} className={navClass}>
