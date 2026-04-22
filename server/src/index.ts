@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
-import ConnectSQLite from 'connect-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
-import { db, DB_PATH } from './db.js';
+import { db } from './db.js';
+import { SQLiteSessionStore } from './session-store.js';
 import { LOGOS_DIR, downloadDefaultBankLogos } from './logoDownloader.js';
 import { authRouter } from './routes/auth.js';
 import { accountsRouter } from './routes/accounts.js';
@@ -17,8 +17,6 @@ import { banksRouter } from './routes/banks.js';
 import { paymentMethodsRouter } from './routes/payment-methods.js';
 import { scheduledRouter } from './routes/scheduled.js';
 import { settingsRouter } from './routes/settings.js';
-
-const SQLiteStore = ConnectSQLite(session);
 
 const PORT = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
@@ -37,7 +35,7 @@ if (IS_PROD) {
 }
 
 app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db', dir: path.dirname(DB_PATH) }) as session.Store,
+  store: new SQLiteSessionStore(db),
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

@@ -5,7 +5,7 @@ services:
     container_name: cash-ctrl
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - "3000:3000"
     volumes:
       - /volume1/data/cash-ctrl:/data
     environment:
