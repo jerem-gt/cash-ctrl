@@ -9,12 +9,11 @@ import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { BankSelect } from '@/components/BankSelect';
+import { AccountSelect } from '@/components/AccountSelect';
 import { TransactionsList } from '@/components/TransactionsList';
 import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
 import { DeleteTxModal } from '@/components/DeleteTxModal';
 
-
-type FormMode = 'transaction' | 'transfer';
 
 export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,8 +42,6 @@ export function AccountDetailPage() {
     account?.initial_balance ?? 0
   );
 
-  const [mode, setMode] = useState<FormMode>('transaction');
-
   const [txForm, setTxForm] = useState({
     type: 'expense' as 'income' | 'expense',
     amount: '',
@@ -52,14 +49,10 @@ export function AccountDetailPage() {
     category: '',
     date: today(),
     payment_method: '',
+    to_account_id: '',
   });
 
-  const [transferForm, setTransferForm] = useState({
-    to_account_id: '',
-    amount: '',
-    description: 'Transfert',
-    date: today(),
-  });
+  const isTransfer = txForm.payment_method === 'Transfert';
 
   const [editTx, setEditTx] = useState<(typeof transactions)[0] | null>(null);
   const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
@@ -69,46 +62,45 @@ export function AccountDetailPage() {
 
   const handleTxSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!txForm.amount || !txForm.description || !txForm.payment_method) {
-      showToast('Veuillez remplir tous les champs obligatoires.');
-      return;
+    if (isTransfer) {
+      if (!txForm.amount || !txForm.to_account_id) {
+        showToast('Veuillez remplir tous les champs.');
+        return;
+      }
+      createTransfer.mutate({
+        from_account_id: accountId,
+        to_account_id: Number.parseInt(txForm.to_account_id),
+        amount: Number.parseFloat(txForm.amount),
+        description: txForm.description || 'Transfert',
+        date: txForm.date,
+      }, {
+        onSuccess: () => {
+          setTxForm(f => ({ ...f, amount: '', description: '', to_account_id: '' }));
+          showToast('Transfert effectué ✓');
+        },
+        onError: e => showToast(e.message),
+      });
+    } else {
+      if (!txForm.amount || !txForm.description || !txForm.payment_method) {
+        showToast('Veuillez remplir tous les champs obligatoires.');
+        return;
+      }
+      createTx.mutate({
+        type: txForm.type,
+        amount: Number.parseFloat(txForm.amount),
+        description: txForm.description,
+        category: txForm.category || categories[0]?.name || 'Autre',
+        account_id: accountId,
+        date: txForm.date,
+        payment_method: txForm.payment_method,
+      }, {
+        onSuccess: () => {
+          setTxForm(f => ({ ...f, amount: '', description: '' }));
+          showToast('Transaction ajoutée ✓');
+        },
+        onError: e => showToast(e.message),
+      });
     }
-    createTx.mutate({
-      type: txForm.type,
-      amount: Number.parseFloat(txForm.amount),
-      description: txForm.description,
-      category: txForm.category || categories[0]?.name || 'Autre',
-      account_id: accountId,
-      date: txForm.date,
-      payment_method: txForm.payment_method,
-    }, {
-      onSuccess: () => {
-        setTxForm(f => ({ ...f, amount: '', description: '' }));
-        showToast('Transaction ajoutée ✓');
-      },
-      onError: e => showToast(e.message),
-    });
-  };
-
-  const handleTransferSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (!transferForm.amount || !transferForm.to_account_id) {
-      showToast('Veuillez remplir tous les champs.');
-      return;
-    }
-    createTransfer.mutate({
-      from_account_id: accountId,
-      to_account_id: Number.parseInt(transferForm.to_account_id),
-      amount: Number.parseFloat(transferForm.amount),
-      description: transferForm.description || 'Transfert',
-      date: transferForm.date,
-    }, {
-      onSuccess: () => {
-        setTransferForm(f => ({ ...f, amount: '', description: 'Transfert' }));
-        showToast('Transfert effectué ✓');
-      },
-      onError: e => showToast(e.message),
-    });
   };
 
   const handleDeleteTx = () => {
@@ -234,91 +226,80 @@ export function AccountDetailPage() {
 
       {/* Form card */}
       <Card>
-        {/* Mode toggle */}
-        <div className="flex gap-1 mb-4 bg-stone-100 rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setMode('transaction')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mode === 'transaction' ? 'bg-white shadow-sm text-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
-          >
-            Transaction
-          </button>
-          <button
-            onClick={() => setMode('transfer')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mode === 'transfer' ? 'bg-white shadow-sm text-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
-          >
-            ↔ Transfert
-          </button>
-        </div>
-
-        {mode === 'transaction' ? (
-          <>
-            <CardTitle>Nouvelle transaction</CardTitle>
-            <form onSubmit={handleTxSubmit} className="space-y-3">
-              <div className="flex gap-3 flex-wrap">
+        <CardTitle>{isTransfer ? 'Transfert vers un autre compte' : 'Nouvelle transaction'}</CardTitle>
+        {isTransfer && otherAccounts.length === 0 ? (
+          <p className="text-sm text-stone-400">Vous n'avez pas d'autre compte.</p>
+        ) : (
+          <form onSubmit={handleTxSubmit} className="space-y-3">
+            <div className="flex gap-3 flex-wrap">
+              {!isTransfer && (
                 <FormGroup label="Type">
                   <Select value={txForm.type} onChange={e => setTxForm(f => ({ ...f, type: e.target.value as 'income' | 'expense' }))}>
                     <option value="expense">Dépense</option>
                     <option value="income">Revenu</option>
                   </Select>
                 </FormGroup>
-                <FormGroup label="Montant (€)">
-                  <Input type="number" value={txForm.amount} onChange={e => setTxForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" min="0" step="0.01" />
+              )}
+              <FormGroup label="Montant (€)">
+                <Input type="number" value={txForm.amount} onChange={e => setTxForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" min="0" step="0.01" />
+              </FormGroup>
+              <FormGroup label="Description">
+                <Input type="text" value={txForm.description} onChange={e => setTxForm(f => ({ ...f, description: e.target.value }))} placeholder={isTransfer ? 'Transfert' : 'Ex : Courses Leclerc'} className="min-w-[180px]" />
+              </FormGroup>
+            </div>
+            <div className="flex gap-3 flex-wrap items-end">
+              {isTransfer ? (
+                <FormGroup label="Vers">
+                  <AccountSelect
+                    value={txForm.to_account_id}
+                    onChange={v => {
+                      const dest = otherAccounts.find(a => String(a.id) === v);
+                      setTxForm(f => ({
+                        ...f,
+                        to_account_id: v,
+                        description: dest
+                          ? `${account?.name ?? ''} → ${dest.name}`
+                          : `${account?.name ?? ''} →`,
+                      }));
+                    }}
+                    accounts={otherAccounts}
+                    logoMap={logoMap}
+                    placeholder="— Choisir —"
+                  />
                 </FormGroup>
-                <FormGroup label="Description">
-                  <Input type="text" value={txForm.description} onChange={e => setTxForm(f => ({ ...f, description: e.target.value }))} placeholder="Ex : Courses Leclerc" className="min-w-[180px]" />
-                </FormGroup>
-              </div>
-              <div className="flex gap-3 flex-wrap items-end">
+              ) : (
                 <FormGroup label="Catégorie">
                   <Select value={txForm.category} onChange={e => setTxForm(f => ({ ...f, category: e.target.value }))}>
                     {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </Select>
                 </FormGroup>
-                <FormGroup label="Moyen de paiement">
-                  <Select value={txForm.payment_method} onChange={e => setTxForm(f => ({ ...f, payment_method: e.target.value }))}>
-                    <option value="">— Choisir —</option>
-                    {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
-                  </Select>
-                </FormGroup>
-                <FormGroup label="Date">
-                  <Input type="date" value={txForm.date} onChange={e => setTxForm(f => ({ ...f, date: e.target.value }))} />
-                </FormGroup>
-                <Button type="submit" variant="primary" disabled={createTx.isPending}>
-                  {createTx.isPending ? '…' : 'Ajouter'}
-                </Button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <>
-            <CardTitle>Transfert vers un autre compte</CardTitle>
-            {otherAccounts.length === 0 ? (
-              <p className="text-sm text-stone-400">Vous n'avez pas d'autre compte.</p>
-            ) : (
-              <form onSubmit={handleTransferSubmit} className="space-y-3">
-                <div className="flex gap-3 flex-wrap items-end">
-                  <FormGroup label="Vers">
-                    <Select value={transferForm.to_account_id} onChange={e => setTransferForm(f => ({ ...f, to_account_id: e.target.value }))}>
-                      <option value="">— Choisir —</option>
-                      {otherAccounts.map(a => <option key={a.id} value={a.id}>{a.name}{a.bank ? ` (${a.bank})` : ''}</option>)}
-                    </Select>
-                  </FormGroup>
-                  <FormGroup label="Montant (€)">
-                    <Input type="number" value={transferForm.amount} onChange={e => setTransferForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" min="0" step="0.01" />
-                  </FormGroup>
-                  <FormGroup label="Description">
-                    <Input type="text" value={transferForm.description} onChange={e => setTransferForm(f => ({ ...f, description: e.target.value }))} placeholder="Transfert" className="min-w-[140px]" />
-                  </FormGroup>
-                  <FormGroup label="Date">
-                    <Input type="date" value={transferForm.date} onChange={e => setTransferForm(f => ({ ...f, date: e.target.value }))} />
-                  </FormGroup>
-                  <Button type="submit" variant="primary" disabled={createTransfer.isPending}>
-                    {createTransfer.isPending ? '…' : 'Transférer'}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </>
+              )}
+              <FormGroup label="Moyen de paiement">
+                <Select
+                  value={txForm.payment_method}
+                  onChange={e => {
+                    const pm = e.target.value;
+                    const nowTransfer = pm === 'Transfert';
+                    setTxForm(f => ({
+                      ...f,
+                      payment_method: pm,
+                      description: nowTransfer ? `${account?.name ?? ''} →` : f.payment_method === 'Transfert' ? '' : f.description,
+                      to_account_id: nowTransfer ? f.to_account_id : '',
+                    }));
+                  }}
+                >
+                  <option value="">— Choisir —</option>
+                  {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
+                </Select>
+              </FormGroup>
+              <FormGroup label="Date">
+                <Input type="date" value={txForm.date} onChange={e => setTxForm(f => ({ ...f, date: e.target.value }))} />
+              </FormGroup>
+              <Button type="submit" variant="primary" disabled={createTx.isPending || createTransfer.isPending}>
+                {createTx.isPending || createTransfer.isPending ? '…' : isTransfer ? 'Transférer' : 'Ajouter'}
+              </Button>
+            </div>
+          </form>
         )}
       </Card>
 
