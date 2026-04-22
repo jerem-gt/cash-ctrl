@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Account } from '@/types';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
@@ -30,24 +30,27 @@ export function AccountSelect({ value, onChange, accounts, logoMap, placeholder 
   const selected = accounts.find(a => String(a.id) === value) ?? null;
   const showSearch = accounts.length > 5;
 
-  const filtered = search
-    ? accounts.filter(a =>
-        a.name.toLowerCase().includes(search.toLowerCase()) ||
-        (a.bank ?? '').toLowerCase().includes(search.toLowerCase())
-      )
-    : accounts;
+  const filtered = useMemo(() => {
+    if (!search) return accounts;
+    const q = search.toLowerCase();
+    return accounts.filter(a =>
+      a.name.toLowerCase().includes(q) || (a.bank ?? '').toLowerCase().includes(q)
+    );
+  }, [accounts, search]);
 
-  const groupMap = new Map<string, Account[]>();
-  for (const acc of filtered) {
-    const key = acc.bank ?? '';
-    if (!groupMap.has(key)) groupMap.set(key, []);
-    groupMap.get(key)!.push(acc);
-  }
-  const groups = [...groupMap.entries()]
-    .sort(([a], [b]) => { if (a === '') return 1; if (b === '') return -1; return a.localeCompare(b); })
-    .map(([bank, accs]) => ({ bank: bank || null, accounts: accs }));
+  const groups = useMemo(() => {
+    const groupMap = new Map<string, Account[]>();
+    for (const acc of filtered) {
+      const key = acc.bank ?? '';
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(acc);
+    }
+    return [...groupMap.entries()]
+      .sort(([a], [b]) => { if (a === '') return 1; if (b === '') return -1; return a.localeCompare(b); })
+      .map(([bank, accs]) => ({ bank: bank || null, accounts: accs }));
+  }, [filtered]);
 
-  const flatAccounts = groups.flatMap(g => g.accounts);
+  const flatAccounts = useMemo(() => groups.flatMap(g => g.accounts), [groups]);
   const totalOptions = 1 + flatAccounts.length;
 
   useEffect(() => {
@@ -87,8 +90,12 @@ export function AccountSelect({ value, onChange, accounts, logoMap, placeholder 
 
   itemRefs.current = [];
 
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) close();
+  };
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" onBlur={handleBlur}>
       <button
         ref={triggerRef}
         type="button"
@@ -146,7 +153,7 @@ export function AccountSelect({ value, onChange, accounts, logoMap, placeholder 
                 </p>
               )}
               {group.accounts.map(a => {
-                const index = 1 + flatAccounts.indexOf(a);
+                const index = 1 + flatAccounts.findIndex(fa => fa.id === a.id);
                 return (
                   <button
                     key={a.id}
