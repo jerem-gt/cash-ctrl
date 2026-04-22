@@ -1,4 +1,4 @@
-tu peux initial# CashCtrl
+# CashCtrl
 
 Application de suivi de comptes bancaires personnels.
 

@@ -113,7 +113,7 @@ export function TransactionsPage() {
               </Select>
             </FormGroup>
             <FormGroup label="Compte">
-              <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} banks={banks} />
+              <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} logoMap={logoMap} />
             </FormGroup>
             <FormGroup label="Moyen de paiement">
               <Select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>

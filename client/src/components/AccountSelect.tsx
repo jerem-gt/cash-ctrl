@@ -1,23 +1,23 @@
 import { useState } from 'react';
-import type { Account, Bank } from '@/types';
+import type { Account } from '@/types';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
   accounts: Account[];
-  banks: Bank[];
+  logoMap: Record<string, string | null>;
   placeholder?: string;
 }
 
-function Logo({ bank, banks }: Readonly<{ bank?: string; banks: Bank[] }>) {
-  const logo = bank ? (banks.find(b => b.name === bank)?.logo ?? null) : null;
+function Logo({ bank, logoMap }: Readonly<{ bank?: string; logoMap: Record<string, string | null> }>) {
+  const logo = bank ? (logoMap[bank] ?? null) : null;
   if (logo) return <img src={logo} alt="" className="w-4 h-4 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />;
   if (bank) return <span className="w-4 h-4 rounded bg-stone-200 shrink-0 inline-block" />;
   return null;
 }
 
-export function AccountSelect({ value, onChange, accounts, banks, placeholder = '— Choisir —' }: Readonly<Props>) {
+export function AccountSelect({ value, onChange, accounts, logoMap, placeholder = '— Choisir —' }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
 
@@ -32,7 +32,7 @@ export function AccountSelect({ value, onChange, accounts, banks, placeholder = 
       >
         {selected ? (
           <>
-            <Logo bank={selected.bank} banks={banks} />
+            <Logo bank={selected.bank} logoMap={logoMap} />
             <span className="flex-1 truncate">{selected.name}</span>
             {selected.bank && <span className="text-stone-400 text-xs shrink-0">({selected.bank})</span>}
           </>
@@ -58,7 +58,7 @@ export function AccountSelect({ value, onChange, accounts, banks, placeholder = 
               onClick={() => { onChange(String(a.id)); setOpen(false); }}
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${String(a.id) === value ? 'bg-stone-50 font-medium' : ''}`}
             >
-              <Logo bank={a.bank} banks={banks} />
+              <Logo bank={a.bank} logoMap={logoMap} />
               <span className="flex-1 truncate">{a.name}</span>
               {a.bank && <span className="text-stone-400 text-xs shrink-0">({a.bank})</span>}
             </button>

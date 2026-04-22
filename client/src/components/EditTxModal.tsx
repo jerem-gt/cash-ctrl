@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import type { Account, Bank, PaymentMethod, Transaction } from '@/types';
+import type { Account, PaymentMethod, Transaction } from '@/types';
 import { Button, Input, Select, FormGroup, showToast } from '@/components/ui';
 import { AccountSelect } from '@/components/AccountSelect';
 
@@ -18,7 +18,7 @@ export type TxFormState = {
 interface Props {
   tx: Transaction;
   accounts: Account[];
-  banks: Bank[];
+  logoMap: Record<string, string | null>;
   categories: { id: number; name: string }[];
   paymentMethods: PaymentMethod[];
   onSave: (data: TxFormState) => void;
@@ -26,7 +26,7 @@ interface Props {
   isPending: boolean;
 }
 
-export function EditTxModal({ tx, accounts, banks, categories, paymentMethods, onSave, onCancel, isPending }: Readonly<Props>) {
+export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods, onSave, onCancel, isPending }: Readonly<Props>) {
   const [form, setForm] = useState<TxFormState>({
     type: tx.type,
     amount: String(tx.amount),
@@ -83,7 +83,7 @@ export function EditTxModal({ tx, accounts, banks, categories, paymentMethods, o
                   </Select>
                 </FormGroup>
                 <FormGroup label="Compte">
-                  <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} banks={banks} />
+                  <AccountSelect value={form.account_id} onChange={v => setForm(f => ({ ...f, account_id: v }))} accounts={accounts} logoMap={logoMap} />
                 </FormGroup>
               </>
             )}
