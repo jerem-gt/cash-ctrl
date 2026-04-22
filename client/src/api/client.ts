@@ -1,8 +1,22 @@
 import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters } from '@/types';
 
+function extractError(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.filter(Boolean).join(', ');
+  if (typeof value === 'object' && value !== null) {
+    const messages: string[] = [];
+    for (const [key, val] of Object.entries(value)) {
+      if (key === '_errors' && Array.isArray(val)) messages.push(...val.filter(Boolean));
+      else { const nested = extractError(val); if (nested) messages.push(nested); }
+    }
+    return messages.join(' · ');
+  }
+  return '';
+}
+
 async function parseResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Request failed');
+  if (!res.ok) throw new Error(extractError((data as { error?: unknown }).error) || 'Request failed');
   return data as T;
 }
 

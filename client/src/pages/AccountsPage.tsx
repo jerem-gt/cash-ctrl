@@ -1,4 +1,4 @@
-import { useState, useMemo, type SubmitEvent } from 'react';
+import { useState, useMemo, useEffect, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccounts, useCreateAccount } from '@/hooks/useAccounts';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -20,6 +20,10 @@ export function AccountsPage() {
   const createAccount = useCreateAccount();
 
   const [form, setForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
+
+  useEffect(() => {
+    if (!form.type && accountTypes[0]?.name) setForm(f => ({ ...f, type: accountTypes[0].name }));
+  }, [accountTypes]);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -65,7 +69,7 @@ export function AccountsPage() {
               <BankSelect value={form.bank} onChange={v => setForm(f => ({ ...f, bank: v }))} banks={banks} />
             </FormGroup>
             <FormGroup label="Type">
-              <Select value={form.type || accountTypes[0]?.name} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 {accountTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
               </Select>
             </FormGroup>

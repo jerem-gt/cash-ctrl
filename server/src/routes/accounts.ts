@@ -10,7 +10,7 @@ const accountSchema = z.object({
   name: z.string().min(1).max(100),
   bank: z.string().min(1).max(100),
   type: z.string().min(1).max(50),
-  initial_balance: z.number().default(0),
+  initial_balance: z.coerce.number().default(0),
 });
 
 accountsRouter.get('/', (req, res) => {
