@@ -26,6 +26,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,7 +43,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: IS_PROD,
+    secure: process.env.SECURE_COOKIE === 'true',
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },

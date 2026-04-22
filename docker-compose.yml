@@ -5,7 +5,7 @@ services:
     container_name: cash-ctrl
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - /volume1/data/cash-ctrl:/data
     environment:
@@ -15,6 +15,7 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       - ADMIN_USER=admin
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECURE_COOKIE=true
 networks:
   mynet:
     driver: bridge
