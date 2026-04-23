@@ -1,0 +1,57 @@
+{
+  "extends": ["config:recommended"],
+
+  "rangeStrategy": "bump",
+
+  "npm": {
+    "enabled": true
+  },
+
+  "packageRules": [
+    {
+      "description": "Group all minor/patch deps",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major deps"
+    },
+    {
+      "description": "Separate devDependencies",
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "devDependencies"
+    },
+    {
+      "description": "Keep React updates isolated",
+      "matchPackageNames": ["react", "react-dom"],
+      "groupName": "react",
+      "automerge": false
+    },
+    {
+      "description": "Keep build tools isolated",
+      "matchPackageNames": [
+        "vite",
+        "typescript",
+        "@vitejs/plugin-react",
+        "tailwindcss",
+        "postcss"
+      ],
+      "groupName": "build-tools",
+      "automerge": false
+    },
+    {
+      "description": "Backend critical deps",
+      "matchPackageNames": [
+        "express",
+        "better-sqlite3",
+        "express-session"
+      ],
+      "automerge": false
+    }
+  ],
+
+  "prConcurrentLimit": 5,
+
+  "schedule": ["before 9am on monday"],
+
+  "labels": ["dependencies"],
+
+  "reviewers": ["jerem-gt"]
+}
