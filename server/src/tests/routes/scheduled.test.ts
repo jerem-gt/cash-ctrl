@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createTestContext, type TestContext } from '../helpers/testApp.js';
+import { SEED } from '../helpers/testDb.js';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -7,8 +8,8 @@ const base = {
   type: 'expense' as const,
   amount: 100,
   description: 'Loyer',
-  category: 'Loyer',
-  payment_method: 'Virement',
+  category_id: SEED.CAT_LOYER,
+  payment_method_id: SEED.PM_VIREMENT,
   recurrence_unit: 'month' as const,
   recurrence_interval: 1,
   start_date: TODAY,
@@ -21,7 +22,9 @@ describe('/api/scheduled', () => {
 
   beforeAll(async () => {
     ctx = await createTestContext();
-    const acc = await ctx.agent.post('/api/accounts').send({ name: 'Main', bank: 'X', type: 'Courant' });
+    const acc = await ctx.agent.post('/api/accounts').send({
+      name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT,
+    });
     accountId = acc.body.id;
   });
 
@@ -40,14 +43,14 @@ describe('/api/scheduled', () => {
 
   it('POST / returns 400 when payment_method is Transfert but no to_account_id', async () => {
     const res = await ctx.agent.post('/api/scheduled').send({
-      ...base, account_id: accountId, payment_method: 'Transfert',
+      ...base, account_id: accountId, payment_method_id: SEED.PM_TRANSFERT,
     });
     expect(res.status).toBe(400);
   });
 
   it('POST / returns 400 when Transfert accounts are identical', async () => {
     const res = await ctx.agent.post('/api/scheduled').send({
-      ...base, account_id: accountId, payment_method: 'Transfert', to_account_id: accountId,
+      ...base, account_id: accountId, payment_method_id: SEED.PM_TRANSFERT, to_account_id: accountId,
     });
     expect(res.status).toBe(400);
   });

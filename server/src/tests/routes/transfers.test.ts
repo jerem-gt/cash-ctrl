@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createTestContext, type TestContext } from '../helpers/testApp.js';
+import { SEED } from '../helpers/testDb.js';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -10,8 +11,12 @@ describe('/api/transfers', () => {
 
   beforeAll(async () => {
     ctx = await createTestContext();
-    const a1 = await ctx.agent.post('/api/accounts').send({ name: 'From', bank: 'X', type: 'Courant' });
-    const a2 = await ctx.agent.post('/api/accounts').send({ name: 'To', bank: 'X', type: 'Épargne' });
+    const a1 = await ctx.agent.post('/api/accounts').send({
+      name: 'From', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT,
+    });
+    const a2 = await ctx.agent.post('/api/accounts').send({
+      name: 'To', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_EPARGNE,
+    });
     fromId = a1.body.id;
     toId   = a2.body.id;
   });

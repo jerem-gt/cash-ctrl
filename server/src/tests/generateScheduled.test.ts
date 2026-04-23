@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setupFixtures, type Fixtures } from './helpers/testDb.js';
+import { setupFixtures, type Fixtures, SEED } from './helpers/testDb.js';
 import { generateScheduledTransactions } from '../lib/generateScheduled.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -10,8 +10,8 @@ function insertSchedule(
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    category: string;
-    payment_method: string;
+    category_id: number;
+    payment_method_id: number;
     recurrence_unit: 'day' | 'week' | 'month' | 'year';
     recurrence_interval: number;
     recurrence_day: number | null;
@@ -27,8 +27,8 @@ function insertSchedule(
     type: 'expense' as const,
     amount: 100,
     description: 'Test',
-    category: 'Autre',
-    payment_method: 'Virement',
+    category_id: SEED.CAT_AUTRE,
+    payment_method_id: SEED.PM_VIREMENT,
     recurrence_unit: 'month' as const,
     recurrence_interval: 1,
     recurrence_day: null,
@@ -43,12 +43,12 @@ function insertSchedule(
 
   return Number(f.db.prepare(`
     INSERT INTO scheduled_transactions
-      (user_id, account_id, type, amount, description, category, payment_method,
+      (user_id, account_id, type, amount, description, category_id, payment_method_id,
        recurrence_unit, recurrence_interval, recurrence_day, recurrence_month,
        to_account_id, weekend_handling, start_date, end_date, active)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    f.userId, f.accountId, d.type, d.amount, d.description, d.category, d.payment_method,
+    f.userId, f.accountId, d.type, d.amount, d.description, d.category_id, d.payment_method_id,
     d.recurrence_unit, d.recurrence_interval, d.recurrence_day, d.recurrence_month,
     d.to_account_id, d.weekend_handling, d.start_date, d.end_date, d.active,
   ).lastInsertRowid);
@@ -241,7 +241,7 @@ describe('generateScheduledTransactions', () => {
   it('transfer: creates an expense on account and income on to_account', () => {
     const today = new Date().toISOString().split('T')[0];
     const id = insertSchedule(f, {
-      payment_method: 'Transfert',
+      payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
       recurrence_unit: 'day',
       recurrence_interval: 1,
@@ -267,7 +267,7 @@ describe('generateScheduledTransactions', () => {
   it('transfer: expense and income are linked via transfer_peer_id', () => {
     const today = new Date().toISOString().split('T')[0];
     const id = insertSchedule(f, {
-      payment_method: 'Transfert',
+      payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
       recurrence_unit: 'day',
       recurrence_interval: 1,
@@ -292,7 +292,7 @@ describe('generateScheduledTransactions', () => {
     end.setDate(today.getDate() + 2);
 
     const id = insertSchedule(f, {
-      payment_method: 'Transfert',
+      payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
       recurrence_unit: 'day',
       recurrence_interval: 1,
@@ -310,7 +310,7 @@ describe('generateScheduledTransactions', () => {
   it('transfer: idempotent on second call', () => {
     const today = new Date().toISOString().split('T')[0];
     const id = insertSchedule(f, {
-      payment_method: 'Transfert',
+      payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
       recurrence_unit: 'day',
       recurrence_interval: 1,
