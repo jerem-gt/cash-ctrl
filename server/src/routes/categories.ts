@@ -1,44 +1,50 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { queries } from '../db.js';
+import type Database from 'better-sqlite3';
+import type { Category } from '../db.js';
 import { requireAuth } from '../middleware.js';
 
-export const categoriesRouter = Router();
-categoriesRouter.use(requireAuth);
-
 const categorySchema = z.object({
-  name: z.string().min(1).max(50),
+  name:  z.string().min(1).max(50),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#9E9A92'),
 });
 
-categoriesRouter.get('/', (_req, res) => {
-  res.json(queries.getCategories.all());
-});
+export function createCategoriesRouter(db: Database.Database): Router {
+  const getCategories   = db.prepare<[], Category>('SELECT * FROM categories ORDER BY created_at');
+  const getCategoryById = db.prepare<[number], Category>('SELECT * FROM categories WHERE id = ?');
+  const insertCategory  = db.prepare<[string, string]>('INSERT INTO categories (name, color) VALUES (?, ?)');
+  const updateCategory  = db.prepare<[string, string, number]>('UPDATE categories SET name = ?, color = ? WHERE id = ?');
+  const deleteCategory  = db.prepare<[number]>('DELETE FROM categories WHERE id = ?');
 
-categoriesRouter.post('/', (req, res) => {
-  const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+  const router = Router();
+  router.use(requireAuth);
 
-  const { name, color } = parsed.data;
-  const result = queries.insertCategory.run(name.trim(), color);
-  res.status(201).json(queries.getCategoryById.get(Number(result.lastInsertRowid)));
-});
+  router.get('/', (_req, res) => {
+    res.json(getCategories.all());
+  });
 
-categoriesRouter.put('/:id', (req, res) => {
-  const id = Number.parseInt(req.params.id);
-  if (!queries.getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
+  router.post('/', (req, res) => {
+    const parsed = categorySchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+    const result = insertCategory.run(parsed.data.name.trim(), parsed.data.color);
+    res.status(201).json(getCategoryById.get(Number(result.lastInsertRowid)));
+  });
 
-  const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+  router.put('/:id', (req, res) => {
+    const id = Number.parseInt(req.params.id);
+    if (!getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
+    const parsed = categorySchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+    updateCategory.run(parsed.data.name.trim(), parsed.data.color, id);
+    res.json(getCategoryById.get(id));
+  });
 
-  const { name, color } = parsed.data;
-  queries.updateCategory.run(name.trim(), color, id);
-  res.json(queries.getCategoryById.get(id));
-});
+  router.delete('/:id', (req, res) => {
+    const id = Number.parseInt(req.params.id);
+    if (!getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
+    deleteCategory.run(id);
+    res.json({ ok: true });
+  });
 
-categoriesRouter.delete('/:id', (req, res) => {
-  const id = Number.parseInt(req.params.id);
-  if (!queries.getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
-  queries.deleteCategory.run(id);
-  res.json({ ok: true });
-});
+  return router;
+}
