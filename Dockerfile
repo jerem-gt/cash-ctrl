@@ -9,14 +9,18 @@ COPY server/package*.json ./server/
 RUN apk add --no-cache python3 make g++ && \
     npm ci --workspace=client --workspace=server
 
+# ─── Test server ──────────────────────────────────────────────────────────────
+FROM deps AS test
+COPY server/ ./server/
+RUN npm test --workspace=server
+
 # ─── Build client ─────────────────────────────────────────────────────────────
 FROM deps AS build-client
 COPY client/ ./client/
 RUN npm run build --workspace=client
 
 # ─── Build server ─────────────────────────────────────────────────────────────
-FROM deps AS build-server
-COPY server/ ./server/
+FROM test AS build-server
 RUN npm run build --workspace=server
 
 # ─── Production image ─────────────────────────────────────────────────────────
