@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:24.15.0-alpine AS base
 WORKDIR /app
 
 # ─── Server deps (native compilation: better-sqlite3, bcrypt) ─────────────────
@@ -29,7 +29,7 @@ COPY client/ ./client/
 RUN npm run build --workspace=client
 
 # ─── Production image ─────────────────────────────────────────────────────────
-FROM node:24-alpine AS runner
+FROM node:24.15.0-alpine AS runner
 WORKDIR /app
 
 COPY package*.json ./
