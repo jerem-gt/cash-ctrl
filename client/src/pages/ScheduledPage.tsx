@@ -46,8 +46,8 @@ type FormState = {
   type: 'income' | 'expense';
   amount: string;
   description: string;
-  category: string;
-  payment_method: string;
+  category_id: string;
+  payment_method_id: string;
   notes: string;
   recurrence_unit: RecurrenceUnit;
   recurrence_interval: string;
@@ -59,15 +59,15 @@ type FormState = {
   active: boolean;
 };
 
-function emptyForm(firstAccountId?: number, firstCategory?: string): FormState {
+function emptyForm(firstAccountId?: number, firstCategoryId?: number): FormState {
   return {
     account_id: firstAccountId ? String(firstAccountId) : '',
     to_account_id: '',
     type: 'expense',
     amount: '',
     description: '',
-    category: firstCategory ?? 'Autre',
-    payment_method: '',
+    category_id: firstCategoryId ? String(firstCategoryId) : '',
+    payment_method_id: '',
     notes: '',
     recurrence_unit: 'month',
     recurrence_interval: '1',
@@ -87,8 +87,8 @@ function schedToForm(s: ScheduledTransaction): FormState {
     type: s.type,
     amount: String(s.amount),
     description: s.description,
-    category: s.category,
-    payment_method: s.payment_method,
+    category_id: String(s.category_id ?? ''),
+    payment_method_id: String(s.payment_method_id ?? ''),
     notes: s.notes ?? '',
     recurrence_unit: s.recurrence_unit,
     recurrence_interval: String(s.recurrence_interval),
@@ -101,17 +101,18 @@ function schedToForm(s: ScheduledTransaction): FormState {
   };
 }
 
-function formToPayload(f: FormState): ScheduledPayload {
+function formToPayload(f: FormState, paymentMethods: { id: number; name: string }[]): ScheduledPayload {
   const unit = f.recurrence_unit;
-  const isTransfer = f.payment_method === 'Transfert';
+  const selectedPm = paymentMethods.find(m => String(m.id) === f.payment_method_id);
+  const isTransfer = selectedPm?.name === 'Transfert';
   return {
     account_id: Number.parseInt(f.account_id),
     to_account_id: isTransfer && f.to_account_id ? Number.parseInt(f.to_account_id) : null,
     type: 'expense',
     amount: Number.parseFloat(f.amount),
     description: f.description.trim(),
-    category: f.category,
-    payment_method: f.payment_method,
+    category_id: Number.parseInt(f.category_id),
+    payment_method_id: Number.parseInt(f.payment_method_id),
     notes: f.notes.trim() || null,
     recurrence_unit: unit,
     recurrence_interval: Number.parseInt(f.recurrence_interval) || 1,
@@ -142,21 +143,22 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
   const [form, setForm] = useState<FormState>(initial);
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
 
-  const isTransfer = form.payment_method === 'Transfert';
+  const selectedPm = paymentMethods.find(m => String(m.id) === form.payment_method_id);
+  const isTransfer = selectedPm?.name === 'Transfert';
 
   const coreValue: TxCoreState = {
     type: form.type,
     amount: form.amount,
     description: form.description,
-    category: form.category,
+    category_id: form.category_id,
     account_id: form.account_id,
     to_account_id: form.to_account_id,
-    payment_method: form.payment_method,
+    payment_method_id: form.payment_method_id,
   };
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.account_id || !form.amount || !form.description || !form.payment_method || !form.start_date) {
+    if (!form.account_id || !form.amount || !form.description || !form.payment_method_id || !form.start_date) {
       showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -368,7 +370,7 @@ export function ScheduledPage() {
   };
 
   const handleCreate = (f: FormState) => {
-    createScheduled.mutate(formToPayload(f), {
+    createScheduled.mutate(formToPayload(f, paymentMethods), {
       onSuccess: () => { setShowModal(false); showToast('Planification créée ✓'); },
       onError: err => showToast(err.message),
     });
@@ -376,7 +378,7 @@ export function ScheduledPage() {
 
   const handleUpdate = (f: FormState) => {
     if (!editTarget) return;
-    updateScheduled.mutate({ id: editTarget.id, ...formToPayload(f) }, {
+    updateScheduled.mutate({ id: editTarget.id, ...formToPayload(f, paymentMethods) }, {
       onSuccess: () => { setEditTarget(null); showToast('Planification mise à jour ✓'); },
       onError: err => showToast(err.message),
     });
@@ -391,7 +393,7 @@ export function ScheduledPage() {
   };
 
   const firstAccountId = accounts[0]?.id;
-  const firstCategory = categories[0]?.name;
+  const firstCategoryId = categories[0]?.id;
 
   return (
     <div className="space-y-5">
@@ -450,7 +452,7 @@ export function ScheduledPage() {
       {/* Modal création */}
       {showModal && (
         <ScheduledModal
-          initial={emptyForm(firstAccountId, firstCategory)}
+          initial={emptyForm(firstAccountId, firstCategoryId)}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}

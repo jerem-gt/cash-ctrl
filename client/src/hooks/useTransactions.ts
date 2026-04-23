@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionsApi, transfersApi } from '@/api/client';
 import type { Transaction, TransactionFilters } from '@/types';
 
-type UpdatePayload = { id: number; account_id: number; type: 'income' | 'expense'; amount: number; description: string; category: string; date: string; payment_method: string; notes: string | null; validated: boolean };
+type UpdatePayload = { id: number; account_id: number; type: 'income' | 'expense'; amount: number; description: string; category_id: number; date: string; payment_method_id: number; notes: string | null; validated: boolean };
 
 export function useTransactions(filters?: TransactionFilters) {
   return useQuery({

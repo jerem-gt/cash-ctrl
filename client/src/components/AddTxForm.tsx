@@ -19,10 +19,10 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
     type: 'expense',
     amount: '',
     description: '',
-    category: '',
+    category_id: '',
     account_id: fixedAccountId != null ? String(fixedAccountId) : '',
     to_account_id: '',
-    payment_method: '',
+    payment_method_id: '',
   };
 }
 
@@ -33,7 +33,8 @@ export function AddTxForm({ accounts, logoMap, categories, paymentMethods, fixed
   const [core, setCore] = useState<TxCoreState>(() => emptyCore(fixedAccountId));
   const [date, setDate] = useState(today);
 
-  const isTransfer = core.payment_method === 'Transfert';
+  const selectedPm = paymentMethods.find(m => String(m.id) === core.payment_method_id);
+  const isTransfer = selectedPm?.name === 'Transfert';
   const noOtherAccounts = fixedAccountId != null && accounts.every(a => a.id === fixedAccountId);
 
   const handleSubmit = (e: SubmitEvent) => {
@@ -59,7 +60,9 @@ export function AddTxForm({ accounts, logoMap, categories, paymentMethods, fixed
         onError: err => showToast(err.message),
       });
     } else {
-      if (!core.amount || !core.description || !core.payment_method || (fixedAccountId == null && !core.account_id)) {
+      const categoryId = Number.parseInt(core.category_id) || categories[0]?.id;
+      const pmId = Number.parseInt(core.payment_method_id);
+      if (!core.amount || !core.description || !pmId || (fixedAccountId == null && !core.account_id) || !categoryId) {
         showToast('Veuillez remplir tous les champs obligatoires.');
         return;
       }
@@ -67,10 +70,10 @@ export function AddTxForm({ accounts, logoMap, categories, paymentMethods, fixed
         type: core.type,
         amount: Number.parseFloat(core.amount),
         description: core.description,
-        category: core.category || categories[0]?.name || 'Autre',
+        category_id: categoryId,
         account_id: fixedAccountId ?? Number.parseInt(core.account_id),
         date,
-        payment_method: core.payment_method,
+        payment_method_id: pmId,
       }, {
         onSuccess: () => {
           setCore(c => ({ ...c, amount: '', description: '' }));

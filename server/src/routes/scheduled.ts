@@ -10,8 +10,8 @@ const scheduledSchema = z.object({
   type:                z.enum(['income', 'expense']),
   amount:              z.number().positive(),
   description:         z.string().min(1).max(200),
-  category:            z.string().min(1),
-  payment_method:      z.string().min(1).max(100),
+  category_id:         z.number().int().positive(),
+  payment_method_id:   z.number().int().positive(),
   notes:               z.string().max(1000).nullable().default(null),
   recurrence_unit:     z.enum(['day', 'week', 'month', 'year']),
   recurrence_interval: z.number().int().min(1).default(1),
@@ -23,15 +23,41 @@ const scheduledSchema = z.object({
   active:              z.boolean().default(true),
 });
 
+const SCHED_WITH_ACCOUNT = `
+  SELECT s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,
+         s.category_id, s.payment_method_id, s.notes,
+         s.recurrence_unit, s.recurrence_interval, s.recurrence_day, s.recurrence_month,
+         s.weekend_handling, s.start_date, s.end_date, s.active, s.last_generated_until, s.created_at,
+         a.name as account_name,
+         COALESCE(c.name, '') as category,
+         COALESCE(pm.name, '') as payment_method
+  FROM scheduled_transactions s
+  JOIN accounts a ON s.account_id = a.id
+  LEFT JOIN categories c ON s.category_id = c.id
+  LEFT JOIN payment_methods pm ON s.payment_method_id = pm.id
+  WHERE s.id = ?
+`;
+
 export function createScheduledRouter(db: Database.Database): Router {
+  const transferPm = db.prepare<[], { id: number }>(`SELECT id FROM payment_methods WHERE name = 'Transfert'`).get();
+  const TRANSFER_PM_ID = transferPm?.id;
+
   const router = Router();
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
     const rows = db.prepare(`
-      SELECT s.*, a.name as account_name
+      SELECT s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,
+             s.category_id, s.payment_method_id, s.notes,
+             s.recurrence_unit, s.recurrence_interval, s.recurrence_day, s.recurrence_month,
+             s.weekend_handling, s.start_date, s.end_date, s.active, s.last_generated_until, s.created_at,
+             a.name as account_name,
+             COALESCE(c.name, '') as category,
+             COALESCE(pm.name, '') as payment_method
       FROM scheduled_transactions s
       JOIN accounts a ON s.account_id = a.id
+      LEFT JOIN categories c ON s.category_id = c.id
+      LEFT JOIN payment_methods pm ON s.payment_method_id = pm.id
       WHERE s.user_id = ?
       ORDER BY s.created_at DESC
     `).all(req.session.userId!);
@@ -43,31 +69,27 @@ export function createScheduledRouter(db: Database.Database): Router {
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
 
     const d = parsed.data;
-    if (d.payment_method === 'Transfert') {
+    if (d.payment_method_id === TRANSFER_PM_ID) {
       if (!d.to_account_id) { res.status(400).json({ error: 'Un compte destination est requis pour un transfert' }); return; }
       if (d.to_account_id === d.account_id) { res.status(400).json({ error: 'Les deux comptes doivent être différents' }); return; }
     }
 
     const result = db.prepare(`
       INSERT INTO scheduled_transactions
-        (user_id, account_id, to_account_id, type, amount, description, category, payment_method, notes,
+        (user_id, account_id, to_account_id, type, amount, description, category_id, payment_method_id, notes,
          recurrence_unit, recurrence_interval, recurrence_day, recurrence_month,
          weekend_handling, start_date, end_date, active)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.session.userId!, d.account_id, d.to_account_id, d.type, d.amount, d.description.trim(),
-      d.category, d.payment_method, d.notes,
+      d.category_id, d.payment_method_id, d.notes,
       d.recurrence_unit, d.recurrence_interval, d.recurrence_day, d.recurrence_month,
       d.weekend_handling, d.start_date, d.end_date, d.active ? 1 : 0,
     );
 
     generateScheduledTransactions(req.session.userId!, db);
 
-    res.status(201).json(db.prepare(`
-      SELECT s.*, a.name as account_name
-      FROM scheduled_transactions s JOIN accounts a ON s.account_id = a.id
-      WHERE s.id = ?
-    `).get(result.lastInsertRowid));
+    res.status(201).json(db.prepare(SCHED_WITH_ACCOUNT).get(result.lastInsertRowid));
   });
 
   router.put('/:id', (req, res) => {
@@ -82,7 +104,7 @@ export function createScheduledRouter(db: Database.Database): Router {
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
 
     const d = parsed.data;
-    if (d.payment_method === 'Transfert') {
+    if (d.payment_method_id === TRANSFER_PM_ID) {
       if (!d.to_account_id) { res.status(400).json({ error: 'Un compte destination est requis pour un transfert' }); return; }
       if (d.to_account_id === d.account_id) { res.status(400).json({ error: 'Les deux comptes doivent être différents' }); return; }
     }
@@ -94,14 +116,16 @@ export function createScheduledRouter(db: Database.Database): Router {
         .run(id, userId, today);
       db.prepare(`
         UPDATE scheduled_transactions SET
-          account_id = ?, to_account_id = ?, type = ?, amount = ?, description = ?, category = ?,
-          payment_method = ?, notes = ?, recurrence_unit = ?, recurrence_interval = ?,
+          account_id = ?, to_account_id = ?, type = ?, amount = ?, description = ?,
+          category_id = ?, payment_method_id = ?, notes = ?,
+          recurrence_unit = ?, recurrence_interval = ?,
           recurrence_day = ?, recurrence_month = ?, weekend_handling = ?,
           start_date = ?, end_date = ?, active = ?, last_generated_until = NULL
         WHERE id = ? AND user_id = ?
       `).run(
-        d.account_id, d.to_account_id, d.type, d.amount, d.description.trim(), d.category,
-        d.payment_method, d.notes, d.recurrence_unit, d.recurrence_interval,
+        d.account_id, d.to_account_id, d.type, d.amount, d.description.trim(),
+        d.category_id, d.payment_method_id, d.notes,
+        d.recurrence_unit, d.recurrence_interval,
         d.recurrence_day, d.recurrence_month, d.weekend_handling,
         d.start_date, d.end_date, d.active ? 1 : 0,
         id, userId,
@@ -110,11 +134,7 @@ export function createScheduledRouter(db: Database.Database): Router {
 
     generateScheduledTransactions(userId, db);
 
-    res.json(db.prepare(`
-      SELECT s.*, a.name as account_name
-      FROM scheduled_transactions s JOIN accounts a ON s.account_id = a.id
-      WHERE s.id = ?
-    `).get(id));
+    res.json(db.prepare(SCHED_WITH_ACCOUNT).get(id));
   });
 
   router.delete('/:id', (req, res) => {

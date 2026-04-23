@@ -30,11 +30,13 @@ export function TransactionsPage() {
     if (!editTx) return;
     const payload = editTx.transfer_peer_id
       ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
-          type: editTx.type, account_id: editTx.account_id, category: editTx.category,
-          payment_method: editTx.payment_method, notes: editTx.notes, validated: !!editTx.validated }
+          type: editTx.type, account_id: editTx.account_id, category_id: editTx.category_id ?? categories[0]?.id ?? 0,
+          payment_method_id: editTx.payment_method_id ?? 0, notes: editTx.notes, validated: !!editTx.validated }
       : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
-          category: data.category || categories[0]?.name || 'Autre', account_id: Number.parseInt(data.account_id), date: data.date,
-          payment_method: data.payment_method, notes: data.notes || null, validated: data.validated };
+          category_id: Number.parseInt(data.category_id) || (categories[0]?.id ?? 0),
+          account_id: Number.parseInt(data.account_id), date: data.date,
+          payment_method_id: Number.parseInt(data.payment_method_id),
+          notes: data.notes || null, validated: data.validated };
     updateTx.mutate(payload, {
       onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
       onError: (e) => showToast(e.message),
@@ -73,9 +75,9 @@ export function TransactionsPage() {
             placeholder="Tous les comptes"
           />
         </div>
-        <Select className="flex-1 min-w-32.5 max-w-50" value={filters.category ?? ''} onChange={e => setFilters(f => ({ ...f, category: e.target.value || undefined }))}>
+        <Select className="flex-1 min-w-32.5 max-w-50" value={String(filters.category_id ?? '')} onChange={e => setFilters(f => ({ ...f, category_id: e.target.value ? Number.parseInt(e.target.value) : undefined }))}>
           <option value="">Toutes catégories</option>
-          {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+          {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
         </Select>
         <Select className="flex-1 min-w-32.5 max-w-50" value={filters.type ?? ''} onChange={e => setFilters(f => ({ ...f, type: (e.target.value || undefined) as 'income' | 'expense' | undefined }))}>
           <option value="">Tous types</option>

@@ -12,7 +12,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
 
-  const selected = banks.find(b => b.name === value) ?? null;
+  const selected = banks.find(b => String(b.id) === value) ?? null;
 
   return (
     <div ref={ref} className="relative">
@@ -48,8 +48,8 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
             <button
               key={b.id}
               type="button"
-              onClick={() => { onChange(b.name); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${b.name === value ? 'bg-stone-50 font-medium' : ''}`}
+              onClick={() => { onChange(String(b.id)); setOpen(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${String(b.id) === value ? 'bg-stone-50 font-medium' : ''}`}
             >
               {b.logo
                 ? <img src={b.logo} alt="" className="w-4 h-4 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />

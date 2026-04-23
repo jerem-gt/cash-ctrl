@@ -8,31 +8,9 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useBanks } from '@/hooks/useBanks';
 import { Card, CardTitle, Metric, Empty } from '@/components/ui';
-import { AccountBadge } from '@/components/AccountBadge';
-import { fmt, fmtDec, fmtDateShort, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
+import { TxItem } from '@/components/TxItem';
+import { fmt, fmtDec, today, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
 import { computeBalance } from '@/lib/account';
-import type { Account, Transaction } from '@/types';
-
-function TxRow({ tx, accounts, logoMap }: Readonly<{ tx: Transaction; accounts: Account[]; logoMap: Record<string, string | null> }>) {
-  const account = accounts.find(a => a.id === tx.account_id);
-  const logo = account?.bank ? (logoMap[account.bank] ?? null) : null;
-  return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-black/4 last:border-0">
-      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${tx.type === 'income' ? 'bg-green-500' : 'bg-red-400'}`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{tx.description}</p>
-        <p className="text-[11px] text-stone-400 flex items-center gap-1 flex-wrap">
-          <span>{tx.category} ·</span>
-          <AccountBadge name={tx.account_name ?? ''} bank={account?.bank} logo={logo} />
-          <span>· {fmtDateShort(tx.date)}</span>
-        </p>
-      </div>
-      <span className={`text-sm font-medium tabular-nums ${tx.type === 'income' ? 'text-green-800' : 'text-red-700'}`}>
-        {tx.type === 'income' ? '+' : '−'}{fmtDec(tx.amount)}
-      </span>
-    </div>
-  );
-}
 
 export function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
@@ -53,7 +31,6 @@ export function DashboardPage() {
   const monthExpense = nonTransfers.filter(t => t.type === 'expense' && isThisMonth(t.date)).reduce((s, t) => s + t.amount, 0);
   const bilan = monthIncome - monthExpense;
 
-  // Donut data
   const catData = useMemo(() => {
     const map: Record<string, number> = {};
     nonTransfers.filter(t => t.type === 'expense' && isThisMonth(t.date))
@@ -61,7 +38,6 @@ export function DashboardPage() {
     return Object.entries(map).map(([name, value]) => ({ name, value, fill: colorMap[name] ?? '#9E9A92' }));
   }, [nonTransfers, colorMap]);
 
-  // Bar chart data (6 months)
   const barData = useMemo(() =>
     Array.from({ length: 6 }, (_, i) => {
       const offset = 5 - i;
@@ -72,7 +48,33 @@ export function DashboardPage() {
       };
     }), [nonTransfers]);
 
-  const recent = [...transactions].slice(0, 6);
+  const todayStr = today();
+
+  const recent = useMemo(
+    () => transactions
+      .filter(t => !!t.validated)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 6),
+    [transactions]
+  );
+
+  const toValidate = useMemo(
+    () => transactions
+      .filter(t => !t.validated && t.date <= todayStr)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 5),
+    [transactions, todayStr]
+  );
+
+  const upcoming = useMemo(
+    () => transactions
+      .filter(t => t.scheduled_id !== null && t.date > todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 5),
+    [transactions, todayStr]
+  );
+
+  const txItemProps = { accounts, logoMap };
 
   return (
     <div className="space-y-5">
@@ -137,13 +139,44 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent */}
+      {/* Transactions — À valider + À venir */}
+      {(toValidate.length > 0 || upcoming.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {toValidate.length > 0 && (
+            <Card>
+              <CardTitle>À valider</CardTitle>
+              <div className="flex flex-col gap-2 mt-1">
+                {toValidate.map(t => (
+                  <TxItem key={t.id} tx={t} {...txItemProps} />
+                ))}
+              </div>
+            </Card>
+          )}
+          {upcoming.length > 0 && (
+            <Card>
+              <CardTitle>À venir</CardTitle>
+              <div className="flex flex-col gap-2 mt-1">
+                {upcoming.map(t => (
+                  <TxItem key={t.id} tx={t} {...txItemProps} />
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Dernières transactions */}
       <Card>
-        <CardTitle>Dernières transactions</CardTitle>
-        {recent.length === 0
-          ? <Empty>Aucune transaction</Empty>
-          : recent.map(t => <TxRow key={t.id} tx={t} accounts={accounts} logoMap={logoMap} />)
-        }
+        <CardTitle>Dernières transactions validées</CardTitle>
+        {recent.length === 0 ? (
+          <Empty>Aucune transaction</Empty>
+        ) : (
+          <div className="flex flex-col gap-2 mt-1">
+            {recent.map(t => (
+              <TxItem key={t.id} tx={t} {...txItemProps} />
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

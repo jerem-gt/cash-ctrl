@@ -8,8 +8,8 @@ interface Props {
   tx: Transaction;
   accounts?: Account[];
   logoMap?: Record<string, string | null>;
-  onEdit: (tx: Transaction) => void;
-  onDelete: (tx: Transaction) => void;
+  onEdit?: (tx: Transaction) => void;
+  onDelete?: (tx: Transaction) => void;
 }
 
 export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Props>) {
@@ -79,15 +79,19 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Pro
         className={`transition-colors text-base leading-none px-1 ${validated ? 'text-green-500 hover:text-stone-400' : 'text-stone-300 hover:text-green-500'}`}
         title={validated ? 'Marquer comme non validée' : 'Valider'}
       >✓</button>
-      <button
-        onClick={() => onEdit(tx)}
-        className="text-stone-300 hover:text-stone-600 transition-colors text-sm leading-none px-1"
-        title="Modifier"
-      >✎</button>
-      <button
-        onClick={() => onDelete(tx)}
-        className="text-stone-300 hover:text-red-400 transition-colors text-lg leading-none px-1"
-      >×</button>
+      {onEdit && (
+        <button
+          onClick={() => onEdit(tx)}
+          className="text-stone-300 hover:text-stone-600 transition-colors text-sm leading-none px-1"
+          title="Modifier"
+        >✎</button>
+      )}
+      {onDelete && (
+        <button
+          onClick={() => onDelete(tx)}
+          className="text-stone-300 hover:text-red-400 transition-colors text-lg leading-none px-1"
+        >×</button>
+      )}
     </div>
   );
 }

@@ -64,9 +64,9 @@ export const accountTypesApi = {
 // Accounts
 export const accountsApi = {
   list: () => request<Account[]>('GET', '/api/accounts'),
-  create: (payload: { name: string; bank: string; type: string; initial_balance: number }) =>
+  create: (payload: { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number }) =>
     request<Account>('POST', '/api/accounts', payload),
-  update: (id: number, payload: { name: string; bank: string; type: string; initial_balance: number }) =>
+  update: (id: number, payload: { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number }) =>
     request<Account>('PUT', `/api/accounts/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/accounts/${id}`),
 };
@@ -100,8 +100,8 @@ export type ScheduledPayload = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category: string;
-  payment_method: string;
+  category_id: number;
+  payment_method_id: number;
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';
   recurrence_interval: number;
@@ -130,9 +130,9 @@ export const settingsApi = {
 export const transactionsApi = {
   list: (filters?: TransactionFilters) => {
     const params = new URLSearchParams();
-    if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
-    if (filters?.type != null)       params.set('type', filters.type);
-    if (filters?.category != null)   params.set('category', filters.category);
+    if (filters?.account_id  != null) params.set('account_id',  String(filters.account_id));
+    if (filters?.type        != null) params.set('type',         filters.type);
+    if (filters?.category_id != null) params.set('category_id',  String(filters.category_id));
     const qs = params.toString();
     const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
     return request<Transaction[]>('GET', url);
@@ -142,9 +142,9 @@ export const transactionsApi = {
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    category: string;
+    category_id: number;
     date: string;
-    payment_method?: string;
+    payment_method_id: number;
     notes?: string | null;
   }) => request<Transaction>('POST', '/api/transactions', payload),
   update: (id: number, payload: {
@@ -152,9 +152,9 @@ export const transactionsApi = {
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    category: string;
+    category_id: number;
     date: string;
-    payment_method: string;
+    payment_method_id: number;
     notes: string | null;
     validated: boolean;
   }) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),

@@ -18,7 +18,9 @@ const upload = multer({
 });
 
 export function createBanksRouter(db: Database.Database): Router {
-  const getBanks    = db.prepare<[], BankRecord>('SELECT * FROM banks ORDER BY name');
+  const getBanks    = db.prepare<[], BankRecord & { acc_count: number }>(
+    `SELECT b.*, COUNT(a.id) as acc_count FROM banks b LEFT JOIN accounts a ON a.bank_id = b.id GROUP BY b.id ORDER BY b.name`,
+  );
   const getBankById = db.prepare<[number], BankRecord>('SELECT * FROM banks WHERE id = ?');
   const insertBank  = db.prepare<[string, string | null]>('INSERT INTO banks (name, logo) VALUES (?, ?)');
   const updateBank  = db.prepare<[string, string | null, number]>('UPDATE banks SET name = ?, logo = ? WHERE id = ?');
@@ -61,6 +63,11 @@ export function createBanksRouter(db: Database.Database): Router {
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
     if (!getBankById.get(id)) { res.status(404).json({ error: 'Bank not found' }); return; }
+    const usage = db.prepare<[number], { cnt: number }>('SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = ?').get(id);
+    if (usage && usage.cnt > 0) {
+      res.status(409).json({ error: `Cette banque est utilisée par ${usage.cnt} compte(s).` });
+      return;
+    }
     deleteBank.run(id);
     res.json({ ok: true });
   });

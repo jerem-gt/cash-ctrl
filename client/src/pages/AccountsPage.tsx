@@ -19,24 +19,24 @@ export function AccountsPage() {
   const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
   const createAccount = useCreateAccount();
 
-  const [form, setForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
+  const [form, setForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '' });
 
   useEffect(() => {
-    if (!form.type && accountTypes[0]?.name) setForm(f => ({ ...f, type: accountTypes[0].name }));
+    if (!form.account_type_id && accountTypes[0]?.id) setForm(f => ({ ...f, account_type_id: String(accountTypes[0].id) }));
   }, [accountTypes]);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!form.name.trim()) { showToast('Donnez un nom au compte.'); return; }
-    if (!form.bank) { showToast('Choisissez une banque.'); return; }
+    if (!form.bank_id) { showToast('Choisissez une banque.'); return; }
     createAccount.mutate({
       name: form.name.trim(),
-      bank: form.bank.trim(),
-      type: form.type,
+      bank_id: Number.parseInt(form.bank_id) || null,
+      account_type_id: Number.parseInt(form.account_type_id) || null,
       initial_balance: Number.parseFloat(form.initial_balance) || 0,
     }, {
       onSuccess: () => {
-        setForm({ name: '', bank: '', type: accountTypes[0]?.name ?? '', initial_balance: '' });
+        setForm({ name: '', bank_id: '', account_type_id: String(accountTypes[0]?.id ?? ''), initial_balance: '' });
         showToast('Compte créé ✓');
       },
       onError: e => showToast(e.message),
@@ -46,7 +46,7 @@ export function AccountsPage() {
   const groups = accountTypes
     .map(t => ({
       type: t,
-      accounts: accounts.filter(a => a.type === t.name),
+      accounts: accounts.filter(a => a.account_type_id === t.id),
     }))
     .filter(g => g.accounts.length > 0);
 
@@ -66,11 +66,11 @@ export function AccountsPage() {
               <Input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Compte courant" className="min-w-44" />
             </FormGroup>
             <FormGroup label="Banque">
-              <BankSelect value={form.bank} onChange={v => setForm(f => ({ ...f, bank: v }))} banks={banks} />
+              <BankSelect value={form.bank_id} onChange={v => setForm(f => ({ ...f, bank_id: v }))} banks={banks} />
             </FormGroup>
             <FormGroup label="Type">
-              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-                {accountTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+              <Select value={form.account_type_id} onChange={e => setForm(f => ({ ...f, account_type_id: e.target.value }))}>
+                {accountTypes.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
               </Select>
             </FormGroup>
             <FormGroup label="Solde initial (€)">

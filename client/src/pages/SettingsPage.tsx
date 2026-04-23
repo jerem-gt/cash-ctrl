@@ -70,14 +70,18 @@ function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
     );
   }
 
+  const txCount = cat.tx_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <div className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ background: cat.color }} />
       <span className="flex-1 text-sm">{cat.name}</span>
-      <RowActions
-        onEdit={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }}
-        onDelete={() => onDelete(cat.id)}
-      />
+      {txCount > 0 && (
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{txCount} tx</span>
+      )}
+      {txCount === 0
+        ? <RowActions onEdit={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }} onDelete={() => onDelete(cat.id)} />
+        : <button onClick={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
+      }
     </div>
   );
 }
@@ -144,6 +148,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     );
   }
 
+  const accCount = bank.acc_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       {bank.logo
@@ -151,7 +156,13 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
         : <div className="w-5 h-5 rounded bg-stone-100 shrink-0" />
       }
       <span className="flex-1 text-sm">{bank.name}</span>
-      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(bank.id)} />
+      {accCount > 0 && (
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{accCount} compte(s)</span>
+      )}
+      {accCount === 0
+        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(bank.id)} />
+        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
+      }
     </div>
   );
 }
@@ -192,10 +203,17 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
     );
   }
 
+  const accCount = at.acc_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <span className="flex-1 text-sm">{at.name}</span>
-      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
+      {accCount > 0 && (
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{accCount} compte(s)</span>
+      )}
+      {accCount === 0
+        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
+        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
+      }
     </div>
   );
 }
@@ -235,11 +253,18 @@ function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
     );
   }
 
+  const txCount = pm.tx_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <span className="w-5 text-center text-base leading-none">{pm.icon}</span>
       <span className="flex-1 text-sm">{pm.name}</span>
-      <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(pm.id)} />
+      {txCount > 0 && (
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{txCount} tx</span>
+      )}
+      {txCount === 0
+        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(pm.id)} />
+        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
+      }
     </div>
   );
 }
@@ -344,7 +369,7 @@ export function SettingsPage() {
                   onDelete={id => setPendingDelete({
                     title: 'Supprimer la banque',
                     body: 'Les comptes existants garderont leur banque actuelle. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deleteBank.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Banque supprimée'); }, onError: () => setIsDeleting(false) }); },
+                    onConfirm: () => { setIsDeleting(true); deleteBank.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Banque supprimée'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
                   })}
                 />
               ))
@@ -374,7 +399,7 @@ export function SettingsPage() {
                   onDelete={id => setPendingDelete({
                     title: 'Supprimer le type de compte',
                     body: 'Les comptes existants garderont leur type actuel. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deleteAccountType.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Type supprimé'); }, onError: () => setIsDeleting(false) }); },
+                    onConfirm: () => { setIsDeleting(true); deleteAccountType.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Type supprimé'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
                   })}
                 />
               ))
@@ -409,8 +434,8 @@ export function SettingsPage() {
                   onSaved={() => showToast('Moyen de paiement mis à jour ✓')}
                   onDelete={id => setPendingDelete({
                     title: 'Supprimer le moyen de paiement',
-                    body: 'Les transactions existantes garderont leur moyen de paiement actuel. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deletePaymentMethod.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Moyen de paiement supprimé'); }, onError: () => setIsDeleting(false) }); },
+                    body: 'Confirmer la suppression ?',
+                    onConfirm: () => { setIsDeleting(true); deletePaymentMethod.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Moyen de paiement supprimé'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
                   })}
                 />
               ))
@@ -442,8 +467,8 @@ export function SettingsPage() {
                   onSaved={() => showToast('Catégorie mise à jour ✓')}
                   onDelete={id => setPendingDelete({
                     title: 'Supprimer la catégorie',
-                    body: 'Les transactions existantes garderont leur catégorie actuelle. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deleteCategory.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Catégorie supprimée'); }, onError: () => setIsDeleting(false) }); },
+                    body: 'Confirmer la suppression ?',
+                    onConfirm: () => { setIsDeleting(true); deleteCategory.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Catégorie supprimée'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
                   })}
                 />
               ))

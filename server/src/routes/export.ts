@@ -8,10 +8,16 @@ export function createExportRouter(db: Database.Database): Router {
 
   router.get('/csv', (req, res) => {
     const rows = db.prepare(`
-      SELECT t.date, t.type, t.description, t.category, a.name as account,
-             t.amount, t.payment_method, t.validated, t.notes
+      SELECT t.date, t.type, t.description,
+             COALESCE(c.name, '') as category,
+             a.name as account,
+             t.amount,
+             COALESCE(pm.name, '') as payment_method,
+             t.validated, t.notes
       FROM transactions t
       JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
       WHERE t.user_id = ?
       ORDER BY t.date DESC
     `).all(req.session.userId!) as Array<{
@@ -41,14 +47,24 @@ export function createExportRouter(db: Database.Database): Router {
   });
 
   router.get('/json', (req, res) => {
-    const accounts = db.prepare(
-      'SELECT id, name, bank, type, initial_balance, created_at FROM accounts WHERE user_id = ?',
-    ).all(req.session.userId!);
+    const accounts = db.prepare(`
+      SELECT a.id, a.name, COALESCE(b.name, '') as bank, COALESCE(at.name, '') as type, a.initial_balance, a.created_at
+      FROM accounts a
+      LEFT JOIN banks b ON a.bank_id = b.id
+      LEFT JOIN account_types at ON a.account_type_id = at.id
+      WHERE a.user_id = ?
+    `).all(req.session.userId!);
 
     const transactions = db.prepare(`
-      SELECT id, account_id, type, amount, description, category, date,
-             payment_method, validated, notes, transfer_peer_id, created_at
-      FROM transactions WHERE user_id = ?
+      SELECT t.id, t.account_id, t.type, t.amount, t.description,
+             t.category_id, t.payment_method_id,
+             COALESCE(c.name, '') as category,
+             COALESCE(pm.name, '') as payment_method,
+             t.date, t.validated, t.notes, t.transfer_peer_id, t.created_at
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+      WHERE t.user_id = ?
     `).all(req.session.userId!);
 
     const date = new Date().toISOString().split('T')[0];

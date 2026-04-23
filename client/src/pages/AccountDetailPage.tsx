@@ -43,7 +43,7 @@ export function AccountDetailPage() {
   const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', bank: '', type: '', initial_balance: '' });
+  const [editForm, setEditForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '' });
 
   const handleDeleteTx = () => {
     if (!deleteTx) return;
@@ -59,11 +59,11 @@ export function AccountDetailPage() {
     if (!editTx) return;
     const payload = editTx.transfer_peer_id
       ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
-          type: editTx.type, account_id: editTx.account_id, category: editTx.category,
-          payment_method: editTx.payment_method, notes: editTx.notes, validated: !!editTx.validated }
+          type: editTx.type, account_id: editTx.account_id, category_id: editTx.category_id ?? 0,
+          payment_method_id: editTx.payment_method_id ?? 0, notes: editTx.notes, validated: !!editTx.validated }
       : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
-          category: data.category, account_id: Number.parseInt(data.account_id), date: data.date,
-          payment_method: data.payment_method, notes: data.notes || null, validated: data.validated };
+          category_id: Number.parseInt(data.category_id), account_id: Number.parseInt(data.account_id), date: data.date,
+          payment_method_id: Number.parseInt(data.payment_method_id), notes: data.notes || null, validated: data.validated };
     updateTx.mutate(payload, {
       onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
       onError: (e) => showToast(e.message),
@@ -78,19 +78,18 @@ export function AccountDetailPage() {
 
   const openEdit = () => {
     if (!account) return;
-    setEditForm({ name: account.name, bank: account.bank ?? '', type: account.type, initial_balance: String(account.initial_balance) });
+    setEditForm({ name: account.name, bank_id: String(account.bank_id ?? ''), account_type_id: String(account.account_type_id ?? ''), initial_balance: String(account.initial_balance) });
     setEditOpen(true);
   };
 
   const handleEditSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!editForm.name.trim()) { showToast('Le nom est requis.'); return; }
-    if (!editForm.bank) { showToast('La banque est requise.'); return; }
     updateAccount.mutate({
       id: accountId,
       name: editForm.name.trim(),
-      bank: editForm.bank.trim(),
-      type: editForm.type,
+      bank_id: Number.parseInt(editForm.bank_id) || null,
+      account_type_id: Number.parseInt(editForm.account_type_id) || null,
       initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
     }, {
       onSuccess: () => { setEditOpen(false); showToast('Compte mis à jour ✓'); },
@@ -145,11 +144,11 @@ export function AccountDetailPage() {
                 <Input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nom" className="min-w-44" />
               </FormGroup>
               <FormGroup label="Banque">
-                <BankSelect value={editForm.bank} onChange={v => setEditForm(f => ({ ...f, bank: v }))} banks={banks} />
+                <BankSelect value={editForm.bank_id} onChange={v => setEditForm(f => ({ ...f, bank_id: v }))} banks={banks} />
               </FormGroup>
               <FormGroup label="Type">
-                <Select value={editForm.type || accountTypes[0]?.name} onChange={e => setEditForm(f => ({ ...f, type: e.target.value }))}>
-                  {accountTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                <Select value={editForm.account_type_id || String(accountTypes[0]?.id ?? '')} onChange={e => setEditForm(f => ({ ...f, account_type_id: e.target.value }))}>
+                  {accountTypes.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
                 </Select>
               </FormGroup>
               <FormGroup label="Solde initial (€)">

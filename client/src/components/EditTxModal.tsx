@@ -7,10 +7,10 @@ export type TxFormState = {
   type: 'income' | 'expense';
   amount: string;
   description: string;
-  category: string;
+  category_id: string;
   account_id: string;
   date: string;
-  payment_method: string;
+  payment_method_id: string;
   notes: string;
   validated: boolean;
 };
@@ -31,10 +31,10 @@ export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods,
     type: tx.type,
     amount: String(tx.amount),
     description: tx.description,
-    category: tx.category,
+    category_id: String(tx.category_id ?? ''),
     account_id: String(tx.account_id),
     date: tx.date,
-    payment_method: tx.payment_method ?? '',
+    payment_method_id: String(tx.payment_method_id ?? ''),
     notes: tx.notes ?? '',
     validated: !!tx.validated,
   });
@@ -43,7 +43,7 @@ export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods,
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!form.amount || !form.description || (!isTransfer && !form.account_id) || (!isTransfer && !form.payment_method)) {
+    if (!form.amount || !form.description || (!isTransfer && !form.account_id) || (!isTransfer && !form.payment_method_id)) {
       showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -78,8 +78,9 @@ export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods,
             {!isTransfer && (
               <>
                 <FormGroup label="Catégorie">
-                  <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  <Select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}>
+                    <option value="">— Choisir —</option>
+                    {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
                   </Select>
                 </FormGroup>
                 <FormGroup label="Compte">
@@ -92,9 +93,9 @@ export function EditTxModal({ tx, accounts, logoMap, categories, paymentMethods,
             </FormGroup>
             {!isTransfer && (
               <FormGroup label="Moyen de paiement">
-                <Select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                <Select value={form.payment_method_id} onChange={e => setForm(f => ({ ...f, payment_method_id: e.target.value }))}>
                   <option value="">— Choisir —</option>
-                  {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                  {paymentMethods.map(m => <option key={m.id} value={String(m.id)}>{m.icon} {m.name}</option>)}
                 </Select>
               </FormGroup>
             )}

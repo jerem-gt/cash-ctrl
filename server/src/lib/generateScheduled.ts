@@ -11,15 +11,17 @@ function insertTransfer(
   actualDateStr: string,
   insertTx: Stmt,
   setPeer: Stmt,
+  transferCategoryId: number,
+  transferPmId: number,
 ): void {
   const expenseId = Number(insertTx.run(
     sched.user_id, sched.account_id, 'expense', sched.amount,
-    sched.description, 'Transfert', actualDateStr, 'Transfert', sched.notes, sched.id,
+    sched.description, transferCategoryId, actualDateStr, transferPmId, sched.notes, sched.id,
   ).lastInsertRowid);
 
   const incomeId = Number(insertTx.run(
     sched.user_id, sched.to_account_id!, 'income', sched.amount,
-    sched.description, 'Transfert', actualDateStr, 'Transfert', sched.notes, sched.id,
+    sched.description, transferCategoryId, actualDateStr, transferPmId, sched.notes, sched.id,
   ).lastInsertRowid);
 
   setPeer.run(incomeId, expenseId);
@@ -33,6 +35,8 @@ function generateForSchedule(
   updateLastGen: Stmt,
   setPeer: Stmt,
   txDb: Db,
+  transferCategoryId: number | undefined,
+  transferPmId: number | undefined,
 ): void {
   let nominal: Date;
 
@@ -43,7 +47,7 @@ function generateForSchedule(
   }
 
   const endDate = sched.end_date ? parseDate(sched.end_date) : null;
-  const isTransfer = sched.payment_method === 'Transfert' && sched.to_account_id != null;
+  const isTransfer = sched.payment_method_id === transferPmId && sched.to_account_id != null;
   let lastNominal: string | null = null;
 
   txDb.transaction(() => {
@@ -53,13 +57,13 @@ function generateForSchedule(
       const actual = applyWeekend(nominal, sched.weekend_handling);
       const actualStr = dateStr(actual);
 
-      if (isTransfer) {
-        insertTransfer(sched, actualStr, insertTx, setPeer);
-      } else {
+      if (isTransfer && transferCategoryId && transferPmId) {
+        insertTransfer(sched, actualStr, insertTx, setPeer, transferCategoryId, transferPmId);
+      } else if (!isTransfer) {
         insertTx.run(
           sched.user_id, sched.account_id, sched.type, sched.amount,
-          sched.description, sched.category, actualStr,
-          sched.payment_method, sched.notes, sched.id,
+          sched.description, sched.category_id, actualStr,
+          sched.payment_method_id, sched.notes, sched.id,
         );
       }
 
@@ -83,13 +87,16 @@ export function generateScheduledTransactions(
   const horizon = new Date();
   horizon.setDate(horizon.getDate() + leadDays);
 
+  const transferCat = database.prepare(`SELECT id FROM categories WHERE name = 'Transfert'`).get() as { id: number } | undefined;
+  const transferPm  = database.prepare(`SELECT id FROM payment_methods WHERE name = 'Transfert'`).get() as { id: number } | undefined;
+
   const schedules = database.prepare(
     'SELECT * FROM scheduled_transactions WHERE user_id = ? AND active = 1',
   ).all(userId) as ScheduledTransaction[];
 
   const insertTx = database.prepare(`
     INSERT INTO transactions
-      (user_id, account_id, type, amount, description, category, date, payment_method, notes, scheduled_id)
+      (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes, scheduled_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
@@ -102,6 +109,6 @@ export function generateScheduledTransactions(
   );
 
   for (const sched of schedules) {
-    generateForSchedule(sched, horizon, insertTx, updateLastGen, setPeer, database);
+    generateForSchedule(sched, horizon, insertTx, updateLastGen, setPeer, database, transferCat?.id, transferPm?.id);
   }
 }

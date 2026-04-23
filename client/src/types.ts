@@ -2,11 +2,13 @@ export interface Bank {
   id: number;
   name: string;
   logo: string | null;
+  acc_count?: number;
 }
 
 export interface AccountType {
   id: number;
   name: string;
+  acc_count?: number;
 }
 
 export type TransactionType = 'income' | 'expense';
@@ -15,13 +17,16 @@ export interface Category {
   id: number;
   name: string;
   color: string;
+  tx_count?: number;
 }
 
 export interface Account {
   id: number;
   name: string;
-  bank: string;
-  type: string;
+  bank_id: number | null;
+  bank: string; // résolu par JOIN
+  account_type_id: number | null;
+  type: string; // résolu par JOIN
   initial_balance: number;
 }
 
@@ -31,12 +36,14 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   description: string;
-  category: string;
+  category_id: number | null;
+  category: string; // résolu par JOIN
   date: string;
   transfer_peer_id: number | null;
   scheduled_id: number | null;
   validated: 0 | 1;
-  payment_method: string;
+  payment_method_id: number | null;
+  payment_method: string; // résolu par JOIN
   notes: string | null;
   account_name?: string;
 }
@@ -51,8 +58,10 @@ export interface ScheduledTransaction {
   type: TransactionType;
   amount: number;
   description: string;
-  category: string;
-  payment_method: string;
+  category_id: number | null;
+  category: string; // résolu par JOIN
+  payment_method_id: number | null;
+  payment_method: string; // résolu par JOIN
   notes: string | null;
   recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;
@@ -73,10 +82,11 @@ export interface PaymentMethod {
   id: number;
   name: string;
   icon: string;
+  tx_count?: number;
 }
 
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
-  category?: string;
+  category_id?: number;
 }

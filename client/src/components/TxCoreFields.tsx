@@ -6,10 +6,10 @@ export interface TxCoreState {
   type: 'income' | 'expense';
   amount: string;
   description: string;
-  category: string;
+  category_id: string;
   account_id: string;
   to_account_id: string;
-  payment_method: string;
+  payment_method_id: string;
 }
 
 interface Props {
@@ -26,7 +26,8 @@ interface Props {
 export function TxCoreFields({
   value, onChange, accounts, logoMap, categories, paymentMethods, fixedAccountId,
 }: Readonly<Props>) {
-  const isTransfer = value.payment_method === 'Transfert';
+  const selectedPm = paymentMethods.find(m => String(m.id) === value.payment_method_id);
+  const isTransfer = selectedPm?.name === 'Transfert';
 
   const sourceAccount = fixedAccountId != null
     ? accounts.find(a => a.id === fixedAccountId)
@@ -36,11 +37,12 @@ export function TxCoreFields({
     ? accounts.filter(a => a.id !== fixedAccountId)
     : accounts.filter(a => String(a.id) !== value.account_id);
 
-  const handlePaymentMethodChange = (pm: string) => {
-    const nowTransfer = pm === 'Transfert';
-    const wasTransfer = value.payment_method === 'Transfert';
+  const handlePaymentMethodChange = (pmId: string) => {
+    const pm = paymentMethods.find(m => String(m.id) === pmId);
+    const nowTransfer = pm?.name === 'Transfert';
+    const wasTransfer = isTransfer;
     onChange({
-      payment_method: pm,
+      payment_method_id: pmId,
       description: nowTransfer
         ? `${sourceAccount?.name ?? ''} →`
         : wasTransfer ? '' : value.description,
@@ -49,7 +51,7 @@ export function TxCoreFields({
   };
 
   const handleSourceChange = (v: string) => {
-    if (value.payment_method === 'Transfert') {
+    if (isTransfer) {
       const newSource = accounts.find(a => String(a.id) === v);
       const dest = accounts.find(a => String(a.id) === value.to_account_id);
       onChange({
@@ -110,8 +112,9 @@ export function TxCoreFields({
       <div className="flex gap-3 flex-wrap">
         {!isTransfer && (
           <FormGroup label="Catégorie">
-            <Select value={value.category} onChange={e => onChange({ category: e.target.value })}>
-              {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            <Select value={value.category_id} onChange={e => onChange({ category_id: e.target.value })}>
+              <option value="">— Choisir —</option>
+              {categories.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
             </Select>
           </FormGroup>
         )}
@@ -137,9 +140,9 @@ export function TxCoreFields({
           </FormGroup>
         )}
         <FormGroup label="Moyen de paiement">
-          <Select value={value.payment_method} onChange={e => handlePaymentMethodChange(e.target.value)}>
+          <Select value={value.payment_method_id} onChange={e => handlePaymentMethodChange(e.target.value)}>
             <option value="">— Choisir —</option>
-            {paymentMethods.map(m => <option key={m.id} value={m.name}>{m.icon} {m.name}</option>)}
+            {paymentMethods.map(m => <option key={m.id} value={String(m.id)}>{m.icon} {m.name}</option>)}
           </Select>
         </FormGroup>
       </div>

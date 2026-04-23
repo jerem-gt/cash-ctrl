@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type Database from 'better-sqlite3';
-import type { Category } from '../db.js';
 import { requireAuth } from '../middleware.js';
 
 const categorySchema = z.object({
@@ -10,39 +9,51 @@ const categorySchema = z.object({
 });
 
 export function createCategoriesRouter(db: Database.Database): Router {
-  const getCategories   = db.prepare<[], Category>('SELECT * FROM categories ORDER BY created_at');
-  const getCategoryById = db.prepare<[number], Category>('SELECT * FROM categories WHERE id = ?');
-  const insertCategory  = db.prepare<[string, string]>('INSERT INTO categories (name, color) VALUES (?, ?)');
-  const updateCategory  = db.prepare<[string, string, number]>('UPDATE categories SET name = ?, color = ? WHERE id = ?');
-  const deleteCategory  = db.prepare<[number]>('DELETE FROM categories WHERE id = ?');
+  const getAll = db.prepare<[], { id: number; name: string; color: string; created_at: string; tx_count: number }>(`
+    SELECT c.*, COUNT(t.id) as tx_count
+    FROM categories c
+    LEFT JOIN transactions t ON t.category_id = c.id
+    GROUP BY c.id
+    ORDER BY c.created_at
+  `);
+  const getById      = db.prepare<[number], { id: number; name: string; color: string; created_at: string }>('SELECT * FROM categories WHERE id = ?');
+  const getTxCount   = db.prepare<[number], { n: number }>('SELECT COUNT(*) as n FROM transactions WHERE category_id = ?');
+  const insertCat    = db.prepare<[string, string]>('INSERT INTO categories (name, color) VALUES (?, ?)');
+  const updateCat    = db.prepare<[string, string, number]>('UPDATE categories SET name = ?, color = ? WHERE id = ?');
+  const deleteCat    = db.prepare<[number]>('DELETE FROM categories WHERE id = ?');
 
   const router = Router();
   router.use(requireAuth);
 
   router.get('/', (_req, res) => {
-    res.json(getCategories.all());
+    res.json(getAll.all());
   });
 
   router.post('/', (req, res) => {
     const parsed = categorySchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    const result = insertCategory.run(parsed.data.name.trim(), parsed.data.color);
-    res.status(201).json(getCategoryById.get(Number(result.lastInsertRowid)));
+    const result = insertCat.run(parsed.data.name.trim(), parsed.data.color);
+    res.status(201).json(getById.get(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
+    if (!getById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
     const parsed = categorySchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    updateCategory.run(parsed.data.name.trim(), parsed.data.color, id);
-    res.json(getCategoryById.get(id));
+    updateCat.run(parsed.data.name.trim(), parsed.data.color, id);
+    res.json(getById.get(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!getCategoryById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
-    deleteCategory.run(id);
+    if (!getById.get(id)) { res.status(404).json({ error: 'Category not found' }); return; }
+    const { n } = getTxCount.get(id)!;
+    if (n > 0) {
+      res.status(409).json({ error: `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.` });
+      return;
+    }
+    deleteCat.run(id);
     res.json({ ok: true });
   });
 

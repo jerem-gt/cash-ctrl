@@ -20,8 +20,8 @@ db.exec(`
     type                 TEXT NOT NULL CHECK(type IN ('income','expense')),
     amount               REAL NOT NULL CHECK(amount > 0),
     description          TEXT NOT NULL,
-    category             TEXT NOT NULL,
-    payment_method       TEXT NOT NULL DEFAULT '',
+    category_id          INTEGER REFERENCES categories(id),
+    payment_method_id    INTEGER REFERENCES payment_methods(id),
     notes                TEXT,
     recurrence_unit      TEXT NOT NULL CHECK(recurrence_unit IN ('day','week','month','year')),
     recurrence_interval  INTEGER NOT NULL DEFAULT 1 CHECK(recurrence_interval > 0),
@@ -86,19 +86,19 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS transactions (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    account_id       INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    type             TEXT NOT NULL CHECK(type IN ('income','expense')),
-    amount           REAL NOT NULL CHECK(amount > 0),
-    description      TEXT NOT NULL,
-    category         TEXT NOT NULL,
-    date             TEXT NOT NULL,
-    transfer_peer_id INTEGER,
-    validated        INTEGER NOT NULL DEFAULT 0,
-    payment_method   TEXT NOT NULL DEFAULT '',
-    notes            TEXT,
-    created_at       TEXT DEFAULT (datetime('now'))
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    account_id        INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    type              TEXT NOT NULL CHECK(type IN ('income','expense')),
+    amount            REAL NOT NULL CHECK(amount > 0),
+    description       TEXT NOT NULL,
+    category_id       INTEGER REFERENCES categories(id),
+    date              TEXT NOT NULL,
+    transfer_peer_id  INTEGER,
+    validated         INTEGER NOT NULL DEFAULT 0,
+    payment_method_id INTEGER REFERENCES payment_methods(id),
+    notes             TEXT,
+    created_at        TEXT DEFAULT (datetime('now'))
   );
 `);
 
@@ -112,6 +112,13 @@ try { db.exec('ALTER TABLE transactions ADD COLUMN notes TEXT'); } catch { /* al
 try { db.exec("ALTER TABLE accounts ADD COLUMN bank TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE banks ADD COLUMN logo TEXT'); } catch { /* already exists */ }
 try { db.exec("ALTER TABLE payment_methods ADD COLUMN icon TEXT NOT NULL DEFAULT ''"); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE transactions ADD COLUMN category_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE transactions ADD COLUMN payment_method_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE scheduled_transactions ADD COLUMN category_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE scheduled_transactions ADD COLUMN payment_method_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE accounts ADD COLUMN bank_id INTEGER'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE accounts ADD COLUMN account_type_id INTEGER'); } catch { /* already exists */ }
+try { db.exec("ALTER TABLE accounts ADD COLUMN type TEXT NOT NULL DEFAULT 'Courant'"); } catch { /* already exists */ }
 
 // Seed default banks (INSERT OR IGNORE so new defaults are added on each restart)
 const DEFAULT_BANKS = ['BoursoBank', 'Fortuneo', 'Crédit Agricole', 'Linxea', 'Amundi', 'BNP Paribas', 'Société Générale', 'Revolut', 'N26'];
@@ -148,6 +155,7 @@ const DEFAULT_CATEGORIES = [
   { name: 'Salaire',      color: '#2D8A50' },
   { name: 'Épargne',      color: '#4A7F5E' },
   { name: 'Autre',        color: '#9E9A92' },
+  { name: 'Transfert',    color: '#9E9A92' },
 ];
 {
   const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)');
@@ -168,6 +176,48 @@ const DEFAULT_PAYMENT_METHODS = [
   const seedPm = db.transaction(() => { for (const m of DEFAULT_PAYMENT_METHODS) insertPm.run(m.name, m.icon); });
   seedPm();
 }
+
+// Migration données : remplir category_id / payment_method_id depuis les anciennes colonnes texte
+{
+  const cols = (db.pragma('table_info(transactions)') as Array<{ name: string }>).map(c => c.name);
+  if (cols.includes('category')) {
+    db.transaction(() => {
+      db.prepare(`INSERT OR IGNORE INTO categories (name, color) SELECT DISTINCT category, '#9E9A92' FROM transactions WHERE category IS NOT NULL AND category != ''`).run();
+      db.prepare(`INSERT OR IGNORE INTO categories (name, color) SELECT DISTINCT category, '#9E9A92' FROM scheduled_transactions WHERE category IS NOT NULL AND category != ''`).run();
+      db.prepare(`INSERT OR IGNORE INTO payment_methods (name, icon) SELECT DISTINCT payment_method, '' FROM transactions WHERE payment_method IS NOT NULL AND payment_method != ''`).run();
+      db.prepare(`INSERT OR IGNORE INTO payment_methods (name, icon) SELECT DISTINCT payment_method, '' FROM scheduled_transactions WHERE payment_method IS NOT NULL AND payment_method != ''`).run();
+      db.prepare(`UPDATE transactions SET category_id = (SELECT id FROM categories WHERE name = transactions.category) WHERE category_id IS NULL AND category IS NOT NULL AND category != ''`).run();
+      db.prepare(`UPDATE transactions SET payment_method_id = (SELECT id FROM payment_methods WHERE name = transactions.payment_method) WHERE payment_method_id IS NULL AND payment_method IS NOT NULL AND payment_method != ''`).run();
+      db.prepare(`UPDATE scheduled_transactions SET category_id = (SELECT id FROM categories WHERE name = scheduled_transactions.category) WHERE category_id IS NULL AND category IS NOT NULL AND category != ''`).run();
+      db.prepare(`UPDATE scheduled_transactions SET payment_method_id = (SELECT id FROM payment_methods WHERE name = scheduled_transactions.payment_method) WHERE payment_method_id IS NULL AND payment_method IS NOT NULL AND payment_method != ''`).run();
+    })();
+  }
+}
+
+// Migration données : remplir bank_id / account_type_id depuis les anciennes colonnes texte
+{
+  const cols = (db.pragma('table_info(accounts)') as Array<{ name: string }>).map(c => c.name);
+  if (cols.includes('bank') || cols.includes('type')) {
+    db.transaction(() => {
+      if (cols.includes('bank')) {
+        db.prepare(`INSERT OR IGNORE INTO banks (name) SELECT DISTINCT "bank" FROM accounts WHERE "bank" IS NOT NULL AND "bank" != ''`).run();
+        db.prepare(`UPDATE accounts SET bank_id = (SELECT id FROM banks WHERE name = accounts."bank") WHERE bank_id IS NULL AND "bank" IS NOT NULL AND "bank" != ''`).run();
+      }
+      if (cols.includes('type')) {
+        db.prepare(`INSERT OR IGNORE INTO account_types (name) SELECT DISTINCT "type" FROM accounts WHERE "type" IS NOT NULL AND "type" != ''`).run();
+        db.prepare(`UPDATE accounts SET account_type_id = (SELECT id FROM account_types WHERE name = accounts."type") WHERE account_type_id IS NULL AND "type" IS NOT NULL AND "type" != ''`).run();
+      }
+    })();
+  }
+}
+
+// Suppression des colonnes texte legacy (remplacées par category_id / payment_method_id)
+try { db.exec('ALTER TABLE transactions DROP COLUMN category'); } catch { /* déjà supprimée ou inexistante */ }
+try { db.exec('ALTER TABLE transactions DROP COLUMN payment_method'); } catch { /* déjà supprimée ou inexistante */ }
+try { db.exec('ALTER TABLE scheduled_transactions DROP COLUMN category'); } catch { /* déjà supprimée ou inexistante */ }
+try { db.exec('ALTER TABLE scheduled_transactions DROP COLUMN payment_method'); } catch { /* déjà supprimée ou inexistante */ }
+try { db.exec('ALTER TABLE accounts DROP COLUMN bank'); } catch { /* déjà supprimée ou inexistante */ }
+try { db.exec('ALTER TABLE accounts DROP COLUMN type'); } catch { /* déjà supprimée ou inexistante */ }
 
 // Seed admin user
 const ADMIN_USER = process.env.ADMIN_USER ?? 'admin';
@@ -220,8 +270,10 @@ export interface Account {
   id: number;
   user_id: number;
   name: string;
-  bank: string;
-  type: string;
+  bank_id: number | null;
+  bank: string; // résolu par JOIN
+  account_type_id: number | null;
+  type: string; // résolu par JOIN
   initial_balance: number;
   created_at: string;
 }
@@ -233,12 +285,14 @@ export interface Transaction {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category: string;
+  category_id: number | null;
+  category: string; // résolu par JOIN
   date: string;
   transfer_peer_id: number | null;
   scheduled_id: number | null;
   validated: number; // 0 | 1
-  payment_method: string;
+  payment_method_id: number | null;
+  payment_method: string; // résolu par JOIN
   notes: string | null;
   created_at: string;
   account_name?: string;
@@ -251,8 +305,10 @@ export interface ScheduledTransaction {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category: string;
-  payment_method: string;
+  category_id: number | null;
+  category: string; // résolu par JOIN
+  payment_method_id: number | null;
+  payment_method: string; // résolu par JOIN
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';
   recurrence_interval: number;
@@ -302,37 +358,65 @@ export const queries = {
   getUserById: db.prepare<[number], User>('SELECT * FROM users WHERE id = ?'),
   updatePassword: db.prepare<[string, number]>('UPDATE users SET password_hash = ? WHERE id = ?'),
 
-  getAccounts: db.prepare<[number], Account>('SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at'),
-  insertAccount: db.prepare<[number, string, string, string, number]>(
-    'INSERT INTO accounts (user_id, name, bank, type, initial_balance) VALUES (?, ?, ?, ?, ?)'
+  getAccounts: db.prepare<[number], Account>(
+    `SELECT a.id, a.user_id, a.name, a.bank_id, a.account_type_id, a.initial_balance, a.created_at,
+            COALESCE(b.name, '') as bank, COALESCE(at.name, '') as type
+     FROM accounts a
+     LEFT JOIN banks b ON a.bank_id = b.id
+     LEFT JOIN account_types at ON a.account_type_id = at.id
+     WHERE a.user_id = ? ORDER BY a.created_at`
   ),
-  updateAccount: db.prepare<[string, string, string, number, number, number]>(
-    'UPDATE accounts SET name = ?, bank = ?, type = ?, initial_balance = ? WHERE id = ? AND user_id = ?'
+  insertAccount: db.prepare<[number, string, number | null, number | null, number]>(
+    'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance) VALUES (?, ?, ?, ?, ?)'
+  ),
+  updateAccount: db.prepare<[string, number | null, number | null, number, number, number]>(
+    'UPDATE accounts SET name = ?, bank_id = ?, account_type_id = ?, initial_balance = ? WHERE id = ? AND user_id = ?'
   ),
   deleteAccount: db.prepare<[number, number]>('DELETE FROM accounts WHERE id = ? AND user_id = ?'),
-  getAccountById: db.prepare<[number, number], Account>('SELECT * FROM accounts WHERE id = ? AND user_id = ?'),
+  getAccountById: db.prepare<[number, number], Account>(
+    `SELECT a.id, a.user_id, a.name, a.bank_id, a.account_type_id, a.initial_balance, a.created_at,
+            COALESCE(b.name, '') as bank, COALESCE(at.name, '') as type
+     FROM accounts a
+     LEFT JOIN banks b ON a.bank_id = b.id
+     LEFT JOIN account_types at ON a.account_type_id = at.id
+     WHERE a.id = ? AND a.user_id = ?`
+  ),
 
   getTransactions: db.prepare<[number], Transaction>(
-    `SELECT t.*, a.name as account_name
+    `SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
+            t.category_id, t.payment_method_id,
+            t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
+            a.name as account_name,
+            COALESCE(c.name, '') as category,
+            COALESCE(pm.name, '') as payment_method
      FROM transactions t
      JOIN accounts a ON t.account_id = a.id
+     LEFT JOIN categories c ON t.category_id = c.id
+     LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
      WHERE t.user_id = ?
      ORDER BY t.date DESC, t.created_at DESC`
   ),
-  insertTransaction: db.prepare<[number, number, string, number, string, string, string, string, string | null]>(
-    'INSERT INTO transactions (user_id, account_id, type, amount, description, category, date, payment_method, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  insertTransaction: db.prepare<[number, number, string, number, string, number | null, string, number | null, string | null]>(
+    'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ),
-  updateTransaction: db.prepare<[number, string, number, string, string, string, string, string | null, number, number, number]>(
-    'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category = ?, date = ?, payment_method = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?'
+  updateTransaction: db.prepare<[number, string, number, string, number | null, string, number | null, string | null, number, number, number]>(
+    'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?'
   ),
   deleteTransaction: db.prepare<[number, number]>('DELETE FROM transactions WHERE id = ? AND user_id = ?'),
   getTransactionById: db.prepare<[number, number], Transaction>(
     'SELECT * FROM transactions WHERE id = ? AND user_id = ?'
   ),
   getTransactionsByAccount: db.prepare<[number, number], Transaction>(
-    `SELECT t.*, a.name as account_name
+    `SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
+            t.category_id, t.payment_method_id,
+            t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
+            a.name as account_name,
+            COALESCE(c.name, '') as category,
+            COALESCE(pm.name, '') as payment_method
      FROM transactions t
      JOIN accounts a ON t.account_id = a.id
+     LEFT JOIN categories c ON t.category_id = c.id
+     LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
      WHERE t.user_id = ? AND t.account_id = ?
      ORDER BY t.date DESC, t.created_at DESC`
   ),
