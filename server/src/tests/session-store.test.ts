@@ -17,7 +17,7 @@ function makeSession(offsetMs = 60_000): SessionData {
   } as unknown as SessionData;
 }
 
-function promisify<T>(fn: (cb: (err: unknown, result?: T) => void) => void): Promise<T | undefined> {
+function promisify<T>(fn: (cb: (err: unknown, result?: T | null) => void) => void): Promise<T | null | undefined> {
   return new Promise((resolve, reject) => fn((err, result) => err ? reject(err) : resolve(result)));
 }
 
