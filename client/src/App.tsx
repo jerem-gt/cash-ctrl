@@ -5,6 +5,7 @@ import { useMe } from '@/hooks/useAuth';
 import { Sidebar } from '@/components/Sidebar';
 import { Toast } from '@/components/ui';
 import { LoginPage } from '@/pages/LoginPage';
+import { appName } from "@/lib/appname.ts";
 
 const DashboardPage    = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
@@ -21,6 +22,9 @@ const qc = new QueryClient({
 });
 
 function AppShell() {
+  // Ajoute (dev) au titre si on est hors production
+  document.title = appName();
+
   const { data: me, isLoading } = useMe();
 
   if (isLoading) {

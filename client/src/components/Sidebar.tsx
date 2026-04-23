@@ -6,6 +6,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
 import { computeBalance } from '@/lib/account';
+import { appName } from "@/lib/appname.ts";
 import type { Account } from '@/types';
 
 type GroupBy = 'bank' | 'type';
@@ -76,7 +77,7 @@ export function Sidebar({ username }: Readonly<Props>) {
     <aside className="fixed inset-y-0 left-0 w-56 bg-[#141210] text-[#F4F1EB] flex flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-7 border-b border-white/[0.07]">
-        <h1 className="font-serif text-xl tracking-tight">CashCtrl</h1>
+        <h1 className="font-serif text-xl tracking-tight">{appName()}</h1>
         <p className="text-[10px] text-white/30 mt-1 uppercase tracking-widest">Suivi personnel</p>
       </div>
 
@@ -103,7 +104,7 @@ export function Sidebar({ username }: Readonly<Props>) {
               }
             >
               <span className="text-[15px] w-4 text-center opacity-80">▣</span>
-              Comptes
+              <span>Comptes</span>
             </NavLink>
 
             {expanded && (

@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useLogin } from '@/hooks/useAuth';
 import { Button, Input, FormGroup } from '@/components/ui';
-import { SyntheticEvent } from "react";
+import { appName } from "@/lib/appname.ts";
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     login.reset();
     login.mutate({ username, password });
@@ -17,7 +17,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-stone-100 flex items-center justify-center p-6">
       <div className="bg-white border border-black/[0.07] rounded-2xl p-8 w-full max-w-sm shadow-lg">
-        <h1 className="font-serif text-2xl mb-1">CashCtrl</h1>
+        <h1 className="font-serif text-2xl mb-1">{appName()}</h1>
         <p className="text-sm text-stone-400 mb-7">Connectez-vous pour accéder à vos comptes</p>
 
         {login.error && (
