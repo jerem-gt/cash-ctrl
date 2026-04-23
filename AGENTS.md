@@ -12,21 +12,28 @@ CashCtrl est une application de suivi de finances personnelles en monorepo npm w
 
 ### Serveur (`server/src/`)
 
-**`db.ts`** — Source de vérité unique pour la base de données.
+**`app.ts`** — Factory `createApp(db, options?)` qui configure Express.
+- Session middleware avec `SQLiteSessionStore`
+- Enregistrement des 11 router factories
+- Utilisé par `index.ts` (prod) et `createTestContext()` (tests)
+
+**`session-store.ts`** — `SQLiteSessionStore extends Store` (express-session).
+- Stocke les sessions dans la table `sessions` de la même DB SQLite
+- Remplace `connect-sqlite3` (failles de sécurité)
+- Nettoyage automatique des sessions expirées toutes les heures
+
+**`db.ts`** — Initialisation de la base de données.
 - Toutes les tables sont créées ici (`CREATE TABLE IF NOT EXISTS`)
 - Les migrations légères (ex : `ALTER TABLE`) sont appliquées ici au démarrage
 - Les seeds utilisent `INSERT OR IGNORE` pour être idempotents
-- Toutes les requêtes préparées sont exportées depuis ce fichier
-- Ne pas créer de requêtes SQL ailleurs
 
 **`lib/`** — Logique métier découplée de la couche HTTP.
 - `scheduledLogic.ts` — Fonctions **pures** de calcul de dates de récurrence (aucun import DB). À importer depuis les tests unitaires.
-- `generateScheduled.ts` — Génération idempotente des transactions planifiées. Accepte un paramètre `database` optionnel (défaut : `defaultDb`) pour l'injection en tests.
+- `generateScheduled.ts` — Génération idempotente des transactions planifiées. Prend `db` en paramètre pour l'injection en tests.
 
-**`routes/`** — Un fichier par ressource. Pattern uniforme :
-1. Zod schema pour valider le body
-2. Appel aux queries préparées de `db.ts`
-3. Réponse JSON
+**`routes/`** — Un fichier par ressource, chacun exporte une factory `createXxxRouter(db: Database)`.
+- Les requêtes préparées sont créées localement dans chaque factory (pas de singleton global)
+- Pattern uniforme : Zod schema → requêtes préparées → réponse JSON
 
 **`logoDownloader.ts`** — Télécharge les logos des banques par défaut au démarrage via l'API favicon de Google. Les logos sont stockés dans `DATA_DIR/logos/`.
 
@@ -96,17 +103,35 @@ cd client && npx tsc --noEmit
 cd server && npx tsc --noEmit
 ```
 
-Tests serveur (Vitest) :
+Tests serveur (Vitest, 133 tests) :
 ```bash
-npm test --workspace=server        # Exécution unique
+npm test --workspace=server            # Exécution unique
 npm run test:watch --workspace=server  # Mode watch
 ```
+
+Structure des tests :
+- `tests/session-store.test.ts` — TU du store de sessions (async/await, pas `done`)
+- `tests/middleware.test.ts` — TU du guard `requireAuth`
+- `tests/scheduledLogic.test.ts` / `generateScheduled.test.ts` — TU logique récurrence
+- `tests/routes/*.test.ts` — TI supertest par ressource (11 fichiers)
+- `tests/helpers/testDb.ts` — `createTestDb()` SQLite `:memory:` + `setupFixtures()`
+- `tests/helpers/testApp.ts` — `createTestContext()` : crée une app + agent supertest authentifié
+
+Chaque suite de tests appelle `createTestContext()` dans `beforeAll` pour obtenir une DB et un agent isolés. Ne pas partager de contexte entre suites.
 
 > **Attention tsx cache** : `tsx watch` maintient un cache disque dans `node_modules/.cache/tsx/`. Le script `dev` utilise `--no-cache` pour éviter de servir du code compilé périmé.
 
 ## Déploiement
 
 CI/CD via GitHub Actions → image Docker `ghcr.io/jerem-gt/cash-ctrl:latest` → Watchtower pull auto.
+
+Pipeline Docker (stages BuildKit) :
+1. `deps-server` — `npm ci` + compilation native (better-sqlite3, bcrypt)
+2. `deps-client` — `npm ci` client (parallèle avec deps-server)
+3. `test` — `npm test` (bloque le build si un test échoue)
+4. `build-server` — `tsc` (hérite de `test`)
+5. `build-client` — `vite build` (parallèle avec test/build-server)
+6. `runner` — image finale, copie `node_modules` compilés depuis `build-server` + `npm prune --omit=dev`
 
 **Important** : les changements ne sont visibles en production qu'après rebuild et push de l'image. Tester en dev d'abord.
 
@@ -122,4 +147,6 @@ Le dossier `data/` est monté en volume Docker et contient :
 - **`computeBalance`** : définie dans `client/src/lib/account.ts`, importée par Sidebar, DashboardPage et AccountsPage
 - **tsx cache** : `tsx watch` peut servir du code compilé périmé si le cache n'est pas invalidé. Utiliser `tsx watch --no-cache` (déjà dans le script `dev`) ou reconstruire avec `npm run build` + `node dist/index.js`
 - **DATA_DIR relatif** : `.env` a `DATA_DIR=./data`, résolu depuis le CWD. En workspace, CWD = `server/`, donc la vraie DB est dans `server/data/`. En test, utiliser une DB `:memory:` via injection.
-- **Testabilité de generateScheduled** : les requêtes SQL sont créées à l'intérieur de `generateScheduledTransactions`, pas en module-level, pour permettre l'injection d'une DB de test via le second paramètre optionnel.
+- **Testabilité des routes** : les routers sont des factory functions `createXxxRouter(db)`. Ne pas revenir à des singletons module-level — cela casserait l'isolation des tests.
+- **Tests session-store** : utiliser `async/await` + helpers `promisify`/`promisifyVoid`. Le pattern `done` est déprécié dans Vitest 4.x (erreur `done() callback is deprecated`).
+- **Testabilité de generateScheduled** : les requêtes SQL sont créées à l'intérieur de `generateScheduledTransactions`, pas en module-level, pour permettre l'injection d'une DB de test via le paramètre `db`.

@@ -12,7 +12,7 @@ Application de suivi de comptes bancaires personnels.
 | Graphiques | Recharts |
 | Backend | Node.js 24 + Express 5 + TypeScript |
 | Base de données | SQLite (better-sqlite3) |
-| Auth | Sessions serveur + bcrypt |
+| Auth | Sessions serveur (SQLiteSessionStore) + bcrypt |
 | Validation | Zod |
 | Upload fichiers | Multer |
 | CI/CD | GitHub Actions → ghcr.io → Watchtower |
@@ -52,7 +52,7 @@ Application de suivi de comptes bancaires personnels.
 - Les transactions générées conservent leur `scheduled_id` pour traçabilité
 
 ### Export
-- Export CSV des transactions avec filtres
+- Export CSV et JSON des transactions
 
 ### Paramètres
 - Gestion des catégories de transactions (nom + couleur)
@@ -103,13 +103,16 @@ cashctrl/
 │       └── types/           # Types partagés
 ├── server/                  # Express + TypeScript
 │   └── src/
-│       ├── db.ts            # SQLite + queries typées
+│       ├── app.ts           # Factory createApp(db) — Express + session + routes
+│       ├── db.ts            # Initialisation SQLite (tables, migrations, seeds)
+│       ├── session-store.ts # SQLiteSessionStore (better-sqlite3)
+│       ├── index.ts         # Point d'entrée production
 │       ├── logoDownloader.ts # Téléchargement des logos de banques au démarrage
-│       ├── middleware.ts    # Auth guard
+│       ├── middleware.ts    # Auth guard (requireAuth)
 │       ├── lib/
 │       │   ├── scheduledLogic.ts  # Fonctions pures de calcul de récurrence
 │       │   └── generateScheduled.ts # Génération des transactions planifiées
-│       ├── routes/
+│       ├── routes/          # Factory functions createXxxRouter(db)
 │       │   ├── auth.ts
 │       │   ├── accounts.ts
 │       │   ├── account-types.ts
@@ -121,10 +124,15 @@ cashctrl/
 │       │   ├── scheduled.ts # CRUD transactions planifiées
 │       │   ├── settings.ts  # lead_days par utilisateur
 │       │   └── export.ts
-│       └── tests/           # Vitest — TU et TI
+│       └── tests/           # Vitest — 133 tests (TU + TI)
+│           ├── session-store.test.ts
+│           ├── middleware.test.ts
 │           ├── scheduledLogic.test.ts
 │           ├── generateScheduled.test.ts
-│           └── helpers/testDb.ts
+│           ├── helpers/
+│           │   ├── testDb.ts   # SQLite :memory: avec schéma complet
+│           │   └── testApp.ts  # createTestContext() — app + agent supertest authentifié
+│           └── routes/      # Tests d'intégration par ressource (11 fichiers)
 ├── .github/workflows/ci.yml
 ├── Dockerfile
 ├── docker-compose.yml
@@ -164,6 +172,7 @@ cashctrl/
 | PUT | `/api/payment-methods/:id` | Modifier |
 | DELETE | `/api/payment-methods/:id` | Supprimer |
 | GET | `/api/export/csv` | Export CSV des transactions |
+| GET | `/api/export/json` | Export JSON (backup complet) |
 | GET | `/logos/:filename` | Fichiers logo statiques |
 | GET | `/api/scheduled` | Liste des transactions planifiées |
 | POST | `/api/scheduled` | Créer une planification |
