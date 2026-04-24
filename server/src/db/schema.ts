@@ -72,6 +72,7 @@ export function initSchema(db: Database) {
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             name       TEXT UNIQUE NOT NULL,
             logo       TEXT,
+            domain     TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         );
 
@@ -104,4 +105,17 @@ export function initSchema(db: Database) {
 
     // Migrations
     try { db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT'); } catch {}
+    try { db.exec('ALTER TABLE banks ADD COLUMN domain TEXT'); } catch {}
+
+    db.exec(`
+        UPDATE banks SET domain = 'boursobank.com'      WHERE name = 'BoursoBank'       AND domain IS NULL;
+        UPDATE banks SET domain = 'fortuneo.fr'         WHERE name = 'Fortuneo'          AND domain IS NULL;
+        UPDATE banks SET domain = 'credit-agricole.fr'  WHERE name = 'Crédit Agricole'   AND domain IS NULL;
+        UPDATE banks SET domain = 'linxea.com'          WHERE name = 'Linxea'            AND domain IS NULL;
+        UPDATE banks SET domain = 'amundi.com'          WHERE name = 'Amundi'            AND domain IS NULL;
+        UPDATE banks SET domain = 'bnpparibas.com'      WHERE name = 'BNP Paribas'       AND domain IS NULL;
+        UPDATE banks SET domain = 'societegenerale.com' WHERE name = 'Société Générale'  AND domain IS NULL;
+        UPDATE banks SET domain = 'revolut.com'         WHERE name = 'Revolut'           AND domain IS NULL;
+        UPDATE banks SET domain = 'n26.com'             WHERE name = 'N26'               AND domain IS NULL;
+    `);
 }

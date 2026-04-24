@@ -6,7 +6,10 @@ import { LOGOS_DIR } from '../../logoDownloader.js';
 import type { Database } from 'better-sqlite3';
 import { createBanksRepo } from './banks.repo';
 
-const schema = z.object({ name: z.string().min(1).max(100) });
+const schema = z.object({
+  name: z.string().min(1).max(100),
+  domain: z.string().max(253).nullable().optional(),
+});
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -29,7 +32,8 @@ export function createBanksRouter(db: Database): Router {
   router.post('/', (req, res) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    const result = banksRepo.create(parsed.data.name.trim());
+    const domain = parsed.data.domain?.trim() || null;
+    const result = banksRepo.create(parsed.data.name.trim(), domain);
     res.status(201).json(banksRepo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -39,7 +43,8 @@ export function createBanksRouter(db: Database): Router {
     if (!bank) { res.status(404).json({ error: 'Bank not found' }); return; }
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    banksRepo.update(id, parsed.data.name.trim(), bank.logo);
+    const domain = parsed.data.domain !== undefined ? (parsed.data.domain?.trim() || null) : bank.domain;
+    banksRepo.update(id, parsed.data.name.trim(), bank.logo, domain);
     res.json(banksRepo.getById(id));
   });
 
@@ -48,7 +53,7 @@ export function createBanksRouter(db: Database): Router {
     const bank = banksRepo.getById(id);
     if (!bank) { res.status(404).json({ error: 'Bank not found' }); return; }
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
-    banksRepo.update(id, bank.name, `/logos/${req.file.filename}`);
+    banksRepo.update(id, bank.name, `/logos/${req.file.filename}`, bank.domain);
     res.json(banksRepo.getById(id));
   });
 

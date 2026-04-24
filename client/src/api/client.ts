@@ -42,8 +42,8 @@ export const authApi = {
 // Banks
 export const banksApi = {
   list: () => request<Bank[]>('GET', '/api/banks'),
-  create: (payload: { name: string }) => request<Bank>('POST', '/api/banks', payload),
-  update: (id: number, payload: { name: string }) => request<Bank>('PUT', `/api/banks/${id}`, payload),
+  create: (payload: { name: string; domain?: string | null }) => request<Bank>('POST', '/api/banks', payload),
+  update: (id: number, payload: { name: string; domain?: string | null }) => request<Bank>('PUT', `/api/banks/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/banks/${id}`),
   uploadLogo: async (id: number, file: File): Promise<Bank> => {
     const fd = new FormData();

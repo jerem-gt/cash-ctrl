@@ -108,6 +108,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
   const uploadLogo = useUploadBankLogo();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(bank.name);
+  const [domain, setDomain] = useState(bank.domain ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -122,7 +123,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     if (!name.trim()) return;
     try {
       if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
-      await updateBank.mutateAsync({ id: bank.id, name: name.trim() });
+      await updateBank.mutateAsync({ id: bank.id, name: name.trim(), domain: domain.trim() || null });
       setEditing(false);
       setFile(null);
       setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
@@ -135,6 +136,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
   const cancelEdit = () => {
     setEditing(false);
     setName(bank.name);
+    setDomain(bank.domain ?? '');
     setFile(null);
     setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
   };
@@ -144,6 +146,7 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     return (
       <form onSubmit={handleSave} className="flex flex-col gap-2 py-3 border-b border-black/[0.06] last:border-0">
         <Input type="text" value={name} onChange={e => setName(e.target.value)} className="text-sm" placeholder="Nom" autoFocus />
+        <Input type="text" value={domain} onChange={e => setDomain(e.target.value)} className="text-sm" placeholder="Domaine (ex : boursobank.com)" />
         <div className="flex items-center gap-2">
           {logoSrc && <img src={logoSrc} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />}
           <label className="flex-1 cursor-pointer">
@@ -299,7 +302,7 @@ export function SettingsPage() {
   const { data: banks = [], isLoading: banksLoading } = useBanks();
   const createBank = useCreateBank();
   const deleteBank = useDeleteBank();
-  const [newBankName, setNewBankName] = useState('');
+  const [newBank, setNewBank] = useState({ name: '', domain: '' });
 
   const { data: paymentMethods = [], isLoading: pmsLoading } = usePaymentMethods();
   const createPaymentMethod = useCreatePaymentMethod();
@@ -345,9 +348,9 @@ export function SettingsPage() {
 
   const handleAddBank = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newBankName.trim()) { showToast('Donnez un nom à la banque.'); return; }
-    createBank.mutate({ name: newBankName.trim() }, {
-      onSuccess: () => { setNewBankName(''); showToast('Banque ajoutée ✓'); },
+    if (!newBank.name.trim()) { showToast('Donnez un nom à la banque.'); return; }
+    createBank.mutate({ name: newBank.name.trim(), domain: newBank.domain.trim() || null }, {
+      onSuccess: () => { setNewBank({ name: '', domain: '' }); showToast('Banque ajoutée ✓'); },
       onError: err => showToast(err.message),
     });
   };
@@ -390,7 +393,10 @@ export function SettingsPage() {
         </div>
         <form onSubmit={handleAddBank} className="flex gap-2 items-end flex-wrap">
           <FormGroup label="Nom">
-            <Input type="text" value={newBankName} onChange={e => setNewBankName(e.target.value)} placeholder="Ex : Fortuneo" className="min-w-44" />
+            <Input type="text" value={newBank.name} onChange={e => setNewBank(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Fortuneo" className="min-w-44" />
+          </FormGroup>
+          <FormGroup label="Domaine">
+            <Input type="text" value={newBank.domain} onChange={e => setNewBank(f => ({ ...f, domain: e.target.value }))} placeholder="Ex : fortuneo.fr" className="min-w-44" />
           </FormGroup>
           <Button type="submit" variant="primary" disabled={createBank.isPending}>
             {createBank.isPending ? '…' : 'Ajouter'}

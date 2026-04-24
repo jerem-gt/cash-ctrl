@@ -16,7 +16,7 @@ export function useCreateBank() {
 export function useUpdateBank() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: number; name: string }) => banksApi.update(id, payload),
+    mutationFn: ({ id, ...payload }: { id: number; name: string; domain?: string | null }) => banksApi.update(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['banks'] }),
   });
 }

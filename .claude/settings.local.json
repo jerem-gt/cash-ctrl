@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(sed -n '55,75p' /c/Users/jerem/WebstormProjects/cash-ctrl/client/src/pages/TransactionsPage.tsx)",
+      "Bash(sed -n '118,130p' /c/Users/jerem/WebstormProjects/cash-ctrl/client/src/pages/AccountDetailPage.tsx)",
+      "Bash(npx tsx *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const D = require\\('better-sqlite3'\\); const db = new D\\(':memory:'\\); const s = db.prepare\\('SELECT 1'\\); console.log\\(Object.getPrototypeOf\\(s\\).constructor.name\\);\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npx vitest *)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}

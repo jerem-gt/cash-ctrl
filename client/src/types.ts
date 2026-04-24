@@ -2,6 +2,7 @@ export interface Bank {
   id: number;
   name: string;
   logo: string | null;
+  domain: string | null;
   acc_count?: number;
 }
 

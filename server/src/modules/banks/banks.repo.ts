@@ -23,12 +23,12 @@ export function createBanksRepo(db: Database) {
       }>('SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = ?').get(id)?.cnt ?? 0;
     },
 
-    create(name: string) {
-      return db.prepare('INSERT INTO banks (name, logo) VALUES (?, ?)').run(name, null);
+    create(name: string, domain: string | null) {
+      return db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, NULL, ?)').run(name, domain);
     },
 
-    update(id: number, name: string, logo: string | null) {
-      return db.prepare('UPDATE banks SET name = ?, logo = ? WHERE id = ?').run(name, logo, id);
+    update(id: number, name: string, logo: string | null, domain: string | null) {
+      return db.prepare('UPDATE banks SET name = ?, logo = ?, domain = ? WHERE id = ?').run(name, logo, domain, id);
     },
 
     updateLogo(id: number, logo: string): void {

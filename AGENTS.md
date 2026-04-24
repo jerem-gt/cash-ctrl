@@ -39,7 +39,7 @@ CashCtrl est une application de suivi de finances personnelles en monorepo npm w
 
 Les 11 modules : `auth`, `accounts`, `account-types`, `transactions`, `transfers`, `banks`, `categories`, `payment-methods`, `scheduled`, `settings`, `export`.
 
-**`logoDownloader.ts`** — Télécharge les logos des banques par défaut au démarrage via l'API favicon de Google. Les logos sont stockés dans `DATA_DIR/logos/`.
+**`logoDownloader.ts`** — Télécharge les logos des banques au démarrage via l'API favicon de Google, pour toutes les banques dont le champ `domain` est renseigné. Les logos sont stockés dans `DATA_DIR/logos/`.
 
 **Serving des fichiers statiques** : `GET /logos/:filename` servi par `express.static`.
 
@@ -79,7 +79,8 @@ Les 11 modules : `auth`, `accounts`, `account-types`, `transactions`, `transfers
 ### Banques et logos
 - Le logo d'une banque est stocké localement dans `data/logos/bank-{id}.png`
 - L'URL servie est `/logos/bank-{id}.png` (proxy Vite en dev, Express static en prod)
-- La correspondance banque ↔ domaine pour le téléchargement auto est dans `logoDownloader.ts` (tableau `BANK_CONFIG`, clés sans accents)
+- Le champ `domain` (ex : `boursobank.com`) est stocké en base dans la table `banks`. `logoDownloader.ts` l'utilise directement — il n'y a plus de tableau `BANK_CONFIG` dans le code.
+- Les banques seedées par défaut ont leur domaine pré-rempli. Une migration dans `schema.ts` rétroactive les banques existantes au démarrage.
 - Dans les pages, construire un `logoMap` une seule fois via `useMemo` : `Object.fromEntries(banks.map(b => [b.name, b.logo]))`. Passer ce `Record<string, string | null>` aux composants plutôt que le tableau `banks[]` pour éviter les `.find()` répétés.
 
 ### Types configurables en base
@@ -107,27 +108,28 @@ cd client && npx tsc --noEmit
 cd server && npx tsc --noEmit
 ```
 
-Tests serveur (Vitest, 133 tests) :
+Tests serveur (Vitest, 135 tests) :
 ```bash
-npm test --workspace=server            # Exécution unique
-npm run test:watch --workspace=server  # Mode watch
+npm test --workspace=server                    # Exécution unique
+npm run test:coverage --workspace=server       # Avec rapport lcov (coverage/)
+npm run test:watch --workspace=server          # Mode watch
 ```
 
-Structure des tests :
-- `tests/session-store.test.ts` — TU du store de sessions (async/await, pas `done`)
-- `tests/middleware.test.ts` — TU du guard `requireAuth`
-- `tests/scheduledLogic.test.ts` / `generateScheduled.test.ts` — TU logique récurrence
-- `tests/routes/*.test.ts` — TI supertest par ressource (11 fichiers)
-- `tests/helpers/testDb.ts` — trois helpers de DB :
+Structure des tests (arborescence miroir des sources) :
+- `src/session-store.test.ts` — TU du store de sessions (async/await, pas `done`)
+- `src/middleware.test.ts` — TU du guard `requireAuth`
+- `src/lib/scheduledLogic.test.ts` / `generateScheduled.test.ts` — TU logique récurrence
+- `src/modules/{module}/{module}.routes.test.ts` — TI supertest par ressource (11 fichiers)
+- `src/tests/helpers/testDb.ts` — trois helpers de DB :
   - `createTestDb()` — SQLite `:memory:` + `initSchema` + seeds de référence (banks, catégories, PM…)
   - `seedTestReferenceData(db)` — insère uniquement les seeds de référence (utilisé par `createTestDb`)
   - `setupFixtures()` — `createTestDb()` + user + 2 comptes ; pour les TU sans couche HTTP
-- `tests/helpers/testApp.ts` — `createTestContext()` : `createTestDb()` + `createApp` + agent supertest authentifié
+- `src/tests/helpers/testApp.ts` — `createTestContext()` : `createTestDb()` + `createApp` + agent supertest authentifié
 
 Patterns d'isolation par type de test :
-- **Routes** (`tests/routes/*.test.ts`) : `createTestContext()` dans `beforeAll` — DB et agent partagés au sein d'une suite, isolés entre suites
+- **Routes** (`modules/{module}/*.routes.test.ts`) : `createTestContext()` dans `beforeAll` — DB et agent partagés au sein d'une suite, isolés entre suites
 - **`generateScheduled.test.ts`** : `setupFixtures()` dans `beforeEach` — DB fraîche à chaque test (les tests modifient l'état de la DB)
-- **`auth.test.ts`** : `setup()` locale dans chaque `it` — app fraîche par test (les tests modifient la session)
+- **`auth.routes.test.ts`** : `setup()` locale dans chaque `it` — app fraîche par test (les tests modifient la session)
 
 > **Attention tsx cache** : `tsx watch` maintient un cache disque dans `node_modules/.cache/tsx/`. Le script `dev` utilise `--no-cache` pour éviter de servir du code compilé périmé.
 
@@ -135,13 +137,12 @@ Patterns d'isolation par type de test :
 
 CI/CD via GitHub Actions → image Docker `ghcr.io/jerem-gt/cash-ctrl:latest` → Watchtower pull auto.
 
-Pipeline Docker (stages BuildKit) :
-1. `deps-server` — `npm ci` + compilation native (better-sqlite3, bcrypt)
-2. `deps-client` — `npm ci` client (parallèle avec deps-server)
-3. `test` — `npm test` (bloque le build si un test échoue)
-4. `build-server` — `tsc` (hérite de `test`)
-5. `build-client` — `vite build` (parallèle avec test/build-server)
-6. `runner` — image finale, copie `node_modules` compilés depuis `build-server` + `npm prune --omit=dev`
+Pipeline GitHub Actions (3 jobs) :
+1. **`ci`** (container `node:24.15.0-alpine`) — `npm ci` + `test:coverage` + build server & client + `npm prune --omit=dev` → upload artifact (`node_modules` musl + `server/dist` + `client/dist` + `server/coverage/lcov.info`)
+2. **`sonar`** (ubuntu, `needs: ci`) — télécharge coverage, lance `SonarSource/sonarcloud-github-action`
+3. **`build-and-push`** (ubuntu, `needs: ci`) — télécharge l'artifact, construit l'image Docker (`linux/amd64`) et pousse sur ghcr.io
+
+Le Dockerfile ne contient aucun `npm ci` ni build tools : il copie simplement les artifacts de la CI dans une image `node:24.15.0-alpine` vierge.
 
 **Important** : les changements ne sont visibles en production qu'après rebuild et push de l'image. Tester en dev d'abord.
 

@@ -33,8 +33,9 @@ Application de suivi de comptes bancaires personnels.
 
 ### Banques
 - Référentiel de banques géré en base de données
+- Champ `domain` par banque (ex : `boursobank.com`) utilisé pour le téléchargement automatique du logo
 - Logo par banque (stockage local sur le serveur)
-- Téléchargement automatique des logos au démarrage pour les banques par défaut : BoursoBank, Fortuneo, Crédit Agricole, Linxea, Amundi, BNP Paribas, Société Générale, Revolut, N26
+- Téléchargement automatique des logos au démarrage pour les banques dont le domaine est renseigné
 - Upload manuel d'un logo personnalisé via les paramètres
 
 ### Tableau de bord
@@ -57,7 +58,7 @@ Application de suivi de comptes bancaires personnels.
 ### Paramètres
 - Gestion des catégories de transactions (nom + couleur)
 - Gestion des types de compte
-- Gestion des banques (nom + logo)
+- Gestion des banques (nom + domaine + logo)
 - Gestion des moyens de paiement (nom + icône emoji)
 
 ### Affichage uniforme des comptes
@@ -128,15 +129,17 @@ cashctrl/
 │       │   ├── scheduled/
 │       │   ├── settings/    # lead_days par utilisateur
 │       │   └── export/
-│       └── tests/           # Vitest (TU + TI)
-│           ├── session-store.test.ts
-│           ├── middleware.test.ts
-│           ├── scheduledLogic.test.ts
-│           ├── generateScheduled.test.ts
-│           ├── helpers/
-│           │   ├── testDb.ts   # SQLite :memory: avec schéma complet
-│           │   └── testApp.ts  # createTestContext() — app + agent supertest authentifié
-│           └── routes/      # Tests d'intégration par ressource (11 fichiers)
+│       ├── middleware.test.ts
+│       ├── session-store.test.ts
+│       ├── lib/
+│       │   ├── scheduledLogic.test.ts
+│       │   └── generateScheduled.test.ts
+│       ├── modules/         # Tests d'intégration co-localisés avec les sources
+│       │   └── {module}/{module}.routes.test.ts  # 11 fichiers
+│       └── tests/
+│           └── helpers/
+│               ├── testDb.ts   # SQLite :memory: avec schéma complet
+│               └── testApp.ts  # createTestContext() — app + agent supertest authentifié
 ├── .github/workflows/ci.yml
 ├── Dockerfile
 ├── docker-compose.yml
@@ -164,7 +167,7 @@ cashctrl/
 | POST | `/api/transactions/transfer` | Créer un transfert entre comptes |
 | GET | `/api/banks` | Liste des banques |
 | POST | `/api/banks` | Créer une banque |
-| PUT | `/api/banks/:id` | Modifier le nom |
+| PUT | `/api/banks/:id` | Modifier le nom et/ou le domaine |
 | POST | `/api/banks/:id/logo` | Uploader un logo (multipart/form-data) |
 | DELETE | `/api/banks/:id` | Supprimer |
 | GET | `/api/categories` | Liste des catégories |
@@ -191,6 +194,18 @@ Le dossier `data/` (monté en volume Docker) contient :
 - `cashctrl.db` — base SQLite
 - `logos/` — logos des banques (`bank-{id}.png`)
 
+## CI/CD
+
+Pipeline GitHub Actions en 3 jobs :
+
+1. **`ci`** (container Alpine) — `npm ci` + tests avec coverage + SonarCloud + build server & client → upload artifacts (node_modules + dist)
+2. **`sonar`** (ubuntu, après `ci`) — télécharge le rapport lcov, lance l'analyse SonarCloud
+3. **`build-and-push`** (ubuntu, après `ci`) — télécharge les artifacts, construit l'image Docker (`linux/amd64`) et la pousse sur ghcr.io
+
+Le Dockerfile est minimal : il ne fait que `COPY` des artifacts pré-compilés, sans `npm ci` ni build tools.
+
+Secret requis dans GitHub : `SONAR_TOKEN` (généré sur sonarcloud.io).
+
 ## Déploiement sur NAS Synology
 
 ```bash
@@ -206,4 +221,4 @@ L'app sera accessible sur `http://IP-DU-NAS:3000`.
 
 Watchtower redémarre automatiquement le container dès qu'une nouvelle image est publiée sur ghcr.io (toutes les 5 minutes).
 
-> **Note :** les logos de banques sont téléchargés depuis l'API favicon de Google au premier démarrage. Un accès Internet est requis pour cette étape ; les logos sont ensuite servis localement.
+> **Note :** les logos de banques sont téléchargés depuis l'API favicon de Google au premier démarrage, pour les banques dont le champ `domain` est renseigné. Un accès Internet est requis pour cette étape ; les logos sont ensuite servis localement.
