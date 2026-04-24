@@ -19,7 +19,7 @@ export function useCreateAccount() {
 export function useUpdateAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: number; name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number }) =>
+    mutationFn: ({ id, ...payload }: { id: number; name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number; opening_date: string }) =>
       accountsApi.update(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });

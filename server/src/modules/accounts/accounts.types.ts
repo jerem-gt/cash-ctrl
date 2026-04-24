@@ -7,6 +7,7 @@ export interface Account {
   bank: string;
   type: string;
   initial_balance: number;
+  opening_date: string | null;
   created_at: string;
 }
 
@@ -15,6 +16,7 @@ export interface CreateAccountInput {
   bank_id: number | null;
   account_type_id: number | null;
   initial_balance: number;
+  opening_date: string;
 }
 
 export type UpdateAccountInput = CreateAccountInput;

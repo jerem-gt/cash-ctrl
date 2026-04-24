@@ -61,13 +61,13 @@ export const accountTypesApi = {
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
 
+type AccountPayload = { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number; opening_date: string };
+
 // Accounts
 export const accountsApi = {
   list: () => request<Account[]>('GET', '/api/accounts'),
-  create: (payload: { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number }) =>
-    request<Account>('POST', '/api/accounts', payload),
-  update: (id: number, payload: { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number }) =>
-    request<Account>('PUT', `/api/accounts/${id}`, payload),
+  create: (payload: AccountPayload) => request<Account>('POST', '/api/accounts', payload),
+  update: (id: number, payload: AccountPayload) => request<Account>('PUT', `/api/accounts/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/accounts/${id}`),
 };
 

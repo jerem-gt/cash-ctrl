@@ -48,6 +48,7 @@ export function initSchema(db: Database) {
             bank_id         INTEGER NOT NULL REFERENCES banks (id),
             account_type_id INTEGER NOT NULL REFERENCES account_types (id),
             initial_balance REAL    NOT NULL DEFAULT 0,
+            opening_date    TEXT,
             created_at      TEXT             DEFAULT (datetime('now'))
         );
 
@@ -100,4 +101,7 @@ export function initSchema(db: Database) {
             created_at        TEXT             DEFAULT (datetime('now'))
         );
     `);
+
+    // Migrations
+    try { db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT'); } catch {}
 }

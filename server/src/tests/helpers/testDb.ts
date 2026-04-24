@@ -50,12 +50,12 @@ export function setupFixtures(): Fixtures {
     db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('test', 'x').lastInsertRowid,
   );
   const accountId = Number(
-    db.prepare('INSERT INTO accounts (user_id, name, bank_id, account_type_id) VALUES (?, ?, ?, ?)')
-      .run(userId, 'Compte principal', SEED.BANK_ID, SEED.AT_COURANT).lastInsertRowid,
+    db.prepare('INSERT INTO accounts (user_id, name, bank_id, account_type_id, opening_date) VALUES (?, ?, ?, ?, ?)')
+      .run(userId, 'Compte principal', SEED.BANK_ID, SEED.AT_COURANT, '2020-01-01').lastInsertRowid,
   );
   const account2Id = Number(
-    db.prepare('INSERT INTO accounts (user_id, name, bank_id, account_type_id) VALUES (?, ?, ?, ?)')
-      .run(userId, 'Épargne', SEED.BANK_ID, SEED.AT_EPARGNE).lastInsertRowid,
+    db.prepare('INSERT INTO accounts (user_id, name, bank_id, account_type_id, opening_date) VALUES (?, ?, ?, ?, ?)')
+      .run(userId, 'Épargne', SEED.BANK_ID, SEED.AT_EPARGNE, '2021-06-01').lastInsertRowid,
   );
 
   return { db, userId, accountId, account2Id };

@@ -9,7 +9,6 @@ services:
     volumes:
       - /volume1/data/cash-ctrl:/data
     environment:
-      - VITE_APP_NAME=CashCtrl
       - NODE_ENV=production
       - PORT=3000
       - DATA_DIR=/data

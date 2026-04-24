@@ -7,7 +7,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 async function setupWithAccount(ctx: TestContext) {
   const acc = await ctx.agent.post('/api/accounts').send({
-    name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT,
+    name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
   });
   return acc.body.id as number;
 }

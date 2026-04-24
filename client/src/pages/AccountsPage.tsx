@@ -19,7 +19,7 @@ export function AccountsPage() {
   const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
   const createAccount = useCreateAccount();
 
-  const [form, setForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '' });
+  const [form, setForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '', opening_date: '' });
 
   useEffect(() => {
     if (!form.account_type_id && accountTypes[0]?.id) setForm(f => ({ ...f, account_type_id: String(accountTypes[0].id) }));
@@ -29,14 +29,16 @@ export function AccountsPage() {
     e.preventDefault();
     if (!form.name.trim()) { showToast('Donnez un nom au compte.'); return; }
     if (!form.bank_id) { showToast('Choisissez une banque.'); return; }
+    if (!form.opening_date) { showToast("Renseignez la date d'ouverture."); return; }
     createAccount.mutate({
       name: form.name.trim(),
       bank_id: Number.parseInt(form.bank_id) || null,
       account_type_id: Number.parseInt(form.account_type_id) || null,
       initial_balance: Number.parseFloat(form.initial_balance) || 0,
+      opening_date: form.opening_date,
     }, {
       onSuccess: () => {
-        setForm({ name: '', bank_id: '', account_type_id: String(accountTypes[0]?.id ?? ''), initial_balance: '' });
+        setForm({ name: '', bank_id: '', account_type_id: String(accountTypes[0]?.id ?? ''), initial_balance: '', opening_date: '' });
         showToast('Compte créé ✓');
       },
       onError: e => showToast(e.message),
@@ -75,6 +77,9 @@ export function AccountsPage() {
             </FormGroup>
             <FormGroup label="Solde initial (€)">
               <Input type="number" value={form.initial_balance} onChange={e => setForm(f => ({ ...f, initial_balance: e.target.value }))} placeholder="0,00" step="0.01" />
+            </FormGroup>
+            <FormGroup label="Date d'ouverture">
+              <Input type="date" value={form.opening_date} onChange={e => setForm(f => ({ ...f, opening_date: e.target.value }))} />
             </FormGroup>
             <Button type="submit" variant="primary" disabled={createAccount.isPending}>
               {createAccount.isPending ? '…' : 'Créer'}

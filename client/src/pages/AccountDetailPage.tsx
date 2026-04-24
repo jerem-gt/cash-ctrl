@@ -4,6 +4,7 @@ import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAcco
 import { useTransactions, useDeleteTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
 import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, showToast } from '@/components/ui';
 import { fmtDec } from '@/lib/format';
+import { accountSeniority } from '@/lib/account';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
@@ -43,7 +44,7 @@ export function AccountDetailPage() {
   const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '' });
+  const [editForm, setEditForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '', opening_date: '' });
 
   const handleDeleteTx = () => {
     if (!deleteTx) return;
@@ -78,19 +79,21 @@ export function AccountDetailPage() {
 
   const openEdit = () => {
     if (!account) return;
-    setEditForm({ name: account.name, bank_id: String(account.bank_id ?? ''), account_type_id: String(account.account_type_id ?? ''), initial_balance: String(account.initial_balance) });
+    setEditForm({ name: account.name, bank_id: String(account.bank_id ?? ''), account_type_id: String(account.account_type_id ?? ''), initial_balance: String(account.initial_balance), opening_date: account.opening_date ?? '' });
     setEditOpen(true);
   };
 
   const handleEditSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!editForm.name.trim()) { showToast('Le nom est requis.'); return; }
+    if (!editForm.opening_date) { showToast("Renseignez la date d'ouverture."); return; }
     updateAccount.mutate({
       id: accountId,
       name: editForm.name.trim(),
       bank_id: Number.parseInt(editForm.bank_id) || null,
       account_type_id: Number.parseInt(editForm.account_type_id) || null,
       initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
+      opening_date: editForm.opening_date,
     }, {
       onSuccess: () => { setEditOpen(false); showToast('Compte mis à jour ✓'); },
       onError: err => showToast(err.message),
@@ -119,6 +122,12 @@ export function AccountDetailPage() {
               {account?.bank && <span className="text-stone-400 text-base">({account.bank})</span>}
             </div>
             <p className="text-sm text-stone-400 mt-0.5">{account?.type ?? ''}</p>
+            {account?.opening_date && (
+              <p className="text-xs text-stone-400 mt-1">
+                Ouvert le {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {' · '}depuis {accountSeniority(account.opening_date)}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className={`font-serif text-3xl ${balance < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(balance)}</p>
@@ -153,6 +162,9 @@ export function AccountDetailPage() {
               </FormGroup>
               <FormGroup label="Solde initial (€)">
                 <Input type="number" value={editForm.initial_balance} onChange={e => setEditForm(f => ({ ...f, initial_balance: e.target.value }))} placeholder="0,00" step="0.01" />
+              </FormGroup>
+              <FormGroup label="Date d'ouverture">
+                <Input type="date" value={editForm.opening_date} onChange={e => setEditForm(f => ({ ...f, opening_date: e.target.value }))} />
               </FormGroup>
               <div className="flex gap-2">
                 <Button type="submit" variant="primary" disabled={updateAccount.isPending}>

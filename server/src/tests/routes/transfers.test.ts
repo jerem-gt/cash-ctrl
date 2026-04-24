@@ -12,10 +12,10 @@ describe('/api/transfers', () => {
   beforeAll(async () => {
     ctx = await createTestContext();
     const a1 = await ctx.agent.post('/api/accounts').send({
-      name: 'From', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT,
+      name: 'From', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
     });
     const a2 = await ctx.agent.post('/api/accounts').send({
-      name: 'To', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_EPARGNE,
+      name: 'To', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_EPARGNE, opening_date: '2021-06-01',
     });
     fromId = a1.body.id;
     toId   = a2.body.id;

@@ -23,7 +23,7 @@ describe('/api/scheduled', () => {
   beforeAll(async () => {
     ctx = await createTestContext();
     const acc = await ctx.agent.post('/api/accounts').send({
-      name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT,
+      name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
     });
     accountId = acc.body.id;
   });

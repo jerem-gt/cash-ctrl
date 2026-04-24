@@ -28,6 +28,7 @@ export interface Account {
   account_type_id: number | null;
   type: string; // résolu par JOIN
   initial_balance: number;
+  opening_date: string | null;
 }
 
 export interface Transaction {
