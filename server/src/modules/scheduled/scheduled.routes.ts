@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { Response, Router } from 'express';
 import { z } from 'zod';
 
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
@@ -29,6 +29,25 @@ const scheduledSchema = z.object({
   active: z.boolean().default(true),
 });
 
+type ScheduledData = z.infer<typeof scheduledSchema>;
+
+function checkTransferConstraints(
+  d: ScheduledData,
+  transferPmId: number | undefined,
+  res: Response,
+): boolean {
+  if (d.payment_method_id !== transferPmId) return true;
+  if (!d.to_account_id) {
+    res.status(400).json({ error: 'Un compte destination est requis pour un transfert' });
+    return false;
+  }
+  if (d.to_account_id === d.account_id) {
+    res.status(400).json({ error: 'Les deux comptes doivent être différents' });
+    return false;
+  }
+  return true;
+}
+
 export function createScheduledRouter(db: Database): Router {
   const scheduledRepo = createScheduledRepo(db);
   const router = Router();
@@ -46,17 +65,7 @@ export function createScheduledRouter(db: Database): Router {
     }
 
     const d = parsed.data;
-    const TRANSFER_PM_ID = scheduledRepo.getTransferPmId();
-    if (d.payment_method_id === TRANSFER_PM_ID) {
-      if (!d.to_account_id) {
-        res.status(400).json({ error: 'Un compte destination est requis pour un transfert' });
-        return;
-      }
-      if (d.to_account_id === d.account_id) {
-        res.status(400).json({ error: 'Les deux comptes doivent être différents' });
-        return;
-      }
-    }
+    if (!checkTransferConstraints(d, scheduledRepo.getTransferPmId(), res)) return;
 
     const userId = sessionUserId(req);
     const result = scheduledRepo.create(userId, { ...d, description: d.description.trim() });
@@ -80,17 +89,7 @@ export function createScheduledRouter(db: Database): Router {
     }
 
     const d = parsed.data;
-    const TRANSFER_PM_ID = scheduledRepo.getTransferPmId();
-    if (d.payment_method_id === TRANSFER_PM_ID) {
-      if (!d.to_account_id) {
-        res.status(400).json({ error: 'Un compte destination est requis pour un transfert' });
-        return;
-      }
-      if (d.to_account_id === d.account_id) {
-        res.status(400).json({ error: 'Les deux comptes doivent être différents' });
-        return;
-      }
-    }
+    if (!checkTransferConstraints(d, scheduledRepo.getTransferPmId(), res)) return;
 
     scheduledRepo.update(userId, id, { ...d, description: d.description.trim() });
     generateScheduledTransactions(userId, db);
