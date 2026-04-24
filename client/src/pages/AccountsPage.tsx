@@ -1,19 +1,10 @@
-import { type SubmitEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AccountBadge } from '@/components/AccountBadge';
-import { BankSelect } from '@/components/BankSelect';
-import {
-  Button,
-  Card,
-  CardTitle,
-  Empty,
-  FormGroup,
-  Input,
-  Select,
-  showToast,
-} from '@/components/ui';
-import { useAccounts, useCreateAccount } from '@/hooks/useAccounts';
+import { AccountModal } from '@/components/AccountModal';
+import { Button, Empty } from '@/components/ui';
+import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { accountSeniority } from '@/lib/account';
@@ -25,54 +16,7 @@ export function AccountsPage() {
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
-  const createAccount = useCreateAccount();
-
-  const [form, setForm] = useState({
-    name: '',
-    bank_id: '',
-    account_type_id: '',
-    initial_balance: '',
-    opening_date: '',
-  });
-  const effectiveAccountTypeId = form.account_type_id || String(accountTypes[0]?.id ?? '');
-
-  const handleSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      showToast('Donnez un nom au compte.');
-      return;
-    }
-    if (!form.bank_id) {
-      showToast('Choisissez une banque.');
-      return;
-    }
-    if (!form.opening_date) {
-      showToast("Renseignez la date d'ouverture.");
-      return;
-    }
-    createAccount.mutate(
-      {
-        name: form.name.trim(),
-        bank_id: Number.parseInt(form.bank_id) || null,
-        account_type_id: Number.parseInt(effectiveAccountTypeId) || null,
-        initial_balance: Number.parseFloat(form.initial_balance) || 0,
-        opening_date: form.opening_date,
-      },
-      {
-        onSuccess: () => {
-          setForm({
-            name: '',
-            bank_id: '',
-            account_type_id: '',
-            initial_balance: '',
-            opening_date: '',
-          });
-          showToast('Compte créé ✓');
-        },
-        onError: (e) => showToast(e.message),
-      },
-    );
-  };
+  const [addOpen, setAddOpen] = useState(false);
 
   const groups = accountTypes
     .map((t) => ({
@@ -83,70 +27,18 @@ export function AccountsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="font-serif text-2xl tracking-tight">Comptes</h2>
-        <p className="text-sm text-stone-400 mt-0.5">
-          Cliquez sur un compte pour voir ses transactions
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="font-serif text-2xl tracking-tight">Comptes</h2>
+          <p className="text-sm text-stone-400 mt-0.5">
+            Cliquez sur un compte pour voir ses transactions
+          </p>
+        </div>
+        <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
+          + Nouveau compte
+        </Button>
       </div>
 
-      {/* Create form */}
-      <Card>
-        <CardTitle>Ajouter un compte</CardTitle>
-        <form onSubmit={handleSubmit}>
-          <div className="flex gap-3 flex-wrap items-end">
-            <FormGroup label="Nom du compte">
-              <Input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Ex : Compte courant"
-                className="min-w-44"
-              />
-            </FormGroup>
-            <FormGroup label="Banque">
-              <BankSelect
-                value={form.bank_id}
-                onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
-                banks={banks}
-              />
-            </FormGroup>
-            <FormGroup label="Type">
-              <Select
-                value={effectiveAccountTypeId}
-                onChange={(e) => setForm((f) => ({ ...f, account_type_id: e.target.value }))}
-              >
-                {accountTypes.map((t) => (
-                  <option key={t.id} value={String(t.id)}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
-            </FormGroup>
-            <FormGroup label="Solde initial (€)">
-              <Input
-                type="number"
-                value={form.initial_balance}
-                onChange={(e) => setForm((f) => ({ ...f, initial_balance: e.target.value }))}
-                placeholder="0,00"
-                step="0.01"
-              />
-            </FormGroup>
-            <FormGroup label="Date d'ouverture">
-              <Input
-                type="date"
-                value={form.opening_date}
-                onChange={(e) => setForm((f) => ({ ...f, opening_date: e.target.value }))}
-              />
-            </FormGroup>
-            <Button type="submit" variant="primary" disabled={createAccount.isPending}>
-              {createAccount.isPending ? '…' : 'Créer'}
-            </Button>
-          </div>
-        </form>
-      </Card>
-
-      {/* Accounts grouped by type */}
       {accounts.length === 0 ? (
         <Empty>Aucun compte pour l'instant.</Empty>
       ) : (
@@ -203,6 +95,15 @@ export function AccountsPage() {
             );
           })}
         </div>
+      )}
+
+      {addOpen && (
+        <AccountModal
+          mode="create"
+          banks={banks}
+          accountTypes={accountTypes}
+          onClose={() => setAddOpen(false)}
+        />
       )}
     </div>
   );

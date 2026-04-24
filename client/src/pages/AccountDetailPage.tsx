@@ -1,21 +1,11 @@
-import { type SubmitEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { BankSelect } from '@/components/BankSelect';
+import { type AccountFormState, AccountModal } from '@/components/AccountModal';
 import { DeleteTxModal } from '@/components/DeleteTxModal';
 import { TransactionsList } from '@/components/TransactionsList';
 import { type TxFormState, TxModal } from '@/components/TxModal';
-import {
-  Button,
-  Card,
-  CardTitle,
-  ConfirmModal,
-  FormGroup,
-  Input,
-  Pagination,
-  Select,
-  showToast,
-} from '@/components/ui';
+import { Button, ConfirmModal, Pagination, showToast } from '@/components/ui';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
@@ -58,14 +48,7 @@ export function AccountDetailPage() {
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    bank_id: '',
-    account_type_id: '',
-    initial_balance: '',
-    opening_date: '',
-  });
+  const [editAccountOpen, setEditAccountOpen] = useState(false);
 
   const handleDeleteTx = () => {
     if (!deleteTx) return;
@@ -122,40 +105,19 @@ export function AccountDetailPage() {
     });
   };
 
-  const openEdit = () => {
-    if (!account) return;
-    setEditForm({
-      name: account.name,
-      bank_id: String(account.bank_id ?? ''),
-      account_type_id: String(account.account_type_id ?? ''),
-      initial_balance: String(account.initial_balance),
-      opening_date: account.opening_date ?? '',
-    });
-    setEditOpen(true);
-  };
-
-  const handleEditSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (!editForm.name.trim()) {
-      showToast('Le nom est requis.');
-      return;
-    }
-    if (!editForm.opening_date) {
-      showToast("Renseignez la date d'ouverture.");
-      return;
-    }
+  const handleEditAccount = (data: AccountFormState) => {
     updateAccount.mutate(
       {
         id: accountId,
-        name: editForm.name.trim(),
-        bank_id: Number.parseInt(editForm.bank_id) || null,
-        account_type_id: Number.parseInt(editForm.account_type_id) || null,
-        initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
-        opening_date: editForm.opening_date,
+        name: data.name.trim(),
+        bank_id: Number.parseInt(data.bank_id) || null,
+        account_type_id: Number.parseInt(data.account_type_id) || null,
+        initial_balance: Number.parseFloat(data.initial_balance) || 0,
+        opening_date: data.opening_date,
       },
       {
         onSuccess: () => {
-          setEditOpen(false);
+          setEditAccountOpen(false);
           showToast('Compte mis à jour ✓');
         },
         onError: (err) => showToast(err.message),
@@ -222,7 +184,7 @@ export function AccountDetailPage() {
             </p>
             <div className="flex gap-3 justify-end mt-1">
               <button
-                onClick={openEdit}
+                onClick={() => setEditAccountOpen(true)}
                 className="text-[11px] text-stone-400 hover:text-stone-700 transition-colors"
               >
                 Modifier
@@ -237,69 +199,6 @@ export function AccountDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Edit account */}
-      {editOpen && (
-        <Card>
-          <CardTitle>Modifier le compte</CardTitle>
-          <form onSubmit={handleEditSubmit}>
-            <div className="flex gap-3 flex-wrap items-end">
-              <FormGroup label="Nom du compte">
-                <Input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Nom"
-                  className="min-w-44"
-                />
-              </FormGroup>
-              <FormGroup label="Banque">
-                <BankSelect
-                  value={editForm.bank_id}
-                  onChange={(v) => setEditForm((f) => ({ ...f, bank_id: v }))}
-                  banks={banks}
-                />
-              </FormGroup>
-              <FormGroup label="Type">
-                <Select
-                  value={editForm.account_type_id || String(accountTypes[0]?.id ?? '')}
-                  onChange={(e) => setEditForm((f) => ({ ...f, account_type_id: e.target.value }))}
-                >
-                  {accountTypes.map((t) => (
-                    <option key={t.id} value={String(t.id)}>
-                      {t.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-              <FormGroup label="Solde initial (€)">
-                <Input
-                  type="number"
-                  value={editForm.initial_balance}
-                  onChange={(e) => setEditForm((f) => ({ ...f, initial_balance: e.target.value }))}
-                  placeholder="0,00"
-                  step="0.01"
-                />
-              </FormGroup>
-              <FormGroup label="Date d'ouverture">
-                <Input
-                  type="date"
-                  value={editForm.opening_date}
-                  onChange={(e) => setEditForm((f) => ({ ...f, opening_date: e.target.value }))}
-                />
-              </FormGroup>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" disabled={updateAccount.isPending}>
-                  {updateAccount.isPending ? '…' : 'Enregistrer'}
-                </Button>
-                <Button type="button" onClick={() => setEditOpen(false)}>
-                  Annuler
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Card>
-      )}
 
       {/* Transaction list */}
       <div>
@@ -375,6 +274,17 @@ export function AccountDetailPage() {
           body="Toutes les transactions associées seront supprimées. Cette action est irréversible."
           onConfirm={handleDeleteAccount}
           onCancel={() => setConfirmDeleteAccount(false)}
+        />
+      )}
+      {editAccountOpen && account && (
+        <AccountModal
+          mode="edit"
+          account={account}
+          banks={banks}
+          accountTypes={accountTypes}
+          onSave={handleEditAccount}
+          onClose={() => setEditAccountOpen(false)}
+          isPending={updateAccount.isPending}
         />
       )}
     </div>
