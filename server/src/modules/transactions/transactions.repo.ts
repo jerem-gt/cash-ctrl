@@ -1,5 +1,13 @@
-import type { Transaction, CreateTransactionInput, CreateScheduledTransactionInput, UpdateSharedTransactionInput, TransactionFilters, PaginatedResult } from './transactions.types';
 import type { Database } from 'better-sqlite3';
+
+import type {
+  CreateScheduledTransactionInput,
+  CreateTransactionInput,
+  PaginatedResult,
+  Transaction,
+  TransactionFilters,
+  UpdateSharedTransactionInput
+} from './transactions.types';
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,

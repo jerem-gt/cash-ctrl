@@ -1,5 +1,6 @@
-import type { Account, CreateAccountInput, UpdateAccountInput } from './accounts.types';
 import type { Database } from 'better-sqlite3';
+
+import type { Account, CreateAccountInput, UpdateAccountInput } from './accounts.types';
 
 const BALANCE_SUBQUERY = `
   a.initial_balance + COALESCE(

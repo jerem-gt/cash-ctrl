@@ -1,5 +1,6 @@
-import type { AccountType, AccountTypeWithCount } from './account-types.types';
 import type { Database } from 'better-sqlite3';
+
+import type { AccountType, AccountTypeWithCount } from './account-types.types';
 
 export function createAccountTypesRepo(db: Database) {
   return {

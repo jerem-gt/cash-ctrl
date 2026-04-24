@@ -1,6 +1,6 @@
-import type { Account } from '@/types';
-import { FormGroup, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/components/AccountSelect';
+import { FormGroup, Input, Select } from '@/components/ui';
+import type { Account } from '@/types';
 
 export interface TxCoreState {
   type: 'income' | 'expense';

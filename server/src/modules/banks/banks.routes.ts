@@ -1,9 +1,10 @@
-import { Router } from 'express';
-import { z } from 'zod';
-import multer from 'multer';
-import { requireAuth } from '../../middleware.js';
-import { LOGOS_DIR } from '../../logoDownloader.js';
 import type { Database } from 'better-sqlite3';
+import { Router } from 'express';
+import multer from 'multer';
+import { z } from 'zod';
+
+import { LOGOS_DIR } from '../../logoDownloader.js';
+import { requireAuth } from '../../middleware.js';
 import { createBanksRepo } from './banks.repo';
 
 const schema = z.object({

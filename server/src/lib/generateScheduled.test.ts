@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { setupFixtures, type Fixtures, SEED } from '../tests/helpers/testDb.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
 import { generateScheduledTransactions } from './generateScheduled.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

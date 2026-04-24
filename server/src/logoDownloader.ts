@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type { Database } from 'better-sqlite3';
-import { createBanksRepo } from './modules/banks/banks.repo.js';
+
 import { DATA_DIR } from './db/init';
+import { createBanksRepo } from './modules/banks/banks.repo.js';
 
 export const LOGOS_DIR = path.join(DATA_DIR, 'logos');
 

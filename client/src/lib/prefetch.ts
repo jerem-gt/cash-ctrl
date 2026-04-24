@@ -1,7 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query';
+
 import {
-  accountsApi, accountTypesApi, banksApi, categoriesApi,
-  paymentMethodsApi, scheduledApi, settingsApi, transactionsApi,
+  accountsApi,
+  accountTypesApi,
+  banksApi,
+  categoriesApi,
+  paymentMethodsApi,
+  scheduledApi,
+  settingsApi,
+  transactionsApi,
 } from '@/api/client';
 
 export function prefetchForRoute(qc: QueryClient, route: string): void {

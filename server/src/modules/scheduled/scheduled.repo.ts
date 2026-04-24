@@ -1,5 +1,6 @@
-import type { ScheduledTransaction, CreateScheduledInput } from './scheduled.types';
 import type { Database } from 'better-sqlite3';
+
+import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
 
 const SCHED_WITH_DETAILS = `
   SELECT s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,

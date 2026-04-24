@@ -1,7 +1,8 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { requireAuth } from '../../middleware.js';
-import type { Database } from 'better-sqlite3';
 import { createAccountsRepo } from './accounts.repo';
 
 const accountSchema = z.object({

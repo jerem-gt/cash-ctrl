@@ -1,7 +1,8 @@
-import { useState, type SubmitEvent } from 'react';
-import type { Account, PaymentMethod, Transaction } from '@/types';
-import { Button, Input, Select, FormGroup, showToast } from '@/components/ui';
+import { type SubmitEvent, useState } from 'react';
+
 import { AccountSelect } from '@/components/AccountSelect';
+import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
+import type { Account, PaymentMethod, Transaction } from '@/types';
 
 export type TxFormState = {
   type: 'income' | 'expense';

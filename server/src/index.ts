@@ -1,10 +1,13 @@
 import 'dotenv/config';
-import express from 'express';
+
 import fs from 'node:fs';
 import path from 'node:path';
-import { LOGOS_DIR, downloadDefaultBankLogos } from './logoDownloader.js';
+
+import express from 'express';
+
 import { createApp } from './app.js';
 import { createDb, initDatabase } from './db/init';
+import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 
 const PORT           = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';

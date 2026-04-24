@@ -1,6 +1,6 @@
-import type { Account, Transaction } from '@/types';
-import { Empty, Skeleton } from '@/components/ui';
 import { TxItem } from '@/components/TxItem';
+import { Empty, Skeleton } from '@/components/ui';
+import type { Account, Transaction } from '@/types';
 
 interface Props {
   isLoading: boolean;

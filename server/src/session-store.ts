@@ -1,5 +1,5 @@
-import { Store, SessionData } from 'express-session';
 import type { Database, Statement } from 'better-sqlite3';
+import { SessionData, Store } from 'express-session';
 
 interface SessionRow {
   data: string;

@@ -1,13 +1,14 @@
-import { useState, useMemo, useEffect, type SubmitEvent } from 'react';
+import { type SubmitEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { AccountBadge } from '@/components/AccountBadge';
+import { BankSelect } from '@/components/BankSelect';
+import { Button, Card, CardTitle, Empty, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { useAccounts, useCreateAccount } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
-import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, showToast } from '@/components/ui';
-import { AccountBadge } from '@/components/AccountBadge';
-import { BankSelect } from '@/components/BankSelect';
-import { fmtDec } from '@/lib/format';
 import { accountSeniority } from '@/lib/account';
+import { fmtDec } from '@/lib/format';
 
 export function AccountsPage() {
   const navigate = useNavigate();

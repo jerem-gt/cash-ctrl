@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { Bank } from '@/types';
+
 import { useClickOutside } from '@/hooks/useClickOutside';
+import type { Bank } from '@/types';
 
 interface Props {
   value: string;

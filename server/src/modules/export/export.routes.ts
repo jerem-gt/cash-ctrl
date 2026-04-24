@@ -1,7 +1,8 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
+
 import { requireAuth } from '../../middleware.js';
 import { createExportRepo } from './export.repo';
-import type { Database } from 'better-sqlite3';
 
 export function createExportRouter(db: Database): Router {
   const exportRepo = createExportRepo(db);

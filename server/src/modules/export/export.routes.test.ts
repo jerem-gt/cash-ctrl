@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
 import supertest from 'supertest';
+import { beforeAll, describe, expect, it } from 'vitest';
+
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
 
@@ -46,7 +47,7 @@ describe('/api/export', () => {
 
     it('CSV has correct number of data rows', async () => {
       const res = await ctx.agent.get('/api/export/csv');
-      const lines = res.text.replace(/^﻿/, '').split('\n').filter(Boolean);
+      const lines = res.text.replace(/^\uFEFF/, '').split('\n').filter(Boolean);
       expect(lines.length).toBe(3); // header + 2 transactions
     });
 

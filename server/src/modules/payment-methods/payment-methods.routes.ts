@@ -1,8 +1,9 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { requireAuth } from '../../middleware.js';
 import { createPaymentMethodsRepo } from './payment-methods.repo';
-import type { Database } from 'better-sqlite3';
 
 const schema = z.object({
   name: z.string().min(1).max(50),

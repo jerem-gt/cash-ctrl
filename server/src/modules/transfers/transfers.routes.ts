@@ -1,8 +1,9 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { requireAuth } from '../../middleware.js';
 import { createTransfersRepo } from './transfers.repo';
-import type { Database } from 'better-sqlite3';
 
 const transferSchema = z.object({
   from_account_id: z.number().int().positive(),

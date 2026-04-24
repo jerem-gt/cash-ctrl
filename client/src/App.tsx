@@ -1,11 +1,12 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMe } from '@/hooks/useAuth';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
 import { Sidebar } from '@/components/Sidebar';
 import { Toast } from '@/components/ui';
-import { LoginPage } from '@/pages/LoginPage';
+import { useMe } from '@/hooks/useAuth';
 import { appName } from '@/lib/appname.ts';
+import { LoginPage } from '@/pages/LoginPage';
 
 const DashboardPage    = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
@@ -23,7 +24,9 @@ const qc = new QueryClient({
 
 function AppShell() {
   // Ajoute (dev) au titre si on est hors production
-  document.title = appName();
+  useEffect(() => {
+    document.title = appName();
+  }, []);
 
   const { data: me, isLoading } = useMe();
 

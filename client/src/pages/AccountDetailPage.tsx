@@ -1,20 +1,31 @@
-import { useState, useMemo, type SubmitEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { type SubmitEvent, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { AddTxForm } from '@/components/AddTxForm';
+import { BankSelect } from '@/components/BankSelect';
+import { DeleteTxModal } from '@/components/DeleteTxModal';
+import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
+import { TransactionsList } from '@/components/TransactionsList';
+import {
+  Button,
+  Card,
+  CardTitle,
+  ConfirmModal,
+  FormGroup,
+  Input,
+  Pagination,
+  Select,
+  showToast
+} from '@/components/ui';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
-import { useTransactions, useDeleteTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
-import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, Pagination, showToast } from '@/components/ui';
-import { fmtDec } from '@/lib/format';
-import { accountSeniority } from '@/lib/account';
-import type { Transaction } from '@/types';
-import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
+import { useCategories } from '@/hooks/useCategories';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { BankSelect } from '@/components/BankSelect';
-import { TransactionsList } from '@/components/TransactionsList';
-import { AddTxForm } from '@/components/AddTxForm';
-import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
-import { DeleteTxModal } from '@/components/DeleteTxModal';
+import { useDeleteTransaction, useTransactions, useUpdateTransaction } from '@/hooks/useTransactions';
+import { accountSeniority } from '@/lib/account';
+import { fmtDec } from '@/lib/format';
+import type { Transaction } from '@/types';
 
 
 export function AccountDetailPage() {

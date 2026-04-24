@@ -1,5 +1,6 @@
-import type { PaymentMethod, PaymentMethodWithCount, CreatePaymentMethodInput } from './payment-methods.types';
 import type { Database } from 'better-sqlite3';
+
+import type { CreatePaymentMethodInput, PaymentMethod, PaymentMethodWithCount } from './payment-methods.types';
 
 export function createPaymentMethodsRepo(db: Database) {
   return {

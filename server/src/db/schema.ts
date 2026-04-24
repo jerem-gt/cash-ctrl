@@ -104,8 +104,8 @@ export function initSchema(db: Database) {
     `);
 
     // Migrations
-    try { db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT'); } catch {}
-    try { db.exec('ALTER TABLE banks ADD COLUMN domain TEXT'); } catch {}
+    try { db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT'); } catch {/* ignore: column may already exist */}
+    try { db.exec('ALTER TABLE banks ADD COLUMN domain TEXT'); } catch {/* ignore: column may already exist */}
 
     db.exec(`
         UPDATE banks SET domain = 'boursobank.com'      WHERE name = 'BoursoBank'       AND domain IS NULL;

@@ -1,15 +1,13 @@
 import { useMemo } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie,
-} from 'recharts';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useCategories } from '@/hooks/useCategories';
-import { useBanks } from '@/hooks/useBanks';
-import { Card, CardTitle, Metric, Empty } from '@/components/ui';
+import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, } from 'recharts';
+
 import { TxItem } from '@/components/TxItem';
-import { fmt, fmtDec, today, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
+import { Card, CardTitle, Empty, Metric } from '@/components/ui';
+import { useAccounts } from '@/hooks/useAccounts';
+import { useBanks } from '@/hooks/useBanks';
+import { useCategories } from '@/hooks/useCategories';
+import { useTransactions } from '@/hooks/useTransactions';
+import { fmt, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
 
 export function DashboardPage() {
   const { data: accounts = [] } = useAccounts();

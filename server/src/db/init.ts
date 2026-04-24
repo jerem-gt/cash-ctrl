@@ -1,8 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
+
 import { initSchema } from './schema';
 import { seedDatabase } from './seed';
-import Database, { type Database as DatabaseType } from 'better-sqlite3';
-import path from 'node:path';
-import fs from 'node:fs';
 
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 

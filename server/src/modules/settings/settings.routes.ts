@@ -1,8 +1,9 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { requireAuth } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
-import type { Database } from 'better-sqlite3';
 
 const settingsSchema = z.object({ lead_days: z.number().int().min(0).max(365) });
 

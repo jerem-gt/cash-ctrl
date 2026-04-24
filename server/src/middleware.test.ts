@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import { describe, expect, it, vi } from 'vitest';
+
 import { requireAuth } from './middleware.js';
 
 function mockReq(session: Partial<{ userId: number; username: string }> = {}): Request {

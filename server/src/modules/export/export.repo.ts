@@ -1,5 +1,6 @@
-import { ExportAccount, ExportTransaction, ExportTxRow } from './export.types';
 import type { Database } from 'better-sqlite3';
+
+import { ExportAccount, ExportTransaction, ExportTxRow } from './export.types';
 
 export function createExportRepo(db: Database) {
     return {

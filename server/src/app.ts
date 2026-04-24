@@ -1,18 +1,19 @@
+import type { Database } from 'better-sqlite3';
 import express from 'express';
 import session from 'express-session';
-import type { Database } from 'better-sqlite3';
-import { SQLiteSessionStore } from './session-store.js';
-import { createAuthRouter } from './modules/auth/auth.routes';
-import { createAccountsRouter } from './modules/accounts/accounts.routes';
-import { createTransactionsRouter } from './modules/transactions/transactions.routes';
-import { createTransfersRouter } from './modules/transfers/transfers.routes';
-import { createExportRouter } from './modules/export/export.routes';
-import { createCategoriesRouter } from './modules/categories/categories.routes';
+
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes';
+import { createAccountsRouter } from './modules/accounts/accounts.routes';
+import { createAuthRouter } from './modules/auth/auth.routes';
 import { createBanksRouter } from './modules/banks/banks.routes';
+import { createCategoriesRouter } from './modules/categories/categories.routes';
+import { createExportRouter } from './modules/export/export.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
+import { createTransactionsRouter } from './modules/transactions/transactions.routes';
+import { createTransfersRouter } from './modules/transfers/transfers.routes';
+import { SQLiteSessionStore } from './session-store.js';
 
 export interface AppOptions {
   sessionSecret?: string;

@@ -1,9 +1,10 @@
+import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../../middleware.js';
+
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
+import { requireAuth } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
-import type { Database } from 'better-sqlite3';
 
 const transactionSchema = z.object({
   account_id:        z.number().int().positive(),

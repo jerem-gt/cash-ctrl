@@ -1,5 +1,6 @@
-import type { Category, CategoryWithCount, CreateCategoryInput } from './categories.types';
 import type { Database } from 'better-sqlite3';
+
+import type { Category, CategoryWithCount, CreateCategoryInput } from './categories.types';
 
 export function createCategoriesRepo(db: Database) {
   return {

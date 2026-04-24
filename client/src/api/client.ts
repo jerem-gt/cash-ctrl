@@ -1,4 +1,15 @@
-import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters, PaginatedTransactions, ScheduledTransaction, UserSettings } from '@/types';
+import type {
+  Account,
+  AccountType,
+  Bank,
+  Category,
+  PaginatedTransactions,
+  PaymentMethod,
+  ScheduledTransaction,
+  Transaction,
+  TransactionFilters,
+  UserSettings
+} from '@/types';
 
 function extractError(value: unknown): string {
   if (typeof value === 'string') return value;

@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Account } from '@/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { useClickOutside } from '@/hooks/useClickOutside';
+import type { Account } from '@/types';
 
 interface Props {
   value: string;

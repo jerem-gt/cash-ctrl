@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
-import { NavLink, useMatch } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useLogout } from '@/hooks/useAuth';
+import { useMemo, useState } from 'react';
+import { NavLink, useMatch } from 'react-router-dom';
+
 import { useAccounts } from '@/hooks/useAccounts';
+import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
-import { fmt } from '@/lib/format';
 import { appName } from '@/lib/appname.ts';
-import { prefetchForRoute, prefetchAccountDetail } from '@/lib/prefetch';
+import { fmt } from '@/lib/format';
+import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
 
 type GroupBy = 'bank' | 'type';

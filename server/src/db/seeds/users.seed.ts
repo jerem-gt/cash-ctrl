@@ -1,5 +1,5 @@
-import type { Database } from 'better-sqlite3';
 import bcrypt from 'bcrypt';
+import type { Database } from 'better-sqlite3';
 
 export function seedAdminUser(db: Database) {
     const ADMIN_USER = process.env.ADMIN_USER ?? 'admin';

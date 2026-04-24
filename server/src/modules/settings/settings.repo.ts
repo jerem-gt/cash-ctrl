@@ -1,5 +1,6 @@
-import type { UserSettings } from './settings.types';
 import type { Database } from 'better-sqlite3';
+
+import type { UserSettings } from './settings.types';
 
 export function createSettingsRepo(db: Database) {
   return {

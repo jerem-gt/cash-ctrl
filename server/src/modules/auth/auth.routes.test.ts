@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import supertest from 'supertest';
 import bcrypt from 'bcrypt';
+import supertest from 'supertest';
+import { describe, expect, it } from 'vitest';
+
 import { createApp } from '../../app.js';
 import { createTestDb } from '../../tests/helpers/testDb';
 

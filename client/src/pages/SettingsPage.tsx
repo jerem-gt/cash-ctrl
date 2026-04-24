@@ -1,11 +1,22 @@
-import { useState, ChangeEvent, SyntheticEvent } from 'react';
+import { ChangeEvent, SyntheticEvent, useState } from 'react';
+
+import { Button, Card, CardTitle, ConfirmModal, FormGroup, Input, showToast, Skeleton } from '@/components/ui';
+import {
+  useAccountTypes,
+  useCreateAccountType,
+  useDeleteAccountType,
+  useUpdateAccountType
+} from '@/hooks/useAccountTypes';
 import { useChangePassword } from '@/hooks/useAuth';
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
-import { useAccountTypes, useCreateAccountType, useUpdateAccountType, useDeleteAccountType } from '@/hooks/useAccountTypes';
-import { useBanks, useCreateBank, useUpdateBank, useUploadBankLogo, useDeleteBank } from '@/hooks/useBanks';
-import { usePaymentMethods, useCreatePaymentMethod, useUpdatePaymentMethod, useDeletePaymentMethod } from '@/hooks/usePaymentMethods';
-import { Card, CardTitle, Button, Input, FormGroup, Skeleton, ConfirmModal, showToast } from '@/components/ui';
-import type { Category, AccountType, Bank, PaymentMethod } from '@/types';
+import { useBanks, useCreateBank, useDeleteBank, useUpdateBank, useUploadBankLogo } from '@/hooks/useBanks';
+import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
+import {
+  useCreatePaymentMethod,
+  useDeletePaymentMethod,
+  usePaymentMethods,
+  useUpdatePaymentMethod
+} from '@/hooks/usePaymentMethods';
+import type { AccountType, Bank, Category, PaymentMethod } from '@/types';
 
 type PendingDelete = { title: string; body: string; onConfirm: () => void };
 

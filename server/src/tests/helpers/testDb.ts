@@ -1,4 +1,5 @@
 import type { Database } from 'better-sqlite3';
+
 import { createDb } from '../../db/init';
 import { initSchema } from '../../db/schema';
 

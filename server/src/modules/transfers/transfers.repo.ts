@@ -1,6 +1,7 @@
+import type { Database } from 'better-sqlite3';
+
 import type { Transaction } from '../transactions/transactions.types';
 import type { TransferInput } from './transfers.types';
-import type { Database } from 'better-sqlite3';
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,

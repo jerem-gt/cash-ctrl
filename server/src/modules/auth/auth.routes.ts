@@ -1,8 +1,9 @@
-import { Router } from 'express';
 import bcrypt from 'bcrypt';
-import { z } from 'zod';
-import { requireAuth } from '../../middleware.js';
 import type { Database } from 'better-sqlite3';
+import { Router } from 'express';
+import { z } from 'zod';
+
+import { requireAuth } from '../../middleware.js';
 import { createAuthRepo } from './auth.repo';
 
 const loginSchema = z.object({

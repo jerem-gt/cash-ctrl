@@ -1,5 +1,6 @@
-import type { User } from './auth.types';
 import type { Database } from 'better-sqlite3';
+
+import type { User } from './auth.types';
 
 export function createAuthRepo(db: Database) {
   return {

@@ -1,5 +1,5 @@
-import type { Transaction } from '@/types';
 import { ConfirmModal } from '@/components/ui';
+import type { Transaction } from '@/types';
 
 interface Props {
   tx: Transaction;
