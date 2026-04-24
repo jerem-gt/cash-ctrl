@@ -6,7 +6,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
 import { appName } from '@/lib/appname.ts';
-import { prefetchForRoute } from '@/lib/prefetch';
+import { prefetchForRoute, prefetchAccountDetail } from '@/lib/prefetch';
 import type { Account } from '@/types';
 
 type GroupBy = 'bank' | 'type';
@@ -147,6 +147,7 @@ export function Sidebar({ username }: Readonly<Props>) {
                       <NavLink
                         key={acc.id}
                         to={`/accounts/${acc.id}`}
+                        onMouseEnter={() => prefetchAccountDetail(qc, acc.id)}
                         className={({ isActive }: { isActive: boolean }) =>
                           `flex items-center justify-between pl-6 pr-3 py-1.5 gap-2 text-xs transition-all duration-100 ${
                             isActive ? 'bg-white/8 text-white/90' : 'text-white/40 hover:text-white/70 hover:bg-white/4'

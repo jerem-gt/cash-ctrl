@@ -36,3 +36,10 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
       break;
   }
 }
+
+export function prefetchAccountDetail(qc: QueryClient, accountId: number): void {
+  qc.prefetchQuery({
+    queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
+    queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
+  });
+}
