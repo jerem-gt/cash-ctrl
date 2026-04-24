@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import supertest from 'supertest';
 import { createTestContext, type TestContext } from '../helpers/testApp.js';
 import { SEED } from '../helpers/testDb.js';
 
@@ -8,10 +9,7 @@ describe('/api/accounts', () => {
   beforeAll(async () => { ctx = await createTestContext(); });
 
   it('GET / returns 401 without auth', async () => {
-    const { db } = await createTestContext();
-    const { createApp } = await import('../../app.js');
-    const supertest = (await import('supertest')).default;
-    const res = await supertest(createApp(db)).get('/api/accounts');
+    const res = await supertest(ctx.app).get('/api/accounts');
     expect(res.status).toBe(401);
   });
 

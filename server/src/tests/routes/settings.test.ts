@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import supertest from 'supertest';
 import { createTestContext, type TestContext } from '../helpers/testApp.js';
 
 describe('/api/settings', () => {
@@ -13,10 +14,7 @@ describe('/api/settings', () => {
   });
 
   it('GET / returns 401 without auth', async () => {
-    const { db } = await createTestContext();
-    const { createApp } = await import('../../app.js');
-    const supertest = (await import('supertest')).default;
-    expect((await supertest(createApp(db)).get('/api/settings')).status).toBe(401);
+    expect((await supertest(ctx.app).get('/api/settings')).status).toBe(401);
   });
 
   it('PUT / updates lead_days', async () => {

@@ -1,42 +1,52 @@
 import type BetterSqlite3 from 'better-sqlite3';
-import { db as defaultDb } from '../db.js';
-import type { ScheduledTransaction } from '../db.js';
 import { dateStr, parseDate, applyWeekend, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
+import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
+import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 
 type Db = BetterSqlite3.Database;
-type Stmt = BetterSqlite3.Statement;
 
 function insertTransfer(
   sched: ScheduledTransaction,
   actualDateStr: string,
-  insertTx: Stmt,
-  setPeer: Stmt,
   transferCategoryId: number,
   transferPmId: number,
+  txRepo: ReturnType<typeof createTransactionsRepo>,
 ): void {
-  const expenseId = Number(insertTx.run(
-    sched.user_id, sched.account_id, 'expense', sched.amount,
-    sched.description, transferCategoryId, actualDateStr, transferPmId, sched.notes, sched.id,
-  ).lastInsertRowid);
+  const expenseId = txRepo.createScheduled(sched.user_id, {
+    account_id: sched.account_id,
+    type: 'expense',
+    amount: sched.amount,
+    description: sched.description,
+    category_id: transferCategoryId,
+    date: actualDateStr,
+    payment_method_id: transferPmId,
+    notes: sched.notes,
+    scheduled_id: sched.id,
+  });
 
-  const incomeId = Number(insertTx.run(
-    sched.user_id, sched.to_account_id!, 'income', sched.amount,
-    sched.description, transferCategoryId, actualDateStr, transferPmId, sched.notes, sched.id,
-  ).lastInsertRowid);
+  const incomeId = txRepo.createScheduled(sched.user_id, {
+    account_id: sched.to_account_id!,
+    type: 'income',
+    amount: sched.amount,
+    description: sched.description,
+    category_id: transferCategoryId,
+    date: actualDateStr,
+    payment_method_id: transferPmId,
+    notes: sched.notes,
+    scheduled_id: sched.id,
+  });
 
-  setPeer.run(incomeId, expenseId);
-  setPeer.run(expenseId, incomeId);
+  txRepo.linkTransferPeers(expenseId, incomeId);
 }
 
 function generateForSchedule(
   sched: ScheduledTransaction,
   horizon: Date,
-  insertTx: Stmt,
-  updateLastGen: Stmt,
-  setPeer: Stmt,
+  updateLastGen: BetterSqlite3.Statement,
   txDb: Db,
   transferCategoryId: number | undefined,
   transferPmId: number | undefined,
+  txRepo: ReturnType<typeof createTransactionsRepo>,
 ): void {
   let nominal: Date;
 
@@ -58,13 +68,19 @@ function generateForSchedule(
       const actualStr = dateStr(actual);
 
       if (isTransfer && transferCategoryId && transferPmId) {
-        insertTransfer(sched, actualStr, insertTx, setPeer, transferCategoryId, transferPmId);
+        insertTransfer(sched, actualStr, transferCategoryId, transferPmId, txRepo);
       } else if (!isTransfer) {
-        insertTx.run(
-          sched.user_id, sched.account_id, sched.type, sched.amount,
-          sched.description, sched.category_id, actualStr,
-          sched.payment_method_id, sched.notes, sched.id,
-        );
+        txRepo.createScheduled(sched.user_id, {
+          account_id: sched.account_id,
+          type: sched.type,
+          amount: sched.amount,
+          description: sched.description,
+          category_id: sched.category_id!,
+          date: actualStr,
+          payment_method_id: sched.payment_method_id!,
+          notes: sched.notes,
+          scheduled_id: sched.id,
+        });
       }
 
       lastNominal = dateStr(nominal);
@@ -79,7 +95,7 @@ function generateForSchedule(
 
 export function generateScheduledTransactions(
   userId: number,
-  database: Db = defaultDb as Db,
+  database: Db
 ): void {
   const settings = database.prepare('SELECT lead_days FROM user_settings WHERE user_id = ?').get(userId) as { lead_days: number } | undefined;
   const leadDays = settings?.lead_days ?? 30;
@@ -94,21 +110,13 @@ export function generateScheduledTransactions(
     'SELECT * FROM scheduled_transactions WHERE user_id = ? AND active = 1',
   ).all(userId) as ScheduledTransaction[];
 
-  const insertTx = database.prepare(`
-    INSERT INTO transactions
-      (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes, scheduled_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
   const updateLastGen = database.prepare(
     'UPDATE scheduled_transactions SET last_generated_until = ? WHERE id = ?',
   );
 
-  const setPeer = database.prepare(
-    'UPDATE transactions SET transfer_peer_id = ? WHERE id = ?',
-  );
+  const txRepo = createTransactionsRepo(database);
 
   for (const sched of schedules) {
-    generateForSchedule(sched, horizon, insertTx, updateLastGen, setPeer, database, transferCat?.id, transferPm?.id);
+    generateForSchedule(sched, horizon, updateLastGen, database, transferCat?.id, transferPm?.id, txRepo);
   }
 }

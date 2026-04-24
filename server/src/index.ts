@@ -2,14 +2,16 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
-import { db } from './db.js';
 import { LOGOS_DIR, downloadDefaultBankLogos } from './logoDownloader.js';
 import { createApp } from './app.js';
+import { createDb, initDatabase } from './db/init';
 
 const PORT           = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
 const IS_PROD        = process.env.NODE_ENV === 'production';
 
+const db = createDb();
+initDatabase(db);
 const app = createApp(db, {
   sessionSecret: SESSION_SECRET,
   secureCookies: process.env.SECURE_COOKIE === 'true',
@@ -37,5 +39,5 @@ if (IS_PROD) {
 
 app.listen(PORT, '0.0.0.0', () => {
   process.stdout.write(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})\n`);
-  downloadDefaultBankLogos().catch((err: unknown) => { process.stderr.write(`${String(err)}\n`); });
+  downloadDefaultBankLogos(db).catch((err: unknown) => { process.stderr.write(`${String(err)}\n`); });
 });

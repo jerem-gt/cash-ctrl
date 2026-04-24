@@ -104,7 +104,11 @@ cashctrl/
 ├── server/                  # Express + TypeScript
 │   └── src/
 │       ├── app.ts           # Factory createApp(db) — Express + session + routes
-│       ├── db.ts            # Initialisation SQLite (tables, migrations, seeds)
+│       ├── db/              # Initialisation SQLite
+│       │   ├── init.ts      # createDb(), initDatabase(), DATA_DIR
+│       │   ├── schema.ts    # CREATE TABLE IF NOT EXISTS + migrations
+│       │   ├── seed.ts      # Orchestration des seeds
+│       │   └── seeds/       # Un fichier par entité seedée
 │       ├── session-store.ts # SQLiteSessionStore (better-sqlite3)
 │       ├── index.ts         # Point d'entrée production
 │       ├── logoDownloader.ts # Téléchargement des logos de banques au démarrage
@@ -112,19 +116,19 @@ cashctrl/
 │       ├── lib/
 │       │   ├── scheduledLogic.ts  # Fonctions pures de calcul de récurrence
 │       │   └── generateScheduled.ts # Génération des transactions planifiées
-│       ├── routes/          # Factory functions createXxxRouter(db)
-│       │   ├── auth.ts
-│       │   ├── accounts.ts
-│       │   ├── account-types.ts
-│       │   ├── transactions.ts
-│       │   ├── transfers.ts
-│       │   ├── banks.ts     # CRUD banques + upload logo (Multer)
-│       │   ├── categories.ts
-│       │   ├── payment-methods.ts
-│       │   ├── scheduled.ts # CRUD transactions planifiées
-│       │   ├── settings.ts  # lead_days par utilisateur
-│       │   └── export.ts
-│       └── tests/           # Vitest — 133 tests (TU + TI)
+│       ├── modules/         # Un dossier par ressource : types + repo + routes
+│       │   ├── auth/
+│       │   ├── accounts/
+│       │   ├── account-types/
+│       │   ├── transactions/ # repo : createScheduled(), linkTransferPeers()
+│       │   ├── transfers/
+│       │   ├── banks/       # repo : updateLogo() — routes : upload logo (Multer)
+│       │   ├── categories/
+│       │   ├── payment-methods/
+│       │   ├── scheduled/
+│       │   ├── settings/    # lead_days par utilisateur
+│       │   └── export/
+│       └── tests/           # Vitest (TU + TI)
 │           ├── session-store.test.ts
 │           ├── middleware.test.ts
 │           ├── scheduledLogic.test.ts

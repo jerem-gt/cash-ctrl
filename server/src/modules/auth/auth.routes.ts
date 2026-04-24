@@ -1,25 +1,22 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
-import type Database from 'better-sqlite3';
-import type { User } from '../db.js';
-import { requireAuth } from '../middleware.js';
+import { requireAuth } from '../../middleware.js';
+import type { Database } from 'better-sqlite3';
+import { createAuthRepo } from './auth.repo';
 
-export function createAuthRouter(db: Database.Database): Router {
-  const getUserByUsername = db.prepare<[string], User>('SELECT * FROM users WHERE username = ?');
-  const getUserById      = db.prepare<[number], User>('SELECT * FROM users WHERE id = ?');
-  const updatePassword   = db.prepare<[string, number]>('UPDATE users SET password_hash = ? WHERE id = ?');
+const loginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
 
-  const loginSchema = z.object({
-    username: z.string().min(1),
-    password: z.string().min(1),
-  });
+const changePasswordSchema = z.object({
+  current: z.string().min(1),
+  next:    z.string().min(8),
+});
 
-  const changePasswordSchema = z.object({
-    current: z.string().min(1),
-    next: z.string().min(8),
-  });
-
+export function createAuthRouter(db: Database): Router {
+  const authRepo = createAuthRepo(db);
   const router = Router();
 
   router.post('/login', (req, res) => {
@@ -30,7 +27,7 @@ export function createAuthRouter(db: Database.Database): Router {
     }
 
     const { username, password } = parsed.data;
-    const user = getUserByUsername.get(username);
+    const user = authRepo.getByUsername(username);
 
     if (!user || !bcrypt.compareSync(password, user.password_hash)) {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -61,14 +58,14 @@ export function createAuthRouter(db: Database.Database): Router {
       return;
     }
 
-    const user = getUserById.get(req.session.userId!);
+    const userId = req.session.userId!;
+    const user = authRepo.getById(userId);
     if (!user || !bcrypt.compareSync(parsed.data.current, user.password_hash)) {
       res.status(401).json({ error: 'Current password is incorrect' });
       return;
     }
 
-    const hash = bcrypt.hashSync(parsed.data.next, 12);
-    updatePassword.run(hash, req.session.userId!);
+    authRepo.updatePassword(userId, bcrypt.hashSync(parsed.data.next, 12));
     res.json({ ok: true });
   });
 

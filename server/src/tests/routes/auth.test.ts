@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import supertest from 'supertest';
 import bcrypt from 'bcrypt';
-import { createTestDb } from '../helpers/testDb.js';
 import { createApp } from '../../app.js';
+import { createTestDb } from '../helpers/testDb';
 
 function setup() {
   const db = createTestDb();

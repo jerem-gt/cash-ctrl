@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA_DIR, db, queries } from './db.js';
+import type { Database } from 'better-sqlite3';
+import { createBanksRepo } from './modules/banks/banks.repo.js';
+import { DATA_DIR } from './db/init';
 
 const BANK_CONFIG: { name: string; domain: string }[] = [
   { name: 'BoursoBank',       domain: 'boursobank.com' },
@@ -14,17 +16,16 @@ const BANK_CONFIG: { name: string; domain: string }[] = [
   { name: 'N26',              domain: 'n26.com' },
 ];
 
-// Normalize for accent-insensitive matching
-const normalize = (s: string) => s.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '').toLowerCase();
+const normalize = (s: string) => s.normalize('NFD').replaceAll(/[̀-ͯ]/g, '').toLowerCase();
 
 export const LOGOS_DIR = path.join(DATA_DIR, 'logos');
 
-export async function downloadDefaultBankLogos(): Promise<void> {
+export async function downloadDefaultBankLogos(db: Database): Promise<void> {
   if (!fs.existsSync(LOGOS_DIR)) fs.mkdirSync(LOGOS_DIR, { recursive: true });
 
-  const updateLogo = db.prepare('UPDATE banks SET logo = ? WHERE id = ?');
+  const banksRepo = createBanksRepo(db);
 
-  for (const bank of queries.getBanks.all()) {
+  for (const bank of banksRepo.getAll()) {
     if (bank.logo) continue;
     const config = BANK_CONFIG.find(c => normalize(c.name) === normalize(bank.name));
     if (!config) continue;
@@ -33,7 +34,7 @@ export async function downloadDefaultBankLogos(): Promise<void> {
     const filename = `bank-${bank.id}.png`;
     const filepath = path.join(LOGOS_DIR, filename);
     if (fs.existsSync(filepath)) {
-      updateLogo.run(`/logos/${filename}`, bank.id);
+      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
       continue;
     }
 
@@ -43,7 +44,7 @@ export async function downloadDefaultBankLogos(): Promise<void> {
       );
       if (!res.ok) { console.warn(`[logos] ${bank.name}: HTTP ${res.status}`); continue; }
       fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
-      updateLogo.run(`/logos/${filename}`, bank.id);
+      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
       console.log(`[logos] Downloaded logo for ${bank.name}`);
     } catch (err) {
       console.warn(`[logos] Failed for ${bank.name}:`, (err as Error).message);

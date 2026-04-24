@@ -6,7 +6,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
 import { computeBalance } from '@/lib/account';
-import { appName } from "@/lib/appname.ts";
+import { appName } from '@/lib/appname.ts';
 import type { Account } from '@/types';
 
 type GroupBy = 'bank' | 'type';

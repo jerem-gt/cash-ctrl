@@ -1,13 +1,14 @@
 import bcrypt from 'bcrypt';
 import supertest from 'supertest';
-import { createTestDb } from './testDb.js';
 import { createApp } from '../../app.js';
+import { createTestDb } from './testDb';
 
 export const TEST_USER = 'testuser';
 export const TEST_PASS = 'test-password-123';
 
 export interface TestContext {
   db: ReturnType<typeof createTestDb>;
+  app: ReturnType<typeof createApp>;
   agent: ReturnType<typeof supertest.agent>;
   userId: number;
 }
@@ -24,5 +25,5 @@ export async function createTestContext(): Promise<TestContext> {
 
   await agent.post('/api/auth/login').send({ username: TEST_USER, password: TEST_PASS });
 
-  return { db, agent, userId };
+  return { db, app, agent, userId };
 }

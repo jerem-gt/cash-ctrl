@@ -1,5 +1,5 @@
 import { Store, SessionData } from 'express-session';
-import type { Database as BetterSQLite3, Statement } from 'better-sqlite3';
+import type { Database, Statement } from 'better-sqlite3';
 
 interface SessionRow {
   data: string;
@@ -13,7 +13,7 @@ export class SQLiteSessionStore extends Store {
   private readonly stmtTouch: Statement<[number, string]>;
   private readonly stmtCleanup: Statement<[number]>;
 
-  constructor(db: BetterSQLite3) {
+  constructor(db: Database) {
     super();
 
     db.exec(`

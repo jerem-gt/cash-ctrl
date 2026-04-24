@@ -1,4 +1,4 @@
-import type { ScheduledTransaction } from '../db.js';
+import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
 
 export function dateStr(d: Date): string {
   const y = d.getFullYear();

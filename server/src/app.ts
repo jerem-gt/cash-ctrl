@@ -1,25 +1,25 @@
 import express from 'express';
 import session from 'express-session';
-import type Database from 'better-sqlite3';
+import type { Database } from 'better-sqlite3';
 import { SQLiteSessionStore } from './session-store.js';
-import { createAuthRouter } from './routes/auth.js';
-import { createAccountsRouter } from './routes/accounts.js';
-import { createTransactionsRouter } from './routes/transactions.js';
-import { createTransfersRouter } from './routes/transfers.js';
-import { createExportRouter } from './routes/export.js';
-import { createCategoriesRouter } from './routes/categories.js';
-import { createAccountTypesRouter } from './routes/account-types.js';
-import { createBanksRouter } from './routes/banks.js';
-import { createPaymentMethodsRouter } from './routes/payment-methods.js';
-import { createScheduledRouter } from './routes/scheduled.js';
-import { createSettingsRouter } from './routes/settings.js';
+import { createAuthRouter } from './modules/auth/auth.routes';
+import { createAccountsRouter } from './modules/accounts/accounts.routes';
+import { createTransactionsRouter } from './modules/transactions/transactions.routes';
+import { createTransfersRouter } from './modules/transfers/transfers.routes';
+import { createExportRouter } from './modules/export/export.routes';
+import { createCategoriesRouter } from './modules/categories/categories.routes';
+import { createAccountTypesRouter } from './modules/account-types/account-types.routes';
+import { createBanksRouter } from './modules/banks/banks.routes';
+import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
+import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
+import { createSettingsRouter } from './modules/settings/settings.routes';
 
 export interface AppOptions {
   sessionSecret?: string;
   secureCookies?: boolean;
 }
 
-export function createApp(db: Database.Database, options?: AppOptions): express.Application {
+export function createApp(db: Database, options?: AppOptions): express.Application {
   const app = express();
 
   app.use(express.json());

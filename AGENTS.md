@@ -22,18 +22,22 @@ CashCtrl est une application de suivi de finances personnelles en monorepo npm w
 - Remplace `connect-sqlite3` (failles de sécurité)
 - Nettoyage automatique des sessions expirées toutes les heures
 
-**`db.ts`** — Initialisation de la base de données.
-- Toutes les tables sont créées ici (`CREATE TABLE IF NOT EXISTS`)
-- Les migrations légères (ex : `ALTER TABLE`) sont appliquées ici au démarrage
-- Les seeds utilisent `INSERT OR IGNORE` pour être idempotents
+**`db/`** — Initialisation de la base de données, découpée en trois responsabilités :
+- `db/init.ts` — `createDb(filePath?)` (ouvre/crée le fichier SQLite, active WAL + FK), `initDatabase(db)` (appelle schema + seed), exporte `DATA_DIR`
+- `db/schema.ts` — `initSchema(db)` : `CREATE TABLE IF NOT EXISTS` pour toutes les tables + migrations légères (`ALTER TABLE`)
+- `db/seed.ts` — `seedDatabase(db)` : orchestre les seeds via `INSERT OR IGNORE` (idempotent)
+- `db/seeds/*.seed.ts` — Un fichier par entité seedée (banks, categories, accountTypes, paymentMethods, users)
 
 **`lib/`** — Logique métier découplée de la couche HTTP.
 - `scheduledLogic.ts` — Fonctions **pures** de calcul de dates de récurrence (aucun import DB). À importer depuis les tests unitaires.
-- `generateScheduled.ts` — Génération idempotente des transactions planifiées. Prend `db` en paramètre pour l'injection en tests.
+- `generateScheduled.ts` — Génération idempotente des transactions planifiées. Prend `db` en paramètre pour l'injection en tests. Délègue les INSERT à `transactions.repo.ts` (`createScheduled`, `linkTransferPeers`).
 
-**`routes/`** — Un fichier par ressource, chacun exporte une factory `createXxxRouter(db: Database)`.
-- Les requêtes préparées sont créées localement dans chaque factory (pas de singleton global)
-- Pattern uniforme : Zod schema → requêtes préparées → réponse JSON
+**`modules/`** — Un dossier par ressource, chacun contient trois fichiers :
+- `{module}.types.ts` — interfaces TypeScript de la ressource
+- `{module}.repo.ts` — factory `createXxxRepo(db: Database)` retournant un objet de méthodes SQL
+- `{module}.routes.ts` — factory `createXxxRouter(db: Database)` : Zod schema → repo → réponse JSON
+
+Les 11 modules : `auth`, `accounts`, `account-types`, `transactions`, `transfers`, `banks`, `categories`, `payment-methods`, `scheduled`, `settings`, `export`.
 
 **`logoDownloader.ts`** — Télécharge les logos des banques par défaut au démarrage via l'API favicon de Google. Les logos sont stockés dans `DATA_DIR/logos/`.
 
@@ -114,10 +118,16 @@ Structure des tests :
 - `tests/middleware.test.ts` — TU du guard `requireAuth`
 - `tests/scheduledLogic.test.ts` / `generateScheduled.test.ts` — TU logique récurrence
 - `tests/routes/*.test.ts` — TI supertest par ressource (11 fichiers)
-- `tests/helpers/testDb.ts` — `createTestDb()` SQLite `:memory:` + `setupFixtures()`
-- `tests/helpers/testApp.ts` — `createTestContext()` : crée une app + agent supertest authentifié
+- `tests/helpers/testDb.ts` — trois helpers de DB :
+  - `createTestDb()` — SQLite `:memory:` + `initSchema` + seeds de référence (banks, catégories, PM…)
+  - `seedTestReferenceData(db)` — insère uniquement les seeds de référence (utilisé par `createTestDb`)
+  - `setupFixtures()` — `createTestDb()` + user + 2 comptes ; pour les TU sans couche HTTP
+- `tests/helpers/testApp.ts` — `createTestContext()` : `createTestDb()` + `createApp` + agent supertest authentifié
 
-Chaque suite de tests appelle `createTestContext()` dans `beforeAll` pour obtenir une DB et un agent isolés. Ne pas partager de contexte entre suites.
+Patterns d'isolation par type de test :
+- **Routes** (`tests/routes/*.test.ts`) : `createTestContext()` dans `beforeAll` — DB et agent partagés au sein d'une suite, isolés entre suites
+- **`generateScheduled.test.ts`** : `setupFixtures()` dans `beforeEach` — DB fraîche à chaque test (les tests modifient l'état de la DB)
+- **`auth.test.ts`** : `setup()` locale dans chaque `it` — app fraîche par test (les tests modifient la session)
 
 > **Attention tsx cache** : `tsx watch` maintient un cache disque dans `node_modules/.cache/tsx/`. Le script `dev` utilise `--no-cache` pour éviter de servir du code compilé périmé.
 
@@ -147,6 +157,6 @@ Le dossier `data/` est monté en volume Docker et contient :
 - **`computeBalance`** : définie dans `client/src/lib/account.ts`, importée par Sidebar, DashboardPage et AccountsPage
 - **tsx cache** : `tsx watch` peut servir du code compilé périmé si le cache n'est pas invalidé. Utiliser `tsx watch --no-cache` (déjà dans le script `dev`) ou reconstruire avec `npm run build` + `node dist/index.js`
 - **DATA_DIR relatif** : `.env` a `DATA_DIR=./data`, résolu depuis le CWD. En workspace, CWD = `server/`, donc la vraie DB est dans `server/data/`. En test, utiliser une DB `:memory:` via injection.
-- **Testabilité des routes** : les routers sont des factory functions `createXxxRouter(db)`. Ne pas revenir à des singletons module-level — cela casserait l'isolation des tests.
+- **Testabilité des routes** : les routers sont des factory functions `createXxxRouter(db)` qui instancient leur repo en interne. Ne pas revenir à des singletons module-level — cela casserait l'isolation des tests.
 - **Tests session-store** : utiliser `async/await` + helpers `promisify`/`promisifyVoid`. Le pattern `done` est déprécié dans Vitest 4.x (erreur `done() callback is deprecated`).
-- **Testabilité de generateScheduled** : les requêtes SQL sont créées à l'intérieur de `generateScheduledTransactions`, pas en module-level, pour permettre l'injection d'une DB de test via le paramètre `db`.
+- **Testabilité de generateScheduled** : `generateScheduledTransactions` instancie `createTransactionsRepo(db)` en interne, ce qui permet l'injection d'une DB de test via le paramètre `db`. Ne pas extraire le repo en singleton module-level.

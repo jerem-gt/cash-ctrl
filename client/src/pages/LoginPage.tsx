@@ -1,7 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 import { useLogin } from '@/hooks/useAuth';
 import { Button, Input, FormGroup } from '@/components/ui';
-import { appName } from "@/lib/appname.ts";
+import { appName } from '@/lib/appname.ts';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');

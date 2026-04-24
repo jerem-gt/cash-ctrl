@@ -1,0 +1,44 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { requireAuth } from '../../middleware.js';
+import { createTransfersRepo } from './transfers.repo';
+import type { Database } from 'better-sqlite3';
+
+const transferSchema = z.object({
+  from_account_id: z.number().int().positive(),
+  to_account_id:   z.number().int().positive(),
+  amount:          z.number().positive(),
+  description:     z.string().min(1).max(200).default('Transfert'),
+  date:            z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export function createTransfersRouter(db: Database): Router {
+  const transfersRepo = createTransfersRepo(db);
+  const router = Router();
+  router.use(requireAuth);
+
+  router.post('/', (req, res) => {
+    const parsed = transferSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+
+    const { from_account_id, to_account_id, amount, description, date } = parsed.data;
+    const userId = req.session.userId!;
+
+    if (from_account_id === to_account_id) {
+      res.status(400).json({ error: 'Les deux comptes doivent être différents' });
+      return;
+    }
+
+    if (!transfersRepo.accountExists(from_account_id, userId) || !transfersRepo.accountExists(to_account_id, userId)) {
+      res.status(403).json({ error: 'Compte introuvable' });
+      return;
+    }
+
+    res.status(201).json(transfersRepo.create(userId, { from_account_id, to_account_id, amount, description, date }));
+  });
+
+  return router;
+}
