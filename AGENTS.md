@@ -67,6 +67,17 @@ Les 11 modules : `auth`, `accounts`, `account-types`, `transactions`, `transfers
 - Un transfert = deux transactions liées via `transfer_peer_id`
 - Modifier ou supprimer un transfert doit toujours affecter les deux legs simultanément
 - La route `PUT /api/transactions/:id` gère les deux cas (détecte via `transfer_peer_id` en DB)
+- `updateBothShared` (transactions.repo.ts) met à jour `amount`, `description`, `date` **et** `validated` sur les deux legs atomiquement
+- Le moyen de paiement « Transfert » et la catégorie associée sont assignés **côté serveur** dans `transfers.repo.ts` — ne jamais les faire sélectionner côté client
+
+**Modale TxModal / TxCoreFields**
+- La bascule Transaction ↔ Transfert est gérée par un état explicite `isTransfer: boolean` dans `TxModal`
+- `TxCoreFields` reçoit une prop `isTransfer: boolean` qui conditionne l'affichage (pas de détection via le PM)
+- En mode transfert : catégorie et moyen de paiement masqués ; sélecteur compte destination affiché
+- La liste des PM exclut toujours « Transfert » côté client (`paymentMethods.filter(m => m.name !== 'Transfert')`)
+- Description auto via `transferLabel(src, dest)` dans `TxCoreFields` : retourne `banque1 → banque2` si les deux comptes ont des banques différentes, sinon `compte1 → compte2`
+- `Select` et `AccountSelect` ont tous les deux `h-9` explicite pour normaliser leur hauteur entre navigateurs
+- Le container blanc du modal a `min-h-[540px]` pour éviter les micro-décalages de position lors du changement de mode
 
 ### Transactions planifiées
 - Table `scheduled_transactions`, générées dans `server/src/lib/generateScheduled.ts`
@@ -93,6 +104,18 @@ Les 11 modules : `auth`, `accounts`, `account-types`, `transactions`, `transfers
 ### Tailwind CSS 4
 - Pas de `tailwind.config.js` — configuration dans `client/src/index.css`
 - Modificateur d'opacité : `/6` = 6% (valeur dans l'échelle), `/[0.07]` = 7% (valeur arbitraire hors échelle). Les crochets `[...]` permettent toute valeur CSS libre.
+
+### ESLint (flat config v9)
+
+Le linter est configuré à la racine dans `eslint.config.js` (flat config ESLint 9) :
+- Deux blocs : l'un pour `server/src/**/*.ts` (rules TS seulement), l'autre pour `client/src/**/*.{ts,tsx}` (TS + React hooks + import sort)
+- Plugins actifs : `@typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-simple-import-sort`
+- Règles importantes à respecter :
+  - `react-hooks/set-state-in-effect` : ne jamais appeler `setState` directement dans un `useEffect` — utiliser de l'état dérivé ou déplacer la logique dans les handlers
+  - `react-hooks/refs` : ne jamais muter `ref.current` pendant le rendu (ex. `arr.current = []` dans le corps du composant)
+  - `react-hooks/preserve-manual-memoization` : les tableaux/objets passés en dépendances de `useMemo`/`useCallback` doivent eux-mêmes être mémoïsés
+  - `simple-import-sort` : les imports sont triés automatiquement (séparateur de groupe : ligne vide)
+- Lancer : `npx eslint client/src server/src` depuis la racine
 
 ## Workflow de développement
 

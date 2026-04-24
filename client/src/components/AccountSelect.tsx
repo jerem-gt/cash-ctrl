@@ -150,7 +150,7 @@ export function AccountSelect({
         onKeyDown={handleTriggerKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
+        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
       >
         {selected ? (
           <>

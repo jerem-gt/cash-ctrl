@@ -30,6 +30,9 @@ Application de suivi de comptes bancaires personnels.
 - Catégories configurables avec couleurs
 - Filtrage par compte, catégorie et type
 - Transferts entre comptes (les deux legs sont créés/modifiés/supprimés ensemble)
+  - Bascule explicite Transaction / Transfert dans la modale de création
+  - Description auto : `banque1 → banque2` si les comptes sont dans des banques différentes, sinon `compte1 → compte2`
+  - Notes et statut « validé » appliqués aux deux legs à la création comme à l'édition
 
 ### Banques
 - Référentiel de banques géré en base de données

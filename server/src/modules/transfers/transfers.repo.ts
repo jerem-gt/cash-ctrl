@@ -20,37 +20,75 @@ const TX_WITH_DETAILS = `
 export function createTransfersRepo(db: Database) {
   return {
     accountExists(accountId: number, userId: number): boolean {
-      return !!db.prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?').get(accountId, userId);
+      return !!db
+        .prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?')
+        .get(accountId, userId);
     },
 
-    create(userId: number, data: TransferInput): { expense: Transaction | undefined; income: Transaction | undefined } {
-      const transferCat = db.prepare<[], { id: number }>(`SELECT id
+    create(
+      userId: number,
+      data: TransferInput,
+    ): { expense: Transaction | undefined; income: Transaction | undefined } {
+      const transferCat = db
+        .prepare<[], { id: number }>(
+          `SELECT id
                                                           FROM categories
-                                                          WHERE name = 'Transfert'`).get();
-      const transferPm = db.prepare<[], { id: number }>(`SELECT id
+                                                          WHERE name = 'Transfert'`,
+        )
+        .get();
+      const transferPm = db
+        .prepare<[], { id: number }>(
+          `SELECT id
                                                          FROM payment_methods
-                                                         WHERE name = 'Transfert'`).get();
+                                                         WHERE name = 'Transfert'`,
+        )
+        .get();
       const TRANSFER_CAT_ID = transferCat?.id ?? null;
       const TRANSFER_PM_ID = transferPm?.id ?? null;
 
       const insertTx = db.prepare(
-          'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       );
       const setPeer = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
       const getTx = db.prepare<[number], Transaction>(TX_WITH_DETAILS);
 
       return db.transaction(() => {
-        const expenseId = Number(insertTx.run(
-            userId, data.from_account_id, 'expense', data.amount, data.description,
-            TRANSFER_CAT_ID, data.date, TRANSFER_PM_ID, null,
-        ).lastInsertRowid);
-        const incomeId = Number(insertTx.run(
-            userId, data.to_account_id, 'income', data.amount, data.description,
-            TRANSFER_CAT_ID, data.date, TRANSFER_PM_ID, null,
-        ).lastInsertRowid);
+        const notes = data.notes ?? null;
+        const validated = data.validated ? 1 : 0;
+        const expenseId = Number(
+          insertTx.run(
+            userId,
+            data.from_account_id,
+            'expense',
+            data.amount,
+            data.description,
+            TRANSFER_CAT_ID,
+            data.date,
+            TRANSFER_PM_ID,
+            notes,
+            validated,
+          ).lastInsertRowid,
+        );
+        const incomeId = Number(
+          insertTx.run(
+            userId,
+            data.to_account_id,
+            'income',
+            data.amount,
+            data.description,
+            TRANSFER_CAT_ID,
+            data.date,
+            TRANSFER_PM_ID,
+            notes,
+            validated,
+          ).lastInsertRowid,
+        );
         setPeer.run(incomeId, expenseId);
         setPeer.run(expenseId, incomeId);
-        return {expense: getTx.get(expenseId) ?? undefined, income: getTx.get(incomeId) ?? undefined};
+        return {
+          expense: getTx.get(expenseId) ?? undefined,
+          income: getTx.get(incomeId) ?? undefined,
+        };
       })();
     },
   };

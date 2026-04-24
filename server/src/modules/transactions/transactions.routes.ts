@@ -7,29 +7,30 @@ import { requireAuth } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
 
 const transactionSchema = z.object({
-  account_id:        z.number().int().positive(),
-  type:              z.enum(['income', 'expense']),
-  amount:            z.number().positive(),
-  description:       z.string().min(1).max(200),
-  category_id:       z.number().int().positive(),
-  date:              z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  account_id: z.number().int().positive(),
+  type: z.enum(['income', 'expense']),
+  amount: z.number().positive(),
+  description: z.string().min(1).max(200),
+  category_id: z.number().int().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   payment_method_id: z.number().int().positive(),
-  notes:             z.string().max(1000).nullable().default(null),
-  validated:         z.boolean().default(false),
+  notes: z.string().max(1000).nullable().default(null),
+  validated: z.boolean().default(false),
 });
 
 const transferUpdateSchema = z.object({
-  amount:      z.number().positive(),
+  amount: z.number().positive(),
   description: z.string().min(1).max(200),
-  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  validated: z.boolean().default(false),
 });
 
 const querySchema = z.object({
-  account_id:  z.coerce.number().int().optional(),
-  type:        z.enum(['income', 'expense']).optional(),
+  account_id: z.coerce.number().int().optional(),
+  type: z.enum(['income', 'expense']).optional(),
   category_id: z.coerce.number().int().optional(),
-  page:        z.coerce.number().int().min(1).default(1),
-  limit:       z.coerce.number().int().min(1).max(10000).default(25),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
 
 export function createTransactionsRouter(db: Database): Router {
@@ -75,20 +76,32 @@ export function createTransactionsRouter(db: Database): Router {
     const userId = req.session.userId!;
 
     const tx = transactionsRepo.getById(id, userId);
-    if (!tx) { res.status(404).json({ error: 'Transaction not found' }); return; }
+    if (!tx) {
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
+    }
 
     if (tx.transfer_peer_id) {
       const parsed = transferUpdateSchema.safeParse(req.body);
-      if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+      if (!parsed.success) {
+        res.status(400).json({ error: z.treeifyError(parsed.error) });
+        return;
+      }
       transactionsRepo.updateBothShared(userId, id, tx.transfer_peer_id, {
-        ...parsed.data,
+        amount: parsed.data.amount,
         description: parsed.data.description.trim(),
+        date: parsed.data.date,
+        validated: parsed.data.validated,
       });
     } else {
       const parsed = transactionSchema.safeParse(req.body);
-      if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+      if (!parsed.success) {
+        res.status(400).json({ error: z.treeifyError(parsed.error) });
+        return;
+      }
       if (!transactionsRepo.accountExists(parsed.data.account_id, userId)) {
-        res.status(403).json({ error: 'Account not found or does not belong to user' }); return;
+        res.status(403).json({ error: 'Account not found or does not belong to user' });
+        return;
       }
       transactionsRepo.update(userId, id, {
         ...parsed.data,
@@ -103,10 +116,14 @@ export function createTransactionsRouter(db: Database): Router {
     const id = Number.parseInt(req.params.id);
     const userId = req.session.userId!;
     const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
 
     if (!transactionsRepo.getById(id, userId)) {
-      res.status(404).json({ error: 'Transaction not found' }); return;
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
     }
 
     transactionsRepo.setValidated(userId, id, parsed.data.validated);
@@ -117,7 +134,10 @@ export function createTransactionsRouter(db: Database): Router {
     const id = Number.parseInt(req.params.id);
     const userId = req.session.userId!;
     const tx = transactionsRepo.getById(id, userId);
-    if (!tx) { res.status(404).json({ error: 'Transaction not found' }); return; }
+    if (!tx) {
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
+    }
 
     if (tx.transfer_peer_id) {
       transactionsRepo.deleteWithPeer(userId, id, tx.transfer_peer_id);

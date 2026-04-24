@@ -8,7 +8,7 @@ import type {
   ScheduledTransaction,
   Transaction,
   TransactionFilters,
-  UserSettings
+  UserSettings,
 } from '@/types';
 
 function extractError(value: unknown): string {
@@ -18,7 +18,10 @@ function extractError(value: unknown): string {
     const messages: string[] = [];
     for (const [key, val] of Object.entries(value)) {
       if (key === '_errors' && Array.isArray(val)) messages.push(...val.filter(Boolean));
-      else { const nested = extractError(val); if (nested) messages.push(nested); }
+      else {
+        const nested = extractError(val);
+        if (nested) messages.push(nested);
+      }
     }
     return messages.join(' · ');
   }
@@ -27,14 +30,15 @@ function extractError(value: unknown): string {
 
 async function parseResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(extractError((data as { error?: unknown }).error) || 'Request failed');
+  if (!res.ok)
+    throw new Error(extractError((data as { error?: unknown }).error) || 'Request failed');
   return data as T;
 }
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
-    headers: body === undefined ? undefined : {'Content-Type': 'application/json'},
+    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return parseResponse<T>(res);
@@ -53,8 +57,10 @@ export const authApi = {
 // Banks
 export const banksApi = {
   list: () => request<Bank[]>('GET', '/api/banks'),
-  create: (payload: { name: string; domain?: string | null }) => request<Bank>('POST', '/api/banks', payload),
-  update: (id: number, payload: { name: string; domain?: string | null }) => request<Bank>('PUT', `/api/banks/${id}`, payload),
+  create: (payload: { name: string; domain?: string | null }) =>
+    request<Bank>('POST', '/api/banks', payload),
+  update: (id: number, payload: { name: string; domain?: string | null }) =>
+    request<Bank>('PUT', `/api/banks/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/banks/${id}`),
   uploadLogo: async (id: number, file: File): Promise<Bank> => {
     const fd = new FormData();
@@ -67,41 +73,61 @@ export const banksApi = {
 // Account types
 export const accountTypesApi = {
   list: () => request<AccountType[]>('GET', '/api/account-types'),
-  create: (payload: { name: string }) => request<AccountType>('POST', '/api/account-types', payload),
-  update: (id: number, payload: { name: string }) => request<AccountType>('PUT', `/api/account-types/${id}`, payload),
+  create: (payload: { name: string }) =>
+    request<AccountType>('POST', '/api/account-types', payload),
+  update: (id: number, payload: { name: string }) =>
+    request<AccountType>('PUT', `/api/account-types/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
 
-type AccountPayload = { name: string; bank_id: number | null; account_type_id: number | null; initial_balance: number; opening_date: string };
+type AccountPayload = {
+  name: string;
+  bank_id: number | null;
+  account_type_id: number | null;
+  initial_balance: number;
+  opening_date: string;
+};
 
 // Accounts
 export const accountsApi = {
   list: () => request<Account[]>('GET', '/api/accounts'),
   create: (payload: AccountPayload) => request<Account>('POST', '/api/accounts', payload),
-  update: (id: number, payload: AccountPayload) => request<Account>('PUT', `/api/accounts/${id}`, payload),
+  update: (id: number, payload: AccountPayload) =>
+    request<Account>('PUT', `/api/accounts/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/accounts/${id}`),
 };
 
 // Categories
 export const categoriesApi = {
   list: () => request<Category[]>('GET', '/api/categories'),
-  create: (payload: { name: string; color: string }) => request<Category>('POST', '/api/categories', payload),
-  update: (id: number, payload: { name: string; color: string }) => request<Category>('PUT', `/api/categories/${id}`, payload),
+  create: (payload: { name: string; color: string }) =>
+    request<Category>('POST', '/api/categories', payload),
+  update: (id: number, payload: { name: string; color: string }) =>
+    request<Category>('PUT', `/api/categories/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
 };
 
 // Payment methods
 export const paymentMethodsApi = {
   list: () => request<PaymentMethod[]>('GET', '/api/payment-methods'),
-  create: (payload: { name: string; icon: string }) => request<PaymentMethod>('POST', '/api/payment-methods', payload),
-  update: (id: number, payload: { name: string; icon: string }) => request<PaymentMethod>('PUT', `/api/payment-methods/${id}`, payload),
+  create: (payload: { name: string; icon: string }) =>
+    request<PaymentMethod>('POST', '/api/payment-methods', payload),
+  update: (id: number, payload: { name: string; icon: string }) =>
+    request<PaymentMethod>('PUT', `/api/payment-methods/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/payment-methods/${id}`),
 };
 
 // Transfers
 export const transfersApi = {
-  create: (payload: { from_account_id: number; to_account_id: number; amount: number; description: string; date: string }) =>
-    request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
+  create: (payload: {
+    from_account_id: number;
+    to_account_id: number;
+    amount: number;
+    description: string;
+    date: string;
+    notes?: string | null;
+    validated?: boolean;
+  }) => request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
 };
 
 // Scheduled transactions
@@ -126,8 +152,10 @@ export type ScheduledPayload = {
 
 export const scheduledApi = {
   list: () => request<ScheduledTransaction[]>('GET', '/api/scheduled'),
-  create: (payload: ScheduledPayload) => request<ScheduledTransaction>('POST', '/api/scheduled', payload),
-  update: (id: number, payload: ScheduledPayload) => request<ScheduledTransaction>('PUT', `/api/scheduled/${id}`, payload),
+  create: (payload: ScheduledPayload) =>
+    request<ScheduledTransaction>('POST', '/api/scheduled', payload),
+  update: (id: number, payload: ScheduledPayload) =>
+    request<ScheduledTransaction>('PUT', `/api/scheduled/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/scheduled/${id}`),
 };
 
@@ -141,11 +169,11 @@ export const settingsApi = {
 export const transactionsApi = {
   list: (filters?: TransactionFilters) => {
     const params = new URLSearchParams();
-    if (filters?.account_id  != null) params.set('account_id',  String(filters.account_id));
-    if (filters?.type        != null) params.set('type',         filters.type);
-    if (filters?.category_id != null) params.set('category_id',  String(filters.category_id));
-    if (filters?.page        != null) params.set('page',         String(filters.page));
-    if (filters?.limit       != null) params.set('limit',        String(filters.limit));
+    if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
+    if (filters?.type != null) params.set('type', filters.type);
+    if (filters?.category_id != null) params.set('category_id', String(filters.category_id));
+    if (filters?.page != null) params.set('page', String(filters.page));
+    if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();
     const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
     return request<PaginatedTransactions>('GET', url);
@@ -160,17 +188,20 @@ export const transactionsApi = {
     payment_method_id: number;
     notes?: string | null;
   }) => request<Transaction>('POST', '/api/transactions', payload),
-  update: (id: number, payload: {
-    account_id: number;
-    type: 'income' | 'expense';
-    amount: number;
-    description: string;
-    category_id: number;
-    date: string;
-    payment_method_id: number;
-    notes: string | null;
-    validated: boolean;
-  }) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),
+  update: (
+    id: number,
+    payload: {
+      account_id: number;
+      type: 'income' | 'expense';
+      amount: number;
+      description: string;
+      category_id: number;
+      date: string;
+      payment_method_id: number;
+      notes: string | null;
+      validated: boolean;
+    },
+  ) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),
   validate: (id: number, validated: boolean) =>
     request<Transaction>('PATCH', `/api/transactions/${id}/validate`, { validated }),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transactions/${id}`),

@@ -1,6 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
 
-import { AccountSelect } from '@/components/AccountSelect';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
@@ -72,14 +71,31 @@ export function TxModal(props: Readonly<Props>) {
   const [date, setDate] = useState(isEdit ? tx!.date : today);
   const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : '');
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
+  const [isTransfer, setIsTransfer] = useState(false);
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
 
-  const selectedPm = paymentMethods.find((m) => String(m.id) === core.payment_method_id);
-  const isTransferCreate = !isEdit && selectedPm?.name === 'Transfert';
   const fixedAccountId = isEdit ? undefined : (props as CreateProps).fixedAccountId;
+  const isTransferCreate = !isEdit && isTransfer;
   const noOtherAccounts = fixedAccountId != null && accounts.every((a) => a.id === fixedAccountId);
+
+  const handleModeToggle = (toTransfer: boolean) => {
+    setIsTransfer(toTransfer);
+    if (toTransfer) {
+      const srcId = fixedAccountId != null ? fixedAccountId : Number.parseInt(core.account_id);
+      const src = accounts.find((a) => a.id === srcId);
+      setCore((c) => ({
+        ...c,
+        category_id: '',
+        payment_method_id: '',
+        to_account_id: '',
+        description: src ? `${src.name} →` : '',
+      }));
+    } else {
+      setCore((c) => ({ ...c, to_account_id: '', description: '' }));
+    }
+  };
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -122,6 +138,8 @@ export function TxModal(props: Readonly<Props>) {
           amount: Number.parseFloat(core.amount),
           description: core.description || 'Transfert',
           date,
+          notes: notes || null,
+          validated,
         },
         {
           onSuccess: () => {
@@ -169,22 +187,44 @@ export function TxModal(props: Readonly<Props>) {
 
   const title = isEdit
     ? 'Modifier la transaction'
-    : isTransferCreate
+    : isTransfer
       ? 'Nouveau transfert'
       : 'Nouvelle transaction';
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl">
+      <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-[540px]">
         <h3 className="font-serif text-xl mb-1">{title}</h3>
-        {isTransferEdit && (
-          <p className="text-[11px] text-stone-400 mb-4">
-            Transfert — montant, date et description appliqués aux deux legs.
-          </p>
-        )}
-        {!isTransferEdit && <div className="mb-4" />}
 
-        {!isEdit && isTransferCreate && noOtherAccounts ? (
+        {isEdit ? (
+          isTransferEdit ? (
+            <p className="text-[11px] text-stone-400 mb-4">
+              Transfert — montant, date et description appliqués aux deux legs.
+            </p>
+          ) : (
+            <div className="mb-4" />
+          )
+        ) : (
+          <div className="flex rounded-lg border border-black/13 overflow-hidden text-sm mb-4">
+            <button
+              type="button"
+              onClick={() => handleModeToggle(false)}
+              className={`flex-1 py-2 font-medium transition-colors ${!isTransfer ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
+            >
+              Transaction
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeToggle(true)}
+              disabled={noOtherAccounts}
+              className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-900 text-white' : noOtherAccounts ? 'bg-stone-50 text-stone-300 cursor-not-allowed' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
+            >
+              Transfert
+            </button>
+          </div>
+        )}
+
+        {!isEdit && isTransfer && noOtherAccounts ? (
           <p className="text-sm text-stone-400">Vous n&apos;avez pas d&apos;autre compte.</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -208,14 +248,6 @@ export function TxModal(props: Readonly<Props>) {
                     placeholder="Ex : Virement"
                   />
                 </FormGroup>
-                <FormGroup label="Compte">
-                  <AccountSelect
-                    value={core.account_id}
-                    onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
-                    accounts={accounts}
-                    logoMap={logoMap}
-                  />
-                </FormGroup>
               </div>
             ) : (
               <TxCoreFields
@@ -225,6 +257,7 @@ export function TxModal(props: Readonly<Props>) {
                 logoMap={logoMap}
                 categories={categories}
                 paymentMethods={paymentMethods}
+                isTransfer={isTransferCreate}
                 fixedAccountId={fixedAccountId}
               />
             )}

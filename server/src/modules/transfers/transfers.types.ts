@@ -4,4 +4,6 @@ export interface TransferInput {
   amount: number;
   description: string;
   date: string;
+  notes?: string | null;
+  validated?: boolean;
 }

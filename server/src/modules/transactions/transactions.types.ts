@@ -46,6 +46,7 @@ export interface UpdateSharedTransactionInput {
   amount: number;
   description: string;
   date: string;
+  validated: boolean;
 }
 
 export interface TransactionFilters {
