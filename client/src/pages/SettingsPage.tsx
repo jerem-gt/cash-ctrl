@@ -4,10 +4,23 @@ import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory 
 import { useAccountTypes, useCreateAccountType, useUpdateAccountType, useDeleteAccountType } from '@/hooks/useAccountTypes';
 import { useBanks, useCreateBank, useUpdateBank, useUploadBankLogo, useDeleteBank } from '@/hooks/useBanks';
 import { usePaymentMethods, useCreatePaymentMethod, useUpdatePaymentMethod, useDeletePaymentMethod } from '@/hooks/usePaymentMethods';
-import { Card, CardTitle, Button, Input, FormGroup, ConfirmModal, showToast } from '@/components/ui';
+import { Card, CardTitle, Button, Input, FormGroup, Skeleton, ConfirmModal, showToast } from '@/components/ui';
 import type { Category, AccountType, Bank, PaymentMethod } from '@/types';
 
 type PendingDelete = { title: string; body: string; onConfirm: () => void };
+
+function SkeletonRows({ count = 3 }: Readonly<{ count?: number }>) {
+  return (
+    <div className="mb-4">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0">
+          <Skeleton className="w-5 h-5 shrink-0" />
+          <Skeleton className="h-3.5 flex-1" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function RowActions({ onEdit, onDelete }: Readonly<{ onEdit: () => void; onDelete: () => void }>) {
   return (
@@ -273,22 +286,22 @@ export function SettingsPage() {
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
 
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isLoading: catsLoading } = useCategories();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
   const [newCat, setNewCat] = useState({ name: '', color: '#9E9A92' });
 
-  const { data: accountTypes = [] } = useAccountTypes();
+  const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
   const deleteAccountType = useDeleteAccountType();
   const [newAtName, setNewAtName] = useState('');
 
-  const { data: banks = [] } = useBanks();
+  const { data: banks = [], isLoading: banksLoading } = useBanks();
   const createBank = useCreateBank();
   const deleteBank = useDeleteBank();
   const [newBankName, setNewBankName] = useState('');
 
-  const { data: paymentMethods = [] } = usePaymentMethods();
+  const { data: paymentMethods = [], isLoading: pmsLoading } = usePaymentMethods();
   const createPaymentMethod = useCreatePaymentMethod();
   const deletePaymentMethod = useDeletePaymentMethod();
   const [newPm, setNewPm] = useState({ name: '', icon: '' });
@@ -359,7 +372,7 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Banques</CardTitle>
         <div className="mb-4">
-          {banks.length === 0
+          {banksLoading ? <SkeletonRows count={3} /> : banks.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucune banque.</p>
             : banks.map(b => (
                 <BankRow
@@ -389,7 +402,7 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Types de compte</CardTitle>
         <div className="mb-4">
-          {accountTypes.length === 0
+          {atsLoading ? <SkeletonRows count={3} /> : accountTypes.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucun type.</p>
             : accountTypes.map(at => (
                 <AccountTypeRow
@@ -425,7 +438,7 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Moyens de paiement</CardTitle>
         <div className="mb-4">
-          {paymentMethods.length === 0
+          {pmsLoading ? <SkeletonRows count={3} /> : paymentMethods.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucun moyen de paiement.</p>
             : paymentMethods.map(pm => (
                 <PaymentMethodRow
@@ -458,7 +471,7 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Catégories</CardTitle>
         <div className="mb-4">
-          {categories.length === 0
+          {catsLoading ? <SkeletonRows count={4} /> : categories.length === 0
             ? <p className="text-sm text-stone-400 py-2">Aucune catégorie.</p>
             : categories.map(cat => (
                 <CategoryRow

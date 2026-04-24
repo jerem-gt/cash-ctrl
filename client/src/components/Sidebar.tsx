@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { NavLink, useMatch } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLogout } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
 import { appName } from '@/lib/appname.ts';
+import { prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
 
 type GroupBy = 'bank' | 'type';
@@ -32,6 +34,7 @@ interface Props {
 }
 
 export function Sidebar({ username }: Readonly<Props>) {
+  const qc = useQueryClient();
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
   const { data: banks = [] } = useBanks();
@@ -82,7 +85,7 @@ export function Sidebar({ username }: Readonly<Props>) {
       <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden flex flex-col">
         <div className="flex-1">
           {NAV_MAIN.map(({ to, label, icon }) => (
-            <NavLink key={to} to={to} end={to === '/'} className={navClass}>
+            <NavLink key={to} to={to} end={to === '/'} className={navClass} onMouseEnter={() => prefetchForRoute(qc, to)}>
               <span className="text-[15px] w-4 text-center opacity-80">{icon}</span>
               {label}
             </NavLink>
@@ -94,6 +97,7 @@ export function Sidebar({ username }: Readonly<Props>) {
             <NavLink
               to="/accounts"
               end
+              onMouseEnter={() => prefetchForRoute(qc, '/accounts')}
               className={({ isActive }: { isActive: boolean }) =>
                 `flex items-center gap-3 pl-6 py-2.5 text-sm flex-1 transition-all duration-100 ${
                   isActive ? 'text-sidebar-fg font-medium' : 'text-white/40 hover:text-white/75'
@@ -171,7 +175,7 @@ export function Sidebar({ username }: Readonly<Props>) {
 
         <div className="border-t border-white/[0.07] pt-2 mt-2">
           {NAV_BOTTOM.map(({ to, label, icon }) => (
-            <NavLink key={to} to={to} className={navClass}>
+            <NavLink key={to} to={to} className={navClass} onMouseEnter={() => prefetchForRoute(qc, to)}>
               <span className="text-[15px] w-4 text-center opacity-80">{icon}</span>
               {label}
             </NavLink>

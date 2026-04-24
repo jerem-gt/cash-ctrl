@@ -90,6 +90,11 @@ export function FormGroup({ label, htmlFor, className = '', children }: Readonly
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+export function Skeleton({ className = '' }: Readonly<{ className?: string }>) {
+  return <div className={`bg-stone-100 animate-pulse rounded-md ${className}`} />;
+}
+
 // ─── Empty ────────────────────────────────────────────────────────────────────
 export function Empty({ children }: Readonly<{ children: ReactNode }>) {
   return <div className="text-center py-12 text-stone-300 text-sm">{children}</div>;
