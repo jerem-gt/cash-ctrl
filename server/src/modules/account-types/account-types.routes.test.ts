@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createTestContext, type TestContext } from '../helpers/testApp.js';
+import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 
 describe('/api/account-types', () => {
   let ctx: TestContext;

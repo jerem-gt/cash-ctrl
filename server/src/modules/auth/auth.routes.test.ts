@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import supertest from 'supertest';
 import bcrypt from 'bcrypt';
 import { createApp } from '../../app.js';
-import { createTestDb } from '../helpers/testDb';
+import { createTestDb } from '../../tests/helpers/testDb';
 
 function setup() {
   const db = createTestDb();

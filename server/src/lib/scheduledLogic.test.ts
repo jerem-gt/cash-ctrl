@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyWeekend, getFirstOccurrence, nextOccurrence, dateStr } from '../lib/scheduledLogic.js';
+import { applyWeekend, getFirstOccurrence, nextOccurrence, dateStr } from './scheduledLogic.js';
 
 // Helper: build a minimal ScheduledTransaction-like object
 function sched(

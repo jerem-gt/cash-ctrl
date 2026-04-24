@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import supertest from 'supertest';
-import { createTestContext, type TestContext } from '../helpers/testApp.js';
+import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 
 describe('/api/settings', () => {
   let ctx: TestContext;

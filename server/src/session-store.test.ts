@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import type { SessionData } from 'express-session';
-import { SQLiteSessionStore } from '../session-store.js';
+import { SQLiteSessionStore } from './session-store.js';
 
 function makeSession(offsetMs = 60_000): SessionData {
   return {

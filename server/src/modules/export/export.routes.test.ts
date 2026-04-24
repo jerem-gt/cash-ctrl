@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import supertest from 'supertest';
-import { createTestContext, type TestContext } from '../helpers/testApp.js';
-import { SEED } from '../helpers/testDb.js';
+import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
+import { SEED } from '../../tests/helpers/testDb.js';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
