@@ -22,11 +22,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install server deps
-        run: npm ci --workspace=server # NOSONAR — native addons (better-sqlite3, bcrypt) require node-gyp scripts
-
-      - name: Install client deps
-        run: npm ci --workspace=client --ignore-scripts
+      - name: Install deps
+        run: npm ci # NOSONAR — server native addons (better-sqlite3, bcrypt) require node-gyp scripts
 
       - name: Test with coverage
         run: npm run test:coverage --workspace=server
