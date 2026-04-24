@@ -1,6 +1,20 @@
+# ---- Stage 1 : récupérer timezone ----
+FROM node:24.15.0-alpine AS tz
+RUN apk add --no-cache tzdata
+
+# ---- Stage final ----
 FROM node:24.15.0-alpine
+
 WORKDIR /app
 
+# Timezone
+ENV TZ=Europe/Paris
+
+COPY --from=tz /usr/share/zoneinfo /usr/share/zoneinfo
+RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
+ && echo "$TZ" > /etc/timezone
+
+# App
 COPY node_modules ./node_modules
 COPY server/dist ./server/dist
 COPY client/dist ./client/dist
