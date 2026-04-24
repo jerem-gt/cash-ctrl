@@ -2,9 +2,10 @@ import { useState, useMemo, type SubmitEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction } from '@/hooks/useTransactions';
-import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, showToast } from '@/components/ui';
+import { Card, CardTitle, Button, Input, Select, FormGroup, ConfirmModal, Pagination, showToast } from '@/components/ui';
 import { fmtDec } from '@/lib/format';
 import { accountSeniority } from '@/lib/account';
+import type { Transaction } from '@/types';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
@@ -29,19 +30,19 @@ export function AccountDetailPage() {
   const { data: paymentMethods = [] } = usePaymentMethods();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
-  const { data: transactions = [], isLoading } = useTransactions({ account_id: accountId });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const { data: result, isLoading } = useTransactions({ account_id: accountId, page, limit });
   const deleteTxMutation = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
 
   const account = accounts.find(a => a.id === accountId);
+  const transactions = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
-  const balance = transactions.reduce(
-    (sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount,
-    account?.initial_balance ?? 0
-  );
-
-  const [editTx, setEditTx] = useState<(typeof transactions)[0] | null>(null);
-  const [deleteTx, setDeleteTx] = useState<(typeof transactions)[0] | null>(null);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '', opening_date: '' });
@@ -130,7 +131,7 @@ export function AccountDetailPage() {
             )}
           </div>
           <div className="text-right">
-            <p className={`font-serif text-3xl ${balance < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(balance)}</p>
+            <p className={`font-serif text-3xl ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(account?.balance ?? 0)}</p>
             <div className="flex gap-3 justify-end mt-1">
               <button onClick={openEdit} className="text-[11px] text-stone-400 hover:text-stone-700 transition-colors">
                 Modifier
@@ -189,7 +190,7 @@ export function AccountDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Transactions</p>
-          <span className="text-xs text-stone-400">{transactions.length} transaction(s)</span>
+          <span className="text-xs text-stone-400">{total} transaction(s)</span>
         </div>
         <TransactionsList
           isLoading={isLoading}
@@ -200,6 +201,9 @@ export function AccountDetailPage() {
           onDelete={setDeleteTx}
           emptyMessage="Aucune transaction sur ce compte"
         />
+        {(totalPages > 1 || total > 10) && (
+          <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onChange={setPage} onLimitChange={l => { setLimit(l); setPage(1); }} />
+        )}
       </div>
 
       {deleteTx && (

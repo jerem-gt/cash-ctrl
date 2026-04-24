@@ -1,19 +1,16 @@
 import { useState, useMemo, useEffect, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccounts, useCreateAccount } from '@/hooks/useAccounts';
-import { useTransactions } from '@/hooks/useTransactions';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, showToast } from '@/components/ui';
 import { AccountBadge } from '@/components/AccountBadge';
 import { BankSelect } from '@/components/BankSelect';
 import { fmtDec } from '@/lib/format';
-import { computeBalance } from '@/lib/account';
 
 export function AccountsPage() {
   const navigate = useNavigate();
   const { data: accounts = [] } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
@@ -94,7 +91,7 @@ export function AccountsPage() {
         : (
           <div className="space-y-6">
             {groups.map(({ type, accounts: groupAccounts }) => {
-              const subtotal = groupAccounts.reduce((sum, acc) => sum + computeBalance(acc, transactions), 0);
+              const subtotal = groupAccounts.reduce((sum, acc) => sum + acc.balance, 0);
               return (
                 <div key={type.id}>
                   <div className="flex items-baseline justify-between mb-3">
@@ -103,7 +100,7 @@ export function AccountsPage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {groupAccounts.map(acc => {
-                      const bal = computeBalance(acc, transactions);
+                      const bal = acc.balance;
                       return (
                         <button
                           key={acc.id}

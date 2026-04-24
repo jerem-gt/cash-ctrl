@@ -27,6 +27,8 @@ const querySchema = z.object({
   account_id:  z.coerce.number().int().optional(),
   type:        z.enum(['income', 'expense']).optional(),
   category_id: z.coerce.number().int().optional(),
+  page:        z.coerce.number().int().min(1).default(1),
+  limit:       z.coerce.number().int().min(1).max(10000).default(25),
 });
 
 export function createTransactionsRouter(db: Database): Router {

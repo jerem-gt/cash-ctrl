@@ -2,10 +2,8 @@ import { useState, useMemo } from 'react';
 import { NavLink, useMatch } from 'react-router-dom';
 import { useLogout } from '@/hooks/useAuth';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useTransactions } from '@/hooks/useTransactions';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
-import { computeBalance } from '@/lib/account';
 import { appName } from '@/lib/appname.ts';
 import type { Account } from '@/types';
 
@@ -36,7 +34,6 @@ interface Props {
 export function Sidebar({ username }: Readonly<Props>) {
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
   const { data: banks = [] } = useBanks();
 
   const [expanded, setExpanded] = useState(true);
@@ -142,7 +139,6 @@ export function Sidebar({ username }: Readonly<Props>) {
                   </p>
                   {group.accounts.map(acc => {
                     const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
-                    const balance = computeBalance(acc, transactions);
                     return (
                       <NavLink
                         key={acc.id}
@@ -160,8 +156,8 @@ export function Sidebar({ username }: Readonly<Props>) {
                           }
                           <span className="truncate">{acc.name}</span>
                         </span>
-                        <span className={`tabular-nums shrink-0 ${balance < 0 ? 'text-red-400/70' : ''}`}>
-                          {fmt(balance)}
+                        <span className={`tabular-nums shrink-0 ${acc.balance < 0 ? 'text-red-400/70' : ''}`}>
+                          {fmt(acc.balance)}
                         </span>
                       </NavLink>
                     );

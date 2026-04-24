@@ -1,4 +1,4 @@
-import type { Transaction, CreateTransactionInput, CreateScheduledTransactionInput, UpdateSharedTransactionInput, TransactionFilters } from './transactions.types';
+import type { Transaction, CreateTransactionInput, CreateScheduledTransactionInput, UpdateSharedTransactionInput, TransactionFilters, PaginatedResult } from './transactions.types';
 import type { Database } from 'better-sqlite3';
 
 const TX_WITH_DETAILS = `
@@ -17,46 +17,41 @@ const TX_WITH_DETAILS = `
 
 export function createTransactionsRepo(db: Database) {
   return {
-    getByUserId(userId: number, filters: TransactionFilters): Transaction[] {
-      let query = `
-        SELECT t.id,
-               t.user_id,
-               t.account_id,
-               t.type,
-               t.amount,
-               t.description,
-               t.category_id,
-               t.payment_method_id,
-               t.date,
-               t.transfer_peer_id,
-               t.scheduled_id,
-               t.validated,
-               t.notes,
-               t.created_at,
-               a.name                as account_name,
-               COALESCE(c.name, '')  as category,
-               COALESCE(pm.name, '') as payment_method
+    getByUserId(userId: number, filters: TransactionFilters): PaginatedResult<Transaction> {
+      const page  = Math.max(1, filters.page  ?? 1);
+      const limit = Math.min(100, Math.max(1, filters.limit ?? 25));
+
+      const FROM_WHERE = `
         FROM transactions t
-               JOIN accounts a ON t.account_id = a.id
-               LEFT JOIN categories c ON t.category_id = c.id
-               LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-        WHERE t.user_id = ?
-      `;
+             JOIN accounts a ON t.account_id = a.id
+             LEFT JOIN categories c ON t.category_id = c.id
+             LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+        WHERE t.user_id = ?`;
+
       const params: (number | string)[] = [userId];
-      if (filters.account_id) {
-        query += ' AND t.account_id = ?';
-        params.push(filters.account_id);
-      }
-      if (filters.type) {
-        query += ' AND t.type = ?';
-        params.push(filters.type);
-      }
-      if (filters.category_id) {
-        query += ' AND t.category_id = ?';
-        params.push(filters.category_id);
-      }
-      query += ' ORDER BY t.date DESC, t.created_at DESC';
-      return db.prepare(query).all(...params) as Transaction[];
+      let conditions = '';
+      if (filters.account_id) { conditions += ' AND t.account_id = ?'; params.push(filters.account_id); }
+      if (filters.type)        { conditions += ' AND t.type = ?';        params.push(filters.type); }
+      if (filters.category_id) { conditions += ' AND t.category_id = ?'; params.push(filters.category_id); }
+
+      const total = (db.prepare<(number | string)[], { count: number }>(
+        `SELECT COUNT(*) AS count ${FROM_WHERE}${conditions}`,
+      ).get(...params) as { count: number }).count;
+
+      const data = db.prepare<(number | string)[], Transaction>(`
+        SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
+               t.category_id, t.payment_method_id, t.date, t.transfer_peer_id,
+               t.scheduled_id, t.validated, t.notes, t.created_at,
+               a.name                AS account_name,
+               COALESCE(c.name, '')  AS category,
+               COALESCE(pm.name, '') AS payment_method
+        ${FROM_WHERE}${conditions}
+        ORDER BY t.date DESC, t.created_at DESC
+        LIMIT ? OFFSET ?`,
+      ).all(...params, limit, (page - 1) * limit);
+
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      return { data, total, page, totalPages };
     },
 
     getById(id: number, userId: number): Transaction | undefined {

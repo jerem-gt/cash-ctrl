@@ -52,4 +52,13 @@ export interface TransactionFilters {
   account_id?: number;
   type?: 'income' | 'expense';
   category_id?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
 }

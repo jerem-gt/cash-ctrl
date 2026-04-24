@@ -95,6 +95,49 @@ export function Empty({ children }: Readonly<{ children: ReactNode }>) {
   return <div className="text-center py-12 text-stone-300 text-sm">{children}</div>;
 }
 
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const LIMIT_OPTIONS = [10, 25, 50, 100];
+
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  total: number;
+  limit: number;
+  onChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+}
+export function Pagination({ page, totalPages, total, limit, onChange, onLimitChange }: Readonly<PaginationProps>) {
+  const from = total === 0 ? 0 : (page - 1) * limit + 1;
+  const to   = Math.min(page * limit, total);
+  return (
+    <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-stone-400">{from}–{to} sur {total}</span>
+        <select
+          value={limit}
+          onChange={e => onLimitChange(Number(e.target.value))}
+          className="text-xs text-stone-500 bg-transparent border border-black/10 rounded px-1.5 py-1 outline-none hover:border-black/20 transition-all"
+        >
+          {LIMIT_OPTIONS.map(o => <option key={o} value={o}>{o} / page</option>)}
+        </select>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >←</button>
+        <span className="text-xs text-stone-400 px-2">{page} / {totalPages}</span>
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page === totalPages}
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >→</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Toast (global) ───────────────────────────────────────────────────────────
 let toastTimer: ReturnType<typeof setTimeout>;
 export function showToast(msg: string) {

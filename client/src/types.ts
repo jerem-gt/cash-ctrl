@@ -29,6 +29,7 @@ export interface Account {
   type: string; // résolu par JOIN
   initial_balance: number;
   opening_date: string | null;
+  balance: number;
 }
 
 export interface Transaction {
@@ -90,4 +91,13 @@ export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
   category_id?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedTransactions {
+  data: Transaction[];
+  total: number;
+  page: number;
+  totalPages: number;
 }

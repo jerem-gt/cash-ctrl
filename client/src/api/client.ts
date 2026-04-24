@@ -1,4 +1,4 @@
-import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters, ScheduledTransaction, UserSettings } from '@/types';
+import type { Account, AccountType, Bank, Category, PaymentMethod, Transaction, TransactionFilters, PaginatedTransactions, ScheduledTransaction, UserSettings } from '@/types';
 
 function extractError(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -133,9 +133,11 @@ export const transactionsApi = {
     if (filters?.account_id  != null) params.set('account_id',  String(filters.account_id));
     if (filters?.type        != null) params.set('type',         filters.type);
     if (filters?.category_id != null) params.set('category_id',  String(filters.category_id));
+    if (filters?.page        != null) params.set('page',         String(filters.page));
+    if (filters?.limit       != null) params.set('limit',        String(filters.limit));
     const qs = params.toString();
     const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
-    return request<Transaction[]>('GET', url);
+    return request<PaginatedTransactions>('GET', url);
   },
   create: (payload: {
     account_id: number;

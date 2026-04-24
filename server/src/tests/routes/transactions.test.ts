@@ -26,10 +26,13 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET / returns empty array initially', async () => {
+  it('GET / returns paginated result initially', async () => {
     const res = await ctx.agent.get('/api/transactions');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.data).toEqual([]);
+    expect(res.body.total).toBe(0);
+    expect(res.body.page).toBe(1);
+    expect(res.body.totalPages).toBe(1);
   });
 
   it('POST / creates a transaction', async () => {
@@ -65,7 +68,7 @@ describe('/api/transactions', () => {
     });
     const res = await ctx.agent.get('/api/transactions?type=expense');
     expect(res.status).toBe(200);
-    expect(res.body.every((t: { type: string }) => t.type === 'expense')).toBe(true);
+    expect(res.body.data.every((t: { type: string }) => t.type === 'expense')).toBe(true);
   });
 
   it('PUT /:id updates a normal transaction', async () => {

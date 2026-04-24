@@ -8,6 +8,7 @@ export interface Account {
   type: string;
   initial_balance: number;
   opening_date: string | null;
+  balance: number;
   created_at: string;
 }
 

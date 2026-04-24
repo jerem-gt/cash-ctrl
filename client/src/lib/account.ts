@@ -1,11 +1,3 @@
-import type { Account, Transaction } from '@/types';
-
-export function computeBalance(account: Account, transactions: Transaction[]): number {
-  return transactions
-    .filter(t => t.account_id === account.id)
-    .reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, account.initial_balance);
-}
-
 export function accountSeniority(openingDate: string): string {
   const open = new Date(openingDate + 'T00:00:00');
   const now = new Date();

@@ -63,7 +63,7 @@ describe('/api/transfers', () => {
     expect(del.status).toBe(200);
 
     const check = await ctx.agent.get('/api/transactions');
-    const ids = check.body.map((t: { id: number }) => t.id);
+    const ids = check.body.data.map((t: { id: number }) => t.id);
     expect(ids).not.toContain(expenseId);
     expect(ids).not.toContain(incomeId);
   });

@@ -10,11 +10,10 @@ import { useBanks } from '@/hooks/useBanks';
 import { Card, CardTitle, Metric, Empty } from '@/components/ui';
 import { TxItem } from '@/components/TxItem';
 import { fmt, fmtDec, today, isThisMonth, monthLabel, isSameMonth } from '@/lib/format';
-import { computeBalance } from '@/lib/account';
 
 export function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
+  const { data: result } = useTransactions({ limit: 10000 });
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
@@ -24,9 +23,10 @@ export function DashboardPage() {
     [categories]
   );
 
+  const transactions = result?.data ?? [];
   const nonTransfers = transactions.filter(t => t.transfer_peer_id === null);
 
-  const totalBalance = accounts.reduce((s, a) => s + computeBalance(a, transactions), 0);
+  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const monthIncome  = nonTransfers.filter(t => t.type === 'income'  && isThisMonth(t.date)).reduce((s, t) => s + t.amount, 0);
   const monthExpense = nonTransfers.filter(t => t.type === 'expense' && isThisMonth(t.date)).reduce((s, t) => s + t.amount, 0);
   const bilan = monthIncome - monthExpense;
