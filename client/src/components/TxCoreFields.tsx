@@ -29,13 +29,13 @@ export function TxCoreFields({
   const selectedPm = paymentMethods.find(m => String(m.id) === value.payment_method_id);
   const isTransfer = selectedPm?.name === 'Transfert';
 
-  const sourceAccount = fixedAccountId != null
-    ? accounts.find(a => a.id === fixedAccountId)
-    : accounts.find(a => String(a.id) === value.account_id);
+  const sourceAccount = fixedAccountId == null
+      ? accounts.find(a => String(a.id) === value.account_id)
+      : accounts.find(a => a.id === fixedAccountId);
 
-  const destAccounts = fixedAccountId != null
-    ? accounts.filter(a => a.id !== fixedAccountId)
-    : accounts.filter(a => String(a.id) !== value.account_id);
+  const destAccounts = fixedAccountId == null
+      ? accounts.filter(a => String(a.id) !== value.account_id)
+      : accounts.filter(a => a.id !== fixedAccountId);
 
   const handlePaymentMethodChange = (pmId: string) => {
     const pm = paymentMethods.find(m => String(m.id) === pmId);

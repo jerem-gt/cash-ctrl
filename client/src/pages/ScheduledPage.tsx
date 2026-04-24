@@ -83,7 +83,7 @@ function emptyForm(firstAccountId?: number, firstCategoryId?: number): FormState
 function schedToForm(s: ScheduledTransaction): FormState {
   return {
     account_id: String(s.account_id),
-    to_account_id: s.to_account_id != null ? String(s.to_account_id) : '',
+    to_account_id: s.to_account_id == null ? '' : String(s.to_account_id),
     type: s.type,
     amount: String(s.amount),
     description: s.description,
@@ -92,8 +92,8 @@ function schedToForm(s: ScheduledTransaction): FormState {
     notes: s.notes ?? '',
     recurrence_unit: s.recurrence_unit,
     recurrence_interval: String(s.recurrence_interval),
-    recurrence_day: s.recurrence_day != null ? String(s.recurrence_day) : '1',
-    recurrence_month: s.recurrence_month != null ? String(s.recurrence_month) : '1',
+    recurrence_day: s.recurrence_day == null ? '1' : String(s.recurrence_day),
+    recurrence_month: s.recurrence_month == null ? '1' : String(s.recurrence_month),
     weekend_handling: s.weekend_handling,
     start_date: s.start_date,
     end_date: s.end_date ?? '',
@@ -357,7 +357,7 @@ export function ScheduledPage() {
 
   // Sync local leadDays input when settings load
   const settingsLeadDays = settings?.lead_days;
-  const displayLeadDays = leadDays !== '' ? leadDays : (settingsLeadDays != null ? String(settingsLeadDays) : '30');
+  const displayLeadDays = leadDays === '' ? (settingsLeadDays == null ? '30' : String(settingsLeadDays)) : leadDays;
 
   const handleSaveLeadDays = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();

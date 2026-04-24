@@ -20,7 +20,7 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
     amount: '',
     description: '',
     category_id: '',
-    account_id: fixedAccountId != null ? String(fixedAccountId) : '',
+    account_id: fixedAccountId == null ? '' : String(fixedAccountId),
     to_account_id: '',
     payment_method_id: '',
   };
