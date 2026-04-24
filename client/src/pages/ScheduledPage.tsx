@@ -2,19 +2,46 @@ import { type SyntheticEvent, useMemo, useState } from 'react';
 
 import type { ScheduledPayload } from '@/api/client';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
-import { Button, Card, CardTitle, ConfirmModal, FormGroup, Input, Select, showToast } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardTitle,
+  ConfirmModal,
+  FormGroup,
+  Input,
+  Select,
+  showToast,
+} from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { useCreateScheduled, useDeleteScheduled, useScheduled, useUpdateScheduled } from '@/hooks/useScheduled';
+import {
+  useCreateScheduled,
+  useDeleteScheduled,
+  useScheduled,
+  useUpdateScheduled,
+} from '@/hooks/useScheduled';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { fmtDec, today } from '@/lib/format';
 import type { RecurrenceUnit, ScheduledTransaction, WeekendHandling } from '@/types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const MONTH_NAMES = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const MONTH_NAMES = [
+  'Janvier',
+  'Février',
+  'Mars',
+  'Avril',
+  'Mai',
+  'Juin',
+  'Juillet',
+  'Août',
+  'Septembre',
+  'Octobre',
+  'Novembre',
+  'Décembre',
+];
 
 function recurrenceLabel(s: ScheduledTransaction): string {
   const n = s.recurrence_interval;
@@ -28,7 +55,7 @@ function recurrenceLabel(s: ScheduledTransaction): string {
   }
   // year
   const day = s.recurrence_day ?? '';
-  const month = s.recurrence_month ? ` ${MONTH_NAMES[(s.recurrence_month - 1)]}` : '';
+  const month = s.recurrence_month ? ` ${MONTH_NAMES[s.recurrence_month - 1]}` : '';
   const when = day || month ? ` le ${day}${month}` : '';
   return n === 1 ? `Chaque année${when}` : `Tous les ${n} ans${when}`;
 }
@@ -102,9 +129,12 @@ function schedToForm(s: ScheduledTransaction): FormState {
   };
 }
 
-function formToPayload(f: FormState, paymentMethods: { id: number; name: string }[]): ScheduledPayload {
+function formToPayload(
+  f: FormState,
+  paymentMethods: { id: number; name: string }[],
+): ScheduledPayload {
   const unit = f.recurrence_unit;
-  const selectedPm = paymentMethods.find(m => String(m.id) === f.payment_method_id);
+  const selectedPm = paymentMethods.find((m) => String(m.id) === f.payment_method_id);
   const isTransfer = selectedPm?.name === 'Transfert';
   return {
     account_id: Number.parseInt(f.account_id),
@@ -117,8 +147,9 @@ function formToPayload(f: FormState, paymentMethods: { id: number; name: string 
     notes: f.notes.trim() || null,
     recurrence_unit: unit,
     recurrence_interval: Number.parseInt(f.recurrence_interval) || 1,
-    recurrence_day: (unit === 'month' || unit === 'year') ? (Number.parseInt(f.recurrence_day) || 1) : null,
-    recurrence_month: unit === 'year' ? (Number.parseInt(f.recurrence_month) || 1) : null,
+    recurrence_day:
+      unit === 'month' || unit === 'year' ? Number.parseInt(f.recurrence_day) || 1 : null,
+    recurrence_month: unit === 'year' ? Number.parseInt(f.recurrence_month) || 1 : null,
     weekend_handling: f.weekend_handling,
     start_date: f.start_date,
     end_date: f.end_date || null,
@@ -140,11 +171,22 @@ interface ModalProps {
   onCancel: () => void;
 }
 
-function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMethods, title, isPending, onSave, onCancel }: Readonly<ModalProps>) {
+function ScheduledModal({
+  initial,
+  accounts = [],
+  logoMap,
+  categories,
+  paymentMethods,
+  title,
+  isPending,
+  onSave,
+  onCancel,
+}: Readonly<ModalProps>) {
   const [form, setForm] = useState<FormState>(initial);
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
-  const selectedPm = paymentMethods.find(m => String(m.id) === form.payment_method_id);
+  const selectedPm = paymentMethods.find((m) => String(m.id) === form.payment_method_id);
   const isTransfer = selectedPm?.name === 'Transfert';
 
   const coreValue: TxCoreState = {
@@ -159,7 +201,13 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.account_id || !form.amount || !form.description || !form.payment_method_id || !form.start_date) {
+    if (
+      !form.account_id ||
+      !form.amount ||
+      !form.description ||
+      !form.payment_method_id ||
+      !form.start_date
+    ) {
       showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -179,32 +227,37 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
       <div className="bg-white rounded-2xl p-7 w-full max-w-2xl shadow-xl my-4">
         <h3 className="font-serif text-xl mb-5">{title}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
-
           {/* Champs communs : type, montant, description, catégorie, comptes, moyen de paiement */}
           <TxCoreFields
             value={coreValue}
-            onChange={patch => setForm(f => ({ ...f, ...patch }))}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
             accounts={accounts}
             logoMap={logoMap}
             categories={categories}
             paymentMethods={paymentMethods}
+            isTransfer={form.to_account_id != null}
           />
 
           {/* Ligne 3 : récurrence */}
           <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Récurrence</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+              Récurrence
+            </p>
             <div className="flex gap-3 flex-wrap">
               <FormGroup label="Tous les…">
                 <Input
                   type="number"
                   value={form.recurrence_interval}
-                  onChange={e => set('recurrence_interval', e.target.value)}
+                  onChange={(e) => set('recurrence_interval', e.target.value)}
                   min="1"
                   className="w-20"
                 />
               </FormGroup>
               <FormGroup label="Unité">
-                <Select value={form.recurrence_unit} onChange={e => set('recurrence_unit', e.target.value as RecurrenceUnit)}>
+                <Select
+                  value={form.recurrence_unit}
+                  onChange={(e) => set('recurrence_unit', e.target.value as RecurrenceUnit)}
+                >
                   <option value="day">Jour(s)</option>
                   <option value="week">Semaine(s)</option>
                   <option value="month">Mois</option>
@@ -216,7 +269,7 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
                   <Input
                     type="number"
                     value={form.recurrence_day}
-                    onChange={e => set('recurrence_day', e.target.value)}
+                    onChange={(e) => set('recurrence_day', e.target.value)}
                     min="1"
                     max="31"
                     className="w-20"
@@ -225,8 +278,15 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
               )}
               {form.recurrence_unit === 'year' && (
                 <FormGroup label="Mois">
-                  <Select value={form.recurrence_month} onChange={e => set('recurrence_month', e.target.value)}>
-                    {MONTH_NAMES.map((name, i) => <option key={i + 1} value={i + 1}>{name}</option>)}
+                  <Select
+                    value={form.recurrence_month}
+                    onChange={(e) => set('recurrence_month', e.target.value)}
+                  >
+                    {MONTH_NAMES.map((name, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {name}
+                      </option>
+                    ))}
                   </Select>
                 </FormGroup>
               )}
@@ -234,8 +294,11 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
 
             {/* Week-end */}
             <div className="flex gap-4 flex-wrap">
-              {(['allow', 'before', 'after'] as WeekendHandling[]).map(v => (
-                <label key={v} className="flex items-center gap-1.5 cursor-pointer text-sm text-stone-700 select-none">
+              {(['allow', 'before', 'after'] as WeekendHandling[]).map((v) => (
+                <label
+                  key={v}
+                  className="flex items-center gap-1.5 cursor-pointer text-sm text-stone-700 select-none"
+                >
                   <input
                     type="radio"
                     name="weekend_handling"
@@ -253,16 +316,24 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
           {/* Ligne 4 : dates + actif */}
           <div className="flex gap-3 flex-wrap items-end">
             <FormGroup label="Date de début">
-              <Input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} />
+              <Input
+                type="date"
+                value={form.start_date}
+                onChange={(e) => set('start_date', e.target.value)}
+              />
             </FormGroup>
             <FormGroup label="Date de fin (optionnel)">
-              <Input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} />
+              <Input
+                type="date"
+                value={form.end_date}
+                onChange={(e) => set('end_date', e.target.value)}
+              />
             </FormGroup>
             <label className="flex items-center gap-2 cursor-pointer select-none pb-2">
               <input
                 type="checkbox"
                 checked={form.active}
-                onChange={e => set('active', e.target.checked)}
+                onChange={(e) => set('active', e.target.checked)}
                 className="w-4 h-4 accent-green-500"
               />
               <span className="text-sm text-stone-700">Actif</span>
@@ -273,7 +344,7 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
           <FormGroup label="Notes">
             <textarea
               value={form.notes}
-              onChange={e => set('notes', e.target.value)}
+              onChange={(e) => set('notes', e.target.value)}
               placeholder="Informations complémentaires…"
               rows={2}
               className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
@@ -281,8 +352,12 @@ function ScheduledModal({ initial, accounts = [], logoMap, categories, paymentMe
           </FormGroup>
 
           <div className="flex gap-2 justify-end pt-1">
-            <Button type="button" onClick={onCancel}>Annuler</Button>
-            <Button type="submit" variant="primary" disabled={isPending}>{isPending ? '…' : 'Enregistrer'}</Button>
+            <Button type="button" onClick={onCancel}>
+              Annuler
+            </Button>
+            <Button type="submit" variant="primary" disabled={isPending}>
+              {isPending ? '…' : 'Enregistrer'}
+            </Button>
           </div>
         </form>
       </div>
@@ -301,7 +376,7 @@ interface RowProps {
 
 function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>) {
   const isTransfer = sched.payment_method === 'Transfert';
-  const toAccount = isTransfer ? accounts.find(a => a.id === sched.to_account_id) : null;
+  const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
 
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/[0.06] last:border-0 group">
@@ -309,7 +384,9 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium truncate">{sched.description}</p>
           {isTransfer && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">↔ Transfert</span>
+            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+              ↔ Transfert
+            </span>
           )}
           {!sched.active && (
             <span className="text-[10px] bg-stone-100 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0">
@@ -323,12 +400,25 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
           {sched.end_date ? ` · jusqu'au ${sched.end_date}` : ''}
         </p>
       </div>
-      <span className={`text-sm font-medium tabular-nums shrink-0 ${isTransfer ? 'text-stone-500' : sched.type === 'income' ? 'text-green-800' : 'text-red-700'}`}>
-        {isTransfer ? '' : sched.type === 'income' ? '+' : '−'}{fmtDec(sched.amount)}
+      <span
+        className={`text-sm font-medium tabular-nums shrink-0 ${isTransfer ? 'text-stone-500' : sched.type === 'income' ? 'text-green-800' : 'text-red-700'}`}
+      >
+        {isTransfer ? '' : sched.type === 'income' ? '+' : '−'}
+        {fmtDec(sched.amount)}
       </span>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button onClick={() => onEdit(sched)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors px-1">Modifier</button>
-        <button onClick={() => onDelete(sched)} className="text-xs text-stone-300 hover:text-red-400 transition-colors px-1">×</button>
+        <button
+          onClick={() => onEdit(sched)}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors px-1"
+        >
+          Modifier
+        </button>
+        <button
+          onClick={() => onDelete(sched)}
+          className="text-xs text-stone-300 hover:text-red-400 transition-colors px-1"
+        >
+          ×
+        </button>
       </div>
     </div>
   );
@@ -349,7 +439,7 @@ export function ScheduledPage() {
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: banks = [] } = useBanks();
 
-  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
+  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<ScheduledTransaction | null>(null);
@@ -358,38 +448,60 @@ export function ScheduledPage() {
 
   // Sync local leadDays input when settings load
   const settingsLeadDays = settings?.lead_days;
-  const displayLeadDays = leadDays === '' ? (settingsLeadDays == null ? '30' : String(settingsLeadDays)) : leadDays;
+  const displayLeadDays =
+    leadDays === '' ? (settingsLeadDays == null ? '30' : String(settingsLeadDays)) : leadDays;
 
   const handleSaveLeadDays = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const val = Number.parseInt(displayLeadDays);
-    if (Number.isNaN(val) || val < 0 || val > 365) { showToast('Valeur entre 0 et 365.'); return; }
-    updateSettings.mutate({ lead_days: val }, {
-      onSuccess: () => { setLeadDays(''); showToast('Délai d\'anticipation mis à jour ✓'); },
-      onError: err => showToast(err.message),
-    });
+    if (Number.isNaN(val) || val < 0 || val > 365) {
+      showToast('Valeur entre 0 et 365.');
+      return;
+    }
+    updateSettings.mutate(
+      { lead_days: val },
+      {
+        onSuccess: () => {
+          setLeadDays('');
+          showToast("Délai d'anticipation mis à jour ✓");
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   const handleCreate = (f: FormState) => {
     createScheduled.mutate(formToPayload(f, paymentMethods), {
-      onSuccess: () => { setShowModal(false); showToast('Planification créée ✓'); },
-      onError: err => showToast(err.message),
+      onSuccess: () => {
+        setShowModal(false);
+        showToast('Planification créée ✓');
+      },
+      onError: (err) => showToast(err.message),
     });
   };
 
   const handleUpdate = (f: FormState) => {
     if (!editTarget) return;
-    updateScheduled.mutate({ id: editTarget.id, ...formToPayload(f, paymentMethods) }, {
-      onSuccess: () => { setEditTarget(null); showToast('Planification mise à jour ✓'); },
-      onError: err => showToast(err.message),
-    });
+    updateScheduled.mutate(
+      { id: editTarget.id, ...formToPayload(f, paymentMethods) },
+      {
+        onSuccess: () => {
+          setEditTarget(null);
+          showToast('Planification mise à jour ✓');
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   const handleDelete = () => {
     if (!pendingDelete) return;
     deleteScheduled.mutate(pendingDelete.id, {
-      onSuccess: () => { setPendingDelete(null); showToast('Planification supprimée'); },
-      onError: err => showToast(err.message),
+      onSuccess: () => {
+        setPendingDelete(null);
+        showToast('Planification supprimée');
+      },
+      onError: (err) => showToast(err.message),
     });
   };
 
@@ -414,7 +526,7 @@ export function ScheduledPage() {
             <Input
               type="number"
               value={displayLeadDays}
-              onChange={e => setLeadDays(e.target.value)}
+              onChange={(e) => setLeadDays(e.target.value)}
               min="0"
               max="365"
               className="w-24"
@@ -429,8 +541,12 @@ export function ScheduledPage() {
       {/* Liste des planifications */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Planifications</p>
-          <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>+ Nouvelle</Button>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+            Planifications
+          </p>
+          <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+            + Nouvelle
+          </Button>
         </div>
 
         {isLoading ? (
@@ -438,13 +554,13 @@ export function ScheduledPage() {
         ) : scheduled.length === 0 ? (
           <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
         ) : (
-          scheduled.map(s => (
+          scheduled.map((s) => (
             <ScheduledRow
               key={s.id}
               sched={s}
               accounts={accounts}
-              onEdit={s => setEditTarget(s)}
-              onDelete={s => setPendingDelete(s)}
+              onEdit={(s) => setEditTarget(s)}
+              onDelete={(s) => setPendingDelete(s)}
             />
           ))
         )}
