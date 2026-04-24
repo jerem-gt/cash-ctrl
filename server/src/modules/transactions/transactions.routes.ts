@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
 
 const transactionSchema = z.object({
@@ -39,7 +39,7 @@ export function createTransactionsRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     generateScheduledTransactions(userId, db);
 
     const parsed = querySchema.safeParse(req.query);
@@ -57,7 +57,7 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
 
     if (!transactionsRepo.accountExists(parsed.data.account_id, userId)) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
@@ -73,7 +73,7 @@ export function createTransactionsRouter(db: Database): Router {
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
 
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
@@ -114,7 +114,7 @@ export function createTransactionsRouter(db: Database): Router {
 
   router.patch('/:id/validate', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
@@ -132,7 +132,7 @@ export function createTransactionsRouter(db: Database): Router {
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
       res.status(404).json({ error: 'Transaction not found' });

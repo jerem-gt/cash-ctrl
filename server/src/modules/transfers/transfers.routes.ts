@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransfersRepo } from './transfers.repo';
 
 const transferSchema = z.object({
@@ -29,7 +29,7 @@ export function createTransfersRouter(db: Database): Router {
 
     const { from_account_id, to_account_id, amount, description, date, notes, validated } =
       parsed.data;
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
 
     if (from_account_id === to_account_id) {
       res.status(400).json({ error: 'Les deux comptes doivent être différents' });
@@ -44,19 +44,17 @@ export function createTransfersRouter(db: Database): Router {
       return;
     }
 
-    res
-      .status(201)
-      .json(
-        transfersRepo.create(userId, {
-          from_account_id,
-          to_account_id,
-          amount,
-          description,
-          date,
-          notes,
-          validated,
-        }),
-      );
+    res.status(201).json(
+      transfersRepo.create(userId, {
+        from_account_id,
+        to_account_id,
+        amount,
+        description,
+        date,
+        notes,
+        validated,
+      }),
+    );
   });
 
   return router;

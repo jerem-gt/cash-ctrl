@@ -14,3 +14,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
   res.status(401).json({ error: 'Unauthorized' });
 }
+
+export function sessionUserId(req: Request): number {
+  return req.session.userId as number;
+}

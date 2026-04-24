@@ -3,7 +3,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAuthRepo } from './auth.repo';
 
 const loginSchema = z.object({
@@ -59,7 +59,7 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     const user = authRepo.getById(userId);
     if (!user || !bcrypt.compareSync(parsed.data.current, user.password_hash)) {
       res.status(401).json({ error: 'Current password is incorrect' });

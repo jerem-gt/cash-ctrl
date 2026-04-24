@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from './accounts.repo';
 
 const accountSchema = z.object({
@@ -19,7 +19,7 @@ export function createAccountsRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    res.json(accountsRepo.getByUserId(req.session.userId!));
+    res.json(accountsRepo.getByUserId(sessionUserId(req)));
   });
 
   router.post('/', (req, res) => {
@@ -28,14 +28,14 @@ export function createAccountsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     const result = accountsRepo.create(userId, parsed.data);
     res.status(201).json(accountsRepo.getById(Number(result.lastInsertRowid), userId));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     if (!accountsRepo.getById(id, userId)) {
       res.status(404).json({ error: 'Account not found' });
       return;
@@ -51,7 +51,7 @@ export function createAccountsRouter(db: Database): Router {
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     if (!accountsRepo.getById(id, userId)) {
       res.status(404).json({ error: 'Account not found' });
       return;

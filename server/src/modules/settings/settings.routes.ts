@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
 
 const settingsSchema = z.object({ lead_days: z.number().int().min(0).max(365) });
@@ -13,13 +13,16 @@ export function createSettingsRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    res.json(settingsRepo.get(req.session.userId!));
+    res.json(settingsRepo.get(sessionUserId(req)));
   });
 
   router.put('/', (req, res) => {
     const parsed = settingsSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    settingsRepo.upsert(req.session.userId!, parsed.data.lead_days);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    settingsRepo.upsert(sessionUserId(req), parsed.data.lead_days);
     res.json({ lead_days: parsed.data.lead_days });
   });
 

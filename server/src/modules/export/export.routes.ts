@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createExportRepo } from './export.repo';
 
 export function createExportRouter(db: Database): Router {
@@ -10,20 +10,32 @@ export function createExportRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/csv', (req, res) => {
-    const rows = exportRepo.getCsvRows(req.session.userId!);
+    const rows = exportRepo.getCsvRows(sessionUserId(req));
 
-    const header = ['Date', 'Type', 'Description', 'Catégorie', 'Compte', 'Montant (€)', 'Moyen de paiement', 'Validée', 'Notes'];
-    const lines = rows.map(r => [
-      r.date,
-      r.type === 'income' ? 'Revenu' : 'Dépense',
-      `"${r.description.replaceAll('"', '""')}"`,
-      r.category,
-      r.account,
-      (r.type === 'expense' ? -r.amount : r.amount).toFixed(2),
-      r.payment_method,
-      r.validated ? 'Oui' : 'Non',
-      r.notes ? `"${r.notes.replaceAll('"', '""')}"` : '',
-    ].join(';'));
+    const header = [
+      'Date',
+      'Type',
+      'Description',
+      'Catégorie',
+      'Compte',
+      'Montant (€)',
+      'Moyen de paiement',
+      'Validée',
+      'Notes',
+    ];
+    const lines = rows.map((r) =>
+      [
+        r.date,
+        r.type === 'income' ? 'Revenu' : 'Dépense',
+        `"${r.description.replaceAll('"', '""')}"`,
+        r.category,
+        r.account,
+        (r.type === 'expense' ? -r.amount : r.amount).toFixed(2),
+        r.payment_method,
+        r.validated ? 'Oui' : 'Non',
+        r.notes ? `"${r.notes.replaceAll('"', '""')}"` : '',
+      ].join(';'),
+    );
 
     const csv = '﻿' + [header.join(';'), ...lines].join('\n');
     const date = new Date().toISOString().split('T')[0];
@@ -34,7 +46,7 @@ export function createExportRouter(db: Database): Router {
   });
 
   router.get('/json', (req, res) => {
-    const userId = req.session.userId!;
+    const userId = sessionUserId(req);
     const date = new Date().toISOString().split('T')[0];
     res.setHeader('Content-Disposition', `attachment; filename="cashctrl-backup-${date}.json"`);
     res.json({
