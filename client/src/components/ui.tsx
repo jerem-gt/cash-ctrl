@@ -1,10 +1,11 @@
 import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from 'react';
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-interface CardProps { children: ReactNode; className?: string; }
-export function Card({ children, className = '' }: Readonly<CardProps>) {
+interface CardProps { children: ReactNode; className?: string; size?: 'sm' | 'md'; }
+export function Card({ children, className = '', size = 'md' }: Readonly<CardProps>) {
+  const padding = { sm: 'p-4', md: 'p-5' };
   return (
-    <div className={`bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm ${className}`}>
+    <div className={`bg-white border border-black/[0.07] rounded-2xl ${padding[size]} shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -19,11 +20,26 @@ interface MetricProps { label: string; value: string; sub?: string; variant?: 'd
 export function Metric({ label, value, sub, variant = 'default' }: Readonly<MetricProps>) {
   const colors = { default: 'text-stone-900', positive: 'text-green-800', negative: 'text-red-800' };
   return (
-    <div className="bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm">
+    <Card size="sm">
       <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
       <p className={`font-serif text-2xl ${colors[variant]}`}>{value}</p>
       {sub && <p className="text-[11px] text-stone-300 mt-1">{sub}</p>}
-    </div>
+    </Card>
+  );
+}
+
+// ─── Badge ────────────────────────────────────────────────────────────────────
+interface BadgeProps { variant: 'blue' | 'indigo' | 'green'; children: ReactNode; }
+export function Badge({ variant, children }: Readonly<BadgeProps>) {
+  const variants = {
+    blue:   'bg-blue-50 text-blue-600 border-blue-200',
+    indigo: 'bg-indigo-50 text-indigo-500 border-indigo-200',
+    green:  'bg-green-50 text-green-600 border-green-200',
+  };
+  return (
+    <span className={`text-[10px] border rounded px-1.5 py-0.5 font-medium shrink-0 ${variants[variant]}`}>
+      {children}
+    </span>
   );
 }
 

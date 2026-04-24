@@ -15,6 +15,11 @@ export default {
           600: '#5A8A2A',
           800: '#2C4F0E',
         },
+        sidebar: {
+          bg:     '#141210',
+          fg:     '#F4F1EB',
+          accent: '#8BBF5A',
+        },
       },
     },
   },

@@ -1,6 +1,7 @@
 import type { Account, Transaction } from '@/types';
 import { fmtDate, fmtDec, today } from '@/lib/format';
 import { AccountBadge } from '@/components/AccountBadge';
+import { Badge } from '@/components/ui';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 
@@ -41,24 +42,12 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Pro
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className={`text-sm font-medium truncate ${validated ? 'text-stone-400' : ''}`}>{tx.description}</p>
-          {isTransfer && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              ↔ Transfert
-            </span>
-          )}
-          {isScheduled && isFuture && (
-            <span className="text-[10px] bg-indigo-50 text-indigo-500 border border-indigo-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              ↻ À venir
-            </span>
-          )}
+          {isTransfer && <Badge variant="blue">↔ Transfert</Badge>}
+          {isScheduled && isFuture && <Badge variant="indigo">↻ À venir</Badge>}
           {isScheduled && !isFuture && (
             <span className="text-[10px] text-stone-300 shrink-0" title="Transaction planifiée">↻</span>
           )}
-          {validated && (
-            <span className="text-[10px] bg-green-50 text-green-600 border border-green-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              ✓ Validée
-            </span>
-          )}
+          {validated && <Badge variant="green">✓ Validée</Badge>}
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{tx.category} ·</span>

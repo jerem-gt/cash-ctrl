@@ -25,7 +25,7 @@ const NAV_BOTTOM = [
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-6 py-2.5 text-sm border-l-2 transition-all duration-100 ${
     isActive
-      ? 'text-[#F4F1EB] border-[#8BBF5A] bg-white/6 font-medium'
+      ? 'text-sidebar-fg border-sidebar-accent bg-white/6 font-medium'
       : 'text-white/40 border-transparent hover:text-white/75 hover:bg-white/4'
   }`;
 
@@ -74,7 +74,7 @@ export function Sidebar({ username }: Readonly<Props>) {
   };
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-56 bg-[#141210] text-[#F4F1EB] flex flex-col z-50">
+    <aside className="fixed inset-y-0 left-0 w-56 bg-sidebar-bg text-sidebar-fg flex flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-7 border-b border-white/[0.07]">
         <h1 className="font-serif text-xl tracking-tight">{appName()}</h1>
@@ -92,14 +92,14 @@ export function Sidebar({ username }: Readonly<Props>) {
           ))}
 
         {/* Comptes — expandable */}
-        <div className={`border-l-2 transition-colors duration-100 ${accountsActive ? 'border-[#8BBF5A]' : 'border-transparent'}`}>
+        <div className={`border-l-2 transition-colors duration-100 ${accountsActive ? 'border-sidebar-accent' : 'border-transparent'}`}>
           <div className={`flex items-center transition-colors duration-100 ${accountsActive ? 'bg-white/6' : ''}`}>
             <NavLink
               to="/accounts"
               end
               className={({ isActive }: { isActive: boolean }) =>
                 `flex items-center gap-3 pl-6 py-2.5 text-sm flex-1 transition-all duration-100 ${
-                  isActive ? 'text-[#F4F1EB] font-medium' : 'text-white/40 hover:text-white/75'
+                  isActive ? 'text-sidebar-fg font-medium' : 'text-white/40 hover:text-white/75'
                 }`
               }
             >
