@@ -7,6 +7,7 @@ import { Card, CardTitle, Button, Input, Select, FormGroup, Empty, showToast } f
 import { AccountBadge } from '@/components/AccountBadge';
 import { BankSelect } from '@/components/BankSelect';
 import { fmtDec } from '@/lib/format';
+import { accountSeniority } from '@/lib/account';
 
 export function AccountsPage() {
   const navigate = useNavigate();
@@ -112,6 +113,9 @@ export function AccountsPage() {
                             <span className="text-stone-300 group-hover:text-stone-500 transition-colors text-sm shrink-0">→</span>
                           </div>
                           <p className={`font-serif text-3xl ${bal < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(bal)}</p>
+                          {acc.opening_date && (
+                            <p className="text-[11px] text-stone-300 mt-2">{accountSeniority(acc.opening_date)}</p>
+                          )}
                         </button>
                       );
                     })}
