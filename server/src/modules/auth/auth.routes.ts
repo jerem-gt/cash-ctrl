@@ -35,7 +35,7 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
-    req.session.userId! = user.id;
+    req.session.userId = user.id;
     req.session.username = user.username;
     req.session.save(() => res.json({ username: user.username }));
   });
