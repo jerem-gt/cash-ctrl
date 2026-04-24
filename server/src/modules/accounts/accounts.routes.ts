@@ -6,11 +6,11 @@ import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from './accounts.repo';
 
 const accountSchema = z.object({
-  name:            z.string().min(1).max(100),
-  bank_id:         z.number().int().positive().nullable().default(null),
+  name: z.string().min(1).max(100),
+  bank_id: z.number().int().positive().nullable().default(null),
   account_type_id: z.number().int().positive().nullable().default(null),
   initial_balance: z.coerce.number().default(0),
-  opening_date:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis'),
+  opening_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis'),
 });
 
 export function createAccountsRouter(db: Database): Router {
@@ -19,8 +19,7 @@ export function createAccountsRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    const userId = req.session.userId!;
-    res.json(accountsRepo.getByUserId(userId));
+    res.json(accountsRepo.getByUserId(req.session.userId!));
   });
 
   router.post('/', (req, res) => {

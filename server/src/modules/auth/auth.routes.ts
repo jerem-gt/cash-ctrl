@@ -13,7 +13,7 @@ const loginSchema = z.object({
 
 const changePasswordSchema = z.object({
   current: z.string().min(1),
-  next:    z.string().min(8),
+  next: z.string().min(8),
 });
 
 export function createAuthRouter(db: Database): Router {
@@ -35,7 +35,7 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
-    req.session.userId = user.id;
+    req.session.userId! = user.id;
     req.session.username = user.username;
     req.session.save(() => res.json({ username: user.username }));
   });

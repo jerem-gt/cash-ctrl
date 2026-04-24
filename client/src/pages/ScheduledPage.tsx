@@ -378,6 +378,11 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
   const isTransfer = sched.payment_method === 'Transfert';
   const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
 
+  const typeColor = sched.type === 'income' ? 'text-green-800' : 'text-red-700';
+  const amountColor = isTransfer ? 'text-stone-500' : typeColor;
+  const typeSign = sched.type === 'income' ? '+' : '−';
+  const amountSign = isTransfer ? '' : typeSign;
+
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/[0.06] last:border-0 group">
       <div className="flex-1 min-w-0">
@@ -400,10 +405,8 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
           {sched.end_date ? ` · jusqu'au ${sched.end_date}` : ''}
         </p>
       </div>
-      <span
-        className={`text-sm font-medium tabular-nums shrink-0 ${isTransfer ? 'text-stone-500' : sched.type === 'income' ? 'text-green-800' : 'text-red-700'}`}
-      >
-        {isTransfer ? '' : sched.type === 'income' ? '+' : '−'}
+      <span className={`text-sm font-medium tabular-nums shrink-0 ${amountColor}`}>
+        {amountSign}
         {fmtDec(sched.amount)}
       </span>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -448,8 +451,8 @@ export function ScheduledPage() {
 
   // Sync local leadDays input when settings load
   const settingsLeadDays = settings?.lead_days;
-  const displayLeadDays =
-    leadDays === '' ? (settingsLeadDays == null ? '30' : String(settingsLeadDays)) : leadDays;
+  const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
+  const displayLeadDays = leadDays === '' ? defaultLeadDays : leadDays;
 
   const handleSaveLeadDays = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -508,6 +511,21 @@ export function ScheduledPage() {
   const firstAccountId = accounts[0]?.id;
   const firstCategoryId = categories[0]?.id;
 
+  const scheduledListOrEmpty =
+    scheduled.length === 0 ? (
+      <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
+    ) : (
+      scheduled.map((s) => (
+        <ScheduledRow
+          key={s.id}
+          sched={s}
+          accounts={accounts}
+          onEdit={(s) => setEditTarget(s)}
+          onDelete={(s) => setPendingDelete(s)}
+        />
+      ))
+    );
+
   return (
     <div className="space-y-5">
       <div>
@@ -551,18 +569,8 @@ export function ScheduledPage() {
 
         {isLoading ? (
           <p className="text-sm text-stone-400 py-2">Chargement…</p>
-        ) : scheduled.length === 0 ? (
-          <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
         ) : (
-          scheduled.map((s) => (
-            <ScheduledRow
-              key={s.id}
-              sched={s}
-              accounts={accounts}
-              onEdit={(s) => setEditTarget(s)}
-              onDelete={(s) => setPendingDelete(s)}
-            />
-          ))
+          scheduledListOrEmpty
         )}
       </Card>
 

@@ -135,11 +135,11 @@ export function AccountSelect({
   };
 
   const handleBlur = (e: React.FocusEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) close();
+    if (!ref.current?.contains(e.relatedTarget as Node | null)) close();
   };
 
   return (
-    <div ref={ref} className="relative" onBlur={handleBlur}>
+    <div ref={ref} className="relative">
       <button
         ref={triggerRef}
         type="button"
@@ -148,6 +148,7 @@ export function AccountSelect({
           else setOpen(true);
         }}
         onKeyDown={handleTriggerKeyDown}
+        onBlur={handleBlur}
         aria-haspopup="listbox"
         aria-expanded={open}
         className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
@@ -169,6 +170,7 @@ export function AccountSelect({
       {open && (
         <div
           role="listbox"
+          onBlur={handleBlur}
           className="absolute z-20 mt-1 w-full bg-white border border-black/[0.09] rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto"
         >
           {showSearch && (

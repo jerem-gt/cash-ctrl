@@ -48,6 +48,71 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
   };
 }
 
+function getTitle(isEdit: boolean, isTransfer: boolean): string {
+  if (isEdit) return 'Modifier la transaction';
+  if (isTransfer) return 'Nouveau transfert';
+  return 'Nouvelle transaction';
+}
+
+function getSubmitLabel(isPending: boolean, isEdit: boolean, isTransferCreate: boolean): string {
+  if (isPending) return '…';
+  if (isEdit) return 'Enregistrer';
+  if (isTransferCreate) return 'Transférer';
+  return 'Ajouter';
+}
+
+function getTransferTabClass(isTransfer: boolean, noOtherAccounts: boolean): string {
+  if (isTransfer) return 'bg-stone-900 text-white';
+  if (noOtherAccounts) return 'bg-stone-50 text-stone-300 cursor-not-allowed';
+  return 'bg-stone-50 text-stone-400 hover:bg-stone-100';
+}
+
+interface HeaderProps {
+  isEdit: boolean;
+  isTransferEdit: boolean;
+  isTransfer: boolean;
+  noOtherAccounts: boolean;
+  onToggle: (toTransfer: boolean) => void;
+}
+
+function TxModalHeader({
+  isEdit,
+  isTransferEdit,
+  isTransfer,
+  noOtherAccounts,
+  onToggle,
+}: Readonly<HeaderProps>) {
+  if (isEdit) {
+    if (isTransferEdit) {
+      return (
+        <p className="text-[11px] text-stone-400 mb-4">
+          Transfert — montant, date et description appliqués aux deux legs.
+        </p>
+      );
+    }
+    return <div className="mb-4" />;
+  }
+  return (
+    <div className="flex rounded-lg border border-black/13 overflow-hidden text-sm mb-4">
+      <button
+        type="button"
+        onClick={() => onToggle(false)}
+        className={`flex-1 py-2 font-medium transition-colors ${!isTransfer ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
+      >
+        Transaction
+      </button>
+      <button
+        type="button"
+        onClick={() => onToggle(true)}
+        disabled={noOtherAccounts}
+        className={`flex-1 py-2 font-medium transition-colors ${getTransferTabClass(isTransfer, noOtherAccounts)}`}
+      >
+        Transfert
+      </button>
+    </div>
+  );
+}
+
 export function TxModal(props: Readonly<Props>) {
   const { accounts, logoMap, categories, paymentMethods, onClose } = props;
 
@@ -83,7 +148,7 @@ export function TxModal(props: Readonly<Props>) {
   const handleModeToggle = (toTransfer: boolean) => {
     setIsTransfer(toTransfer);
     if (toTransfer) {
-      const srcId = fixedAccountId != null ? fixedAccountId : Number.parseInt(core.account_id);
+      const srcId = fixedAccountId ?? Number.parseInt(core.account_id);
       const src = accounts.find((a) => a.id === srcId);
       setCore((c) => ({
         ...c,
@@ -97,132 +162,114 @@ export function TxModal(props: Readonly<Props>) {
     }
   };
 
-  const handleSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-
-    if (isEdit) {
-      if (
-        !core.amount ||
-        !core.description ||
-        (!isTransferEdit && !core.account_id) ||
-        (!isTransferEdit && !core.payment_method_id)
-      ) {
-        showToast('Veuillez remplir tous les champs obligatoires.');
-        return;
-      }
-      const data: TxFormState = {
-        type: core.type,
-        amount: core.amount,
-        description: core.description,
-        category_id: core.category_id,
-        account_id: core.account_id,
-        date,
-        payment_method_id: core.payment_method_id,
-        notes,
-        validated,
-      };
-      props.onSave(data);
+  const submitEdit = () => {
+    if (
+      !core.amount ||
+      !core.description ||
+      (!isTransferEdit && !core.account_id) ||
+      (!isTransferEdit && !core.payment_method_id)
+    ) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
       return;
     }
+    (props as EditProps).onSave({
+      type: core.type,
+      amount: core.amount,
+      description: core.description,
+      category_id: core.category_id,
+      account_id: core.account_id,
+      date,
+      payment_method_id: core.payment_method_id,
+      notes,
+      validated,
+    });
+  };
 
+  const submitTransfer = () => {
+    if (!core.amount || !core.to_account_id) {
+      showToast('Veuillez remplir tous les champs.');
+      return;
+    }
+    createTransfer.mutate(
+      {
+        from_account_id: fixedAccountId ?? Number.parseInt(core.account_id),
+        to_account_id: Number.parseInt(core.to_account_id),
+        amount: Number.parseFloat(core.amount),
+        description: core.description || 'Transfert',
+        date,
+        notes: notes || null,
+        validated,
+      },
+      {
+        onSuccess: () => {
+          showToast('Transfert effectué ✓');
+          onClose();
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
+  };
+
+  const submitTx = () => {
+    const categoryId = Number.parseInt(core.category_id) || categories[0]?.id;
+    const pmId = Number.parseInt(core.payment_method_id);
+    if (
+      !core.amount ||
+      !core.description ||
+      !pmId ||
+      (fixedAccountId == null && !core.account_id) ||
+      !categoryId
+    ) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+    createTx.mutate(
+      {
+        type: core.type,
+        amount: Number.parseFloat(core.amount),
+        description: core.description,
+        category_id: categoryId,
+        account_id: fixedAccountId ?? Number.parseInt(core.account_id),
+        date,
+        payment_method_id: pmId,
+      },
+      {
+        onSuccess: () => {
+          showToast('Transaction ajoutée ✓');
+          onClose();
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
+  };
+
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    if (isEdit) {
+      submitEdit();
+      return;
+    }
     if (isTransferCreate) {
-      if (!core.amount || !core.to_account_id) {
-        showToast('Veuillez remplir tous les champs.');
-        return;
-      }
-      const fromId = fixedAccountId ?? Number.parseInt(core.account_id);
-      createTransfer.mutate(
-        {
-          from_account_id: fromId,
-          to_account_id: Number.parseInt(core.to_account_id),
-          amount: Number.parseFloat(core.amount),
-          description: core.description || 'Transfert',
-          date,
-          notes: notes || null,
-          validated,
-        },
-        {
-          onSuccess: () => {
-            showToast('Transfert effectué ✓');
-            onClose();
-          },
-          onError: (err) => showToast(err.message),
-        },
-      );
+      submitTransfer();
     } else {
-      const categoryId = Number.parseInt(core.category_id) || categories[0]?.id;
-      const pmId = Number.parseInt(core.payment_method_id);
-      if (
-        !core.amount ||
-        !core.description ||
-        !pmId ||
-        (fixedAccountId == null && !core.account_id) ||
-        !categoryId
-      ) {
-        showToast('Veuillez remplir tous les champs obligatoires.');
-        return;
-      }
-      createTx.mutate(
-        {
-          type: core.type,
-          amount: Number.parseFloat(core.amount),
-          description: core.description,
-          category_id: categoryId,
-          account_id: fixedAccountId ?? Number.parseInt(core.account_id),
-          date,
-          payment_method_id: pmId,
-        },
-        {
-          onSuccess: () => {
-            showToast('Transaction ajoutée ✓');
-            onClose();
-          },
-          onError: (err) => showToast(err.message),
-        },
-      );
+      submitTx();
     }
   };
 
   const isPending = isEdit ? props.isPending : createTx.isPending || createTransfer.isPending;
 
-  const title = isEdit
-    ? 'Modifier la transaction'
-    : isTransfer
-      ? 'Nouveau transfert'
-      : 'Nouvelle transaction';
-
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-[540px]">
-        <h3 className="font-serif text-xl mb-1">{title}</h3>
+        <h3 className="font-serif text-xl mb-1">{getTitle(isEdit, isTransfer)}</h3>
 
-        {isEdit ? (
-          isTransferEdit ? (
-            <p className="text-[11px] text-stone-400 mb-4">
-              Transfert — montant, date et description appliqués aux deux legs.
-            </p>
-          ) : (
-            <div className="mb-4" />
-          )
-        ) : (
-          <div className="flex rounded-lg border border-black/13 overflow-hidden text-sm mb-4">
-            <button
-              type="button"
-              onClick={() => handleModeToggle(false)}
-              className={`flex-1 py-2 font-medium transition-colors ${!isTransfer ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
-            >
-              Transaction
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeToggle(true)}
-              disabled={noOtherAccounts}
-              className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-900 text-white' : noOtherAccounts ? 'bg-stone-50 text-stone-300 cursor-not-allowed' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
-            >
-              Transfert
-            </button>
-          </div>
-        )}
+        <TxModalHeader
+          isEdit={isEdit}
+          isTransferEdit={isTransferEdit}
+          isTransfer={isTransfer}
+          noOtherAccounts={noOtherAccounts}
+          onToggle={handleModeToggle}
+        />
 
         {!isEdit && isTransfer && noOtherAccounts ? (
           <p className="text-sm text-stone-400">Vous n&apos;avez pas d&apos;autre compte.</p>
@@ -293,13 +340,7 @@ export function TxModal(props: Readonly<Props>) {
                 Annuler
               </Button>
               <Button type="submit" variant="primary" disabled={isPending}>
-                {isPending
-                  ? '…'
-                  : isEdit
-                    ? 'Enregistrer'
-                    : isTransferCreate
-                      ? 'Transférer'
-                      : 'Ajouter'}
+                {getSubmitLabel(isPending, isEdit, isTransferCreate)}
               </Button>
             </div>
           </form>

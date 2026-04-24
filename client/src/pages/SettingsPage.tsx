@@ -1,30 +1,69 @@
-import { ChangeEvent, SyntheticEvent, useState } from 'react';
+import { type ChangeEvent, type ReactNode, type SyntheticEvent, useState } from 'react';
 
-import { Button, Card, CardTitle, ConfirmModal, FormGroup, Input, showToast, Skeleton } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardTitle,
+  ConfirmModal,
+  FormGroup,
+  Input,
+  showToast,
+  Skeleton,
+} from '@/components/ui';
 import {
   useAccountTypes,
   useCreateAccountType,
   useDeleteAccountType,
-  useUpdateAccountType
+  useUpdateAccountType,
 } from '@/hooks/useAccountTypes';
 import { useChangePassword } from '@/hooks/useAuth';
-import { useBanks, useCreateBank, useDeleteBank, useUpdateBank, useUploadBankLogo } from '@/hooks/useBanks';
-import { useCategories, useCreateCategory, useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories';
+import {
+  useBanks,
+  useCreateBank,
+  useDeleteBank,
+  useUpdateBank,
+  useUploadBankLogo,
+} from '@/hooks/useBanks';
+import {
+  useCategories,
+  useCreateCategory,
+  useDeleteCategory,
+  useUpdateCategory,
+} from '@/hooks/useCategories';
 import {
   useCreatePaymentMethod,
   useDeletePaymentMethod,
   usePaymentMethods,
-  useUpdatePaymentMethod
+  useUpdatePaymentMethod,
 } from '@/hooks/usePaymentMethods';
 import type { AccountType, Bank, Category, PaymentMethod } from '@/types';
 
 type PendingDelete = { title: string; body: string; onConfirm: () => void };
+type DeleteMutateFn = (
+  id: number,
+  opts: { onSuccess: () => void; onError: (e: Error) => void },
+) => void;
+
+function listContent<TItem>(
+  isLoading: boolean,
+  items: TItem[],
+  empty: string,
+  render: (item: TItem) => ReactNode,
+  count = 3,
+) {
+  if (isLoading) return <SkeletonRows count={count} />;
+  if (items.length === 0) return <p className="text-sm text-stone-400 py-2">{empty}</p>;
+  return items.map(render);
+}
 
 function SkeletonRows({ count = 3 }: Readonly<{ count?: number }>) {
   return (
     <div className="mb-4">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0">
+        <div
+          key={i}
+          className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0"
+        >
           <Skeleton className="w-5 h-5 shrink-0" />
           <Skeleton className="h-3.5 flex-1" />
         </div>
@@ -52,7 +91,11 @@ function RowActions({ onEdit, onDelete }: Readonly<{ onEdit: () => void; onDelet
   );
 }
 
-function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
+function CategoryRow({
+  cat,
+  onSaved,
+  onDelete,
+}: Readonly<{
   cat: Category;
   onSaved: () => void;
   onDelete: (id: number) => void;
@@ -64,32 +107,43 @@ function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    updateCategory.mutate({ id: cat.id, name: form.name.trim(), color: form.color }, {
-      onSuccess: () => { setEditing(false); onSaved(); },
-      onError: err => showToast(err.message),
-    });
+    updateCategory.mutate(
+      { id: cat.id, name: form.name.trim(), color: form.color },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          onSaved();
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   if (editing) {
     return (
-      <form onSubmit={handleSave} className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0">
+      <form
+        onSubmit={handleSave}
+        className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0"
+      >
         <input
           type="color"
           value={form.color}
-          onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
           className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5 shrink-0"
         />
         <Input
           type="text"
           value={form.name}
-          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           className="flex-1 text-sm"
           autoFocus
         />
         <Button type="submit" variant="primary" size="sm" disabled={updateCategory.isPending}>
           {updateCategory.isPending ? '…' : 'OK'}
         </Button>
-        <Button type="button" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
+        <Button type="button" size="sm" onClick={() => setEditing(false)}>
+          Annuler
+        </Button>
       </form>
     );
   }
@@ -102,15 +156,34 @@ function CategoryRow({ cat, onSaved, onDelete }: Readonly<{
       {txCount > 0 && (
         <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{txCount} tx</span>
       )}
-      {txCount === 0
-        ? <RowActions onEdit={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }} onDelete={() => onDelete(cat.id)} />
-        : <button onClick={() => { setForm({ name: cat.name, color: cat.color }); setEditing(true); }} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      }
+      {txCount === 0 ? (
+        <RowActions
+          onEdit={() => {
+            setForm({ name: cat.name, color: cat.color });
+            setEditing(true);
+          }}
+          onDelete={() => onDelete(cat.id)}
+        />
+      ) : (
+        <button
+          onClick={() => {
+            setForm({ name: cat.name, color: cat.color });
+            setEditing(true);
+          }}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+        >
+          Modifier
+        </button>
+      )}
     </div>
   );
 }
 
-function BankRow({ bank, onSaved, onDelete }: Readonly<{
+function BankRow({
+  bank,
+  onSaved,
+  onDelete,
+}: Readonly<{
   bank: Bank;
   onSaved: () => void;
   onDelete: (id: number) => void;
@@ -125,7 +198,10 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
-    setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return f ? URL.createObjectURL(f) : null; });
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return f ? URL.createObjectURL(f) : null;
+    });
     setFile(f);
   };
 
@@ -134,10 +210,17 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     if (!name.trim()) return;
     try {
       if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
-      await updateBank.mutateAsync({ id: bank.id, name: name.trim(), domain: domain.trim() || null });
+      await updateBank.mutateAsync({
+        id: bank.id,
+        name: name.trim(),
+        domain: domain.trim() || null,
+      });
       setEditing(false);
       setFile(null);
-      setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
       onSaved();
     } catch (err) {
       showToast((err as Error).message);
@@ -149,27 +232,60 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
     setName(bank.name);
     setDomain(bank.domain ?? '');
     setFile(null);
-    setPreview(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   };
 
   if (editing) {
     const logoSrc = preview ?? bank.logo ?? null;
     return (
-      <form onSubmit={handleSave} className="flex flex-col gap-2 py-3 border-b border-black/[0.06] last:border-0">
-        <Input type="text" value={name} onChange={e => setName(e.target.value)} className="text-sm" placeholder="Nom" autoFocus />
-        <Input type="text" value={domain} onChange={e => setDomain(e.target.value)} className="text-sm" placeholder="Domaine (ex : boursobank.com)" />
+      <form
+        onSubmit={handleSave}
+        className="flex flex-col gap-2 py-3 border-b border-black/[0.06] last:border-0"
+      >
+        <Input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="text-sm"
+          placeholder="Nom"
+          autoFocus
+        />
+        <Input
+          type="text"
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          className="text-sm"
+          placeholder="Domaine (ex : boursobank.com)"
+        />
         <div className="flex items-center gap-2">
-          {logoSrc && <img src={logoSrc} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />}
+          {logoSrc && (
+            <img
+              src={logoSrc}
+              alt=""
+              className="w-6 h-6 object-contain rounded shrink-0"
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          )}
           <label className="flex-1 cursor-pointer">
             <span className="text-xs text-stone-400">{file ? file.name : 'Choisir un logo…'}</span>
             <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
           </label>
         </div>
         <div className="flex gap-2">
-          <Button type="submit" variant="primary" size="sm" disabled={updateBank.isPending || uploadLogo.isPending}>
-            {(updateBank.isPending || uploadLogo.isPending) ? '…' : 'OK'}
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={updateBank.isPending || uploadLogo.isPending}
+          >
+            {updateBank.isPending || uploadLogo.isPending ? '…' : 'OK'}
           </Button>
-          <Button type="button" size="sm" onClick={cancelEdit}>Annuler</Button>
+          <Button type="button" size="sm" onClick={cancelEdit}>
+            Annuler
+          </Button>
         </div>
       </form>
     );
@@ -178,23 +294,41 @@ function BankRow({ bank, onSaved, onDelete }: Readonly<{
   const accCount = bank.acc_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
-      {bank.logo
-        ? <img src={bank.logo} alt="" className="w-5 h-5 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />
-        : <div className="w-5 h-5 rounded bg-stone-100 shrink-0" />
-      }
+      {bank.logo ? (
+        <img
+          src={bank.logo}
+          alt=""
+          className="w-5 h-5 object-contain rounded shrink-0"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+      ) : (
+        <div className="w-5 h-5 rounded bg-stone-100 shrink-0" />
+      )}
       <span className="flex-1 text-sm">{bank.name}</span>
       {accCount > 0 && (
-        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{accCount} compte(s)</span>
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">
+          {accCount} compte(s)
+        </span>
       )}
-      {accCount === 0
-        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(bank.id)} />
-        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      }
+      {accCount === 0 ? (
+        <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(bank.id)} />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+        >
+          Modifier
+        </button>
+      )}
     </div>
   );
 }
 
-function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
+function AccountTypeRow({
+  at,
+  onSaved,
+  onDelete,
+}: Readonly<{
   at: AccountType;
   onSaved: () => void;
   onDelete: (id: number) => void;
@@ -206,26 +340,44 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
-    updateAccountType.mutate({ id: at.id, name: name.trim() }, {
-      onSuccess: () => { setEditing(false); onSaved(); },
-      onError: err => showToast(err.message),
-    });
+    updateAccountType.mutate(
+      { id: at.id, name: name.trim() },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          onSaved();
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   if (editing) {
     return (
-      <form onSubmit={handleSave} className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0">
+      <form
+        onSubmit={handleSave}
+        className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0"
+      >
         <Input
           type="text"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           className="flex-1 text-sm"
           autoFocus
         />
         <Button type="submit" variant="primary" size="sm" disabled={updateAccountType.isPending}>
           {updateAccountType.isPending ? '…' : 'OK'}
         </Button>
-        <Button type="button" size="sm" onClick={() => { setEditing(false); setName(at.name); }}>Annuler</Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            setEditing(false);
+            setName(at.name);
+          }}
+        >
+          Annuler
+        </Button>
       </form>
     );
   }
@@ -235,17 +387,29 @@ function AccountTypeRow({ at, onSaved, onDelete }: Readonly<{
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
       <span className="flex-1 text-sm">{at.name}</span>
       {accCount > 0 && (
-        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{accCount} compte(s)</span>
+        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">
+          {accCount} compte(s)
+        </span>
       )}
-      {accCount === 0
-        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
-        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      }
+      {accCount === 0 ? (
+        <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+        >
+          Modifier
+        </button>
+      )}
     </div>
   );
 }
 
-function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
+function PaymentMethodRow({
+  pm,
+  onSaved,
+  onDelete,
+}: Readonly<{
   pm: PaymentMethod;
   onSaved: () => void;
   onDelete: (id: number) => void;
@@ -257,25 +421,51 @@ function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    updatePm.mutate({ id: pm.id, name: form.name.trim(), icon: form.icon }, {
-      onSuccess: () => { setEditing(false); onSaved(); },
-      onError: err => showToast(err.message),
-    });
+    updatePm.mutate(
+      { id: pm.id, name: form.name.trim(), icon: form.icon },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          onSaved();
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   if (editing) {
     return (
-      <form onSubmit={handleSave} className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0">
+      <form
+        onSubmit={handleSave}
+        className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0"
+      >
         <Input
           type="text"
           value={form.icon}
-          onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
+          onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
           className="w-14 text-center text-lg"
           placeholder="🔸"
         />
-        <Input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="flex-1 text-sm" autoFocus />
-        <Button type="submit" variant="primary" size="sm" disabled={updatePm.isPending}>{updatePm.isPending ? '…' : 'OK'}</Button>
-        <Button type="button" size="sm" onClick={() => { setEditing(false); setForm({ name: pm.name, icon: pm.icon }); }}>Annuler</Button>
+        <Input
+          type="text"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          className="flex-1 text-sm"
+          autoFocus
+        />
+        <Button type="submit" variant="primary" size="sm" disabled={updatePm.isPending}>
+          {updatePm.isPending ? '…' : 'OK'}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            setEditing(false);
+            setForm({ name: pm.name, icon: pm.icon });
+          }}
+        >
+          Annuler
+        </Button>
       </form>
     );
   }
@@ -288,10 +478,16 @@ function PaymentMethodRow({ pm, onSaved, onDelete }: Readonly<{
       {txCount > 0 && (
         <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{txCount} tx</span>
       )}
-      {txCount === 0
-        ? <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(pm.id)} />
-        : <button onClick={() => setEditing(true)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100">Modifier</button>
-      }
+      {txCount === 0 ? (
+        <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(pm.id)} />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+        >
+          Modifier
+        </button>
+      )}
     </div>
   );
 }
@@ -323,56 +519,129 @@ export function SettingsPage() {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const closeDelete = () => {
+    setPendingDelete(null);
+    setIsDeleting(false);
+  };
+
+  const requestDelete = (
+    title: string,
+    body: string,
+    id: number,
+    mutate: DeleteMutateFn,
+    successMsg: string,
+  ) => {
+    setPendingDelete({
+      title,
+      body,
+      onConfirm: () => {
+        setIsDeleting(true);
+        mutate(id, {
+          onSuccess: () => {
+            closeDelete();
+            showToast(successMsg);
+          },
+          onError: (e) => {
+            closeDelete();
+            showToast(e.message);
+          },
+        });
+      },
+    });
+  };
+
   const handlePasswordSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (pwForm.next !== pwForm.confirm) { showToast('Les mots de passe ne correspondent pas.'); return; }
-    if (pwForm.next.length < 8) { showToast('Minimum 8 caractères.'); return; }
-    changePassword.mutate({ current: pwForm.current, next: pwForm.next }, {
-      onSuccess: () => {
-        setPwForm({ current: '', next: '', confirm: '' });
-        showToast('Mot de passe mis à jour ✓');
+    if (pwForm.next !== pwForm.confirm) {
+      showToast('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    if (pwForm.next.length < 8) {
+      showToast('Minimum 8 caractères.');
+      return;
+    }
+    changePassword.mutate(
+      { current: pwForm.current, next: pwForm.next },
+      {
+        onSuccess: () => {
+          setPwForm({ current: '', next: '', confirm: '' });
+          showToast('Mot de passe mis à jour ✓');
+        },
+        onError: (e) => showToast(e.message),
       },
-      onError: e => showToast(e.message),
-    });
+    );
   };
 
   const handleAddCategory = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newCat.name.trim()) { showToast('Donnez un nom à la catégorie.'); return; }
-    createCategory.mutate({ name: newCat.name.trim(), color: newCat.color }, {
-      onSuccess: () => {
-        setNewCat({ name: '', color: '#9E9A92' });
-        showToast('Catégorie ajoutée ✓');
+    if (!newCat.name.trim()) {
+      showToast('Donnez un nom à la catégorie.');
+      return;
+    }
+    createCategory.mutate(
+      { name: newCat.name.trim(), color: newCat.color },
+      {
+        onSuccess: () => {
+          setNewCat({ name: '', color: '#9E9A92' });
+          showToast('Catégorie ajoutée ✓');
+        },
+        onError: (err) => showToast(err.message),
       },
-      onError: err => showToast(err.message),
-    });
+    );
   };
 
   const handleAddAccountType = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newAtName.trim()) { showToast('Donnez un nom au type.'); return; }
-    createAccountType.mutate({ name: newAtName.trim() }, {
-      onSuccess: () => { setNewAtName(''); showToast('Type ajouté ✓'); },
-      onError: err => showToast(err.message),
-    });
+    if (!newAtName.trim()) {
+      showToast('Donnez un nom au type.');
+      return;
+    }
+    createAccountType.mutate(
+      { name: newAtName.trim() },
+      {
+        onSuccess: () => {
+          setNewAtName('');
+          showToast('Type ajouté ✓');
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   const handleAddBank = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newBank.name.trim()) { showToast('Donnez un nom à la banque.'); return; }
-    createBank.mutate({ name: newBank.name.trim(), domain: newBank.domain.trim() || null }, {
-      onSuccess: () => { setNewBank({ name: '', domain: '' }); showToast('Banque ajoutée ✓'); },
-      onError: err => showToast(err.message),
-    });
+    if (!newBank.name.trim()) {
+      showToast('Donnez un nom à la banque.');
+      return;
+    }
+    createBank.mutate(
+      { name: newBank.name.trim(), domain: newBank.domain.trim() || null },
+      {
+        onSuccess: () => {
+          setNewBank({ name: '', domain: '' });
+          showToast('Banque ajoutée ✓');
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   const handleAddPaymentMethod = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newPm.name.trim()) { showToast('Donnez un nom au moyen de paiement.'); return; }
-    createPaymentMethod.mutate({ name: newPm.name.trim(), icon: newPm.icon }, {
-      onSuccess: () => { setNewPm({ name: '', icon: '' }); showToast('Moyen de paiement ajouté ✓'); },
-      onError: err => showToast(err.message),
-    });
+    if (!newPm.name.trim()) {
+      showToast('Donnez un nom au moyen de paiement.');
+      return;
+    }
+    createPaymentMethod.mutate(
+      { name: newPm.name.trim(), icon: newPm.icon },
+      {
+        onSuccess: () => {
+          setNewPm({ name: '', icon: '' });
+          showToast('Moyen de paiement ajouté ✓');
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   return (
@@ -386,28 +655,41 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Banques</CardTitle>
         <div className="mb-4">
-          {banksLoading ? <SkeletonRows count={3} /> : banks.length === 0
-            ? <p className="text-sm text-stone-400 py-2">Aucune banque.</p>
-            : banks.map(b => (
-                <BankRow
-                  key={b.id}
-                  bank={b}
-                  onSaved={() => showToast('Banque mise à jour ✓')}
-                  onDelete={id => setPendingDelete({
-                    title: 'Supprimer la banque',
-                    body: 'Les comptes existants garderont leur banque actuelle. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deleteBank.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Banque supprimée'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
-                  })}
-                />
-              ))
-          }
+          {listContent(banksLoading, banks, 'Aucune banque.', (b) => (
+            <BankRow
+              key={b.id}
+              bank={b}
+              onSaved={() => showToast('Banque mise à jour ✓')}
+              onDelete={(id) =>
+                requestDelete(
+                  'Supprimer la banque',
+                  'Les comptes existants garderont leur banque actuelle. Confirmer ?',
+                  id,
+                  deleteBank.mutate,
+                  'Banque supprimée',
+                )
+              }
+            />
+          ))}
         </div>
         <form onSubmit={handleAddBank} className="flex gap-2 items-end flex-wrap">
           <FormGroup label="Nom">
-            <Input type="text" value={newBank.name} onChange={e => setNewBank(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Fortuneo" className="min-w-44" />
+            <Input
+              type="text"
+              value={newBank.name}
+              onChange={(e) => setNewBank((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Ex : Fortuneo"
+              className="min-w-44"
+            />
           </FormGroup>
           <FormGroup label="Domaine">
-            <Input type="text" value={newBank.domain} onChange={e => setNewBank(f => ({ ...f, domain: e.target.value }))} placeholder="Ex : fortuneo.fr" className="min-w-44" />
+            <Input
+              type="text"
+              value={newBank.domain}
+              onChange={(e) => setNewBank((f) => ({ ...f, domain: e.target.value }))}
+              placeholder="Ex : fortuneo.fr"
+              className="min-w-44"
+            />
           </FormGroup>
           <Button type="submit" variant="primary" disabled={createBank.isPending}>
             {createBank.isPending ? '…' : 'Ajouter'}
@@ -419,28 +701,29 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Types de compte</CardTitle>
         <div className="mb-4">
-          {atsLoading ? <SkeletonRows count={3} /> : accountTypes.length === 0
-            ? <p className="text-sm text-stone-400 py-2">Aucun type.</p>
-            : accountTypes.map(at => (
-                <AccountTypeRow
-                  key={at.id}
-                  at={at}
-                  onSaved={() => showToast('Type mis à jour ✓')}
-                  onDelete={id => setPendingDelete({
-                    title: 'Supprimer le type de compte',
-                    body: 'Les comptes existants garderont leur type actuel. Confirmer ?',
-                    onConfirm: () => { setIsDeleting(true); deleteAccountType.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Type supprimé'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
-                  })}
-                />
-              ))
-          }
+          {listContent(atsLoading, accountTypes, 'Aucun type.', (at) => (
+            <AccountTypeRow
+              key={at.id}
+              at={at}
+              onSaved={() => showToast('Type mis à jour ✓')}
+              onDelete={(id) =>
+                requestDelete(
+                  'Supprimer le type de compte',
+                  'Les comptes existants garderont leur type actuel. Confirmer ?',
+                  id,
+                  deleteAccountType.mutate,
+                  'Type supprimé',
+                )
+              }
+            />
+          ))}
         </div>
         <form onSubmit={handleAddAccountType} className="flex gap-2 items-end flex-wrap">
           <FormGroup label="Nom">
             <Input
               type="text"
               value={newAtName}
-              onChange={e => setNewAtName(e.target.value)}
+              onChange={(e) => setNewAtName(e.target.value)}
               placeholder="Ex : PEA"
               className="min-w-44"
             />
@@ -455,28 +738,41 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Moyens de paiement</CardTitle>
         <div className="mb-4">
-          {pmsLoading ? <SkeletonRows count={3} /> : paymentMethods.length === 0
-            ? <p className="text-sm text-stone-400 py-2">Aucun moyen de paiement.</p>
-            : paymentMethods.map(pm => (
-                <PaymentMethodRow
-                  key={pm.id}
-                  pm={pm}
-                  onSaved={() => showToast('Moyen de paiement mis à jour ✓')}
-                  onDelete={id => setPendingDelete({
-                    title: 'Supprimer le moyen de paiement',
-                    body: 'Confirmer la suppression ?',
-                    onConfirm: () => { setIsDeleting(true); deletePaymentMethod.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Moyen de paiement supprimé'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
-                  })}
-                />
-              ))
-          }
+          {listContent(pmsLoading, paymentMethods, 'Aucun moyen de paiement.', (pm) => (
+            <PaymentMethodRow
+              key={pm.id}
+              pm={pm}
+              onSaved={() => showToast('Moyen de paiement mis à jour ✓')}
+              onDelete={(id) =>
+                requestDelete(
+                  'Supprimer le moyen de paiement',
+                  'Confirmer la suppression ?',
+                  id,
+                  deletePaymentMethod.mutate,
+                  'Moyen de paiement supprimé',
+                )
+              }
+            />
+          ))}
         </div>
         <form onSubmit={handleAddPaymentMethod} className="flex gap-2 items-end flex-wrap">
           <FormGroup label="Icône">
-            <Input type="text" value={newPm.icon} onChange={e => setNewPm(f => ({ ...f, icon: e.target.value }))} placeholder="💶" className="w-16 text-center text-lg" />
+            <Input
+              type="text"
+              value={newPm.icon}
+              onChange={(e) => setNewPm((f) => ({ ...f, icon: e.target.value }))}
+              placeholder="💶"
+              className="w-16 text-center text-lg"
+            />
           </FormGroup>
           <FormGroup label="Nom">
-            <Input type="text" value={newPm.name} onChange={e => setNewPm(f => ({ ...f, name: e.target.value }))} placeholder="Ex : Espèces" className="min-w-44" />
+            <Input
+              type="text"
+              value={newPm.name}
+              onChange={(e) => setNewPm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Ex : Espèces"
+              className="min-w-44"
+            />
           </FormGroup>
           <Button type="submit" variant="primary" disabled={createPaymentMethod.isPending}>
             {createPaymentMethod.isPending ? '…' : 'Ajouter'}
@@ -488,21 +784,28 @@ export function SettingsPage() {
       <Card>
         <CardTitle>Catégories</CardTitle>
         <div className="mb-4">
-          {catsLoading ? <SkeletonRows count={4} /> : categories.length === 0
-            ? <p className="text-sm text-stone-400 py-2">Aucune catégorie.</p>
-            : categories.map(cat => (
-                <CategoryRow
-                  key={cat.id}
-                  cat={cat}
-                  onSaved={() => showToast('Catégorie mise à jour ✓')}
-                  onDelete={id => setPendingDelete({
-                    title: 'Supprimer la catégorie',
-                    body: 'Confirmer la suppression ?',
-                    onConfirm: () => { setIsDeleting(true); deleteCategory.mutate(id, { onSuccess: () => { setPendingDelete(null); setIsDeleting(false); showToast('Catégorie supprimée'); }, onError: (e) => { setPendingDelete(null); setIsDeleting(false); showToast(e.message); } }); },
-                  })}
-                />
-              ))
-          }
+          {listContent(
+            catsLoading,
+            categories,
+            'Aucune catégorie.',
+            (cat) => (
+              <CategoryRow
+                key={cat.id}
+                cat={cat}
+                onSaved={() => showToast('Catégorie mise à jour ✓')}
+                onDelete={(id) =>
+                  requestDelete(
+                    'Supprimer la catégorie',
+                    'Confirmer la suppression ?',
+                    id,
+                    deleteCategory.mutate,
+                    'Catégorie supprimée',
+                  )
+                }
+              />
+            ),
+            4,
+          )}
         </div>
         <form onSubmit={handleAddCategory} className="flex gap-2 items-end flex-wrap">
           <div className="flex items-center gap-2">
@@ -510,18 +813,18 @@ export function SettingsPage() {
               Couleur
             </label>
             <input
-                id="color"
-                type="color"
-                value={newCat.color}
-                onChange={e => setNewCat(f => ({ ...f, color: e.target.value }))}
-                className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5"
+              id="color"
+              type="color"
+              value={newCat.color}
+              onChange={(e) => setNewCat((f) => ({ ...f, color: e.target.value }))}
+              className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5"
             />
           </div>
           <FormGroup label="Nom">
             <Input
               type="text"
               value={newCat.name}
-              onChange={e => setNewCat(f => ({ ...f, name: e.target.value }))}
+              onChange={(e) => setNewCat((f) => ({ ...f, name: e.target.value }))}
               placeholder="Ex : Vacances"
               className="min-w-44"
             />
@@ -537,15 +840,36 @@ export function SettingsPage() {
         <CardTitle>Changer le mot de passe</CardTitle>
         <form onSubmit={handlePasswordSubmit} className="space-y-3">
           <FormGroup label="Mot de passe actuel">
-            <Input type="password" value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} autoComplete="current-password" />
+            <Input
+              type="password"
+              value={pwForm.current}
+              onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+              autoComplete="current-password"
+            />
           </FormGroup>
           <FormGroup label="Nouveau mot de passe">
-            <Input type="password" value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} placeholder="Min. 8 caractères" autoComplete="new-password" />
+            <Input
+              type="password"
+              value={pwForm.next}
+              onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+              placeholder="Min. 8 caractères"
+              autoComplete="new-password"
+            />
           </FormGroup>
           <FormGroup label="Confirmer">
-            <Input type="password" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} autoComplete="new-password" />
+            <Input
+              type="password"
+              value={pwForm.confirm}
+              onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+              autoComplete="new-password"
+            />
           </FormGroup>
-          <Button type="submit" variant="primary" disabled={changePassword.isPending} className="mt-2">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={changePassword.isPending}
+            className="mt-2"
+          >
             {changePassword.isPending ? '…' : 'Mettre à jour'}
           </Button>
         </form>
