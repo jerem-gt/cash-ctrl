@@ -97,7 +97,7 @@ function TxModalHeader({
       <button
         type="button"
         onClick={() => onToggle(false)}
-        className={`flex-1 py-2 font-medium transition-colors ${!isTransfer ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}`}
+        className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-50 text-stone-400 hover:bg-stone-100' : 'bg-stone-900 text-white'}`}
       >
         Transaction
       </button>
