@@ -1,11 +1,10 @@
 import { type SubmitEvent, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { AddTxForm } from '@/components/AddTxForm';
 import { BankSelect } from '@/components/BankSelect';
 import { DeleteTxModal } from '@/components/DeleteTxModal';
-import { EditTxModal, type TxFormState } from '@/components/EditTxModal';
 import { TransactionsList } from '@/components/TransactionsList';
+import { type TxFormState, TxModal } from '@/components/TxModal';
 import {
   Button,
   Card,
@@ -15,18 +14,21 @@ import {
   Input,
   Pagination,
   Select,
-  showToast
+  showToast,
 } from '@/components/ui';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { useDeleteTransaction, useTransactions, useUpdateTransaction } from '@/hooks/useTransactions';
+import {
+  useDeleteTransaction,
+  useTransactions,
+  useUpdateTransaction,
+} from '@/hooks/useTransactions';
 import { accountSeniority } from '@/lib/account';
 import { fmtDec } from '@/lib/format';
 import type { Transaction } from '@/types';
-
 
 export function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +39,7 @@ export function AccountDetailPage() {
   const { data: categories = [] } = useCategories();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
-  const logoMap = useMemo(() => Object.fromEntries(banks.map(b => [b.name, b.logo])), [banks]);
+  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
@@ -47,16 +49,23 @@ export function AccountDetailPage() {
   const deleteTxMutation = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
 
-  const account = accounts.find(a => a.id === accountId);
+  const account = accounts.find((a) => a.id === accountId);
   const transactions = result?.data ?? [];
   const total = result?.total ?? 0;
   const totalPages = result?.totalPages ?? 1;
 
+  const [addOpen, setAddOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', bank_id: '', account_type_id: '', initial_balance: '', opening_date: '' });
+  const [editForm, setEditForm] = useState({
+    name: '',
+    bank_id: '',
+    account_type_id: '',
+    initial_balance: '',
+    opening_date: '',
+  });
 
   const handleDeleteTx = () => {
     if (!deleteTx) return;
@@ -71,51 +80,98 @@ export function AccountDetailPage() {
   const handleUpdateTx = (data: TxFormState) => {
     if (!editTx) return;
     const payload = editTx.transfer_peer_id
-      ? { id: editTx.id, amount: Number.parseFloat(data.amount), description: data.description, date: data.date,
-          type: editTx.type, account_id: editTx.account_id, category_id: editTx.category_id ?? 0,
-          payment_method_id: editTx.payment_method_id ?? 0, notes: editTx.notes, validated: !!editTx.validated }
-      : { id: editTx.id, type: data.type, amount: Number.parseFloat(data.amount), description: data.description,
-          category_id: Number.parseInt(data.category_id), account_id: Number.parseInt(data.account_id), date: data.date,
-          payment_method_id: Number.parseInt(data.payment_method_id), notes: data.notes || null, validated: data.validated };
+      ? {
+          id: editTx.id,
+          amount: Number.parseFloat(data.amount),
+          description: data.description,
+          date: data.date,
+          type: editTx.type,
+          account_id: editTx.account_id,
+          category_id: editTx.category_id ?? 0,
+          payment_method_id: editTx.payment_method_id ?? 0,
+          notes: editTx.notes,
+          validated: !!editTx.validated,
+        }
+      : {
+          id: editTx.id,
+          type: data.type,
+          amount: Number.parseFloat(data.amount),
+          description: data.description,
+          category_id: Number.parseInt(data.category_id),
+          account_id: Number.parseInt(data.account_id),
+          date: data.date,
+          payment_method_id: Number.parseInt(data.payment_method_id),
+          notes: data.notes || null,
+          validated: data.validated,
+        };
     updateTx.mutate(payload, {
-      onSuccess: () => { setEditTx(null); showToast('Transaction modifiée ✓'); },
+      onSuccess: () => {
+        setEditTx(null);
+        showToast('Transaction modifiée ✓');
+      },
       onError: (e) => showToast(e.message),
     });
   };
 
   const handleDeleteAccount = () => {
     deleteAccount.mutate(accountId, {
-      onSuccess: () => { navigate('/accounts'); showToast('Compte supprimé'); },
+      onSuccess: () => {
+        navigate('/accounts');
+        showToast('Compte supprimé');
+      },
     });
   };
 
   const openEdit = () => {
     if (!account) return;
-    setEditForm({ name: account.name, bank_id: String(account.bank_id ?? ''), account_type_id: String(account.account_type_id ?? ''), initial_balance: String(account.initial_balance), opening_date: account.opening_date ?? '' });
+    setEditForm({
+      name: account.name,
+      bank_id: String(account.bank_id ?? ''),
+      account_type_id: String(account.account_type_id ?? ''),
+      initial_balance: String(account.initial_balance),
+      opening_date: account.opening_date ?? '',
+    });
     setEditOpen(true);
   };
 
   const handleEditSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!editForm.name.trim()) { showToast('Le nom est requis.'); return; }
-    if (!editForm.opening_date) { showToast("Renseignez la date d'ouverture."); return; }
-    updateAccount.mutate({
-      id: accountId,
-      name: editForm.name.trim(),
-      bank_id: Number.parseInt(editForm.bank_id) || null,
-      account_type_id: Number.parseInt(editForm.account_type_id) || null,
-      initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
-      opening_date: editForm.opening_date,
-    }, {
-      onSuccess: () => { setEditOpen(false); showToast('Compte mis à jour ✓'); },
-      onError: err => showToast(err.message),
-    });
+    if (!editForm.name.trim()) {
+      showToast('Le nom est requis.');
+      return;
+    }
+    if (!editForm.opening_date) {
+      showToast("Renseignez la date d'ouverture.");
+      return;
+    }
+    updateAccount.mutate(
+      {
+        id: accountId,
+        name: editForm.name.trim(),
+        bank_id: Number.parseInt(editForm.bank_id) || null,
+        account_type_id: Number.parseInt(editForm.account_type_id) || null,
+        initial_balance: Number.parseFloat(editForm.initial_balance) || 0,
+        opening_date: editForm.opening_date,
+      },
+      {
+        onSuccess: () => {
+          setEditOpen(false);
+          showToast('Compte mis à jour ✓');
+        },
+        onError: (err) => showToast(err.message),
+      },
+    );
   };
 
   if (!account && accounts.length > 0) {
     return (
       <div className="space-y-5">
-        <button onClick={() => navigate('/accounts')} className="text-sm text-stone-400 hover:text-stone-600 transition-colors">← Comptes</button>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+        >
+          ← Comptes
+        </button>
         <p className="text-sm text-stone-400">Compte introuvable.</p>
       </div>
     );
@@ -125,29 +181,56 @@ export function AccountDetailPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <button onClick={() => navigate('/accounts')} className="text-xs text-stone-400 hover:text-stone-600 transition-colors mb-3 block">← Comptes</button>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="text-xs text-stone-400 hover:text-stone-600 transition-colors mb-3 block"
+        >
+          ← Comptes
+        </button>
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              {account?.bank && logoMap[account.bank] && <img src={logoMap[account.bank]!} alt="" className="w-6 h-6 object-contain rounded shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />}
+              {account?.bank && logoMap[account.bank] && (
+                <img
+                  src={logoMap[account.bank]!}
+                  alt=""
+                  className="w-6 h-6 object-contain rounded shrink-0"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              )}
               <h2 className="font-serif text-2xl tracking-tight">{account?.name ?? '…'}</h2>
               {account?.bank && <span className="text-stone-400 text-base">({account.bank})</span>}
             </div>
             <p className="text-sm text-stone-400 mt-0.5">{account?.type ?? ''}</p>
             {account?.opening_date && (
               <p className="text-xs text-stone-400 mt-1">
-                Ouvert le {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Ouvert le{' '}
+                {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
                 {' · '}depuis {accountSeniority(account.opening_date)}
               </p>
             )}
           </div>
           <div className="text-right">
-            <p className={`font-serif text-3xl ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}>{fmtDec(account?.balance ?? 0)}</p>
+            <p
+              className={`font-serif text-3xl ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
+            >
+              {fmtDec(account?.balance ?? 0)}
+            </p>
             <div className="flex gap-3 justify-end mt-1">
-              <button onClick={openEdit} className="text-[11px] text-stone-400 hover:text-stone-700 transition-colors">
+              <button
+                onClick={openEdit}
+                className="text-[11px] text-stone-400 hover:text-stone-700 transition-colors"
+              >
                 Modifier
               </button>
-              <button onClick={() => setConfirmDeleteAccount(true)} className="text-[11px] text-stone-300 hover:text-red-400 transition-colors">
+              <button
+                onClick={() => setConfirmDeleteAccount(true)}
+                className="text-[11px] text-stone-300 hover:text-red-400 transition-colors"
+              >
                 Supprimer
               </button>
             </div>
@@ -162,46 +245,74 @@ export function AccountDetailPage() {
           <form onSubmit={handleEditSubmit}>
             <div className="flex gap-3 flex-wrap items-end">
               <FormGroup label="Nom du compte">
-                <Input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nom" className="min-w-44" />
+                <Input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="Nom"
+                  className="min-w-44"
+                />
               </FormGroup>
               <FormGroup label="Banque">
-                <BankSelect value={editForm.bank_id} onChange={v => setEditForm(f => ({ ...f, bank_id: v }))} banks={banks} />
+                <BankSelect
+                  value={editForm.bank_id}
+                  onChange={(v) => setEditForm((f) => ({ ...f, bank_id: v }))}
+                  banks={banks}
+                />
               </FormGroup>
               <FormGroup label="Type">
-                <Select value={editForm.account_type_id || String(accountTypes[0]?.id ?? '')} onChange={e => setEditForm(f => ({ ...f, account_type_id: e.target.value }))}>
-                  {accountTypes.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
+                <Select
+                  value={editForm.account_type_id || String(accountTypes[0]?.id ?? '')}
+                  onChange={(e) => setEditForm((f) => ({ ...f, account_type_id: e.target.value }))}
+                >
+                  {accountTypes.map((t) => (
+                    <option key={t.id} value={String(t.id)}>
+                      {t.name}
+                    </option>
+                  ))}
                 </Select>
               </FormGroup>
               <FormGroup label="Solde initial (€)">
-                <Input type="number" value={editForm.initial_balance} onChange={e => setEditForm(f => ({ ...f, initial_balance: e.target.value }))} placeholder="0,00" step="0.01" />
+                <Input
+                  type="number"
+                  value={editForm.initial_balance}
+                  onChange={(e) => setEditForm((f) => ({ ...f, initial_balance: e.target.value }))}
+                  placeholder="0,00"
+                  step="0.01"
+                />
               </FormGroup>
               <FormGroup label="Date d'ouverture">
-                <Input type="date" value={editForm.opening_date} onChange={e => setEditForm(f => ({ ...f, opening_date: e.target.value }))} />
+                <Input
+                  type="date"
+                  value={editForm.opening_date}
+                  onChange={(e) => setEditForm((f) => ({ ...f, opening_date: e.target.value }))}
+                />
               </FormGroup>
               <div className="flex gap-2">
                 <Button type="submit" variant="primary" disabled={updateAccount.isPending}>
                   {updateAccount.isPending ? '…' : 'Enregistrer'}
                 </Button>
-                <Button type="button" onClick={() => setEditOpen(false)}>Annuler</Button>
+                <Button type="button" onClick={() => setEditOpen(false)}>
+                  Annuler
+                </Button>
               </div>
             </div>
           </form>
         </Card>
       )}
 
-      <AddTxForm
-        accounts={accounts}
-        logoMap={logoMap}
-        categories={categories}
-        paymentMethods={paymentMethods}
-        fixedAccountId={accountId}
-      />
-
       {/* Transaction list */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">Transactions</p>
-          <span className="text-xs text-stone-400">{total} transaction(s)</span>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+            Transactions
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-stone-400">{total} transaction(s)</span>
+            <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
+              + Ajouter
+            </Button>
+          </div>
         </div>
         <TransactionsList
           isLoading={isLoading}
@@ -213,22 +324,48 @@ export function AccountDetailPage() {
           emptyMessage="Aucune transaction sur ce compte"
         />
         {(totalPages > 1 || total > 10) && (
-          <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onChange={setPage} onLimitChange={l => { setLimit(l); setPage(1); }} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onChange={setPage}
+            onLimitChange={(l) => {
+              setLimit(l);
+              setPage(1);
+            }}
+          />
         )}
       </div>
 
+      {addOpen && (
+        <TxModal
+          mode="create"
+          accounts={accounts}
+          logoMap={logoMap}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          fixedAccountId={accountId}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
       {deleteTx && (
-        <DeleteTxModal tx={deleteTx} onConfirm={handleDeleteTx} onCancel={() => setDeleteTx(null)} />
+        <DeleteTxModal
+          tx={deleteTx}
+          onConfirm={handleDeleteTx}
+          onCancel={() => setDeleteTx(null)}
+        />
       )}
       {editTx && (
-        <EditTxModal
+        <TxModal
+          mode="edit"
           tx={editTx}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
           onSave={handleUpdateTx}
-          onCancel={() => setEditTx(null)}
+          onClose={() => setEditTx(null)}
           isPending={updateTx.isPending}
         />
       )}
