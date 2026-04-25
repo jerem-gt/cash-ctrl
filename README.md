@@ -84,8 +84,9 @@ server/   → Express API (modules + DB + logique métier)
 ```bash
 npm test --workspace=server
 npm test --workspace=client
-npm run test:coverage --workspace=client  # couverture statements : 80.58%
 ```
+
+**Backend** : 153 tests — Vitest + supertest + better-sqlite3 in-memory
 
 **Frontend** : 283 tests — Vitest + @testing-library/react + MSW v2
 

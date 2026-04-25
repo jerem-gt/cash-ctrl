@@ -86,8 +86,10 @@ modules/{module}/
 ### Backend
 - Routes → `createTestContext()`
 - Logique → `setupFixtures()`
+- Seeds → DB in-memory + `initSchema`
+- Mocks fs/fetch → `vi.mock('node:fs')` + `vi.stubGlobal`
 
-### Frontend (283 tests — 80.58% statements)
+### Frontend
 - Hooks → QueryClient isolé + `renderHook` + `waitFor`
 - Pages/composants → `renderWithProviders` (QueryClient + MemoryRouter)
 - API mockée via MSW v2 (`server.use()` pour overrides par test)
