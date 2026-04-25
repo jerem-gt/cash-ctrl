@@ -138,7 +138,7 @@ npm run test:coverage --workspace=server       # Avec rapport lcov (coverage/)
 npm run test:watch --workspace=server          # Mode watch
 ```
 
-Structure des tests (arborescence miroir des sources) :
+Structure des tests serveur (arborescence miroir des sources) :
 - `src/session-store.test.ts` — TU du store de sessions (async/await, pas `done`)
 - `src/middleware.test.ts` — TU du guard `requireAuth`
 - `src/lib/scheduledLogic.test.ts` / `generateScheduled.test.ts` — TU logique récurrence
@@ -149,12 +149,38 @@ Structure des tests (arborescence miroir des sources) :
   - `setupFixtures()` — `createTestDb()` + user + 2 comptes ; pour les TU sans couche HTTP
 - `src/tests/helpers/testApp.ts` — `createTestContext()` : `createTestDb()` + `createApp` + agent supertest authentifié
 
-Patterns d'isolation par type de test :
+Patterns d'isolation par type de test (serveur) :
 - **Routes** (`modules/{module}/*.routes.test.ts`) : `createTestContext()` dans `beforeAll` — DB et agent partagés au sein d'une suite, isolés entre suites
 - **`generateScheduled.test.ts`** : `setupFixtures()` dans `beforeEach` — DB fraîche à chaque test (les tests modifient l'état de la DB)
 - **`auth.routes.test.ts`** : `setup()` locale dans chaque `it` — app fraîche par test (les tests modifient la session)
 
 > **Attention tsx cache** : `tsx watch` maintient un cache disque dans `node_modules/.cache/tsx/`. Le script `dev` utilise `--no-cache` pour éviter de servir du code compilé périmé.
+
+Tests client (Vitest + @testing-library/react, 222 tests) :
+```bash
+npm test --workspace=client                    # Exécution unique
+npm run test:coverage --workspace=client       # Avec rapport lcov
+npm run test:watch --workspace=client          # Mode watch
+```
+
+Infrastructure (`client/src/tests/`) :
+- `setup.ts` — import `@testing-library/jest-dom/vitest`, lifecycle MSW (`beforeAll/afterEach/afterAll`), mock global `ResizeObserver` (requis par recharts)
+- `fixtures.ts` — données typées réutilisables : `ACCOUNTS`, `ACCOUNT_TYPES`, `BANKS`, `CATEGORIES`, `PAYMENT_METHODS`, `TRANSACTIONS`, `SCHEDULED`
+- `msw/handlers.ts` — handlers MSW v2 (`http.*` + `HttpResponse`) couvrant tous les endpoints CRUD de l'API
+- `msw/server.ts` — `setupServer(...handlers)` pour Node/jsdom
+- `helpers/renderWithProviders.tsx` — wrapper `QueryClientProvider + MemoryRouter + Toast` ; accepte `initialEntries` pour la navigation. Exporte aussi `createTestQueryClient()`
+- `helpers/hookWrapper.tsx` — `createHookWrapper()` : `QueryClient` frais par test pour `renderHook`
+
+Patterns de test client :
+- **Composants sans hooks async** : `render()` nu suffit (ex. `AccountBadge`, `DeleteTxModal`, `BankSelect`, `TxCoreFields`, primitives `ui.tsx`)
+- **Composants avec TanStack Query** : `renderWithProviders()` — MSW intercepte les fetch, QueryClient frais par `describe` (ex. `TxModal`, `TxItem`, `Sidebar`)
+- **Hooks** : `renderHook(…, { wrapper: Wrapper })` via `createHookWrapper()` — QueryClient isolé par test
+- **Pages avec `useParams`** : wrapper `<Routes><Route path="/x/:id" element={<Page />} /></Routes>` avec `initialEntries: ['/x/1']`
+- **App (racine)** : `render(<App />)` nu — App apporte ses propres providers (`QueryClient` + `BrowserRouter`). MSW global intercepte `/api/auth/me`. État de chargement vérifiable synchroniquement (isLoading=true avant résolution async), état auth via `findByRole`.
+- **Toasts** : `<Toast />` inclus dans `renderWithProviders` → asserter via `document.getElementById('toast')?.textContent`
+- **Tests date-dépendants** : `vi.useFakeTimers()` + `vi.setSystemTime(new Date('YYYY-MM-DD'))` dans `beforeEach`/`afterEach`
+- **CSS `uppercase`** : RTL interroge le texte DOM, pas le rendu visuel → chercher `'Banques'` pas `'BANQUES'`
+- **Images avec `alt=""`** : role ARIA = `presentation`, pas `img` → préférer `container.querySelector('img')`
 
 ## Déploiement
 

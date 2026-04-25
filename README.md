@@ -104,6 +104,15 @@ cashctrl/
 │       │   └── useSettings.ts
 │       ├── lib/             # Utilitaires (format, dates)
 │       ├── pages/           # Dashboard, Transactions, Accounts, Settings, Export, Scheduled
+│       ├── tests/           # Infrastructure de tests client
+│       │   ├── fixtures.ts              # Données de test typées (accounts, transactions…)
+│       │   ├── setup.ts                 # jest-dom + MSW lifecycle + ResizeObserver mock
+│       │   ├── msw/
+│       │   │   ├── handlers.ts          # Handlers MSW (CRUD complet toutes ressources)
+│       │   │   └── server.ts            # setupServer(…handlers)
+│       │   └── helpers/
+│       │       ├── renderWithProviders.tsx  # QueryClient + MemoryRouter + Toast
+│       │       └── hookWrapper.tsx          # createHookWrapper() pour renderHook
 │       └── types/           # Types partagés
 ├── server/                  # Express + TypeScript
 │   └── src/
@@ -196,6 +205,18 @@ cashctrl/
 Le dossier `data/` (monté en volume Docker) contient :
 - `cashctrl.db` — base SQLite
 - `logos/` — logos des banques (`bank-{id}.png`)
+
+## Tests
+
+```bash
+# Serveur (135 tests — TU + TI Supertest)
+npm test --workspace=server
+npm run test:coverage --workspace=server
+
+# Client (222 tests — TU lib/hooks, composants, pages, App)
+npm test --workspace=client
+npm run test:coverage --workspace=client
+```
 
 ## CI/CD
 
