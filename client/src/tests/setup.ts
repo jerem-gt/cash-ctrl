@@ -5,11 +5,11 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from './msw/server';
 
 // recharts ResponsiveContainer uses ResizeObserver
-global.ResizeObserver = class {
+globalThis.ResizeObserver = class {
   observe() {}
   unobserve() {}
   disconnect() {}
-};
+} as unknown as typeof ResizeObserver;
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => server.resetHandlers());
