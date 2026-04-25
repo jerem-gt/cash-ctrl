@@ -26,6 +26,7 @@ const ACCOUNT_B: Account = {
   bank: 'LCL',
   bank_id: 2,
   account_type_id: 1,
+  type: 'Livret',
   initial_balance: 0,
   opening_date: null,
   balance: 500,
