@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS } from '@/tests/fixtures';
+import type { Account } from '@/types';
 
 import type { TxCoreState } from './TxCoreFields';
 import { TxCoreFields } from './TxCoreFields';
 
-const logoMap: Record<string, string | null> = { BNP: null };
+const logoMap: Record<string, string | null> = { BNP: null, LCL: null };
 
 const defaultValue: TxCoreState = {
   type: 'expense',
@@ -18,6 +19,19 @@ const defaultValue: TxCoreState = {
   to_account_id: '',
   payment_method_id: '',
 };
+
+const ACCOUNT_B: Account = {
+  id: 2,
+  name: 'Livret A',
+  bank: 'LCL',
+  bank_id: 2,
+  account_type_id: 1,
+  initial_balance: 0,
+  opening_date: null,
+  balance: 500,
+};
+
+const TWO_ACCOUNTS = [...ACCOUNTS, ACCOUNT_B];
 
 const defaultProps = {
   value: defaultValue,
@@ -62,7 +76,6 @@ describe('TxCoreFields', () => {
 
   it('masque le sélecteur de compte source si fixedAccountId est fourni', () => {
     render(<TxCoreFields {...defaultProps} fixedAccountId={1} />);
-    // Le FormGroup "Compte" n'est pas rendu
     expect(screen.queryByText('Compte')).not.toBeInTheDocument();
   });
 
@@ -80,5 +93,74 @@ describe('TxCoreFields', () => {
     render(<TxCoreFields {...defaultProps} onChange={onChange} />);
     await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Marché');
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it('handleSourceChange en mode simple appelle onChange avec account_id', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<TxCoreFields {...defaultProps} onChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /choisir/i });
+    await user.click(trigger);
+    await user.click(await screen.findByRole('option', { name: /Compte courant/i }));
+    expect(onChange).toHaveBeenCalledWith({ account_id: '1' });
+  });
+
+  it('handleDestChange en mode transfert appelle onChange avec to_account_id et description', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TxCoreFields
+        {...defaultProps}
+        onChange={onChange}
+        accounts={TWO_ACCOUNTS}
+        isTransfer
+        value={{ ...defaultValue, account_id: '1' }}
+      />,
+    );
+    // Source sélectionné = "Compte courant" ; destination affiche "— Choisir —"
+    const destTrigger = screen.getByRole('button', { name: /choisir/i });
+    await user.click(destTrigger);
+    await user.click(await screen.findByRole('option', { name: /Livret A/i }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ to_account_id: '2' }));
+  });
+
+  it('description utilise les noms de banques différentes (BNP → LCL)', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TxCoreFields
+        {...defaultProps}
+        onChange={onChange}
+        accounts={TWO_ACCOUNTS}
+        logoMap={logoMap}
+        isTransfer
+        value={{ ...defaultValue, account_id: '1' }}
+      />,
+    );
+    const destTrigger = screen.getByRole('button', { name: /choisir/i });
+    await user.click(destTrigger);
+    await user.click(await screen.findByRole('option', { name: /Livret A/i }));
+    // ACCOUNTS[0].bank = 'BNP', ACCOUNT_B.bank = 'LCL' → description = 'BNP → LCL'
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ description: 'BNP → LCL' }));
+  });
+
+  it('handleSourceChange en mode transfert met à jour account_id', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TxCoreFields
+        {...defaultProps}
+        onChange={onChange}
+        accounts={TWO_ACCOUNTS}
+        isTransfer
+        value={{ ...defaultValue, account_id: '' }}
+      />,
+    );
+    // Les deux AccountSelect affichent "— Choisir —"
+    const triggers = screen.getAllByRole('button', { name: /choisir/i });
+    // Premier = source
+    await user.click(triggers[0]);
+    await user.click(await screen.findByRole('option', { name: /Compte courant/i }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ account_id: '1' }));
   });
 });
