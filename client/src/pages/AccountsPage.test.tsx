@@ -18,7 +18,7 @@ describe('AccountsPage', () => {
   it("affiche l'état vide quand aucun compte", async () => {
     server.use(http.get('/api/accounts', () => HttpResponse.json([])));
     renderWithProviders(<AccountsPage />);
-    await screen.findByText("Aucun compte pour l'instant.");
+    expect(await screen.findByText("Aucun compte pour l'instant.")).toBeInTheDocument();
   });
 
   it('affiche les comptes groupés par type après le chargement', async () => {

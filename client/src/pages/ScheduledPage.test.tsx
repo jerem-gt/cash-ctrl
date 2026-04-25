@@ -36,7 +36,7 @@ describe('ScheduledPage', () => {
   it('affiche "Aucune planification" quand la liste est vide', async () => {
     server.use(http.get('/api/scheduled', () => HttpResponse.json([])));
     renderWithProviders(<ScheduledPage />);
-    await screen.findByText('Aucune planification.');
+    expect(await screen.findByText('Aucune planification.')).toBeInTheDocument();
   });
 
   it('ouvre le modal de création au clic', async () => {
@@ -44,7 +44,7 @@ describe('ScheduledPage', () => {
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
     await user.click(screen.getByRole('button', { name: /nouvelle/i }));
-    await screen.findByText('Nouvelle planification');
+    expect(await screen.findByText('Nouvelle planification')).toBeInTheDocument();
   });
 
   // ─── recurrenceLabel branches ──────────────────────────────────────────────
@@ -150,7 +150,7 @@ describe('ScheduledPage', () => {
       http.get('/api/scheduled', () => HttpResponse.json([{ ...SCHEDULED[0], active: 0 }])),
     );
     renderWithProviders(<ScheduledPage />);
-    await screen.findByText('Suspendu');
+    expect(await screen.findByText('Suspendu')).toBeInTheDocument();
   });
 
   it('affiche le badge "Transfert" pour un virement planifié', async () => {
@@ -160,7 +160,7 @@ describe('ScheduledPage', () => {
       ),
     );
     renderWithProviders(<ScheduledPage />);
-    await screen.findByText(/↔ Transfert/);
+    expect(await screen.findByText(/↔ Transfert/)).toBeInTheDocument();
   });
 
   // ─── Interactions ──────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ describe('ScheduledPage', () => {
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
     await user.click(screen.getByRole('button', { name: 'Modifier' }));
-    await screen.findByText('Modifier la planification');
+    expect(await screen.findByText('Modifier la planification')).toBeInTheDocument();
   });
 
   it('ouvre la confirmation de suppression au clic sur ×', async () => {

@@ -19,17 +19,17 @@ describe('SettingsPage', () => {
 
   it('affiche les banques chargées', async () => {
     renderWithProviders(<SettingsPage />);
-    await screen.findByText('BNP');
+    expect(await screen.findByText('BNP')).toBeInTheDocument();
   });
 
   it('affiche les catégories chargées', async () => {
     renderWithProviders(<SettingsPage />);
-    await screen.findByText('Alimentation');
+    expect(await screen.findByText('Alimentation')).toBeInTheDocument();
   });
 
   it('affiche les moyens de paiement chargés', async () => {
     renderWithProviders(<SettingsPage />);
-    await screen.findByText('CB');
+    expect(await screen.findByText('CB')).toBeInTheDocument();
   });
 
   it('affiche une erreur toast si les mots de passe ne correspondent pas', async () => {

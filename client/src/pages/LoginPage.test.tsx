@@ -40,6 +40,6 @@ describe('LoginPage', () => {
     await user.type(screen.getByPlaceholderText('admin'), 'bad');
     await user.type(screen.getByPlaceholderText('••••••••'), 'bad');
     await user.click(screen.getByRole('button', { name: /se connecter/i }));
-    await screen.findByText('Identifiants invalides');
+    expect(await screen.findByText('Identifiants invalides')).toBeInTheDocument();
   });
 });

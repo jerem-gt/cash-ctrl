@@ -70,7 +70,7 @@ describe('AccountDetailPage', () => {
       ),
     );
     renderDetail();
-    await screen.findByText('Aucune transaction sur ce compte');
+    expect(await screen.findByText('Aucune transaction sur ce compte')).toBeInTheDocument();
   });
 
   it("ouvre le modal d'édition du compte", async () => {

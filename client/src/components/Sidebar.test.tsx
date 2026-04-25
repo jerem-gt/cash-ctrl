@@ -37,7 +37,7 @@ describe('Sidebar', () => {
 
   it('affiche le compte chargé dans la liste', async () => {
     renderWithProviders(<Sidebar username="test" />);
-    await screen.findByText('Compte courant');
+    expect(await screen.findByText('Compte courant')).toBeInTheDocument();
   });
 
   it('bascule le groupement au clic sur le bouton', async () => {

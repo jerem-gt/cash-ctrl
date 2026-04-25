@@ -24,13 +24,12 @@ describe('DashboardPage', () => {
 
   it('affiche le solde total des comptes', async () => {
     renderWithProviders(<DashboardPage />);
-    // '1 compte(s)' n'apparaît qu'après chargement des comptes
-    await screen.findByText('1 compte(s)');
+    expect(await screen.findByText('1 compte(s)')).toBeInTheDocument();
   });
 
   it('affiche le titre de la section des dernières transactions', async () => {
     renderWithProviders(<DashboardPage />);
-    await screen.findByText('Dernières transactions validées');
+    expect(await screen.findByText('Dernières transactions validées')).toBeInTheDocument();
   });
 
   it('affiche "Aucune dépense ce mois" dans le graphe camembert si vide', async () => {
@@ -40,7 +39,7 @@ describe('DashboardPage', () => {
       ),
     );
     renderWithProviders(<DashboardPage />);
-    await screen.findByText('Aucune dépense ce mois');
+    expect(await screen.findByText('Aucune dépense ce mois')).toBeInTheDocument();
   });
 
   it('affiche "Aucune transaction" dans la section validées si vide', async () => {
@@ -50,6 +49,6 @@ describe('DashboardPage', () => {
       ),
     );
     renderWithProviders(<DashboardPage />);
-    await screen.findByText('Aucune transaction');
+    expect(await screen.findByText('Aucune transaction')).toBeInTheDocument();
   });
 });

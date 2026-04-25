@@ -35,6 +35,22 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
 
+function resolveTransferAccountIds(
+  isExpense: boolean,
+  from_account_id: number | undefined,
+  to_account_id: number | undefined,
+): { thisAccountId: number | undefined; peerAccountId: number | undefined } {
+  let thisAccountId: number | undefined;
+  if (from_account_id !== undefined) {
+    thisAccountId = isExpense ? from_account_id : to_account_id;
+  }
+  let peerAccountId: number | undefined;
+  if (to_account_id !== undefined) {
+    peerAccountId = isExpense ? to_account_id : from_account_id;
+  }
+  return { thisAccountId, peerAccountId };
+}
+
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
   const router = Router();
@@ -99,18 +115,11 @@ export function createTransactionsRouter(db: Database): Router {
         return;
       }
       // tx.type === 'expense' means this tx is the source leg, peer is the destination leg
-      const thisAccountId =
-        from_account_id === undefined
-          ? undefined
-          : tx.type === 'expense'
-            ? from_account_id
-            : to_account_id;
-      const peerAccountId =
-        to_account_id === undefined
-          ? undefined
-          : tx.type === 'expense'
-            ? to_account_id
-            : from_account_id;
+      const { thisAccountId, peerAccountId } = resolveTransferAccountIds(
+        tx.type === 'expense',
+        from_account_id,
+        to_account_id,
+      );
       transactionsRepo.updateBothShared(userId, id, tx.transfer_peer_id, {
         amount: parsed.data.amount,
         description: parsed.data.description.trim(),

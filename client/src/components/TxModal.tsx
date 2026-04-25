@@ -54,6 +54,68 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
   };
 }
 
+function resolveTransferAccounts(tx: Transaction): { account_id: string; to_account_id: string } {
+  const isExpense = tx.type === 'expense';
+  return {
+    account_id: isExpense ? String(tx.account_id) : String(tx.transfer_peer_account_id ?? ''),
+    to_account_id: isExpense ? String(tx.transfer_peer_account_id ?? '') : String(tx.account_id),
+  };
+}
+
+function initCore(
+  tx: Transaction | null,
+  duplicateFrom: Transaction | undefined,
+  fixedAccountId: number | undefined,
+): TxCoreState {
+  if (tx !== null) {
+    const isTransferTx = tx.transfer_peer_id !== null;
+    const { account_id, to_account_id } = isTransferTx
+      ? resolveTransferAccounts(tx)
+      : { account_id: String(tx.account_id), to_account_id: '' };
+    return {
+      type: tx.type,
+      amount: String(tx.amount),
+      description: tx.description,
+      category_id: String(tx.category_id ?? ''),
+      account_id,
+      to_account_id,
+      payment_method_id: String(tx.payment_method_id ?? ''),
+    };
+  }
+  if (duplicateFrom) {
+    if (duplicateFrom.transfer_peer_id !== null) {
+      const fromId =
+        duplicateFrom.type === 'expense'
+          ? duplicateFrom.account_id
+          : (duplicateFrom.transfer_peer_account_id ?? duplicateFrom.account_id);
+      const toId =
+        duplicateFrom.type === 'expense'
+          ? (duplicateFrom.transfer_peer_account_id ?? 0)
+          : duplicateFrom.account_id;
+      return {
+        type: 'expense',
+        amount: String(duplicateFrom.amount),
+        description: duplicateFrom.description,
+        category_id: '',
+        account_id: String(fromId),
+        to_account_id: String(toId),
+        payment_method_id: '',
+      };
+    }
+    return {
+      type: duplicateFrom.type,
+      amount: String(duplicateFrom.amount),
+      description: duplicateFrom.description,
+      category_id: String(duplicateFrom.category_id ?? ''),
+      account_id:
+        fixedAccountId == null ? String(duplicateFrom.account_id) : String(fixedAccountId),
+      to_account_id: '',
+      payment_method_id: String(duplicateFrom.payment_method_id ?? ''),
+    };
+  }
+  return emptyCore(fixedAccountId);
+}
+
 function getTitle(isEdit: boolean, isTransfer: boolean, isDuplicate: boolean): string {
   if (isEdit) return 'Modifier la transaction';
   if (isDuplicate && isTransfer) return 'Dupliquer le transfert';
@@ -132,59 +194,7 @@ export function TxModal(props: Readonly<Props>) {
   const duplicateFrom = isEdit ? undefined : (props as CreateProps).duplicateFrom;
   const isDuplicate = duplicateFrom != null;
 
-  const [core, setCore] = useState<TxCoreState>(() => {
-    if (isEdit) {
-      const isTransferTx = tx!.transfer_peer_id !== null;
-      return {
-        type: tx!.type,
-        amount: String(tx!.amount),
-        description: tx!.description,
-        category_id: String(tx!.category_id ?? ''),
-        // Pour les transferts, account_id = compte source et to_account_id = compte destination
-        account_id: isTransferTx
-          ? String(tx!.type === 'expense' ? tx!.account_id : (tx!.transfer_peer_account_id ?? ''))
-          : String(tx!.account_id),
-        to_account_id: isTransferTx
-          ? String(tx!.type === 'expense' ? (tx!.transfer_peer_account_id ?? '') : tx!.account_id)
-          : '',
-        payment_method_id: String(tx!.payment_method_id ?? ''),
-      };
-    }
-    if (duplicateFrom) {
-      if (duplicateFrom.transfer_peer_id !== null) {
-        // Pour les transferts, on reconstitue la direction source → destination
-        // selon le type : expense = argent parti du account_id, income = argent arrivé sur account_id
-        const fromId =
-          duplicateFrom.type === 'expense'
-            ? duplicateFrom.account_id
-            : (duplicateFrom.transfer_peer_account_id ?? duplicateFrom.account_id);
-        const toId =
-          duplicateFrom.type === 'expense'
-            ? (duplicateFrom.transfer_peer_account_id ?? 0)
-            : duplicateFrom.account_id;
-        return {
-          type: 'expense',
-          amount: String(duplicateFrom.amount),
-          description: duplicateFrom.description,
-          category_id: '',
-          account_id: String(fromId),
-          to_account_id: String(toId),
-          payment_method_id: '',
-        };
-      }
-      return {
-        type: duplicateFrom.type,
-        amount: String(duplicateFrom.amount),
-        description: duplicateFrom.description,
-        category_id: String(duplicateFrom.category_id ?? ''),
-        account_id:
-          fixedAccountId == null ? String(duplicateFrom.account_id) : String(fixedAccountId),
-        to_account_id: '',
-        payment_method_id: String(duplicateFrom.payment_method_id ?? ''),
-      };
-    }
-    return emptyCore(fixedAccountId);
-  });
+  const [core, setCore] = useState<TxCoreState>(() => initCore(tx, duplicateFrom, fixedAccountId));
   const [date, setDate] = useState(isEdit ? tx!.date : today);
   const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : (duplicateFrom?.notes ?? ''));
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
