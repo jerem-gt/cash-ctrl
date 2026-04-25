@@ -22,7 +22,7 @@ export function renderWithProviders(ui: ReactElement, options?: Options) {
   const { initialEntries = ['/'], ...renderOptions } = options ?? {};
   const queryClient = createTestQueryClient();
 
-  function Wrapper({ children }: { children: ReactNode }) {
+  function Wrapper({ children }: Readonly<{ children: ReactNode }>) {
     return (
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={initialEntries}>

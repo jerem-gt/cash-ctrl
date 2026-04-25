@@ -178,7 +178,7 @@ export function TxModal(props: Readonly<Props>) {
         description: duplicateFrom.description,
         category_id: String(duplicateFrom.category_id ?? ''),
         account_id:
-          fixedAccountId != null ? String(fixedAccountId) : String(duplicateFrom.account_id),
+          fixedAccountId == null ? String(duplicateFrom.account_id) : String(fixedAccountId),
         to_account_id: '',
         payment_method_id: String(duplicateFrom.payment_method_id ?? ''),
       };

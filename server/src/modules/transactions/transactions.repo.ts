@@ -175,19 +175,19 @@ export function createTransactionsRepo(db: Database) {
     ) {
       const v = data.validated ? 1 : 0;
       db.transaction(() => {
-        if (data.this_account_id !== undefined) {
+        if (data.this_account_id === undefined) {
+          const stmt = db.prepare(
+            'UPDATE transactions SET amount=?, description=?, date=?, validated=? WHERE id=? AND user_id=?',
+          );
+          stmt.run(data.amount, data.description, data.date, v, id, userId);
+          stmt.run(data.amount, data.description, data.date, v, peerId, userId);
+        } else {
           db.prepare(
             'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
           ).run(data.amount, data.description, data.date, v, data.this_account_id, id, userId);
           db.prepare(
             'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
           ).run(data.amount, data.description, data.date, v, data.peer_account_id, peerId, userId);
-        } else {
-          const stmt = db.prepare(
-            'UPDATE transactions SET amount=?, description=?, date=?, validated=? WHERE id=? AND user_id=?',
-          );
-          stmt.run(data.amount, data.description, data.date, v, id, userId);
-          stmt.run(data.amount, data.description, data.date, v, peerId, userId);
         }
       })();
     },
