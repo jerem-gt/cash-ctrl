@@ -23,6 +23,8 @@ const transferUpdateSchema = z.object({
   description: z.string().min(1).max(200),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   validated: z.boolean().default(false),
+  from_account_id: z.number().int().positive().optional(),
+  to_account_id: z.number().int().positive().optional(),
 });
 
 const querySchema = z.object({
@@ -87,11 +89,35 @@ export function createTransactionsRouter(db: Database): Router {
         res.status(400).json({ error: z.treeifyError(parsed.error) });
         return;
       }
+      const { from_account_id, to_account_id } = parsed.data;
+      if (from_account_id && !transactionsRepo.accountExists(from_account_id, userId)) {
+        res.status(403).json({ error: 'Account not found or does not belong to user' });
+        return;
+      }
+      if (to_account_id && !transactionsRepo.accountExists(to_account_id, userId)) {
+        res.status(403).json({ error: 'Account not found or does not belong to user' });
+        return;
+      }
+      // tx.type === 'expense' means this tx is the source leg, peer is the destination leg
+      const thisAccountId =
+        from_account_id !== undefined
+          ? tx.type === 'expense'
+            ? from_account_id
+            : to_account_id
+          : undefined;
+      const peerAccountId =
+        to_account_id !== undefined
+          ? tx.type === 'expense'
+            ? to_account_id
+            : from_account_id
+          : undefined;
       transactionsRepo.updateBothShared(userId, id, tx.transfer_peer_id, {
         amount: parsed.data.amount,
         description: parsed.data.description.trim(),
         date: parsed.data.date,
         validated: parsed.data.validated,
+        this_account_id: thisAccountId,
+        peer_account_id: peerAccountId,
       });
     } else {
       const parsed = transactionSchema.safeParse(req.body);

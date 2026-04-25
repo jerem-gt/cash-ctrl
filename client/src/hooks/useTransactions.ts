@@ -14,6 +14,8 @@ type UpdatePayload = {
   payment_method_id: number;
   notes: string | null;
   validated: boolean;
+  from_account_id?: number;
+  to_account_id?: number;
 };
 
 export function useTransactions(filters?: TransactionFilters) {
@@ -58,6 +60,7 @@ export function useUpdateTransaction() {
             }
           : old,
       );
+      qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['accounts'] });
     },
   });

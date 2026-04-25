@@ -46,6 +46,7 @@ export function AccountDetailPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
   const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [editAccountOpen, setEditAccountOpen] = useState(false);
@@ -74,6 +75,8 @@ export function AccountDetailPage() {
           payment_method_id: editTx.payment_method_id ?? 0,
           notes: editTx.notes,
           validated: !!editTx.validated,
+          from_account_id: Number.parseInt(data.account_id) || undefined,
+          to_account_id: Number.parseInt(data.to_account_id) || undefined,
         }
       : {
           id: editTx.id,
@@ -219,6 +222,7 @@ export function AccountDetailPage() {
           accounts={accounts}
           logoMap={logoMap}
           onEdit={setEditTx}
+          onDuplicate={setDuplicateTx}
           onDelete={setDeleteTx}
           emptyMessage="Aucune transaction sur ce compte"
         />
@@ -246,6 +250,18 @@ export function AccountDetailPage() {
           paymentMethods={paymentMethods}
           fixedAccountId={accountId}
           onClose={() => setAddOpen(false)}
+        />
+      )}
+      {duplicateTx && (
+        <TxModal
+          mode="create"
+          accounts={accounts}
+          logoMap={logoMap}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          fixedAccountId={duplicateTx.transfer_peer_id ? undefined : accountId}
+          duplicateFrom={duplicateTx}
+          onClose={() => setDuplicateTx(null)}
         />
       )}
       {deleteTx && (

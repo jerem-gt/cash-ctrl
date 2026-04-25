@@ -15,7 +15,8 @@ const TX_WITH_DETAILS = `
          t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
          a.name as account_name,
          COALESCE(c.name, '') as category,
-         COALESCE(pm.name, '') as payment_method
+         COALESCE(pm.name, '') as payment_method,
+         (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN categories c ON t.category_id = c.id
@@ -68,7 +69,8 @@ export function createTransactionsRepo(db: Database) {
                t.scheduled_id, t.validated, t.notes, t.created_at,
                a.name                AS account_name,
                COALESCE(c.name, '')  AS category,
-               COALESCE(pm.name, '') AS payment_method
+               COALESCE(pm.name, '') AS payment_method,
+               (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
         ${FROM_WHERE}${conditions}
         ORDER BY t.date DESC, t.created_at DESC
         LIMIT ? OFFSET ?`,
@@ -171,13 +173,22 @@ export function createTransactionsRepo(db: Database) {
       peerId: number,
       data: UpdateSharedTransactionInput,
     ) {
-      const stmt = db.prepare(
-        'UPDATE transactions SET amount = ?, description = ?, date = ?, validated = ? WHERE id = ? AND user_id = ?',
-      );
       const v = data.validated ? 1 : 0;
       db.transaction(() => {
-        stmt.run(data.amount, data.description, data.date, v, id, userId);
-        stmt.run(data.amount, data.description, data.date, v, peerId, userId);
+        if (data.this_account_id !== undefined) {
+          db.prepare(
+            'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
+          ).run(data.amount, data.description, data.date, v, data.this_account_id, id, userId);
+          db.prepare(
+            'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
+          ).run(data.amount, data.description, data.date, v, data.peer_account_id, peerId, userId);
+        } else {
+          const stmt = db.prepare(
+            'UPDATE transactions SET amount=?, description=?, date=?, validated=? WHERE id=? AND user_id=?',
+          );
+          stmt.run(data.amount, data.description, data.date, v, id, userId);
+          stmt.run(data.amount, data.description, data.date, v, peerId, userId);
+        }
       })();
     },
 

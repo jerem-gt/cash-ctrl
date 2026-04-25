@@ -1,5 +1,6 @@
 import { type SubmitEvent, useState } from 'react';
 
+import { AccountSelect } from '@/components/AccountSelect';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
@@ -12,6 +13,7 @@ export type TxFormState = {
   description: string;
   category_id: string;
   account_id: string;
+  to_account_id: string;
   date: string;
   payment_method_id: string;
   notes: string;
@@ -26,7 +28,11 @@ type BaseProps = {
   onClose: () => void;
 };
 
-type CreateProps = BaseProps & { mode: 'create'; fixedAccountId?: number };
+type CreateProps = BaseProps & {
+  mode: 'create';
+  fixedAccountId?: number;
+  duplicateFrom?: Transaction;
+};
 type EditProps = BaseProps & {
   mode: 'edit';
   tx: Transaction;
@@ -48,8 +54,10 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
   };
 }
 
-function getTitle(isEdit: boolean, isTransfer: boolean): string {
+function getTitle(isEdit: boolean, isTransfer: boolean, isDuplicate: boolean): string {
   if (isEdit) return 'Modifier la transaction';
+  if (isDuplicate && isTransfer) return 'Dupliquer le transfert';
+  if (isDuplicate) return 'Dupliquer la transaction';
   if (isTransfer) return 'Nouveau transfert';
   return 'Nouvelle transaction';
 }
@@ -120,28 +128,70 @@ export function TxModal(props: Readonly<Props>) {
   const tx = isEdit ? props.tx : null;
   const isTransferEdit = tx != null && tx.transfer_peer_id !== null;
 
-  const [core, setCore] = useState<TxCoreState>(() =>
-    isEdit
-      ? {
-          type: tx!.type,
-          amount: String(tx!.amount),
-          description: tx!.description,
-          category_id: String(tx!.category_id ?? ''),
-          account_id: String(tx!.account_id),
-          to_account_id: '',
-          payment_method_id: String(tx!.payment_method_id ?? ''),
-        }
-      : emptyCore((props as CreateProps).fixedAccountId),
-  );
+  const fixedAccountId = isEdit ? undefined : (props as CreateProps).fixedAccountId;
+  const duplicateFrom = isEdit ? undefined : (props as CreateProps).duplicateFrom;
+  const isDuplicate = duplicateFrom != null;
+
+  const [core, setCore] = useState<TxCoreState>(() => {
+    if (isEdit) {
+      const isTransferTx = tx!.transfer_peer_id !== null;
+      return {
+        type: tx!.type,
+        amount: String(tx!.amount),
+        description: tx!.description,
+        category_id: String(tx!.category_id ?? ''),
+        // Pour les transferts, account_id = compte source et to_account_id = compte destination
+        account_id: isTransferTx
+          ? String(tx!.type === 'expense' ? tx!.account_id : (tx!.transfer_peer_account_id ?? ''))
+          : String(tx!.account_id),
+        to_account_id: isTransferTx
+          ? String(tx!.type === 'expense' ? (tx!.transfer_peer_account_id ?? '') : tx!.account_id)
+          : '',
+        payment_method_id: String(tx!.payment_method_id ?? ''),
+      };
+    }
+    if (duplicateFrom) {
+      if (duplicateFrom.transfer_peer_id !== null) {
+        // Pour les transferts, on reconstitue la direction source → destination
+        // selon le type : expense = argent parti du account_id, income = argent arrivé sur account_id
+        const fromId =
+          duplicateFrom.type === 'expense'
+            ? duplicateFrom.account_id
+            : (duplicateFrom.transfer_peer_account_id ?? duplicateFrom.account_id);
+        const toId =
+          duplicateFrom.type === 'expense'
+            ? (duplicateFrom.transfer_peer_account_id ?? 0)
+            : duplicateFrom.account_id;
+        return {
+          type: 'expense',
+          amount: String(duplicateFrom.amount),
+          description: duplicateFrom.description,
+          category_id: '',
+          account_id: String(fromId),
+          to_account_id: String(toId),
+          payment_method_id: '',
+        };
+      }
+      return {
+        type: duplicateFrom.type,
+        amount: String(duplicateFrom.amount),
+        description: duplicateFrom.description,
+        category_id: String(duplicateFrom.category_id ?? ''),
+        account_id:
+          fixedAccountId != null ? String(fixedAccountId) : String(duplicateFrom.account_id),
+        to_account_id: '',
+        payment_method_id: String(duplicateFrom.payment_method_id ?? ''),
+      };
+    }
+    return emptyCore(fixedAccountId);
+  });
   const [date, setDate] = useState(isEdit ? tx!.date : today);
-  const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : '');
+  const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : (duplicateFrom?.notes ?? ''));
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
-  const [isTransfer, setIsTransfer] = useState(false);
+  const [isTransfer, setIsTransfer] = useState(!!duplicateFrom?.transfer_peer_id);
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
-
-  const fixedAccountId = isEdit ? undefined : (props as CreateProps).fixedAccountId;
   const isTransferCreate = !isEdit && isTransfer;
   const noOtherAccounts = fixedAccountId != null && accounts.every((a) => a.id === fixedAccountId);
 
@@ -166,6 +216,7 @@ export function TxModal(props: Readonly<Props>) {
     if (
       !core.amount ||
       !core.description ||
+      (isTransferEdit && (!core.account_id || !core.to_account_id)) ||
       (!isTransferEdit && !core.account_id) ||
       (!isTransferEdit && !core.payment_method_id)
     ) {
@@ -178,6 +229,7 @@ export function TxModal(props: Readonly<Props>) {
       description: core.description,
       category_id: core.category_id,
       account_id: core.account_id,
+      to_account_id: core.to_account_id,
       date,
       payment_method_id: core.payment_method_id,
       notes,
@@ -261,7 +313,7 @@ export function TxModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-[540px]">
-        <h3 className="font-serif text-xl mb-1">{getTitle(isEdit, isTransfer)}</h3>
+        <h3 className="font-serif text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
 
         <TxModalHeader
           isEdit={isEdit}
@@ -276,25 +328,46 @@ export function TxModal(props: Readonly<Props>) {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             {isTransferEdit ? (
-              <div className="flex gap-3 flex-wrap">
-                <FormGroup label="Montant (€)">
-                  <Input
-                    type="number"
-                    value={core.amount}
-                    onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
-                    placeholder="0,00"
-                    min="0"
-                    step="0.01"
-                  />
-                </FormGroup>
-                <FormGroup label="Description">
-                  <Input
-                    type="text"
-                    value={core.description}
-                    onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
-                    placeholder="Ex : Virement"
-                  />
-                </FormGroup>
+              <div className="space-y-3">
+                <div className="flex gap-3 flex-wrap">
+                  <FormGroup label="Montant (€)">
+                    <Input
+                      type="number"
+                      value={core.amount}
+                      onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
+                      placeholder="0,00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </FormGroup>
+                  <FormGroup label="Description">
+                    <Input
+                      type="text"
+                      value={core.description}
+                      onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
+                      placeholder="Ex : Virement"
+                    />
+                  </FormGroup>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  <FormGroup label="Compte source">
+                    <AccountSelect
+                      value={core.account_id}
+                      onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
+                      accounts={accounts}
+                      logoMap={logoMap}
+                    />
+                  </FormGroup>
+                  <FormGroup label="Compte destination">
+                    <AccountSelect
+                      value={core.to_account_id}
+                      onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
+                      accounts={accounts.filter((a) => String(a.id) !== core.account_id)}
+                      logoMap={logoMap}
+                      placeholder="— Choisir —"
+                    />
+                  </FormGroup>
+                </div>
               </div>
             ) : (
               <TxCoreFields

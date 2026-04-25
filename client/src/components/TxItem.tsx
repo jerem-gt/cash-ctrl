@@ -10,10 +10,11 @@ interface Props {
   accounts?: Account[];
   logoMap?: Record<string, string | null>;
   onEdit?: (tx: Transaction) => void;
+  onDuplicate?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
 }
 
-export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Props>) {
+export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }: Readonly<Props>) {
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
@@ -90,6 +91,15 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDelete }: Readonly<Pro
           title="Modifier"
         >
           ✎
+        </button>
+      )}
+      {onDuplicate && (
+        <button
+          onClick={() => onDuplicate(tx)}
+          className="text-stone-300 hover:text-stone-600 transition-colors text-sm leading-none px-1"
+          title="Dupliquer"
+        >
+          ⧉
         </button>
       )}
       {onDelete && (

@@ -9,6 +9,7 @@ export interface Transaction {
   category: string;
   date: string;
   transfer_peer_id: number | null;
+  transfer_peer_account_id: number | null;
   scheduled_id: number | null;
   validated: number;
   payment_method_id: number | null;
@@ -47,6 +48,8 @@ export interface UpdateSharedTransactionInput {
   description: string;
   date: string;
   validated: boolean;
+  this_account_id?: number;
+  peer_account_id?: number;
 }
 
 export interface TransactionFilters {

@@ -35,6 +35,7 @@ export function TransactionsPage() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
   const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
 
   const setFilter = (patch: Partial<Filters>) => {
@@ -61,6 +62,8 @@ export function TransactionsPage() {
           payment_method_id: editTx.payment_method_id ?? 0,
           notes: editTx.notes,
           validated: !!editTx.validated,
+          from_account_id: Number.parseInt(data.account_id) || undefined,
+          to_account_id: Number.parseInt(data.to_account_id) || undefined,
         }
       : {
           id: editTx.id,
@@ -155,6 +158,7 @@ export function TransactionsPage() {
         accounts={accounts}
         logoMap={logoMap}
         onEdit={setEditTx}
+        onDuplicate={setDuplicateTx}
         onDelete={setDeleteTx}
       />
 
@@ -177,6 +181,17 @@ export function TransactionsPage() {
           categories={categories}
           paymentMethods={paymentMethods}
           onClose={() => setAddOpen(false)}
+        />
+      )}
+      {duplicateTx && (
+        <TxModal
+          mode="create"
+          accounts={accounts}
+          logoMap={logoMap}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          duplicateFrom={duplicateTx}
+          onClose={() => setDuplicateTx(null)}
         />
       )}
       {editTx && (
