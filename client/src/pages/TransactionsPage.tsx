@@ -116,6 +116,7 @@ export function TransactionsPage() {
       <div className="flex gap-3 flex-wrap items-center">
         <div className="flex-1 min-w-32.5 max-w-50">
           <AccountSelect
+            id="filtered-account-select"
             value={String(filters.account_id ?? '')}
             onChange={(v) => setFilter({ account_id: v ? Number.parseInt(v) : undefined })}
             accounts={accounts}
