@@ -16,6 +16,7 @@ services:
       - ADMIN_USER=admin
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SECURE_COOKIE=true
+      - LOG_LEVEL=INFO
 networks:
   mynet:
     driver: bridge
