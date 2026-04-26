@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createDb } from './db/init.js';
 import { initSchema } from './db/schema.js';
+import { logger } from './logger.js';
 import { downloadDefaultBankLogos } from './logoDownloader.js';
 
 vi.mock('node:fs', () => ({
@@ -23,8 +24,8 @@ describe('downloadDefaultBankLogos', () => {
 
   beforeEach(() => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    vi.spyOn(logger, 'info').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -118,7 +119,7 @@ describe('downloadDefaultBankLogos', () => {
     vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     await downloadDefaultBankLogos(db);
-    expect(console.warn).toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalled();
   });
 
   it('logs a warning when fetch throws', async () => {
@@ -131,6 +132,6 @@ describe('downloadDefaultBankLogos', () => {
     vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));
     await downloadDefaultBankLogos(db);
-    expect(console.warn).toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalled();
   });
 });

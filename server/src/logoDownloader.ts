@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Database } from 'better-sqlite3';
 
 import { DATA_DIR } from './db/init';
+import { logger } from './logger';
 import { createBanksRepo } from './modules/banks/banks.repo.js';
 
 export const LOGOS_DIR = path.join(DATA_DIR, 'logos');
@@ -24,15 +25,16 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
     }
 
     try {
-      const res = await fetch(
-        `https://www.google.com/s2/favicons?domain=${bank.domain}&sz=64`
-      );
-      if (!res.ok) { console.warn(`[logos] ${bank.name}: HTTP ${res.status}`); continue; }
+      const res = await fetch(`https://www.google.com/s2/favicons?domain=${bank.domain}&sz=64`);
+      if (!res.ok) {
+        logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
+        continue;
+      }
       fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
       banksRepo.updateLogo(bank.id, `/logos/${filename}`);
-      console.log(`[logos] Downloaded logo for ${bank.name}`);
+      logger.info(`logos: downloaded ${bank.name}`);
     } catch (err) {
-      console.warn(`[logos] Failed for ${bank.name}:`, (err as Error).message);
+      logger.warn(`logos: ${bank.name} — ${(err as Error).message}`);
     }
   }
 }

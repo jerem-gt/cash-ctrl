@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import express from 'express';
 import session from 'express-session';
 
+import { globalErrorHandler, requestLogger } from './logger';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes';
 import { createAccountsRouter } from './modules/accounts/accounts.routes';
 import { createAuthRouter } from './modules/auth/auth.routes';
@@ -25,19 +26,22 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(requestLogger);
 
-  app.use(session({
-    store: new SQLiteSessionStore(db),
-    secret: options?.sessionSecret ?? 'test-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: options?.secureCookies ?? false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  }));
+  app.use(
+    session({
+      store: new SQLiteSessionStore(db),
+      secret: options?.sessionSecret ?? 'test-secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: options?.secureCookies ?? false,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      },
+    }),
+  );
 
   app.get('/api/health', (_req, res) => {
     try {
@@ -59,6 +63,8 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/payment-methods', createPaymentMethodsRouter(db));
   app.use('/api/scheduled', createScheduledRouter(db));
   app.use('/api/settings', createSettingsRouter(db));
+
+  app.use(globalErrorHandler);
 
   return app;
 }

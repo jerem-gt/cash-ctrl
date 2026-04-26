@@ -7,11 +7,12 @@ import express from 'express';
 
 import { createApp } from './app.js';
 import { createDb, initDatabase } from './db/init';
+import { logger } from './logger';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 
-const PORT           = Number.parseInt(process.env.PORT ?? '3000');
+const PORT = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
-const IS_PROD        = process.env.NODE_ENV === 'production';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 const db = createDb();
 initDatabase(db);
@@ -28,19 +29,38 @@ if (IS_PROD) {
 
   // Override health check in production to also verify the frontend bundle
   app.get('/api/health', (_req, res) => {
-    try { db.prepare('SELECT 1').get(); } catch {
-      res.status(503).json({ ok: false, reason: 'db' }); return;
+    try {
+      db.prepare('SELECT 1').get();
+    } catch {
+      res.status(503).json({ ok: false, reason: 'db' });
+      return;
     }
     if (!fs.existsSync(path.join(__dirname, '../../client/dist', 'index.html'))) {
-      res.status(503).json({ ok: false, reason: 'frontend' }); return;
+      res.status(503).json({ ok: false, reason: 'frontend' });
+      return;
     }
     res.json({ ok: true });
   });
 
-  app.get('*splat', (_req, res) => res.sendFile(path.join(__dirname, '../../client/dist', 'index.html')));
+  app.get('*splat', (_req, res) =>
+    res.sendFile(path.join(__dirname, '../../client/dist', 'index.html')),
+  );
 }
 
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught exception: ${err.message}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled rejection: ${String(reason)}`);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
-  process.stdout.write(`[cashctrl] Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})\n`);
-  downloadDefaultBankLogos(db).catch((err: unknown) => { process.stderr.write(`${String(err)}\n`); });
+  logger.info(
+    `Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})`,
+  );
+  downloadDefaultBankLogos(db).catch((err: unknown) => {
+    logger.error(String(err));
+  });
 });
