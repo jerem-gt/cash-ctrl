@@ -47,7 +47,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   res.on('finish', () => {
     const { statusCode } = res;
     const ms = Date.now() - start;
-    const line = `${req.method} ${req.path} ${statusCode} - ${ms}ms`;
+    const line = `${req.method} ${req.originalUrl} ${statusCode} - ${ms}ms`;
 
     if (statusCode >= 500) {
       logger.error(line);
@@ -67,7 +67,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const message = err instanceof Error ? err.message : String(err);
-  logger.error(`${req.method} ${req.path} 500 — ${message}`);
+  logger.error(`${req.method} ${req.originalUrl} 500 — ${message}`);
   if (!res.headersSent) {
     res.status(500).json({ error: 'Erreur interne du serveur.' });
   }

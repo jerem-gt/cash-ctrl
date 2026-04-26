@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { globalErrorHandler, logger, requestLogger } from './logger.js';
 
-function mockReq(method = 'GET', path = '/test'): Request {
-  return { method, path } as unknown as Request;
+function mockReq(method = 'GET', originalUrl = '/test'): Request {
+  return { method, originalUrl } as unknown as Request;
 }
 
 function mockRes(statusCode = 200) {
