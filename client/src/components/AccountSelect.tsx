@@ -4,6 +4,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import type { Account } from '@/types';
 
 interface Props {
+  id: string;
   value: string;
   onChange: (value: string) => void;
   accounts: Account[];
@@ -30,6 +31,7 @@ function Logo({
 }
 
 export function AccountSelect({
+  id,
   value,
   onChange,
   accounts,
@@ -141,6 +143,7 @@ export function AccountSelect({
   return (
     <div ref={ref} className="relative">
       <button
+        id={id}
         ref={triggerRef}
         type="button"
         onClick={() => {

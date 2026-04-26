@@ -362,6 +362,7 @@ export function TxModal(props: Readonly<Props>) {
                 <div className="flex gap-3 flex-wrap">
                   <FormGroup label="Compte source">
                     <AccountSelect
+                      id="source-account-select"
                       value={core.account_id}
                       onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
                       accounts={accounts}
@@ -370,6 +371,7 @@ export function TxModal(props: Readonly<Props>) {
                   </FormGroup>
                   <FormGroup label="Compte destination">
                     <AccountSelect
+                      id="dest-account-select"
                       value={core.to_account_id}
                       onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
                       accounts={accounts.filter((a) => String(a.id) !== core.account_id)}

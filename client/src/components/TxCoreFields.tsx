@@ -115,6 +115,7 @@ export function TxCoreFields({
         {!isTransfer && (
           <FormGroup label="Catégorie">
             <Select
+              id="categorie-select"
               value={value.category_id}
               onChange={(e) => onChange({ category_id: e.target.value })}
             >
@@ -130,6 +131,7 @@ export function TxCoreFields({
         {fixedAccountId == null && (
           <FormGroup label={isTransfer ? 'Compte source' : 'Compte'}>
             <AccountSelect
+              id="source-account-select"
               value={value.account_id}
               onChange={handleSourceChange}
               accounts={accounts}
@@ -140,6 +142,7 @@ export function TxCoreFields({
         {isTransfer && (
           <FormGroup label="Compte destination">
             <AccountSelect
+              id="dest-account-select"
               value={value.to_account_id}
               onChange={handleDestChange}
               accounts={destAccounts}
@@ -151,6 +154,7 @@ export function TxCoreFields({
         {!isTransfer && (
           <FormGroup label="Moyen de paiement">
             <Select
+              id="payment-method-select"
               value={value.payment_method_id}
               onChange={(e) => onChange({ payment_method_id: e.target.value })}
             >

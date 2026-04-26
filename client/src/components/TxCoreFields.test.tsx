@@ -2,8 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS } from '@/tests/fixtures';
-import type { Account } from '@/types';
+import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, TWO_ACCOUNTS } from '@/tests/fixtures';
 
 import type { TxCoreState } from './TxCoreFields';
 import { TxCoreFields } from './TxCoreFields';
@@ -19,20 +18,6 @@ const defaultValue: TxCoreState = {
   to_account_id: '',
   payment_method_id: '',
 };
-
-const ACCOUNT_B: Account = {
-  id: 2,
-  name: 'Livret A',
-  bank: 'LCL',
-  bank_id: 2,
-  account_type_id: 1,
-  type: 'Livret',
-  initial_balance: 0,
-  opening_date: null,
-  balance: 500,
-};
-
-const TWO_ACCOUNTS = [...ACCOUNTS, ACCOUNT_B];
 
 const defaultProps = {
   value: defaultValue,
@@ -138,6 +123,7 @@ describe('TxCoreFields', () => {
         value={{ ...defaultValue, account_id: '1' }}
       />,
     );
+    document.getElementById('account-select')!;
     const destTrigger = screen.getByRole('button', { name: /choisir/i });
     await user.click(destTrigger);
     await user.click(await screen.findByRole('option', { name: /Livret A/i }));

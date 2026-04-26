@@ -48,6 +48,32 @@ describe('AccountModal — mode création', () => {
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it('affiche un toast de succès et ferme le modal après la création', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithProviders(<AccountModal mode="create" {...baseProps} onClose={onClose} />);
+
+    // 1. Remplissage complet du formulaire
+    await user.type(screen.getByPlaceholderText(/compte courant/i), 'Mon nouveau compte');
+    // On remplit la date pour éviter le toast d'erreur de validation
+    await user.type(screen.getByLabelText(/opening-date/i), '2026-04-25');
+    // On choisit la banque
+    await user.click(screen.getByLabelText(/sélectionner une banque/i));
+    await user.click(screen.getByRole('button', { name: BANKS[0].name }));
+
+    // 2. Soumission
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    // 3. Vérification du toast (prouve que onSuccess a été appelé)
+    await waitFor(() => {
+      const toast = document.getElementById('toast');
+      expect(toast?.textContent).toContain('Compte créé ✓');
+    });
+
+    // 4. Vérification de la fermeture (prouve que la suite du bloc a été exécutée)
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('AccountModal — mode édition', () => {
@@ -97,5 +123,33 @@ describe('AccountModal — mode édition', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument();
+  });
+
+  it('appelle onSave avec les données modifiées en mode édition', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    renderWithProviders(
+      <AccountModal
+        mode="edit"
+        account={ACCOUNTS[0]}
+        banks={BANKS}
+        accountTypes={ACCOUNT_TYPES}
+        onSave={onSave}
+        onClose={vi.fn()}
+        isPending={false}
+      />,
+    );
+
+    const inputNom = screen.getByDisplayValue('Compte courant');
+    await user.clear(inputNom);
+    await user.type(inputNom, 'Compte Modifié');
+
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Compte Modifié',
+      }),
+    );
   });
 });

@@ -158,7 +158,7 @@ export function AccountDetailPage() {
               {account?.bank && logoMap[account.bank] && (
                 <img
                   src={logoMap[account.bank]!}
-                  alt=""
+                  alt={`Logo ${account.bank}`}
                   className="w-6 h-6 object-contain rounded shrink-0"
                   onError={(e) => (e.currentTarget.style.display = 'none')}
                 />

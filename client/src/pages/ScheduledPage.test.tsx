@@ -1,9 +1,9 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { SCHEDULED } from '@/tests/fixtures';
+import { SCHEDULED, TWO_ACCOUNTS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -216,5 +216,157 @@ describe('ScheduledPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mise à jour'),
     );
+  });
+
+  // ─── handleUpdate / handleDelete / handleSaveLeadDays onError ─────────────
+
+  it('toast si la mise à jour échoue', async () => {
+    server.use(
+      http.put('/api/scheduled/:id', () =>
+        HttpResponse.json({ error: 'Erreur mise à jour' }, { status: 500 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await screen.findByText('Modifier la planification');
+    const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
+    await user.click(btns[btns.length - 1]);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Erreur mise à jour'),
+    );
+  });
+
+  it('toast si la suppression échoue', async () => {
+    server.use(
+      http.delete('/api/scheduled/:id', () =>
+        HttpResponse.json({ error: 'Erreur suppression' }, { status: 500 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: /confirmer/i }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Erreur suppression'),
+    );
+  });
+
+  it("toast si la sauvegarde du délai d'anticipation échoue", async () => {
+    server.use(
+      http.put('/api/settings', () =>
+        HttpResponse.json({ error: 'Erreur paramètre' }, { status: 500 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText("Délai d'anticipation");
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Erreur paramètre'),
+    );
+  });
+
+  it("toast si le délai d'anticipation est invalide (> 365)", async () => {
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText("Délai d'anticipation");
+    const input = screen.getByRole('spinbutton');
+    fireEvent.change(input, { target: { value: '400' } });
+    fireEvent.submit(input.closest('form')!);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('0 et 365'),
+    );
+  });
+
+  // ─── ScheduledModal : helper set + onCancel ────────────────────────────────
+
+  it('ScheduledModal : modifie des champs et annule (edit)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await screen.findByText('Modifier la planification');
+    // notes → couvre set + (e) => set('notes', ...)
+    await user.type(screen.getByPlaceholderText('Informations complémentaires…'), 'Note test');
+    // weekend_handling radio → couvre (e) => set('weekend_handling', v)
+    await user.click(screen.getByLabelText('Décaler au vendredi'));
+    // active checkbox → couvre (e) => set('active', ...)
+    await user.click(screen.getByRole('checkbox'));
+    // Annuler → couvre onCancel edit () => setEditTarget(null)
+    await user.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByText('Modifier la planification')).not.toBeInTheDocument();
+  });
+
+  it('ferme le modal de création au clic sur Annuler', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByText('Nouvelle planification')).not.toBeInTheDocument();
+  });
+
+  it('ferme la confirmation de suppression au clic sur Annuler', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: '×' }));
+    expect(screen.getByText('Supprimer la planification')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /annuler/i }));
+    expect(screen.queryByText('Supprimer la planification')).not.toBeInTheDocument();
+  });
+
+  // ─── handleSubmit validation ───────────────────────────────────────────────
+
+  it('ScheduledModal : toast si les champs obligatoires sont manquants', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    // Soumettre sans remplir amount / description / payment_method
+    const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
+    await user.click(btns[btns.length - 1]);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('obligatoires'),
+    );
+  });
+
+  it('ScheduledModal : toast si le montant est nul (via modal édition)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await screen.findByText('Modifier la planification');
+    const amountInput = screen.getByPlaceholderText('0,00');
+    fireEvent.change(amountInput, { target: { value: '0' } });
+    fireEvent.submit(amountInput.closest('form')!);
+    await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('positif'));
+  });
+
+  // ─── ScheduledRow : branches end_date et toAccount ────────────────────────
+
+  it('ScheduledRow : affiche la date de fin', async () => {
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([{ ...SCHEDULED[0], end_date: '2026-12-31' }]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    expect(await screen.findByText(/jusqu'au 2026-12-31/)).toBeInTheDocument();
+  });
+
+  it('ScheduledRow : affiche le compte destination pour un transfert connu', async () => {
+    server.use(
+      http.get('/api/accounts', () => HttpResponse.json(TWO_ACCOUNTS)),
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([{ ...SCHEDULED[0], payment_method: 'Transfert', to_account_id: 2 }]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    expect(await screen.findByText(/→ Livret A/)).toBeInTheDocument();
   });
 });

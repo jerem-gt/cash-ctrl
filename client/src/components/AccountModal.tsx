@@ -141,6 +141,7 @@ export function AccountModal(props: Readonly<Props>) {
           <FormGroup label="Date d'ouverture">
             <Input
               type="date"
+              aria-label="opening-date"
               value={form.opening_date}
               onChange={(e) => setForm((f) => ({ ...f, opening_date: e.target.value }))}
             />

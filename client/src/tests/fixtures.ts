@@ -22,9 +22,25 @@ export const ACCOUNTS: Account[] = [
   },
 ];
 
+const ACCOUNT_B: Account = {
+  id: 2,
+  name: 'Livret A',
+  bank: 'LCL',
+  bank_id: 2,
+  account_type_id: 1,
+  type: 'Livret',
+  initial_balance: 0,
+  opening_date: null,
+  balance: 500,
+};
+
+export const TWO_ACCOUNTS = [...ACCOUNTS, ACCOUNT_B];
+
 export const ACCOUNT_TYPES: AccountType[] = [{ id: 1, name: 'Courant', acc_count: 1 }];
 
-export const BANKS: Bank[] = [{ id: 1, name: 'BNP', logo: null, domain: 'bnp.fr' }];
+export const BANKS: Bank[] = [
+  { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr' },
+];
 
 export const CATEGORIES: Category[] = [{ id: 1, name: 'Alimentation', color: '#22c55e' }];
 

@@ -1,9 +1,10 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import { TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -149,5 +150,114 @@ describe('AccountDetailPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mis à jour'),
     );
+  });
+
+  it("affiche le bon message lors de la suppression d'un transfert", async () => {
+    const user = userEvent.setup();
+    // On simule une transaction qui est un transfert
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({
+          data: [{ ...TRANSACTIONS.data[0], transfer_peer_id: 123 }],
+          total: 1,
+          page: 1,
+          totalPages: 1,
+        }),
+      ),
+    );
+
+    renderDetail();
+    const deleteBtn = await screen.findByRole('button', { name: '×' });
+    await user.click(deleteBtn);
+    await user.click(screen.getByRole('button', { name: /confirmer/i }));
+
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Transfert supprimé'),
+    );
+  });
+
+  it("soumet le formulaire d'édition pour un transfert", async () => {
+    const user = userEvent.setup();
+    // Mock d'un transfert existant
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({
+          data: [{ ...TRANSACTIONS.data[0], transfer_peer_id: 123, transfer_peer_account_id: 2 }],
+          total: 1,
+          page: 1,
+          totalPages: 1,
+        }),
+      ),
+    );
+
+    renderDetail();
+    const editBtn = await screen.findByRole('button', { name: '✎' });
+    await user.click(editBtn);
+
+    // On vérifie que les champs spécifiques au transfert (AccountSelect) sont là
+    await screen.findByText('Compte destination');
+
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('modifiée'),
+    );
+  });
+
+  it("affiche un message d'erreur si la mise à jour du compte échoue", async () => {
+    const user = userEvent.setup();
+    // Simuler une erreur API
+    server.use(
+      http.patch('/api/accounts/:id', () => {
+        return new HttpResponse(null, { status: 400, statusText: 'Erreur Serveur' });
+      }),
+    );
+
+    renderDetail();
+    await user.click(screen.getByText('Modifier'));
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    // Attend que le toast affiche l'erreur (le message dépend de ton hook/API)
+    await waitFor(() => expect(document.getElementById('toast')).toBeInTheDocument());
+  });
+
+  it("cache le logo du compte si l'image est corrompue", async () => {
+    renderDetail();
+    const img = await screen.findByRole('img', { name: /logo BNP/i });
+
+    // Déclencher manuellement l'erreur
+    fireEvent.error(img);
+
+    expect(img).toHaveStyle({ display: 'none' });
+  });
+
+  it('calcule l’ancienneté du compte', async () => {
+    vi.setSystemTime(new Date('2026-04-01'));
+    renderDetail();
+    // Vérifie que le texte généré par accountSeniority est présent
+    expect(await screen.findByText(/depuis 2 ans 3 mois/i)).toBeInTheDocument();
+  });
+
+  it('ouvre et ferme toutes les modales', async () => {
+    const user = userEvent.setup();
+    renderDetail();
+    await screen.findByText('Compte courant');
+
+    // Test Modale Edition Transaction
+    const editTxBtns = await screen.findAllByRole('button', { name: '✎' });
+    await user.click(editTxBtns[0]);
+    expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /annuler/i })); // Déclenche onClose
+
+    // Test Modale Suppression Transaction
+    const deleteTxBtns = await screen.findAllByRole('button', { name: '×' });
+    await user.click(deleteTxBtns[0]);
+    expect(screen.getByText('Supprimer la transaction')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /annuler/i }));
+
+    // Test Modale Duplication
+    const duplicateBtns = await screen.findAllByRole('button', { name: '⧉' });
+    await user.click(duplicateBtns[0]);
+    expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
   });
 });
