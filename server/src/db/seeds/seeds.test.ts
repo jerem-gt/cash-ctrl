@@ -7,7 +7,7 @@ import { seedDatabase } from '../seed.js';
 import { seedAccountTypes } from './accountTypes.seed.js';
 import { seedBanks } from './banks.seed.js';
 import { seedCategories } from './categories.seed.js';
-import { seedPaymentMethods } from './paymentMethods.seed.js';
+import { DEFAULT_PAYMENT_METHODS, seedPaymentMethods } from './paymentMethods.seed.js';
 import { seedAdminUser } from './users.seed.js';
 
 function createFreshDb(): Database {
@@ -87,7 +87,7 @@ describe('seedPaymentMethods', () => {
     seedPaymentMethods(db);
     const count = (db.prepare('SELECT COUNT(*) as c FROM payment_methods').get() as { c: number })
       .c;
-    expect(count).toBe(5);
+    expect(count).toBe(DEFAULT_PAYMENT_METHODS.length);
   });
 });
 

@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 export function initSchema(db: Database) {
-    db.exec(`
+  db.exec(`
         CREATE TABLE IF NOT EXISTS scheduled_transactions
         (
             id                   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +55,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS categories
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT NOT NULL,
+            name       TEXT UNIQUE NOT NULL,
             color      TEXT NOT NULL DEFAULT '#9E9A92',
             created_at TEXT          DEFAULT (datetime('now'))
         );
@@ -103,11 +103,19 @@ export function initSchema(db: Database) {
         );
     `);
 
-    // Migrations
-    try { db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT'); } catch {/* ignore: column may already exist */}
-    try { db.exec('ALTER TABLE banks ADD COLUMN domain TEXT'); } catch {/* ignore: column may already exist */}
+  // Migrations
+  try {
+    db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT');
+  } catch {
+    /* ignore: column may already exist */
+  }
+  try {
+    db.exec('ALTER TABLE banks ADD COLUMN domain TEXT');
+  } catch {
+    /* ignore: column may already exist */
+  }
 
-    db.exec(`
+  db.exec(`
         UPDATE banks SET domain = 'boursobank.com'      WHERE name = 'BoursoBank'       AND domain IS NULL;
         UPDATE banks SET domain = 'fortuneo.fr'         WHERE name = 'Fortuneo'          AND domain IS NULL;
         UPDATE banks SET domain = 'credit-agricole.fr'  WHERE name = 'Crédit Agricole'   AND domain IS NULL;
