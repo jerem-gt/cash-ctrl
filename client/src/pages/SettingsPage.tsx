@@ -1,5 +1,6 @@
 import { type ChangeEvent, type ReactNode, type SyntheticEvent, useState } from 'react';
 
+import { CategoryEditor } from '@/components/CategoryEditor.tsx';
 import {
   Button,
   Card,
@@ -100,79 +101,56 @@ function CategoryRow({
   onSaved: () => void;
   onDelete: (id: number) => void;
 }>) {
-  const updateCategory = useUpdateCategory();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: cat.name, color: cat.color });
-
-  const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
-    updateCategory.mutate(
-      { id: cat.id, name: form.name.trim(), color: form.color },
-      {
-        onSuccess: () => {
-          setEditing(false);
-          onSaved();
-        },
-        onError: (err) => showToast(err.message),
-      },
-    );
-  };
+  const updateCategory = useUpdateCategory();
 
   if (editing) {
     return (
-      <form
-        onSubmit={handleSave}
-        className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0"
-      >
-        <input
-          type="color"
-          value={form.color}
-          onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-          className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5 shrink-0"
-        />
-        <Input
-          type="text"
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="flex-1 text-sm"
-          autoFocus
-        />
-        <Button type="submit" variant="primary" size="sm" disabled={updateCategory.isPending}>
-          {updateCategory.isPending ? '…' : 'OK'}
-        </Button>
-        <Button type="button" size="sm" onClick={() => setEditing(false)}>
-          Annuler
-        </Button>
-      </form>
+      <CategoryEditor
+        initialValues={{ name: cat.name, color: cat.color, icon: cat.icon }}
+        isPending={updateCategory.isPending}
+        onCancel={() => setEditing(false)}
+        onSave={(values) => {
+          updateCategory.mutate(
+            { id: cat.id, ...values },
+            {
+              onSuccess: () => {
+                setEditing(false);
+                onSaved();
+              },
+              onError: (err) => showToast(err.message),
+            },
+          );
+        }}
+      />
     );
   }
 
+  // Mode lecture
   const txCount = cat.tx_count ?? 0;
   return (
     <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
-      <div className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ background: cat.color }} />
+      <div
+        className="w-3.5 h-3.5 rounded-sm shrink-0 shadow-sm ring-1 ring-inset ring-black/5"
+        style={{ background: cat.color }}
+      />
+      <div className="text-base">{cat.icon}</div>
       <span className="flex-1 text-sm">{cat.name}</span>
       {txCount > 0 && (
         <span className="text-[10px] text-stone-400 tabular-nums shrink-0">{txCount} tx</span>
       )}
-      {txCount === 0 ? (
-        <RowActions
-          onEdit={() => {
-            setForm({ name: cat.name, color: cat.color });
-            setEditing(true);
-          }}
-          onDelete={() => onDelete(cat.id)}
-        />
-      ) : (
+      <button
+        onClick={() => setEditing(true)}
+        className="text-xs text-stone-400 opacity-0 group-hover:opacity-100 transition-colors"
+      >
+        Modifier
+      </button>
+      {txCount === 0 && (
         <button
-          onClick={() => {
-            setForm({ name: cat.name, color: cat.color });
-            setEditing(true);
-          }}
-          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+          onClick={() => onDelete(cat.id)}
+          className="text-xs text-stone-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
         >
-          Modifier
+          ×
         </button>
       )}
     </div>
@@ -499,7 +477,6 @@ export function SettingsPage() {
   const { data: categories = [], isLoading: catsLoading } = useCategories();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
-  const [newCat, setNewCat] = useState({ name: '', color: '#9E9A92' });
 
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
@@ -568,24 +545,6 @@ export function SettingsPage() {
           showToast('Mot de passe mis à jour ✓');
         },
         onError: (e) => showToast(e.message),
-      },
-    );
-  };
-
-  const handleAddCategory = (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newCat.name.trim()) {
-      showToast('Donnez un nom à la catégorie.');
-      return;
-    }
-    createCategory.mutate(
-      { name: newCat.name.trim(), color: newCat.color },
-      {
-        onSuccess: () => {
-          setNewCat({ name: '', color: '#9E9A92' });
-          showToast('Catégorie ajoutée ✓');
-        },
-        onError: (err) => showToast(err.message),
       },
     );
   };
@@ -807,32 +766,25 @@ export function SettingsPage() {
             4,
           )}
         </div>
-        <form onSubmit={handleAddCategory} className="flex gap-2 items-end flex-wrap">
-          <div className="flex items-center gap-2">
-            <label htmlFor="color" className="text-xs text-stone-500 font-medium">
-              Couleur
-            </label>
-            <input
-              id="color"
-              type="color"
-              value={newCat.color}
-              onChange={(e) => setNewCat((f) => ({ ...f, color: e.target.value }))}
-              className="w-7 h-7 rounded cursor-pointer border border-black/10 p-0.5"
-            />
-          </div>
-          <FormGroup label="Nom">
-            <Input
-              type="text"
-              value={newCat.name}
-              onChange={(e) => setNewCat((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Ex : Vacances"
-              className="min-w-44"
-            />
-          </FormGroup>
-          <Button type="submit" variant="primary" disabled={createCategory.isPending}>
-            {createCategory.isPending ? '…' : 'Ajouter'}
-          </Button>
-        </form>
+        <div className="mt-6 pt-4 border-t border-black/[0.06]">
+          <p className="text-[10px] font-bold text-stone-400 uppercase mb-2 ml-1">
+            Nouvelle catégorie
+          </p>
+          <CategoryEditor
+            initialValues={{ name: '', color: '#9E9A92', icon: '❓' }}
+            isPending={createCategory.isPending}
+            submitLabel="Ajouter"
+            onSave={(values) => {
+              if (!values.name.trim()) return showToast('Donnez un nom à la catégorie.');
+              createCategory.mutate(values, {
+                onSuccess: () => {
+                  showToast('Catégorie ajoutée ✓');
+                },
+                onError: (err) => showToast(err.message),
+              });
+            }}
+          />
+        </div>
       </Card>
 
       {/* Password */}

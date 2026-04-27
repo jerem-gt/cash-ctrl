@@ -100,10 +100,15 @@ describe('TxModal — mode création', () => {
     await user.click(document.getElementById('source-account-select')!);
     await user.click(screen.getByText(ACCOUNTS[0].name));
 
-    // 2. Sélectionner une catégorie (le premier choix par défaut si non sélectionné)
+    // 2. Sélectionner une catégorie
     await user.selectOptions(
-      document.getElementById('categorie-select')!,
+      document.getElementById('category-select')!,
       CATEGORIES[0].id.toString(),
+    );
+    // 3. Sélectionner une sous-catégorie
+    await user.selectOptions(
+      document.getElementById('subcategory-select')!,
+      CATEGORIES[0].subcategories[0].id.toString(),
     );
     // 3. Sélectionner un moyen de paiement
     await user.selectOptions(

@@ -9,7 +9,7 @@ const base = {
   type: 'expense' as const,
   amount: 100,
   description: 'Loyer',
-  category_id: SEED.CAT_LOYER,
+  subcategory_id: SEED.SUBCAT_LOYER,
   payment_method_id: SEED.PM_VIREMENT,
   recurrence_unit: 'month' as const,
   recurrence_interval: 1,
@@ -24,7 +24,10 @@ describe('/api/scheduled', () => {
   beforeAll(async () => {
     ctx = await createTestContext();
     const acc = await ctx.agent.post('/api/accounts').send({
-      name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
+      name: 'Main',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
     });
     accountId = acc.body.id;
   });
@@ -44,14 +47,19 @@ describe('/api/scheduled', () => {
 
   it('POST / returns 400 when payment_method is Transfert but no to_account_id', async () => {
     const res = await ctx.agent.post('/api/scheduled').send({
-      ...base, account_id: accountId, payment_method_id: SEED.PM_TRANSFERT,
+      ...base,
+      account_id: accountId,
+      payment_method_id: SEED.PM_TRANSFERT,
     });
     expect(res.status).toBe(400);
   });
 
   it('POST / returns 400 when Transfert accounts are identical', async () => {
     const res = await ctx.agent.post('/api/scheduled').send({
-      ...base, account_id: accountId, payment_method_id: SEED.PM_TRANSFERT, to_account_id: accountId,
+      ...base,
+      account_id: accountId,
+      payment_method_id: SEED.PM_TRANSFERT,
+      to_account_id: accountId,
     });
     expect(res.status).toBe(400);
   });
@@ -62,15 +70,21 @@ describe('/api/scheduled', () => {
   });
 
   it('PUT /:id updates a scheduled transaction', async () => {
-    const create = await ctx.agent.post('/api/scheduled').send({ ...base, account_id: accountId, amount: 50 });
+    const create = await ctx.agent
+      .post('/api/scheduled')
+      .send({ ...base, account_id: accountId, amount: 50 });
     const id = create.body.id;
-    const res = await ctx.agent.put(`/api/scheduled/${id}`).send({ ...base, account_id: accountId, amount: 75 });
+    const res = await ctx.agent
+      .put(`/api/scheduled/${id}`)
+      .send({ ...base, account_id: accountId, amount: 75 });
     expect(res.status).toBe(200);
     expect(res.body.amount).toBe(75);
   });
 
   it('PUT /:id returns 404 for unknown schedule', async () => {
-    const res = await ctx.agent.put('/api/scheduled/99999').send({ ...base, account_id: accountId });
+    const res = await ctx.agent
+      .put('/api/scheduled/99999')
+      .send({ ...base, account_id: accountId });
     expect(res.status).toBe(404);
   });
 

@@ -11,7 +11,7 @@ export type TxFormState = {
   type: 'income' | 'expense';
   amount: string;
   description: string;
-  category_id: string;
+  subcategory_id: string;
   account_id: string;
   to_account_id: string;
   date: string;
@@ -23,7 +23,7 @@ export type TxFormState = {
 type BaseProps = {
   accounts: Account[];
   logoMap: Record<string, string | null>;
-  categories: Pick<Category, 'id' | 'name'>[];
+  categories: Pick<Category, 'id' | 'name' | 'subcategories'>[];
   paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
   onClose: () => void;
 };
@@ -48,6 +48,7 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
     amount: '',
     description: '',
     category_id: '',
+    subcategory_id: '',
     account_id: fixedAccountId == null ? '' : String(fixedAccountId),
     to_account_id: '',
     payment_method_id: '',
@@ -77,6 +78,7 @@ function initCore(
       amount: String(tx.amount),
       description: tx.description,
       category_id: String(tx.category_id ?? ''),
+      subcategory_id: String(tx.subcategory_id ?? ''),
       account_id,
       to_account_id,
       payment_method_id: String(tx.payment_method_id ?? ''),
@@ -97,6 +99,7 @@ function initCore(
         amount: String(duplicateFrom.amount),
         description: duplicateFrom.description,
         category_id: '',
+        subcategory_id: '',
         account_id: String(fromId),
         to_account_id: String(toId),
         payment_method_id: '',
@@ -107,6 +110,7 @@ function initCore(
       amount: String(duplicateFrom.amount),
       description: duplicateFrom.description,
       category_id: String(duplicateFrom.category_id ?? ''),
+      subcategory_id: String(duplicateFrom.subcategory_id ?? ''),
       account_id:
         fixedAccountId == null ? String(duplicateFrom.account_id) : String(fixedAccountId),
       to_account_id: '',
@@ -212,7 +216,7 @@ export function TxModal(props: Readonly<Props>) {
       const src = accounts.find((a) => a.id === srcId);
       setCore((c) => ({
         ...c,
-        category_id: '',
+        subcategory_id: '',
         payment_method_id: '',
         to_account_id: '',
         description: src ? `${src.name} →` : '',
@@ -228,6 +232,7 @@ export function TxModal(props: Readonly<Props>) {
       !core.description ||
       (isTransferEdit && (!core.account_id || !core.to_account_id)) ||
       (!isTransferEdit && !core.account_id) ||
+      (!isTransferEdit && !core.subcategory_id) ||
       (!isTransferEdit && !core.payment_method_id)
     ) {
       showToast('Veuillez remplir tous les champs obligatoires.');
@@ -237,7 +242,7 @@ export function TxModal(props: Readonly<Props>) {
       type: core.type,
       amount: core.amount,
       description: core.description,
-      category_id: core.category_id,
+      subcategory_id: core.subcategory_id,
       account_id: core.account_id,
       to_account_id: core.to_account_id,
       date,
@@ -273,14 +278,14 @@ export function TxModal(props: Readonly<Props>) {
   };
 
   const submitTx = () => {
-    const categoryId = Number.parseInt(core.category_id) || categories[0]?.id;
+    const subcategoryId = Number.parseInt(core.subcategory_id);
     const pmId = Number.parseInt(core.payment_method_id);
     if (
       !core.amount ||
       !core.description ||
       !pmId ||
       (fixedAccountId == null && !core.account_id) ||
-      !categoryId
+      !subcategoryId
     ) {
       showToast('Veuillez remplir tous les champs obligatoires.');
       return;
@@ -290,7 +295,7 @@ export function TxModal(props: Readonly<Props>) {
         type: core.type,
         amount: Number.parseFloat(core.amount),
         description: core.description,
-        category_id: categoryId,
+        subcategory_id: subcategoryId,
         account_id: fixedAccountId ?? Number.parseInt(core.account_id),
         date,
         payment_method_id: pmId,

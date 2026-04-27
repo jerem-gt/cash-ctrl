@@ -42,7 +42,15 @@ export const BANKS: Bank[] = [
   { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr' },
 ];
 
-export const CATEGORIES: Category[] = [{ id: 1, name: 'Alimentation', color: '#22c55e' }];
+export const CATEGORIES: Category[] = [
+  {
+    id: 1,
+    name: 'Alimentation',
+    color: '#22c55e',
+    icon: '🍴',
+    subcategories: [{ id: 1, name: 'Supermarché' }],
+  },
+];
 
 export const PAYMENT_METHODS: PaymentMethod[] = [{ id: 1, name: 'CB', icon: '💳' }];
 
@@ -55,7 +63,9 @@ export const TRANSACTIONS: PaginatedTransactions = {
       amount: 24.5,
       description: 'Courses',
       category_id: 1,
+      subcategory_id: 1,
       category: 'Alimentation',
+      subcategory: 'Supermarché',
       date: '2026-04-20',
       transfer_peer_id: null,
       scheduled_id: null,
@@ -79,7 +89,9 @@ export const SCHEDULED: ScheduledTransaction[] = [
     amount: 800,
     description: 'Loyer',
     category_id: 1,
+    subcategory_id: 1,
     category: 'Logement',
+    subcategory: 'Loyer',
     payment_method_id: 1,
     payment_method: 'Virement',
     notes: null,

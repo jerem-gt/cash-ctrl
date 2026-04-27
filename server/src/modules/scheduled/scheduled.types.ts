@@ -6,7 +6,9 @@ export interface ScheduledTransaction {
   amount: number;
   description: string;
   category_id: number | null;
+  subcategory_id: number | null;
   category: string;
+  subcategory: string;
   payment_method_id: number | null;
   payment_method: string;
   notes: string | null;
@@ -30,7 +32,7 @@ export interface CreateScheduledInput {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   payment_method_id: number;
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';

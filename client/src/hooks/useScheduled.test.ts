@@ -16,7 +16,7 @@ const PAYLOAD = {
   type: 'expense' as const,
   amount: 800,
   description: 'Loyer',
-  category_id: 1,
+  subcategory_id: 1,
   payment_method_id: 1,
   notes: null,
   recurrence_unit: 'month' as const,

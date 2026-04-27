@@ -11,7 +11,7 @@ const transactionSchema = z.object({
   type: z.enum(['income', 'expense']),
   amount: z.number().positive(),
   description: z.string().min(1).max(200),
-  category_id: z.number().int().positive(),
+  subcategory_id: z.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   payment_method_id: z.number().int().positive(),
   notes: z.string().max(1000).nullable().default(null),
@@ -31,6 +31,7 @@ const querySchema = z.object({
   account_id: z.coerce.number().int().optional(),
   type: z.enum(['income', 'expense']).optional(),
   category_id: z.coerce.number().int().optional(),
+  subcategory_id: z.coerce.number().int().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });

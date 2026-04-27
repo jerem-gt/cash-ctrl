@@ -12,17 +12,28 @@ describe('/api/export', () => {
   beforeAll(async () => {
     ctx = await createTestContext();
     const acc = await ctx.agent.post('/api/accounts').send({
-      name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
+      name: 'Main',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
     });
     const accountId = acc.body.id;
     await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'income', amount: 2000,
-      description: 'Salaire', category_id: SEED.CAT_SALAIRE, date: TODAY,
+      account_id: accountId,
+      type: 'income',
+      amount: 2000,
+      description: 'Salaire',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
     await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'expense', amount: 50,
-      description: 'Courses', category_id: SEED.CAT_ALIMENTATION, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Courses',
+      subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+      date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
   });
@@ -47,14 +58,17 @@ describe('/api/export', () => {
 
     it('CSV has correct number of data rows', async () => {
       const res = await ctx.agent.get('/api/export/csv');
-      const lines = res.text.replace(/^\uFEFF/, '').split('\n').filter(Boolean);
+      const lines = res.text
+        .replace(/^\uFEFF/, '')
+        .split('\n')
+        .filter(Boolean);
       expect(lines.length).toBe(3); // header + 2 transactions
     });
 
     it('expense amounts are negative in CSV', async () => {
       const res = await ctx.agent.get('/api/export/csv');
       const lines = res.text.split('\n');
-      const expenseLine = lines.find(l => l.includes('Courses'));
+      const expenseLine = lines.find((l) => l.includes('Courses'));
       expect(expenseLine).toContain('-50.00');
     });
   });

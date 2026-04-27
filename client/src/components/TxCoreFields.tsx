@@ -1,12 +1,13 @@
 import { AccountSelect } from '@/components/AccountSelect';
 import { FormGroup, Input, Select } from '@/components/ui';
-import type { Account } from '@/types';
+import type { Account, Subcategory } from '@/types';
 
 export interface TxCoreState {
   type: 'income' | 'expense';
   amount: string;
   description: string;
   category_id: string;
+  subcategory_id: string;
   account_id: string;
   to_account_id: string;
   payment_method_id: string;
@@ -17,7 +18,7 @@ interface Props {
   onChange: (patch: Partial<TxCoreState>) => void;
   accounts: Account[];
   logoMap: Record<string, string | null>;
-  categories: { id: number; name: string }[];
+  categories: { id: number; name: string; subcategories: Subcategory[] }[];
   paymentMethods: { id: number; name: string; icon: string }[];
   isTransfer: boolean;
   /** Si fourni, le sélecteur de compte source est masqué et ce compte est utilisé. */
@@ -113,20 +114,40 @@ export function TxCoreFields({
       {/* Ligne 2 : catégorie (masquée transfert) + compte(s) + moyen de paiement (masqué transfert) */}
       <div className="flex gap-3 flex-wrap">
         {!isTransfer && (
-          <FormGroup label="Catégorie">
-            <Select
-              id="categorie-select"
-              value={value.category_id}
-              onChange={(e) => onChange({ category_id: e.target.value })}
-            >
-              <option value="">— Choisir —</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
+          <>
+            <FormGroup label="Catégorie">
+              <Select
+                id="category-select"
+                value={value.category_id}
+                onChange={(e) => onChange({ category_id: e.target.value, subcategory_id: '' })}
+              >
+                <option value="">— Choisir —</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
+            <FormGroup label="Sous-catégorie">
+              <Select
+                disabled={!value.category_id} // Désactivé si aucune catégorie n'est choisie
+                id="subcategory-select"
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
+                value={value.subcategory_id}
+                onChange={(e) => onChange({ subcategory_id: e.target.value })}
+              >
+                <option value="">— Choisir —</option>
+                {categories
+                  .find((c) => String(c.id) === String(value.category_id))
+                  ?.subcategories?.map((sub) => (
+                    <option key={sub.id} value={String(sub.id)}>
+                      {sub.name}
+                    </option>
+                  ))}
+              </Select>
+            </FormGroup>
+          </>
         )}
         {fixedAccountId == null && (
           <FormGroup label={isTransfer ? 'Compte source' : 'Compte'}>

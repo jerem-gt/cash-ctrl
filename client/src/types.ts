@@ -18,7 +18,14 @@ export interface Category {
   id: number;
   name: string;
   color: string;
+  icon: string;
   tx_count?: number;
+  subcategories: Subcategory[];
+}
+
+export interface Subcategory {
+  id: number;
+  name: string;
 }
 
 export interface Account {
@@ -39,7 +46,9 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   description: string;
-  category_id: number | null;
+  subcategory_id: number | null;
+  subcategory: string; // résolu par JOIN
+  category_id: number; // résolu par JOIN
   category: string; // résolu par JOIN
   date: string;
   transfer_peer_id: number | null;
@@ -62,7 +71,9 @@ export interface ScheduledTransaction {
   type: TransactionType;
   amount: number;
   description: string;
-  category_id: number | null;
+  subcategory_id: number | null;
+  subcategory: string; // résolu par JOIN
+  category_id: number; // résolu par JOIN
   category: string; // résolu par JOIN
   payment_method_id: number | null;
   payment_method: string; // résolu par JOIN
@@ -93,6 +104,7 @@ export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
   category_id?: number;
+  subcategory_id?: number;
   page?: number;
   limit?: number;
 }

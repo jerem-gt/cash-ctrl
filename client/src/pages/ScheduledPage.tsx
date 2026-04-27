@@ -24,7 +24,7 @@ import {
 } from '@/hooks/useScheduled';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { fmtDec, today } from '@/lib/format';
-import type { RecurrenceUnit, ScheduledTransaction, WeekendHandling } from '@/types';
+import type { RecurrenceUnit, ScheduledTransaction, Subcategory, WeekendHandling } from '@/types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +75,7 @@ type FormState = {
   amount: string;
   description: string;
   category_id: string;
+  subcategory_id: string;
   payment_method_id: string;
   notes: string;
   recurrence_unit: RecurrenceUnit;
@@ -87,14 +88,15 @@ type FormState = {
   active: boolean;
 };
 
-function emptyForm(firstAccountId?: number, firstCategoryId?: number): FormState {
+function emptyForm(firstAccountId?: number): FormState {
   return {
     account_id: firstAccountId ? String(firstAccountId) : '',
     to_account_id: '',
     type: 'expense',
     amount: '',
     description: '',
-    category_id: firstCategoryId ? String(firstCategoryId) : '',
+    category_id: '',
+    subcategory_id: '',
     payment_method_id: '',
     notes: '',
     recurrence_unit: 'month',
@@ -116,6 +118,7 @@ function schedToForm(s: ScheduledTransaction): FormState {
     amount: String(s.amount),
     description: s.description,
     category_id: String(s.category_id ?? ''),
+    subcategory_id: String(s.subcategory_id ?? ''),
     payment_method_id: String(s.payment_method_id ?? ''),
     notes: s.notes ?? '',
     recurrence_unit: s.recurrence_unit,
@@ -142,7 +145,7 @@ function formToPayload(
     type: 'expense',
     amount: Number.parseFloat(f.amount),
     description: f.description.trim(),
-    category_id: Number.parseInt(f.category_id),
+    subcategory_id: Number.parseInt(f.subcategory_id),
     payment_method_id: Number.parseInt(f.payment_method_id),
     notes: f.notes.trim() || null,
     recurrence_unit: unit,
@@ -163,7 +166,7 @@ interface ModalProps {
   initial: FormState;
   accounts: ReturnType<typeof useAccounts>['data'];
   logoMap: Record<string, string | null>;
-  categories: { id: number; name: string }[];
+  categories: { id: number; name: string; subcategories: Subcategory[] }[];
   paymentMethods: { id: number; name: string; icon: string }[];
   title: string;
   isPending: boolean;
@@ -194,6 +197,7 @@ function ScheduledModal({
     amount: form.amount,
     description: form.description,
     category_id: form.category_id,
+    subcategory_id: form.subcategory_id,
     account_id: form.account_id,
     to_account_id: form.to_account_id,
     payment_method_id: form.payment_method_id,
@@ -509,7 +513,6 @@ export function ScheduledPage() {
   };
 
   const firstAccountId = accounts[0]?.id;
-  const firstCategoryId = categories[0]?.id;
 
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
@@ -577,7 +580,7 @@ export function ScheduledPage() {
       {/* Modal création */}
       {showModal && (
         <ScheduledModal
-          initial={emptyForm(firstAccountId, firstCategoryId)}
+          initial={emptyForm(firstAccountId)}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}

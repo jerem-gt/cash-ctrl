@@ -12,6 +12,7 @@ import { createExportRouter } from './modules/export/export.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
+import { createSubcategoriesRouter } from './modules/subcategories/subcategories.routes';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes';
 import { createTransfersRouter } from './modules/transfers/transfers.routes';
 import { SQLiteSessionStore } from './session-store.js';
@@ -58,6 +59,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/transfers', createTransfersRouter(db));
   app.use('/api/export', createExportRouter(db));
   app.use('/api/categories', createCategoriesRouter(db));
+  app.use('/api/subcategories', createSubcategoriesRouter(db));
   app.use('/api/account-types', createAccountTypesRouter(db));
   app.use('/api/banks', createBanksRouter(db));
   app.use('/api/payment-methods', createPaymentMethodsRouter(db));

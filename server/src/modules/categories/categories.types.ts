@@ -1,15 +1,20 @@
+import { Subcategory } from '../subcategories/subcategories.types';
+
 export interface Category {
   id: number;
   name: string;
   color: string;
+  icon: string;
   created_at: string;
 }
 
-export interface CategoryWithCount extends Category {
+export interface CategoryWithCountAndSubCategories extends Category {
   tx_count: number;
+  subcategories: Subcategory[];
 }
 
 export interface CreateCategoryInput {
   name: string;
   color: string;
+  icon: string;
 }

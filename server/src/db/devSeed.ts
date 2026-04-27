@@ -43,16 +43,22 @@ const typeLivret = lookupId('account_types', 'Livret');
 const typeEpargne = lookupId('account_types', 'Épargne');
 const typeAutre = lookupId('account_types', 'Autre');
 
-const catAlim = lookupId('categories', 'Alimentation');
-const catLoyer = lookupId('categories', 'Loyer');
-const catTransp = lookupId('categories', 'Transport');
-const catSante = lookupId('categories', 'Santé');
-const catLoisi = lookupId('categories', 'Loisirs');
-const catAbo = lookupId('categories', 'Abonnements');
-const catSalaire = lookupId('categories', 'Salaire');
-const catEpargne = lookupId('categories', 'Épargne');
-const catTransfert = lookupId('categories', 'Transfert');
-const catAutre = lookupId('categories', 'Autre');
+const subcatSalaire = lookupId('subcategories', 'Salaire');
+const subcatLoyer = lookupId('subcategories', 'Loyer');
+const subcatElec = lookupId('subcategories', 'Électricité');
+const subcatSupermarche = lookupId('subcategories', 'Supermarché');
+const subcatRestaurant = lookupId('subcategories', 'Restaurant');
+const subcatStreaming = lookupId('subcategories', 'Streaming');
+const subcatBTM = lookupId('subcategories', 'Bus/Tram/Metro');
+const subcatPharmacie = lookupId('subcategories', 'Pharmacie');
+const subcatInterets = lookupId('subcategories', 'Intérêts');
+const subcatVetements = lookupId('subcategories', 'Vêtements');
+const subcatVTC = lookupId('subcategories', 'VTC');
+const subcatVacances = lookupId('subcategories', 'Vacances');
+const subcatCinema = lookupId('subcategories', 'Cinéma');
+const subcatAutre = lookupId('subcategories', 'Autre');
+
+const subcatTransfert = lookupId('subcategories', 'Transfert');
 
 const pmVirement = lookupId('payment_methods', 'Virement');
 const pmCB = lookupId('payment_methods', 'Carte Bancaire');
@@ -90,7 +96,7 @@ type TxInput = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   date: string;
   payment_method_id: number;
   validated: 0 | 1;
@@ -99,7 +105,7 @@ type TxInput = {
 
 const stmtTx = db.prepare(`
     INSERT INTO transactions
-        (user_id, account_id, type, amount, description, category_id,
+        (user_id, account_id, type, amount, description, subcategory_id,
          date, payment_method_id, validated, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
@@ -112,7 +118,7 @@ function insertTx(tx: TxInput): number {
       tx.type,
       tx.amount,
       tx.description,
-      tx.category_id,
+      tx.subcategory_id,
       tx.date,
       tx.payment_method_id,
       tx.validated,
@@ -136,7 +142,7 @@ function insertTransfer(
     type: 'expense',
     amount,
     description: descFrom,
-    category_id: catTransfert,
+    subcategory_id: subcatTransfert,
     date,
     payment_method_id: pmTransfert,
     validated: 1,
@@ -146,7 +152,7 @@ function insertTransfer(
     type: 'income',
     amount,
     description: descTo,
-    category_id: catTransfert,
+    subcategory_id: subcatTransfert,
     date,
     payment_method_id: pmTransfert,
     validated: 1,
@@ -161,7 +167,7 @@ insertTx({
   type: 'income',
   amount: 2800,
   description: 'Salaire mars',
-  category_id: catSalaire,
+  subcategory_id: subcatSalaire,
   date: '2026-03-01',
   payment_method_id: pmVirement,
   validated: 1,
@@ -171,7 +177,7 @@ insertTx({
   type: 'income',
   amount: 2800,
   description: 'Salaire avril',
-  category_id: catSalaire,
+  subcategory_id: subcatSalaire,
   date: '2026-04-01',
   payment_method_id: pmVirement,
   validated: 1,
@@ -181,7 +187,7 @@ insertTx({
   type: 'expense',
   amount: 850,
   description: 'Loyer mars',
-  category_id: catLoyer,
+  subcategory_id: subcatLoyer,
   date: '2026-03-05',
   payment_method_id: pmVirement,
   validated: 1,
@@ -191,7 +197,7 @@ insertTx({
   type: 'expense',
   amount: 850,
   description: 'Loyer avril',
-  category_id: catLoyer,
+  subcategory_id: subcatLoyer,
   date: '2026-04-05',
   payment_method_id: pmVirement,
   validated: 1,
@@ -201,7 +207,7 @@ insertTx({
   type: 'expense',
   amount: 65,
   description: 'EDF mars',
-  category_id: catAbo,
+  subcategory_id: subcatElec,
   date: '2026-03-10',
   payment_method_id: pmPrelevement,
   validated: 1,
@@ -211,7 +217,7 @@ insertTx({
   type: 'expense',
   amount: 65,
   description: 'EDF avril',
-  category_id: catAbo,
+  subcategory_id: subcatElec,
   date: '2026-04-10',
   payment_method_id: pmPrelevement,
   validated: 1,
@@ -221,7 +227,7 @@ insertTx({
   type: 'expense',
   amount: 78.5,
   description: 'Carrefour',
-  category_id: catAlim,
+  subcategory_id: subcatSupermarche,
   date: '2026-03-08',
   payment_method_id: pmCB,
   validated: 1,
@@ -231,7 +237,7 @@ insertTx({
   type: 'expense',
   amount: 45.2,
   description: 'Lidl',
-  category_id: catAlim,
+  subcategory_id: subcatSupermarche,
   date: '2026-03-20',
   payment_method_id: pmCB,
   validated: 1,
@@ -241,7 +247,7 @@ insertTx({
   type: 'expense',
   amount: 92.3,
   description: 'Leclerc',
-  category_id: catAlim,
+  subcategory_id: subcatSupermarche,
   date: '2026-04-12',
   payment_method_id: pmCB,
   validated: 1,
@@ -251,7 +257,7 @@ insertTx({
   type: 'expense',
   amount: 38,
   description: 'Restaurant Le Zinc',
-  category_id: catLoisi,
+  subcategory_id: subcatRestaurant,
   date: '2026-04-19',
   payment_method_id: pmCB,
   validated: 1,
@@ -261,7 +267,7 @@ insertTx({
   type: 'expense',
   amount: 22.5,
   description: 'Pharmacie',
-  category_id: catSante,
+  subcategory_id: subcatPharmacie,
   date: '2026-03-15',
   payment_method_id: pmCB,
   validated: 1,
@@ -271,7 +277,7 @@ insertTx({
   type: 'expense',
   amount: 15,
   description: 'Taxi',
-  category_id: catTransp,
+  subcategory_id: subcatVTC,
   date: '2026-04-08',
   payment_method_id: pmCB,
   validated: 1,
@@ -281,7 +287,7 @@ insertTx({
   type: 'expense',
   amount: 120,
   description: 'Vêtements Uniqlo',
-  category_id: catAutre,
+  subcategory_id: subcatVetements,
   date: '2026-04-22',
   payment_method_id: pmCB,
   validated: 0,
@@ -293,7 +299,7 @@ insertTx({
   type: 'income',
   amount: 18.45,
   description: 'Intérêts 2025',
-  category_id: catEpargne,
+  subcategory_id: subcatInterets,
   date: '2026-01-01',
   payment_method_id: pmVirement,
   validated: 1,
@@ -305,7 +311,7 @@ insertTx({
   type: 'expense',
   amount: 15.99,
   description: 'Netflix',
-  category_id: catAbo,
+  subcategory_id: subcatStreaming,
   date: '2026-03-15',
   payment_method_id: pmCB,
   validated: 1,
@@ -315,7 +321,7 @@ insertTx({
   type: 'expense',
   amount: 9.99,
   description: 'Spotify',
-  category_id: catAbo,
+  subcategory_id: subcatStreaming,
   date: '2026-03-15',
   payment_method_id: pmCB,
   validated: 1,
@@ -325,7 +331,7 @@ insertTx({
   type: 'expense',
   amount: 86.4,
   description: 'Pass Navigo',
-  category_id: catTransp,
+  subcategory_id: subcatBTM,
   date: '2026-03-03',
   payment_method_id: pmPrelevement,
   validated: 1,
@@ -335,7 +341,7 @@ insertTx({
   type: 'expense',
   amount: 52,
   description: 'Cinéma + dîner',
-  category_id: catLoisi,
+  subcategory_id: subcatCinema,
   date: '2026-04-05',
   payment_method_id: pmCB,
   validated: 1,
@@ -345,7 +351,7 @@ insertTx({
   type: 'expense',
   amount: 15.99,
   description: 'Netflix',
-  category_id: catAbo,
+  subcategory_id: subcatStreaming,
   date: '2026-04-15',
   payment_method_id: pmCB,
   validated: 1,
@@ -355,7 +361,7 @@ insertTx({
   type: 'expense',
   amount: 9.99,
   description: 'Spotify',
-  category_id: catAbo,
+  subcategory_id: subcatStreaming,
   date: '2026-04-15',
   payment_method_id: pmCB,
   validated: 1,
@@ -365,7 +371,7 @@ insertTx({
   type: 'expense',
   amount: 86.4,
   description: 'Pass Navigo',
-  category_id: catTransp,
+  subcategory_id: subcatBTM,
   date: '2026-04-01',
   payment_method_id: pmPrelevement,
   validated: 1,
@@ -375,19 +381,9 @@ insertTx({
 insertTx({
   account_id: accCA,
   type: 'income',
-  amount: 2000,
-  description: 'Versement initial',
-  category_id: catEpargne,
-  date: '2020-06-01',
-  payment_method_id: pmVirement,
-  validated: 1,
-});
-insertTx({
-  account_id: accCA,
-  type: 'income',
   amount: 112,
   description: 'Intérêts 2025',
-  category_id: catEpargne,
+  subcategory_id: subcatInterets,
   date: '2026-01-01',
   payment_method_id: pmVirement,
   validated: 1,
@@ -399,7 +395,7 @@ insertTx({
   type: 'expense',
   amount: 320,
   description: 'Airbnb Amsterdam',
-  category_id: catLoisi,
+  subcategory_id: subcatVacances,
   date: '2026-03-22',
   payment_method_id: pmCB,
   validated: 1,
@@ -409,7 +405,7 @@ insertTx({
   type: 'expense',
   amount: 45.8,
   description: 'Alimentation voyage',
-  category_id: catAlim,
+  subcategory_id: subcatRestaurant,
   date: '2026-03-23',
   payment_method_id: pmCB,
   validated: 1,
@@ -419,7 +415,7 @@ insertTx({
   type: 'income',
   amount: 60,
   description: 'Remboursement Pierre',
-  category_id: catAutre,
+  subcategory_id: subcatAutre,
   date: '2026-04-01',
   payment_method_id: pmVirement,
   validated: 1,
@@ -463,7 +459,7 @@ insertTransfer(
 const stmtSched = db.prepare(`
     INSERT INTO scheduled_transactions
         (user_id, account_id, to_account_id, type, amount, description,
-         category_id, payment_method_id, notes, recurrence_unit, recurrence_interval,
+         subcategory_id, payment_method_id, notes, recurrence_unit, recurrence_interval,
          recurrence_day, recurrence_month, weekend_handling, start_date, end_date, active)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
@@ -474,7 +470,7 @@ type SchedInput = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   payment_method_id: number;
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';
@@ -495,7 +491,7 @@ function insertScheduled(s: SchedInput): void {
     s.type,
     s.amount,
     s.description,
-    s.category_id,
+    s.subcategory_id,
     s.payment_method_id,
     s.notes,
     s.recurrence_unit,
@@ -516,7 +512,7 @@ insertScheduled({
   type: 'income',
   amount: 2800,
   description: 'Salaire',
-  category_id: catSalaire,
+  subcategory_id: subcatSalaire,
   payment_method_id: pmVirement,
   notes: null,
   recurrence_unit: 'month',
@@ -535,7 +531,7 @@ insertScheduled({
   type: 'expense',
   amount: 850,
   description: 'Loyer',
-  category_id: catLoyer,
+  subcategory_id: subcatLoyer,
   payment_method_id: pmVirement,
   notes: null,
   recurrence_unit: 'month',
@@ -554,7 +550,7 @@ insertScheduled({
   type: 'expense',
   amount: 65,
   description: 'EDF',
-  category_id: catAbo,
+  subcategory_id: subcatElec,
   payment_method_id: pmPrelevement,
   notes: null,
   recurrence_unit: 'month',
@@ -573,7 +569,7 @@ insertScheduled({
   type: 'expense',
   amount: 300,
   description: 'Épargne mensuelle',
-  category_id: catTransfert,
+  subcategory_id: subcatTransfert,
   payment_method_id: pmTransfert,
   notes: null,
   recurrence_unit: 'month',
@@ -592,7 +588,7 @@ insertScheduled({
   type: 'expense',
   amount: 15.99,
   description: 'Netflix',
-  category_id: catAbo,
+  subcategory_id: subcatStreaming,
   payment_method_id: pmCB,
   notes: null,
   recurrence_unit: 'month',
@@ -611,7 +607,7 @@ insertScheduled({
   type: 'expense',
   amount: 86.4,
   description: 'Pass Navigo',
-  category_id: catTransp,
+  subcategory_id: subcatBTM,
   payment_method_id: pmPrelevement,
   notes: null,
   recurrence_unit: 'month',

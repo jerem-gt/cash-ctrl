@@ -12,7 +12,7 @@ const scheduledSchema = z.object({
   type: z.enum(['income', 'expense']),
   amount: z.number().positive(),
   description: z.string().min(1).max(200),
-  category_id: z.number().int().positive(),
+  subcategory_id: z.number().int().positive(),
   payment_method_id: z.number().int().positive(),
   notes: z.string().max(1000).nullable().default(null),
   recurrence_unit: z.enum(['day', 'week', 'month', 'year']),

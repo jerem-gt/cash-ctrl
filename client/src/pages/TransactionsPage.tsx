@@ -58,7 +58,7 @@ export function TransactionsPage() {
           date: data.date,
           type: editTx.type,
           account_id: editTx.account_id,
-          category_id: editTx.category_id ?? categories[0]?.id ?? 0,
+          subcategory_id: editTx.subcategory_id ?? 0,
           payment_method_id: editTx.payment_method_id ?? 0,
           notes: editTx.notes,
           validated: !!editTx.validated,
@@ -70,7 +70,7 @@ export function TransactionsPage() {
           type: data.type,
           amount: Number.parseFloat(data.amount),
           description: data.description,
-          category_id: Number.parseInt(data.category_id) || (categories[0]?.id ?? 0),
+          subcategory_id: Number.parseInt(data.subcategory_id),
           account_id: Number.parseInt(data.account_id),
           date: data.date,
           payment_method_id: Number.parseInt(data.payment_method_id),
@@ -125,6 +125,7 @@ export function TransactionsPage() {
           />
         </div>
         <Select
+          aria-label="Choisir une catégorie"
           className="flex-1 min-w-32.5 max-w-50"
           value={String(filters.category_id ?? '')}
           onChange={(e) =>
@@ -139,6 +140,27 @@ export function TransactionsPage() {
           ))}
         </Select>
         <Select
+          aria-label="Choisir une sous-catégorie"
+          disabled={!filters.category_id} // Désactivé si aucune catégorie n'est choisie
+          className="flex-1 min-w-32.5 max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          value={String(filters.subcategory_id ?? '')}
+          onChange={(e) =>
+            setFilter({
+              subcategory_id: e.target.value ? Number.parseInt(e.target.value) : undefined,
+            })
+          }
+        >
+          <option value="">Toutes sous-catégories</option>
+          {categories
+            .find((c) => String(c.id) === String(filters.category_id))
+            ?.subcategories?.map((sub) => (
+              <option key={sub.id} value={String(sub.id)}>
+                {sub.name}
+              </option>
+            ))}
+        </Select>
+        <Select
+          aria-label="Choisir un type"
           className="flex-1 min-w-32.5 max-w-50"
           value={filters.type ?? ''}
           onChange={(e) =>

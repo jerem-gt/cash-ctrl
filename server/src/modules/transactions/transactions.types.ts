@@ -6,7 +6,9 @@ export interface Transaction {
   amount: number;
   description: string;
   category_id: number | null;
+  subcategory_id: number | null;
   category: string;
+  subcategory: string;
   date: string;
   transfer_peer_id: number | null;
   transfer_peer_account_id: number | null;
@@ -24,7 +26,7 @@ export interface CreateScheduledTransactionInput {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   date: string;
   payment_method_id: number;
   notes: string | null;
@@ -36,7 +38,7 @@ export interface CreateTransactionInput {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   date: string;
   payment_method_id: number;
   notes: string | null;
@@ -56,6 +58,7 @@ export interface TransactionFilters {
   account_id?: number;
   type?: 'income' | 'expense';
   category_id?: number;
+  subcategory_id?: number;
   page?: number;
   limit?: number;
 }

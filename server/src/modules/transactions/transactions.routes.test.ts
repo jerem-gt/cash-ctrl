@@ -8,7 +8,10 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 async function setupWithAccount(ctx: TestContext) {
   const acc = await ctx.agent.post('/api/accounts').send({
-    name: 'Main', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT, opening_date: '2020-01-01',
+    name: 'Main',
+    bank_id: SEED.BANK_ID,
+    account_type_id: SEED.AT_COURANT,
+    opening_date: '2020-01-01',
   });
   return acc.body.id as number;
 }
@@ -38,8 +41,12 @@ describe('/api/transactions', () => {
 
   it('POST / creates a transaction', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'income', amount: 1000,
-      description: 'Salaire', category_id: SEED.CAT_SALAIRE, date: TODAY,
+      account_id: accountId,
+      type: 'income',
+      amount: 1000,
+      description: 'Salaire',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
     expect(res.status).toBe(201);
@@ -49,8 +56,12 @@ describe('/api/transactions', () => {
 
   it('POST / returns 403 for a non-owned account', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
-      account_id: 99999, type: 'income', amount: 100,
-      description: 'x', category_id: SEED.CAT_AUTRE, date: TODAY,
+      account_id: 99999,
+      type: 'income',
+      amount: 100,
+      description: 'x',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
     expect(res.status).toBe(403);
@@ -63,8 +74,12 @@ describe('/api/transactions', () => {
 
   it('GET / filters by type', async () => {
     await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'expense', amount: 50,
-      description: 'Courses', category_id: SEED.CAT_ALIMENTATION, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Courses',
+      subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+      date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
     const res = await ctx.agent.get('/api/transactions?type=expense');
@@ -74,14 +89,22 @@ describe('/api/transactions', () => {
 
   it('PUT /:id updates a normal transaction', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'expense', amount: 20,
-      description: 'Café', category_id: SEED.CAT_LOISIRS, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 20,
+      description: 'Café',
+      subcategory_id: SEED.SUBCAT_CINEMA,
+      date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
     const id = create.body.id;
     const res = await ctx.agent.put(`/api/transactions/${id}`).send({
-      account_id: accountId, type: 'expense', amount: 25,
-      description: 'Café maj', category_id: SEED.CAT_LOISIRS, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 25,
+      description: 'Café maj',
+      subcategory_id: SEED.SUBCAT_CINEMA,
+      date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
     expect(res.status).toBe(200);
@@ -91,8 +114,12 @@ describe('/api/transactions', () => {
 
   it('PUT /:id returns 404 for unknown transaction', async () => {
     const res = await ctx.agent.put('/api/transactions/99999').send({
-      account_id: accountId, type: 'expense', amount: 1,
-      description: 'x', category_id: SEED.CAT_AUTRE, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 1,
+      description: 'x',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
     expect(res.status).toBe(404);
@@ -100,8 +127,12 @@ describe('/api/transactions', () => {
 
   it('PATCH /:id/validate toggles validated flag', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'income', amount: 500,
-      description: 'Prime', category_id: SEED.CAT_SALAIRE, date: TODAY,
+      account_id: accountId,
+      type: 'income',
+      amount: 500,
+      description: 'Prime',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
     const id = create.body.id;
@@ -112,8 +143,12 @@ describe('/api/transactions', () => {
 
   it('DELETE /:id removes a transaction', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
-      account_id: accountId, type: 'expense', amount: 10,
-      description: 'ToDelete', category_id: SEED.CAT_AUTRE, date: TODAY,
+      account_id: accountId,
+      type: 'expense',
+      amount: 10,
+      description: 'ToDelete',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
     const id = create.body.id;

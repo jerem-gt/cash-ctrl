@@ -9,7 +9,7 @@ type UpdatePayload = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   date: string;
   payment_method_id: number;
   notes: string | null;

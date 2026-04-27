@@ -138,7 +138,7 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<SettingsPage />);
     await screen.findByText('Alimentation');
-    await user.type(screen.getByPlaceholderText('Ex : Vacances'), 'Loisirs');
+    await user.type(screen.getByPlaceholderText('Nom de la catégorie'), 'Loisirs');
     const addBtns = screen.getAllByRole('button', { name: /ajouter/i });
     await user.click(addBtns[3]);
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('ajoutée'));
@@ -521,7 +521,7 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<SettingsPage />);
     await screen.findByText('Alimentation');
-    await user.type(screen.getByPlaceholderText('Ex : Vacances'), 'Loisirs');
+    await user.type(screen.getByPlaceholderText('Nom de la catégorie'), 'Loisirs');
     await user.click(screen.getAllByRole('button', { name: /ajouter/i })[3]);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur ajout cat'),

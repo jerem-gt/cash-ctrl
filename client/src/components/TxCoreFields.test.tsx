@@ -14,6 +14,7 @@ const defaultValue: TxCoreState = {
   amount: '',
   description: '',
   category_id: '',
+  subcategory_id: '',
   account_id: '',
   to_account_id: '',
   payment_method_id: '',

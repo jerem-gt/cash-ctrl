@@ -11,15 +11,18 @@ import type {
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
-         t.category_id, t.payment_method_id,
+         t.subcategory_id, t.payment_method_id,
          t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
-         a.name as account_name,
-         COALESCE(c.name, '') as category,
+         a.name                as account_name,
+         sc.category_id,
+         COALESCE(c.name, '')  as category,
+         COALESCE(sc.name, '') as subcategory,
          COALESCE(pm.name, '') as payment_method,
          (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
-  LEFT JOIN categories c ON t.category_id = c.id
+  LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+  LEFT JOIN categories c ON sc.category_id = c.id
   LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
   WHERE t.id = ?
 `;
@@ -33,7 +36,8 @@ export function createTransactionsRepo(db: Database) {
       const FROM_WHERE = `
         FROM transactions t
              JOIN accounts a ON t.account_id = a.id
-             LEFT JOIN categories c ON t.category_id = c.id
+             LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+             LEFT JOIN categories c ON sc.category_id = c.id
              LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
         WHERE t.user_id = ?`;
 
@@ -48,8 +52,12 @@ export function createTransactionsRepo(db: Database) {
         params.push(filters.type);
       }
       if (filters.category_id) {
-        conditions += ' AND t.category_id = ?';
+        conditions += ' AND sc.category_id = ?';
         params.push(filters.category_id);
+      }
+      if (filters.subcategory_id) {
+        conditions += ' AND t.subcategory_id = ?';
+        params.push(filters.subcategory_id);
       }
 
       const total = (
@@ -65,10 +73,12 @@ export function createTransactionsRepo(db: Database) {
         .prepare<(number | string)[], Transaction>(
           `
         SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
-               t.category_id, t.payment_method_id, t.date, t.transfer_peer_id,
+               t.subcategory_id, t.payment_method_id, t.date, t.transfer_peer_id,
                t.scheduled_id, t.validated, t.notes, t.created_at,
+               sc.category_id,
                a.name                AS account_name,
                COALESCE(c.name, '')  AS category,
+               COALESCE(sc.name, '') AS subcategory,
                COALESCE(pm.name, '') AS payment_method,
                (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
         ${FROM_WHERE}${conditions}
@@ -105,7 +115,7 @@ export function createTransactionsRepo(db: Database) {
     create(userId: number, data: CreateTransactionInput) {
       return db
         .prepare(
-          'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         )
         .run(
           userId,
@@ -113,7 +123,7 @@ export function createTransactionsRepo(db: Database) {
           data.type,
           data.amount,
           data.description,
-          data.category_id,
+          data.subcategory_id,
           data.date,
           data.payment_method_id,
           data.notes,
@@ -124,7 +134,7 @@ export function createTransactionsRepo(db: Database) {
       return Number(
         db
           .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes, scheduled_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, scheduled_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
             userId,
@@ -132,7 +142,7 @@ export function createTransactionsRepo(db: Database) {
             data.type,
             data.amount,
             data.description,
-            data.category_id,
+            data.subcategory_id,
             data.date,
             data.payment_method_id,
             data.notes,
@@ -150,14 +160,14 @@ export function createTransactionsRepo(db: Database) {
     update(userId: number, id: number, data: CreateTransactionInput) {
       return db
         .prepare(
-          'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, category_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?',
+          'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, subcategory_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?',
         )
         .run(
           data.account_id,
           data.type,
           data.amount,
           data.description,
-          data.category_id,
+          data.subcategory_id,
           data.date,
           data.payment_method_id,
           data.notes,

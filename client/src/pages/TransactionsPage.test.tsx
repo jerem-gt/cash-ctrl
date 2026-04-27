@@ -24,10 +24,11 @@ describe('TransactionsPage', () => {
     await waitFor(() => expect(screen.getByText('1 transaction(s)')).toBeInTheDocument());
   });
 
-  it('affiche les filtres de catégorie et de type', async () => {
+  it('affiche les filtres de catégorie, de sous-catégorie et de type', async () => {
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
     expect(screen.getByText('Toutes catégories')).toBeInTheDocument();
+    expect(screen.getByText('Toutes sous-catégories')).toBeInTheDocument();
     expect(screen.getByText('Tous types')).toBeInTheDocument();
   });
 
@@ -67,20 +68,45 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    // Le select de type est le dernier <select> de la page
-    const selects = screen.getAllByRole('combobox');
-    await user.selectOptions(selects[selects.length - 1], 'expense');
-    expect(screen.getAllByRole('combobox')[selects.length - 1]).toHaveValue('expense');
+    const selectType = screen.getByRole('combobox', { name: /choisir un type/i });
+    await user.selectOptions(selectType, 'expense');
+    expect(selectType).toHaveValue('expense');
   });
 
   it('filtre par catégorie', async () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    const selects = screen.getAllByRole('combobox');
-    // Le select de catégorie est l'avant-dernier <select>
-    await user.selectOptions(selects[selects.length - 2], '1');
-    expect(selects[selects.length - 2]).toHaveValue('1');
+    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
+    await user.selectOptions(selectCategorie, '1');
+    expect(selectCategorie).toHaveValue('1');
+  });
+
+  it('filtre par sous-catégorie non accessible si pas de catégorie', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TransactionsPage />);
+    await screen.findByText('Courses');
+    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
+    await user.selectOptions(selectCategorie, '');
+    const selectSousCategorie = screen.getByRole('combobox', {
+      name: /choisir une sous-catégorie/i,
+    });
+    expect(selectSousCategorie).toBeDisabled();
+  });
+
+  it('filtre par sous-catégorie', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TransactionsPage />);
+    await screen.findByText('Courses');
+    // On sélectionne déjà un item dans les catégories
+    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
+    await user.selectOptions(selectCategorie, '1');
+    // Puis une sous-catégorie
+    const selectSousCategorie = screen.getByRole('combobox', {
+      name: /choisir une sous-catégorie/i,
+    });
+    await user.selectOptions(selectSousCategorie, '1');
+    expect(selectSousCategorie).toHaveValue('1');
   });
 
   it("confirme la suppression d'une transaction", async () => {

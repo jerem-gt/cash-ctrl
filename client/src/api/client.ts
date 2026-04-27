@@ -100,9 +100,9 @@ export const accountsApi = {
 // Categories
 export const categoriesApi = {
   list: () => request<Category[]>('GET', '/api/categories'),
-  create: (payload: { name: string; color: string }) =>
+  create: (payload: { name: string; color: string; icon: string }) =>
     request<Category>('POST', '/api/categories', payload),
-  update: (id: number, payload: { name: string; color: string }) =>
+  update: (id: number, payload: { name: string; color: string; icon: string }) =>
     request<Category>('PUT', `/api/categories/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
 };
@@ -137,7 +137,7 @@ export type ScheduledPayload = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  category_id: number;
+  subcategory_id: number;
   payment_method_id: number;
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';
@@ -172,6 +172,8 @@ export const transactionsApi = {
     if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
     if (filters?.type != null) params.set('type', filters.type);
     if (filters?.category_id != null) params.set('category_id', String(filters.category_id));
+    if (filters?.subcategory_id != null)
+      params.set('subcategory_id', String(filters.subcategory_id));
     if (filters?.page != null) params.set('page', String(filters.page));
     if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();
@@ -183,7 +185,7 @@ export const transactionsApi = {
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    category_id: number;
+    subcategory_id: number;
     date: string;
     payment_method_id: number;
     notes?: string | null;
@@ -195,7 +197,7 @@ export const transactionsApi = {
       type: 'income' | 'expense';
       amount: number;
       description: string;
-      category_id: number;
+      subcategory_id: number;
       date: string;
       payment_method_id: number;
       notes: string | null;

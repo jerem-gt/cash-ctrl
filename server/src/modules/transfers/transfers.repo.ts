@@ -5,14 +5,14 @@ import type { TransferInput } from './transfers.types';
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
-         t.category_id, t.payment_method_id,
+         t.subcategory_id, t.payment_method_id,
          t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
+         sc.category_id,
          a.name as account_name,
-         COALESCE(c.name, '') as category,
          COALESCE(pm.name, '') as payment_method
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
-  LEFT JOIN categories c ON t.category_id = c.id
+  LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
   LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
   WHERE t.id = ?
 `;
@@ -29,10 +29,10 @@ export function createTransfersRepo(db: Database) {
       userId: number,
       data: TransferInput,
     ): { expense: Transaction | undefined; income: Transaction | undefined } {
-      const transferCat = db
+      const transferSubcat = db
         .prepare<[], { id: number }>(
           `SELECT id
-                                                          FROM categories
+                                                          FROM subcategories
                                                           WHERE name = 'Transfert'`,
         )
         .get();
@@ -43,11 +43,11 @@ export function createTransfersRepo(db: Database) {
                                                          WHERE name = 'Transfert'`,
         )
         .get();
-      const TRANSFER_CAT_ID = transferCat?.id ?? null;
+      const TRANSFER_SUBCAT_ID = transferSubcat?.id ?? null;
       const TRANSFER_PM_ID = transferPm?.id ?? null;
 
       const insertTx = db.prepare(
-        'INSERT INTO transactions (user_id, account_id, type, amount, description, category_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       );
       const setPeer = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
       const getTx = db.prepare<[number], Transaction>(TX_WITH_DETAILS);
@@ -62,7 +62,7 @@ export function createTransfersRepo(db: Database) {
             'expense',
             data.amount,
             data.description,
-            TRANSFER_CAT_ID,
+            TRANSFER_SUBCAT_ID,
             data.date,
             TRANSFER_PM_ID,
             notes,
@@ -76,7 +76,7 @@ export function createTransfersRepo(db: Database) {
             'income',
             data.amount,
             data.description,
-            TRANSFER_CAT_ID,
+            TRANSFER_SUBCAT_ID,
             data.date,
             TRANSFER_PM_ID,
             notes,

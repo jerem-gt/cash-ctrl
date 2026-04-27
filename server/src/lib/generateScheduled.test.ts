@@ -11,7 +11,7 @@ function insertSchedule(
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    category_id: number;
+    subcategory_id: number;
     payment_method_id: number;
     recurrence_unit: 'day' | 'week' | 'month' | 'year';
     recurrence_interval: number;
@@ -28,7 +28,7 @@ function insertSchedule(
     type: 'expense' as const,
     amount: 100,
     description: 'Test',
-    category_id: SEED.CAT_AUTRE,
+    subcategory_id: SEED.SUBCAT_AUTRE,
     payment_method_id: SEED.PM_VIREMENT,
     recurrence_unit: 'month' as const,
     recurrence_interval: 1,
@@ -42,33 +42,63 @@ function insertSchedule(
     ...overrides,
   };
 
-  return Number(f.db.prepare(`
+  return Number(
+    f.db
+      .prepare(
+        `
     INSERT INTO scheduled_transactions
-      (user_id, account_id, type, amount, description, category_id, payment_method_id,
+      (user_id, account_id, type, amount, description, subcategory_id, payment_method_id,
        recurrence_unit, recurrence_interval, recurrence_day, recurrence_month,
        to_account_id, weekend_handling, start_date, end_date, active)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    f.userId, f.accountId, d.type, d.amount, d.description, d.category_id, d.payment_method_id,
-    d.recurrence_unit, d.recurrence_interval, d.recurrence_day, d.recurrence_month,
-    d.to_account_id, d.weekend_handling, d.start_date, d.end_date, d.active,
-  ).lastInsertRowid);
+  `,
+      )
+      .run(
+        f.userId,
+        f.accountId,
+        d.type,
+        d.amount,
+        d.description,
+        d.subcategory_id,
+        d.payment_method_id,
+        d.recurrence_unit,
+        d.recurrence_interval,
+        d.recurrence_day,
+        d.recurrence_month,
+        d.to_account_id,
+        d.weekend_handling,
+        d.start_date,
+        d.end_date,
+        d.active,
+      ).lastInsertRowid,
+  );
 }
 
 function setLeadDays(f: Fixtures, days: number): void {
-  f.db.prepare('INSERT OR REPLACE INTO user_settings (user_id, lead_days) VALUES (?, ?)').run(f.userId, days);
+  f.db
+    .prepare('INSERT OR REPLACE INTO user_settings (user_id, lead_days) VALUES (?, ?)')
+    .run(f.userId, days);
 }
 
 function countTx(f: Fixtures, schedId: number): number {
-  return (f.db.prepare('SELECT count(*) as n FROM transactions WHERE scheduled_id = ?').get(schedId) as { n: number }).n;
+  return (
+    f.db.prepare('SELECT count(*) as n FROM transactions WHERE scheduled_id = ?').get(schedId) as {
+      n: number;
+    }
+  ).n;
 }
 
 function getTx(f: Fixtures, schedId: number) {
-  return f.db.prepare(
-    'SELECT * FROM transactions WHERE scheduled_id = ? ORDER BY date',
-  ).all(schedId) as Array<{
-    id: number; account_id: number; type: string; amount: number;
-    date: string; transfer_peer_id: number | null; scheduled_id: number;
+  return f.db
+    .prepare('SELECT * FROM transactions WHERE scheduled_id = ? ORDER BY date')
+    .all(schedId) as Array<{
+    id: number;
+    account_id: number;
+    type: string;
+    amount: number;
+    date: string;
+    transfer_peer_id: number | null;
+    scheduled_id: number;
   }>;
 }
 
@@ -256,8 +286,8 @@ describe('generateScheduledTransactions', () => {
     const txs = getTx(f, id);
     expect(txs).toHaveLength(2);
 
-    const expense = txs.find(t => t.type === 'expense')!;
-    const income  = txs.find(t => t.type === 'income')!;
+    const expense = txs.find((t) => t.type === 'expense')!;
+    const income = txs.find((t) => t.type === 'income')!;
 
     expect(expense.account_id).toBe(f.accountId);
     expect(income.account_id).toBe(f.account2Id);
@@ -280,8 +310,8 @@ describe('generateScheduledTransactions', () => {
     generateScheduledTransactions(f.userId, f.db);
 
     const txs = getTx(f, id);
-    const expense = txs.find(t => t.type === 'expense')!;
-    const income  = txs.find(t => t.type === 'income')!;
+    const expense = txs.find((t) => t.type === 'expense')!;
+    const income = txs.find((t) => t.type === 'income')!;
 
     expect(expense.transfer_peer_id).toBe(income.id);
     expect(income.transfer_peer_id).toBe(expense.id);
@@ -338,7 +368,9 @@ describe('generateScheduledTransactions', () => {
       end_date: '2026-02-28',
     });
 
-    f.db.prepare('UPDATE scheduled_transactions SET last_generated_until = ? WHERE id = ?').run('2026-01-31', id);
+    f.db
+      .prepare('UPDATE scheduled_transactions SET last_generated_until = ? WHERE id = ?')
+      .run('2026-01-31', id);
 
     setLeadDays(f, 30);
     generateScheduledTransactions(f.userId, f.db);

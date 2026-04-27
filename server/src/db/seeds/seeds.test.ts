@@ -8,6 +8,7 @@ import { seedAccountTypes } from './accountTypes.seed.js';
 import { seedBanks } from './banks.seed.js';
 import { seedCategories } from './categories.seed.js';
 import { DEFAULT_PAYMENT_METHODS, seedPaymentMethods } from './paymentMethods.seed.js';
+import { seedSubcategories } from './subcategories.seed';
 import { seedAdminUser } from './users.seed.js';
 
 function createFreshDb(): Database {
@@ -64,8 +65,22 @@ describe('seedCategories', () => {
       name: string;
       color: string;
     }[];
-    expect(rows).toHaveLength(10);
+    expect(rows).toHaveLength(14);
     expect(rows.every((r) => r.name && /^#[0-9A-Fa-f]{6}$/.test(r.color))).toBe(true);
+  });
+});
+
+describe('seedSubcategories', () => {
+  it('inserts 10 subcategories with valid name and category_id coherent with the schema', () => {
+    const db = createFreshDb();
+    seedCategories(db);
+    seedSubcategories(db);
+    const rows = db.prepare('SELECT name, category_id FROM subcategories').all() as {
+      name: string;
+      category_id: string;
+    }[];
+    expect(rows).toHaveLength(64);
+    expect(rows.every((r) => r.name && r.category_id)).toBe(true);
   });
 });
 

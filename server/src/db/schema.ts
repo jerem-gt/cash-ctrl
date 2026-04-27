@@ -10,7 +10,7 @@ export function initSchema(db: Database) {
             type                 TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
             amount               REAL    NOT NULL CHECK (amount > 0),
             description          TEXT    NOT NULL,
-            category_id          INTEGER REFERENCES categories (id),
+            subcategory_id       INTEGER REFERENCES subcategories (id),
             payment_method_id    INTEGER REFERENCES payment_methods (id),
             notes                TEXT,
             recurrence_unit      TEXT    NOT NULL CHECK (recurrence_unit IN ('day', 'week', 'month', 'year')),
@@ -57,7 +57,17 @@ export function initSchema(db: Database) {
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             name       TEXT UNIQUE NOT NULL,
             color      TEXT NOT NULL DEFAULT '#9E9A92',
+            icon       TEXT NOT NULL,
             created_at TEXT          DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS subcategories
+        (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER NOT NULL REFERENCES categories (id) ON DELETE CASCADE,
+            name        TEXT    NOT NULL,
+            created_at  TEXT    DEFAULT (datetime('now')),
+            UNIQUE (category_id, name)
         );
 
         CREATE TABLE IF NOT EXISTS account_types
@@ -92,7 +102,7 @@ export function initSchema(db: Database) {
             type              TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
             amount            REAL    NOT NULL CHECK (amount > 0),
             description       TEXT    NOT NULL,
-            category_id       INTEGER REFERENCES categories (id),
+            subcategory_id    INTEGER REFERENCES subcategories (id),
             date              TEXT    NOT NULL,
             transfer_peer_id  INTEGER,
             validated         INTEGER NOT NULL DEFAULT 0,
@@ -105,25 +115,17 @@ export function initSchema(db: Database) {
 
   // Migrations
   try {
-    db.exec('ALTER TABLE accounts ADD COLUMN opening_date TEXT');
+    db.exec(
+      'ALTER TABLE transactions ADD COLUMN subcategory_id INTEGER REFERENCES subcategories(id)',
+    );
   } catch {
     /* ignore: column may already exist */
   }
   try {
-    db.exec('ALTER TABLE banks ADD COLUMN domain TEXT');
+    db.exec(
+      'ALTER TABLE scheduled_transactions ADD COLUMN subcategory_id INTEGER REFERENCES subcategories(id)',
+    );
   } catch {
     /* ignore: column may already exist */
   }
-
-  db.exec(`
-        UPDATE banks SET domain = 'boursobank.com'      WHERE name = 'BoursoBank'       AND domain IS NULL;
-        UPDATE banks SET domain = 'fortuneo.fr'         WHERE name = 'Fortuneo'          AND domain IS NULL;
-        UPDATE banks SET domain = 'credit-agricole.fr'  WHERE name = 'Crédit Agricole'   AND domain IS NULL;
-        UPDATE banks SET domain = 'linxea.com'          WHERE name = 'Linxea'            AND domain IS NULL;
-        UPDATE banks SET domain = 'amundi.com'          WHERE name = 'Amundi'            AND domain IS NULL;
-        UPDATE banks SET domain = 'bnpparibas.com'      WHERE name = 'BNP Paribas'       AND domain IS NULL;
-        UPDATE banks SET domain = 'societegenerale.com' WHERE name = 'Société Générale'  AND domain IS NULL;
-        UPDATE banks SET domain = 'revolut.com'         WHERE name = 'Revolut'           AND domain IS NULL;
-        UPDATE banks SET domain = 'n26.com'             WHERE name = 'N26'               AND domain IS NULL;
-    `);
 }
