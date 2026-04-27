@@ -78,7 +78,7 @@ function CategoryRow({
   );
 }
 
-export function CategoriesTab() {
+export function CategoriesManager() {
   const { data: categories = [], isLoading: catsLoading } = useCategories();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();

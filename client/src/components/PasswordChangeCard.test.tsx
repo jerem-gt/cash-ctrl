@@ -2,19 +2,19 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { PasswordChangeTab } from '@/features/settings';
+import { PasswordChangeCard } from '@/components/PasswordChangeCard.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
-describe('PasswordChangeTab', () => {
+describe('PasswordChangeCard', () => {
   it('affiche la section', async () => {
-    renderWithProviders(<PasswordChangeTab />);
+    renderWithProviders(<PasswordChangeCard />);
     expect(screen.getByText('Changer le mot de passe')).toBeInTheDocument();
   });
 
   it('affiche une erreur toast si les mots de passe ne correspondent pas', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PasswordChangeTab />);
+    renderWithProviders(<PasswordChangeCard />);
 
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     await user.type(passwordInputs[0], 'oldpass');
@@ -30,7 +30,7 @@ describe('PasswordChangeTab', () => {
 
   it('affiche une erreur toast si le nouveau mot de passe est trop court', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PasswordChangeTab />);
+    renderWithProviders(<PasswordChangeCard />);
 
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     await user.type(passwordInputs[0], 'oldpass');
@@ -46,7 +46,7 @@ describe('PasswordChangeTab', () => {
 
   it('met à jour le mot de passe avec succès', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PasswordChangeTab />);
+    renderWithProviders(<PasswordChangeCard />);
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     await user.type(passwordInputs[0], 'oldpassword');
     await user.type(passwordInputs[1], 'newpassword123');
@@ -64,7 +64,7 @@ describe('PasswordChangeTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<PasswordChangeTab />);
+    renderWithProviders(<PasswordChangeCard />);
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     await user.type(passwordInputs[0], 'oldpassword');
     await user.type(passwordInputs[1], 'newpassword123');

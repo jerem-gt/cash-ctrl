@@ -99,7 +99,7 @@ function PaymentMethodRow({
   );
 }
 
-export function PaymentMethodsTab() {
+export function PaymentMethodsManager() {
   const { data: paymentMethods = [], isLoading: pmsLoading } = usePaymentMethods();
   const createPaymentMethod = useCreatePaymentMethod();
   const deletePaymentMethod = useDeletePaymentMethod();

@@ -1,6 +1,5 @@
-export { AccountTypesTab } from './components/AccountTypesTab';
-export { BanksTab } from './components/BanksTab';
-export { CategoriesTab } from './components/CategoriesTab';
-export { PasswordChangeTab } from './components/PasswordChangeTab';
-export { PaymentMethodsTab } from './components/PaymentMethodsTab';
-export { SettingsTabs, type SettingsTab } from './components/SettingsTabs';
+export { AccountTypesManager } from './components/AccountTypesManager';
+export { BanksManager } from './components/BanksManager';
+export { CategoriesManager } from './components/CategoriesManager';
+export { PaymentMethodsManager } from './components/PaymentMethodsManager';
+export { SettingsManager, type SettingsTab } from './components/SettingsManager';

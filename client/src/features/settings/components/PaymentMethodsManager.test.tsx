@@ -2,25 +2,25 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { PaymentMethodsTab } from '@/features/settings';
+import { PaymentMethodsManager } from '@/features/settings';
 import { PAYMENT_METHODS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
-describe('PaymentMethodsTab', () => {
+describe('PaymentMethodsManager', () => {
   it('affiche la section', async () => {
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     expect(screen.getByText('Moyens de paiement')).toBeInTheDocument();
   });
 
   it('affiche les moyens de paiement chargés', async () => {
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     expect(await screen.findByText('CB')).toBeInTheDocument();
   });
 
   it("toast si nom vide lors de l'ajout d'un moyen de paiement", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
     await user.click(addBtn);
@@ -29,7 +29,7 @@ describe('PaymentMethodsTab', () => {
 
   it('ajoute un moyen de paiement avec succès', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.type(screen.getByPlaceholderText('Ex : Espèces'), 'Espèces');
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
@@ -39,7 +39,7 @@ describe('PaymentMethodsTab', () => {
 
   it("soumet le formulaire d'édition d'un moyen de paiement", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByDisplayValue('CB');
@@ -53,7 +53,7 @@ describe('PaymentMethodsTab', () => {
 
   it("annule l'édition d'un moyen de paiement", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
@@ -67,7 +67,7 @@ describe('PaymentMethodsTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('PaymentMethodsTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: 'OK' }));
@@ -96,7 +96,7 @@ describe('PaymentMethodsTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<PaymentMethodsTab />);
+    renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.type(screen.getByPlaceholderText('Ex : Espèces'), 'Espèces');
     await user.click(screen.getByRole('button', { name: /ajouter/i }));

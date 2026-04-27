@@ -1,33 +1,39 @@
+// Dans ton fichier SettingsPage.tsx (structure suggérée)
 import { useState } from 'react';
 
 import {
-  AccountTypesTab,
-  BanksTab,
-  CategoriesTab,
-  PasswordChangeTab,
-  PaymentMethodsTab,
+  AccountTypesManager,
+  BanksManager,
+  CategoriesManager,
+  PaymentMethodsManager,
+  SettingsManager,
   SettingsTab,
-  SettingsTabs,
 } from '@/features/settings';
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<SettingsTab>('categories');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('categories');
 
   return (
-    <>
+    <div className="flex flex-col gap-8">
+      {/* Header de la page */}
       <div>
-        <h2 className="font-serif text-2xl tracking-tight">Paramètres</h2>
-        <p className="text-sm text-stone-400 mt-0.5">Administration et gestion du compte</p>
+        <h1 className="text-3xl font-serif tracking-tight">Paramètres</h1>
+        <p className="text-sm text-black/40">Administration et gestion de l'application</p>
       </div>
-      <div className="p-6 space-y-6">
-        <SettingsTabs activeTab={tab} onChange={setTab} />
 
-        {tab === 'categories' && <CategoriesTab />}
-        {tab === 'banks' && <BanksTab />}
-        {tab === 'paymentMethods' && <PaymentMethodsTab />}
-        {tab === 'accountTypes' && <AccountTypesTab />}
-        {tab === 'passwordChange' && <PasswordChangeTab />}
+      {/* Layout Main */}
+      <div className="flex items-start gap-12">
+        {/* Menu Gauche */}
+        <SettingsManager activeTab={activeTab} onChange={setActiveTab} />
+
+        {/* Contenu Droite */}
+        <div className="flex-1 min-w-0">
+          {activeTab === 'categories' && <CategoriesManager />}
+          {activeTab === 'banks' && <BanksManager />}
+          {activeTab === 'paymentMethods' && <PaymentMethodsManager />}
+          {activeTab === 'accountTypes' && <AccountTypesManager />}
+        </div>
       </div>
-    </>
+    </div>
   );
 }

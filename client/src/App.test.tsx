@@ -16,18 +16,18 @@ describe('App', () => {
   it('affiche la page de connexion si non authentifié', async () => {
     server.use(http.get('/api/auth/me', () => new HttpResponse(null, { status: 401 })));
     render(<App />);
-    expect(await screen.findByRole('button', { name: /connexion/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /se connecter/i })).toBeInTheDocument();
   });
 
   it('affiche la sidebar après authentification', async () => {
     render(<App />);
-    await screen.findByRole('button', { name: /déconnexion/i });
+    await screen.findByLabelText(/Menu utilisateur/i);
     expect(screen.getByText('Planifiées')).toBeInTheDocument();
   });
 
   it('définit le titre du document après authentification', async () => {
     render(<App />);
-    await screen.findByRole('button', { name: /déconnexion/i });
+    await screen.findByLabelText(/Menu utilisateur/i);
     expect(document.title).toBe('CashCtrl (dev)');
   });
 });

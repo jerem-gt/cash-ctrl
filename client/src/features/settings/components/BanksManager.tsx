@@ -158,7 +158,7 @@ function BankRow({
   );
 }
 
-export function BanksTab() {
+export function BanksManager() {
   const { data: banks = [], isLoading: banksLoading } = useBanks();
   const createBank = useCreateBank();
   const deleteBank = useDeleteBank();

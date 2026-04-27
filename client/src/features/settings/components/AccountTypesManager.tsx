@@ -93,7 +93,7 @@ function AccountTypeRow({
   );
 }
 
-export function AccountTypesTab() {
+export function AccountTypesManager() {
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
   const deleteAccountType = useDeleteAccountType();

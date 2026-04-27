@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authApi } from '@/api/client';
+import { showToast } from '@/components/ui.tsx';
 
 export function useMe() {
   return useQuery({
@@ -23,7 +24,10 @@ export function useLogout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: authApi.logout,
-    onSuccess: () => qc.setQueryData(['me'], null),
+    onSuccess: () => {
+      showToast('Déconnexion réussie');
+      qc.setQueryData(['me'], null);
+    },
   });
 }
 

@@ -2,25 +2,25 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { CategoriesTab } from '@/features/settings';
+import { CategoriesManager } from '@/features/settings';
 import { CATEGORIES } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
-describe('CategoriesTab', () => {
+describe('CategoriesManager', () => {
   it('affiche la section', async () => {
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     expect(await screen.findByText('Catégories')).toBeInTheDocument();
   });
 
   it('affiche les catégories chargées', async () => {
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     expect(await screen.findByText('Alimentation')).toBeInTheDocument();
   });
 
   it("toast si nom vide lors de l'ajout d'une catégorie", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
     await user.click(addBtn);
@@ -29,7 +29,7 @@ describe('CategoriesTab', () => {
 
   it('ajoute une catégorie avec succès', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.type(screen.getByPlaceholderText('Nom de la catégorie'), 'Loisirs');
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
@@ -39,7 +39,7 @@ describe('CategoriesTab', () => {
 
   it('passe en mode édition pour une catégorie (tx_count=0)', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     const modifyBtn = screen.getByRole('button', { name: /modifier/i });
     await user.click(modifyBtn);
@@ -48,7 +48,7 @@ describe('CategoriesTab', () => {
 
   it("soumet le formulaire d'édition d'une catégorie", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByDisplayValue('Alimentation');
@@ -62,7 +62,7 @@ describe('CategoriesTab', () => {
 
   it("annule l'édition d'une catégorie", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
@@ -74,7 +74,7 @@ describe('CategoriesTab', () => {
       http.get('/api/categories', () => HttpResponse.json([{ ...CATEGORIES[0], tx_count: 3 }])),
     );
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('CategoriesTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: 'OK' }));
@@ -103,7 +103,7 @@ describe('CategoriesTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<CategoriesTab />);
+    renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
     await user.type(screen.getByPlaceholderText('Nom de la catégorie'), 'Loisirs');
     await user.click(screen.getByRole('button', { name: /ajouter/i }));

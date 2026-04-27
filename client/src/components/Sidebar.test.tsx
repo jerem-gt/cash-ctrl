@@ -30,9 +30,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('jerem')).toBeInTheDocument();
   });
 
-  it('affiche le bouton de déconnexion', () => {
+  it('affiche le bouton user menu', async () => {
     renderWithProviders(<Sidebar username="test" />);
-    expect(screen.getByRole('button', { name: /déconnexion/i })).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Menu utilisateur/i)).toBeInTheDocument();
   });
 
   it('affiche le compte chargé dans la liste', async () => {

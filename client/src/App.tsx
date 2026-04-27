@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { Sidebar } from '@/components/Sidebar';
@@ -7,6 +7,7 @@ import { Toast } from '@/components/ui';
 import { useMe } from '@/hooks/useAuth';
 import { appName } from '@/lib/appname.ts';
 import { LoginPage } from '@/pages/LoginPage';
+import { SecuritySettingsPage } from '@/pages/SecuritySettingsPage.tsx';
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'));
@@ -15,12 +16,6 @@ const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage'));
 const ExportPage = lazy(() => import('@/pages/ExportPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
-
-const qc = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 30_000, retry: false },
-  },
-});
 
 function AppShell() {
   // Ajoute (dev) au titre si on est hors production
@@ -52,6 +47,7 @@ function AppShell() {
             <Route path="/accounts/:id" element={<AccountDetailPage />} />
             <Route path="/export" element={<ExportPage />} />
             <Route path="/scheduled" element={<ScheduledPage />} />
+            <Route path="/settings/security" element={<SecuritySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -62,8 +58,19 @@ function AppShell() {
 }
 
 export default function App() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            retry: false,
+          },
+        },
+      }),
+  );
   return (
-    <QueryClientProvider client={qc}>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppShell />
         <Toast />

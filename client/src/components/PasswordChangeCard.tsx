@@ -3,7 +3,7 @@ import { SyntheticEvent, useState } from 'react';
 import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui.tsx';
 import { useChangePassword } from '@/hooks/useAuth.ts';
 
-export function PasswordChangeTab() {
+export function PasswordChangeCard() {
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
 

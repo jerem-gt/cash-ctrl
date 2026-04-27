@@ -2,25 +2,25 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { BanksTab } from '@/features/settings';
+import { BanksManager } from '@/features/settings';
 import { BANKS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
-describe('BanksTab', () => {
+describe('BanksManager', () => {
   it('affiche la section', async () => {
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     expect(await screen.findByText('Banques')).toBeInTheDocument();
   });
 
   it('affiche les banques chargées', async () => {
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     expect(await screen.findByText('BNP')).toBeInTheDocument();
   });
 
   it("toast si nom vide lors de l'ajout d'une banque", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     // Premier bouton "Ajouter" = banques
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
@@ -30,7 +30,7 @@ describe('BanksTab', () => {
 
   it('ajoute une banque avec succès', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.type(screen.getByPlaceholderText('Ex : Fortuneo'), 'Fortuneo');
     const addBtn = screen.getByRole('button', { name: /ajouter/i });
@@ -40,7 +40,7 @@ describe('BanksTab', () => {
 
   it('passe en mode édition au clic sur Modifier (banque)', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     // Les boutons "Modifier" sont opacity-0 mais accessibles
     const modifyBtn = screen.getByRole('button', { name: /modifier/i });
@@ -51,7 +51,7 @@ describe('BanksTab', () => {
 
   it("annule l'édition d'une banque", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     const modifyBtn = screen.getByRole('button', { name: /modifier/i });
     await user.click(modifyBtn);
@@ -61,7 +61,7 @@ describe('BanksTab', () => {
 
   it('ouvre la confirmation de suppression', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     // BNP a acc_count=undefined → 0 → bouton × visible dans RowActions
     const deleteBtn = screen.getByRole('button', { name: '×' });
@@ -71,7 +71,7 @@ describe('BanksTab', () => {
 
   it("confirme la suppression d'une banque", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     const deleteBtn = screen.getByRole('button', { name: '×' });
     await user.click(deleteBtn);
@@ -83,7 +83,7 @@ describe('BanksTab', () => {
 
   it("annule la suppression d'une banque", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     const deleteBtn = screen.getByRole('button', { name: '×' });
     await user.click(deleteBtn);
@@ -94,7 +94,7 @@ describe('BanksTab', () => {
 
   it("soumet le formulaire d'édition d'une banque", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByPlaceholderText('Nom');
@@ -109,7 +109,7 @@ describe('BanksTab', () => {
   it('BankRow : affiche le bouton Modifier seul et ouvre le formulaire quand acc_count > 0', async () => {
     server.use(http.get('/api/banks', () => HttpResponse.json([{ ...BANKS[0], acc_count: 2 }])));
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe('BanksTab', () => {
 
     it('sélectionne un fichier et affiche son nom', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<BanksTab />);
+      renderWithProviders(<BanksManager />);
       await screen.findByText('BNP');
       await user.click(screen.getByRole('button', { name: /modifier/i }));
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -138,7 +138,7 @@ describe('BanksTab', () => {
     it('soumet le formulaire avec un logo uploadé', async () => {
       server.use(http.post('/api/banks/:id/logo', () => HttpResponse.json(BANKS[0])));
       const user = userEvent.setup();
-      renderWithProviders(<BanksTab />);
+      renderWithProviders(<BanksManager />);
       await screen.findByText('BNP');
       await user.click(screen.getByRole('button', { name: /modifier/i }));
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -161,7 +161,7 @@ describe('BanksTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: 'OK' }));
@@ -177,7 +177,7 @@ describe('BanksTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.click(screen.getByRole('button', { name: '×' }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
@@ -193,7 +193,7 @@ describe('BanksTab', () => {
       ),
     );
     const user = userEvent.setup();
-    renderWithProviders(<BanksTab />);
+    renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.type(screen.getByPlaceholderText('Ex : Fortuneo'), 'Fortuneo');
     await user.click(screen.getByRole('button', { name: /ajouter/i }));
