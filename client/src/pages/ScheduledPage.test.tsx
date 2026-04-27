@@ -3,11 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import ScheduledPage from '@/pages/ScheduledPage.tsx';
 import { SCHEDULED, TWO_ACCOUNTS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-
-import { ScheduledPage } from './ScheduledPage';
 
 describe('ScheduledPage', () => {
   it('affiche le titre', () => {

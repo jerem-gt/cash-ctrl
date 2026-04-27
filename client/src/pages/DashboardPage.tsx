@@ -9,7 +9,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
 import { fmt, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
 
-export function DashboardPage() {
+export default function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: result } = useTransactions({ limit: 10000 });
   const { data: categories = [] } = useCategories();

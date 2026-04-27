@@ -4,11 +4,10 @@ import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import AccountDetailPage from '@/pages/AccountDetailPage.tsx';
 import { TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-
-import { AccountDetailPage } from './AccountDetailPage';
 
 function renderDetail(id = '1') {
   return renderWithProviders(

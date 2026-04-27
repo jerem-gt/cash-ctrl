@@ -20,7 +20,7 @@ import { accountSeniority } from '@/lib/account';
 import { fmtDec } from '@/lib/format';
 import type { Transaction } from '@/types';
 
-export function AccountDetailPage() {
+export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const accountId = Number.parseInt(id ?? '0');
   const navigate = useNavigate();

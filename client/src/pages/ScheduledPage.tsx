@@ -433,7 +433,7 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function ScheduledPage() {
+export default function ScheduledPage() {
   const { data: scheduled = [], isLoading } = useScheduled();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();

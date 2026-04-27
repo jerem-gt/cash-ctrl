@@ -3,10 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import AccountsPage from '@/pages/AccountsPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-
-import { AccountsPage } from './AccountsPage';
 
 describe('AccountsPage', () => {
   it('affiche le titre et le bouton de création', () => {

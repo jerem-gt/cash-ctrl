@@ -18,7 +18,7 @@ import type { Transaction, TransactionFilters } from '@/types';
 
 type Filters = Omit<TransactionFilters, 'page' | 'limit'>;
 
-export function TransactionsPage() {
+export default function TransactionsPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();

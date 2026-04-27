@@ -10,7 +10,7 @@ import { useBanks } from '@/hooks/useBanks';
 import { accountSeniority } from '@/lib/account';
 import { fmtDec } from '@/lib/format';
 
-export function AccountsPage() {
+export default function AccountsPage() {
   const navigate = useNavigate();
   const { data: accounts = [] } = useAccounts();
   const { data: accountTypes = [] } = useAccountTypes();

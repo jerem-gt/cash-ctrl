@@ -26,7 +26,6 @@ describe('CategoryEditor', () => {
     isPending: false,
     submitLabel: 'OK',
   };
-
   it('affiche les valeurs initiales correctement', () => {
     render(<CategoryEditor {...defaultProps} />);
 

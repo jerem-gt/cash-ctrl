@@ -2,10 +2,9 @@ import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import DashboardPage from '@/pages/DashboardPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-
-import { DashboardPage } from './DashboardPage';
 
 describe('DashboardPage', () => {
   it('affiche le titre et le sous-titre', () => {

@@ -6,7 +6,10 @@ async function downloadExport(path: string, filename: string, setLoading: (v: bo
   setLoading(true);
   try {
     const res = await fetch(path);
-    if (!res.ok) { showToast(`Erreur serveur (${res.status})`); return; }
+    if (!res.ok) {
+      showToast(`Erreur serveur (${res.status})`);
+      return;
+    }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -21,7 +24,7 @@ async function downloadExport(path: string, filename: string, setLoading: (v: bo
   }
 }
 
-export function ExportPage() {
+export default function ExportPage() {
   const [csvPending, setCsvPending] = useState(false);
   const [jsonPending, setJsonPending] = useState(false);
 
@@ -36,7 +39,9 @@ export function ExportPage() {
 
       <Card>
         <CardTitle>Transactions</CardTitle>
-        <p className="text-sm text-stone-500 mb-4">Exportez toutes vos transactions dans le format de votre choix.</p>
+        <p className="text-sm text-stone-500 mb-4">
+          Exportez toutes vos transactions dans le format de votre choix.
+        </p>
         <div className="flex gap-3 flex-wrap">
           <Button
             variant="export"
@@ -48,7 +53,9 @@ export function ExportPage() {
           <Button
             variant="export"
             disabled={jsonPending}
-            onClick={() => downloadExport('/api/export/json', `cashctrl-backup-${date}.json`, setJsonPending)}
+            onClick={() =>
+              downloadExport('/api/export/json', `cashctrl-backup-${date}.json`, setJsonPending)
+            }
           >
             {jsonPending ? '…' : '⬇ Télécharger JSON'}
           </Button>

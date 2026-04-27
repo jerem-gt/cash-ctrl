@@ -2,9 +2,8 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import ExportPage from '@/pages/ExportPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-
-import { ExportPage } from './ExportPage';
 
 describe('ExportPage', () => {
   beforeEach(() => {

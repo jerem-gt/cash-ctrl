@@ -2,9 +2,8 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import TransactionsPage from '@/pages/TransactionsPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-
-import { TransactionsPage } from './TransactionsPage';
 
 describe('TransactionsPage', () => {
   it("affiche le titre et le bouton d'ajout", () => {
