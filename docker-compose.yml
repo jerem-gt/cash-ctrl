@@ -3,6 +3,9 @@ services:
     image: ghcr.io/jerem-gt/cash-ctrl:latest
     user: "${PUID}:${PGID}"
     container_name: cash-ctrl
+    labels:
+      # Pour watchtower-fast
+      - "com.centurylinklabs.watchtower.scope=app-fast"
     restart: unless-stopped
     ports:
       - "3000:3000"

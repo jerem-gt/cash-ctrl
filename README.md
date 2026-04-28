@@ -86,9 +86,9 @@ npm test --workspace=server
 npm test --workspace=client
 ```
 
-**Backend** : 153 tests — Vitest + supertest + better-sqlite3 in-memory
+**Backend** : Vitest + supertest + better-sqlite3 in-memory
 
-**Frontend** : 283 tests — Vitest + @testing-library/react + MSW v2
+**Frontend** : Vitest + @testing-library/react + MSW v2
 
 ---
 
