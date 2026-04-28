@@ -6,6 +6,7 @@ import type {
   PaginatedTransactions,
   PaymentMethod,
   ScheduledTransaction,
+  Subcategory,
 } from '@/types';
 
 export const ACCOUNTS: Account[] = [
@@ -49,6 +50,20 @@ export const CATEGORIES: Category[] = [
     color: '#22c55e',
     icon: '🍴',
     subcategories: [{ id: 1, name: 'Supermarché' }],
+  },
+  {
+    id: 2,
+    name: 'Logement',
+    color: '#5C6BC0',
+    icon: '🏠',
+    subcategories: [{ id: 2, name: 'Loyer' }],
+  },
+];
+
+export const SUBCATEGORIES: Subcategory[] = [
+  {
+    id: 1,
+    name: 'Supermarché',
   },
 ];
 

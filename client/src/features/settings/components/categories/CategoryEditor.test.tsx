@@ -25,11 +25,12 @@ describe('CategoryEditor', () => {
     onCancel: vi.fn(),
     isPending: false,
     submitLabel: 'OK',
+    placeholder: 'cat placeholder',
   };
   it('affiche les valeurs initiales correctement', () => {
     render(<CategoryEditor {...defaultProps} />);
 
-    expect(screen.getByPlaceholderText(/nom de la catégorie/i)).toHaveValue('Courses');
+    expect(screen.getByPlaceholderText(/cat placeholder/i)).toHaveValue('Courses');
     expect(screen.getByRole('button', { name: '🛒' })).toBeInTheDocument();
   });
 
@@ -38,7 +39,7 @@ describe('CategoryEditor', () => {
     const onSave = vi.fn();
     render(<CategoryEditor {...defaultProps} onSave={onSave} />);
 
-    const input = screen.getByPlaceholderText(/nom de la catégorie/i);
+    const input = screen.getByPlaceholderText(/cat placeholder/i);
     await user.clear(input);
     await user.type(input, 'Supermarché');
 
@@ -99,7 +100,7 @@ describe('CategoryEditor', () => {
     const onSave = vi.fn();
     render(<CategoryEditor {...defaultProps} onSave={onSave} />);
 
-    const input = screen.getByPlaceholderText(/nom de la catégorie/i);
+    const input = screen.getByPlaceholderText(/cat placeholder/i);
     await user.type(input, '{enter}');
 
     expect(onSave).toHaveBeenCalled();

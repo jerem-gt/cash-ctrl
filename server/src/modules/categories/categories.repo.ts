@@ -16,22 +16,25 @@ export function createCategoriesRepo(db: Database) {
       const rows = db
         .prepare(
           `
-        SELECT 
-          c.*,
-          (SELECT COUNT(*) FROM transactions t 
-           JOIN subcategories sc ON t.subcategory_id = sc.id 
-           WHERE sc.category_id = c.id) as tx_count,
-          (SELECT json_group_array(
-                    json_object(
-                      'id', id, 
-                      'name', name, 
-                      'category_id', category_id
-                    )
-                  )
-           FROM subcategories 
-           WHERE category_id = c.id) as subcategories
-        FROM categories c
-        ORDER BY c.created_at
+          SELECT
+            c.*,
+            -- Nombre total de transactions pour la catégorie (somme de ses sous-catégories)
+            (SELECT COUNT(*) FROM transactions t
+                                    JOIN subcategories sc ON t.subcategory_id = sc.id
+             WHERE sc.category_id = c.id) as tx_count,
+            -- Liste des sous-catégories avec leur propre tx_count
+            (SELECT json_group_array(
+              json_object(
+                  'id', id,
+                  'name', name,
+                  'category_id', category_id,
+                  'tx_count', (SELECT COUNT(*) FROM transactions t WHERE t.subcategory_id = subcategories.id)
+              )
+            )
+             FROM subcategories
+             WHERE category_id = c.id) as subcategories
+          FROM categories c
+          ORDER BY c.created_at;
       `,
         )
         .all() as RawCategoryRow[];

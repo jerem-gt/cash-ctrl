@@ -107,6 +107,16 @@ export const categoriesApi = {
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
 };
 
+// Subcategories
+export const subcategoriesApi = {
+  list: () => request<Category[]>('GET', '/api/subcategories'),
+  create: (payload: { name: string; category_id: number }) =>
+    request<Category>('POST', '/api/subcategories', payload),
+  update: (id: number, payload: { name: string }) =>
+    request<Category>('PUT', `/api/subcategories/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/subcategories/${id}`),
+};
+
 // Payment methods
 export const paymentMethodsApi = {
   list: () => request<PaymentMethod[]>('GET', '/api/payment-methods'),

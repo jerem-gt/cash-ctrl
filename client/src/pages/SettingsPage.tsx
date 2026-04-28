@@ -1,4 +1,3 @@
-// Dans ton fichier SettingsPage.tsx (structure suggérée)
 import { useState } from 'react';
 
 import {

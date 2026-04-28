@@ -26,6 +26,7 @@ export interface Category {
 export interface Subcategory {
   id: number;
   name: string;
+  tx_count?: number;
 }
 
 export interface Account {

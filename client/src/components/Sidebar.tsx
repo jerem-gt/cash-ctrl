@@ -121,7 +121,7 @@ export function Sidebar({ username }: Readonly<Props>) {
               </NavLink>
 
               {expanded && (
-                <div className="flex items-center bg-white/[0.06] rounded-md p-0.5 text-[10px]">
+                <div className="flex items-center bg-white/6 rounded-md p-0.5 text-[10px]">
                   <button
                     onClick={() => handleSetGroupBy('bank')}
                     className={`px-1.5 py-0.5 rounded transition-all ${groupBy === 'bank' ? 'bg-white/15 text-white/80' : 'text-white/30 hover:text-white/55'}`}

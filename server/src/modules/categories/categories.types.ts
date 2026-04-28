@@ -1,4 +1,4 @@
-import { Subcategory } from '../subcategories/subcategories.types';
+import { SubcategoryWithCount } from '../subcategories/subcategories.types';
 
 export interface Category {
   id: number;
@@ -10,7 +10,7 @@ export interface Category {
 
 export interface CategoryWithCountAndSubCategories extends Category {
   tx_count: number;
-  subcategories: Subcategory[];
+  subcategories: SubcategoryWithCount[];
 }
 
 export interface CreateCategoryInput {

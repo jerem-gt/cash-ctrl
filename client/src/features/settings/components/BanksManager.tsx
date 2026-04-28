@@ -77,7 +77,7 @@ function BankRow({
     return (
       <form
         onSubmit={handleSave}
-        className="flex flex-col gap-2 py-3 border-b border-black/[0.06] last:border-0"
+        className="flex flex-col gap-2 py-3 border-b border-black/6 last:border-0"
       >
         <Input
           type="text"
@@ -127,7 +127,7 @@ function BankRow({
 
   const accCount = bank.acc_count ?? 0;
   return (
-    <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
+    <div className="flex items-center gap-2.5 py-2 border-b border-black/6 last:border-0 group">
       {bank.logo ? (
         <img
           src={bank.logo}

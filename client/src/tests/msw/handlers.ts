@@ -7,6 +7,7 @@ import {
   CATEGORIES,
   PAYMENT_METHODS,
   SCHEDULED,
+  SUBCATEGORIES,
   TRANSACTIONS,
 } from '../fixtures';
 
@@ -44,6 +45,13 @@ export const handlers = [
   ),
   http.put('/api/categories/:id', () => HttpResponse.json(CATEGORIES[0])),
   http.delete('/api/categories/:id', () => HttpResponse.json({ ok: true })),
+
+  // Subcategories
+  http.post('/api/subcategories', () =>
+    HttpResponse.json({ id: 99, name: 'Nouvelle subcat', category_id: 99 }),
+  ),
+  http.put('/api/subcategories/:id', () => HttpResponse.json(SUBCATEGORIES[0])),
+  http.delete('/api/subcategories/:id', () => HttpResponse.json({ ok: true })),
 
   // Payment methods
   http.get('/api/payment-methods', () => HttpResponse.json(PAYMENT_METHODS)),

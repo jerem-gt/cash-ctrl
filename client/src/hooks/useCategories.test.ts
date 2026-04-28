@@ -15,8 +15,7 @@ describe('useCategories', () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useCategories(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toHaveLength(1);
-    expect(result.current.data![0].name).toBe('Alimentation');
+    expect(result.current.data).toMatchObject([{ name: 'Alimentation' }, { name: 'Logement' }]);
   });
 });
 
