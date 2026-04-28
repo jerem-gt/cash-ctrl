@@ -2,7 +2,7 @@ name: Build, Release & Push
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
     branches: [main]
 
@@ -79,7 +79,7 @@ jobs:
   release:
     name: 🚀 Semantic Release
     needs: [ci]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -90,9 +90,17 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v6
+        with:
+          branches: |
+            [
+              "main",
+              { "name": "develop", "prerelease": "dev" }
+            ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -129,9 +137,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            # Tag précis (ex: 1.1.0 ou 1.2.0-dev.1)
             type=semver,pattern={{version}},value=${{ needs.release.outputs.new_release_version }}
+            # Le tag 'latest' ne bouge que lors d'un push sur main
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=ref,event=pr
+            # Un tag 'dev' pratique pour pull la dernière version de develop
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=sha,prefix=sha-
 
       - name: Set up Buildx
@@ -148,3 +159,18 @@ jobs:
             APP_VERSION=${{ needs.release.outputs.new_release_version || 'dev' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  prune-images:
+    name: 🧹 Prune Dev Images
+    needs: [ build-and-push ]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete old dev images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}
+          package-type: 'container'
+          min-versions-to-keep: 5 # On garde les 5 dernières versions de dev
+          delete-only-pre-release-versions: true # On ne touche pas aux versions stables !
