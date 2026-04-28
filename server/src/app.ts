@@ -53,6 +53,12 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
     }
   });
 
+  app.get('/api/version', (req, res) => {
+    res.json({
+      version: process.env.APP_VERSION || 'development',
+    });
+  });
+
   app.use('/api/auth', createAuthRouter(db));
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));

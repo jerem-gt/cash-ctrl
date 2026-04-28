@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { NavLink, useMatch } from 'react-router-dom';
 
 import { UserMenu } from '@/components/UserMenu.tsx';
+import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
@@ -215,6 +216,7 @@ export function Sidebar({ username }: Readonly<Props>) {
 
       {/* User */}
       <UserMenu username={username} onLogout={() => logout.mutate()} />
+      <VersionStatus />
     </aside>
   );
 }

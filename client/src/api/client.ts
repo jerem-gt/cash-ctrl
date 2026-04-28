@@ -1,6 +1,7 @@
 import type {
   Account,
   AccountType,
+  AppVersion,
   Bank,
   Category,
   PaginatedTransactions,
@@ -173,6 +174,11 @@ export const scheduledApi = {
 export const settingsApi = {
   get: () => request<UserSettings>('GET', '/api/settings'),
   update: (payload: UserSettings) => request<UserSettings>('PUT', '/api/settings', payload),
+};
+
+// Version
+export const versionApi = {
+  get: () => request<AppVersion>('GET', '/api/version'),
 };
 
 // Transactions

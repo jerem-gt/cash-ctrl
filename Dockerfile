@@ -5,6 +5,9 @@ RUN apk add --no-cache tzdata
 # ---- Stage final ----
 FROM node:24.15.0-alpine
 
+# Déclarer l'argument de build (reçu de GitHub Actions)
+ARG APP_VERSION=dev
+
 WORKDIR /app
 
 # Timezone
@@ -13,6 +16,9 @@ ENV TZ=Europe/Paris
 COPY --from=tz /usr/share/zoneinfo /usr/share/zoneinfo
 RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
  && echo "$TZ" > /etc/timezone
+
+# Transformer l'ARG en ENV pour qu'il soit disponible à l'exécution (Runtime)
+ENV APP_VERSION=$APP_VERSION
 
 # App
 COPY node_modules ./node_modules

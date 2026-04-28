@@ -1,6 +1,7 @@
 import { type SubmitEvent, useState } from 'react';
 
 import { Button, FormGroup, Input } from '@/components/ui';
+import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { useLogin } from '@/hooks/useAuth';
 import { appName } from '@/lib/appname.ts';
 
@@ -33,7 +34,7 @@ export function LoginPage() {
               id="username"
               type="text"
               value={username}
-              onChange={e => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               placeholder="admin"
               autoFocus
@@ -45,7 +46,7 @@ export function LoginPage() {
               id="password"
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="••••••••"
               required
@@ -59,6 +60,7 @@ export function LoginPage() {
           >
             {login.isPending ? 'Connexion…' : 'Se connecter'}
           </Button>
+          <VersionStatus />
         </form>
       </div>
     </div>

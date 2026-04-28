@@ -1,4 +1,4 @@
-name: Build & Push
+name: Build, Release & Push
 
 on:
   push:
@@ -12,6 +12,7 @@ env:
 
 jobs:
   ci:
+    name: 🧪 CI & Tests
     runs-on: ubuntu-latest
     container: node:24.15.0-alpine
     steps:
@@ -22,14 +23,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
       - name: Install deps
         run: npm ci # NOSONAR — server native addons (better-sqlite3, bcrypt) require node-gyp scripts
 
-      - name: Test server with coverage
-        run: npm run test:coverage --workspace=server
-
-      - name: Test client with coverage
-        run: npm run test:coverage --workspace=client
+      - name: Test with coverage
+        run: |
+          npm run test:coverage --workspace=server
+          npm run test:coverage --workspace=client
 
       - name: Build
         run: |
@@ -42,29 +48,27 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: build
+          name: build-assets
           path: |
             node_modules
-            !node_modules/@cashctrl
             server/dist
             server/coverage/lcov.info
             client/dist
             client/coverage/lcov.info
 
   sonar:
+    name: 🛡️ SonarCloud Analysis
     needs: [ci]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Download coverage
+      - name: Download build assets
         uses: actions/download-artifact@v8
         with:
-          name: build
+          name: build-assets
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v7
@@ -72,8 +76,33 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
-  build-and-push:
+  release:
+    name: 🚀 Semantic Release
     needs: [ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push:
+    name: 📦 Docker Build & Push
+    needs: [ci, release]
+    # On build si on est sur PR, OU si une nouvelle release a été publiée sur main
+    if: |
+      github.event_name == 'pull_request' || 
+      (needs.release.outputs.new_release_published == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -82,10 +111,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download build artifacts
+      - name: Download build assets
         uses: actions/download-artifact@v8
         with:
-          name: build
+          name: build-assets
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -100,7 +129,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},value=${{ needs.release.outputs.new_release_version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=pr
             type=sha,prefix=sha-
 
       - name: Set up Buildx
@@ -110,9 +141,10 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ needs.release.outputs.new_release_version || 'dev' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64

@@ -94,6 +94,10 @@ export interface UserSettings {
   lead_days: number;
 }
 
+export interface AppVersion {
+  version: string;
+}
+
 export interface PaymentMethod {
   id: number;
   name: string;
