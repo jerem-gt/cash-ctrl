@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
 
       - name: Install deps
-        run: npm ci # NOSONAR — server native addons (better-sqlite3, bcrypt) require node-gyp scripts
+        run: npm ci
 
       - name: Test with coverage
         run: |
