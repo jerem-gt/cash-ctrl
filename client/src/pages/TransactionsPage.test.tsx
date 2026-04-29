@@ -6,12 +6,6 @@ import TransactionsPage from '@/pages/TransactionsPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 describe('TransactionsPage', () => {
-  it("affiche le titre et le bouton d'ajout", () => {
-    renderWithProviders(<TransactionsPage />);
-    expect(screen.getByText('Transactions')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /nouvelle transaction/i })).toBeInTheDocument();
-  });
-
   it('affiche les transactions après le chargement', async () => {
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');

@@ -46,7 +46,7 @@ describe('AccountSelect', () => {
         logoMap={logoMap}
       />,
     );
-    expect(screen.getByText('Compte courant')).toBeInTheDocument();
+    expect(screen.getByText('Compte test')).toBeInTheDocument();
   });
 
   it('ouvre la liste au clic', async () => {

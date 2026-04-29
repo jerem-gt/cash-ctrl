@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, TWO_ACCOUNTS } from '@/tests/fixtures';
+import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS } from '@/tests/fixtures';
 
 import type { TxCoreState } from './TxCoreFields';
 import { TxCoreFields } from './TxCoreFields';
@@ -88,7 +88,7 @@ describe('TxCoreFields', () => {
     render(<TxCoreFields {...defaultProps} onChange={onChange} />);
     const trigger = screen.getByRole('button', { name: /choisir/i });
     await user.click(trigger);
-    await user.click(await screen.findByRole('option', { name: /Compte courant/i }));
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
     expect(onChange).toHaveBeenCalledWith({ account_id: '1' });
   });
 
@@ -99,7 +99,6 @@ describe('TxCoreFields', () => {
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}
-        accounts={TWO_ACCOUNTS}
         isTransfer
         value={{ ...defaultValue, account_id: '1' }}
       />,
@@ -118,7 +117,6 @@ describe('TxCoreFields', () => {
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}
-        accounts={TWO_ACCOUNTS}
         logoMap={logoMap}
         isTransfer
         value={{ ...defaultValue, account_id: '1' }}
@@ -139,7 +137,6 @@ describe('TxCoreFields', () => {
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}
-        accounts={TWO_ACCOUNTS}
         isTransfer
         value={{ ...defaultValue, account_id: '' }}
       />,
@@ -148,7 +145,7 @@ describe('TxCoreFields', () => {
     const triggers = screen.getAllByRole('button', { name: /choisir/i });
     // Premier = source
     await user.click(triggers[0]);
-    await user.click(await screen.findByRole('option', { name: /Compte courant/i }));
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ account_id: '1' }));
   });
 });

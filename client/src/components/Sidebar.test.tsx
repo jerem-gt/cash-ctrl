@@ -37,13 +37,13 @@ describe('Sidebar', () => {
 
   it('affiche le compte chargé dans la liste', async () => {
     renderWithProviders(<Sidebar username="test" />);
-    expect(await screen.findByText('Compte courant')).toBeInTheDocument();
+    expect(await screen.findByText('Compte test')).toBeInTheDocument();
   });
 
   it('bascule le groupement au clic sur le bouton', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Sidebar username="test" />);
-    await screen.findByText('Compte courant');
+    await screen.findByText('Compte test');
     const groupBtn = screen.getByRole('button', { name: 'Banque' });
     await user.click(groupBtn);
     expect(groupBtn).toBeInTheDocument();

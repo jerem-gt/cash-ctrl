@@ -105,6 +105,8 @@ export interface PaymentMethod {
   tx_count?: number;
 }
 
+export type Filters = Omit<TransactionFilters, 'page' | 'limit'>;
+
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;

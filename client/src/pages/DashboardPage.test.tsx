@@ -23,7 +23,7 @@ describe('DashboardPage', () => {
 
   it('affiche le solde total des comptes', async () => {
     renderWithProviders(<DashboardPage />);
-    expect(await screen.findByText('1 compte(s)')).toBeInTheDocument();
+    expect(await screen.findByText('2 compte(s)')).toBeInTheDocument();
   });
 
   it('affiche le titre de la section des dernières transactions', async () => {
