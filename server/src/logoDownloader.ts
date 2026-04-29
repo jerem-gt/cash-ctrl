@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Database } from 'better-sqlite3';
 
 import { DATA_DIR } from './db/init';
+import { toFileName } from './lib/stringUtils';
 import { logger } from './logger';
 import { createBanksRepo } from './modules/banks/banks.repo.js';
 
@@ -17,7 +18,7 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
   for (const bank of banksRepo.getAll()) {
     if (bank.logo || !bank.domain) continue;
 
-    const filename = `bank-${bank.id}.png`;
+    const filename = `${toFileName(bank.name)}-${bank.id}.png`;
     const filepath = path.join(LOGOS_DIR, filename);
     if (fs.existsSync(filepath)) {
       banksRepo.updateLogo(bank.id, `/logos/${filename}`);
