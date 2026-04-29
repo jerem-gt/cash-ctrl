@@ -84,7 +84,7 @@ describe('downloadDefaultBankLogos', () => {
     const updated = db.prepare('SELECT logo FROM banks WHERE id = ?').get(bank.id) as {
       logo: string;
     };
-    expect(updated.logo).toMatch(/\/logos\/bank-\d+\.png/);
+    expect(updated.logo).toMatch(/\/logos\/bankfileexists-\d+\.png/);
   });
 
   it('fetches and saves logo when file does not exist on disk', async () => {
