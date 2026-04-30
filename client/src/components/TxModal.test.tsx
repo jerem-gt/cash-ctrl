@@ -147,6 +147,46 @@ describe('TxModal — mode création', () => {
   });
 });
 
+describe('TxModal — ventilation', () => {
+  it('affiche le bouton "Ventiler" en mode création', () => {
+    renderWithProviders(<TxModal {...createProps} />);
+    expect(screen.getByRole('button', { name: 'Ventiler' })).toBeInTheDocument();
+  });
+
+  it('pas de bouton "Ventiler" en mode transfert', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    expect(screen.queryByRole('button', { name: 'Ventiler' })).not.toBeInTheDocument();
+  });
+
+  it("clic sur Ventiler masque les catégories et affiche l'éditeur de ventilation", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    expect(screen.getByText('Alimentation')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ventiler' }));
+    expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
+    expect(screen.getByText('Ventilation')).toBeInTheDocument();
+  });
+
+  it('clic à nouveau sur Ventilée repasse en mode normal', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ventiler' }));
+    await user.click(screen.getByRole('button', { name: '⊕ Ventilée' }));
+    expect(screen.getByText('Alimentation')).toBeInTheDocument();
+    expect(screen.queryByText('Ventilation')).not.toBeInTheDocument();
+  });
+
+  it('toast si soumis en mode ventilé sans ligne de ventilation', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ventiler' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('Ajoutez'));
+  });
+});
+
 describe('TxModal — mode duplication', () => {
   it('affiche le titre "Dupliquer la transaction"', () => {
     renderWithProviders(<TxModal {...createProps} duplicateFrom={baseTx} />);

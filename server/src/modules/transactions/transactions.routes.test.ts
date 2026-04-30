@@ -160,4 +160,100 @@ describe('/api/transactions', () => {
     const res = await ctx.agent.delete('/api/transactions/99999');
     expect(res.status).toBe(404);
   });
+
+  // ─── Ventilation (splits) ──────────────────────────────────────────────────
+
+  it('POST / crée une transaction ventilée et retourne les splits', async () => {
+    const res = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 500,
+      description: 'Assurance',
+      splits: [
+        { subcategory_id: SEED.SUBCAT_AUTRE, amount: 200 },
+        { subcategory_id: SEED.SUBCAT_LOYER, amount: 300 },
+      ],
+      date: TODAY,
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.subcategory_id).toBeNull();
+    expect(res.body.splits).toHaveLength(2);
+  });
+
+  it('POST / retourne 400 si ni subcategory_id ni splits ne sont fournis', async () => {
+    const res = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Test',
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST / retourne 400 si subcategory_id et splits sont fournis simultanément', async () => {
+    const res = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Test',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      splits: [{ subcategory_id: SEED.SUBCAT_CINEMA, amount: 100 }],
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /:id passe une transaction normale en ventilée', async () => {
+    const create = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      description: 'Multi-poste',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    const id = create.body.id;
+    const res = await ctx.agent.put(`/api/transactions/${id}`).send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      description: 'Multi-poste ventilé',
+      splits: [
+        { subcategory_id: SEED.SUBCAT_AUTRE, amount: 100 },
+        { subcategory_id: SEED.SUBCAT_CINEMA, amount: 100 },
+      ],
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+      validated: false,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.subcategory_id).toBeNull();
+    expect(res.body.splits).toHaveLength(2);
+  });
+
+  it('GET / inclut les splits pour les transactions ventilées', async () => {
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 300,
+      description: 'Ventilée-list',
+      splits: [
+        { subcategory_id: SEED.SUBCAT_AUTRE, amount: 150 },
+        { subcategory_id: SEED.SUBCAT_LOYER, amount: 150 },
+      ],
+      date: TODAY,
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    const res = await ctx.agent.get('/api/transactions');
+    const tx = res.body.data.find(
+      (t: { description: string }) => t.description === 'Ventilée-list',
+    );
+    expect(tx).toBeDefined();
+    expect(tx.splits).toHaveLength(2);
+  });
 });

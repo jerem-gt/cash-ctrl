@@ -6,17 +6,34 @@ import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
 
-const transactionSchema = z.object({
-  account_id: z.number().int().positive(),
-  type: z.enum(['income', 'expense']),
-  amount: z.number().positive(),
-  description: z.string().min(1).max(200),
-  subcategory_id: z.number().int().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  payment_method_id: z.number().int().positive(),
-  notes: z.string().max(1000).nullable().default(null),
-  validated: z.boolean().default(false),
-});
+const transactionSchema = z
+  .object({
+    account_id: z.number().int().positive(),
+    type: z.enum(['income', 'expense']),
+    amount: z.number().positive(),
+    description: z.string().min(1).max(200),
+    subcategory_id: z.number().int().positive().nullable().default(null),
+    splits: z
+      .array(
+        z.object({
+          subcategory_id: z.number().int().positive(),
+          amount: z.number().positive(),
+        }),
+      )
+      .optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    payment_method_id: z.number().int().positive(),
+    notes: z.string().max(1000).nullable().default(null),
+    validated: z.boolean().default(false),
+  })
+  .refine(
+    (d) => {
+      const hasSub = d.subcategory_id !== null;
+      const hasSplits = (d.splits?.length ?? 0) > 0;
+      return hasSub !== hasSplits;
+    },
+    { message: 'Exactly one of subcategory_id or splits must be provided' },
+  );
 
 const transferUpdateSchema = z.object({
   amount: z.number().positive(),

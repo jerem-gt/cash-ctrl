@@ -111,6 +111,14 @@ export function initSchema(db: Database) {
             notes             TEXT,
             created_at        TEXT             DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS transaction_splits
+        (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            subcategory_id INTEGER NOT NULL REFERENCES subcategories (id),
+            amount         REAL    NOT NULL CHECK (amount > 0)
+        );
     `);
 
   // Migrations

@@ -64,4 +64,37 @@ describe('TxItem', () => {
     expect(screen.queryByTitle('Modifier')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Dupliquer')).not.toBeInTheDocument();
   });
+
+  it('affiche le badge "Ventilée" pour une transaction ventilée', () => {
+    const ventilatedTx: Transaction = {
+      ...baseTx,
+      validated: 0,
+      subcategory_id: null,
+      splits: [
+        { id: 1, subcategory_id: 1, amount: 10 },
+        { id: 2, subcategory_id: 2, amount: 14.5 },
+      ],
+    };
+    renderTx(ventilatedTx);
+    expect(screen.getByText('⊕ Ventilée')).toBeInTheDocument();
+  });
+
+  it('affiche "Ventilée (N)" dans le sous-titre pour une transaction ventilée', () => {
+    const ventilatedTx: Transaction = {
+      ...baseTx,
+      validated: 0,
+      subcategory_id: null,
+      splits: [
+        { id: 1, subcategory_id: 1, amount: 10 },
+        { id: 2, subcategory_id: 2, amount: 14.5 },
+      ],
+    };
+    renderTx(ventilatedTx);
+    expect(screen.getByText(/Ventilée \(2\)/)).toBeInTheDocument();
+  });
+
+  it('pas de badge "Ventilée" pour une transaction normale', () => {
+    renderTx(baseTx);
+    expect(screen.queryByText('⊕ Ventilée')).not.toBeInTheDocument();
+  });
 });

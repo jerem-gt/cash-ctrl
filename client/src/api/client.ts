@@ -9,6 +9,7 @@ import type {
   ScheduledTransaction,
   Transaction,
   TransactionFilters,
+  TransactionSplit,
   UserSettings,
 } from '@/types';
 
@@ -201,7 +202,8 @@ export const transactionsApi = {
     type: 'income' | 'expense';
     amount: number;
     description: string;
-    subcategory_id: number;
+    subcategory_id: number | null;
+    splits?: Pick<TransactionSplit, 'subcategory_id' | 'amount'>[];
     date: string;
     payment_method_id: number;
     notes?: string | null;
@@ -213,7 +215,8 @@ export const transactionsApi = {
       type: 'income' | 'expense';
       amount: number;
       description: string;
-      subcategory_id: number;
+      subcategory_id: number | null;
+      splits?: Pick<TransactionSplit, 'subcategory_id' | 'amount'>[];
       date: string;
       payment_method_id: number;
       notes: string | null;
