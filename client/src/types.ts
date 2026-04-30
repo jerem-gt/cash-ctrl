@@ -14,6 +14,12 @@ export interface AccountType {
 
 export type TransactionType = 'income' | 'expense';
 
+export interface TransactionSplit {
+  id: number;
+  subcategory_id: number;
+  amount: number;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -60,6 +66,7 @@ export interface Transaction {
   payment_method: string; // résolu par JOIN
   notes: string | null;
   account_name?: string;
+  splits?: TransactionSplit[];
 }
 
 export type RecurrenceUnit = 'day' | 'week' | 'month' | 'year';

@@ -6,8 +6,27 @@ import type {
   PaginatedResult,
   Transaction,
   TransactionFilters,
+  TransactionSplit,
   UpdateSharedTransactionInput,
 } from './transactions.types';
+
+interface TransactionRow extends Omit<Transaction, 'splits'> {
+  splits_json: string | null;
+}
+
+function parseSplits(row: TransactionRow): Transaction {
+  const { splits_json, ...rest } = row;
+  if (!splits_json) return rest;
+  const splits = JSON.parse(splits_json) as TransactionSplit[];
+  return splits.length > 0 ? { ...rest, splits } : rest;
+}
+
+const SPLITS_SUBQUERY = `
+  COALESCE(
+    (SELECT json_group_array(json_object('id', ts.id, 'subcategory_id', ts.subcategory_id, 'amount', ts.amount))
+     FROM transaction_splits ts WHERE ts.transaction_id = t.id),
+    '[]'
+  ) AS splits_json`;
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
@@ -18,7 +37,8 @@ const TX_WITH_DETAILS = `
          COALESCE(c.name, '')  as category,
          COALESCE(sc.name, '') as subcategory,
          COALESCE(pm.name, '') as payment_method,
-         (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
+         (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
+         ${SPLITS_SUBQUERY}
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -69,8 +89,8 @@ export function createTransactionsRepo(db: Database) {
           .get(...params) as { count: number }
       ).count;
 
-      const data = db
-        .prepare<(number | string)[], Transaction>(
+      const rawRows = db
+        .prepare<(number | string)[], TransactionRow>(
           `
         SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
                t.subcategory_id, t.payment_method_id, t.date, t.transfer_peer_id,
@@ -80,12 +100,14 @@ export function createTransactionsRepo(db: Database) {
                COALESCE(c.name, '')  AS category,
                COALESCE(sc.name, '') AS subcategory,
                COALESCE(pm.name, '') AS payment_method,
-               (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id
+               (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
+               ${SPLITS_SUBQUERY}
         ${FROM_WHERE}${conditions}
         ORDER BY t.date DESC, t.created_at DESC
         LIMIT ? OFFSET ?`,
         )
         .all(...params, limit, (page - 1) * limit);
+      const data = rawRows.map(parseSplits);
 
       const totalPages = Math.max(1, Math.ceil(total / limit));
       return { data, total, page, totalPages };
@@ -103,7 +125,8 @@ export function createTransactionsRepo(db: Database) {
     },
 
     getWithDetails(id: number): Transaction | undefined {
-      return db.prepare<[number], Transaction>(TX_WITH_DETAILS).get(id) ?? undefined;
+      const row = db.prepare<[number], TransactionRow>(TX_WITH_DETAILS).get(id);
+      return row ? parseSplits(row) : undefined;
     },
 
     accountExists(accountId: number, userId: number): boolean {
@@ -113,21 +136,31 @@ export function createTransactionsRepo(db: Database) {
     },
 
     create(userId: number, data: CreateTransactionInput) {
-      return db
-        .prepare(
-          'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        )
-        .run(
-          userId,
-          data.account_id,
-          data.type,
-          data.amount,
-          data.description,
-          data.subcategory_id,
-          data.date,
-          data.payment_method_id,
-          data.notes,
-        );
+      return db.transaction(() => {
+        const result = db
+          .prepare(
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          )
+          .run(
+            userId,
+            data.account_id,
+            data.type,
+            data.amount,
+            data.description,
+            data.subcategory_id,
+            data.date,
+            data.payment_method_id,
+            data.notes,
+          );
+        if (data.splits?.length) {
+          const txId = Number(result.lastInsertRowid);
+          const ins = db.prepare(
+            'INSERT INTO transaction_splits (transaction_id, subcategory_id, amount) VALUES (?, ?, ?)',
+          );
+          for (const s of data.splits) ins.run(txId, s.subcategory_id, s.amount);
+        }
+        return result;
+      })();
     },
 
     createScheduled(userId: number, data: CreateScheduledTransactionInput): number {
@@ -158,23 +191,33 @@ export function createTransactionsRepo(db: Database) {
     },
 
     update(userId: number, id: number, data: CreateTransactionInput) {
-      return db
-        .prepare(
-          'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, subcategory_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?',
-        )
-        .run(
-          data.account_id,
-          data.type,
-          data.amount,
-          data.description,
-          data.subcategory_id,
-          data.date,
-          data.payment_method_id,
-          data.notes,
-          data.validated ? 1 : 0,
-          id,
-          userId,
-        );
+      return db.transaction(() => {
+        const result = db
+          .prepare(
+            'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, subcategory_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?',
+          )
+          .run(
+            data.account_id,
+            data.type,
+            data.amount,
+            data.description,
+            data.subcategory_id,
+            data.date,
+            data.payment_method_id,
+            data.notes,
+            data.validated ? 1 : 0,
+            id,
+            userId,
+          );
+        db.prepare('DELETE FROM transaction_splits WHERE transaction_id = ?').run(id);
+        if (data.splits?.length) {
+          const ins = db.prepare(
+            'INSERT INTO transaction_splits (transaction_id, subcategory_id, amount) VALUES (?, ?, ?)',
+          );
+          for (const s of data.splits) ins.run(id, s.subcategory_id, s.amount);
+        }
+        return result;
+      })();
     },
 
     updateBothShared(

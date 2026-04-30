@@ -1,3 +1,9 @@
+export interface TransactionSplit {
+  id: number;
+  subcategory_id: number;
+  amount: number;
+}
+
 export interface Transaction {
   id: number;
   user_id: number;
@@ -19,6 +25,7 @@ export interface Transaction {
   notes: string | null;
   created_at: string;
   account_name?: string;
+  splits?: TransactionSplit[];
 }
 
 export interface CreateScheduledTransactionInput {
@@ -38,7 +45,8 @@ export interface CreateTransactionInput {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  subcategory_id: number;
+  subcategory_id: number | null;
+  splits?: { subcategory_id: number; amount: number }[];
   date: string;
   payment_method_id: number;
   notes: string | null;

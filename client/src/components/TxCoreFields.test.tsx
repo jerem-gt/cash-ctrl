@@ -56,6 +56,13 @@ describe('TxCoreFields', () => {
     expect(screen.queryByText(/CB/)).not.toBeInTheDocument();
   });
 
+  it('masque les catégories quand hideCategories est true', () => {
+    render(<TxCoreFields {...defaultProps} hideCategories />);
+    expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Logement')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('0,00')).toBeInTheDocument();
+  });
+
   it('affiche le sélecteur de compte destination en mode transfert', () => {
     render(<TxCoreFields {...defaultProps} isTransfer />);
     expect(screen.getByText('Compte destination')).toBeInTheDocument();

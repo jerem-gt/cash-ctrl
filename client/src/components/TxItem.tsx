@@ -49,6 +49,9 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }:
             {tx.description}
           </p>
           {isTransfer && <Badge variant="blue">↔ Transfert</Badge>}
+          {!isTransfer && tx.splits && tx.splits.length > 0 && (
+            <Badge variant="indigo">⊕ Ventilée</Badge>
+          )}
           {isScheduled && isFuture && <Badge variant="indigo">↻ À venir</Badge>}
           {isScheduled && !isFuture && (
             <span className="text-[10px] text-stone-300 shrink-0" title="Transaction planifiée">
@@ -58,7 +61,7 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }:
           {validated && <Badge variant="green">✓ Validée</Badge>}
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1 flex-wrap">
-          <span>{tx.category} ·</span>
+          <span>{tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.category} ·</span>
           {accounts && logoMap ? (
             <AccountBadge name={tx.account_name ?? ''} bank={account?.bank} logo={logo} />
           ) : null}

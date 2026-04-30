@@ -2,6 +2,7 @@ import { type SubmitEvent, useState } from 'react';
 
 import { AccountSelect } from '@/components/AccountSelect';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
+import { type SplitInput, TxSplitEditor } from '@/components/TxSplitEditor';
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
@@ -18,6 +19,8 @@ export type TxFormState = {
   payment_method_id: string;
   notes: string;
   validated: boolean;
+  isVentilated: boolean;
+  splits: { subcategory_id: number; amount: number }[];
 };
 
 type BaseProps = {
@@ -90,8 +93,8 @@ function initCore(
     type: isDuplicate && isTransfer ? 'expense' : source.type,
     amount: String(source.amount),
     description: source.description,
-    category_id: String(source.category_id),
-    subcategory_id: String(source.subcategory_id),
+    category_id: source.category_id != null ? String(source.category_id) : '',
+    subcategory_id: source.subcategory_id != null ? String(source.subcategory_id) : '',
     account_id: fixedAccountId ? String(fixedAccountId) : account_id,
     to_account_id,
     payment_method_id: String(source.payment_method_id),
@@ -181,6 +184,32 @@ export function TxModal(props: Readonly<Props>) {
   const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : (duplicateFrom?.notes ?? ''));
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
   const [isTransfer, setIsTransfer] = useState(!!duplicateFrom?.transfer_peer_id);
+  const [isVentilated, setIsVentilated] = useState(() => !!(tx ?? duplicateFrom)?.splits?.length);
+  const [splits, setSplits] = useState<SplitInput[]>(() => {
+    const source = tx ?? duplicateFrom;
+    if (!source?.splits?.length) return [];
+    return source.splits.map((s) => ({
+      _key: String(s.subcategory_id),
+      category_id: String(
+        categories.find((c) => c.subcategories.some((sub) => sub.id === s.subcategory_id))?.id ??
+          '',
+      ),
+      subcategory_id: String(s.subcategory_id),
+      amount: String(s.amount),
+    }));
+  });
+
+  const validateSplits = (rows: SplitInput[], total: number): string | null => {
+    if (rows.length === 0) return 'Ajoutez au moins une ligne de ventilation.';
+    for (const s of rows) {
+      if (!s.subcategory_id) return 'Chaque ligne doit avoir une sous-catégorie.';
+      if (!(Number.parseFloat(s.amount) > 0)) return 'Chaque ligne doit avoir un montant positif.';
+    }
+    const sum = rows.reduce((acc, s) => acc + Number.parseFloat(s.amount), 0);
+    if (Math.abs(sum - total) > 0.01)
+      return `Total ventilation (${sum.toFixed(2)} €) ≠ montant (${total.toFixed(2)} €).`;
+    return null;
+  };
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
@@ -190,6 +219,8 @@ export function TxModal(props: Readonly<Props>) {
   const handleModeToggle = (toTransfer: boolean) => {
     setIsTransfer(toTransfer);
     if (toTransfer) {
+      setIsVentilated(false);
+      setSplits([]);
       const srcId = fixedAccountId ?? Number.parseInt(core.account_id);
       const src = accounts.find((a) => a.id === srcId);
       setCore((c) => ({
@@ -205,12 +236,19 @@ export function TxModal(props: Readonly<Props>) {
   };
 
   const submitEdit = () => {
+    if (isVentilated) {
+      const err = validateSplits(splits, Number.parseFloat(core.amount));
+      if (err) {
+        showToast(err);
+        return;
+      }
+    }
     if (
       !core.amount ||
       !core.description ||
       (isTransferEdit && (!core.account_id || !core.to_account_id)) ||
       (!isTransferEdit && !core.account_id) ||
-      (!isTransferEdit && !core.subcategory_id) ||
+      (!isTransferEdit && !isVentilated && !core.subcategory_id) ||
       (!isTransferEdit && !core.payment_method_id)
     ) {
       showToast('Veuillez remplir tous les champs obligatoires.');
@@ -227,6 +265,11 @@ export function TxModal(props: Readonly<Props>) {
       payment_method_id: core.payment_method_id,
       notes,
       validated,
+      isVentilated,
+      splits: splits.map((s) => ({
+        subcategory_id: Number.parseInt(s.subcategory_id),
+        amount: Number.parseFloat(s.amount),
+      })),
     });
   };
 
@@ -256,14 +299,21 @@ export function TxModal(props: Readonly<Props>) {
   };
 
   const submitTx = () => {
-    const subcategoryId = Number.parseInt(core.subcategory_id);
+    if (isVentilated) {
+      const err = validateSplits(splits, Number.parseFloat(core.amount));
+      if (err) {
+        showToast(err);
+        return;
+      }
+    }
+    const subcategoryId = isVentilated ? 0 : Number.parseInt(core.subcategory_id);
     const pmId = Number.parseInt(core.payment_method_id);
     if (
       !core.amount ||
       !core.description ||
       !pmId ||
       (fixedAccountId == null && !core.account_id) ||
-      !subcategoryId
+      (!isVentilated && !subcategoryId)
     ) {
       showToast('Veuillez remplir tous les champs obligatoires.');
       return;
@@ -273,7 +323,13 @@ export function TxModal(props: Readonly<Props>) {
         type: core.type,
         amount: Number.parseFloat(core.amount),
         description: core.description,
-        subcategory_id: subcategoryId,
+        subcategory_id: isVentilated ? null : subcategoryId,
+        splits: isVentilated
+          ? splits.map((s) => ({
+              subcategory_id: Number.parseInt(s.subcategory_id),
+              amount: Number.parseFloat(s.amount),
+            }))
+          : undefined,
         account_id: fixedAccountId ?? Number.parseInt(core.account_id),
         date,
         payment_method_id: pmId,
@@ -365,16 +421,48 @@ export function TxModal(props: Readonly<Props>) {
                 </div>
               </div>
             ) : (
-              <TxCoreFields
-                value={core}
-                onChange={(patch) => setCore((c) => ({ ...c, ...patch }))}
-                accounts={accounts}
-                logoMap={logoMap}
-                categories={categories}
-                paymentMethods={paymentMethods}
-                isTransfer={isTransferCreate}
-                fixedAccountId={fixedAccountId}
-              />
+              <>
+                <TxCoreFields
+                  value={core}
+                  onChange={(patch) => setCore((c) => ({ ...c, ...patch }))}
+                  accounts={accounts}
+                  logoMap={logoMap}
+                  categories={categories}
+                  paymentMethods={paymentMethods}
+                  isTransfer={isTransferCreate}
+                  fixedAccountId={fixedAccountId}
+                  hideCategories={isVentilated}
+                />
+                {!isTransferCreate && (
+                  <>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsVentilated((v) => !v);
+                          setSplits([]);
+                          setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
+                        }}
+                        className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
+                          isVentilated
+                            ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                            : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        {isVentilated ? '⊕ Ventilée' : 'Ventiler'}
+                      </button>
+                    </div>
+                    {isVentilated && (
+                      <TxSplitEditor
+                        splits={splits}
+                        onChange={setSplits}
+                        categories={categories}
+                        totalAmount={Number.parseFloat(core.amount) || 0}
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
 
             <div className="flex gap-3 flex-wrap items-end">

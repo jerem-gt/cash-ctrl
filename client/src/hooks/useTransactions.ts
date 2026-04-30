@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
-import type { PaginatedTransactions, TransactionFilters } from '@/types';
+import type { PaginatedTransactions, TransactionFilters, TransactionSplit } from '@/types';
 
 type UpdatePayload = {
   id: number;
@@ -9,7 +9,8 @@ type UpdatePayload = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  subcategory_id: number;
+  subcategory_id: number | null;
+  splits?: Pick<TransactionSplit, 'subcategory_id' | 'amount'>[];
   date: string;
   payment_method_id: number;
   notes: string | null;

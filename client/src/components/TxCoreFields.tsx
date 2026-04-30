@@ -23,6 +23,8 @@ interface Props {
   isTransfer: boolean;
   /** Si fourni, le sélecteur de compte source est masqué et ce compte est utilisé. */
   fixedAccountId?: number;
+  /** Masque les sélecteurs catégorie/sous-catégorie (mode ventilation). */
+  hideCategories?: boolean;
 }
 
 type AccountRef = { name: string; bank?: string | null };
@@ -43,6 +45,7 @@ export function TxCoreFields({
   paymentMethods,
   isTransfer,
   fixedAccountId,
+  hideCategories,
 }: Readonly<Props>) {
   const sourceAccount =
     fixedAccountId == null
@@ -113,7 +116,7 @@ export function TxCoreFields({
 
       {/* Ligne 2 : catégorie (masquée transfert) + compte(s) + moyen de paiement (masqué transfert) */}
       <div className="flex gap-3 flex-wrap">
-        {!isTransfer && (
+        {!isTransfer && !hideCategories && (
           <>
             <FormGroup label="Catégorie">
               <Select

@@ -148,6 +148,52 @@ describe('useTransactionsManager', () => {
       expect(mockDelete).toHaveBeenCalledWith(50, expect.any(Object));
     });
 
+    it('handleUpdate passe subcategory_id=null et splits pour une transaction ventilée', () => {
+      const mockUpdate = vi.fn();
+      vi.mocked(useUpdateTransaction).mockReturnValue({
+        mutate: mockUpdate,
+        isPending: false,
+      } as unknown as ReturnType<typeof useUpdateTransaction>);
+
+      const { result } = renderHook(() => useTransactionsManager());
+      const tx = { id: 10, transfer_peer_id: null } as Transaction;
+
+      act(() => {
+        result.current.actions.openEdit(tx);
+      });
+      act(() => {
+        result.current.actions.handleUpdate({
+          type: 'expense',
+          amount: '500',
+          description: 'Assurance',
+          subcategory_id: '',
+          account_id: '1',
+          to_account_id: '',
+          date: '2026-01-01',
+          payment_method_id: '1',
+          notes: '',
+          validated: false,
+          isVentilated: true,
+          splits: [
+            { subcategory_id: 1, amount: 300 },
+            { subcategory_id: 2, amount: 200 },
+          ],
+        });
+      });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 10,
+          subcategory_id: null,
+          splits: [
+            { subcategory_id: 1, amount: 300 },
+            { subcategory_id: 2, amount: 200 },
+          ],
+        }),
+        expect.any(Object),
+      );
+    });
+
     it('ne devrait rien faire si handleDelete est appelé sans modale delete ouverte', () => {
       const mockDelete = vi.fn();
       vi.mocked(useDeleteTransaction).mockReturnValue({
