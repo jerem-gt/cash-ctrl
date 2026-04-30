@@ -12,7 +12,7 @@ import type {
 export const ACCOUNTS: Account[] = [
   {
     id: 1,
-    name: 'Compte courant',
+    name: 'Compte test',
     bank_id: 1,
     bank: 'BNP',
     account_type_id: 1,
@@ -21,21 +21,18 @@ export const ACCOUNTS: Account[] = [
     opening_date: '2024-01-01',
     balance: 1500,
   },
+  {
+    id: 2,
+    name: 'Livret A',
+    bank: 'LCL',
+    bank_id: 2,
+    account_type_id: 1,
+    type: 'Livret',
+    initial_balance: 0,
+    opening_date: null,
+    balance: 500,
+  },
 ];
-
-const ACCOUNT_B: Account = {
-  id: 2,
-  name: 'Livret A',
-  bank: 'LCL',
-  bank_id: 2,
-  account_type_id: 1,
-  type: 'Livret',
-  initial_balance: 0,
-  opening_date: null,
-  balance: 500,
-};
-
-export const TWO_ACCOUNTS = [...ACCOUNTS, ACCOUNT_B];
 
 export const ACCOUNT_TYPES: AccountType[] = [{ id: 1, name: 'Courant', acc_count: 1 }];
 

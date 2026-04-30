@@ -25,12 +25,12 @@ type BaseProps = {
   logoMap: Record<string, string | null>;
   categories: Pick<Category, 'id' | 'name' | 'subcategories'>[];
   paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
+  fixedAccountId?: number;
   onClose: () => void;
 };
 
 type CreateProps = BaseProps & {
   mode: 'create';
-  fixedAccountId?: number;
   duplicateFrom?: Transaction;
 };
 type EditProps = BaseProps & {
@@ -55,11 +55,11 @@ function emptyCore(fixedAccountId?: number): TxCoreState {
   };
 }
 
-function resolveTransferAccounts(tx: Transaction): { account_id: string; to_account_id: string } {
+function getTransferAccounts(tx: Transaction): { from: string; to: string } {
   const isExpense = tx.type === 'expense';
   return {
-    account_id: isExpense ? String(tx.account_id) : String(tx.transfer_peer_account_id ?? ''),
-    to_account_id: isExpense ? String(tx.transfer_peer_account_id ?? '') : String(tx.account_id),
+    from: String(isExpense ? tx.account_id : (tx.transfer_peer_account_id ?? tx.account_id)),
+    to: String(isExpense ? (tx.transfer_peer_account_id ?? '') : tx.account_id),
   };
 }
 
@@ -68,56 +68,34 @@ function initCore(
   duplicateFrom: Transaction | undefined,
   fixedAccountId: number | undefined,
 ): TxCoreState {
-  if (tx !== null) {
-    const isTransferTx = tx.transfer_peer_id !== null;
-    const { account_id, to_account_id } = isTransferTx
-      ? resolveTransferAccounts(tx)
-      : { account_id: String(tx.account_id), to_account_id: '' };
-    return {
-      type: tx.type,
-      amount: String(tx.amount),
-      description: tx.description,
-      category_id: String(tx.category_id ?? ''),
-      subcategory_id: String(tx.subcategory_id ?? ''),
-      account_id,
-      to_account_id,
-      payment_method_id: String(tx.payment_method_id ?? ''),
-    };
+  // 1. Déterminer la source de données (Priorité : Edition > Duplication > Vide)
+  const source = tx ?? duplicateFrom;
+  if (!source) return emptyCore(fixedAccountId);
+
+  // 2. Initialisation des valeurs par défaut
+  const isTransfer = source.transfer_peer_id !== null;
+  const isDuplicate = !tx && !!duplicateFrom;
+
+  // Logique spécifique pour les comptes
+  let account_id = String(source.account_id);
+  let to_account_id = '';
+  if (isTransfer) {
+    const accounts = getTransferAccounts(source);
+    account_id = accounts.from;
+    to_account_id = accounts.to;
   }
-  if (duplicateFrom) {
-    if (duplicateFrom.transfer_peer_id !== null) {
-      const fromId =
-        duplicateFrom.type === 'expense'
-          ? duplicateFrom.account_id
-          : (duplicateFrom.transfer_peer_account_id ?? duplicateFrom.account_id);
-      const toId =
-        duplicateFrom.type === 'expense'
-          ? (duplicateFrom.transfer_peer_account_id ?? 0)
-          : duplicateFrom.account_id;
-      return {
-        type: 'expense',
-        amount: String(duplicateFrom.amount),
-        description: duplicateFrom.description,
-        category_id: '',
-        subcategory_id: '',
-        account_id: String(fromId),
-        to_account_id: String(toId),
-        payment_method_id: '',
-      };
-    }
-    return {
-      type: duplicateFrom.type,
-      amount: String(duplicateFrom.amount),
-      description: duplicateFrom.description,
-      category_id: String(duplicateFrom.category_id ?? ''),
-      subcategory_id: String(duplicateFrom.subcategory_id ?? ''),
-      account_id:
-        fixedAccountId == null ? String(duplicateFrom.account_id) : String(fixedAccountId),
-      to_account_id: '',
-      payment_method_id: String(duplicateFrom.payment_method_id ?? ''),
-    };
-  }
-  return emptyCore(fixedAccountId);
+
+  // 3. Retourner l'état consolidé
+  return {
+    type: isDuplicate && isTransfer ? 'expense' : source.type,
+    amount: String(source.amount),
+    description: source.description,
+    category_id: String(source.category_id),
+    subcategory_id: String(source.subcategory_id),
+    account_id: fixedAccountId ? String(fixedAccountId) : account_id,
+    to_account_id,
+    payment_method_id: String(source.payment_method_id),
+  };
 }
 
 function getTitle(isEdit: boolean, isTransfer: boolean, isDuplicate: boolean): string {
@@ -194,7 +172,7 @@ export function TxModal(props: Readonly<Props>) {
   const tx = isEdit ? props.tx : null;
   const isTransferEdit = tx != null && tx.transfer_peer_id !== null;
 
-  const fixedAccountId = isEdit ? undefined : (props as CreateProps).fixedAccountId;
+  const fixedAccountId = props.fixedAccountId;
   const duplicateFrom = isEdit ? undefined : (props as CreateProps).duplicateFrom;
   const isDuplicate = duplicateFrom != null;
 

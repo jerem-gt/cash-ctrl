@@ -21,13 +21,13 @@ function renderDetail(id = '1') {
 describe('AccountDetailPage', () => {
   it('affiche le nom du compte après chargement', async () => {
     renderDetail();
-    await screen.findByText('Compte courant');
-    expect(screen.getByText('Compte courant')).toBeInTheDocument();
+    await screen.findByText('Compte test');
+    expect(screen.getByText('Compte test')).toBeInTheDocument();
   });
 
   it('affiche le solde du compte', async () => {
     renderDetail();
-    await screen.findByText('Compte courant');
+    await screen.findByText('Compte test');
     expect(screen.getByText(/1.500/)).toBeInTheDocument();
   });
 
@@ -51,16 +51,8 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: /ajouter/i }));
-    expect(screen.getByText('Nouvelle transaction')).toBeInTheDocument();
-  });
-
-  it('ouvre la confirmation de suppression du compte', async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Compte courant');
-    await user.click(screen.getByText('Supprimer'));
-    expect(screen.getByText('Supprimer le compte')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /\+ nouvelle transaction/i }));
+    expect(screen.getByText('Transaction validée')).toBeInTheDocument();
   });
 
   it("affiche l'état vide si aucune transaction", async () => {
@@ -70,26 +62,9 @@ describe('AccountDetailPage', () => {
       ),
     );
     renderDetail();
-    expect(await screen.findByText('Aucune transaction sur ce compte')).toBeInTheDocument();
-  });
-
-  it("ouvre le modal d'édition du compte", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Compte courant');
-    await user.click(screen.getByText('Modifier'));
-    expect(screen.getByText('Modifier le compte')).toBeInTheDocument();
-  });
-
-  it('confirme la suppression du compte', async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Compte courant');
-    await user.click(screen.getByText('Supprimer'));
-    await user.click(screen.getByRole('button', { name: /confirmer/i }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('supprimé'),
-    );
+    await waitFor(() => {
+      expect(screen.getByText('Aucune transaction sur ce compte')).toBeInTheDocument();
+    });
   });
 
   it('ouvre la modal de suppression de transaction (×)', async () => {
@@ -139,18 +114,6 @@ describe('AccountDetailPage', () => {
     );
   });
 
-  it("soumet le formulaire d'édition du compte", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Compte courant');
-    await user.click(screen.getByText('Modifier'));
-    await screen.findByText('Modifier le compte');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('mis à jour'),
-    );
-  });
-
   it("affiche le bon message lors de la suppression d'un transfert", async () => {
     const user = userEvent.setup();
     // On simule une transaction qui est un transfert
@@ -166,6 +129,7 @@ describe('AccountDetailPage', () => {
     );
 
     renderDetail();
+    await screen.findByText('Courses');
     const deleteBtn = await screen.findByRole('button', { name: '×' });
     await user.click(deleteBtn);
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
@@ -190,6 +154,7 @@ describe('AccountDetailPage', () => {
     );
 
     renderDetail();
+    await screen.findByText('Courses');
     const editBtn = await screen.findByRole('button', { name: '✎' });
     await user.click(editBtn);
 
@@ -201,23 +166,6 @@ describe('AccountDetailPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('modifiée'),
     );
-  });
-
-  it("affiche un message d'erreur si la mise à jour du compte échoue", async () => {
-    const user = userEvent.setup();
-    // Simuler une erreur API
-    server.use(
-      http.patch('/api/accounts/:id', () => {
-        return new HttpResponse(null, { status: 400, statusText: 'Erreur Serveur' });
-      }),
-    );
-
-    renderDetail();
-    await user.click(screen.getByText('Modifier'));
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-
-    // Attend que le toast affiche l'erreur (le message dépend de ton hook/API)
-    await waitFor(() => expect(document.getElementById('toast')).toBeInTheDocument());
   });
 
   it("cache le logo du compte si l'image est corrompue", async () => {
@@ -234,13 +182,13 @@ describe('AccountDetailPage', () => {
     vi.setSystemTime(new Date('2026-04-01'));
     renderDetail();
     // Vérifie que le texte généré par accountSeniority est présent
-    expect(await screen.findByText(/depuis 2 ans 3 mois/i)).toBeInTheDocument();
+    expect(await screen.findByText(/2 ans 3 mois/i)).toBeInTheDocument();
   });
 
   it('ouvre et ferme toutes les modales', async () => {
     const user = userEvent.setup();
     renderDetail();
-    await screen.findByText('Compte courant');
+    await screen.findByText('Compte test');
 
     // Test Modale Edition Transaction
     const editTxBtns = await screen.findAllByRole('button', { name: '✎' });

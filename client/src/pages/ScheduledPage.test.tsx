@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import ScheduledPage from '@/pages/ScheduledPage.tsx';
-import { SCHEDULED, TWO_ACCOUNTS } from '@/tests/fixtures';
+import { SCHEDULED } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -360,7 +360,6 @@ describe('ScheduledPage', () => {
 
   it('ScheduledRow : affiche le compte destination pour un transfert connu', async () => {
     server.use(
-      http.get('/api/accounts', () => HttpResponse.json(TWO_ACCOUNTS)),
       http.get('/api/scheduled', () =>
         HttpResponse.json([{ ...SCHEDULED[0], payment_method: 'Transfert', to_account_id: 2 }]),
       ),

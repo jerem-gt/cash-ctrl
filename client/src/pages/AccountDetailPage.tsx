@@ -1,24 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { type AccountFormState, AccountModal } from '@/components/AccountModal';
-import { DeleteTxModal } from '@/components/DeleteTxModal';
 import { TransactionsList } from '@/components/TransactionsList';
-import { type TxFormState, TxModal } from '@/components/TxModal';
-import { Button, ConfirmModal, Pagination, showToast } from '@/components/ui';
-import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
-import { useAccountTypes } from '@/hooks/useAccountTypes';
+import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
-import { useCategories } from '@/hooks/useCategories';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import {
-  useDeleteTransaction,
-  useTransactions,
-  useUpdateTransaction,
-} from '@/hooks/useTransactions';
 import { accountSeniority } from '@/lib/account';
 import { fmtDec } from '@/lib/format';
-import type { Transaction } from '@/types';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,107 +13,10 @@ export default function AccountDetailPage() {
   const navigate = useNavigate();
 
   const { data: accounts = [] } = useAccounts();
-  const { data: categories = [] } = useCategories();
-  const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
-  const { data: paymentMethods = [] } = usePaymentMethods();
-  const deleteAccount = useDeleteAccount();
-  const updateAccount = useUpdateAccount();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
-  const { data: result, isLoading } = useTransactions({ account_id: accountId, page, limit });
-  const deleteTxMutation = useDeleteTransaction();
-  const updateTx = useUpdateTransaction();
 
   const account = accounts.find((a) => a.id === accountId);
-  const transactions = result?.data ?? [];
-  const total = result?.total ?? 0;
-  const totalPages = result?.totalPages ?? 1;
-
-  const [addOpen, setAddOpen] = useState(false);
-  const [editTx, setEditTx] = useState<Transaction | null>(null);
-  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
-  const [deleteTx, setDeleteTx] = useState<Transaction | null>(null);
-  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
-  const [editAccountOpen, setEditAccountOpen] = useState(false);
-
-  const handleDeleteTx = () => {
-    if (!deleteTx) return;
-    deleteTxMutation.mutate(deleteTx.id, {
-      onSuccess: () => {
-        setDeleteTx(null);
-        showToast(deleteTx.transfer_peer_id ? 'Transfert supprimé' : 'Transaction supprimée');
-      },
-    });
-  };
-
-  const handleUpdateTx = (data: TxFormState) => {
-    if (!editTx) return;
-    const payload = editTx.transfer_peer_id
-      ? {
-          id: editTx.id,
-          amount: Number.parseFloat(data.amount),
-          description: data.description,
-          date: data.date,
-          type: editTx.type,
-          account_id: editTx.account_id,
-          subcategory_id: editTx.subcategory_id ?? 0,
-          payment_method_id: editTx.payment_method_id ?? 0,
-          notes: editTx.notes,
-          validated: !!editTx.validated,
-          from_account_id: Number.parseInt(data.account_id) || undefined,
-          to_account_id: Number.parseInt(data.to_account_id) || undefined,
-        }
-      : {
-          id: editTx.id,
-          type: data.type,
-          amount: Number.parseFloat(data.amount),
-          description: data.description,
-          subcategory_id: Number.parseInt(data.subcategory_id),
-          account_id: Number.parseInt(data.account_id),
-          date: data.date,
-          payment_method_id: Number.parseInt(data.payment_method_id),
-          notes: data.notes || null,
-          validated: data.validated,
-        };
-    updateTx.mutate(payload, {
-      onSuccess: () => {
-        setEditTx(null);
-        showToast('Transaction modifiée ✓');
-      },
-      onError: (e) => showToast(e.message),
-    });
-  };
-
-  const handleDeleteAccount = () => {
-    deleteAccount.mutate(accountId, {
-      onSuccess: () => {
-        navigate('/accounts');
-        showToast('Compte supprimé');
-      },
-    });
-  };
-
-  const handleEditAccount = (data: AccountFormState) => {
-    updateAccount.mutate(
-      {
-        id: accountId,
-        name: data.name.trim(),
-        bank_id: Number.parseInt(data.bank_id) || null,
-        account_type_id: Number.parseInt(data.account_type_id) || null,
-        initial_balance: Number.parseFloat(data.initial_balance) || 0,
-        opening_date: data.opening_date,
-      },
-      {
-        onSuccess: () => {
-          setEditAccountOpen(false);
-          showToast('Compte mis à jour ✓');
-        },
-        onError: (err) => showToast(err.message),
-      },
-    );
-  };
 
   if (!account && accounts.length > 0) {
     return (
@@ -146,163 +36,76 @@ export default function AccountDetailPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <button
-          onClick={() => navigate('/accounts')}
-          className="text-xs text-stone-400 hover:text-stone-600 transition-colors mb-3 block"
-        >
-          ← Comptes
-        </button>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
+        <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="flex gap-5 items-start">
+              {/* Conteneur Logo */}
               {account?.bank && logoMap[account.bank] && (
-                <img
-                  src={logoMap[account.bank]!}
-                  alt={`Logo ${account.bank}`}
-                  className="w-6 h-6 object-contain rounded shrink-0"
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
+                <div className="flex-shrink-0 w-14 h-14 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0,04)] border border-stone-200 flex items-center justify-center p-2.5">
+                  <img
+                    src={logoMap[account.bank]!}
+                    alt={`Logo ${account.bank}`}
+                    className="w-full h-full object-contain"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
+                </div>
               )}
-              <h2 className="font-serif text-2xl tracking-tight">{account?.name ?? '…'}</h2>
-              {account?.bank && <span className="text-stone-400 text-base">({account.bank})</span>}
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-stone-500 font-medium text-xs tracking-wide">
+                  <span className="uppercase">{account?.bank}</span>
+                  <span className="text-stone-300">•</span>
+                  <span>{account?.type}</span>
+                </div>
+
+                <h2 className="font-serif text-4xl text-stone-900 tracking-tight">
+                  {account?.name ?? 'Compte'}
+                </h2>
+
+                {account?.opening_date && (
+                  <p className="text-sm text-stone-500 font-medium">
+                    <span className="text-stone-400">Ouvert le</span>{' '}
+                    {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                    <span className="mx-2 text-stone-300">—</span>
+                    <span className="bg-stone-200/50 text-stone-600 px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
+                      {accountSeniority(account.opening_date)}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-stone-400 mt-0.5">{account?.type ?? ''}</p>
-            {account?.opening_date && (
-              <p className="text-xs text-stone-400 mt-1">
-                Ouvert le{' '}
-                {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-                {' · '}depuis {accountSeniority(account.opening_date)}
+
+            {/* Section Solde */}
+            <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[200px]">
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
+                Solde disponible
+              </span>
+              <p
+                className={`font-serif text-4xl leading-none ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
+              >
+                {fmtDec(account?.balance ?? 0)}
               </p>
-            )}
-          </div>
-          <div className="text-right">
-            <p
-              className={`font-serif text-3xl ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
-            >
-              {fmtDec(account?.balance ?? 0)}
-            </p>
-            <div className="flex gap-3 justify-end mt-1">
-              <button
-                onClick={() => setEditAccountOpen(true)}
-                className="text-[11px] text-stone-400 hover:text-stone-700 transition-colors"
-              >
-                Modifier
-              </button>
-              <button
-                onClick={() => setConfirmDeleteAccount(true)}
-                className="text-[11px] text-stone-300 hover:text-red-400 transition-colors"
-              >
-                Supprimer
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Transaction list */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Transactions
-          </p>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-stone-400">{total} transaction(s)</span>
-            <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
-              + Ajouter
-            </Button>
-          </div>
-        </div>
-        <TransactionsList
-          isLoading={isLoading}
-          transactions={transactions}
-          accounts={accounts}
-          logoMap={logoMap}
-          onEdit={setEditTx}
-          onDuplicate={setDuplicateTx}
-          onDelete={setDeleteTx}
-          emptyMessage="Aucune transaction sur ce compte"
-        />
-        {(totalPages > 1 || total > 10) && (
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            limit={limit}
-            onChange={setPage}
-            onLimitChange={(l) => {
-              setLimit(l);
-              setPage(1);
-            }}
-          />
-        )}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+          Transactions
+        </p>
       </div>
-
-      {addOpen && (
-        <TxModal
-          mode="create"
-          accounts={accounts}
-          logoMap={logoMap}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          fixedAccountId={accountId}
-          onClose={() => setAddOpen(false)}
-        />
-      )}
-      {duplicateTx && (
-        <TxModal
-          mode="create"
-          accounts={accounts}
-          logoMap={logoMap}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          fixedAccountId={duplicateTx.transfer_peer_id ? undefined : accountId}
-          duplicateFrom={duplicateTx}
-          onClose={() => setDuplicateTx(null)}
-        />
-      )}
-      {deleteTx && (
-        <DeleteTxModal
-          tx={deleteTx}
-          onConfirm={handleDeleteTx}
-          onCancel={() => setDeleteTx(null)}
-        />
-      )}
-      {editTx && (
-        <TxModal
-          mode="edit"
-          tx={editTx}
-          accounts={accounts}
-          logoMap={logoMap}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          onSave={handleUpdateTx}
-          onClose={() => setEditTx(null)}
-          isPending={updateTx.isPending}
-        />
-      )}
-      {confirmDeleteAccount && (
-        <ConfirmModal
-          title="Supprimer le compte"
-          body="Toutes les transactions associées seront supprimées. Cette action est irréversible."
-          onConfirm={handleDeleteAccount}
-          onCancel={() => setConfirmDeleteAccount(false)}
-        />
-      )}
-      {editAccountOpen && account && (
-        <AccountModal
-          mode="edit"
-          account={account}
-          banks={banks}
-          accountTypes={accountTypes}
-          onSave={handleEditAccount}
-          onClose={() => setEditAccountOpen(false)}
-          isPending={updateAccount.isPending}
-        />
-      )}
+      <TransactionsList
+        key={account?.id}
+        account={account}
+        logoMap={logoMap}
+        emptyMessage="Aucune transaction sur ce compte"
+      />
     </div>
   );
 }

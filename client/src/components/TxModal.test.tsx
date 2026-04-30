@@ -2,13 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  ACCOUNTS,
-  CATEGORIES,
-  PAYMENT_METHODS,
-  TRANSACTIONS,
-  TWO_ACCOUNTS,
-} from '@/tests/fixtures';
+import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import type { Transaction } from '@/types';
 
@@ -20,7 +14,7 @@ const transferTx: Transaction = { ...baseTx, transfer_peer_id: 42 };
 
 const createProps = {
   mode: 'create' as const,
-  accounts: TWO_ACCOUNTS,
+  accounts: ACCOUNTS,
   logoMap,
   categories: CATEGORIES,
   paymentMethods: PAYMENT_METHODS,
@@ -30,7 +24,7 @@ const createProps = {
 const editProps = {
   mode: 'edit' as const,
   tx: baseTx,
-  accounts: TWO_ACCOUNTS,
+  accounts: ACCOUNTS,
   logoMap,
   categories: CATEGORIES,
   paymentMethods: PAYMENT_METHODS,
@@ -140,7 +134,7 @@ describe('TxModal — mode création', () => {
     // Sélectionner le compte de destination (AccountSelect)
     await user.click(document.getElementById('dest-account-select')!);
     // On sélectionne le deuxième compte des fixtures (différent du source)
-    await user.click(screen.getByText(TWO_ACCOUNTS[1].name));
+    await user.click(screen.getByText(ACCOUNTS[1].name));
 
     // 3. Soumettre
     await user.click(screen.getByRole('button', { name: 'Transférer' }));
