@@ -1,8 +1,7 @@
 import { SyntheticEvent, useState } from 'react';
 
 import { ListContent } from '@/components/ListContent.tsx';
-import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui.tsx';
-import { RowActions } from '@/features/settings/components/RowActions.tsx';
+import { showToast } from '@/components/ui.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
 import {
   useAccountTypes,
@@ -14,81 +13,138 @@ import { AccountType } from '@/types.ts';
 
 function AccountTypeRow({
   at,
-  onSaved,
-  onDelete,
+  selectedId,
+  onSelect,
 }: Readonly<{
   at: AccountType;
-  onSaved: () => void;
-  onDelete: (id: number) => void;
+  selectedId: number | null;
+  onSelect: (id: number) => void;
 }>) {
-  const updateAccountType = useUpdateAccountType();
+  return (
+    <button
+      onClick={() => onSelect(at.id)}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+        selectedId === at.id
+          ? 'bg-white shadow-sm ring-1 ring-black/5 text-black'
+          : 'text-stone-500 hover:bg-black/5'
+      }`}
+    >
+      <span className="flex-1 text-sm font-semibold tracking-tight text-left">{at.name}</span>
+      {(at.acc_count ?? 0) > 0 && (
+        <span className="text-[10px] font-bold opacity-30 tabular-nums">{at.acc_count}</span>
+      )}
+    </button>
+  );
+}
+
+function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
+  const updateAt = useUpdateAccountType();
+  const deleteAt = useDeleteAccountType();
+  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
 
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
-    updateAccountType.mutate(
+    updateAt.mutate(
       { id: at.id, name: name.trim() },
       {
         onSuccess: () => {
           setEditing(false);
-          onSaved();
+          showToast('Type mis à jour ✓');
         },
         onError: (err) => showToast(err.message),
       },
     );
   };
 
-  if (editing) {
-    return (
-      <form
-        onSubmit={handleSave}
-        className="flex items-center gap-2 py-2 border-b border-black/[0.06] last:border-0"
-      >
-        <Input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="flex-1 text-sm"
-          autoFocus
-        />
-        <Button type="submit" variant="primary" size="sm" disabled={updateAccountType.isPending}>
-          {updateAccountType.isPending ? '…' : 'OK'}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setEditing(false);
-            setName(at.name);
-          }}
-        >
-          Annuler
-        </Button>
-      </form>
-    );
-  }
-
   const accCount = at.acc_count ?? 0;
+
   return (
-    <div className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0 group">
-      <span className="flex-1 text-sm">{at.name}</span>
-      {accCount > 0 && (
-        <span className="text-[10px] text-stone-400 tabular-nums shrink-0">
-          {accCount} compte(s)
-        </span>
-      )}
-      {accCount === 0 ? (
-        <RowActions onEdit={() => setEditing(true)} onDelete={() => onDelete(at.id)} />
-      ) : (
-        <button
-          onClick={() => setEditing(true)}
-          className="text-xs text-stone-400 hover:text-stone-700 transition-colors opacity-0 group-hover:opacity-100"
-        >
-          Modifier
-        </button>
-      )}
+    <div className="flex-1 min-w-0 bg-white rounded-4xl p-8 shadow-sm border border-black/5">
+      <div className="max-w-2xl mx-auto">
+        {editing ? (
+          <form
+            onSubmit={handleSave}
+            className="bg-stone-50 p-6 rounded-2xl border border-black/5 animate-in fade-in zoom-in-95 flex flex-col gap-3"
+          >
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">
+              Modifier le type de compte
+            </p>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+              placeholder="Nom"
+              autoFocus
+            />
+            <div className="flex gap-2 mt-1">
+              <button
+                type="submit"
+                disabled={updateAt.isPending}
+                className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
+              >
+                {updateAt.isPending ? '…' : 'Enregistrer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(false);
+                  setName(at.name);
+                }}
+                className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        ) : (
+          <header className="flex justify-between items-center pb-8 border-b border-black/3">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-stone-50 flex items-center justify-center text-3xl shadow-inner ring-1 ring-black/5">
+                🗂️
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-stone-900 leading-none">
+                  {at.name}
+                </h2>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                    Type de compte
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditing(true)}
+                className="px-4 py-2 text-[11px] font-bold text-stone-500 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all"
+              >
+                Modifier
+              </button>
+              {accCount === 0 && (
+                <button
+                  onClick={() =>
+                    requestDelete(
+                      'Supprimer le type de compte',
+                      'Les comptes existants garderont leur type actuel. Confirmer ?',
+                      at.id,
+                      deleteAt.mutate,
+                      'Type supprimé',
+                    )
+                  }
+                  className="px-4 py-2 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  Supprimer
+                </button>
+              )}
+            </div>
+          </header>
+        )}
+      </div>
+      <DeleteConfirmModal />
     </div>
   );
 }
@@ -96,9 +152,11 @@ function AccountTypeRow({
 export function AccountTypesManager() {
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
-  const deleteAccountType = useDeleteAccountType();
   const [newAtName, setNewAtName] = useState('');
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selectedAt = accountTypes.find((at) => at.id === selectedId);
+
+  if (atsLoading) return <div>Chargement...</div>;
 
   const handleAddAccountType = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -119,46 +177,49 @@ export function AccountTypesManager() {
   };
 
   return (
-    <Card>
-      <CardTitle>Types de compte</CardTitle>
-      <div className="mb-4">
+    <div className="flex items-start gap-8 mx-auto px-4">
+      {/* COLONNE GAUCHE */}
+      <div className="w-[320px] shrink-0">
+        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-4 ml-1">
+          Types de compte
+        </p>
+        <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200 mb-2">
+          <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">Nouveau type</p>
+          <form onSubmit={handleAddAccountType} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newAtName}
+              onChange={(e) => setNewAtName(e.target.value)}
+              className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+              placeholder="Ex : PEA"
+            />
+            <button
+              type="submit"
+              disabled={createAccountType.isPending}
+              className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30 shrink-0"
+            >
+              {createAccountType.isPending ? '…' : 'Ajouter'}
+            </button>
+          </form>
+        </div>
         <ListContent
           isLoading={atsLoading}
           items={accountTypes}
-          empty="Aucune type"
+          empty=""
           render={(at) => (
-            <AccountTypeRow
-              key={at.id}
-              at={at}
-              onSaved={() => showToast('Type mis à jour ✓')}
-              onDelete={(id) =>
-                requestDelete(
-                  'Supprimer le type de compte',
-                  'Les comptes existants garderont leur type actuel. Confirmer ?',
-                  id,
-                  deleteAccountType.mutate,
-                  'Type supprimé',
-                )
-              }
-            />
+            <AccountTypeRow key={at.id} at={at} selectedId={selectedId} onSelect={setSelectedId} />
           )}
         />
       </div>
-      <form onSubmit={handleAddAccountType} className="flex gap-2 items-end flex-wrap">
-        <FormGroup label="Nom">
-          <Input
-            type="text"
-            value={newAtName}
-            onChange={(e) => setNewAtName(e.target.value)}
-            placeholder="Ex : PEA"
-            className="min-w-44"
-          />
-        </FormGroup>
-        <Button type="submit" variant="primary" disabled={createAccountType.isPending}>
-          {createAccountType.isPending ? '…' : 'Ajouter'}
-        </Button>
-      </form>
-      <DeleteConfirmModal />
-    </Card>
+
+      {/* COLONNE DROITE */}
+      {selectedAt ? (
+        <AccountTypeDetails key={selectedAt.id} at={selectedAt} />
+      ) : (
+        <div className="flex-1 h-64 flex flex-col items-center justify-center border-2 border-dashed border-black/5 rounded-4xl text-stone-300 italic animate-in fade-in duration-500">
+          Sélectionnez un type de compte pour gérer ses détails
+        </div>
+      )}
+    </div>
   );
 }

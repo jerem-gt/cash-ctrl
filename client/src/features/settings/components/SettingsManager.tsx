@@ -22,7 +22,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
         <button
           key={t.key}
           onClick={() => onChange(t.key)}
-          className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all ${
+          className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl transition-all ${
             activeTab === t.key
               ? 'bg-black text-white shadow-md'
               : 'text-black/60 hover:bg-black/5 hover:text-black'
