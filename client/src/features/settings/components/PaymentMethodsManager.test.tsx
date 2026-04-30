@@ -10,7 +10,7 @@ import { server } from '@/tests/msw/server.ts';
 describe('PaymentMethodsManager', () => {
   it('affiche la section', async () => {
     renderWithProviders(<PaymentMethodsManager />);
-    expect(screen.getByText('Moyens de paiement')).toBeInTheDocument();
+    expect(await screen.findByText('Moyens de paiement')).toBeInTheDocument();
   });
 
   it('affiche les moyens de paiement chargés', async () => {
@@ -22,8 +22,7 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    const addBtn = screen.getByRole('button', { name: /ajouter/i });
-    await user.click(addBtn);
+    await user.click(screen.getByRole('button', { name: /ajouter/i }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('nom'));
   });
 
@@ -32,8 +31,7 @@ describe('PaymentMethodsManager', () => {
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
     await user.type(screen.getByPlaceholderText('Ex : Espèces'), 'Espèces');
-    const addBtn = screen.getByRole('button', { name: /ajouter/i });
-    await user.click(addBtn);
+    await user.click(screen.getByRole('button', { name: /ajouter/i }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('ajouté'));
   });
 
@@ -41,11 +39,12 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
+    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByDisplayValue('CB');
     await user.clear(nameInput);
     await user.type(nameInput, 'Carte bancaire');
-    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mis à jour'),
     );
@@ -55,12 +54,14 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
+    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: 'Annuler' }));
-    expect(screen.getByText('CB')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /annuler/i }));
+    expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
 
-  it('PaymentMethodRow : affiche le bouton Modifier seul et ouvre le formulaire quand tx_count > 0', async () => {
+  it('pas de bouton Supprimer dans le panneau quand tx_count > 0', async () => {
     server.use(
       http.get('/api/payment-methods', () =>
         HttpResponse.json([{ ...PAYMENT_METHODS[0], tx_count: 2 }]),
@@ -69,11 +70,12 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    await user.click(screen.getByRole('button', { name: /modifier/i }));
-    expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /CB/ }));
+    expect(screen.queryByRole('button', { name: /supprimer/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
 
-  it('PaymentMethodRow : toast si la sauvegarde échoue', async () => {
+  it('toast si la sauvegarde échoue', async () => {
     server.use(
       http.put('/api/payment-methods/:id', () =>
         HttpResponse.json({ error: 'Erreur PM' }, { status: 500 }),
@@ -82,8 +84,9 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
+    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur PM'),
     );

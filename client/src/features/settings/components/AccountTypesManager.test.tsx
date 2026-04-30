@@ -16,8 +16,7 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
-    const addBtn = screen.getByRole('button', { name: /ajouter/i });
-    await user.click(addBtn);
+    await user.click(screen.getByRole('button', { name: /ajouter/i }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('nom'));
   });
 
@@ -26,8 +25,7 @@ describe('AccountTypesManager', () => {
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
     await user.type(screen.getByPlaceholderText('Ex : PEA'), 'PEA');
-    const addBtn = screen.getByRole('button', { name: /ajouter/i });
-    await user.click(addBtn);
+    await user.click(screen.getByRole('button', { name: /ajouter/i }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('ajouté'));
   });
 
@@ -35,11 +33,12 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
+    await user.click(screen.getByRole('button', { name: /Courant/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByDisplayValue('Courant');
     await user.clear(nameInput);
     await user.type(nameInput, 'Courant modifié');
-    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mis à jour'),
     );
@@ -49,12 +48,14 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
+    await user.click(screen.getByRole('button', { name: /Courant/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: 'Annuler' }));
-    expect(screen.getByText('Courant')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /annuler/i }));
+    expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
 
-  it('AccountTypeRow : toast si la sauvegarde échoue', async () => {
+  it('toast si la sauvegarde échoue', async () => {
     server.use(
       http.put('/api/account-types/:id', () =>
         HttpResponse.json({ error: 'Erreur type' }, { status: 500 }),
@@ -63,8 +64,9 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
+    await user.click(screen.getByRole('button', { name: /Courant/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur type'),
     );
