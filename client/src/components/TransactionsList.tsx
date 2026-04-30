@@ -1,29 +1,26 @@
+import { DeleteTxModal } from '@/components/DeleteTxModal.tsx';
 import { TxItem } from '@/components/TxItem';
-import { Empty, Skeleton } from '@/components/ui';
-import type { Account, Transaction } from '@/types';
+import { TxModal } from '@/components/TxModal.tsx';
+import { Button, Empty, Pagination, Skeleton } from '@/components/ui';
+import { useTransactionsManager } from '@/hooks/useTransactionsManager.ts';
+import type { Account } from '@/types';
+
+import { TransactionsFilters } from './TransactionsFilters.tsx';
 
 interface Props {
-  isLoading: boolean;
-  transactions: Transaction[];
-  accounts?: Account[];
-  logoMap?: Record<string, string | null>;
-  onEdit: (tx: Transaction) => void;
-  onDuplicate?: (tx: Transaction) => void;
-  onDelete: (tx: Transaction) => void;
+  account?: Account;
+  logoMap: Record<string, string | null>;
   emptyMessage?: string;
 }
 
 export function TransactionsList({
-  isLoading,
-  transactions,
-  accounts,
+  account,
   logoMap,
-  onEdit,
-  onDuplicate,
-  onDelete,
   emptyMessage = 'Aucune transaction trouvée',
 }: Readonly<Props>) {
-  if (isLoading)
+  const { state, actions } = useTransactionsManager(account?.id);
+
+  if (state.isLoading) {
     return (
       <div className="flex flex-col gap-2">
         {Array.from({ length: 6 }, (_, i) => (
@@ -41,21 +38,95 @@ export function TransactionsList({
         ))}
       </div>
     );
-  if (transactions.length === 0) return <Empty>{emptyMessage}</Empty>;
+  }
 
   return (
-    <div className="flex flex-col gap-2">
-      {transactions.map((t) => (
-        <TxItem
-          key={t.id}
-          tx={t}
-          accounts={accounts}
+    <>
+      <div className="flex gap-3 flex-wrap items-center">
+        {/* Filters */}
+        <TransactionsFilters
+          filters={state.filters}
+          onFilterChange={actions.handleFilterChange}
+          categories={state.categories}
+          subcategories={state.activeSubcategories}
+          accounts={state.accounts}
           logoMap={logoMap}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
+          showAccountSelect={!account}
         />
-      ))}
-    </div>
+        <span className="text-xs text-stone-400 ml-auto">{state.total} transaction(s)</span>
+        <Button variant="primary" onClick={actions.openAdd}>
+          + Nouvelle transaction
+        </Button>
+      </div>
+      <div className="flex flex-col gap-2">
+        {state.transactions.length === 0 && <Empty>{emptyMessage}</Empty>}
+        {state.transactions.map((t) => (
+          <TxItem
+            key={t.id}
+            tx={t}
+            accounts={account ? undefined : state.accounts}
+            logoMap={logoMap}
+            onEdit={actions.openEdit}
+            onDuplicate={actions.openDuplicate}
+            onDelete={actions.openDelete}
+          />
+        ))}
+      </div>
+      {(state.totalPages > 1 || state.total > 10) && (
+        <Pagination
+          page={state.page}
+          totalPages={state.totalPages}
+          total={state.total}
+          limit={state.limit}
+          onChange={actions.setPage}
+          onLimitChange={actions.handleLimitChange}
+        />
+      )}
+
+      {state.modal.type === 'add' && (
+        <TxModal
+          mode="create"
+          accounts={state.accounts}
+          logoMap={logoMap}
+          categories={state.categories}
+          paymentMethods={state.paymentMethods}
+          fixedAccountId={account?.id}
+          onClose={actions.closeAll}
+        />
+      )}
+      {state.modal.type === 'duplicate' && (
+        <TxModal
+          mode="create"
+          accounts={state.accounts}
+          logoMap={logoMap}
+          categories={state.categories}
+          paymentMethods={state.paymentMethods}
+          duplicateFrom={state.modal.tx}
+          fixedAccountId={account?.id}
+          onClose={actions.closeAll}
+        />
+      )}
+      {state.modal.type === 'edit' && (
+        <TxModal
+          mode="edit"
+          tx={state.modal.tx}
+          accounts={state.accounts}
+          logoMap={logoMap}
+          categories={state.categories}
+          paymentMethods={state.paymentMethods}
+          fixedAccountId={account?.id}
+          onSave={actions.handleUpdate}
+          onClose={actions.closeAll}
+          isPending={state.isPending}
+        />
+      )}
+      {state.modal.type === 'delete' && (
+        <DeleteTxModal
+          tx={state.modal.tx}
+          onConfirm={actions.handleDelete}
+          onCancel={actions.closeAll}
+        />
+      )}
+    </>
   );
 }

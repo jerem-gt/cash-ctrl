@@ -175,7 +175,7 @@ export function Pagination({
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex items-center justify-between pt-1">
+    <nav className="flex items-center justify-between pt-1">
       <div className="flex items-center gap-2">
         <span className="text-xs text-stone-400">
           {from}–{to} sur {total}
@@ -211,7 +211,7 @@ export function Pagination({
           →
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 

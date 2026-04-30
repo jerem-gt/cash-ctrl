@@ -14,9 +14,9 @@ const baseProps = {
 };
 
 describe('AccountModal — mode création', () => {
-  it('affiche le titre "Nouveau compte"', () => {
+  it('affiche le titre "Ajouter un compte"', () => {
     renderWithProviders(<AccountModal mode="create" {...baseProps} />);
-    expect(screen.getByText('Nouveau compte')).toBeInTheDocument();
+    expect(screen.getByText('Ajouter un compte')).toBeInTheDocument();
   });
 
   it('affiche le bouton "Créer"', () => {
@@ -106,7 +106,7 @@ describe('AccountModal — mode édition', () => {
         isPending={false}
       />,
     );
-    expect(screen.getByDisplayValue('Compte courant')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Compte test')).toBeInTheDocument();
   });
 
   it('affiche le bouton "Enregistrer"', () => {
@@ -140,7 +140,7 @@ describe('AccountModal — mode édition', () => {
       />,
     );
 
-    const inputNom = screen.getByDisplayValue('Compte courant');
+    const inputNom = screen.getByDisplayValue('Compte test');
     await user.clear(inputNom);
     await user.type(inputNom, 'Compte Modifié');
 
