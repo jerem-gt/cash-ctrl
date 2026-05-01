@@ -115,7 +115,7 @@ export function TxCoreFields({
       </div>
 
       {/* Ligne 2 : catégorie (masquée transfert) + compte(s) + moyen de paiement (masqué transfert) */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="grid grid-cols-2 gap-3">
         {!isTransfer && !hideCategories && (
           <>
             <FormGroup label="Catégorie">
