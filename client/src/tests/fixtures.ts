@@ -8,6 +8,8 @@ import type {
   PendingReimbursement,
   Reimbursement,
   ScheduledTransaction,
+  StockOperation,
+  StockPosition,
   Subcategory,
 } from '@/types';
 
@@ -19,9 +21,11 @@ export const ACCOUNTS: Account[] = [
     bank: 'BNP',
     account_type_id: 1,
     type: 'Courant',
+    is_investment: 0,
     initial_balance: 0,
     opening_date: '2024-01-01',
     balance: 1500,
+    balance_stocks: 0,
   },
   {
     id: 2,
@@ -30,13 +34,48 @@ export const ACCOUNTS: Account[] = [
     bank_id: 2,
     account_type_id: 1,
     type: 'Livret',
+    is_investment: 0,
     initial_balance: 0,
     opening_date: null,
     balance: 500,
+    balance_stocks: 0,
   },
 ];
 
-export const ACCOUNT_TYPES: AccountType[] = [{ id: 1, name: 'Courant', acc_count: 1 }];
+export const ACCOUNT_TYPES: AccountType[] = [
+  { id: 1, name: 'Courant', is_investment: 0, acc_count: 1 },
+  { id: 3, name: 'Bourse', is_investment: 1, acc_count: 1 },
+];
+
+export const STOCK_POSITIONS: StockPosition[] = [
+  {
+    id: 1,
+    account_id: 3,
+    ticker: 'DCAM.PA',
+    quantity: 10,
+    avg_price: 12,
+    current_price: 15,
+    currency: 'EUR',
+    price_fetched_at: '2026-05-01T10:00:00',
+    updated_at: '2026-05-01T10:00:00',
+    created_at: '2026-04-01T10:00:00',
+  },
+];
+
+export const STOCK_OPERATIONS: StockOperation[] = [
+  {
+    id: 1,
+    account_id: 3,
+    transaction_id: 20,
+    ticker: 'DCAM.PA',
+    type: 'buy',
+    quantity: 10,
+    price_per_share: 12,
+    fees: 1.5,
+    date: '2026-04-01',
+    created_at: '2026-04-01T10:00:00',
+  },
+];
 
 export const BANKS: Bank[] = [
   { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr' },

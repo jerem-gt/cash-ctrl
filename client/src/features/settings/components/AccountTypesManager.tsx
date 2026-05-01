@@ -43,12 +43,13 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
+  const [isInvestment, setIsInvestment] = useState(!!at.is_investment);
 
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     updateAt.mutate(
-      { id: at.id, name: name.trim() },
+      { id: at.id, name: name.trim(), is_investment: isInvestment },
       {
         onSuccess: () => {
           setEditing(false);
@@ -80,6 +81,15 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
               placeholder="Nom"
               autoFocus
             />
+            <label className="flex items-center gap-2 mt-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isInvestment}
+                onChange={(e) => setIsInvestment(e.target.checked)}
+                className="w-4 h-4 accent-indigo-500"
+              />
+              <span className="text-sm text-stone-600">Compte d&apos;investissement</span>
+            </label>
             <div className="flex gap-2 mt-1">
               <button
                 type="submit"
@@ -114,6 +124,11 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                     Type de compte
                   </span>
+                  {!!at.is_investment && (
+                    <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                      Investissement
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -153,6 +168,7 @@ export function AccountTypesManager() {
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
   const [newAtName, setNewAtName] = useState('');
+  const [newAtIsInvestment, setNewAtIsInvestment] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selectedAt = accountTypes.find((at) => at.id === selectedId);
 
@@ -165,10 +181,11 @@ export function AccountTypesManager() {
       return;
     }
     createAccountType.mutate(
-      { name: newAtName.trim() },
+      { name: newAtName.trim(), is_investment: newAtIsInvestment },
       {
         onSuccess: () => {
           setNewAtName('');
+          setNewAtIsInvestment(false);
           showToast('Type ajouté ✓');
         },
         onError: (err) => showToast(err.message),
@@ -201,6 +218,15 @@ export function AccountTypesManager() {
               {createAccountType.isPending ? '…' : 'Ajouter'}
             </button>
           </form>
+          <label className="flex items-center gap-2 mt-2 ml-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={newAtIsInvestment}
+              onChange={(e) => setNewAtIsInvestment(e.target.checked)}
+              className="w-3.5 h-3.5 accent-indigo-500"
+            />
+            <span className="text-[11px] text-stone-500">Compte d&apos;investissement</span>
+          </label>
         </div>
         <ListContent
           isLoading={atsLoading}

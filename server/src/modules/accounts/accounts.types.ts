@@ -6,9 +6,11 @@ export interface Account {
   account_type_id: number | null;
   bank: string;
   type: string;
+  is_investment: number;
   initial_balance: number;
   opening_date: string | null;
   balance: number;
+  balance_stocks: number;
   created_at: string;
 }
 

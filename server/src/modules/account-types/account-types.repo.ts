@@ -5,31 +5,47 @@ import type { AccountType, AccountTypeWithCount } from './account-types.types';
 export function createAccountTypesRepo(db: Database) {
   return {
     getAll(): AccountTypeWithCount[] {
-      return db.prepare<[], AccountTypeWithCount>(
+      return db
+        .prepare<[], AccountTypeWithCount>(
           `SELECT at.*, COUNT(a.id) as acc_count
            FROM account_types at
                   LEFT JOIN accounts a ON a.account_type_id = at.id
            GROUP BY at.id
            ORDER BY at.created_at`,
-      ).all();
+        )
+        .all();
     },
 
     getById(id: number): AccountType | undefined {
-      return db.prepare<[number], AccountType>('SELECT * FROM account_types WHERE id = ?').get(id) ?? undefined;
+      return (
+        db.prepare<[number], AccountType>('SELECT * FROM account_types WHERE id = ?').get(id) ??
+        undefined
+      );
     },
 
     getAccountCount(id: number): number {
-      return db.prepare<[number], {
-        cnt: number
-      }>('SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = ?').get(id)?.cnt ?? 0;
+      return (
+        db
+          .prepare<
+            [number],
+            {
+              cnt: number;
+            }
+          >('SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = ?')
+          .get(id)?.cnt ?? 0
+      );
     },
 
-    create(name: string) {
-      return db.prepare('INSERT INTO account_types (name) VALUES (?)').run(name);
+    create(name: string, is_investment: boolean) {
+      return db
+        .prepare('INSERT INTO account_types (name, is_investment) VALUES (?, ?)')
+        .run(name, is_investment ? 1 : 0);
     },
 
-    update(id: number, name: string) {
-      return db.prepare('UPDATE account_types SET name = ? WHERE id = ?').run(name, id);
+    update(id: number, name: string, is_investment: boolean) {
+      return db
+        .prepare('UPDATE account_types SET name = ?, is_investment = ? WHERE id = ?')
+        .run(name, is_investment ? 1 : 0, id);
     },
 
     delete(id: number) {

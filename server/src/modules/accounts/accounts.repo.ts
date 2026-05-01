@@ -9,6 +9,15 @@ const BALANCE_SUBQUERY = `
     0
   ) AS balance`;
 
+const BALANCE_STOCKS_SUBQUERY = `
+  COALESCE(
+    (SELECT SUM(sp.quantity * COALESCE(sprice.price, 0))
+     FROM stock_positions sp
+     LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+     WHERE sp.account_id = a.id),
+    0
+  ) AS balance_stocks`;
+
 const ACCOUNT_SELECT = `
   SELECT a.id,
          a.user_id,
@@ -18,41 +27,64 @@ const ACCOUNT_SELECT = `
          a.initial_balance,
          a.opening_date,
          a.created_at,
-         COALESCE(b.name, '')  AS bank,
-         COALESCE(at.name, '') AS type,
-         ${BALANCE_SUBQUERY}
+         COALESCE(b.name, '')           AS bank,
+         COALESCE(at.name, '')          AS type,
+         COALESCE(at.is_investment, 0)  AS is_investment,
+         ${BALANCE_SUBQUERY},
+         ${BALANCE_STOCKS_SUBQUERY}
   FROM accounts a
        LEFT JOIN banks b ON a.bank_id = b.id
        LEFT JOIN account_types at ON a.account_type_id = at.id`;
 
 export function createAccountsRepo(db: Database) {
-    return {
-        getByUserId(userId: number): Account[] {
-            return db.prepare<[number], Account>(
-                `${ACCOUNT_SELECT} WHERE a.user_id = ? ORDER BY a.created_at`,
-            ).all(userId);
-        },
+  return {
+    getByUserId(userId: number): Account[] {
+      return db
+        .prepare<[number], Account>(`${ACCOUNT_SELECT} WHERE a.user_id = ? ORDER BY a.created_at`)
+        .all(userId);
+    },
 
-        getById(id: number, userId: number): Account | undefined {
-            return db.prepare<[number, number], Account>(
-                `${ACCOUNT_SELECT} WHERE a.id = ? AND a.user_id = ?`,
-            ).get(id, userId) ?? undefined;
-        },
+    getById(id: number, userId: number): Account | undefined {
+      return (
+        db
+          .prepare<[number, number], Account>(`${ACCOUNT_SELECT} WHERE a.id = ? AND a.user_id = ?`)
+          .get(id, userId) ?? undefined
+      );
+    },
 
-        create(userId: number, data: CreateAccountInput) {
-            return db.prepare(
-                'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date) VALUES (?, ?, ?, ?, ?, ?)',
-            ).run(userId, data.name, data.bank_id, data.account_type_id, data.initial_balance, data.opening_date);
-        },
+    create(userId: number, data: CreateAccountInput) {
+      return db
+        .prepare(
+          'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date) VALUES (?, ?, ?, ?, ?, ?)',
+        )
+        .run(
+          userId,
+          data.name,
+          data.bank_id,
+          data.account_type_id,
+          data.initial_balance,
+          data.opening_date,
+        );
+    },
 
-        update(userId: number, id: number, data: UpdateAccountInput) {
-            return db.prepare(
-                'UPDATE accounts SET name = ?, bank_id = ?, account_type_id = ?, initial_balance = ?, opening_date = ? WHERE id = ? AND user_id = ?',
-            ).run(data.name, data.bank_id, data.account_type_id, data.initial_balance, data.opening_date, id, userId);
-        },
+    update(userId: number, id: number, data: UpdateAccountInput) {
+      return db
+        .prepare(
+          'UPDATE accounts SET name = ?, bank_id = ?, account_type_id = ?, initial_balance = ?, opening_date = ? WHERE id = ? AND user_id = ?',
+        )
+        .run(
+          data.name,
+          data.bank_id,
+          data.account_type_id,
+          data.initial_balance,
+          data.opening_date,
+          id,
+          userId,
+        );
+    },
 
-        delete(userId: number, id: number) {
-            return db.prepare('DELETE FROM accounts WHERE id = ? AND user_id = ?').run(id, userId);
-        },
-    };
+    delete(userId: number, id: number) {
+      return db.prepare('DELETE FROM accounts WHERE id = ? AND user_id = ?').run(id, userId);
+    },
+  };
 }

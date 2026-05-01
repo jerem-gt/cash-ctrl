@@ -1,0 +1,90 @@
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it } from 'vitest';
+
+import { PortfolioSection } from '@/components/PortfolioSection';
+import { STOCK_POSITIONS } from '@/tests/fixtures';
+import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
+
+function renderPortfolio(accountId = 3) {
+  return renderWithProviders(<PortfolioSection accountId={accountId} />);
+}
+
+describe('PortfolioSection', () => {
+  it('affiche les positions après chargement', async () => {
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    expect(screen.getByText('DCAM.PA')).toBeInTheDocument();
+  });
+
+  it('affiche la quantité et le PRU', async () => {
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    expect(screen.getByText('10')).toBeInTheDocument();
+  });
+
+  it('affiche "Aucune position ouverte" quand le portefeuille est vide', async () => {
+    server.use(http.get('/api/stocks/:accountId/positions', () => HttpResponse.json([])));
+    renderPortfolio();
+    await waitFor(() => expect(screen.getByText('Aucune position ouverte')).toBeInTheDocument());
+  });
+
+  it('ouvre le modal Acheter au clic sur + Acheter', async () => {
+    const user = userEvent.setup();
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    await user.click(screen.getByRole('button', { name: /\+ Acheter/i }));
+    expect(screen.getByText('Acheter des actions')).toBeInTheDocument();
+  });
+
+  it('ouvre le modal Vendre au clic sur Vendre dans une ligne', async () => {
+    const user = userEvent.setup();
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    const sellBtn = screen.getByRole('button', { name: /vendre/i });
+    await user.click(sellBtn);
+    expect(screen.getByText('Vendre des actions')).toBeInTheDocument();
+  });
+
+  it('affiche la PV latente colorée en vert', async () => {
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    // PV = (15 - 12) * 10 = +30€
+    const pv = await screen.findByText(/\+.*30/);
+    expect(pv).toBeInTheDocument();
+  });
+
+  it('actualise les cours au clic sur Actualiser', async () => {
+    const user = userEvent.setup();
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    await user.click(screen.getByRole('button', { name: /actualiser les cours/i }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Cours mis à jour'),
+    );
+  });
+
+  it("affiche la ligne total quand il y a plus d'une position", async () => {
+    server.use(
+      http.get('/api/stocks/:accountId/positions', () =>
+        HttpResponse.json([
+          STOCK_POSITIONS[0],
+          {
+            ...STOCK_POSITIONS[0],
+            id: 2,
+            ticker: 'AAPL',
+            quantity: 5,
+            avg_price: 180,
+            current_price: 200,
+          },
+        ]),
+      ),
+    );
+    renderPortfolio();
+    await screen.findByText('DCAM.PA');
+    await screen.findByText('AAPL');
+    expect(screen.getByText('Total')).toBeInTheDocument();
+  });
+});

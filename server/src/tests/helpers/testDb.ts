@@ -8,6 +8,7 @@ export const SEED = {
   BANK_ID: 1, // 'DefaultBank'
   AT_COURANT: 1, // 'Courant'
   AT_EPARGNE: 2, // 'Épargne'
+  AT_BOURSE: 3, // 'Bourse'
   SUBCAT_AUTRE: 1,
   SUBCAT_SALAIRE: 2,
   SUBCAT_SUPERMARCHE: 3,
@@ -22,7 +23,7 @@ export const SEED = {
 export function seedTestReferenceData(db: Database) {
   db.exec(`
     INSERT INTO banks (name) VALUES ('DefaultBank');
-    INSERT INTO account_types (name) VALUES ('Courant'), ('Épargne');
+    INSERT INTO account_types (name, is_investment) VALUES ('Courant', 0), ('Épargne', 0), ('Bourse', 1);
     INSERT INTO categories (name, icon) VALUES
       ('Revenus divers', '💰'), ('Revenus du travail', '💼'), ('Alimentation', '🍴'), ('Loisirs', '🎮'), ('Logement', '🏠'), ('Transfert', '🔄');
     INSERT INTO subcategories (name, category_id) VALUES

@@ -5,7 +5,10 @@ import { z } from 'zod';
 import { requireAuth } from '../../middleware.js';
 import { createAccountTypesRepo } from './account-types.repo';
 
-const schema = z.object({ name: z.string().min(1).max(50) });
+const schema = z.object({
+  name: z.string().min(1).max(50),
+  is_investment: z.boolean().default(false),
+});
 
 export function createAccountTypesRouter(db: Database): Router {
   const accountTypesRepo = createAccountTypesRepo(db);
@@ -18,23 +21,35 @@ export function createAccountTypesRouter(db: Database): Router {
 
   router.post('/', (req, res) => {
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    const result = accountTypesRepo.create(parsed.data.name.trim());
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    const result = accountTypesRepo.create(parsed.data.name.trim(), parsed.data.is_investment);
     res.status(201).json(accountTypesRepo.getById(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!accountTypesRepo.getById(id)) { res.status(404).json({ error: 'Account type not found' }); return; }
+    if (!accountTypesRepo.getById(id)) {
+      res.status(404).json({ error: 'Account type not found' });
+      return;
+    }
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: z.treeifyError(parsed.error) }); return; }
-    accountTypesRepo.update(id, parsed.data.name.trim());
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    accountTypesRepo.update(id, parsed.data.name.trim(), parsed.data.is_investment);
     res.json(accountTypesRepo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!accountTypesRepo.getById(id)) { res.status(404).json({ error: 'Account type not found' }); return; }
+    if (!accountTypesRepo.getById(id)) {
+      res.status(404).json({ error: 'Account type not found' });
+      return;
+    }
     const cnt = accountTypesRepo.getAccountCount(id);
     if (cnt > 0) {
       res.status(409).json({ error: `Ce type est utilisé par ${cnt} compte(s).` });

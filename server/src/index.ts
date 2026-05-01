@@ -9,6 +9,7 @@ import { createApp } from './app.js';
 import { createDb, initDatabase } from './db/init';
 import { logger } from './logger';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
+import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
@@ -63,4 +64,5 @@ app.listen(PORT, '0.0.0.0', () => {
   downloadDefaultBankLogos(db).catch((err: unknown) => {
     logger.error(String(err));
   });
+  startPriceRefreshInterval(db);
 });

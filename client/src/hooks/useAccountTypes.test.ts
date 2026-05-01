@@ -15,7 +15,7 @@ describe('useAccountTypes', () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useAccountTypes(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data).toHaveLength(2);
     expect(result.current.data![0].name).toBe('Courant');
   });
 });
@@ -24,7 +24,7 @@ describe('useCreateAccountType', () => {
   it('crée un type avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useCreateAccountType(), { wrapper: Wrapper });
-    result.current.mutate({ name: 'PEA' });
+    result.current.mutate({ name: 'PEA', is_investment: false });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });
@@ -33,7 +33,7 @@ describe('useUpdateAccountType', () => {
   it('met à jour un type avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateAccountType(), { wrapper: Wrapper });
-    result.current.mutate({ id: 1, name: 'Livret' });
+    result.current.mutate({ id: 1, name: 'Livret', is_investment: false });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

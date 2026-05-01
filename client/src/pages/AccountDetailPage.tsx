@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { PortfolioSection } from '@/components/PortfolioSection';
 import { TransactionsList } from '@/components/TransactionsList';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
@@ -17,6 +18,7 @@ export default function AccountDetailPage() {
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
   const account = accounts.find((a) => a.id === accountId);
+  const isInvestment = !!account?.is_investment;
 
   if (!account && accounts.length > 0) {
     return (
@@ -56,6 +58,14 @@ export default function AccountDetailPage() {
                   <span className="uppercase">{account?.bank}</span>
                   <span className="text-stone-300">•</span>
                   <span>{account?.type}</span>
+                  {isInvestment && (
+                    <>
+                      <span className="text-stone-300">•</span>
+                      <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                        Investissement
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <h2 className="font-serif text-4xl text-stone-900 tracking-tight">
@@ -80,19 +90,59 @@ export default function AccountDetailPage() {
             </div>
 
             {/* Section Solde */}
-            <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[200px]">
-              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
-                Solde disponible
-              </span>
-              <p
-                className={`font-serif text-4xl leading-none ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
-              >
-                {fmtDec(account?.balance ?? 0)}
-              </p>
-            </div>
+            {isInvestment ? (
+              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[240px] gap-2">
+                <div className="w-full">
+                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+                    Cash disponible
+                  </span>
+                  <p
+                    className={`font-serif text-2xl leading-none mt-0.5 ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-700'}`}
+                  >
+                    {fmtDec(account?.balance ?? 0)}
+                  </p>
+                </div>
+                <div className="w-full border-t border-stone-200/60 pt-2">
+                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+                    Portefeuille
+                  </span>
+                  <p className="font-serif text-2xl leading-none mt-0.5 text-stone-700">
+                    {fmtDec(account?.balance_stocks ?? 0)}
+                  </p>
+                </div>
+                <div className="w-full border-t border-stone-200 pt-2">
+                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+                    Total
+                  </span>
+                  <p
+                    className={`font-serif text-4xl leading-none mt-0.5 ${(account?.balance ?? 0) + (account?.balance_stocks ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
+                  >
+                    {fmtDec((account?.balance ?? 0) + (account?.balance_stocks ?? 0))}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[200px]">
+                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
+                  Solde disponible
+                </span>
+                <p
+                  className={`font-serif text-4xl leading-none ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
+                >
+                  {fmtDec(account?.balance ?? 0)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Portefeuille */}
+      {isInvestment && (
+        <div className="px-1">
+          <PortfolioSection accountId={accountId} />
+        </div>
+      )}
 
       {/* Transaction list */}
       <div className="flex items-center justify-between mb-3">
