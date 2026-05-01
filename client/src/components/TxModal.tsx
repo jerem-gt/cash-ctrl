@@ -8,6 +8,8 @@ import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions
 import { today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, Transaction } from '@/types';
 
+import { ReimbursementsPanel } from './ReimbursementsPanel';
+
 export type TxFormState = {
   type: 'income' | 'expense';
   amount: string;
@@ -183,6 +185,9 @@ export function TxModal(props: Readonly<Props>) {
   const [date, setDate] = useState(isEdit ? tx!.date : today);
   const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : (duplicateFrom?.notes ?? ''));
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
+  const [reimbursementStatus, setReimbursementStatus] = useState<'en_attente' | 'rembourse' | null>(
+    null,
+  );
   const [isTransfer, setIsTransfer] = useState(!!duplicateFrom?.transfer_peer_id);
   const [isVentilated, setIsVentilated] = useState(() => !!(tx ?? duplicateFrom)?.splits?.length);
   const [splits, setSplits] = useState<SplitInput[]>(() => {
@@ -333,6 +338,7 @@ export function TxModal(props: Readonly<Props>) {
         account_id: fixedAccountId ?? Number.parseInt(core.account_id),
         date,
         payment_method_id: pmId,
+        reimbursement_status: core.type === 'expense' ? reimbursementStatus : null,
       },
       {
         onSuccess: () => {
@@ -490,6 +496,59 @@ export function TxModal(props: Readonly<Props>) {
               />
               <span className="text-sm text-stone-700">Transaction validée</span>
             </label>
+
+            {isEdit && tx!.type === 'expense' && !isTransferEdit && (
+              <ReimbursementsPanel tx={tx!} />
+            )}
+
+            {!isEdit && !isTransferCreate && core.type === 'expense' && (
+              <div className="border-t border-black/[0.07] pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-stone-400">
+                    Suivi remboursement
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReimbursementStatus((s) => (s === null ? 'en_attente' : null))
+                    }
+                    className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
+                      reimbursementStatus !== null
+                        ? 'bg-teal-50 text-teal-700 hover:bg-teal-100'
+                        : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    {reimbursementStatus !== null ? '⚕ Actif' : 'Activer'}
+                  </button>
+                </div>
+                {reimbursementStatus !== null && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setReimbursementStatus('en_attente')}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        reimbursementStatus === 'en_attente'
+                          ? 'bg-amber-50 border-amber-300 text-amber-700'
+                          : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
+                      }`}
+                    >
+                      En attente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReimbursementStatus('rembourse')}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        reimbursementStatus === 'rembourse'
+                          ? 'bg-green-50 border-green-300 text-green-700'
+                          : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
+                      }`}
+                    >
+                      Remboursement terminé
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end pt-2">
               <Button type="button" onClick={onClose}>

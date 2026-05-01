@@ -10,6 +10,7 @@ import { createBanksRouter } from './modules/banks/banks.routes';
 import { createCategoriesRouter } from './modules/categories/categories.routes';
 import { createExportRouter } from './modules/export/export.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
+import { createReimbursementsRouter } from './modules/reimbursements/reimbursements.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
 import { createSubcategoriesRouter } from './modules/subcategories/subcategories.routes';
@@ -63,6 +64,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));
+  app.use('/api/reimbursements', createReimbursementsRouter(db));
   app.use('/api/export', createExportRouter(db));
   app.use('/api/categories', createCategoriesRouter(db));
   app.use('/api/subcategories', createSubcategoriesRouter(db));
