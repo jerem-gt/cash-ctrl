@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useClickOutside } from '@/hooks/useClickOutside';
@@ -154,20 +155,17 @@ export function AccountSelect({
         onBlur={handleBlur}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
+        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all text-left"
       >
         {selected ? (
           <>
             <Logo bank={selected.bank} logoMap={logoMap} />
             <span className="flex-1 truncate">{selected.name}</span>
-            {selected.bank && (
-              <span className="text-stone-400 text-xs shrink-0">({selected.bank})</span>
-            )}
           </>
         ) : (
-          <span className="flex-1 text-stone-400">{placeholder}</span>
+          <span className="flex-1">{placeholder}</span>
         )}
-        <span className="text-stone-300 text-xs">▾</span>
+        <ChevronDown size={16} />
       </button>
 
       {open && (

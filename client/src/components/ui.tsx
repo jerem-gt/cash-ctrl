@@ -117,7 +117,7 @@ export function Select({
 }: Readonly<SelectHTMLAttributes<HTMLSelectElement>>) {
   return (
     <select
-      className={`w-full h-9 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all ${className}`}
+      className={`w-full h-9 px-3 py-2 text-sm text-stone-700 bg-white border border-stone-200 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all ${className}`}
       {...props}
     />
   );
