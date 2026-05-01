@@ -96,20 +96,28 @@ export function initSchema(db: Database) {
 
         CREATE TABLE IF NOT EXISTS transactions
         (
-            id                INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id           INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-            account_id        INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            type              TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
-            amount            REAL    NOT NULL CHECK (amount > 0),
-            description       TEXT    NOT NULL,
-            subcategory_id    INTEGER REFERENCES subcategories (id),
-            date              TEXT    NOT NULL,
-            transfer_peer_id  INTEGER,
-            validated         INTEGER NOT NULL DEFAULT 0,
-            payment_method_id INTEGER REFERENCES payment_methods (id),
-            scheduled_id      INTEGER REFERENCES scheduled_transactions(id) ON DELETE SET NULL,
-            notes             TEXT,
-            created_at        TEXT             DEFAULT (datetime('now'))
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id               INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            account_id            INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            type                  TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
+            amount                REAL    NOT NULL CHECK (amount > 0),
+            description           TEXT    NOT NULL,
+            subcategory_id        INTEGER REFERENCES subcategories (id),
+            date                  TEXT    NOT NULL,
+            transfer_peer_id      INTEGER,
+            validated             INTEGER NOT NULL DEFAULT 0,
+            payment_method_id     INTEGER REFERENCES payment_methods (id),
+            scheduled_id          INTEGER REFERENCES scheduled_transactions(id) ON DELETE SET NULL,
+            notes                 TEXT,
+            reimbursement_status  TEXT    CHECK (reimbursement_status IN ('en_attente', 'rembourse')),
+            created_at            TEXT             DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS reimbursements
+        (
+            transaction_id        INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            linked_transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            PRIMARY KEY (transaction_id, linked_transaction_id)
         );
 
         CREATE TABLE IF NOT EXISTS transaction_splits
@@ -132,6 +140,13 @@ export function initSchema(db: Database) {
   try {
     db.exec(
       'ALTER TABLE scheduled_transactions ADD COLUMN subcategory_id INTEGER REFERENCES subcategories(id)',
+    );
+  } catch {
+    /* ignore: column may already exist */
+  }
+  try {
+    db.exec(
+      "ALTER TABLE transactions ADD COLUMN reimbursement_status TEXT CHECK (reimbursement_status IN ('en_attente', 'rembourse'))",
     );
   } catch {
     /* ignore: column may already exist */

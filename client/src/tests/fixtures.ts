@@ -5,6 +5,8 @@ import type {
   Category,
   PaginatedTransactions,
   PaymentMethod,
+  PendingReimbursement,
+  Reimbursement,
   ScheduledTransaction,
   Subcategory,
 } from '@/types';
@@ -85,6 +87,7 @@ export const TRANSACTIONS: PaginatedTransactions = {
       payment_method_id: 1,
       payment_method: 'CB',
       notes: null,
+      reimbursement_status: null,
     },
   ],
   total: 1,
@@ -116,5 +119,30 @@ export const SCHEDULED: ScheduledTransaction[] = [
     end_date: null,
     active: 1,
     account_name: 'Compte courant',
+  },
+];
+
+export const REIMBURSEMENTS: Reimbursement[] = [
+  {
+    id: 20,
+    amount: 45,
+    description: 'Remboursement CPAM',
+    date: '2026-04-22',
+    subcategory: 'CPAM',
+    category: 'Santé',
+    payment_method: 'Virement',
+  },
+];
+
+export const PENDING_REIMBURSEMENTS: PendingReimbursement[] = [
+  {
+    id: 10,
+    amount: 150,
+    description: 'Médecin',
+    date: '2026-04-20',
+    subcategory: 'Médecin',
+    category: 'Santé',
+    account_name: 'Compte test',
+    total_reimbursed: 45,
   },
 ];

@@ -23,6 +23,7 @@ export interface Transaction {
   payment_method_id: number | null;
   payment_method: string;
   notes: string | null;
+  reimbursement_status: 'en_attente' | 'rembourse' | null;
   created_at: string;
   account_name?: string;
   splits?: TransactionSplit[];
@@ -51,6 +52,7 @@ export interface CreateTransactionInput {
   payment_method_id: number;
   notes: string | null;
   validated: boolean;
+  reimbursement_status?: 'en_attente' | 'rembourse' | null;
 }
 
 export interface UpdateSharedTransactionInput {

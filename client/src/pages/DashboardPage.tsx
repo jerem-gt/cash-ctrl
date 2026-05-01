@@ -7,7 +7,9 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
-import { fmt, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
+import { fmt, fmtDate, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
+
+import { usePendingReimbursements, useSetReimbursementStatus } from '../hooks/useReimbursements';
 
 export default function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
@@ -95,6 +97,9 @@ export default function DashboardPage() {
         .slice(0, 5),
     [transactions, todayStr],
   );
+
+  const { data: pendingReimbursements = [] } = usePendingReimbursements();
+  const setReimbursementStatus = useSetReimbursementStatus();
 
   const txItemProps = { accounts, logoMap };
 
@@ -216,6 +221,71 @@ export default function DashboardPage() {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Dépenses en attente de remboursement */}
+      {pendingReimbursements.length > 0 && (
+        <Card>
+          <CardTitle>Remboursements en attente</CardTitle>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
+                  <th className="text-left pb-2 font-medium">Description</th>
+                  <th className="text-left pb-2 font-medium hidden sm:table-cell">Date</th>
+                  <th className="text-right pb-2 font-medium">Dépense</th>
+                  <th className="text-right pb-2 font-medium hidden sm:table-cell">Remboursé</th>
+                  <th className="text-right pb-2 font-medium">Reste à charge</th>
+                  <th className="pb-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/[0.04]">
+                {pendingReimbursements.map((item) => {
+                  const remaining = item.amount - item.total_reimbursed;
+                  return (
+                    <tr key={item.id} className="group">
+                      <td className="py-2 pr-3">
+                        <p className="font-medium text-stone-700 truncate max-w-[160px]">
+                          {item.description}
+                        </p>
+                        <p className="text-stone-400 text-[10px]">
+                          {item.subcategory || item.category} · {item.account_name}
+                        </p>
+                      </td>
+                      <td className="py-2 pr-3 text-stone-500 hidden sm:table-cell whitespace-nowrap">
+                        {fmtDate(item.date)}
+                      </td>
+                      <td className="py-2 pr-3 text-right text-red-700 tabular-nums font-medium whitespace-nowrap">
+                        −{fmtDec(item.amount)}
+                      </td>
+                      <td className="py-2 pr-3 text-right text-green-700 tabular-nums hidden sm:table-cell whitespace-nowrap">
+                        {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
+                        <span className={remaining > 0 ? 'text-red-700' : 'text-green-700'}>
+                          {fmtDec(Math.max(0, remaining))}
+                        </span>
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReimbursementStatus.mutate({ id: item.id, status: 'rembourse' })
+                          }
+                          disabled={setReimbursementStatus.isPending}
+                          title="Marquer remboursement terminé"
+                          className="text-stone-300 hover:text-green-500 transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
+                        >
+                          ✓
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
 
       {/* Dernières transactions */}

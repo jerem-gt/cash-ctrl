@@ -6,6 +6,8 @@ import type {
   Category,
   PaginatedTransactions,
   PaymentMethod,
+  PendingReimbursement,
+  Reimbursement,
   ScheduledTransaction,
   Transaction,
   TransactionFilters,
@@ -182,6 +184,23 @@ export const versionApi = {
   get: () => request<AppVersion>('GET', '/api/version'),
 };
 
+// Reimbursements
+export const reimbursementsApi = {
+  pending: () => request<PendingReimbursement[]>('GET', '/api/reimbursements/pending'),
+  list: (transactionId: number) =>
+    request<Reimbursement[]>('GET', `/api/reimbursements/${transactionId}`),
+  link: (transactionId: number, linked_transaction_id: number) =>
+    request<Reimbursement[]>('POST', `/api/reimbursements/${transactionId}`, {
+      linked_transaction_id,
+    }),
+  unlink: (transactionId: number, linkedId: number) =>
+    request<{ ok: boolean }>('DELETE', `/api/reimbursements/${transactionId}/${linkedId}`),
+  setStatus: (transactionId: number, reimbursement_status: 'en_attente' | 'rembourse' | null) =>
+    request<Transaction>('PATCH', `/api/reimbursements/${transactionId}/status`, {
+      reimbursement_status,
+    }),
+};
+
 // Transactions
 export const transactionsApi = {
   list: (filters?: TransactionFilters) => {
@@ -207,6 +226,7 @@ export const transactionsApi = {
     date: string;
     payment_method_id: number;
     notes?: string | null;
+    reimbursement_status?: 'en_attente' | 'rembourse' | null;
   }) => request<Transaction>('POST', '/api/transactions', payload),
   update: (
     id: number,

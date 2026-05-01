@@ -6,6 +6,8 @@ import {
   BANKS,
   CATEGORIES,
   PAYMENT_METHODS,
+  PENDING_REIMBURSEMENTS,
+  REIMBURSEMENTS,
   SCHEDULED,
   SUBCATEGORIES,
   TRANSACTIONS,
@@ -87,6 +89,19 @@ export const handlers = [
   // Settings
   http.get('/api/settings', () => HttpResponse.json({ lead_days: 3 })),
   http.put('/api/settings', () => HttpResponse.json({ lead_days: 30 })),
+
+  // Reimbursements
+  http.get('/api/reimbursements/pending', () => HttpResponse.json(PENDING_REIMBURSEMENTS)),
+  http.get('/api/reimbursements/:transactionId', () => HttpResponse.json(REIMBURSEMENTS)),
+  http.post('/api/reimbursements/:transactionId', () =>
+    HttpResponse.json(REIMBURSEMENTS, { status: 201 }),
+  ),
+  http.delete('/api/reimbursements/:transactionId/:linkedId', () =>
+    HttpResponse.json({ ok: true }),
+  ),
+  http.patch('/api/reimbursements/:transactionId/status', () =>
+    HttpResponse.json({ ...TRANSACTIONS.data[0], reimbursement_status: 'en_attente' }),
+  ),
 
   // Export
   http.get(

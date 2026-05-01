@@ -31,7 +31,7 @@ const SPLITS_SUBQUERY = `
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
          t.subcategory_id, t.payment_method_id,
-         t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
+         t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.reimbursement_status, t.created_at,
          a.name                as account_name,
          sc.category_id,
          COALESCE(c.name, '')  as category,
@@ -94,7 +94,7 @@ export function createTransactionsRepo(db: Database) {
           `
         SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
                t.subcategory_id, t.payment_method_id, t.date, t.transfer_peer_id,
-               t.scheduled_id, t.validated, t.notes, t.created_at,
+               t.scheduled_id, t.validated, t.notes, t.reimbursement_status, t.created_at,
                sc.category_id,
                a.name                AS account_name,
                COALESCE(c.name, '')  AS category,
@@ -139,7 +139,7 @@ export function createTransactionsRepo(db: Database) {
       return db.transaction(() => {
         const result = db
           .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, reimbursement_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
             userId,
@@ -151,6 +151,7 @@ export function createTransactionsRepo(db: Database) {
             data.date,
             data.payment_method_id,
             data.notes,
+            data.reimbursement_status ?? null,
           );
         if (data.splits?.length) {
           const txId = Number(result.lastInsertRowid);
@@ -249,6 +250,12 @@ export function createTransactionsRepo(db: Database) {
       return db
         .prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?')
         .run(validated ? 1 : 0, id, userId);
+    },
+
+    setReimbursementStatus(userId: number, id: number, status: 'en_attente' | 'rembourse' | null) {
+      return db
+        .prepare('UPDATE transactions SET reimbursement_status = ? WHERE id = ? AND user_id = ?')
+        .run(status, id, userId);
     },
 
     delete(userId: number, id: number) {

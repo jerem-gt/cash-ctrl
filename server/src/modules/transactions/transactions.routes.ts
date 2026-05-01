@@ -25,6 +25,7 @@ const transactionSchema = z
     payment_method_id: z.number().int().positive(),
     notes: z.string().max(1000).nullable().default(null),
     validated: z.boolean().default(false),
+    reimbursement_status: z.enum(['en_attente', 'rembourse']).nullable().default(null),
   })
   .refine(
     (d) => {
