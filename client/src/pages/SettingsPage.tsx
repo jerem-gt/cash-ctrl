@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { PasswordChangeCard } from '@/components/PasswordChangeCard.tsx';
 import {
   AccountTypesManager,
   BanksManager,
@@ -8,6 +9,8 @@ import {
   SettingsManager,
   SettingsTab,
 } from '@/features/settings';
+
+import ExportManager from '../features/settings/components/ExportManager.tsx';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('categories');
@@ -31,6 +34,8 @@ export default function SettingsPage() {
           {activeTab === 'banks' && <BanksManager />}
           {activeTab === 'paymentMethods' && <PaymentMethodsManager />}
           {activeTab === 'accountTypes' && <AccountTypesManager />}
+          {activeTab === 'export' && <ExportManager />}
+          {activeTab === 'password' && <PasswordChangeCard />}
         </div>
       </div>
     </div>

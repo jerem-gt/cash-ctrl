@@ -8,21 +8,20 @@ import { Sidebar } from './Sidebar';
 
 describe('Sidebar', () => {
   it("affiche le nom de l'application", () => {
-    renderWithProviders(<Sidebar username="test" />);
+    renderWithProviders(<Sidebar username="usertest" />);
     expect(screen.getAllByText(/cashctrl/i).length).toBeGreaterThan(0);
   });
 
   it('affiche les liens de navigation principaux', () => {
-    renderWithProviders(<Sidebar username="test" />);
-    expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
-    expect(screen.getByText('Transactions')).toBeInTheDocument();
-    expect(screen.getByText('Planifiées')).toBeInTheDocument();
+    renderWithProviders(<Sidebar username="usertest" />);
+    expect(screen.getByText('Comptes')).toBeInTheDocument();
   });
 
   it('affiche les liens de navigation bas de page', () => {
-    renderWithProviders(<Sidebar username="test" />);
-    expect(screen.getByText('Export')).toBeInTheDocument();
-    expect(screen.getByText('Paramètres')).toBeInTheDocument();
+    renderWithProviders(<Sidebar username="usertest" />);
+    expect(screen.getByText('Gestion des comptes')).toBeInTheDocument();
+    expect(screen.getByText('Planifications')).toBeInTheDocument();
+    expect(screen.getByText('Configuration')).toBeInTheDocument();
   });
 
   it("affiche le nom d'utilisateur", () => {
@@ -30,19 +29,19 @@ describe('Sidebar', () => {
     expect(screen.getByText('jerem')).toBeInTheDocument();
   });
 
-  it('affiche le bouton user menu', async () => {
-    renderWithProviders(<Sidebar username="test" />);
-    expect(await screen.findByLabelText(/Menu utilisateur/i)).toBeInTheDocument();
+  it('affiche le bouton Déconnexion', async () => {
+    renderWithProviders(<Sidebar username="usertest" />);
+    expect(await screen.findByTitle(/Déconnexion/i)).toBeInTheDocument();
   });
 
   it('affiche le compte chargé dans la liste', async () => {
-    renderWithProviders(<Sidebar username="test" />);
+    renderWithProviders(<Sidebar username="usertest" />);
     expect(await screen.findByText('Compte test')).toBeInTheDocument();
   });
 
   it('bascule le groupement au clic sur le bouton', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<Sidebar username="test" />);
+    renderWithProviders(<Sidebar username="usertest" />);
     await screen.findByText('Compte test');
     const groupBtn = screen.getByRole('button', { name: 'Banque' });
     await user.click(groupBtn);

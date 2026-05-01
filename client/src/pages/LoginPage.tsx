@@ -2,13 +2,15 @@ import { type SubmitEvent, useState } from 'react';
 
 import { Button, FormGroup, Input } from '@/components/ui';
 import { VersionStatus } from '@/components/VersionStatus.tsx';
+import { APP_CONFIG } from '@/constants.ts';
+import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogin } from '@/hooks/useAuth';
-import { appName } from '@/lib/appname.ts';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
+  const isDev = useAppVersion();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -19,7 +21,9 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-stone-100 flex items-center justify-center p-6">
       <div className="bg-white border border-black/[0.07] rounded-2xl p-8 w-full max-w-sm shadow-lg">
-        <h1 className="font-serif text-2xl mb-1">{appName()}</h1>
+        <h1 className="font-serif text-2xl mb-1">
+          {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
+        </h1>
         <p className="text-sm text-stone-400 mb-7">Connectez-vous pour accéder à vos comptes</p>
 
         {login.error && (

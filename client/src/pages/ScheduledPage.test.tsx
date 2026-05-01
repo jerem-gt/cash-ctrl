@@ -11,7 +11,7 @@ import { server } from '@/tests/msw/server';
 describe('ScheduledPage', () => {
   it('affiche le titre', () => {
     renderWithProviders(<ScheduledPage />);
-    expect(screen.getByText('Transactions planifiées')).toBeInTheDocument();
+    expect(screen.getByText('Planifications')).toBeInTheDocument();
   });
 
   it("affiche le paramètre de délai d'anticipation", async () => {
