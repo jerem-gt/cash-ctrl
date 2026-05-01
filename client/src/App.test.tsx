@@ -21,13 +21,13 @@ describe('App', () => {
 
   it('affiche la sidebar après authentification', async () => {
     render(<App />);
-    await screen.findByLabelText(/Menu utilisateur/i);
-    expect(screen.getByText('Planifiées')).toBeInTheDocument();
+    await screen.findByTitle(/Déconnexion/i);
+    expect(screen.getByText('Planifications')).toBeInTheDocument();
   });
 
   it('définit le titre du document après authentification', async () => {
     render(<App />);
-    await screen.findByLabelText(/Menu utilisateur/i);
+    await screen.findByTitle(/Déconnexion/i);
     expect(document.title).toBe('CashCtrl (dev)');
   });
 });

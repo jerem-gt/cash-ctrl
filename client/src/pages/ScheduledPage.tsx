@@ -388,7 +388,7 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
   const amountSign = isTransfer ? '' : typeSign;
 
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-black/[0.06] last:border-0 group">
+    <div className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0 group">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium truncate">{sched.description}</p>
@@ -532,7 +532,7 @@ export default function ScheduledPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-serif text-2xl tracking-tight">Transactions planifiées</h2>
+        <h2 className="font-serif text-2xl tracking-tight">Planifications</h2>
         <p className="text-sm text-stone-400 mt-0.5">Récurrences automatiques</p>
       </div>
 
@@ -558,18 +558,14 @@ export default function ScheduledPage() {
           </Button>
         </form>
       </Card>
+      <div className="flex items-center justify-end mb-4">
+        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+          + Nouvelle
+        </Button>
+      </div>
 
       {/* Liste des planifications */}
       <Card>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Planifications
-          </p>
-          <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
-            + Nouvelle
-          </Button>
-        </div>
-
         {isLoading ? (
           <p className="text-sm text-stone-400 py-2">Chargement…</p>
         ) : (

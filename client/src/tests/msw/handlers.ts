@@ -18,6 +18,9 @@ export const handlers = [
   http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
 
+  // Version
+  http.get('/api/version', () => HttpResponse.json({ version: 'testversion' })),
+
   // Accounts
   http.get('/api/accounts', () => HttpResponse.json(ACCOUNTS)),
   http.post('/api/accounts', () => HttpResponse.json({ ...ACCOUNTS[0], id: 99, name: 'Nouveau' })),

@@ -14,6 +14,7 @@ export function useAppVersion() {
 
   return {
     version: query.data?.version ?? '...',
+    isDev: query.data?.version === 'development',
     // Si la requête a réussi, on est online
     isOnline: query.isSuccess,
     // L'état de chargement

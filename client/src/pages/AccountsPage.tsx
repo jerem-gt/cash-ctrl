@@ -1,6 +1,5 @@
-import { ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
@@ -13,7 +12,6 @@ import { fmtDec } from '@/lib/format';
 import type { Account } from '@/types.ts';
 
 export default function AccountsPage() {
-  const navigate = useNavigate();
   const { data: accounts = [] } = useAccounts();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
@@ -99,15 +97,7 @@ export default function AccountsPage() {
                         key={acc.id}
                         className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group"
                       >
-                        {/* 1. Le bouton principal qui couvre TOUTE la carte */}
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/accounts/${acc.id}`)}
-                          className="absolute inset-0 w-full h-full cursor-pointer rounded-2xl z-0"
-                          aria-label={`Accéder au compte ${acc.name}`}
-                        />
-
-                        {/* 2. Le contenu visuel (on ajoute pointer-events-none pour que le clic passe à travers vers le bouton du dessous) */}
+                        {/* Le contenu visuel */}
                         <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
                           <AccountBadge
                             name={acc.name}
@@ -134,7 +124,7 @@ export default function AccountsPage() {
                                 e.stopPropagation();
                                 setAccountToDelete(acc);
                               }}
-                              className="pointer-events-auto p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                              className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                               title="Supprimer le compte"
                             >
                               <Trash2 size={18} strokeWidth={1.5} />
@@ -154,10 +144,6 @@ export default function AccountsPage() {
                               {accountSeniority(acc.opening_date)}
                             </p>
                           )}
-                          <ChevronRight
-                            size={16}
-                            className="text-stone-300 group-hover:text-stone-500 group-hover:translate-x-1 transition-all"
-                          />
                         </div>
                       </div>
                     );

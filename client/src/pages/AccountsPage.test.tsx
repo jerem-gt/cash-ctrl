@@ -13,13 +13,10 @@ function renderAccountsPage() {
   return renderWithProviders(<AccountsPage />);
 }
 
-const mockNavigate = vi.fn();
-
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
   };
 });
 
@@ -42,19 +39,6 @@ describe('AccountsPage', () => {
     renderAccountsPage();
 
     expect(await screen.findByText(/aucun compte pour l'instant/i)).toBeInTheDocument();
-  });
-
-  it('navigue vers le détail du compte lors du clic sur la carte', async () => {
-    const user = userEvent.setup();
-    renderAccountsPage();
-
-    const accountCard = await screen.findByRole('button', {
-      name: /accéder au compte compte test/i,
-    });
-    await user.click(accountCard);
-
-    // Vérifie que l'URL a changé (le mock du router enregistre les navigations)
-    expect(mockNavigate).toHaveBeenCalledWith('/accounts/1');
   });
 
   it('ouvre le modal de création lors du clic sur "Nouveau compte"', async () => {
