@@ -9,6 +9,7 @@ export interface Bank {
 export interface AccountType {
   id: number;
   name: string;
+  is_investment: number;
   acc_count?: number;
 }
 
@@ -42,9 +43,44 @@ export interface Account {
   bank: string; // résolu par JOIN
   account_type_id: number | null;
   type: string; // résolu par JOIN
+  is_investment: number;
   initial_balance: number;
   opening_date: string | null;
   balance: number;
+  balance_stocks: number;
+}
+
+export interface StockPosition {
+  id: number;
+  account_id: number;
+  ticker: string;
+  quantity: number;
+  avg_price: number;
+  current_price: number | null;
+  currency: string;
+  price_fetched_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface StockOperation {
+  id: number;
+  account_id: number;
+  transaction_id: number;
+  ticker: string;
+  type: 'buy' | 'sell';
+  quantity: number;
+  price_per_share: number;
+  fees: number;
+  date: string;
+  created_at: string;
+}
+
+export interface StockPrice {
+  ticker: string;
+  price: number;
+  currency: string;
+  fetched_at: string;
 }
 
 export interface Transaction {

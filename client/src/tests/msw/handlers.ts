@@ -9,6 +9,8 @@ import {
   PENDING_REIMBURSEMENTS,
   REIMBURSEMENTS,
   SCHEDULED,
+  STOCK_OPERATIONS,
+  STOCK_POSITIONS,
   SUBCATEGORIES,
   TRANSACTIONS,
 } from '../fixtures';
@@ -112,4 +114,26 @@ export const handlers = [
     '/api/export/json',
     () => new HttpResponse(new Blob(['[]'], { type: 'application/json' })),
   ),
+
+  // Stocks
+  http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),
+  http.get('/api/stocks/:accountId/operations', () => HttpResponse.json(STOCK_OPERATIONS)),
+  http.post('/api/stocks/:accountId/buy', () =>
+    HttpResponse.json({ operation: STOCK_OPERATIONS[0], transaction_id: 20 }, { status: 201 }),
+  ),
+  http.post('/api/stocks/:accountId/sell', () =>
+    HttpResponse.json(
+      { operation: { ...STOCK_OPERATIONS[0], type: 'sell' }, transaction_id: 21 },
+      { status: 201 },
+    ),
+  ),
+  http.get('/api/stocks/price/:ticker', () =>
+    HttpResponse.json({
+      ticker: 'DCAM.PA',
+      price: 15,
+      currency: 'EUR',
+      fetched_at: '2026-05-01T10:00:00',
+    }),
+  ),
+  http.post('/api/stocks/prices/refresh', () => HttpResponse.json({ ok: true })),
 ];

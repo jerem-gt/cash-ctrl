@@ -9,6 +9,9 @@ import type {
   PendingReimbursement,
   Reimbursement,
   ScheduledTransaction,
+  StockOperation,
+  StockPosition,
+  StockPrice,
   Transaction,
   TransactionFilters,
   TransactionSplit,
@@ -77,9 +80,9 @@ export const banksApi = {
 // Account types
 export const accountTypesApi = {
   list: () => request<AccountType[]>('GET', '/api/account-types'),
-  create: (payload: { name: string }) =>
+  create: (payload: { name: string; is_investment: boolean }) =>
     request<AccountType>('POST', '/api/account-types', payload),
-  update: (id: number, payload: { name: string }) =>
+  update: (id: number, payload: { name: string; is_investment: boolean }) =>
     request<AccountType>('PUT', `/api/account-types/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
@@ -182,6 +185,37 @@ export const settingsApi = {
 // Version
 export const versionApi = {
   get: () => request<AppVersion>('GET', '/api/version'),
+};
+
+// Stocks
+export type StockOperationPayload = {
+  ticker: string;
+  quantity: number;
+  price_per_share: number;
+  fees: number;
+  date: string;
+  description?: string;
+};
+
+export const stocksApi = {
+  positions: (accountId: number) =>
+    request<StockPosition[]>('GET', `/api/stocks/${accountId}/positions`),
+  operations: (accountId: number) =>
+    request<StockOperation[]>('GET', `/api/stocks/${accountId}/operations`),
+  buy: (accountId: number, payload: StockOperationPayload) =>
+    request<{ operation: StockOperation; transaction_id: number }>(
+      'POST',
+      `/api/stocks/${accountId}/buy`,
+      payload,
+    ),
+  sell: (accountId: number, payload: StockOperationPayload) =>
+    request<{ operation: StockOperation; transaction_id: number }>(
+      'POST',
+      `/api/stocks/${accountId}/sell`,
+      payload,
+    ),
+  price: (ticker: string) => request<StockPrice>('GET', `/api/stocks/price/${ticker}`),
+  refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
 };
 
 // Reimbursements

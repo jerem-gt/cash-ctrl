@@ -72,9 +72,44 @@ export function initSchema(db: Database) {
 
         CREATE TABLE IF NOT EXISTS account_types
         (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT UNIQUE NOT NULL,
+            is_investment INTEGER     NOT NULL DEFAULT 0,
+            created_at    TEXT                 DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS stock_positions
+        (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT UNIQUE NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
+            account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            ticker     TEXT    NOT NULL,
+            quantity   REAL    NOT NULL DEFAULT 0,
+            avg_price  REAL    NOT NULL DEFAULT 0,
+            updated_at TEXT             DEFAULT (datetime('now')),
+            created_at TEXT             DEFAULT (datetime('now')),
+            UNIQUE (account_id, ticker)
+        );
+
+        CREATE TABLE IF NOT EXISTS stock_operations
+        (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id       INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            transaction_id   INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            ticker           TEXT    NOT NULL,
+            type             TEXT    NOT NULL CHECK (type IN ('buy', 'sell')),
+            quantity         REAL    NOT NULL,
+            price_per_share  REAL    NOT NULL,
+            fees             REAL    NOT NULL DEFAULT 0,
+            date             TEXT    NOT NULL,
+            created_at       TEXT             DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS stock_prices
+        (
+            ticker     TEXT PRIMARY KEY,
+            price      REAL NOT NULL,
+            currency   TEXT NOT NULL DEFAULT 'EUR',
+            fetched_at TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS banks
@@ -148,6 +183,11 @@ export function initSchema(db: Database) {
     db.exec(
       "ALTER TABLE transactions ADD COLUMN reimbursement_status TEXT CHECK (reimbursement_status IN ('en_attente', 'rembourse'))",
     );
+  } catch {
+    /* ignore: column may already exist */
+  }
+  try {
+    db.exec('ALTER TABLE account_types ADD COLUMN is_investment INTEGER NOT NULL DEFAULT 0');
   } catch {
     /* ignore: column may already exist */
   }
