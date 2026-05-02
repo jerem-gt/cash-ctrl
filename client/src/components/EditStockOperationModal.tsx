@@ -2,6 +2,7 @@ import { type SyntheticEvent, useState } from 'react';
 
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useUpdateStockOperation } from '@/hooks/useStocks';
+import { calculateTotalAmount } from '@/lib/stock.ts';
 import type { Transaction } from '@/types';
 
 interface Props {
@@ -18,16 +19,15 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
   const [fees, setFees] = useState(String(op.fees));
   const [date, setDate] = useState(op.date);
 
-  const qty = Number.parseFloat(quantity);
-  const pps = Number.parseFloat(price);
+  const qty = Number.parseFloat(quantity) || 0;
+  const pps = Number.parseFloat(price) || 0;
   const f = Number.parseFloat(fees) || 0;
 
-  const totalAmount =
-    qty > 0 && pps > 0 ? (op.type === 'buy' ? qty * pps + f : qty * pps - f) : null;
+  const totalAmount = calculateTotalAmount(op.type, qty, pps, f);
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!(qty > 0) || !(pps > 0)) return;
+    if (qty <= 0 || pps <= 0) return;
     update.mutate(
       {
         operationId: op.id,
@@ -104,18 +104,16 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
             </FormGroup>
           </div>
 
-          {totalAmount !== null && (
-            <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
-              <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
-                {isBuy ? 'Montant total' : 'Montant net reçu'}
-              </p>
-              <p
-                className={`font-serif text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
-              >
-                {totalAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-              </p>
-            </div>
-          )}
+          <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
+            <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
+              {isBuy ? 'Montant total' : 'Montant net reçu'}
+            </p>
+            <p
+              className={`font-serif text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
+            >
+              {totalAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+            </p>
+          </div>
 
           <div className="flex gap-2 justify-end mt-1">
             <Button type="button" onClick={onClose} disabled={update.isPending}>
@@ -124,7 +122,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
             <Button
               type="submit"
               variant="primary"
-              disabled={update.isPending || !(qty > 0) || !(pps > 0)}
+              disabled={update.isPending || qty <= 0 || pps <= 0}
             >
               {update.isPending ? '…' : 'Enregistrer'}
             </Button>

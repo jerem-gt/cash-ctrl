@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
-import { BuyStockModal } from '@/components/BuyStockModal';
-import { SellStockModal } from '@/components/SellStockModal';
+import { StockOperationModal } from '@/components/StockOperationModal';
 import { Button, showToast } from '@/components/ui';
 import { useRefreshPrices, useStockPositions } from '@/hooks/useStocks';
 import type { StockPosition } from '@/types';
@@ -11,27 +10,26 @@ interface PositionRowProps {
   onSell: (pos: StockPosition) => void;
 }
 
-function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
-  const marketValue = pos.current_price != null ? pos.current_price * pos.quantity : null;
-  const costBasis = pos.avg_price * pos.quantity;
-  const pnl = marketValue != null ? marketValue - costBasis : null;
-  const pnlPct = pnl != null && costBasis > 0 ? (pnl / costBasis) * 100 : null;
+const getPnlColor = (pnl: number | null) => {
+  if (pnl == null) return 'text-stone-400';
+  if (pnl > 0) return 'text-green-700';
+  if (pnl < 0) return 'text-red-700';
+  return 'text-stone-500'; // Cas pnl === 0
+};
 
-  const pnlColor =
-    pnl == null
-      ? 'text-stone-400'
-      : pnl > 0
-        ? 'text-green-700'
-        : pnl < 0
-          ? 'text-red-700'
-          : 'text-stone-500';
+function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
+  const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
+  const costBasis = pos.avg_price * pos.quantity;
+  const pnl = marketValue == null ? null : marketValue - costBasis;
+  const pnlPct = pnl != null && costBasis > 0 ? (pnl / costBasis) * 100 : null;
+  const pnlColor = getPnlColor(pnl);
 
   return (
     <div className="flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
       <div className="w-24 shrink-0">
         <span className="text-sm font-bold text-stone-800 font-mono">{pos.ticker}</span>
         {pos.name && (
-          <p className="text-[10px] text-stone-400 truncate mt-0.5" title={pos.name}>
+          <p className="text-[10px] text-stone-400 line-clamp-2 mt-0.5" title={pos.name}>
             {pos.name}
           </p>
         )}
@@ -51,26 +49,28 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
         <div>
           <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Cours</p>
           <p className="font-medium text-stone-700 tabular-nums">
-            {pos.current_price != null
-              ? pos.current_price.toLocaleString('fr-FR', {
+            {pos.current_price == null
+              ? '—'
+              : pos.current_price.toLocaleString('fr-FR', {
                   style: 'currency',
                   currency: pos.currency,
-                })
-              : '—'}
+                })}
           </p>
         </div>
         <div>
           <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valorisation</p>
           <p className="font-medium text-stone-700 tabular-nums">
-            {marketValue != null
-              ? marketValue.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })
-              : '—'}
+            {marketValue == null
+              ? '—'
+              : marketValue.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
           </p>
         </div>
       </div>
 
       <div className="w-28 text-right shrink-0">
-        {pnl != null ? (
+        {pnl == null ? (
+          <p className="text-sm text-stone-300">—</p>
+        ) : (
           <div>
             <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
               {pnl >= 0 ? '+' : ''}
@@ -83,8 +83,6 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
               </p>
             )}
           </div>
-        ) : (
-          <p className="text-sm text-stone-300">—</p>
         )}
       </div>
 
@@ -110,7 +108,7 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
   const [sellPosition, setSellPosition] = useState<StockPosition | null>(null);
 
   const totalMarketValue = positions.reduce(
-    (sum, p) => sum + (p.current_price != null ? p.current_price * p.quantity : 0),
+    (sum, p) => sum + (p.current_price == null ? 0 : p.current_price * p.quantity),
     0,
   );
   const totalCostBasis = positions.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
@@ -123,6 +121,61 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
       onError: (err) => showToast(err.message),
     });
   };
+
+  const totalPnlColor = getPnlColor(totalPnl);
+
+  let portfolioContent: ReactNode;
+  if (isLoading) {
+    portfolioContent = <div className="text-sm text-stone-400 py-4">Chargement…</div>;
+  } else if (positions.length === 0) {
+    portfolioContent = (
+      <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
+        Aucune position ouverte
+      </div>
+    );
+  } else {
+    portfolioContent = (
+      <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
+        {positions.map((pos) => (
+          <PositionRow key={pos.ticker} pos={pos} onSell={setSellPosition} />
+        ))}
+
+        {positions.length > 1 && (
+          <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
+            <div className="w-24 shrink-0">
+              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                Total
+              </span>
+            </div>
+            <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+              <div />
+              <div />
+              <div />
+              <div>
+                <p className="font-bold text-stone-800 tabular-nums">
+                  {totalMarketValue.toLocaleString('fr-FR', {
+                    style: 'currency',
+                    currency: 'EUR',
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="w-28 text-right shrink-0">
+              <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
+                {totalPnl >= 0 ? '+' : ''}
+                {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              </p>
+              <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
+                {totalPnlPct >= 0 ? '+' : ''}
+                {totalPnlPct.toFixed(2)} %
+              </p>
+            </div>
+            <div className="w-10" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -141,62 +194,15 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-sm text-stone-400 py-4">Chargement…</div>
-        ) : positions.length === 0 ? (
-          <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
-            Aucune position ouverte
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-            {positions.map((pos) => (
-              <PositionRow key={pos.ticker} pos={pos} onSell={setSellPosition} />
-            ))}
-
-            {positions.length > 1 && (
-              <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
-                <div className="w-24 shrink-0">
-                  <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                    Total
-                  </span>
-                </div>
-                <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-                  <div />
-                  <div />
-                  <div />
-                  <div>
-                    <p className="font-bold text-stone-800 tabular-nums">
-                      {totalMarketValue.toLocaleString('fr-FR', {
-                        style: 'currency',
-                        currency: 'EUR',
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="w-28 text-right shrink-0">
-                  <p
-                    className={`text-sm font-bold tabular-nums ${totalPnl > 0 ? 'text-green-700' : totalPnl < 0 ? 'text-red-700' : 'text-stone-500'}`}
-                  >
-                    {totalPnl >= 0 ? '+' : ''}
-                    {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                  </p>
-                  <p
-                    className={`text-[11px] tabular-nums ${totalPnl > 0 ? 'text-green-700' : totalPnl < 0 ? 'text-red-700' : 'text-stone-500'}`}
-                  >
-                    {totalPnlPct >= 0 ? '+' : ''}
-                    {totalPnlPct.toFixed(2)} %
-                  </p>
-                </div>
-                <div className="w-10" />
-              </div>
-            )}
-          </div>
-        )}
+        {portfolioContent}
       </div>
 
-      {showBuy && <BuyStockModal accountId={accountId} onClose={() => setShowBuy(false)} />}
+      {showBuy && (
+        <StockOperationModal mode="buy" accountId={accountId} onClose={() => setShowBuy(false)} />
+      )}
       {sellPosition && (
-        <SellStockModal
+        <StockOperationModal
+          mode="sell"
           accountId={accountId}
           position={sellPosition}
           onClose={() => setSellPosition(null)}

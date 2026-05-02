@@ -79,12 +79,12 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           onClick={handleToggle}
           disabled={setStatus.isPending}
           className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
-            localStatus !== null
-              ? 'bg-teal-50 text-teal-700 hover:bg-teal-100'
-              : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+            localStatus === null
+              ? 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+              : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
           }`}
         >
-          {localStatus !== null ? '↩ Actif' : 'Activer'}
+          {localStatus === null ? 'Activer' : '↩ Actif'}
         </button>
       </div>
 
@@ -122,7 +122,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               {reimbursements.map((r) => (
                 <div
                   key={r.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-lg border border-black/[0.06]"
+                  className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-lg border border-black/6"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-stone-700 truncate">{r.description}</p>
@@ -148,7 +148,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           )}
 
           {/* Reste à charge */}
-          <div className="flex items-center justify-between px-3 py-2 bg-stone-50 rounded-lg border border-black/[0.06]">
+          <div className="flex items-center justify-between px-3 py-2 bg-stone-50 rounded-lg border border-black/6">
             <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
               Reste à charge
             </span>
@@ -163,15 +163,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           </div>
 
           {/* Lier un remboursement */}
-          {!showAdd ? (
-            <button
-              type="button"
-              onClick={() => setShowAdd(true)}
-              className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-all"
-            >
-              + Lier un remboursement
-            </button>
-          ) : (
+          {showAdd ? (
             <div className="flex gap-2 items-end">
               <FormGroup label="Transaction de revenu" className="flex-1">
                 <Select value={selectedTxId} onChange={(e) => setSelectedTxId(e.target.value)}>
@@ -196,6 +188,14 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                 Annuler
               </Button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAdd(true)}
+              className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-all"
+            >
+              + Lier un remboursement
+            </button>
           )}
         </div>
       )}
