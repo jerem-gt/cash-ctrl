@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
 import { getOrRefreshPrice, refreshAllPrices } from './stocks.service.js';
 
@@ -52,57 +53,17 @@ export function createStocksRouter(db: Database): Router {
   });
 
   router.post('/:accountId/buy', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    if (!repo.isInvestmentAccount(accountId)) {
-      res.status(400).json({ error: "Ce compte n'est pas un compte d'investissement" });
-      return;
-    }
-
-    const parsed = buySchema.safeParse({ ...req.body, account_id: accountId });
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-
-    try {
-      const result = repo.buy(userId, parsed.data);
+    handleStockAction(req, res, repo, buySchema, ({ userId, data }) => {
+      const result = repo.buy(userId, data);
       res.status(201).json(result);
-    } catch (err) {
-      res.status(400).json({ error: (err as Error).message });
-    }
+    });
   });
 
   router.post('/:accountId/sell', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    if (!repo.isInvestmentAccount(accountId)) {
-      res.status(400).json({ error: "Ce compte n'est pas un compte d'investissement" });
-      return;
-    }
-
-    const parsed = sellSchema.safeParse({ ...req.body, account_id: accountId });
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-
-    try {
-      const result = repo.sell(userId, parsed.data);
+    handleStockAction(req, res, repo, sellSchema, ({ userId, data }) => {
+      const result = repo.sell(userId, data);
       res.status(201).json(result);
-    } catch (err) {
-      res.status(400).json({ error: (err as Error).message });
-    }
+    });
   });
 
   router.put('/:accountId/operations/:operationId', (req, res) => {
