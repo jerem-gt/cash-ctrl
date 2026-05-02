@@ -59,6 +59,8 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }:
             </span>
           )}
           {validated && <Badge variant="green">✓ Validée</Badge>}
+          {tx.reimbursement_status === 'en_attente' && <Badge variant="amber">↩ En attente</Badge>}
+          {tx.reimbursement_status === 'rembourse' && <Badge variant="stone">↩ Remboursé</Badge>}
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.category} ·</span>

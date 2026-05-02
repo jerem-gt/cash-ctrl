@@ -41,6 +41,7 @@ const bankRevolut = lookupId('banks', 'Revolut');
 const typeCourant = lookupId('account_types', 'Courant');
 const typeLivret = lookupId('account_types', 'Livret');
 const typeEpargne = lookupId('account_types', 'Épargne');
+const typeBourse = lookupId('account_types', 'Bourse');
 const typeAutre = lookupId('account_types', 'Autre');
 
 const subcatSalaire = lookupId('subcategories', 'Salaire');
@@ -51,6 +52,7 @@ const subcatRestaurant = lookupId('subcategories', 'Restaurant');
 const subcatStreaming = lookupId('subcategories', 'Streaming');
 const subcatBTM = lookupId('subcategories', 'Bus/Tram/Metro');
 const subcatPharmacie = lookupId('subcategories', 'Pharmacie');
+const subcatMedecin = lookupId('subcategories', 'Médecin');
 const subcatInterets = lookupId('subcategories', 'Intérêts');
 const subcatVetements = lookupId('subcategories', 'Vêtements');
 const subcatVTC = lookupId('subcategories', 'VTC');
@@ -83,12 +85,13 @@ function insertAccount(
   );
 }
 
-// Deux comptes chez BNP (même banque), puis 3 banques différentes
+// Deux comptes chez BNP (même banque), puis 3 banques différentes + un PEA
 const accBNPCourant = insertAccount('Compte BNP', bankBNP, typeCourant, 500, '2022-01-10');
 const accBNPLivret = insertAccount('Livret A BNP', bankBNP, typeLivret, 1000, '2022-01-10');
 const accBourso = insertAccount('Compte Bourso', bankBourso, typeCourant, 200, '2023-03-15');
 const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, 5000, '2020-06-01');
 const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, '2024-01-01');
+const accPEA = insertAccount('PEA BoursoBank', bankBourso, typeBourse, 5000, '2024-01-01');
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 type TxInput = {
@@ -101,13 +104,14 @@ type TxInput = {
   payment_method_id: number;
   validated: 0 | 1;
   notes?: string | null;
+  reimbursement_status?: 'en_attente' | 'rembourse' | null;
 };
 
 const stmtTx = db.prepare(`
     INSERT INTO transactions
         (user_id, account_id, type, amount, description, subcategory_id,
-         date, payment_method_id, validated, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         date, payment_method_id, validated, notes, reimbursement_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 function insertTx(tx: TxInput): number {
@@ -123,6 +127,7 @@ function insertTx(tx: TxInput): number {
       tx.payment_method_id,
       tx.validated,
       tx.notes ?? null,
+      tx.reimbursement_status ?? null,
     ).lastInsertRowid,
   );
 }
@@ -271,6 +276,29 @@ insertTx({
   date: '2026-03-15',
   payment_method_id: pmCB,
   validated: 1,
+  reimbursement_status: 'rembourse',
+});
+insertTx({
+  account_id: accBNPCourant,
+  type: 'expense',
+  amount: 38,
+  description: 'Consultation Dr. Martin',
+  subcategory_id: subcatMedecin,
+  date: '2026-04-10',
+  payment_method_id: pmCB,
+  validated: 1,
+  reimbursement_status: 'en_attente',
+});
+insertTx({
+  account_id: accBNPCourant,
+  type: 'expense',
+  amount: 65,
+  description: 'Dentiste',
+  subcategory_id: subcatMedecin,
+  date: '2026-04-25',
+  payment_method_id: pmCB,
+  validated: 0,
+  reimbursement_status: 'en_attente',
 });
 insertTx({
   account_id: accBNPCourant,
@@ -455,6 +483,83 @@ insertTransfer(
   '2026-03-20',
 );
 
+// ── Bourse (PEA) ─────────────────────────────────────────────────────────────
+const stmtStockTx = db.prepare(`
+  INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes)
+  VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)
+`);
+const stmtStockOp = db.prepare(`
+  INSERT INTO stock_operations (account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+const stmtPositionBuy = db.prepare(`
+  INSERT INTO stock_positions (account_id, ticker, quantity, avg_price, updated_at)
+  VALUES (?, ?, ?, ?, datetime('now'))
+  ON CONFLICT(account_id, ticker) DO UPDATE SET
+    avg_price  = (quantity * avg_price + excluded.quantity * excluded.avg_price) / (quantity + excluded.quantity),
+    quantity   = quantity + excluded.quantity,
+    updated_at = datetime('now')
+`);
+const stmtPositionSell = db.prepare(`
+  UPDATE stock_positions SET quantity = quantity - ?, updated_at = datetime('now')
+  WHERE account_id = ? AND ticker = ?
+`);
+const stmtPrice = db.prepare(`
+  INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at, name)
+  VALUES (?, ?, ?, datetime('now'), ?)
+`);
+
+function insertStockBuy(
+  accountId: number,
+  ticker: string,
+  quantity: number,
+  pricePerShare: number,
+  fees: number,
+  date: string,
+): void {
+  const totalAmount = quantity * pricePerShare + fees;
+  const description = `Achat ${quantity} × ${ticker}`;
+  const txId = Number(
+    stmtStockTx.run(USER_ID, accountId, 'expense', totalAmount, description, date).lastInsertRowid,
+  );
+  stmtStockOp.run(accountId, txId, ticker, 'buy', quantity, pricePerShare, fees, date);
+  stmtPositionBuy.run(accountId, ticker, quantity, pricePerShare);
+}
+
+function insertStockSell(
+  accountId: number,
+  ticker: string,
+  quantity: number,
+  pricePerShare: number,
+  fees: number,
+  date: string,
+): void {
+  const netAmount = quantity * pricePerShare - fees;
+  const description = `Vente ${quantity} × ${ticker}`;
+  const txId = Number(
+    stmtStockTx.run(USER_ID, accountId, 'income', netAmount, description, date).lastInsertRowid,
+  );
+  stmtStockOp.run(accountId, txId, ticker, 'sell', quantity, pricePerShare, fees, date);
+  stmtPositionSell.run(quantity, accountId, ticker);
+}
+
+// PEA BoursoBank — achats sur 3 titres, vente partielle sur LVMH.PA
+// DCAM.PA — ETF Amundi Diversifié : 2 achats → PRU ≈ 10,80 €
+insertStockBuy(accPEA, 'DCAM.PA', 20, 10.5, 0.99, '2025-01-15');
+insertStockBuy(accPEA, 'DCAM.PA', 15, 11.2, 0.99, '2025-03-10');
+
+// AAPL — Apple : 1 achat
+insertStockBuy(accPEA, 'AAPL', 5, 170.0, 1.99, '2025-02-10');
+
+// LVMH.PA — LVMH : achat + vente partielle → 1 action en portefeuille
+insertStockBuy(accPEA, 'LVMH.PA', 2, 580.0, 1.99, '2025-01-20');
+insertStockSell(accPEA, 'LVMH.PA', 1, 620.0, 1.99, '2026-04-15');
+
+// Cours actuels simulés (normalement mis à jour par Yahoo Finance)
+stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
+stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
+stmtPrice.run('LVMH.PA', 610.0, 'EUR', 'LVMH Moët Hennessy');
+
 // ── Planifications ────────────────────────────────────────────────────────────
 const stmtSched = db.prepare(`
     INSERT INTO scheduled_transactions
@@ -621,7 +726,12 @@ insertScheduled({
 });
 
 console.log('Jeu de données de développement chargé.');
-console.log('  Comptes      : 5 (BNP x2, BoursoBank, Crédit Agricole, Revolut)');
-console.log('  Transactions : 34 (dont 8 dans 4 virements liés)');
+console.log('  Comptes       : 6 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut)');
+console.log(
+  '  Transactions  : ~42 (dont 8 virements liés, 5 opérations boursières, 3 remboursements)',
+);
+console.log(
+  '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€)',
+);
 console.log('  Planifications: 6');
-console.log('  Identifiants : admin / changeme');
+console.log('  Identifiants  : admin / changeme');

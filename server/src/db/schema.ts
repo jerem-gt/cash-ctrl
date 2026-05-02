@@ -109,7 +109,8 @@ export function initSchema(db: Database) {
             ticker     TEXT PRIMARY KEY,
             price      REAL NOT NULL,
             currency   TEXT NOT NULL DEFAULT 'EUR',
-            fetched_at TEXT NOT NULL
+            fetched_at TEXT NOT NULL,
+            name       TEXT
         );
 
         CREATE TABLE IF NOT EXISTS banks
@@ -188,11 +189,6 @@ export function initSchema(db: Database) {
   }
   try {
     db.exec('ALTER TABLE account_types ADD COLUMN is_investment INTEGER NOT NULL DEFAULT 0');
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec('ALTER TABLE stock_prices ADD COLUMN name TEXT');
   } catch {
     /* ignore: column may already exist */
   }
