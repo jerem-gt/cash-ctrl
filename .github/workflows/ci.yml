@@ -174,3 +174,4 @@ jobs:
           package-type: 'container'
           min-versions-to-keep: 5 # On garde les 5 dernières versions de dev
           delete-only-pre-release-versions: true # On ne touche pas aux versions stables !
+          ignore-versions: '^(latest)$'
