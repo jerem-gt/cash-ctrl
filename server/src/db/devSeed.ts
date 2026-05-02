@@ -549,16 +549,16 @@ insertStockBuy(accPEA, 'DCAM.PA', 20, 10.5, 0.99, '2025-01-15');
 insertStockBuy(accPEA, 'DCAM.PA', 15, 11.2, 0.99, '2025-03-10');
 
 // AAPL — Apple : 1 achat
-insertStockBuy(accPEA, 'AAPL', 5, 170.0, 1.99, '2025-02-10');
+insertStockBuy(accPEA, 'AAPL', 5, 170, 1.99, '2025-02-10');
 
 // LVMH.PA — LVMH : achat + vente partielle → 1 action en portefeuille
-insertStockBuy(accPEA, 'LVMH.PA', 2, 580.0, 1.99, '2025-01-20');
-insertStockSell(accPEA, 'LVMH.PA', 1, 620.0, 1.99, '2026-04-15');
+insertStockBuy(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20');
+insertStockSell(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15');
 
 // Cours actuels simulés (normalement mis à jour par Yahoo Finance)
 stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
 stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
-stmtPrice.run('LVMH.PA', 610.0, 'EUR', 'LVMH Moët Hennessy');
+stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
 
 // ── Planifications ────────────────────────────────────────────────────────────
 const stmtSched = db.prepare(`

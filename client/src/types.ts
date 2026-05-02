@@ -129,6 +129,8 @@ export interface PendingReimbursement {
   total_reimbursed: number;
 }
 
+export type ReimbursementStatus = 'en_attente' | 'rembourse' | null;
+
 export type RecurrenceUnit = 'day' | 'week' | 'month' | 'year';
 export type WeekendHandling = 'allow' | 'before' | 'after';
 
