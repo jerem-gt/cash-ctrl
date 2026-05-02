@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
 import { generateScheduledTransactions } from './generateScheduled.js';
+import { dateStr } from './scheduledLogic.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -121,7 +122,7 @@ describe('generateScheduledTransactions', () => {
     // Start yesterday, daily, lead=3 → yesterday, today, +1, +2, +3 = 5 occurrences
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split('T')[0];
+    const yStr = dateStr(yesterday);
 
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
@@ -137,7 +138,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('respects lead_days: no occurrences beyond horizon', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
 
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
@@ -160,8 +161,8 @@ describe('generateScheduledTransactions', () => {
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
       recurrence_interval: 1,
-      start_date: today.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0],
+      start_date: dateStr(today),
+      end_date: dateStr(endDate),
     });
     setLeadDays(f, 10);
 
@@ -181,7 +182,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('is idempotent: calling twice does not duplicate', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
       recurrence_interval: 1,
@@ -198,7 +199,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('updates last_generated_until to the last nominal date', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
       recurrence_interval: 1,
@@ -210,7 +211,7 @@ describe('generateScheduledTransactions', () => {
 
     const horizonDate = new Date();
     horizonDate.setDate(horizonDate.getDate() + 2);
-    const expected = horizonDate.toISOString().split('T')[0];
+    const expected = dateStr(horizonDate);
 
     expect(getSchedule(f, id).last_generated_until).toBe(expected);
   });
@@ -219,11 +220,11 @@ describe('generateScheduledTransactions', () => {
     // Find next Saturday
     const d = new Date();
     while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
-    const satStr = d.toISOString().split('T')[0];
+    const satStr = dateStr(d);
 
     const monDate = new Date(d);
     monDate.setDate(d.getDate() + 2);
-    const monStr = monDate.toISOString().split('T')[0];
+    const monStr = dateStr(monDate);
 
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
@@ -245,11 +246,11 @@ describe('generateScheduledTransactions', () => {
     // Find next Sunday
     const d = new Date();
     while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
-    const sunStr = d.toISOString().split('T')[0];
+    const sunStr = dateStr(d);
 
     const friDate = new Date(d);
     friDate.setDate(d.getDate() - 2);
-    const friStr = friDate.toISOString().split('T')[0];
+    const friStr = dateStr(friDate);
 
     const id = insertSchedule(f, {
       recurrence_unit: 'day',
@@ -270,7 +271,7 @@ describe('generateScheduledTransactions', () => {
   // ── Transfer tests ──────────────────────────────────────────────────────────
 
   it('transfer: creates an expense on account and income on to_account', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
     const id = insertSchedule(f, {
       payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
@@ -296,7 +297,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('transfer: expense and income are linked via transfer_peer_id', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
     const id = insertSchedule(f, {
       payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
@@ -327,8 +328,8 @@ describe('generateScheduledTransactions', () => {
       to_account_id: f.account2Id,
       recurrence_unit: 'day',
       recurrence_interval: 1,
-      start_date: today.toISOString().split('T')[0],
-      end_date: end.toISOString().split('T')[0],
+      start_date: dateStr(today),
+      end_date: dateStr(end),
     });
     setLeadDays(f, 10);
 
@@ -339,7 +340,7 @@ describe('generateScheduledTransactions', () => {
   });
 
   it('transfer: idempotent on second call', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = dateStr(new Date());
     const id = insertSchedule(f, {
       payment_method_id: SEED.PM_TRANSFERT,
       to_account_id: f.account2Id,
