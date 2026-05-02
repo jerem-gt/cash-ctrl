@@ -132,6 +132,7 @@ export function useTransactionsManager(initialAccountId?: number) {
       total: result?.total ?? 0,
       totalPages: result?.totalPages ?? 1,
       transactions: result?.data ?? [],
+      balance_before_page: result?.balance_before_page ?? 0,
       categories,
       activeSubcategories,
       accounts,
