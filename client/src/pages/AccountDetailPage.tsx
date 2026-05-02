@@ -39,11 +39,11 @@ export default function AccountDetailPage() {
       {/* Header */}
       <div>
         <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="flex gap-5 items-start">
               {/* Conteneur Logo */}
               {account?.bank && logoMap[account.bank] && (
-                <div className="flex-shrink-0 w-14 h-14 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0,04)] border border-stone-200 flex items-center justify-center p-2.5">
+                <div className="shrink-0 w-14 h-14 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0,04)] border border-stone-200 flex items-center justify-center p-2.5">
                   <img
                     src={logoMap[account.bank]!}
                     alt={`Logo ${account.bank}`}
@@ -91,38 +91,47 @@ export default function AccountDetailPage() {
 
             {/* Section Solde */}
             {isInvestment ? (
-              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[240px] gap-2">
-                <div className="w-full">
-                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+              <div className="flex flex-col md:flex-row items-stretch bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-5 md:gap-5">
+                {/* Cash disponible */}
+                <div className="flex-1 flex flex-col justify-between">
+                  <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
                     Cash disponible
                   </span>
                   <p
-                    className={`font-serif text-2xl leading-none mt-0.5 ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-700'}`}
+                    className={`font-serif text-2xl leading-none ${(account?.balance ?? 0) < 0 ? 'text-red-700' : 'text-stone-700'}`}
                   >
                     {fmtDec(account?.balance ?? 0)}
                   </p>
                 </div>
-                <div className="w-full border-t border-stone-200/60 pt-2">
-                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+
+                <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+
+                {/* Portefeuille */}
+                <div className="flex-1 flex flex-col justify-between">
+                  <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
                     Portefeuille
                   </span>
-                  <p className="font-serif text-2xl leading-none mt-0.5 text-stone-700">
+                  <p className="font-serif text-2xl leading-none text-stone-700">
                     {fmtDec(account?.balance_stocks ?? 0)}
                   </p>
                 </div>
-                <div className="w-full border-t border-stone-200 pt-2">
-                  <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+
+                <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+
+                {/* Total */}
+                <div className="flex-1 flex flex-col justify-between md:pl-2 border-t md:border-t-0 border-stone-200 pt-6 md:pt-0">
+                  <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
                     Total
                   </span>
                   <p
-                    className={`font-serif text-4xl leading-none mt-0.5 ${(account?.balance ?? 0) + (account?.balance_stocks ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
+                    className={`font-serif text-4xl leading-none ${(account?.balance ?? 0) + (account?.balance_stocks ?? 0) < 0 ? 'text-red-700' : 'text-stone-900'}`}
                   >
                     {fmtDec((account?.balance ?? 0) + (account?.balance_stocks ?? 0))}
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-[200px]">
+              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-50">
                 <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
                   Solde disponible
                 </span>
