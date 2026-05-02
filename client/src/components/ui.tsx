@@ -54,7 +54,7 @@ export function Metric({ label, value, sub, variant = 'default' }: Readonly<Metr
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 interface BadgeProps {
-  variant: 'blue' | 'indigo' | 'green';
+  variant: 'blue' | 'indigo' | 'green' | 'amber' | 'stone';
   children: ReactNode;
 }
 export function Badge({ variant, children }: Readonly<BadgeProps>) {
@@ -62,6 +62,8 @@ export function Badge({ variant, children }: Readonly<BadgeProps>) {
     blue: 'bg-blue-50 text-blue-600 border-blue-200',
     indigo: 'bg-indigo-50 text-indigo-500 border-indigo-200',
     green: 'bg-green-50 text-green-600 border-green-200',
+    amber: 'bg-amber-50 text-amber-700 border-amber-200',
+    stone: 'bg-stone-100 text-stone-500 border-stone-200',
   };
   return (
     <span

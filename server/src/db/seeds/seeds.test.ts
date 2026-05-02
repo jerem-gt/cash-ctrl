@@ -43,7 +43,7 @@ describe('seedAccountTypes', () => {
     const db = createFreshDb();
     seedAccountTypes(db);
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(6);
     expect(rows.map((r) => r.name)).toContain('Courant');
     expect(rows.map((r) => r.name)).toContain('Épargne');
   });
@@ -53,7 +53,7 @@ describe('seedAccountTypes', () => {
     seedAccountTypes(db);
     seedAccountTypes(db);
     const count = (db.prepare('SELECT COUNT(*) as c FROM account_types').get() as { c: number }).c;
-    expect(count).toBe(5);
+    expect(count).toBe(6);
   });
 });
 
