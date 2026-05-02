@@ -23,7 +23,7 @@ export const handlers = [
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
 
   // Version
-  http.get('/api/version', () => HttpResponse.json({ version: 'testversion' })),
+  http.get('/api/version', () => HttpResponse.json({ version: 'development' })),
 
   // Accounts
   http.get('/api/accounts', () => HttpResponse.json(ACCOUNTS)),
