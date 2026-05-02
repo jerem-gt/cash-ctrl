@@ -10,15 +10,22 @@ import type {
   UpdateSharedTransactionInput,
 } from './transactions.types';
 
-interface TransactionRow extends Omit<Transaction, 'splits'> {
+interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'> {
   splits_json: string | null;
+  stock_operation_json: string | null;
 }
 
 function parseSplits(row: TransactionRow): Transaction {
-  const { splits_json, ...rest } = row;
-  if (!splits_json) return rest;
-  const splits = JSON.parse(splits_json) as TransactionSplit[];
-  return splits.length > 0 ? { ...rest, splits } : rest;
+  const { splits_json, stock_operation_json, ...rest } = row;
+  const result: Transaction = rest;
+  if (splits_json) {
+    const splits = JSON.parse(splits_json) as TransactionSplit[];
+    if (splits.length > 0) result.splits = splits;
+  }
+  if (stock_operation_json) {
+    result.stock_operation = JSON.parse(stock_operation_json) as Transaction['stock_operation'];
+  }
+  return result;
 }
 
 const SPLITS_SUBQUERY = `
@@ -27,6 +34,13 @@ const SPLITS_SUBQUERY = `
      FROM transaction_splits ts WHERE ts.transaction_id = t.id),
     '[]'
   ) AS splits_json`;
+
+const STOCK_OPERATION_SUBQUERY = `
+  (SELECT json_object('id', so.id, 'account_id', so.account_id, 'transaction_id', so.transaction_id,
+                      'ticker', so.ticker, 'type', so.type, 'quantity', so.quantity,
+                      'price_per_share', so.price_per_share, 'fees', so.fees,
+                      'date', so.date, 'created_at', so.created_at)
+   FROM stock_operations so WHERE so.transaction_id = t.id) AS stock_operation_json`;
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
@@ -38,7 +52,8 @@ const TX_WITH_DETAILS = `
          COALESCE(sc.name, '') as subcategory,
          COALESCE(pm.name, '') as payment_method,
          (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
-         ${SPLITS_SUBQUERY}
+         ${SPLITS_SUBQUERY},
+         ${STOCK_OPERATION_SUBQUERY}
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -101,7 +116,8 @@ export function createTransactionsRepo(db: Database) {
                COALESCE(sc.name, '') AS subcategory,
                COALESCE(pm.name, '') AS payment_method,
                (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
-               ${SPLITS_SUBQUERY}
+               ${SPLITS_SUBQUERY},
+               ${STOCK_OPERATION_SUBQUERY}
         ${FROM_WHERE}${conditions}
         ORDER BY t.date DESC, t.created_at DESC
         LIMIT ? OFFSET ?`,

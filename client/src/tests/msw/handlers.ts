@@ -127,6 +127,9 @@ export const handlers = [
       { status: 201 },
     ),
   ),
+  http.put('/api/stocks/:accountId/operations/:operationId', () =>
+    HttpResponse.json(STOCK_OPERATIONS[0]),
+  ),
   http.get('/api/stocks/price/:ticker', () =>
     HttpResponse.json({
       ticker: 'DCAM.PA',

@@ -6,6 +6,7 @@ export interface StockPosition {
   avg_price: number;
   current_price: number | null;
   currency: string;
+  name: string | null;
   price_fetched_at: string | null;
   updated_at: string;
   created_at: string;
@@ -28,6 +29,7 @@ export interface StockPrice {
   ticker: string;
   price: number;
   currency: string;
+  name: string | null;
   fetched_at: string;
 }
 

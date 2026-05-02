@@ -191,4 +191,9 @@ export function initSchema(db: Database) {
   } catch {
     /* ignore: column may already exist */
   }
+  try {
+    db.exec('ALTER TABLE stock_prices ADD COLUMN name TEXT');
+  } catch {
+    /* ignore: column may already exist */
+  }
 }

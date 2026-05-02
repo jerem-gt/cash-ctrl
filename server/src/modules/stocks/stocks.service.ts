@@ -7,6 +7,7 @@ const PRICE_TTL_MS = 15 * 60 * 1000;
 interface YahooPrice {
   price: number;
   currency: string;
+  name: string | null;
 }
 
 async function fetchYahooPrice(ticker: string): Promise<YahooPrice | null> {
@@ -20,9 +21,15 @@ async function fetchYahooPrice(ticker: string): Promise<YahooPrice | null> {
     const data = (await res.json()) as {
       chart?: { result?: Array<{ meta?: { regularMarketPrice?: number; currency?: string } }> };
     };
-    const meta = data.chart?.result?.[0]?.meta;
+    const meta = data.chart?.result?.[0]?.meta as
+      | { regularMarketPrice?: number; currency?: string; longName?: string; shortName?: string }
+      | undefined;
     if (!meta?.regularMarketPrice) return null;
-    return { price: meta.regularMarketPrice, currency: meta.currency ?? 'EUR' };
+    return {
+      price: meta.regularMarketPrice,
+      currency: meta.currency ?? 'EUR',
+      name: meta.longName ?? meta.shortName ?? null,
+    };
   } catch {
     return null;
   }
@@ -32,20 +39,20 @@ export async function refreshPrice(db: Database, ticker: string): Promise<YahooP
   const fetched = await fetchYahooPrice(ticker);
   if (!fetched) return null;
   db.prepare(
-    "INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at) VALUES (?, ?, ?, datetime('now'))",
-  ).run(ticker, fetched.price, fetched.currency);
+    "INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at) VALUES (?, ?, ?, ?, datetime('now'))",
+  ).run(ticker, fetched.price, fetched.currency, fetched.name);
   return fetched;
 }
 
 export async function getOrRefreshPrice(
   db: Database,
   ticker: string,
-): Promise<{ price: number; currency: string; fetched_at: string } | null> {
+): Promise<{ price: number; currency: string; name: string | null; fetched_at: string } | null> {
   const cached = db
     .prepare<
       [string],
-      { price: number; currency: string; fetched_at: string }
-    >('SELECT price, currency, fetched_at FROM stock_prices WHERE ticker = ?')
+      { price: number; currency: string; name: string | null; fetched_at: string }
+    >('SELECT price, currency, name, fetched_at FROM stock_prices WHERE ticker = ?')
     .get(ticker);
 
   if (cached) {
@@ -60,8 +67,8 @@ export async function getOrRefreshPrice(
     db
       .prepare<
         [string],
-        { price: number; currency: string; fetched_at: string }
-      >('SELECT price, currency, fetched_at FROM stock_prices WHERE ticker = ?')
+        { price: number; currency: string; name: string | null; fetched_at: string }
+      >('SELECT price, currency, name, fetched_at FROM stock_prices WHERE ticker = ?')
       .get(ticker) ?? null
   );
 }

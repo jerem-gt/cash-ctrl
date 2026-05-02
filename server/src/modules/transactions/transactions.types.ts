@@ -27,6 +27,18 @@ export interface Transaction {
   created_at: string;
   account_name?: string;
   splits?: TransactionSplit[];
+  stock_operation?: {
+    id: number;
+    account_id: number;
+    transaction_id: number;
+    ticker: string;
+    type: 'buy' | 'sell';
+    quantity: number;
+    price_per_share: number;
+    fees: number;
+    date: string;
+    created_at: string;
+  } | null;
 }
 
 export interface CreateScheduledTransactionInput {

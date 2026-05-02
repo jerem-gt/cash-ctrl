@@ -11,6 +11,7 @@ import type {
   StockOperation,
   StockPosition,
   Subcategory,
+  Transaction,
 } from '@/types';
 
 export const ACCOUNTS: Account[] = [
@@ -56,6 +57,7 @@ export const STOCK_POSITIONS: StockPosition[] = [
     avg_price: 12,
     current_price: 15,
     currency: 'EUR',
+    name: 'Décathlon',
     price_fetched_at: '2026-05-01T10:00:00',
     updated_at: '2026-05-01T10:00:00',
     created_at: '2026-04-01T10:00:00',
@@ -106,6 +108,27 @@ export const SUBCATEGORIES: Subcategory[] = [
 ];
 
 export const PAYMENT_METHODS: PaymentMethod[] = [{ id: 1, name: 'CB', icon: '💳' }];
+
+export const STOCK_TX: Transaction = {
+  id: 20,
+  account_id: 3,
+  type: 'expense',
+  amount: 121.5,
+  description: 'Achat 10 × DCAM.PA',
+  category_id: 0,
+  subcategory_id: null,
+  category: '',
+  subcategory: '',
+  date: '2026-04-01',
+  transfer_peer_id: null,
+  scheduled_id: null,
+  validated: 0,
+  payment_method_id: null,
+  payment_method: '',
+  notes: null,
+  reimbursement_status: null,
+  stock_operation: STOCK_OPERATIONS[0],
+};
 
 export const TRANSACTIONS: PaginatedTransactions = {
   data: [

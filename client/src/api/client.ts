@@ -197,6 +197,8 @@ export type StockOperationPayload = {
   description?: string;
 };
 
+export type UpdateOperationPayload = Omit<StockOperationPayload, 'ticker'>;
+
 export const stocksApi = {
   positions: (accountId: number) =>
     request<StockPosition[]>('GET', `/api/stocks/${accountId}/positions`),
@@ -216,6 +218,8 @@ export const stocksApi = {
     ),
   price: (ticker: string) => request<StockPrice>('GET', `/api/stocks/price/${ticker}`),
   refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
+  updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>
+    request<StockOperation>('PUT', `/api/stocks/${accountId}/operations/${operationId}`, payload),
 };
 
 // Reimbursements
