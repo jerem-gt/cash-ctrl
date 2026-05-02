@@ -12,9 +12,10 @@ export function useAppVersion() {
     refetchInterval: 30000,
   });
 
+  const version = query.data?.version ?? '...';
   return {
-    version: query.data?.version ?? '...',
-    isDev: query.data?.version === 'development',
+    version: version,
+    isDev: version === 'development',
     // Si la requête a réussi, on est online
     isOnline: query.isSuccess,
     // L'état de chargement

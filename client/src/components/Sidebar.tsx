@@ -36,7 +36,7 @@ export function Sidebar({ username }: Readonly<Props>) {
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
   const { data: banks = [] } = useBanks();
-  const isDev = useAppVersion();
+  const { isDev } = useAppVersion();
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const toggleGroup = (label: string) => {
