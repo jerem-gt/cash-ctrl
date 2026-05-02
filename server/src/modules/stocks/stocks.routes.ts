@@ -116,7 +116,7 @@ export function createStocksRouter(db: Database): Router {
     }
 
     const op = repo.getOperationById(operationId);
-    if (!op || op.account_id !== accountId) {
+    if (op?.account_id !== accountId) {
       res.status(404).json({ error: 'Opération introuvable' });
       return;
     }
