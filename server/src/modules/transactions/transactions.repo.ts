@@ -126,7 +126,24 @@ export function createTransactionsRepo(db: Database) {
       const data = rawRows.map(parseSplits);
 
       const totalPages = Math.max(1, Math.ceil(total / limit));
-      return { data, total, page, totalPages };
+      const offset = (page - 1) * limit;
+
+      let balance_before_page: number | undefined;
+      if (filters.account_id && offset > 0) {
+        const row = db
+          .prepare<[number, number, number], { sum: number }>(
+            `SELECT COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE -amount END), 0) AS sum
+             FROM (SELECT type, amount FROM transactions
+                   WHERE user_id = ? AND account_id = ?
+                   ORDER BY date DESC, created_at DESC LIMIT ?)`,
+          )
+          .get(userId, filters.account_id, offset);
+        balance_before_page = row?.sum ?? 0;
+      } else if (filters.account_id) {
+        balance_before_page = 0;
+      }
+
+      return { data, total, page, totalPages, balance_before_page };
     },
 
     getById(id: number, userId: number): Transaction | undefined {

@@ -97,4 +97,23 @@ describe('TxItem', () => {
     renderTx(baseTx);
     expect(screen.queryByText('⊕ Ventilée')).not.toBeInTheDocument();
   });
+
+  it('affiche le solde courant quand runningBalance est fourni', () => {
+    renderWithProviders(
+      <TxItem
+        tx={baseTx}
+        runningBalance={1500.5}
+        onEdit={noop}
+        onDelete={noop}
+        onDuplicate={noop}
+      />,
+    );
+    expect(screen.getByTitle('Solde courant')).toBeInTheDocument();
+    expect(screen.getByTitle('Solde courant').textContent).toMatch(/1.500,50/);
+  });
+
+  it("n'affiche pas de solde courant si runningBalance est absent", () => {
+    renderTx(baseTx);
+    expect(screen.queryByTitle('Solde courant')).not.toBeInTheDocument();
+  });
 });

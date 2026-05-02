@@ -9,12 +9,21 @@ interface Props {
   tx: Transaction;
   accounts?: Account[];
   logoMap?: Record<string, string | null>;
+  runningBalance?: number;
   onEdit?: (tx: Transaction) => void;
   onDuplicate?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
 }
 
-export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }: Readonly<Props>) {
+export function TxItem({
+  tx,
+  accounts,
+  logoMap,
+  runningBalance,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Readonly<Props>) {
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
@@ -77,10 +86,17 @@ export function TxItem({ tx, accounts, logoMap, onEdit, onDuplicate, onDelete }:
           )}
         </p>
       </div>
-      <span className={`text-sm font-medium tabular-nums ${amountColor}`}>
-        {tx.type === 'income' ? '+' : '−'}
-        {fmtDec(tx.amount)}
-      </span>
+      <div className="text-right shrink-0">
+        <div className={`text-sm font-medium tabular-nums ${amountColor}`}>
+          {tx.type === 'income' ? '+' : '−'}
+          {fmtDec(tx.amount)}
+        </div>
+        {runningBalance != null && (
+          <div className="text-[11px] text-stone-400 tabular-nums" title="Solde courant">
+            {fmtDec(runningBalance)}
+          </div>
+        )}
+      </div>
       <button
         onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
         disabled={validate.isPending}

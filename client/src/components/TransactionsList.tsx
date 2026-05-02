@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
+
 import { DeleteTxModal } from '@/components/DeleteTxModal.tsx';
 import { EditStockOperationModal } from '@/components/EditStockOperationModal';
 import { TxItem } from '@/components/TxItem';
 import { TxModal } from '@/components/TxModal.tsx';
 import { Button, Empty, Pagination, Skeleton } from '@/components/ui';
 import { useTransactionsManager } from '@/hooks/useTransactionsManager.ts';
+import { computeRunningBalances } from '@/lib/balance';
 import type { Account } from '@/types';
 
 import { TransactionsFilters } from './TransactionsFilters.tsx';
@@ -20,6 +23,17 @@ export function TransactionsList({
   emptyMessage = 'Aucune transaction trouvée',
 }: Readonly<Props>) {
   const { state, actions } = useTransactionsManager(account?.id);
+
+  const runningBalances = useMemo(
+    () =>
+      account == null
+        ? []
+        : computeRunningBalances(
+            state.transactions,
+            account.balance - (state.balance_before_page ?? 0),
+          ),
+    [account, state.transactions, state.balance_before_page],
+  );
 
   if (state.isLoading) {
     return (
@@ -61,12 +75,13 @@ export function TransactionsList({
       </div>
       <div className="flex flex-col gap-2">
         {state.transactions.length === 0 && <Empty>{emptyMessage}</Empty>}
-        {state.transactions.map((t) => (
+        {state.transactions.map((t, i) => (
           <TxItem
             key={t.id}
             tx={t}
             accounts={account ? undefined : state.accounts}
             logoMap={logoMap}
+            runningBalance={account == null ? undefined : runningBalances[i]}
             onEdit={actions.openEdit}
             onDuplicate={actions.openDuplicate}
             onDelete={actions.openDelete}

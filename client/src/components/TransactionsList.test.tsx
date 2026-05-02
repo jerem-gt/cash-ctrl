@@ -28,6 +28,7 @@ const mockManager = (overrides: ManagerOverrides = {}) => {
       total: 0,
       totalPages: 1,
       transactions: [],
+      balance_before_page: 0,
       categories: [],
       activeSubcategories: [],
       accounts: [],
@@ -149,10 +150,50 @@ describe('TransactionsList', () => {
 
   it('cache le sélecteur de compte si un compte spécifique est fourni en props', () => {
     mockManager();
-    // showAccountSelect={!account} dans ton code
     render(<TransactionsList account={ACCOUNTS[0]} logoMap={mockLogoMap} />);
 
     const accountSelect = screen.queryByLabelText(/compte/i);
     expect(accountSelect).not.toBeInTheDocument();
+  });
+
+  it('affiche le solde courant sur chaque ligne quand account est fourni', () => {
+    const tx = {
+      ...TRANSACTIONS.data[0],
+      type: 'expense' as const,
+      amount: 200,
+      transfer_peer_id: null,
+    };
+    mockManager({ state: { transactions: [tx], total: 1 } });
+
+    // ACCOUNTS[0].balance = 1500 → solde affiché = 1 500,xx €
+    renderWithProviders(<TransactionsList account={ACCOUNTS[0]} logoMap={mockLogoMap} />);
+
+    expect(screen.getByTitle('Solde courant')).toBeInTheDocument();
+  });
+
+  it("n'affiche pas de solde courant sans account", () => {
+    const tx = { ...TRANSACTIONS.data[0] };
+    mockManager({ state: { transactions: [tx], total: 1 } });
+
+    renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
+
+    expect(screen.queryByTitle('Solde courant')).not.toBeInTheDocument();
+  });
+
+  it('décale le solde courant en fonction de balance_before_page (page 2+)', () => {
+    // ACCOUNTS[0].balance = 1500, balance_before_page = 300
+    // → solde affiché pour la 1ère tx de cette page = 1500 - 300 = 1200
+    const tx = {
+      ...TRANSACTIONS.data[0],
+      type: 'expense' as const,
+      amount: 50,
+      transfer_peer_id: null,
+    };
+    mockManager({ state: { transactions: [tx], total: 26, balance_before_page: 300 } });
+
+    renderWithProviders(<TransactionsList account={ACCOUNTS[0]} logoMap={mockLogoMap} />);
+
+    // fmtDec(1200) → "1 200,00 €" — on cherche "200,00" pour éviter les problèmes d'espace fine
+    expect(screen.getByTitle('Solde courant').textContent).toMatch(/200,00/);
   });
 });
