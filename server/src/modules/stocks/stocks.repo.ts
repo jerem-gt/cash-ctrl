@@ -2,6 +2,43 @@ import type { Database } from 'better-sqlite3';
 
 import type { BuyInput, SellInput, StockOperation, StockPosition } from './stocks.types';
 
+function recalcPosition(db: Database, accountId: number, ticker: string): void {
+  const ops = db
+    .prepare<
+      [number, string],
+      { type: string; quantity: number; price_per_share: number }
+    >('SELECT type, quantity, price_per_share FROM stock_operations WHERE account_id = ? AND ticker = ? ORDER BY date, id')
+    .all(accountId, ticker);
+
+  let qty = 0;
+  let avgPrice = 0;
+  for (const op of ops) {
+    if (op.type === 'buy') {
+      const newQty = qty + op.quantity;
+      avgPrice = newQty > 0 ? (qty * avgPrice + op.quantity * op.price_per_share) / newQty : 0;
+      qty = newQty;
+    } else {
+      qty -= op.quantity;
+    }
+  }
+
+  if (qty <= 0) {
+    db.prepare('DELETE FROM stock_positions WHERE account_id = ? AND ticker = ?').run(
+      accountId,
+      ticker,
+    );
+  } else {
+    db.prepare(
+      `INSERT INTO stock_positions (account_id, ticker, quantity, avg_price, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(account_id, ticker) DO UPDATE SET
+         quantity   = excluded.quantity,
+         avg_price  = excluded.avg_price,
+         updated_at = datetime('now')`,
+    ).run(accountId, ticker, qty, avgPrice);
+  }
+}
+
 export function createStocksRepo(db: Database) {
   return {
     accountBelongsToUser(accountId: number, userId: number): boolean {
@@ -28,6 +65,7 @@ export function createStocksRepo(db: Database) {
           `SELECT sp.id, sp.account_id, sp.ticker, sp.quantity, sp.avg_price,
                   sprice.price      AS current_price,
                   COALESCE(sprice.currency, 'EUR') AS currency,
+                  sprice.name       AS name,
                   sprice.fetched_at AS price_fetched_at,
                   sp.updated_at, sp.created_at
            FROM stock_positions sp
@@ -45,6 +83,7 @@ export function createStocksRepo(db: Database) {
             `SELECT sp.id, sp.account_id, sp.ticker, sp.quantity, sp.avg_price,
                     sprice.price      AS current_price,
                     COALESCE(sprice.currency, 'EUR') AS currency,
+                    sprice.name       AS name,
                     sprice.fetched_at AS price_fetched_at,
                     sp.updated_at, sp.created_at
              FROM stock_positions sp
@@ -188,6 +227,60 @@ export function createStocksRepo(db: Database) {
       db.prepare(
         "INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at) VALUES (?, ?, ?, datetime('now'))",
       ).run(ticker, price, currency);
+    },
+
+    getOperationById(operationId: number): StockOperation | undefined {
+      return (
+        db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(operationId) ?? undefined
+      );
+    },
+
+    updateOperation(
+      operationId: number,
+      input: {
+        account_id: number;
+        quantity: number;
+        price_per_share: number;
+        fees: number;
+        date: string;
+        description?: string;
+      },
+    ): StockOperation {
+      return db.transaction(() => {
+        const op = db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(operationId);
+        if (!op) throw new Error('Opération introuvable');
+
+        const totalAmount =
+          op.type === 'buy'
+            ? input.quantity * input.price_per_share + input.fees
+            : input.quantity * input.price_per_share - input.fees;
+
+        if (totalAmount <= 0) throw new Error('Le montant net doit être positif');
+
+        const description =
+          input.description ??
+          (op.type === 'buy'
+            ? `Achat ${input.quantity} × ${op.ticker}`
+            : `Vente ${input.quantity} × ${op.ticker}`);
+
+        db.prepare(
+          'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ? WHERE id = ?',
+        ).run(input.quantity, input.price_per_share, input.fees, input.date, operationId);
+
+        db.prepare(
+          'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
+        ).run(totalAmount, description, input.date, op.transaction_id);
+
+        recalcPosition(db, input.account_id, op.ticker);
+
+        return db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(operationId)!;
+      })();
     },
   };
 }

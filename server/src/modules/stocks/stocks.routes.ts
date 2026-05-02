@@ -18,6 +18,14 @@ const buySchema = z.object({
 
 const sellSchema = buySchema;
 
+const editOperationSchema = z.object({
+  quantity: z.number().positive(),
+  price_per_share: z.number().positive(),
+  fees: z.number().min(0).default(0),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  description: z.string().min(1).max(200).optional(),
+});
+
 export function createStocksRouter(db: Database): Router {
   const repo = createStocksRepo(db);
   const router = Router();
@@ -92,6 +100,39 @@ export function createStocksRouter(db: Database): Router {
     try {
       const result = repo.sell(userId, parsed.data);
       res.status(201).json(result);
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+    }
+  });
+
+  router.put('/:accountId/operations/:operationId', (req, res) => {
+    const accountId = Number.parseInt(req.params.accountId);
+    const operationId = Number.parseInt(req.params.operationId);
+    const userId = sessionUserId(req);
+
+    if (!repo.accountBelongsToUser(accountId, userId)) {
+      res.status(403).json({ error: 'Compte introuvable' });
+      return;
+    }
+
+    const op = repo.getOperationById(operationId);
+    if (!op || op.account_id !== accountId) {
+      res.status(404).json({ error: 'Opération introuvable' });
+      return;
+    }
+
+    const parsed = editOperationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+
+    try {
+      const operation = repo.updateOperation(operationId, {
+        account_id: accountId,
+        ...parsed.data,
+      });
+      res.json(operation);
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
     }

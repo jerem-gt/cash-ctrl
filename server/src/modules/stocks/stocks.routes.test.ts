@@ -258,6 +258,85 @@ describe('/api/stocks', () => {
     });
   });
 
+  // ─── Édition d'opération ──────────────────────────────────────────────────
+
+  describe('PUT /:accountId/operations/:operationId', () => {
+    it('met à jour la quantité et recalcule le PRU', async () => {
+      // Acheter 10 à 12 → position: qty=10, avg=12
+      const buyRes = await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'EDIT.PA',
+        quantity: 10,
+        price_per_share: 12,
+        fees: 0,
+        date: TODAY,
+      });
+      const opId = buyRes.body.operation.id;
+
+      // Modifier : 20 actions à 14
+      const res = await ctx.agent
+        .put(`/api/stocks/${bourseAccountId}/operations/${opId}`)
+        .send({ quantity: 20, price_per_share: 14, fees: 0, date: TODAY });
+
+      expect(res.status).toBe(200);
+      expect(res.body.quantity).toBe(20);
+      expect(res.body.price_per_share).toBe(14);
+
+      // La position doit refléter la nouvelle quantité
+      const posRes = await ctx.agent.get(`/api/stocks/${bourseAccountId}/positions`);
+      const pos = posRes.body.find((p: { ticker: string }) => p.ticker === 'EDIT.PA');
+      expect(pos.quantity).toBe(20);
+      expect(pos.avg_price).toBe(14);
+
+      // La transaction doit avoir le nouveau montant (20 * 14 = 280)
+      const txRes = await ctx.agent.get('/api/transactions');
+      const tx = txRes.body.data.find((t: { id: number }) => t.id === buyRes.body.transaction_id);
+      expect(tx.amount).toBe(280);
+    });
+
+    it('met à jour les frais et recalcule le montant', async () => {
+      const buyRes = await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'FEES.PA',
+        quantity: 5,
+        price_per_share: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      const opId = buyRes.body.operation.id;
+
+      const res = await ctx.agent
+        .put(`/api/stocks/${bourseAccountId}/operations/${opId}`)
+        .send({ quantity: 5, price_per_share: 100, fees: 2.5, date: TODAY });
+
+      expect(res.status).toBe(200);
+      expect(res.body.fees).toBe(2.5);
+
+      const txRes = await ctx.agent.get('/api/transactions');
+      const tx = txRes.body.data.find((t: { id: number }) => t.id === buyRes.body.transaction_id);
+      expect(tx.amount).toBe(502.5);
+    });
+
+    it('retourne 404 pour une opération inconnue', async () => {
+      const res = await ctx.agent
+        .put(`/api/stocks/${bourseAccountId}/operations/99999`)
+        .send({ quantity: 1, price_per_share: 10, fees: 0, date: TODAY });
+      expect(res.status).toBe(404);
+    });
+
+    it('retourne 403 pour un compte inconnu', async () => {
+      const res = await ctx.agent
+        .put(`/api/stocks/99999/operations/1`)
+        .send({ quantity: 1, price_per_share: 10, fees: 0, date: TODAY });
+      expect(res.status).toBe(403);
+    });
+
+    it('retourne 400 sur paramètres invalides', async () => {
+      const res = await ctx.agent
+        .put(`/api/stocks/${bourseAccountId}/operations/1`)
+        .send({ quantity: -1, price_per_share: 0, date: TODAY });
+      expect(res.status).toBe(400);
+    });
+  });
+
   // ─── Prix ─────────────────────────────────────────────────────────────────
 
   describe('GET /price/:ticker', () => {

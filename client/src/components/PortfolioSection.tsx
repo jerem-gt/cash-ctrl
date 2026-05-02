@@ -27,9 +27,14 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
           : 'text-stone-500';
 
   return (
-    <div className="flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors group">
+    <div className="flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
       <div className="w-24 shrink-0">
         <span className="text-sm font-bold text-stone-800 font-mono">{pos.ticker}</span>
+        {pos.name && (
+          <p className="text-[10px] text-stone-400 truncate mt-0.5" title={pos.name}>
+            {pos.name}
+          </p>
+        )}
       </div>
 
       <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
@@ -85,7 +90,7 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
 
       <button
         onClick={() => onSell(pos)}
-        className="opacity-0 group-hover:opacity-100 text-[11px] font-bold text-stone-400 hover:text-red-600 px-2 py-1 rounded-lg transition-all"
+        className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all shrink-0"
         title="Vendre"
       >
         Vendre

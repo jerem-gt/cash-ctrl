@@ -1,4 +1,5 @@
 import { DeleteTxModal } from '@/components/DeleteTxModal.tsx';
+import { EditStockOperationModal } from '@/components/EditStockOperationModal';
 import { TxItem } from '@/components/TxItem';
 import { TxModal } from '@/components/TxModal.tsx';
 import { Button, Empty, Pagination, Skeleton } from '@/components/ui';
@@ -106,20 +107,23 @@ export function TransactionsList({
           onClose={actions.closeAll}
         />
       )}
-      {state.modal.type === 'edit' && (
-        <TxModal
-          mode="edit"
-          tx={state.modal.tx}
-          accounts={state.accounts}
-          logoMap={logoMap}
-          categories={state.categories}
-          paymentMethods={state.paymentMethods}
-          fixedAccountId={account?.id}
-          onSave={actions.handleUpdate}
-          onClose={actions.closeAll}
-          isPending={state.isPending}
-        />
-      )}
+      {state.modal.type === 'edit' &&
+        (state.modal.tx.stock_operation ? (
+          <EditStockOperationModal tx={state.modal.tx} onClose={actions.closeAll} />
+        ) : (
+          <TxModal
+            mode="edit"
+            tx={state.modal.tx}
+            accounts={state.accounts}
+            logoMap={logoMap}
+            categories={state.categories}
+            paymentMethods={state.paymentMethods}
+            fixedAccountId={account?.id}
+            onSave={actions.handleUpdate}
+            onClose={actions.closeAll}
+            isPending={state.isPending}
+          />
+        ))}
       {state.modal.type === 'delete' && (
         <DeleteTxModal
           tx={state.modal.tx}
