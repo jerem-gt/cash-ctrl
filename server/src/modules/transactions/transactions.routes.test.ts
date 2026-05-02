@@ -256,4 +256,218 @@ describe('/api/transactions', () => {
     expect(tx).toBeDefined();
     expect(tx.splits).toHaveLength(2);
   });
+
+  // ─── GET / filtres supplémentaires ────────────────────────────────────────
+
+  it('GET / filtre par account_id', async () => {
+    const acc2 = await ctx.agent.post('/api/accounts').send({
+      name: 'Épargne',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_EPARGNE,
+      opening_date: '2021-01-01',
+    });
+    const acc2Id = acc2.body.id as number;
+    await ctx.agent.post('/api/transactions').send({
+      account_id: acc2Id,
+      type: 'income',
+      amount: 50,
+      description: 'Intérêts',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    const res = await ctx.agent.get(`/api/transactions?account_id=${acc2Id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { account_id: number }) => t.account_id === acc2Id)).toBe(true);
+  });
+
+  it('GET / filtre par subcategory_id', async () => {
+    const res = await ctx.agent.get(`/api/transactions?subcategory_id=${SEED.SUBCAT_SALAIRE}`);
+    expect(res.status).toBe(200);
+    expect(
+      res.body.data.every(
+        (t: { subcategory_id: number }) => t.subcategory_id === SEED.SUBCAT_SALAIRE,
+      ),
+    ).toBe(true);
+  });
+
+  it('GET / pagination limit=1 retourne une seule transaction', async () => {
+    const res = await ctx.agent.get('/api/transactions?limit=1&page=1');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.totalPages).toBeGreaterThan(1);
+  });
+
+  it('GET / retourne 400 pour un paramètre type invalide', async () => {
+    const res = await ctx.agent.get('/api/transactions?type=invalid');
+    expect(res.status).toBe(400);
+  });
+
+  // ─── PUT /:id cas limites (transaction normale) ───────────────────────────
+
+  it('PUT /:id retourne 400 pour données invalides', async () => {
+    const create = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 10,
+      description: 'Test400',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    const id = create.body.id;
+    const res = await ctx.agent.put(`/api/transactions/${id}`).send({ amount: -1 });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /:id retourne 403 pour un compte non possédé', async () => {
+    const create = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 10,
+      description: 'Test403',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    const id = create.body.id;
+    const res = await ctx.agent.put(`/api/transactions/${id}`).send({
+      account_id: 99999,
+      type: 'expense',
+      amount: 10,
+      description: 'Test403',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  // ─── PATCH /:id/validate cas limites ─────────────────────────────────────
+
+  it('PATCH /:id/validate retourne 404 pour une transaction inconnue', async () => {
+    const res = await ctx.agent.patch('/api/transactions/99999/validate').send({ validated: true });
+    expect(res.status).toBe(404);
+  });
+
+  it('PATCH /:id/validate retourne 400 pour un body invalide', async () => {
+    const create = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 100,
+      description: 'ValidateTest',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    const id = create.body.id;
+    const res = await ctx.agent.patch(`/api/transactions/${id}/validate`).send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('PATCH /:id/validate peut dévalider une transaction', async () => {
+    const create = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 100,
+      description: 'Devalider',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: TODAY,
+      payment_method_id: SEED.PM_VIREMENT,
+      validated: true,
+    });
+    const id = create.body.id;
+    await ctx.agent.patch(`/api/transactions/${id}/validate`).send({ validated: true });
+    const res = await ctx.agent
+      .patch(`/api/transactions/${id}/validate`)
+      .send({ validated: false });
+    expect(res.status).toBe(200);
+    expect(res.body.validated).toBe(0);
+  });
+
+  // ─── Transferts ───────────────────────────────────────────────────────────
+
+  describe('transferts (transfer_peer_id)', () => {
+    let transferTxId: number;
+    let account2Id: number;
+
+    beforeAll(async () => {
+      const acc2 = await ctx.agent.post('/api/accounts').send({
+        name: 'Épargne transfert',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_EPARGNE,
+        opening_date: '2021-01-01',
+      });
+      account2Id = acc2.body.id as number;
+
+      const transfer = await ctx.agent.post('/api/transfers').send({
+        from_account_id: accountId,
+        to_account_id: account2Id,
+        amount: 500,
+        description: 'Virement épargne',
+        date: TODAY,
+      });
+      // expense = transaction source (from_account, type expense)
+      transferTxId = transfer.body.expense.id as number;
+    });
+
+    it('PUT /:id met à jour un transfert (montant + date)', async () => {
+      const res = await ctx.agent.put(`/api/transactions/${transferTxId}`).send({
+        amount: 600,
+        description: 'Virement maj',
+        date: TODAY,
+        validated: false,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.amount).toBe(600);
+      expect(res.body.description).toBe('Virement maj');
+    });
+
+    it('PUT /:id transfert retourne 400 pour données invalides', async () => {
+      const res = await ctx.agent.put(`/api/transactions/${transferTxId}`).send({
+        amount: -1,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('PUT /:id transfert retourne 403 si from_account_id non possédé', async () => {
+      const res = await ctx.agent.put(`/api/transactions/${transferTxId}`).send({
+        amount: 500,
+        description: 'Test',
+        date: TODAY,
+        validated: false,
+        from_account_id: 99999,
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('PUT /:id transfert retourne 403 si to_account_id non possédé', async () => {
+      const res = await ctx.agent.put(`/api/transactions/${transferTxId}`).send({
+        amount: 500,
+        description: 'Test',
+        date: TODAY,
+        validated: false,
+        to_account_id: 99999,
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it('DELETE /:id supprime un transfert et son pair', async () => {
+      const transfer = await ctx.agent.post('/api/transfers').send({
+        from_account_id: accountId,
+        to_account_id: account2Id,
+        amount: 100,
+        description: 'À supprimer',
+        date: TODAY,
+      });
+      const txId = transfer.body.expense.id as number;
+      const peerId = transfer.body.income.id as number;
+      const del = await ctx.agent.delete(`/api/transactions/${txId}`);
+      expect(del.status).toBe(200);
+      expect(del.body.ok).toBe(true);
+      // Le pair doit aussi avoir disparu
+      const check = await ctx.agent.delete(`/api/transactions/${peerId}`);
+      expect(check.status).toBe(404);
+    });
+  });
 });
