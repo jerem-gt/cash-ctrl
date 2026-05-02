@@ -27,7 +27,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
   const add = () =>
     onChange([
       ...splits,
-      { _key: String(Date.now() + Math.random()), category_id: '', subcategory_id: '', amount: '' },
+      { _key: crypto.randomUUID(), category_id: '', subcategory_id: '', amount: '' },
     ]);
 
   return (

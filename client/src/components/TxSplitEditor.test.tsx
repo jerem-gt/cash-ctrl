@@ -108,4 +108,94 @@ describe('TxSplitEditor', () => {
     // selects[0] = catégorie, selects[1] = sous-catégorie
     expect(selects[1]).toBeDisabled();
   });
+
+  it('la nouvelle ligne reçoit une _key au format UUID v4', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TxSplitEditor splits={[]} onChange={onChange} categories={CATEGORIES} totalAmount={0} />,
+    );
+    await user.click(screen.getByRole('button', { name: /\+ ajouter/i }));
+    const [[rows]] = onChange.mock.calls as [[SplitInput[]]];
+    expect(rows[0]._key).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+  });
+
+  it('appelle onChange avec le montant mis à jour', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TxSplitEditor
+        splits={[makeRow({ amount: '' })]}
+        onChange={onChange}
+        categories={CATEGORIES}
+        totalAmount={100}
+      />,
+    );
+    await user.type(screen.getByRole('spinbutton'), '8');
+    expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ amount: '8' })]);
+  });
+
+  it('appelle onChange avec la catégorie mise à jour et sous-catégorie réinitialisée', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TxSplitEditor
+        splits={[makeRow({ category_id: '1', subcategory_id: '1' })]}
+        onChange={onChange}
+        categories={CATEGORIES}
+        totalAmount={100}
+      />,
+    );
+    await user.selectOptions(screen.getAllByRole('combobox')[0], '2');
+    expect(onChange).toHaveBeenLastCalledWith([
+      expect.objectContaining({ category_id: '2', subcategory_id: '' }),
+    ]);
+  });
+
+  it('appelle onChange avec la sous-catégorie mise à jour', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TxSplitEditor
+        splits={[makeRow({ category_id: '1', subcategory_id: '' })]}
+        onChange={onChange}
+        categories={CATEGORIES}
+        totalAmount={100}
+      />,
+    );
+    await user.selectOptions(screen.getAllByRole('combobox')[1], '1');
+    expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ subcategory_id: '1' })]);
+  });
+
+  it('affiche uniquement les sous-catégories de la catégorie sélectionnée', () => {
+    render(
+      <TxSplitEditor
+        splits={[makeRow({ category_id: '1', subcategory_id: '' })]}
+        onChange={vi.fn()}
+        categories={CATEGORIES}
+        totalAmount={100}
+      />,
+    );
+    expect(screen.getByRole('option', { name: 'Supermarché' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Loyer' })).not.toBeInTheDocument();
+  });
+
+  it('supprime uniquement la bonne ligne parmi plusieurs', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const row1 = makeRow({ _key: 'k1', amount: '100' });
+    const row2 = makeRow({ _key: 'k2', amount: '200' });
+    render(
+      <TxSplitEditor
+        splits={[row1, row2]}
+        onChange={onChange}
+        categories={CATEGORIES}
+        totalAmount={300}
+      />,
+    );
+    await user.click(screen.getAllByRole('button', { name: '×' })[0]);
+    expect(onChange).toHaveBeenCalledWith([row2]);
+  });
 });
