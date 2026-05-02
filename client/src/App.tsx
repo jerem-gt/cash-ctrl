@@ -18,10 +18,10 @@ const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
 
 function AppShell() {
   // Ajoute (dev) au titre si on est hors production
-  const isDev = useAppVersion();
+  const { isDev } = useAppVersion();
   useEffect(() => {
     document.title = APP_CONFIG.name + (isDev ? ' (dev)' : '');
-  }, []);
+  }, [isDev]);
 
   const { data: me, isLoading } = useMe();
 

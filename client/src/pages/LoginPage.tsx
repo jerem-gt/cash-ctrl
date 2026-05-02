@@ -10,7 +10,7 @@ export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
-  const isDev = useAppVersion();
+  const { isDev } = useAppVersion();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
