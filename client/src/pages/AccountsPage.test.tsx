@@ -60,7 +60,7 @@ describe('AccountsPage', () => {
     expect(screen.queryByText('Courant')).not.toBeInTheDocument();
   });
 
-  it('affiche un état vide si aucun compte n’existe', async () => {
+  it("affiche un état vide si aucun compte n'existe", async () => {
     // On surcharge le mock pour renvoyer une liste vide
     server.use(http.get('/api/accounts', () => HttpResponse.json([])));
 
@@ -100,7 +100,7 @@ describe('AccountsPage', () => {
     });
   });
 
-  it('ouvre le modal d’édition avec les données pré-remplies', async () => {
+  it("ouvre le modal d'édition avec les données pré-remplies", async () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
@@ -111,7 +111,46 @@ describe('AccountsPage', () => {
     expect(screen.getByText('Modifier le compte')).toBeInTheDocument();
   });
 
-  it('masque le logo de la banque si l’image échoue à charger', async () => {
+  it('affiche le bouton Rouvrir sur les comptes clôturés et rouvre après clic', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/accounts', () =>
+        HttpResponse.json([
+          {
+            ...{
+              id: 1,
+              name: 'Compte test',
+              bank_id: 1,
+              bank: 'BNP',
+              account_type_id: 1,
+              type: 'Courant',
+              is_investment: 0,
+              initial_balance: 0,
+              opening_date: '2024-01-01',
+              closed_at: '2025-01-01',
+              balance: 0,
+              balance_stocks: 0,
+            },
+          },
+        ]),
+      ),
+    );
+    renderAccountsPage();
+
+    // Développe la section des comptes clôturés
+    const toggle = await screen.findByRole('button', { name: /comptes clôturés/i });
+    await user.click(toggle);
+
+    // Le bouton Rouvrir est présent
+    const reopenBtn = await screen.findByTitle(/rouvrir le compte/i);
+    await user.click(reopenBtn);
+
+    await waitFor(() => {
+      expect(document.getElementById('toast')?.textContent).toMatch(/réouvert/i);
+    });
+  });
+
+  it("masque le logo de la banque si l'image échoue à charger", async () => {
     renderAccountsPage();
 
     // On attend qu'une image de logo soit présente (via AccountBadge)

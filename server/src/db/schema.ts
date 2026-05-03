@@ -192,4 +192,9 @@ export function initSchema(db: Database) {
   } catch {
     /* ignore: column may already exist */
   }
+  try {
+    db.exec('ALTER TABLE accounts ADD COLUMN closed_at TEXT');
+  } catch {
+    /* ignore: column may already exist */
+  }
 }

@@ -103,6 +103,7 @@ describe('TransactionsList', () => {
             balance: 1000,
             balance_stocks: 0,
             opening_date: '',
+            closed_at: null,
           },
         ],
         categories: [],

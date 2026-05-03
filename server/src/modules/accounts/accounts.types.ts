@@ -9,6 +9,7 @@ export interface Account {
   is_investment: number;
   initial_balance: number;
   opening_date: string | null;
+  closed_at: string | null;
   balance: number;
   balance_stocks: number;
   created_at: string;
@@ -23,3 +24,8 @@ export interface CreateAccountInput {
 }
 
 export type UpdateAccountInput = CreateAccountInput;
+
+export interface CloseAccountInput {
+  closed_at: string;
+  transfer_to_account_id?: number;
+}
