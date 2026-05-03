@@ -246,13 +246,13 @@ function AccountCard({
   onEdit,
   onDelete,
   onClose,
-}: {
+}: Readonly<{
   acc: Account;
   logoMap: Record<string, string | null>;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
-}) {
+}>) {
   const bal = acc.balance;
   return (
     <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
@@ -313,12 +313,12 @@ function ClosedAccountCard({
   logoMap,
   onReopen,
   onDelete,
-}: {
+}: Readonly<{
   acc: Account;
   logoMap: Record<string, string | null>;
   onReopen: () => void;
   onDelete: () => void;
-}) {
+}>) {
   return (
     <div className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60">
       <div className="flex justify-between items-start mb-3">
