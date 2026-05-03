@@ -5,7 +5,14 @@ import { describe, expect, it } from 'vitest';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
-import { useAccounts, useCreateAccount, useDeleteAccount, useUpdateAccount } from './useAccounts';
+import {
+  useAccounts,
+  useCloseAccount,
+  useCreateAccount,
+  useDeleteAccount,
+  useReopenAccount,
+  useUpdateAccount,
+} from './useAccounts';
 
 describe('useAccounts', () => {
   it('charge les comptes', async () => {
@@ -71,5 +78,49 @@ describe('useDeleteAccount', () => {
     const { result } = renderHook(() => useDeleteAccount(), { wrapper: Wrapper });
     result.current.mutate(1);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useReopenAccount', () => {
+  it('rouvre le compte avec succès', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useReopenAccount(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it("passe en erreur si l'API échoue", async () => {
+    server.use(
+      http.post('/api/accounts/:id/reopen', () =>
+        HttpResponse.json({ error: 'Réouverture impossible' }, { status: 400 }),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useReopenAccount(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.message).toBe('Réouverture impossible');
+  });
+});
+
+describe('useCloseAccount', () => {
+  it('clôture le compte avec succès', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useCloseAccount(), { wrapper: Wrapper });
+    result.current.mutate({ id: 1, closed_at: '2025-01-01' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it("passe en erreur si l'API échoue", async () => {
+    server.use(
+      http.post('/api/accounts/:id/close', () =>
+        HttpResponse.json({ error: 'Clôture impossible' }, { status: 400 }),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useCloseAccount(), { wrapper: Wrapper });
+    result.current.mutate({ id: 1, closed_at: '2025-01-01' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.message).toBe('Clôture impossible');
   });
 });

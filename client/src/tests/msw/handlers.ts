@@ -30,6 +30,12 @@ export const handlers = [
   http.post('/api/accounts', () => HttpResponse.json({ ...ACCOUNTS[0], id: 99, name: 'Nouveau' })),
   http.put('/api/accounts/:id', () => HttpResponse.json(ACCOUNTS[0])),
   http.delete('/api/accounts/:id', () => HttpResponse.json({ ok: true })),
+  http.post('/api/accounts/:id/close', () =>
+    HttpResponse.json({ ...ACCOUNTS[0], closed_at: '2025-01-01' }),
+  ),
+  http.post('/api/accounts/:id/reopen', () =>
+    HttpResponse.json({ ...ACCOUNTS[0], closed_at: null }),
+  ),
 
   // Account types
   http.get('/api/account-types', () => HttpResponse.json(ACCOUNT_TYPES)),

@@ -60,5 +60,54 @@ export function createAccountsRouter(db: Database): Router {
     res.json({ ok: true });
   });
 
+  const closeSchema = z.object({
+    closed_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis'),
+    transfer_to_account_id: z.number().int().positive().optional(),
+  });
+
+  router.post('/:id/close', (req, res) => {
+    const id = Number.parseInt(req.params.id);
+    const userId = sessionUserId(req);
+    const account = accountsRepo.getById(id, userId);
+    if (!account) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+    if (account.closed_at) {
+      res.status(400).json({ error: 'Ce compte est déjà clôturé' });
+      return;
+    }
+    const parsed = closeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    const balance = Math.round(account.balance * 100) / 100;
+    if (balance !== 0 && !parsed.data.transfer_to_account_id) {
+      res
+        .status(400)
+        .json({ error: 'Le solde doit être nul ou un compte de destination est requis' });
+      return;
+    }
+    accountsRepo.close(userId, id, parsed.data);
+    res.json(accountsRepo.getById(id, userId));
+  });
+
+  router.post('/:id/reopen', (req, res) => {
+    const id = Number.parseInt(req.params.id);
+    const userId = sessionUserId(req);
+    const account = accountsRepo.getById(id, userId);
+    if (!account) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+    if (!account.closed_at) {
+      res.status(400).json({ error: "Ce compte n'est pas clôturé" });
+      return;
+    }
+    accountsRepo.reopen(userId, id);
+    res.json(accountsRepo.getById(id, userId));
+  });
+
   return router;
 }

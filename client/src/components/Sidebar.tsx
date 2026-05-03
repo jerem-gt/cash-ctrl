@@ -56,7 +56,7 @@ export function Sidebar({ username }: Readonly<Props>) {
 
   const groups = useMemo(() => {
     const map = new Map<string, Account[]>();
-    for (const acc of accounts) {
+    for (const acc of accounts.filter((a) => !a.closed_at)) {
       const key = groupBy === 'bank' ? (acc.bank ?? '') : (acc.type ?? 'Autre');
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(acc);

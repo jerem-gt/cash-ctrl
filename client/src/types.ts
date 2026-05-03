@@ -46,6 +46,7 @@ export interface Account {
   is_investment: number;
   initial_balance: number;
   opening_date: string | null;
+  closed_at: string | null;
   balance: number;
   balance_stocks: number;
 }

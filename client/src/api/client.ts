@@ -102,6 +102,9 @@ export const accountsApi = {
   update: (id: number, payload: AccountPayload) =>
     request<Account>('PUT', `/api/accounts/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/accounts/${id}`),
+  close: (id: number, payload: { closed_at: string; transfer_to_account_id?: number }) =>
+    request<Account>('POST', `/api/accounts/${id}/close`, payload),
+  reopen: (id: number) => request<Account>('POST', `/api/accounts/${id}/reopen`),
 };
 
 // Categories
