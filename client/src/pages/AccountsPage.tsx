@@ -5,6 +5,7 @@ import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
 import { Button, ConfirmModal, Empty, showToast } from '@/components/ui';
 import { useAccounts, useDeleteAccount, useUpdateAccount } from '@/hooks/useAccounts';
+import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { accountSeniority } from '@/lib/account';
@@ -21,13 +22,31 @@ export default function AccountsPage() {
   const updateAccount = useUpdateAccount();
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+  const groupBy = useAccountsGroupBy();
 
-  const groups = accountTypes
-    .map((t) => ({
-      type: t,
-      accounts: accounts.filter((a) => a.account_type_id === t.id),
-    }))
-    .filter((g) => g.accounts.length > 0);
+  const groups = useMemo(() => {
+    if (groupBy === 'type') {
+      return accountTypes
+        .map((t) => ({
+          label: t.name,
+          accounts: accounts.filter((a) => a.account_type_id === t.id),
+        }))
+        .filter((g) => g.accounts.length > 0);
+    }
+    const map = new Map<string, Account[]>();
+    for (const acc of accounts) {
+      const key = acc.bank ?? '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(acc);
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) => {
+        if (a === '') return 1;
+        if (b === '') return -1;
+        return a.localeCompare(b);
+      })
+      .map(([key, accs]) => ({ label: key === '' ? 'Sans banque' : key, accounts: accs }));
+  }, [accounts, accountTypes, groupBy]);
 
   const handleDeleteAccount = (accountId: number) => {
     deleteAccount.mutate(accountId, {
@@ -66,22 +85,48 @@ export default function AccountsPage() {
             Cliquez sur un compte pour voir ses transactions
           </p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
-          + Nouveau compte
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-stone-100 rounded-lg p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setGroupBy('bank')}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                groupBy === 'bank'
+                  ? 'bg-white text-stone-800 shadow-sm font-medium'
+                  : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              Banque
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupBy('type')}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                groupBy === 'type'
+                  ? 'bg-white text-stone-800 shadow-sm font-medium'
+                  : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              Type
+            </button>
+          </div>
+          <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
+            + Nouveau compte
+          </Button>
+        </div>
       </div>
 
       {accounts.length === 0 ? (
         <Empty>Aucun compte pour l'instant.</Empty>
       ) : (
         <div className="space-y-6">
-          {groups.map(({ type, accounts: groupAccounts }) => {
+          {groups.map(({ label, accounts: groupAccounts }) => {
             const subtotal = groupAccounts.reduce((sum, acc) => sum + acc.balance, 0);
             return (
-              <div key={type.id}>
+              <div key={label}>
                 <div className="flex items-baseline justify-between mb-3">
                   <span className="text-xs font-semibold uppercase tracking-widest text-stone-400">
-                    {type.name}
+                    {label}
                   </span>
                   <span
                     className={`font-serif text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}

@@ -5,14 +5,13 @@ import { NavLink, useMatch } from 'react-router-dom';
 import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAccounts } from '@/hooks/useAccounts';
+import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
 import { fmt } from '@/lib/format';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
-
-type GroupBy = 'bank' | 'type';
 
 const NAV_BOTTOM = [
   { to: '/accounts', label: 'Gestion des comptes', icon: '▣', end: true },
@@ -50,9 +49,7 @@ export function Sidebar({ username }: Readonly<Props>) {
       return next;
     });
   };
-  const [groupBy, setGroupBy] = useState<GroupBy>(
-    () => (localStorage.getItem('cashctrl.accountsGroupBy') as GroupBy) ?? 'bank',
-  );
+  const groupBy = useAccountsGroupBy();
 
   const accountsActive = useMatch({ path: '/accounts/:id', end: true }) !== null;
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
@@ -77,11 +74,6 @@ export function Sidebar({ username }: Readonly<Props>) {
         accounts: accs,
       }));
   }, [accounts, groupBy]);
-
-  const handleSetGroupBy = (g: GroupBy) => {
-    setGroupBy(g);
-    localStorage.setItem('cashctrl.accountsGroupBy', g);
-  };
 
   return (
     <aside className="fixed inset-y-0 left-0 w-56 bg-sidebar-bg text-sidebar-fg flex flex-col z-50">
@@ -113,7 +105,7 @@ export function Sidebar({ username }: Readonly<Props>) {
             >
               <div className="flex flex-1 items-center bg-white/6 rounded-md p-0.5 text-[10px]">
                 <button
-                  onClick={() => handleSetGroupBy('bank')}
+                  onClick={() => setGroupBy('bank')}
                   className={`flex-1 px-1.5 py-1 rounded transition-all ${
                     groupBy === 'bank'
                       ? 'bg-white/15 text-white/80 shadow-sm'
@@ -123,7 +115,7 @@ export function Sidebar({ username }: Readonly<Props>) {
                   Banque
                 </button>
                 <button
-                  onClick={() => handleSetGroupBy('type')}
+                  onClick={() => setGroupBy('type')}
                   className={`flex-1 px-1.5 py-1 rounded transition-all ${
                     groupBy === 'type'
                       ? 'bg-white/15 text-white/80 shadow-sm'

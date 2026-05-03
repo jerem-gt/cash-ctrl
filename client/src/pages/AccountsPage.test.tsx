@@ -1,35 +1,63 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setGroupBy } from '@/hooks/useAccountsGroupBy';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
 import AccountsPage from './AccountsPage';
 
-// Helper pour rendre la page avec le router
 function renderAccountsPage() {
   return renderWithProviders(<AccountsPage />);
 }
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-  };
+  return { ...actual };
+});
+
+beforeEach(() => {
+  localStorage.clear();
+  act(() => setGroupBy('bank'));
 });
 
 describe('AccountsPage', () => {
-  it('affiche la liste des comptes groupés par type', async () => {
+  it('affiche la liste des comptes groupés par banque par défaut', async () => {
     renderAccountsPage();
 
-    // Vérifie que les titres de groupes (ex: "Compte Courant") sont là
-    await screen.findByText('Courant');
-    // Vérifie que le nom du compte spécifique est présent
+    await screen.findByText('BNP');
     expect(screen.getByText('Compte test')).toBeInTheDocument();
-    // Vérifie l'affichage du solde
-    expect(screen.getByText(/1.500,00 €/)).toBeInTheDocument();
+    expect(screen.getAllByText(/1.500,00 €/).length).toBeGreaterThan(0);
+  });
+
+  it('affiche la liste des comptes groupés par type après switch', async () => {
+    const user = userEvent.setup();
+    renderAccountsPage();
+
+    await user.click(screen.getByRole('button', { name: /^type$/i }));
+
+    await screen.findByText('Courant');
+    expect(screen.getByText('Compte test')).toBeInTheDocument();
+  });
+
+  it('switche le groupement entre banque et type', async () => {
+    const user = userEvent.setup();
+    renderAccountsPage();
+
+    // Mode banque par défaut : "Courant" n'est pas un label de groupe
+    await screen.findByText('BNP');
+    expect(screen.queryByRole('heading', { name: /courant/i })).not.toBeInTheDocument();
+
+    // Switch vers type : "Courant" devient un label de groupe
+    await user.click(screen.getByRole('button', { name: /^type$/i }));
+    await screen.findByText('Courant');
+
+    // Retour vers banque
+    await user.click(screen.getByRole('button', { name: /^banque$/i }));
+    await screen.findByText('BNP');
+    expect(screen.queryByText('Courant')).not.toBeInTheDocument();
   });
 
   it('affiche un état vide si aucun compte n’existe', async () => {
