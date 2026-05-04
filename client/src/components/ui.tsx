@@ -106,7 +106,7 @@ export function Input({
 }: Readonly<InputHTMLAttributes<HTMLInputElement>>) {
   return (
     <input
-      className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all ${className}`}
+      className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       {...props}
     />
   );

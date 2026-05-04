@@ -9,6 +9,7 @@ import { createAuthRouter } from './modules/auth/auth.routes';
 import { createBanksRouter } from './modules/banks/banks.routes';
 import { createCategoriesRouter } from './modules/categories/categories.routes';
 import { createExportRouter } from './modules/export/export.routes';
+import { createLoansRouter } from './modules/loans/loans.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
 import { createReimbursementsRouter } from './modules/reimbursements/reimbursements.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
@@ -75,6 +76,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/scheduled', createScheduledRouter(db));
   app.use('/api/settings', createSettingsRouter(db));
   app.use('/api/stocks', createStocksRouter(db));
+  app.use('/api/loans', createLoansRouter(db));
 
   app.use(globalErrorHandler);
 

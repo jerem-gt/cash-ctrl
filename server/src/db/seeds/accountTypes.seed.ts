@@ -1,27 +1,27 @@
 import type { Database } from 'better-sqlite3';
 
 const DEFAULT_ACCOUNT_TYPES = [
-  { name: 'Courant', is_investment: 0 },
-  { name: 'Épargne', is_investment: 0 },
-  { name: 'Livret', is_investment: 0 },
-  { name: 'Crédit', is_investment: 0 },
-  { name: 'Bourse', is_investment: 1 },
-  { name: 'Autre', is_investment: 0 },
+  { name: 'Courant', is_investment: 0, is_loan: 0 },
+  { name: 'Épargne', is_investment: 0, is_loan: 0 },
+  { name: 'Livret', is_investment: 0, is_loan: 0 },
+  { name: 'Crédit', is_investment: 0, is_loan: 0 },
+  { name: 'Bourse', is_investment: 1, is_loan: 0 },
+  { name: 'Autre', is_investment: 0, is_loan: 0 },
+  { name: 'Prêt', is_investment: 0, is_loan: 1 },
 ];
 
 export function seedAccountTypes(db: Database) {
   const insert = db.prepare(
-    'INSERT OR IGNORE INTO account_types (name, is_investment) VALUES (?, ?)',
+    'INSERT OR IGNORE INTO account_types (name, is_investment, is_loan) VALUES (?, ?, ?)',
   );
-  // Corrige les lignes déjà existantes (ex. migration depuis ancienne version)
   const update = db.prepare(
-    'UPDATE account_types SET is_investment = ? WHERE name = ? AND is_investment != ?',
+    'UPDATE account_types SET is_investment = ?, is_loan = ? WHERE name = ?',
   );
 
   db.transaction(() => {
-    for (const { name, is_investment } of DEFAULT_ACCOUNT_TYPES) {
-      insert.run(name, is_investment);
-      update.run(is_investment, name, is_investment);
+    for (const { name, is_investment, is_loan } of DEFAULT_ACCOUNT_TYPES) {
+      insert.run(name, is_investment, is_loan);
+      update.run(is_investment, is_loan, name);
     }
   })();
 }

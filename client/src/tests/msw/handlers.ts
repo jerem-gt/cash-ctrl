@@ -5,6 +5,8 @@ import {
   ACCOUNTS,
   BANKS,
   CATEGORIES,
+  LOAN,
+  LOAN_INSTALLMENTS,
   PAYMENT_METHODS,
   PENDING_REIMBURSEMENTS,
   REIMBURSEMENTS,
@@ -120,6 +122,15 @@ export const handlers = [
     '/api/export/json',
     () => new HttpResponse(new Blob(['[]'], { type: 'application/json' })),
   ),
+
+  // Loans (specific patterns before generic /:loanId)
+  http.get('/api/loans/account/:accountId', () => HttpResponse.json(LOAN)),
+  http.get('/api/loans/:loanId/installments', () => HttpResponse.json(LOAN_INSTALLMENTS)),
+  http.post('/api/loans', () => HttpResponse.json(LOAN, { status: 201 })),
+  http.patch('/api/loans/:loanId/installments/:installmentId', () =>
+    HttpResponse.json(LOAN_INSTALLMENTS[0]),
+  ),
+  http.patch('/api/loans/:loanId', () => HttpResponse.json(LOAN)),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

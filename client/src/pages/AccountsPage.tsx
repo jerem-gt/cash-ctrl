@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
 import { CloseAccountModal } from '@/components/CloseAccountModal';
+import { LoanFormModal } from '@/components/LoanFormModal';
 import { Button, ConfirmModal, Empty, showToast } from '@/components/ui';
 import {
   useAccounts,
@@ -24,12 +25,14 @@ export default function AccountsPage() {
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
   const [addOpen, setAddOpen] = useState(false);
+  const [addLoanOpen, setAddLoanOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const reopenAccount = useReopenAccount();
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+  const [loanToEdit, setLoanToEdit] = useState<Account | null>(null);
   const [accountToClose, setAccountToClose] = useState<Account | null>(null);
   const groupBy = useAccountsGroupBy();
 
@@ -129,6 +132,9 @@ export default function AccountsPage() {
               Type
             </button>
           </div>
+          <Button size="sm" onClick={() => setAddLoanOpen(true)}>
+            + Nouveau prêt
+          </Button>
           <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
             + Nouveau compte
           </Button>
@@ -141,7 +147,11 @@ export default function AccountsPage() {
         <div className="space-y-6">
           {/* Comptes actifs */}
           {groups.map(({ label, accounts: groupAccounts }) => {
-            const subtotal = groupAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+            const subtotal = groupAccounts.reduce(
+              (sum, acc) =>
+                sum + (acc.is_loan ? Math.max(0, acc.capital_restant_du ?? 0) : acc.balance),
+              0,
+            );
             return (
               <div key={label}>
                 <div className="flex items-baseline justify-between mb-3">
@@ -160,7 +170,7 @@ export default function AccountsPage() {
                       key={acc.id}
                       acc={acc}
                       logoMap={logoMap}
-                      onEdit={() => setAccountToEdit(acc)}
+                      onEdit={() => (acc.is_loan ? setLoanToEdit(acc) : setAccountToEdit(acc))}
                       onDelete={() => setAccountToDelete(acc)}
                       onClose={() => setAccountToClose(acc)}
                     />
@@ -210,6 +220,7 @@ export default function AccountsPage() {
           onClose={() => setAddOpen(false)}
         />
       )}
+      {addLoanOpen && <LoanFormModal mode="create" onClose={() => setAddLoanOpen(false)} />}
       {accountToEdit && (
         <AccountModal
           mode="edit"
@@ -236,6 +247,9 @@ export default function AccountsPage() {
           onCancel={() => setAccountToDelete(null)}
         />
       )}
+      {loanToEdit && (
+        <LoanFormModal mode="edit" account={loanToEdit} onClose={() => setLoanToEdit(null)} />
+      )}
     </div>
   );
 }
@@ -254,6 +268,7 @@ function AccountCard({
   onClose: () => void;
 }>) {
   const bal = acc.balance;
+  const displayBal = acc.is_loan ? Math.max(0, acc.capital_restant_du ?? 0) : bal;
   return (
     <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
       <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
@@ -294,8 +309,10 @@ function AccountCard({
           </button>
         </div>
       </div>
-      <p className={`font-serif text-3xl ${bal < 0 ? 'text-red-700' : 'text-stone-900'}`}>
-        {fmtDec(bal)}
+      <p
+        className={`font-serif text-3xl ${acc.is_loan || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
+      >
+        {fmtDec(displayBal)}
       </p>
       <div className="flex justify-between items-center mt-4">
         {acc.opening_date && (

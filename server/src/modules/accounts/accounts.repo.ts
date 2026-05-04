@@ -23,6 +23,16 @@ const BALANCE_STOCKS_SUBQUERY = `
     0
   ) AS balance_stocks`;
 
+const CAPITAL_RESTANT_DU_SUBQUERY = `
+  (SELECT l.principal_amount - COALESCE(
+      (SELECT SUM(li.principal_amount)
+       FROM loan_installments li
+       INNER JOIN transactions t ON t.id = li.transaction_id
+       WHERE li.loan_id = l.id AND t.validated = 1),
+      0
+   )
+   FROM loans l WHERE l.account_id = a.id) AS capital_restant_du`;
+
 const ACCOUNT_SELECT = `
   SELECT a.id,
          a.user_id,
@@ -36,8 +46,10 @@ const ACCOUNT_SELECT = `
          COALESCE(b.name, '')           AS bank,
          COALESCE(at.name, '')          AS type,
          COALESCE(at.is_investment, 0)  AS is_investment,
+         COALESCE(at.is_loan, 0)        AS is_loan,
          ${BALANCE_SUBQUERY},
-         ${BALANCE_STOCKS_SUBQUERY}
+         ${BALANCE_STOCKS_SUBQUERY},
+         ${CAPITAL_RESTANT_DU_SUBQUERY}
   FROM accounts a
        LEFT JOIN banks b ON a.bank_id = b.id
        LEFT JOIN account_types at ON a.account_type_id = at.id`;

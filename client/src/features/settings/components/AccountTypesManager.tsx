@@ -44,12 +44,13 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
   const [isInvestment, setIsInvestment] = useState(!!at.is_investment);
+  const [isLoan, setIsLoan] = useState(!!at.is_loan);
 
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     updateAt.mutate(
-      { id: at.id, name: name.trim(), is_investment: isInvestment },
+      { id: at.id, name: name.trim(), is_investment: isInvestment, is_loan: isLoan },
       {
         onSuccess: () => {
           setEditing(false);
@@ -85,10 +86,25 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
               <input
                 type="checkbox"
                 checked={isInvestment}
-                onChange={(e) => setIsInvestment(e.target.checked)}
+                onChange={(e) => {
+                  setIsInvestment(e.target.checked);
+                  if (e.target.checked) setIsLoan(false);
+                }}
                 className="w-4 h-4 accent-indigo-500"
               />
               <span className="text-sm text-stone-600">Compte d&apos;investissement</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isLoan}
+                onChange={(e) => {
+                  setIsLoan(e.target.checked);
+                  if (e.target.checked) setIsInvestment(false);
+                }}
+                className="w-4 h-4 accent-amber-500"
+              />
+              <span className="text-sm text-stone-600">Compte de prêt</span>
             </label>
             <div className="flex gap-2 mt-1">
               <button
@@ -103,6 +119,8 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
                 onClick={() => {
                   setEditing(false);
                   setName(at.name);
+                  setIsInvestment(!!at.is_investment);
+                  setIsLoan(!!at.is_loan);
                 }}
                 className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
               >
@@ -127,6 +145,11 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
                   {!!at.is_investment && (
                     <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
                       Investissement
+                    </span>
+                  )}
+                  {!!at.is_loan && (
+                    <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                      Prêt
                     </span>
                   )}
                 </div>
@@ -169,6 +192,7 @@ export function AccountTypesManager() {
   const createAccountType = useCreateAccountType();
   const [newAtName, setNewAtName] = useState('');
   const [newAtIsInvestment, setNewAtIsInvestment] = useState(false);
+  const [newAtIsLoan, setNewAtIsLoan] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selectedAt = accountTypes.find((at) => at.id === selectedId);
 
@@ -181,11 +205,12 @@ export function AccountTypesManager() {
       return;
     }
     createAccountType.mutate(
-      { name: newAtName.trim(), is_investment: newAtIsInvestment },
+      { name: newAtName.trim(), is_investment: newAtIsInvestment, is_loan: newAtIsLoan },
       {
         onSuccess: () => {
           setNewAtName('');
           setNewAtIsInvestment(false);
+          setNewAtIsLoan(false);
           showToast('Type ajouté ✓');
         },
         onError: (err) => showToast(err.message),
@@ -222,10 +247,25 @@ export function AccountTypesManager() {
             <input
               type="checkbox"
               checked={newAtIsInvestment}
-              onChange={(e) => setNewAtIsInvestment(e.target.checked)}
+              onChange={(e) => {
+                setNewAtIsInvestment(e.target.checked);
+                if (e.target.checked) setNewAtIsLoan(false);
+              }}
               className="w-3.5 h-3.5 accent-indigo-500"
             />
             <span className="text-[11px] text-stone-500">Compte d&apos;investissement</span>
+          </label>
+          <label className="flex items-center gap-2 ml-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={newAtIsLoan}
+              onChange={(e) => {
+                setNewAtIsLoan(e.target.checked);
+                if (e.target.checked) setNewAtIsInvestment(false);
+              }}
+              className="w-3.5 h-3.5 accent-amber-500"
+            />
+            <span className="text-[11px] text-stone-500">Compte de prêt</span>
           </label>
         </div>
         <ListContent

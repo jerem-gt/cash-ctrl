@@ -3,6 +3,8 @@ import type {
   AccountType,
   Bank,
   Category,
+  Loan,
+  LoanInstallment,
   PaginatedTransactions,
   PaymentMethod,
   PendingReimbursement,
@@ -23,11 +25,13 @@ export const ACCOUNTS: Account[] = [
     account_type_id: 1,
     type: 'Courant',
     is_investment: 0,
+    is_loan: 0,
     initial_balance: 0,
     opening_date: '2024-01-01',
     closed_at: null,
     balance: 1500,
     balance_stocks: 0,
+    capital_restant_du: null,
   },
   {
     id: 2,
@@ -37,17 +41,19 @@ export const ACCOUNTS: Account[] = [
     account_type_id: 1,
     type: 'Livret',
     is_investment: 0,
+    is_loan: 0,
     initial_balance: 0,
     opening_date: null,
     closed_at: null,
     balance: 500,
     balance_stocks: 0,
+    capital_restant_du: null,
   },
 ];
 
 export const ACCOUNT_TYPES: AccountType[] = [
-  { id: 1, name: 'Courant', is_investment: 0, acc_count: 1 },
-  { id: 3, name: 'Bourse', is_investment: 1, acc_count: 1 },
+  { id: 1, name: 'Courant', is_investment: 0, is_loan: 0, acc_count: 1 },
+  { id: 3, name: 'Bourse', is_investment: 1, is_loan: 0, acc_count: 1 },
 ];
 
 export const STOCK_POSITIONS: StockPosition[] = [
@@ -208,5 +214,71 @@ export const PENDING_REIMBURSEMENTS: PendingReimbursement[] = [
     category: 'Santé',
     account_name: 'Compte test',
     total_reimbursed: 45,
+  },
+];
+
+export const LOAN_ACCOUNT: Account = {
+  id: 10,
+  name: 'Prêt immobilier',
+  bank_id: 1,
+  bank: 'BNP',
+  account_type_id: 5,
+  type: 'Prêt',
+  is_investment: 0,
+  is_loan: 1,
+  initial_balance: -12000,
+  opening_date: '2024-01-01',
+  closed_at: null,
+  balance: -11200,
+  balance_stocks: 0,
+  capital_restant_du: 11200,
+};
+
+export const LOAN: Loan = {
+  id: 1,
+  account_id: 10,
+  user_id: 1,
+  principal_amount: 12000,
+  interest_rate: 0.05,
+  duration_months: 36,
+  start_date: '2024-02-01',
+  monthly_payment: 359.61,
+  source_account_id: 1,
+  created_at: '2024-01-01T00:00:00',
+};
+
+export const LOAN_INSTALLMENTS: LoanInstallment[] = [
+  {
+    id: 101,
+    loan_id: 1,
+    installment_number: 1,
+    due_date: '2024-02-01',
+    total_amount: 359.61,
+    principal_amount: 309.61,
+    interest_amount: 50,
+    transaction_id: null,
+    transaction_validated: null,
+  },
+  {
+    id: 102,
+    loan_id: 1,
+    installment_number: 2,
+    due_date: '2024-03-01',
+    total_amount: 359.61,
+    principal_amount: 310.9,
+    interest_amount: 48.71,
+    transaction_id: 30,
+    transaction_validated: 1,
+  },
+  {
+    id: 103,
+    loan_id: 1,
+    installment_number: 3,
+    due_date: '2024-04-01',
+    total_amount: 359.61,
+    principal_amount: 312.19,
+    interest_amount: 47.42,
+    transaction_id: 31,
+    transaction_validated: 0,
   },
 ];

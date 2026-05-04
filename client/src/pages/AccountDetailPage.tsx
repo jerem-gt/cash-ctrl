@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { CloseAccountModal } from '@/components/CloseAccountModal';
+import { LoanSection } from '@/components/LoanSection';
 import { PortfolioSection } from '@/components/PortfolioSection';
 import { TransactionsList } from '@/components/TransactionsList';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
+import { useLoan, useLoanInstallments } from '@/hooks/useLoans';
 import { accountSeniority } from '@/lib/account';
 import { fmtDec } from '@/lib/format';
 
@@ -19,6 +22,18 @@ export default function AccountDetailPage() {
 
   const account = accounts.find((a) => a.id === accountId);
   const isInvestment = !!account?.is_investment;
+  const isLoan = !!account?.is_loan;
+  const [loanCloseOpen, setLoanCloseOpen] = useState(false);
+
+  const { data: loanData } = useLoan(isLoan ? accountId : 0);
+  const { data: loanInstallments = [] } = useLoanInstallments(isLoan ? loanData?.id : undefined);
+  const capitalRestantDu = useMemo(() => {
+    if (!loanData) return 0;
+    const paid = loanInstallments
+      .filter((i) => i.transaction_validated === 1)
+      .reduce((sum, i) => sum + i.principal_amount, 0);
+    return Math.max(0, loanData.principal_amount - paid);
+  }, [loanData, loanInstallments]);
 
   if (!account && accounts.length > 0) {
     return (
@@ -66,6 +81,14 @@ export default function AccountDetailPage() {
                       </span>
                     </>
                   )}
+                  {isLoan && (
+                    <>
+                      <span className="text-stone-300">•</span>
+                      <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                        Prêt
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <h2 className="font-serif text-4xl text-stone-900 tracking-tight">
@@ -90,7 +113,16 @@ export default function AccountDetailPage() {
             </div>
 
             {/* Section Solde */}
-            {isInvestment ? (
+            {isLoan ? (
+              <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-50">
+                <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
+                  Capital restant dû
+                </span>
+                <p className="font-serif text-4xl leading-none text-red-700">
+                  {fmtDec(capitalRestantDu)}
+                </p>
+              </div>
+            ) : isInvestment ? (
               <div className="flex flex-col md:flex-row items-stretch bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-5 md:gap-5">
                 {/* Cash disponible */}
                 <div className="flex-1 flex flex-col justify-between">
@@ -153,6 +185,13 @@ export default function AccountDetailPage() {
         </div>
       )}
 
+      {/* Section prêt */}
+      {isLoan && account && (
+        <div className="px-1">
+          <LoanSection account={account} onClose={() => setLoanCloseOpen(true)} />
+        </div>
+      )}
+
       {/* Transaction list */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
@@ -165,6 +204,14 @@ export default function AccountDetailPage() {
         logoMap={logoMap}
         emptyMessage="Aucune transaction sur ce compte"
       />
+
+      {loanCloseOpen && account && (
+        <CloseAccountModal
+          account={account}
+          activeAccounts={accounts.filter((a) => !a.closed_at && a.id !== account.id)}
+          onClose={() => setLoanCloseOpen(false)}
+        />
+      )}
     </div>
   );
 }

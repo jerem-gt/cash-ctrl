@@ -163,6 +163,33 @@ export function initSchema(db: Database) {
             subcategory_id INTEGER NOT NULL REFERENCES subcategories (id),
             amount         REAL    NOT NULL CHECK (amount > 0)
         );
+
+        CREATE TABLE IF NOT EXISTS loans
+        (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id        INTEGER NOT NULL UNIQUE REFERENCES accounts (id) ON DELETE CASCADE,
+            user_id           INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            principal_amount  REAL    NOT NULL CHECK (principal_amount > 0),
+            interest_rate     REAL    NOT NULL CHECK (interest_rate >= 0),
+            duration_months   INTEGER NOT NULL CHECK (duration_months > 0),
+            start_date        TEXT    NOT NULL,
+            monthly_payment   REAL    NOT NULL,
+            source_account_id INTEGER NOT NULL REFERENCES accounts (id),
+            created_at        TEXT             DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS loan_installments
+        (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            loan_id             INTEGER NOT NULL REFERENCES loans (id) ON DELETE CASCADE,
+            installment_number  INTEGER NOT NULL,
+            due_date            TEXT    NOT NULL,
+            total_amount        REAL    NOT NULL CHECK (total_amount > 0),
+            principal_amount    REAL    NOT NULL,
+            interest_amount     REAL    NOT NULL,
+            transaction_id      INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            UNIQUE (loan_id, installment_number)
+        );
     `);
 
   // Migrations
@@ -194,6 +221,11 @@ export function initSchema(db: Database) {
   }
   try {
     db.exec('ALTER TABLE accounts ADD COLUMN closed_at TEXT');
+  } catch {
+    /* ignore: column may already exist */
+  }
+  try {
+    db.exec('ALTER TABLE account_types ADD COLUMN is_loan INTEGER NOT NULL DEFAULT 0');
   } catch {
     /* ignore: column may already exist */
   }

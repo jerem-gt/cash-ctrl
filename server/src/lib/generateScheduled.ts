@@ -100,6 +100,87 @@ function generateForSchedule(
   })();
 }
 
+function generateLoanInstallments(userId: number, db: Db, horizon: Date): void {
+  const horizonStr = dateStr(horizon);
+
+  const transferSubcat = db
+    .prepare<[], { id: number }>(`SELECT id FROM subcategories WHERE name = 'Transfert'`)
+    .get();
+  const prelevementPm = db
+    .prepare<[], { id: number }>(`SELECT id FROM payment_methods WHERE name = 'Prélèvement'`)
+    .get();
+
+  const loans = db
+    .prepare<
+      [number],
+      { id: number; account_id: number; source_account_id: number; account_name: string }
+    >(
+      `SELECT l.id, l.account_id, l.source_account_id, a.name AS account_name
+       FROM loans l
+       JOIN accounts a ON l.account_id = a.id
+       WHERE l.user_id = ? AND a.closed_at IS NULL`,
+    )
+    .all(userId);
+
+  const getPending = db.prepare<
+    [number, string],
+    { id: number; installment_number: number; due_date: string; total_amount: number }
+  >(
+    `SELECT id, installment_number, due_date, total_amount
+     FROM loan_installments
+     WHERE loan_id = ? AND due_date <= ? AND transaction_id IS NULL
+     ORDER BY installment_number`,
+  );
+
+  const insertTx = db.prepare(
+    `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+  );
+  const setPeer = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
+  const setTxId = db.prepare('UPDATE loan_installments SET transaction_id = ? WHERE id = ?');
+
+  for (const loan of loans) {
+    const pending = getPending.all(loan.id, horizonStr);
+    if (pending.length === 0) continue;
+
+    db.transaction(() => {
+      for (const inst of pending) {
+        const desc = `Mensualité n°${inst.installment_number} — ${loan.account_name}`;
+
+        const expId = Number(
+          insertTx.run(
+            userId,
+            loan.source_account_id,
+            'expense',
+            inst.total_amount,
+            desc,
+            transferSubcat?.id ?? null,
+            inst.due_date,
+            prelevementPm?.id ?? null,
+          ).lastInsertRowid,
+        );
+
+        const incId = Number(
+          insertTx.run(
+            userId,
+            loan.account_id,
+            'income',
+            inst.total_amount,
+            desc,
+            transferSubcat?.id ?? null,
+            inst.due_date,
+            prelevementPm?.id ?? null,
+          ).lastInsertRowid,
+        );
+
+        setPeer.run(incId, expId);
+        setPeer.run(expId, incId);
+        setTxId.run(incId, inst.id);
+      }
+    })();
+  }
+}
+
 export function generateScheduledTransactions(userId: number, database: Db): void {
   const settings = database
     .prepare('SELECT lead_days FROM user_settings WHERE user_id = ?')
@@ -137,4 +218,6 @@ export function generateScheduledTransactions(userId: number, database: Db): voi
       txRepo,
     );
   }
+
+  generateLoanInstallments(userId, database, horizon);
 }
