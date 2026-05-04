@@ -15,6 +15,7 @@ import {
 import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
+import { useLoan } from '@/hooks/useLoans';
 import { accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { Account } from '@/types.ts';
@@ -33,6 +34,7 @@ export default function AccountsPage() {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   const [loanToEdit, setLoanToEdit] = useState<Account | null>(null);
+  const { data: loanToEditData } = useLoan(loanToEdit?.id ?? 0);
   const [accountToClose, setAccountToClose] = useState<Account | null>(null);
   const groupBy = useAccountsGroupBy();
 
@@ -247,8 +249,13 @@ export default function AccountsPage() {
           onCancel={() => setAccountToDelete(null)}
         />
       )}
-      {loanToEdit && (
-        <LoanFormModal mode="edit" account={loanToEdit} onClose={() => setLoanToEdit(null)} />
+      {loanToEdit && loanToEditData && (
+        <LoanFormModal
+          mode="edit"
+          account={loanToEdit}
+          loan={loanToEditData}
+          onClose={() => setLoanToEdit(null)}
+        />
       )}
     </div>
   );
