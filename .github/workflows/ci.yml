@@ -175,20 +175,22 @@ jobs:
 
       - name: Delete inferior dev tags
         run: |
-          CURRENT_VERSION="${{ needs.release.outputs.new_release_version }}"
-          echo "Current stable release: $CURRENT_VERSION"
+          # On s'assure d'avoir la version sans le 'v' pour la comparaison
+          CURRENT_VERSION=$(echo "${{ needs.release.outputs.new_release_version }}" | sed 's/^v//')
+          echo "Comparing against stable version: $CURRENT_VERSION"
+
+          # On liste tous les tags de dev
+          for tag in $(git tag -l "*dev*"); do
+            # On extrait la version de base et on enlève le 'v' initial pour comparer des chiffres
+            # v1.3.0-dev.1 -> 1.3.0
+            TAG_BASE=$(echo $tag | sed 's/^v//' | cut -d'-' -f1)
           
-          # Récupère tous les tags contenant "-dev."
-          # Puis boucle pour supprimer ceux qui sont inférieurs ou égaux à la version actuelle
-          for tag in $(git tag -l "*-dev.*"); do
-            # Extraction de la partie version avant le tiret (ex: 1.3.0 de 1.3.0-dev.1)
-            TAG_BASE=$(echo $tag | cut -d'-' -f1)
-          
-            # Utilisation de sort -V (version sort) pour comparer
-            # Si le tag est plus ancien ou égal à la version de release actuelle
+            # Si TAG_BASE est inférieur ou égal à CURRENT_VERSION
             if [ "$(printf '%s\n%s' "$TAG_BASE" "$CURRENT_VERSION" | sort -V | head -n1)" == "$TAG_BASE" ]; then
-              echo "Deleting old dev tag: $tag"
-              git push origin --delete "$tag"
+              echo "Cleaning up: $tag (Base: $TAG_BASE <= $CURRENT_VERSION)"
+              git push origin --delete "$tag" || echo "Could not delete $tag"
+            else
+              echo "Keeping: $tag (Base: $TAG_BASE is newer than $CURRENT_VERSION)"
             fi
           done
 
