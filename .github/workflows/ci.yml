@@ -160,6 +160,38 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  prune-git-tags:
+    name: 🧹 Prune Older Dev Tags
+    needs: [ release ]
+    # On ne lance le ménage que si une nouvelle version stable est publiée sur main
+    if: needs.release.outputs.new_release_published == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Important pour récupérer tous les tags
+
+      - name: Delete inferior dev tags
+        run: |
+          CURRENT_VERSION="${{ needs.release.outputs.new_release_version }}"
+          echo "Current stable release: $CURRENT_VERSION"
+          
+          # Récupère tous les tags contenant "-dev."
+          # Puis boucle pour supprimer ceux qui sont inférieurs ou égaux à la version actuelle
+          for tag in $(git tag -l "*-dev.*"); do
+            # Extraction de la partie version avant le tiret (ex: 1.3.0 de 1.3.0-dev.1)
+            TAG_BASE=$(echo $tag | cut -d'-' -f1)
+          
+            # Utilisation de sort -V (version sort) pour comparer
+            # Si le tag est plus ancien ou égal à la version de release actuelle
+            if [ "$(printf '%s\n%s' "$TAG_BASE" "$CURRENT_VERSION" | sort -V | head -n1)" == "$TAG_BASE" ]; then
+              echo "Deleting old dev tag: $tag"
+              git push origin --delete "$tag"
+            fi
+          done
+
   prune-images:
     name: 🧹 Prune Dev Images
     needs: [ build-and-push ]
