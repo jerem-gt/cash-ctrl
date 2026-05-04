@@ -50,8 +50,10 @@ export interface Account {
   opening_date: string | null;
   closed_at: string | null;
   balance: number;
+  balance_all: number;
   balance_stocks: number;
   capital_restant_du: number | null;
+  capital_restant_du_all: number | null;
 }
 
 export interface Loan {
@@ -132,6 +134,7 @@ export interface Transaction {
   payment_method: string; // résolu par JOIN
   notes: string | null;
   reimbursement_status: 'en_attente' | 'rembourse' | null;
+  loan_principal: number | null;
   account_name?: string;
   splits?: TransactionSplit[];
   stock_operation?: StockOperation | null;

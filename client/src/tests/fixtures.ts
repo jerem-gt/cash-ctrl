@@ -31,7 +31,9 @@ export const ACCOUNTS: Account[] = [
     closed_at: null,
     balance: 1500,
     balance_stocks: 0,
+    balance_all: 1500,
     capital_restant_du: null,
+    capital_restant_du_all: null,
   },
   {
     id: 2,
@@ -47,7 +49,9 @@ export const ACCOUNTS: Account[] = [
     closed_at: null,
     balance: 500,
     balance_stocks: 0,
+    balance_all: 0,
     capital_restant_du: null,
+    capital_restant_du_all: null,
   },
 ];
 
@@ -135,6 +139,7 @@ export const STOCK_TX: Transaction = {
   payment_method: '',
   notes: null,
   reimbursement_status: null,
+  loan_principal: null,
   stock_operation: STOCK_OPERATIONS[0],
 };
 
@@ -158,6 +163,7 @@ export const TRANSACTIONS: PaginatedTransactions = {
       payment_method: 'CB',
       notes: null,
       reimbursement_status: null,
+      loan_principal: null,
     },
   ],
   total: 1,
@@ -231,7 +237,9 @@ export const LOAN_ACCOUNT: Account = {
   closed_at: null,
   balance: -11200,
   balance_stocks: 0,
+  balance_all: 0,
   capital_restant_du: 11200,
+  capital_restant_du_all: 11200,
 };
 
 export const LOAN: Loan = {

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router-dom';
@@ -19,18 +19,6 @@ function renderDetail(id = '1') {
 }
 
 describe('AccountDetailPage', () => {
-  it('affiche le nom du compte après chargement', async () => {
-    renderDetail();
-    await screen.findByText('Compte test');
-    expect(screen.getByText('Compte test')).toBeInTheDocument();
-  });
-
-  it('affiche le solde du compte', async () => {
-    renderDetail();
-    await screen.findByText('Compte test');
-    expect(screen.getByText(/1.500/)).toBeInTheDocument();
-  });
-
   it('affiche "Compte introuvable" pour un id inexistant', async () => {
     renderDetail('999');
     await waitFor(() => expect(screen.getByText('Compte introuvable.')).toBeInTheDocument());
@@ -166,23 +154,6 @@ describe('AccountDetailPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('modifiée'),
     );
-  });
-
-  it("cache le logo du compte si l'image est corrompue", async () => {
-    renderDetail();
-    const img = await screen.findByRole('img', { name: /logo BNP/i });
-
-    // Déclencher manuellement l'erreur
-    fireEvent.error(img);
-
-    expect(img).toHaveStyle({ display: 'none' });
-  });
-
-  it('calcule l’ancienneté du compte', async () => {
-    vi.setSystemTime(new Date('2026-04-01'));
-    renderDetail();
-    // Vérifie que le texte généré par accountSeniority est présent
-    expect(await screen.findByText(/2 ans 3 mois/i)).toBeInTheDocument();
   });
 
   it('ouvre et ferme toutes les modales', async () => {

@@ -10,9 +10,16 @@ import type {
 const BALANCE_SUBQUERY = `
   a.initial_balance + COALESCE(
     (SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
-     FROM transactions t WHERE t.account_id = a.id),
+     FROM transactions t WHERE t.account_id = a.id AND t.validated = 1),
     0
   ) AS balance`;
+
+const BALANCE_ALL_SUBQUERY = `
+  a.initial_balance + COALESCE(
+    (SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
+     FROM transactions t WHERE t.account_id = a.id),
+    0
+  ) AS balance_all`;
 
 const BALANCE_STOCKS_SUBQUERY = `
   COALESCE(
@@ -33,6 +40,16 @@ const CAPITAL_RESTANT_DU_SUBQUERY = `
    )
    FROM loans l WHERE l.account_id = a.id) AS capital_restant_du`;
 
+const CAPITAL_RESTANT_DU_ALL_SUBQUERY = `
+  (SELECT l.principal_amount - COALESCE(
+      (SELECT SUM(li.principal_amount)
+       FROM loan_installments li
+       INNER JOIN transactions t ON t.id = li.transaction_id
+       WHERE li.loan_id = l.id),
+      0
+   )
+   FROM loans l WHERE l.account_id = a.id) AS capital_restant_du_all`;
+
 const ACCOUNT_SELECT = `
   SELECT a.id,
          a.user_id,
@@ -48,8 +65,10 @@ const ACCOUNT_SELECT = `
          COALESCE(at.is_investment, 0)  AS is_investment,
          COALESCE(at.is_loan, 0)        AS is_loan,
          ${BALANCE_SUBQUERY},
+         ${BALANCE_ALL_SUBQUERY},
          ${BALANCE_STOCKS_SUBQUERY},
-         ${CAPITAL_RESTANT_DU_SUBQUERY}
+         ${CAPITAL_RESTANT_DU_SUBQUERY},
+         ${CAPITAL_RESTANT_DU_ALL_SUBQUERY}
   FROM accounts a
        LEFT JOIN banks b ON a.bank_id = b.id
        LEFT JOIN account_types at ON a.account_type_id = at.id`;
