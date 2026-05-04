@@ -280,9 +280,25 @@ export function createTransactionsRepo(db: Database) {
     },
 
     setValidated(userId: number, id: number, validated: boolean) {
-      return db
-        .prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?')
-        .run(validated ? 1 : 0, id, userId);
+      const v = validated ? 1 : 0;
+      db.prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?').run(
+        v,
+        id,
+        userId,
+      );
+      const peer = db
+        .prepare<
+          [number, number],
+          { transfer_peer_id: number | null }
+        >('SELECT transfer_peer_id FROM transactions WHERE id = ? AND user_id = ?')
+        .get(id, userId);
+      if (peer?.transfer_peer_id) {
+        db.prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?').run(
+          v,
+          peer.transfer_peer_id,
+          userId,
+        );
+      }
     },
 
     setReimbursementStatus(userId: number, id: number, status: 'en_attente' | 'rembourse' | null) {

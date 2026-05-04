@@ -36,16 +36,16 @@ export function createAccountTypesRepo(db: Database) {
       );
     },
 
-    create(name: string, is_investment: boolean) {
+    create(name: string, is_investment: boolean, is_loan: boolean) {
       return db
-        .prepare('INSERT INTO account_types (name, is_investment) VALUES (?, ?)')
-        .run(name, is_investment ? 1 : 0);
+        .prepare('INSERT INTO account_types (name, is_investment, is_loan) VALUES (?, ?, ?)')
+        .run(name, is_investment ? 1 : 0, is_loan ? 1 : 0);
     },
 
-    update(id: number, name: string, is_investment: boolean) {
+    update(id: number, name: string, is_investment: boolean, is_loan: boolean) {
       return db
-        .prepare('UPDATE account_types SET name = ?, is_investment = ? WHERE id = ?')
-        .run(name, is_investment ? 1 : 0, id);
+        .prepare('UPDATE account_types SET name = ?, is_investment = ?, is_loan = ? WHERE id = ?')
+        .run(name, is_investment ? 1 : 0, is_loan ? 1 : 0, id);
     },
 
     delete(id: number) {

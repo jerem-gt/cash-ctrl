@@ -5,10 +5,15 @@ import { z } from 'zod';
 import { requireAuth } from '../../middleware.js';
 import { createAccountTypesRepo } from './account-types.repo';
 
-const schema = z.object({
-  name: z.string().min(1).max(50),
-  is_investment: z.boolean().default(false),
-});
+const schema = z
+  .object({
+    name: z.string().min(1).max(50),
+    is_investment: z.boolean().default(false),
+    is_loan: z.boolean().default(false),
+  })
+  .refine((d) => !(d.is_investment && d.is_loan), {
+    message: 'Un type ne peut pas être à la fois investissement et prêt.',
+  });
 
 export function createAccountTypesRouter(db: Database): Router {
   const accountTypesRepo = createAccountTypesRepo(db);
@@ -25,7 +30,11 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const result = accountTypesRepo.create(parsed.data.name.trim(), parsed.data.is_investment);
+    const result = accountTypesRepo.create(
+      parsed.data.name.trim(),
+      parsed.data.is_investment,
+      parsed.data.is_loan,
+    );
     res.status(201).json(accountTypesRepo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -40,7 +49,12 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    accountTypesRepo.update(id, parsed.data.name.trim(), parsed.data.is_investment);
+    accountTypesRepo.update(
+      id,
+      parsed.data.name.trim(),
+      parsed.data.is_investment,
+      parsed.data.is_loan,
+    );
     res.json(accountTypesRepo.getById(id));
   });
 

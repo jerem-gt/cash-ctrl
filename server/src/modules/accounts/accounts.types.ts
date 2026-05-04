@@ -12,6 +12,7 @@ export interface Account {
   closed_at: string | null;
   balance: number;
   balance_stocks: number;
+  capital_restant_du: number | null;
   created_at: string;
 }
 

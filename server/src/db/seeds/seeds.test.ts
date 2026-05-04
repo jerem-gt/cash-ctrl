@@ -39,13 +39,14 @@ describe('seedBanks', () => {
 });
 
 describe('seedAccountTypes', () => {
-  it('inserts 5 account types coherent with the schema', () => {
+  it('inserts account types coherent with the schema', () => {
     const db = createFreshDb();
     seedAccountTypes(db);
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
     expect(rows.map((r) => r.name)).toContain('Courant');
     expect(rows.map((r) => r.name)).toContain('Épargne');
+    expect(rows.map((r) => r.name)).toContain('Prêt');
   });
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
@@ -53,7 +54,7 @@ describe('seedAccountTypes', () => {
     seedAccountTypes(db);
     seedAccountTypes(db);
     const count = (db.prepare('SELECT COUNT(*) as c FROM account_types').get() as { c: number }).c;
-    expect(count).toBe(6);
+    expect(count).toBe(7);
   });
 });
 

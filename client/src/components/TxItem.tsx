@@ -38,7 +38,7 @@ export function TxItem({
     : '';
 
   const stateClass =
-    isScheduled && isFuture
+    isFuture && !validated
       ? 'bg-indigo-50/60 border-indigo-100 hover:border-indigo-200'
       : 'bg-white border-black/[0.07] hover:border-black/[0.13]';
   const rowClass = validated ? 'bg-white border-green-200 hover:border-green-300' : stateClass;
@@ -61,7 +61,7 @@ export function TxItem({
           {!isTransfer && tx.splits && tx.splits.length > 0 && (
             <Badge variant="indigo">⊕ Ventilée</Badge>
           )}
-          {isScheduled && isFuture && <Badge variant="indigo">↻ À venir</Badge>}
+          {isFuture && !validated && <Badge variant="indigo">↻ À venir</Badge>}
           {isScheduled && !isFuture && (
             <span className="text-[10px] text-stone-300 shrink-0" title="Transaction planifiée">
               ↻

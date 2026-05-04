@@ -4,6 +4,8 @@ import type {
   AppVersion,
   Bank,
   Category,
+  Loan,
+  LoanInstallment,
   PaginatedTransactions,
   PaymentMethod,
   PendingReimbursement,
@@ -80,9 +82,9 @@ export const banksApi = {
 // Account types
 export const accountTypesApi = {
   list: () => request<AccountType[]>('GET', '/api/account-types'),
-  create: (payload: { name: string; is_investment: boolean }) =>
+  create: (payload: { name: string; is_investment: boolean; is_loan: boolean }) =>
     request<AccountType>('POST', '/api/account-types', payload),
-  update: (id: number, payload: { name: string; is_investment: boolean }) =>
+  update: (id: number, payload: { name: string; is_investment: boolean; is_loan: boolean }) =>
     request<AccountType>('PUT', `/api/account-types/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
@@ -223,6 +225,40 @@ export const stocksApi = {
   refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
   updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>
     request<StockOperation>('PUT', `/api/stocks/${accountId}/operations/${operationId}`, payload),
+};
+
+// Loans
+export type CreateLoanPayload = {
+  name: string;
+  bank_id: number | null;
+  opening_date: string;
+  principal_amount: number;
+  interest_rate: number;
+  duration_months: number;
+  start_date: string;
+  source_account_id: number;
+};
+
+export type UpdateLoanPayload = {
+  name: string;
+  bank_id: number | null;
+  opening_date: string;
+  source_account_id: number;
+};
+
+export const loansApi = {
+  create: (payload: CreateLoanPayload) => request<Loan>('POST', '/api/loans', payload),
+  update: (loanId: number, payload: UpdateLoanPayload) =>
+    request<Loan>('PATCH', `/api/loans/${loanId}`, payload),
+  getByAccount: (accountId: number) => request<Loan>('GET', `/api/loans/account/${accountId}`),
+  getInstallments: (loanId: number) =>
+    request<LoanInstallment[]>('GET', `/api/loans/${loanId}/installments`),
+  updateInstallment: (
+    loanId: number,
+    installmentId: number,
+    data: { due_date: string; total_amount: number },
+  ) =>
+    request<LoanInstallment>('PATCH', `/api/loans/${loanId}/installments/${installmentId}`, data),
 };
 
 // Reimbursements
