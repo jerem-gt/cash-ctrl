@@ -53,7 +53,8 @@ const TX_WITH_DETAILS = `
          COALESCE(pm.name, '') as payment_method,
          (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
          ${SPLITS_SUBQUERY},
-         ${STOCK_OPERATION_SUBQUERY}
+         ${STOCK_OPERATION_SUBQUERY},
+         (SELECT li.principal_amount FROM loan_installments li WHERE li.transaction_id = t.id) AS loan_principal
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -117,7 +118,8 @@ export function createTransactionsRepo(db: Database) {
                COALESCE(pm.name, '') AS payment_method,
                (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
                ${SPLITS_SUBQUERY},
-               ${STOCK_OPERATION_SUBQUERY}
+               ${STOCK_OPERATION_SUBQUERY},
+               (SELECT li.principal_amount FROM loan_installments li WHERE li.transaction_id = t.id) AS loan_principal
         ${FROM_WHERE}${conditions}
         ORDER BY t.date DESC, t.created_at DESC
         LIMIT ? OFFSET ?`,
@@ -132,10 +134,12 @@ export function createTransactionsRepo(db: Database) {
       if (filters.account_id && offset > 0) {
         const row = db
           .prepare<[number, number, number], { sum: number }>(
-            `SELECT COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE -amount END), 0) AS sum
-             FROM (SELECT type, amount FROM transactions
-                   WHERE user_id = ? AND account_id = ?
-                   ORDER BY date DESC, created_at DESC LIMIT ?)`,
+            `SELECT COALESCE(SUM(CASE WHEN type='income' THEN eff_amount ELSE -eff_amount END), 0) AS sum
+             FROM (SELECT t.type, COALESCE(li.principal_amount, t.amount) AS eff_amount
+                   FROM transactions t
+                   LEFT JOIN loan_installments li ON li.transaction_id = t.id
+                   WHERE t.user_id = ? AND t.account_id = ?
+                   ORDER BY t.date DESC, t.created_at DESC LIMIT ?)`,
           )
           .get(userId, filters.account_id, offset);
         balance_before_page = row?.sum ?? 0;

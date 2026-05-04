@@ -24,16 +24,16 @@ export function TransactionsList({
 }: Readonly<Props>) {
   const { state, actions } = useTransactionsManager(account?.id);
 
-  const runningBalances = useMemo(
-    () =>
-      account == null
-        ? []
-        : computeRunningBalances(
-            state.transactions,
-            account.balance - (state.balance_before_page ?? 0),
-          ),
-    [account, state.transactions, state.balance_before_page],
-  );
+  const runningBalances = useMemo(() => {
+    if (account == null) return [];
+    const startingBalance = account.is_loan
+      ? (account.capital_restant_du_all ?? 0)
+      : account.balance_all;
+    return computeRunningBalances(
+      state.transactions,
+      startingBalance - (state.balance_before_page ?? 0),
+    );
+  }, [account, state.transactions, state.balance_before_page]);
 
   if (state.isLoading) {
     return (

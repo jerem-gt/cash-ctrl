@@ -24,6 +24,7 @@ export interface Transaction {
   payment_method: string;
   notes: string | null;
   reimbursement_status: 'en_attente' | 'rembourse' | null;
+  loan_principal: number | null;
   created_at: string;
   account_name?: string;
   splits?: TransactionSplit[];

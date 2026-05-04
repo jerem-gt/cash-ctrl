@@ -103,9 +103,11 @@ describe('TransactionsList', () => {
             initial_balance: 100,
             balance: 1000,
             balance_stocks: 0,
+            balance_all: 1000,
             opening_date: '',
             closed_at: null,
             capital_restant_du: null,
+            capital_restant_du_all: null,
           },
         ],
         categories: [],
@@ -184,7 +186,7 @@ describe('TransactionsList', () => {
   });
 
   it('décale le solde courant en fonction de balance_before_page (page 2+)', () => {
-    // ACCOUNTS[0].balance = 1500, balance_before_page = 300
+    // ACCOUNTS[0].balance_all = 1500, balance_before_page = 300
     // → solde affiché pour la 1ère tx de cette page = 1500 - 300 = 1200
     const tx = {
       ...TRANSACTIONS.data[0],
