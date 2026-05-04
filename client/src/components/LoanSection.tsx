@@ -23,6 +23,12 @@ function LoanStat({ label, value }: Readonly<{ label: string; value: string }>) 
   );
 }
 
+const STATUS_CONFIG = {
+  paid: { label: 'Payé', colors: 'bg-green-50 text-green-700 border-green-200' },
+  pending: { label: 'En attente', colors: 'bg-amber-50 text-amber-700 border-amber-200' },
+  planned: { label: 'Planifié', colors: 'bg-stone-50 text-stone-400 border-stone-200' },
+};
+
 function InstallmentRow({
   inst,
   loanId,
@@ -39,6 +45,8 @@ function InstallmentRow({
 
   const isPaid = inst.transaction_validated === 1;
   const isGenerated = inst.transaction_id != null;
+  const status = (isPaid && 'paid') || (isGenerated && 'pending') || 'planned';
+  const config = STATUS_CONFIG[status];
 
   const handleSave = () => {
     const total = Number.parseFloat(amount);
@@ -61,17 +69,9 @@ function InstallmentRow({
     setEditing(false);
   };
 
-  const statusBadge = isPaid ? (
-    <span className="text-[10px] bg-green-50 text-green-700 border border-green-200 rounded px-1.5 py-0.5 font-medium">
-      Payé
-    </span>
-  ) : isGenerated ? (
-    <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 rounded px-1.5 py-0.5 font-medium">
-      En attente
-    </span>
-  ) : (
-    <span className="text-[10px] bg-stone-50 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium">
-      Planifié
+  const statusBadge = (
+    <span className={`text-[10px] rounded px-1.5 py-0.5 font-medium border ${config.colors}`}>
+      {config.label}
     </span>
   );
 
