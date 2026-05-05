@@ -142,7 +142,7 @@ function formToPayload(
   return {
     account_id: Number.parseInt(f.account_id),
     to_account_id: isTransfer && f.to_account_id ? Number.parseInt(f.to_account_id) : null,
-    type: 'expense',
+    type: f.type,
     amount: Number.parseFloat(f.amount),
     description: f.description.trim(),
     subcategory_id: Number.parseInt(f.subcategory_id),
@@ -239,7 +239,7 @@ function ScheduledModal({
             logoMap={logoMap}
             categories={categories}
             paymentMethods={paymentMethods}
-            isTransfer={form.to_account_id != null}
+            isTransfer={!!form.to_account_id}
           />
 
           {/* Ligne 3 : récurrence */}
