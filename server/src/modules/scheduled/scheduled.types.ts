@@ -1,8 +1,10 @@
+import { RecurrenceUnit, TransactionType, WeekendHandling } from '../../constants';
+
 export interface ScheduledTransaction {
   id: number;
   user_id: number;
   account_id: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   category_id: number | null;
@@ -12,12 +14,12 @@ export interface ScheduledTransaction {
   payment_method_id: number | null;
   payment_method: string;
   notes: string | null;
-  recurrence_unit: 'day' | 'week' | 'month' | 'year';
+  recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;
   recurrence_day: number | null;
   recurrence_month: number | null;
   to_account_id: number | null;
-  weekend_handling: 'allow' | 'before' | 'after';
+  weekend_handling: WeekendHandling;
   start_date: string;
   end_date: string | null;
   active: number;
@@ -29,17 +31,17 @@ export interface ScheduledTransaction {
 export interface CreateScheduledInput {
   account_id: number;
   to_account_id: number | null;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   subcategory_id: number;
   payment_method_id: number;
   notes: string | null;
-  recurrence_unit: 'day' | 'week' | 'month' | 'year';
+  recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;
   recurrence_day: number | null;
   recurrence_month: number | null;
-  weekend_handling: 'allow' | 'before' | 'after';
+  weekend_handling: WeekendHandling;
   start_date: string;
   end_date: string | null;
   active: boolean;

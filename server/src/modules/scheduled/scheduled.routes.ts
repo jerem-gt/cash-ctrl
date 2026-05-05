@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Response, Router } from 'express';
 import { z } from 'zod';
 
+import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
@@ -9,17 +10,17 @@ import { createScheduledRepo } from './scheduled.repo';
 const scheduledSchema = z.object({
   account_id: z.number().int().positive(),
   to_account_id: z.number().int().positive().nullable().default(null),
-  type: z.enum(['income', 'expense']),
+  type: z.enum(TRANSACTION_TYPES),
   amount: z.number().positive(),
   description: z.string().min(1).max(200),
   subcategory_id: z.number().int().positive(),
   payment_method_id: z.number().int().positive(),
   notes: z.string().max(1000).nullable().default(null),
-  recurrence_unit: z.enum(['day', 'week', 'month', 'year']),
+  recurrence_unit: z.enum(RECURRENCE_UNITS),
   recurrence_interval: z.number().int().min(1).default(1),
   recurrence_day: z.number().int().min(1).max(31).nullable().default(null),
   recurrence_month: z.number().int().min(1).max(12).nullable().default(null),
-  weekend_handling: z.enum(['allow', 'before', 'after']).default('allow'),
+  weekend_handling: z.enum(WEEKEND_HANDLING).default('allow'),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end_date: z
     .string()

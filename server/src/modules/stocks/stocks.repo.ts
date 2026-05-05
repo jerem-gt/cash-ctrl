@@ -131,15 +131,7 @@ export function createStocksRepo(db: Database) {
           );
         const operationId = Number(opResult.lastInsertRowid);
 
-        // Upsert position: update avg_price (PRU) and quantity
-        db.prepare(
-          `INSERT INTO stock_positions (account_id, ticker, quantity, avg_price, updated_at)
-           VALUES (?, ?, ?, ?, datetime('now'))
-           ON CONFLICT(account_id, ticker) DO UPDATE SET
-             avg_price  = (quantity * avg_price + excluded.quantity * excluded.avg_price) / (quantity + excluded.quantity),
-             quantity   = quantity + excluded.quantity,
-             updated_at = datetime('now')`,
-        ).run(input.account_id, input.ticker, input.quantity, input.price_per_share);
+        recalcPosition(db, input.account_id, input.ticker);
 
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
@@ -194,17 +186,7 @@ export function createStocksRepo(db: Database) {
           );
         const operationId = Number(opResult.lastInsertRowid);
 
-        const newQty = position.quantity - input.quantity;
-        if (newQty === 0) {
-          db.prepare('DELETE FROM stock_positions WHERE account_id = ? AND ticker = ?').run(
-            input.account_id,
-            input.ticker,
-          );
-        } else {
-          db.prepare(
-            "UPDATE stock_positions SET quantity = ?, updated_at = datetime('now') WHERE account_id = ? AND ticker = ?",
-          ).run(newQty, input.account_id, input.ticker);
-        }
+        recalcPosition(db, input.account_id, input.ticker);
 
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')

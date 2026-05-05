@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { RecurrenceUnit } from '../constants';
 import { applyWeekend, dateStr, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
 
 // Helper: build a minimal ScheduledTransaction-like object
 function sched(
-  unit: 'day' | 'week' | 'month' | 'year',
+  unit: RecurrenceUnit,
   interval: number,
   startDate: string,
   opts: { recurrence_day?: number; recurrence_month?: number } = {},

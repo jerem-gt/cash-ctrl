@@ -1,3 +1,5 @@
+import { ReimbursementStatus, StockOperationType, TransactionType } from '../../constants';
+
 export interface TransactionSplit {
   id: number;
   subcategory_id: number;
@@ -8,7 +10,7 @@ export interface Transaction {
   id: number;
   user_id: number;
   account_id: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   category_id: number | null;
@@ -23,7 +25,7 @@ export interface Transaction {
   payment_method_id: number | null;
   payment_method: string;
   notes: string | null;
-  reimbursement_status: 'en_attente' | 'rembourse' | null;
+  reimbursement_status: ReimbursementStatus | null;
   loan_principal: number | null;
   created_at: string;
   account_name?: string;
@@ -33,7 +35,7 @@ export interface Transaction {
     account_id: number;
     transaction_id: number;
     ticker: string;
-    type: 'buy' | 'sell';
+    type: StockOperationType;
     quantity: number;
     price_per_share: number;
     fees: number;
@@ -44,7 +46,7 @@ export interface Transaction {
 
 export interface CreateScheduledTransactionInput {
   account_id: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   subcategory_id: number;
@@ -56,7 +58,7 @@ export interface CreateScheduledTransactionInput {
 
 export interface CreateTransactionInput {
   account_id: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   subcategory_id: number | null;
@@ -65,7 +67,7 @@ export interface CreateTransactionInput {
   payment_method_id: number;
   notes: string | null;
   validated: boolean;
-  reimbursement_status?: 'en_attente' | 'rembourse' | null;
+  reimbursement_status?: ReimbursementStatus | null;
 }
 
 export interface UpdateSharedTransactionInput {
@@ -79,7 +81,7 @@ export interface UpdateSharedTransactionInput {
 
 export interface TransactionFilters {
   account_id?: number;
-  type?: 'income' | 'expense';
+  type?: TransactionType;
   category_id?: number;
   subcategory_id?: number;
   page?: number;
