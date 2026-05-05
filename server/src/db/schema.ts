@@ -1,5 +1,15 @@
 import type { Database } from 'better-sqlite3';
 
+import {
+  RECURRENCE_UNITS,
+  REIMBURSEMENT_STATUSES,
+  STOCK_OPERATION_TYPES,
+  TRANSACTION_TYPES,
+  WEEKEND_HANDLING,
+} from '../constants';
+
+const sqlIn = (arr: readonly string[]) => arr.map((v) => `'${v}'`).join(', ');
+
 export function initSchema(db: Database) {
   db.exec(`
         CREATE TABLE IF NOT EXISTS scheduled_transactions
@@ -7,18 +17,18 @@ export function initSchema(db: Database) {
             id                   INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            type                 TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
+            type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(TRANSACTION_TYPES)})),
             amount               REAL    NOT NULL CHECK (amount > 0),
             description          TEXT    NOT NULL,
             subcategory_id       INTEGER REFERENCES subcategories (id),
             payment_method_id    INTEGER REFERENCES payment_methods (id),
             notes                TEXT,
-            recurrence_unit      TEXT    NOT NULL CHECK (recurrence_unit IN ('day', 'week', 'month', 'year')),
+            recurrence_unit      TEXT    NOT NULL CHECK (recurrence_unit IN (${sqlIn(RECURRENCE_UNITS)})),
             recurrence_interval  INTEGER NOT NULL DEFAULT 1 CHECK (recurrence_interval > 0),
             recurrence_day       INTEGER,
             recurrence_month     INTEGER,
             to_account_id        INTEGER REFERENCES accounts (id) ON DELETE SET NULL,
-            weekend_handling     TEXT    NOT NULL DEFAULT 'allow' CHECK (weekend_handling IN ('allow', 'before', 'after')),
+            weekend_handling     TEXT    NOT NULL DEFAULT 'allow' CHECK (weekend_handling IN (${sqlIn(WEEKEND_HANDLING)})),
             start_date           TEXT    NOT NULL,
             end_date             TEXT,
             active               INTEGER NOT NULL DEFAULT 1,
@@ -96,13 +106,16 @@ export function initSchema(db: Database) {
             account_id       INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             transaction_id   INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             ticker           TEXT    NOT NULL,
-            type             TEXT    NOT NULL CHECK (type IN ('buy', 'sell')),
+            type             TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
             quantity         REAL    NOT NULL,
             price_per_share  REAL    NOT NULL,
             fees             REAL    NOT NULL DEFAULT 0,
             date             TEXT    NOT NULL,
             created_at       TEXT             DEFAULT (datetime('now'))
         );
+
+        CREATE INDEX IF NOT EXISTS idx_stock_txid ON stock_operations(transaction_id);
+        CREATE INDEX IF NOT EXISTS idx_stock_ops_account_ticker ON stock_operations (account_id, ticker);
 
         CREATE TABLE IF NOT EXISTS stock_prices
         (
@@ -135,7 +148,7 @@ export function initSchema(db: Database) {
             id                    INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id               INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id            INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            type                  TEXT    NOT NULL CHECK (type IN ('income', 'expense')),
+            type                  TEXT    NOT NULL CHECK (type IN (${sqlIn(TRANSACTION_TYPES)})),
             amount                REAL    NOT NULL CHECK (amount > 0),
             description           TEXT    NOT NULL,
             subcategory_id        INTEGER REFERENCES subcategories (id),
@@ -145,9 +158,11 @@ export function initSchema(db: Database) {
             payment_method_id     INTEGER REFERENCES payment_methods (id),
             scheduled_id          INTEGER REFERENCES scheduled_transactions(id) ON DELETE SET NULL,
             notes                 TEXT,
-            reimbursement_status  TEXT    CHECK (reimbursement_status IN ('en_attente', 'rembourse')),
+            reimbursement_status  TEXT    CHECK (reimbursement_status IN (${sqlIn(REIMBURSEMENT_STATUSES)})),
             created_at            TEXT             DEFAULT (datetime('now'))
         );
+
+        CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, date DESC, created_at DESC);
 
         CREATE TABLE IF NOT EXISTS reimbursements
         (
@@ -163,6 +178,8 @@ export function initSchema(db: Database) {
             subcategory_id INTEGER NOT NULL REFERENCES subcategories (id),
             amount         REAL    NOT NULL CHECK (amount > 0)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_splits_txid ON transaction_splits(transaction_id);
 
         CREATE TABLE IF NOT EXISTS loans
         (
@@ -209,7 +226,7 @@ export function initSchema(db: Database) {
   }
   try {
     db.exec(
-      "ALTER TABLE transactions ADD COLUMN reimbursement_status TEXT CHECK (reimbursement_status IN ('en_attente', 'rembourse'))",
+      `ALTER TABLE transactions ADD COLUMN reimbursement_status TEXT CHECK (reimbursement_status IN (${sqlIn(REIMBURSEMENT_STATUSES)}))`,
     );
   } catch {
     /* ignore: column may already exist */

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { RecurrenceUnit, TransactionType, WeekendHandling } from '../constants';
 import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
 import { generateScheduledTransactions } from './generateScheduled.js';
 import { dateStr } from './scheduledLogic.js';
@@ -9,17 +10,17 @@ import { dateStr } from './scheduledLogic.js';
 function insertSchedule(
   f: Fixtures,
   overrides: Partial<{
-    type: 'income' | 'expense';
+    type: TransactionType;
     amount: number;
     description: string;
     subcategory_id: number;
     payment_method_id: number;
-    recurrence_unit: 'day' | 'week' | 'month' | 'year';
+    recurrence_unit: RecurrenceUnit;
     recurrence_interval: number;
     recurrence_day: number | null;
     recurrence_month: number | null;
     to_account_id: number | null;
-    weekend_handling: 'allow' | 'before' | 'after';
+    weekend_handling: WeekendHandling;
     start_date: string;
     end_date: string | null;
     active: number;

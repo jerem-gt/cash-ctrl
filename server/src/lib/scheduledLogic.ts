@@ -1,3 +1,4 @@
+import { WeekendHandling } from '../constants';
 import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
 
 export function dateStr(d: Date): string {
@@ -11,7 +12,7 @@ export function parseDate(s: string): Date {
   return new Date(s + 'T00:00:00');
 }
 
-export function applyWeekend(d: Date, handling: 'allow' | 'before' | 'after'): Date {
+export function applyWeekend(d: Date, handling: WeekendHandling): Date {
   if (handling === 'allow') return d;
   const dow = d.getDay(); // 0=Sun, 6=Sat
   if (dow !== 0 && dow !== 6) return d;
@@ -24,8 +25,11 @@ export function applyWeekend(d: Date, handling: 'allow' | 'before' | 'after'): D
   return result;
 }
 
-export function getFirstOccurrence(sched: Pick<ScheduledTransaction,
-  'start_date' | 'recurrence_unit' | 'recurrence_day' | 'recurrence_month'>
+export function getFirstOccurrence(
+  sched: Pick<
+    ScheduledTransaction,
+    'start_date' | 'recurrence_unit' | 'recurrence_day' | 'recurrence_month'
+  >,
 ): Date {
   const start = parseDate(sched.start_date);
 
@@ -45,13 +49,15 @@ export function getFirstOccurrence(sched: Pick<ScheduledTransaction,
   const day = sched.recurrence_day ?? start.getDate();
   const month = (sched.recurrence_month ?? start.getMonth() + 1) - 1;
   const candidate = new Date(start.getFullYear(), month, day);
-  return candidate >= start
-    ? candidate
-    : new Date(start.getFullYear() + 1, month, day);
+  return candidate >= start ? candidate : new Date(start.getFullYear() + 1, month, day);
 }
 
-export function nextOccurrence(nominal: Date, sched: Pick<ScheduledTransaction,
-  'recurrence_unit' | 'recurrence_interval' | 'recurrence_day' | 'recurrence_month'>
+export function nextOccurrence(
+  nominal: Date,
+  sched: Pick<
+    ScheduledTransaction,
+    'recurrence_unit' | 'recurrence_interval' | 'recurrence_day' | 'recurrence_month'
+  >,
 ): Date {
   const { recurrence_unit: unit, recurrence_interval: interval } = sched;
 

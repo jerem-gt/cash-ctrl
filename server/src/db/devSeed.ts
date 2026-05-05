@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import {
+  RecurrenceUnit,
+  ReimbursementStatus,
+  TransactionType,
+  WeekendHandling,
+} from '../constants';
 import { createDb, DATA_DIR, initDatabase } from './init';
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
@@ -96,7 +102,7 @@ const accPEA = insertAccount('PEA BoursoBank', bankBourso, typeBourse, 5000, '20
 // ── Transactions ──────────────────────────────────────────────────────────────
 type TxInput = {
   account_id: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   subcategory_id: number;
@@ -104,7 +110,7 @@ type TxInput = {
   payment_method_id: number;
   validated: 0 | 1;
   notes?: string | null;
-  reimbursement_status?: 'en_attente' | 'rembourse' | null;
+  reimbursement_status?: ReimbursementStatus | null;
 };
 
 const stmtTx = db.prepare(`
@@ -572,17 +578,17 @@ const stmtSched = db.prepare(`
 type SchedInput = {
   account_id: number;
   to_account_id: number | null;
-  type: 'income' | 'expense';
+  type: TransactionType;
   amount: number;
   description: string;
   subcategory_id: number;
   payment_method_id: number;
   notes: string | null;
-  recurrence_unit: 'day' | 'week' | 'month' | 'year';
+  recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;
   recurrence_day: number | null;
   recurrence_month: number | null;
-  weekend_handling: 'allow' | 'before' | 'after';
+  weekend_handling: WeekendHandling;
   start_date: string;
   end_date: string | null;
   active: 0 | 1;

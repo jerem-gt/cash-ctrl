@@ -1,3 +1,5 @@
+import { StockOperationType } from '../../constants';
+
 export interface StockPosition {
   id: number;
   account_id: number;
@@ -17,7 +19,7 @@ export interface StockOperation {
   account_id: number;
   transaction_id: number;
   ticker: string;
-  type: 'buy' | 'sell';
+  type: StockOperationType;
   quantity: number;
   price_per_share: number;
   fees: number;

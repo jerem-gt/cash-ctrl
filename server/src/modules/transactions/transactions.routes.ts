@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
@@ -9,7 +10,7 @@ import { createTransactionsRepo } from './transactions.repo';
 const transactionSchema = z
   .object({
     account_id: z.number().int().positive(),
-    type: z.enum(['income', 'expense']),
+    type: z.enum(TRANSACTION_TYPES),
     amount: z.number().positive(),
     description: z.string().min(1).max(200),
     subcategory_id: z.number().int().positive().nullable().default(null),
@@ -25,7 +26,7 @@ const transactionSchema = z
     payment_method_id: z.number().int().positive(),
     notes: z.string().max(1000).nullable().default(null),
     validated: z.boolean().default(false),
-    reimbursement_status: z.enum(['en_attente', 'rembourse']).nullable().default(null),
+    reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable().default(null),
   })
   .refine(
     (d) => {
@@ -47,7 +48,7 @@ const transferUpdateSchema = z.object({
 
 const querySchema = z.object({
   account_id: z.coerce.number().int().optional(),
-  type: z.enum(['income', 'expense']).optional(),
+  type: z.enum(TRANSACTION_TYPES).optional(),
   category_id: z.coerce.number().int().optional(),
   subcategory_id: z.coerce.number().int().optional(),
   page: z.coerce.number().int().min(1).default(1),

@@ -470,4 +470,107 @@ describe('/api/transactions', () => {
       expect(check.status).toBe(404);
     });
   });
+
+  describe('Transactions Pagination & Balance', () => {
+    beforeAll(async () => {
+      ctx = await createTestContext();
+      accountId = await setupWithAccount(ctx);
+    });
+
+    it('devrait retourner un résultat vide initialement (EMPTY_PAGINATED_RESULT)', async () => {
+      const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.total).toBe(0);
+      expect(res.body.balance_before_page).toBe(0);
+    });
+
+    it('devrait calculer correctement le balance_before_page sur la page 2', async () => {
+      // 1. On insère 3 transactions (limitera la page à 2 pour le test)
+      // Transaction la plus ancienne (sera en page 2)
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'income',
+        amount: 100,
+        description: 'Salaire',
+        subcategory_id: SEED.SUBCAT_SALAIRE,
+        date: '2024-01-01',
+        payment_method_id: SEED.PM_VIREMENT,
+      });
+
+      // Transactions plus récentes (seront en page 1)
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 30,
+        description: 'Courses',
+        subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+        date: '2024-01-02',
+        payment_method_id: SEED.PM_VIREMENT,
+      });
+
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 20,
+        description: 'Loisirs',
+        subcategory_id: SEED.SUBCAT_CINEMA,
+        date: '2024-01-03',
+        payment_method_id: SEED.PM_VIREMENT,
+      });
+
+      // 2. Test Page 1 (limit=2)
+      const resPage1 = await ctx.agent.get(
+        `/api/transactions?account_id=${accountId}&limit=2&page=1`,
+      );
+      expect(resPage1.body.data).toHaveLength(2);
+      expect(resPage1.body.balance_before_page).toBe(0); // Page 1 toujours 0
+      expect(resPage1.body.total).toBe(3);
+
+      // 3. Test Page 2 (limit=2)
+      const resPage2 = await ctx.agent.get(
+        `/api/transactions?account_id=${accountId}&limit=2&page=2`,
+      );
+
+      expect(resPage2.body.data).toHaveLength(1);
+      expect(resPage2.body.data[0].description).toBe('Salaire');
+
+      // Le solde AVANT la page 2 correspond à la somme des dépenses de la page 1 (-30 + -20 = -50)
+      // car on trie par date DESC (les plus récentes d'abord)
+      expect(resPage2.body.balance_before_page).toBe(-50);
+    });
+
+    it('devrait gérer le tri par ID en cas de dates identiques pour le solde', async () => {
+      const commonDate = '2024-05-01';
+
+      // Insertion de 2 transactions le même jour
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'income',
+        amount: 1000,
+        date: commonDate,
+        description: 'Premier',
+        subcategory_id: SEED.SUBCAT_CINEMA,
+        payment_method_id: SEED.PM_VIREMENT,
+      });
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 200,
+        date: commonDate,
+        description: 'Second',
+        subcategory_id: SEED.SUBCAT_CINEMA,
+        payment_method_id: SEED.PM_VIREMENT,
+      });
+
+      // On demande la page 2 avec une limite de 1
+      const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&limit=1&page=2`);
+
+      // La plus récente (ID le plus grand) est en page 1, la première est en page 2
+      expect(res.body.data[0].description).toBe('Premier');
+      // Le solde avant devrait être celui de la transaction "Second" (-200)
+      expect(res.body.balance_before_page).toBe(-200);
+    });
+  });
 });

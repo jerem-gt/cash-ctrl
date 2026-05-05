@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { REIMBURSEMENT_STATUSES } from '../../constants';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo';
@@ -78,7 +79,7 @@ export function createReimbursementsRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     const parsed = z
-      .object({ reimbursement_status: z.enum(['en_attente', 'rembourse']).nullable() })
+      .object({ reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable() })
       .safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: z.treeifyError(parsed.error) });

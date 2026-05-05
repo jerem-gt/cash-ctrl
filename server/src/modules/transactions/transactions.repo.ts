@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { ReimbursementStatus } from '../../constants';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
@@ -28,19 +29,38 @@ function parseSplits(row: TransactionRow): Transaction {
   return result;
 }
 
+const EMPTY_PAGINATED_RESULT: PaginatedResult<Transaction> = {
+  data: [],
+  total: 0,
+  page: 1,
+  totalPages: 1,
+  balance_before_page: undefined,
+};
+
 const SPLITS_SUBQUERY = `
   COALESCE(
-    (SELECT json_group_array(json_object('id', ts.id, 'subcategory_id', ts.subcategory_id, 'amount', ts.amount))
-     FROM transaction_splits ts WHERE ts.transaction_id = t.id),
-    '[]'
+    json_group_array(
+        json_object('id', ts.id, 'subcategory_id', ts.subcategory_id, 'amount', ts.amount)
+    ) FILTER (WHERE ts.id IS NOT NULL), '[]'
   ) AS splits_json`;
 
 const STOCK_OPERATION_SUBQUERY = `
-  (SELECT json_object('id', so.id, 'account_id', so.account_id, 'transaction_id', so.transaction_id,
-                      'ticker', so.ticker, 'type', so.type, 'quantity', so.quantity,
-                      'price_per_share', so.price_per_share, 'fees', so.fees,
-                      'date', so.date, 'created_at', so.created_at)
-   FROM stock_operations so WHERE so.transaction_id = t.id) AS stock_operation_json`;
+  CASE 
+    WHEN so.id IS NOT NULL THEN 
+      json_object(
+        'id', so.id,
+        'account_id', so.account_id,
+        'transaction_id', so.transaction_id,
+        'ticker', so.ticker,
+        'type', so.type,
+        'quantity', so.quantity,
+        'price_per_share', so.price_per_share,
+        'fees', so.fees,
+        'date', so.date,
+        'created_at', so.created_at
+      )
+    ELSE NULL 
+  END AS stock_operation_json`;
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
@@ -51,16 +71,19 @@ const TX_WITH_DETAILS = `
          COALESCE(c.name, '')  as category,
          COALESCE(sc.name, '') as subcategory,
          COALESCE(pm.name, '') as payment_method,
-         (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
+         peer.account_id AS transfer_peer_account_id,
+         li.principal_amount AS loan_principal,
          ${SPLITS_SUBQUERY},
-         ${STOCK_OPERATION_SUBQUERY},
-         (SELECT li.principal_amount FROM loan_installments li WHERE li.transaction_id = t.id) AS loan_principal
+         ${STOCK_OPERATION_SUBQUERY}
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
   LEFT JOIN categories c ON sc.category_id = c.id
   LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-  WHERE t.id = ?
+  LEFT JOIN transactions peer ON t.transfer_peer_id = peer.id
+  LEFT JOIN loan_installments li ON li.transaction_id = t.id
+  LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
+  LEFT JOIN stock_operations so ON so.transaction_id = t.id
 `;
 
 export function createTransactionsRepo(db: Database) {
@@ -105,24 +128,22 @@ export function createTransactionsRepo(db: Database) {
           .get(...params) as { count: number }
       ).count;
 
+      if (total === 0) {
+        return {
+          ...EMPTY_PAGINATED_RESULT,
+          balance_before_page: filters.account_id ? 0 : undefined,
+        };
+      }
+
       const rawRows = db
         .prepare<(number | string)[], TransactionRow>(
-          `
-        SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
-               t.subcategory_id, t.payment_method_id, t.date, t.transfer_peer_id,
-               t.scheduled_id, t.validated, t.notes, t.reimbursement_status, t.created_at,
-               sc.category_id,
-               a.name                AS account_name,
-               COALESCE(c.name, '')  AS category,
-               COALESCE(sc.name, '') AS subcategory,
-               COALESCE(pm.name, '') AS payment_method,
-               (SELECT account_id FROM transactions WHERE id = t.transfer_peer_id) AS transfer_peer_account_id,
-               ${SPLITS_SUBQUERY},
-               ${STOCK_OPERATION_SUBQUERY},
-               (SELECT li.principal_amount FROM loan_installments li WHERE li.transaction_id = t.id) AS loan_principal
-        ${FROM_WHERE}${conditions}
-        ORDER BY t.date DESC, t.created_at DESC
-        LIMIT ? OFFSET ?`,
+          `${TX_WITH_DETAILS}
+          WHERE t.user_id = ?
+          ${conditions}
+          GROUP BY t.id
+          ORDER BY t.date DESC, t.id DESC
+          LIMIT ? OFFSET ?
+          `,
         )
         .all(...params, limit, (page - 1) * limit);
       const data = rawRows.map(parseSplits);
@@ -131,20 +152,33 @@ export function createTransactionsRepo(db: Database) {
       const offset = (page - 1) * limit;
 
       let balance_before_page: number | undefined;
-      if (filters.account_id && offset > 0) {
-        const row = db
-          .prepare<[number, number, number], { sum: number }>(
-            `SELECT COALESCE(SUM(CASE WHEN type='income' THEN eff_amount ELSE -eff_amount END), 0) AS sum
-             FROM (SELECT t.type, COALESCE(li.principal_amount, t.amount) AS eff_amount
-                   FROM transactions t
-                   LEFT JOIN loan_installments li ON li.transaction_id = t.id
-                   WHERE t.user_id = ? AND t.account_id = ?
-                   ORDER BY t.date DESC, t.created_at DESC LIMIT ?)`,
-          )
-          .get(userId, filters.account_id, offset);
-        balance_before_page = row?.sum ?? 0;
-      } else if (filters.account_id) {
-        balance_before_page = 0;
+      if (filters.account_id) {
+        if (offset === 0 || data.length === 0) {
+          // Page 1 ou aucune donnée : le solde précédent est par définition 0
+          balance_before_page = 0;
+        } else {
+          // On prend la première transaction de la page actuelle pour définir la frontière
+          const firstTx = data[0];
+
+          const row = db
+            .prepare<[number, number, string, string, number], { sum: number }>(
+              `
+              SELECT COALESCE(SUM(
+                CASE WHEN t.type = 'income'
+                THEN COALESCE(li.principal_amount, t.amount)
+                ELSE -COALESCE(li.principal_amount, t.amount)
+                END
+              ), 0) AS sum
+              FROM transactions t
+              LEFT JOIN loan_installments li ON li.transaction_id = t.id
+              WHERE t.user_id = ?
+                AND t.account_id = ?
+                AND (t.date > ? OR (t.date = ? AND t.id > ?))
+          `,
+            )
+            .get(userId, filters.account_id, firstTx.date, firstTx.date, firstTx.id);
+          balance_before_page = row?.sum ?? 0;
+        }
       }
 
       return { data, total, page, totalPages, balance_before_page };
@@ -162,7 +196,9 @@ export function createTransactionsRepo(db: Database) {
     },
 
     getWithDetails(id: number): Transaction | undefined {
-      const row = db.prepare<[number], TransactionRow>(TX_WITH_DETAILS).get(id);
+      const row = db
+        .prepare<[number], TransactionRow>(TX_WITH_DETAILS + ' WHERE t.id = ? GROUP BY t.id')
+        .get(id);
       return row ? parseSplits(row) : undefined;
     },
 
@@ -305,7 +341,7 @@ export function createTransactionsRepo(db: Database) {
       }
     },
 
-    setReimbursementStatus(userId: number, id: number, status: 'en_attente' | 'rembourse' | null) {
+    setReimbursementStatus(userId: number, id: number, status: ReimbursementStatus | null) {
       return db
         .prepare('UPDATE transactions SET reimbursement_status = ? WHERE id = ? AND user_id = ?')
         .run(status, id, userId);
