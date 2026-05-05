@@ -74,7 +74,11 @@ const ACCOUNT_SELECT = `
        LEFT JOIN account_types at ON a.account_type_id = at.id`;
 
 export function createAccountsRepo(db: Database) {
+  const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
+
   return {
+    exists: (id: number, userId: number) => !!existsStmt.get({ id, userId }),
+
     getByUserId(userId: number): Account[] {
       return db
         .prepare<[number], Account>(`${ACCOUNT_SELECT} WHERE a.user_id = ? ORDER BY a.created_at`)

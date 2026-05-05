@@ -1,10 +1,11 @@
-import type { Database } from 'better-sqlite3';
+import type { Database, Statement } from 'better-sqlite3';
 
 import { ReimbursementStatus } from '../../constants';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
   PaginatedResult,
+  QueryParams,
   Transaction,
   TransactionFilters,
   TransactionSplit,
@@ -86,47 +87,124 @@ const TX_WITH_DETAILS = `
   LEFT JOIN stock_operations so ON so.transaction_id = t.id
 `;
 
+const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+
 export function createTransactionsRepo(db: Database) {
+  const getByIdStmt = db.prepare<{ id: number; userId: number }, Transaction>(
+    `SELECT * FROM transactions WHERE id = :id AND user_id = :userId`,
+  );
+  const getByIdWithDetailsStmt = db.prepare<{ id: number }, TransactionRow>(
+    `${TX_WITH_DETAILS} WHERE t.id = :id GROUP BY t.id`,
+  );
+  const getBalanceStmt = db.prepare<
+    { id: number; userId: number; accountId: number; date: string },
+    { sum: number }
+  >(`
+      SELECT COALESCE(SUM(
+        CASE WHEN t.type = 'income'
+        THEN COALESCE(li.principal_amount, t.amount)
+        ELSE -COALESCE(li.principal_amount, t.amount)
+        END
+      ), 0) AS sum
+      FROM transactions t
+      LEFT JOIN loan_installments li ON li.transaction_id = t.id
+      WHERE t.user_id = :userId
+        AND t.account_id = :accountId
+        AND (t.date > :date OR (t.date = :date AND t.id > :id))
+  `);
+
+  const insertTxStmt = db.prepare(`
+      INSERT INTO transactions
+      (user_id, account_id, type, amount, description, subcategory_id, date,
+       payment_method_id, notes, reimbursement_status, scheduled_id)
+      VALUES
+          (:userId, :accountId, :type, :amount, :description, :subcategoryId, :date,
+           :paymentMethodId, :notes, :reimbursementStatus, :scheduledId)
+  `);
+  const insertSplitStmt = db.prepare(`
+      INSERT INTO transaction_splits (transaction_id, subcategory_id, amount)
+      VALUES (:txId, :subcategoryId, :amount)
+  `);
+  const updateTxStmt = db.prepare(`
+      UPDATE transactions
+      SET account_id        = :accountId,
+          type              = :type,
+          amount            = :amount,
+          description       = :description,
+          subcategory_id    = :subcategoryId,
+          date              = :date,
+          payment_method_id = :paymentMethodId,
+          notes             = :notes,
+          validated         = :validated
+      WHERE id = :id
+        AND user_id = :userId
+  `);
+  const validateTxStmt = db.prepare(`
+      UPDATE transactions
+      SET validated = :validated
+      WHERE user_id = :userId
+        AND id IN (:id, (SELECT transfer_peer_id FROM transactions WHERE id = :id))
+  `);
+  const updateReimbursementStatusStmt = db.prepare(
+    `UPDATE transactions SET reimbursement_status = :status WHERE id = :id AND user_id = :userId`,
+  );
+  const updateSharedStmt = db.prepare(
+    `UPDATE transactions SET amount=:amount, description=:description, date=:date, validated=:validated,
+     account_id=COALESCE(:accountId, account_id) WHERE id=:id AND user_id=:userId`,
+  );
+  const updatelinkTransferPeers = db.prepare(
+    'UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id',
+  );
+  const deleteStmt = db.prepare('DELETE FROM transactions WHERE id = :id AND user_id = :userId');
+  const deleteSplitsByTxIdStmt = db.prepare(
+    'DELETE FROM transaction_splits WHERE transaction_id = :txId',
+  );
+
+  // Cache pour les requêtes dynamiques
+  const getStatementCache = new Map<string, Statement>();
+  const getDynamicStmt = (baseSql: string, filterKeys: string[]) => {
+    const sortedKeys = [...filterKeys].sort(collator.compare);
+    const cacheKey = baseSql + sortedKeys.join(',');
+    if (!getStatementCache.has(cacheKey)) {
+      getStatementCache.set(cacheKey, db.prepare(baseSql));
+    }
+    return getStatementCache.get(cacheKey)!;
+  };
+
   return {
     getByUserId(userId: number, filters: TransactionFilters): PaginatedResult<Transaction> {
       const page = Math.max(1, filters.page ?? 1);
       const limit = Math.min(100, Math.max(1, filters.limit ?? 25));
 
-      const FROM_WHERE = `
-        FROM transactions t
-             JOIN accounts a ON t.account_id = a.id
-             LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
-             LEFT JOIN categories c ON sc.category_id = c.id
-             LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-        WHERE t.user_id = ?`;
+      // Construction des conditions pour Named Parameters
+      const conditions: string[] = ['t.user_id = :userId'];
+      const params: QueryParams = { userId };
 
-      const params: (number | string)[] = [userId];
-      let conditions = '';
       if (filters.account_id) {
-        conditions += ' AND t.account_id = ?';
-        params.push(filters.account_id);
+        conditions.push('t.account_id = :account_id');
+        params.account_id = filters.account_id;
       }
       if (filters.type) {
-        conditions += ' AND t.type = ?';
-        params.push(filters.type);
+        conditions.push('t.type = :type');
+        params.type = filters.type;
       }
       if (filters.category_id) {
-        conditions += ' AND sc.category_id = ?';
-        params.push(filters.category_id);
+        conditions.push('sc.category_id = :category_id');
+        params.category_id = filters.category_id;
       }
       if (filters.subcategory_id) {
-        conditions += ' AND t.subcategory_id = ?';
-        params.push(filters.subcategory_id);
+        conditions.push('t.subcategory_id = :subcategory_id');
+        params.subcategory_id = filters.subcategory_id;
       }
 
-      const total = (
-        db
-          .prepare<
-            (number | string)[],
-            { count: number }
-          >(`SELECT COUNT(*) AS count ${FROM_WHERE}${conditions}`)
-          .get(...params) as { count: number }
-      ).count;
+      const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+      const countSql = `SELECT COUNT(*) AS count FROM transactions t
+                        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+                        ${whereClause}`;
+
+      const countStmt = getDynamicStmt(countSql, Object.keys(params));
+      const total = (countStmt.get(params) as { count: number }).count;
 
       if (total === 0) {
         return {
@@ -135,17 +213,21 @@ export function createTransactionsRepo(db: Database) {
         };
       }
 
-      const rawRows = db
-        .prepare<(number | string)[], TransactionRow>(
-          `${TX_WITH_DETAILS}
-          WHERE t.user_id = ?
-          ${conditions}
-          GROUP BY t.id
-          ORDER BY t.date DESC, t.id DESC
-          LIMIT ? OFFSET ?
-          `,
-        )
-        .all(...params, limit, (page - 1) * limit);
+      const dataSql = `
+        ${TX_WITH_DETAILS}
+        ${whereClause}
+        GROUP BY t.id
+        ORDER BY t.date DESC, t.id DESC
+        LIMIT :limit OFFSET :offset`;
+
+      const dataStmt = getDynamicStmt(dataSql, [...Object.keys(params), 'limit', 'offset']);
+
+      const queryArgs: QueryParams = {
+        ...params,
+        limit,
+        offset: (page - 1) * limit,
+      };
+      const rawRows = dataStmt.all(queryArgs) as TransactionRow[];
       const data = rawRows.map(parseSplits);
 
       const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -160,23 +242,12 @@ export function createTransactionsRepo(db: Database) {
           // On prend la première transaction de la page actuelle pour définir la frontière
           const firstTx = data[0];
 
-          const row = db
-            .prepare<[number, number, string, string, number], { sum: number }>(
-              `
-              SELECT COALESCE(SUM(
-                CASE WHEN t.type = 'income'
-                THEN COALESCE(li.principal_amount, t.amount)
-                ELSE -COALESCE(li.principal_amount, t.amount)
-                END
-              ), 0) AS sum
-              FROM transactions t
-              LEFT JOIN loan_installments li ON li.transaction_id = t.id
-              WHERE t.user_id = ?
-                AND t.account_id = ?
-                AND (t.date > ? OR (t.date = ? AND t.id > ?))
-          `,
-            )
-            .get(userId, filters.account_id, firstTx.date, firstTx.date, firstTx.id);
+          const row = getBalanceStmt.get({
+            userId,
+            accountId: filters.account_id,
+            date: firstTx.date,
+            id: firstTx.id,
+          });
           balance_before_page = row?.sum ?? 0;
         }
       }
@@ -184,111 +255,84 @@ export function createTransactionsRepo(db: Database) {
       return { data, total, page, totalPages, balance_before_page };
     },
 
-    getById(id: number, userId: number): Transaction | undefined {
-      return (
-        db
-          .prepare<
-            [number, number],
-            Transaction
-          >('SELECT * FROM transactions WHERE id = ? AND user_id = ?')
-          .get(id, userId) ?? undefined
-      );
-    },
+    getById: (id: number, userId: number) => getByIdStmt.get({ id, userId }) ?? undefined,
 
-    getWithDetails(id: number): Transaction | undefined {
-      const row = db
-        .prepare<[number], TransactionRow>(TX_WITH_DETAILS + ' WHERE t.id = ? GROUP BY t.id')
-        .get(id);
+    getWithDetails(id: number) {
+      const row = getByIdWithDetailsStmt.get({ id });
       return row ? parseSplits(row) : undefined;
-    },
-
-    accountExists(accountId: number, userId: number): boolean {
-      return !!db
-        .prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?')
-        .get(accountId, userId);
     },
 
     create(userId: number, data: CreateTransactionInput) {
       return db.transaction(() => {
-        const result = db
-          .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, reimbursement_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          )
-          .run(
-            userId,
-            data.account_id,
-            data.type,
-            data.amount,
-            data.description,
-            data.subcategory_id,
-            data.date,
-            data.payment_method_id,
-            data.notes,
-            data.reimbursement_status ?? null,
-          );
+        const result = insertTxStmt.run({
+          userId,
+          accountId: data.account_id,
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          subcategoryId: data.subcategory_id,
+          date: data.date,
+          paymentMethodId: data.payment_method_id,
+          notes: data.notes,
+          reimbursementStatus: data.reimbursement_status ?? null,
+          scheduledId: null, // Toujours null pour une transaction manuelle
+        });
         if (data.splits?.length) {
           const txId = Number(result.lastInsertRowid);
-          const ins = db.prepare(
-            'INSERT INTO transaction_splits (transaction_id, subcategory_id, amount) VALUES (?, ?, ?)',
-          );
-          for (const s of data.splits) ins.run(txId, s.subcategory_id, s.amount);
+          for (const s of data.splits) {
+            insertSplitStmt.run({
+              txId,
+              subcategoryId: s.subcategory_id,
+              amount: s.amount,
+            });
+          }
         }
         return result;
       })();
     },
 
     createScheduled(userId: number, data: CreateScheduledTransactionInput): number {
-      return Number(
-        db
-          .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, scheduled_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          )
-          .run(
-            userId,
-            data.account_id,
-            data.type,
-            data.amount,
-            data.description,
-            data.subcategory_id,
-            data.date,
-            data.payment_method_id,
-            data.notes,
-            data.scheduled_id,
-          ).lastInsertRowid,
-      );
+      const result = insertTxStmt.run({
+        userId,
+        accountId: data.account_id,
+        type: data.type,
+        amount: data.amount,
+        description: data.description,
+        subcategoryId: data.subcategory_id,
+        date: data.date,
+        paymentMethodId: data.payment_method_id,
+        notes: data.notes,
+        reimbursementStatus: null, // Toujours null pour du récurrent au moment de la génération
+        scheduledId: data.scheduled_id,
+      });
+      return Number(result.lastInsertRowid);
     },
 
     linkTransferPeers(id1: number, id2: number): void {
-      const stmt = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
-      stmt.run(id2, id1);
-      stmt.run(id1, id2);
+      updatelinkTransferPeers.run({ peerId: id2, id: id1 });
+      updatelinkTransferPeers.run({ peerId: id1, id: id2 });
     },
 
     update(userId: number, id: number, data: CreateTransactionInput) {
       return db.transaction(() => {
-        const result = db
-          .prepare(
-            'UPDATE transactions SET account_id = ?, type = ?, amount = ?, description = ?, subcategory_id = ?, date = ?, payment_method_id = ?, notes = ?, validated = ? WHERE id = ? AND user_id = ?',
-          )
-          .run(
-            data.account_id,
-            data.type,
-            data.amount,
-            data.description,
-            data.subcategory_id,
-            data.date,
-            data.payment_method_id,
-            data.notes,
-            data.validated ? 1 : 0,
-            id,
-            userId,
-          );
-        db.prepare('DELETE FROM transaction_splits WHERE transaction_id = ?').run(id);
+        const result = updateTxStmt.run({
+          accountId: data.account_id,
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          subcategoryId: data.subcategory_id,
+          date: data.date,
+          paymentMethodId: data.payment_method_id,
+          notes: data.notes,
+          validated: data.validated ? 1 : 0,
+          id,
+          userId,
+        });
+        deleteSplitsByTxIdStmt.run({ txId: id });
         if (data.splits?.length) {
-          const ins = db.prepare(
-            'INSERT INTO transaction_splits (transaction_id, subcategory_id, amount) VALUES (?, ?, ?)',
-          );
-          for (const s of data.splits) ins.run(id, s.subcategory_id, s.amount);
+          for (const s of data.splits) {
+            insertSplitStmt.run({ txId: id, subcategoryId: s.subcategory_id, amount: s.amount });
+          }
         }
         return result;
       })();
@@ -300,63 +344,38 @@ export function createTransactionsRepo(db: Database) {
       peerId: number,
       data: UpdateSharedTransactionInput,
     ) {
-      const v = data.validated ? 1 : 0;
+      const base = {
+        amount: data.amount,
+        description: data.description,
+        date: data.date,
+        validated: data.validated ? 1 : 0,
+        userId,
+      };
       db.transaction(() => {
-        if (data.this_account_id === undefined) {
-          const stmt = db.prepare(
-            'UPDATE transactions SET amount=?, description=?, date=?, validated=? WHERE id=? AND user_id=?',
-          );
-          stmt.run(data.amount, data.description, data.date, v, id, userId);
-          stmt.run(data.amount, data.description, data.date, v, peerId, userId);
-        } else {
-          db.prepare(
-            'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
-          ).run(data.amount, data.description, data.date, v, data.this_account_id, id, userId);
-          db.prepare(
-            'UPDATE transactions SET amount=?, description=?, date=?, validated=?, account_id=? WHERE id=? AND user_id=?',
-          ).run(data.amount, data.description, data.date, v, data.peer_account_id, peerId, userId);
-        }
+        updateSharedStmt.run({ ...base, accountId: data.this_account_id ?? null, id });
+        updateSharedStmt.run({ ...base, accountId: data.peer_account_id ?? null, id: peerId });
       })();
     },
 
     setValidated(userId: number, id: number, validated: boolean) {
-      const v = validated ? 1 : 0;
-      db.prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?').run(
-        v,
-        id,
+      return validateTxStmt.run({
         userId,
-      );
-      const peer = db
-        .prepare<
-          [number, number],
-          { transfer_peer_id: number | null }
-        >('SELECT transfer_peer_id FROM transactions WHERE id = ? AND user_id = ?')
-        .get(id, userId);
-      if (peer?.transfer_peer_id) {
-        db.prepare('UPDATE transactions SET validated = ? WHERE id = ? AND user_id = ?').run(
-          v,
-          peer.transfer_peer_id,
-          userId,
-        );
-      }
+        id,
+        validated: validated ? 1 : 0,
+      });
     },
 
-    setReimbursementStatus(userId: number, id: number, status: ReimbursementStatus | null) {
-      return db
-        .prepare('UPDATE transactions SET reimbursement_status = ? WHERE id = ? AND user_id = ?')
-        .run(status, id, userId);
-    },
+    setReimbursementStatus: (userId: number, id: number, status: ReimbursementStatus | null) =>
+      updateReimbursementStatusStmt.run({ id, userId, status }),
 
-    delete(userId: number, id: number) {
-      return db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(id, userId);
-    },
+    delete: (userId: number, id: number) => deleteStmt.run({ id, userId }),
 
     deleteWithPeer(userId: number, id: number, peerId: number) {
-      const stmt = db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?');
-      db.transaction(() => {
-        stmt.run(peerId, userId);
-        stmt.run(id, userId);
-      })();
+      const runDeleteWithPeer = db.transaction(() => {
+        deleteStmt.run({ id: peerId, userId });
+        deleteStmt.run({ id, userId });
+      });
+      return runDeleteWithPeer();
     },
   };
 }

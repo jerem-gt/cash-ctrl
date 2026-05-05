@@ -92,7 +92,7 @@ export function createScheduledRouter(db: Database): Router {
     const d = parsed.data;
     if (!checkTransferConstraints(d, scheduledRepo.getTransferPmId(), res)) return;
 
-    scheduledRepo.update(userId, id, { ...d, description: d.description.trim() });
+    scheduledRepo.update(id, userId, { ...d, description: d.description.trim() });
     generateScheduledTransactions(userId, db);
     res.json(scheduledRepo.getById(id, userId));
   });

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createTransactionsRepo } from './transactions.repo';
 
 const transactionSchema = z
@@ -73,6 +74,7 @@ function resolveTransferAccountIds(
 
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
+  const accountsRepo = createAccountsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -97,7 +99,7 @@ export function createTransactionsRouter(db: Database): Router {
     }
     const userId = sessionUserId(req);
 
-    if (!transactionsRepo.accountExists(parsed.data.account_id, userId)) {
+    if (!accountsRepo.exists(parsed.data.account_id, userId)) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
       return;
     }
@@ -126,11 +128,11 @@ export function createTransactionsRouter(db: Database): Router {
         return;
       }
       const { from_account_id, to_account_id } = parsed.data;
-      if (from_account_id && !transactionsRepo.accountExists(from_account_id, userId)) {
+      if (from_account_id && !accountsRepo.exists(from_account_id, userId)) {
         res.status(403).json({ error: 'Account not found or does not belong to user' });
         return;
       }
-      if (to_account_id && !transactionsRepo.accountExists(to_account_id, userId)) {
+      if (to_account_id && !accountsRepo.exists(to_account_id, userId)) {
         res.status(403).json({ error: 'Account not found or does not belong to user' });
         return;
       }
@@ -154,7 +156,7 @@ export function createTransactionsRouter(db: Database): Router {
         res.status(400).json({ error: z.treeifyError(parsed.error) });
         return;
       }
-      if (!transactionsRepo.accountExists(parsed.data.account_id, userId)) {
+      if (!accountsRepo.exists(parsed.data.account_id, userId)) {
         res.status(403).json({ error: 'Account not found or does not belong to user' });
         return;
       }
