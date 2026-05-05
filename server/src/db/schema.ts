@@ -59,6 +59,7 @@ export function initSchema(db: Database) {
             account_type_id INTEGER NOT NULL REFERENCES account_types (id),
             initial_balance REAL    NOT NULL DEFAULT 0,
             opening_date    TEXT,
+            closed_at       TEXT,
             created_at      TEXT             DEFAULT (datetime('now'))
         );
 
@@ -85,6 +86,7 @@ export function initSchema(db: Database) {
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             name          TEXT UNIQUE NOT NULL,
             is_investment INTEGER     NOT NULL DEFAULT 0,
+            is_loan       INTEGER     NOT NULL DEFAULT 0,
             created_at    TEXT                 DEFAULT (datetime('now'))
         );
 
@@ -153,7 +155,7 @@ export function initSchema(db: Database) {
             description           TEXT    NOT NULL,
             subcategory_id        INTEGER REFERENCES subcategories (id),
             date                  TEXT    NOT NULL,
-            transfer_peer_id      INTEGER,
+            transfer_peer_id      INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             validated             INTEGER NOT NULL DEFAULT 0,
             payment_method_id     INTEGER REFERENCES payment_methods (id),
             scheduled_id          INTEGER REFERENCES scheduled_transactions(id) ON DELETE SET NULL,
@@ -208,42 +210,4 @@ export function initSchema(db: Database) {
             UNIQUE (loan_id, installment_number)
         );
     `);
-
-  // Migrations
-  try {
-    db.exec(
-      'ALTER TABLE transactions ADD COLUMN subcategory_id INTEGER REFERENCES subcategories(id)',
-    );
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec(
-      'ALTER TABLE scheduled_transactions ADD COLUMN subcategory_id INTEGER REFERENCES subcategories(id)',
-    );
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec(
-      `ALTER TABLE transactions ADD COLUMN reimbursement_status TEXT CHECK (reimbursement_status IN (${sqlIn(REIMBURSEMENT_STATUSES)}))`,
-    );
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec('ALTER TABLE account_types ADD COLUMN is_investment INTEGER NOT NULL DEFAULT 0');
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec('ALTER TABLE accounts ADD COLUMN closed_at TEXT');
-  } catch {
-    /* ignore: column may already exist */
-  }
-  try {
-    db.exec('ALTER TABLE account_types ADD COLUMN is_loan INTEGER NOT NULL DEFAULT 0');
-  } catch {
-    /* ignore: column may already exist */
-  }
 }

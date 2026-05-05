@@ -95,3 +95,5 @@ export interface PaginatedResult<T> {
   totalPages: number;
   balance_before_page?: number;
 }
+
+export type QueryParams = Record<string, string | number | null | bigint>;
