@@ -89,6 +89,8 @@ export const handlers = [
   http.post('/api/transfers', () =>
     HttpResponse.json({ expense: TRANSACTIONS.data[0], income: TRANSACTIONS.data[0] }),
   ),
+  http.put('/api/transfers/:id', () => HttpResponse.json(TRANSACTIONS.data[0])),
+  http.delete('/api/transfers/:id', () => HttpResponse.json({ ok: true })),
 
   // Scheduled
   http.get('/api/scheduled', () => HttpResponse.json(SCHEDULED)),

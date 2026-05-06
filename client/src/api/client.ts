@@ -150,6 +150,18 @@ export const transfersApi = {
     notes?: string | null;
     validated?: boolean;
   }) => request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
+  update: (
+    id: number,
+    payload: {
+      amount: number;
+      description: string;
+      date: string;
+      validated: boolean;
+      from_account_id?: number;
+      to_account_id?: number;
+    },
+  ) => request<Transaction>('PUT', `/api/transfers/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transfers/${id}`),
 };
 
 // Scheduled transactions

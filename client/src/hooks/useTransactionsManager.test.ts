@@ -6,15 +6,23 @@ import { useCategories } from '@/hooks/useCategories';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import {
   useDeleteTransaction,
+  useDeleteTransfer,
   useTransactions,
   useUpdateTransaction,
+  useUpdateTransfer,
 } from '@/hooks/useTransactions';
 import { Transaction } from '@/types.ts';
 
 import { useTransactionsManager } from './useTransactionsManager';
 
 // 1. Mock de tous les hooks dont dépend le manager
-vi.mock('@/hooks/useTransactions');
+vi.mock('@/hooks/useTransactions', () => ({
+  useTransactions: vi.fn(),
+  useUpdateTransaction: vi.fn(),
+  useUpdateTransfer: vi.fn(),
+  useDeleteTransaction: vi.fn(),
+  useDeleteTransfer: vi.fn(),
+}));
 vi.mock('@/hooks/useCategories');
 vi.mock('@/hooks/useAccounts');
 vi.mock('@/hooks/usePaymentMethods');
@@ -48,10 +56,20 @@ describe('useTransactionsManager', () => {
       isPending: false,
     } as unknown as ReturnType<typeof useUpdateTransaction>);
 
+    vi.mocked(useUpdateTransfer).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateTransfer>);
+
     vi.mocked(useDeleteTransaction).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
     } as unknown as ReturnType<typeof useDeleteTransaction>);
+
+    vi.mocked(useDeleteTransfer).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useDeleteTransfer>);
   });
 
   describe('Initialisation et Filtres', () => {
@@ -127,25 +145,44 @@ describe('useTransactionsManager', () => {
   });
 
   describe('Actions métier (Mutations)', () => {
-    it('devrait appeler la mutation de suppression avec l’ID de la modale delete', () => {
+    it('appelle deleteTransaction pour une transaction normale', () => {
       const mockDelete = vi.fn();
       vi.mocked(useDeleteTransaction).mockReturnValue({
         mutate: mockDelete,
+        isPending: false,
       } as unknown as ReturnType<typeof useDeleteTransaction>);
 
       const { result } = renderHook(() => useTransactionsManager());
       const tx = { id: 50, transfer_peer_id: null } as Transaction;
 
-      // 1. Ouvrir la modale
       act(() => {
         result.current.actions.openDelete(tx);
       });
-      // 2. Confirmer la suppression
       act(() => {
         result.current.actions.handleDelete();
       });
 
       expect(mockDelete).toHaveBeenCalledWith(50, expect.any(Object));
+    });
+
+    it('appelle deleteTransfer pour un transfert', () => {
+      const mockDeleteTransfer = vi.fn();
+      vi.mocked(useDeleteTransfer).mockReturnValue({
+        mutate: mockDeleteTransfer,
+        isPending: false,
+      } as unknown as ReturnType<typeof useDeleteTransfer>);
+
+      const { result } = renderHook(() => useTransactionsManager());
+      const tx = { id: 50, transfer_peer_id: 51 } as Transaction;
+
+      act(() => {
+        result.current.actions.openDelete(tx);
+      });
+      act(() => {
+        result.current.actions.handleDelete();
+      });
+
+      expect(mockDeleteTransfer).toHaveBeenCalledWith(50, expect.any(Object));
     });
 
     it('handleUpdate passe subcategory_id=null et splits pour une transaction ventilée', () => {

@@ -9,7 +9,6 @@ import type {
   Transaction,
   TransactionFilters,
   TransactionSplit,
-  UpdateSharedTransactionInput,
 } from './transactions.types';
 
 interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'> {
@@ -147,13 +146,6 @@ export function createTransactionsRepo(db: Database) {
   `);
   const updateReimbursementStatusStmt = db.prepare(
     `UPDATE transactions SET reimbursement_status = :status WHERE id = :id AND user_id = :userId`,
-  );
-  const updateSharedStmt = db.prepare(
-    `UPDATE transactions SET amount=:amount, description=:description, date=:date, validated=:validated,
-     account_id=COALESCE(:accountId, account_id) WHERE id=:id AND user_id=:userId`,
-  );
-  const updatelinkTransferPeers = db.prepare(
-    'UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id',
   );
   const deleteStmt = db.prepare('DELETE FROM transactions WHERE id = :id AND user_id = :userId');
   const deleteSplitsByTxIdStmt = db.prepare(
@@ -308,11 +300,6 @@ export function createTransactionsRepo(db: Database) {
       return Number(result.lastInsertRowid);
     },
 
-    linkTransferPeers(id1: number, id2: number): void {
-      updatelinkTransferPeers.run({ peerId: id2, id: id1 });
-      updatelinkTransferPeers.run({ peerId: id1, id: id2 });
-    },
-
     update(userId: number, id: number, data: CreateTransactionInput) {
       return db.transaction(() => {
         const result = updateTxStmt.run({
@@ -338,25 +325,6 @@ export function createTransactionsRepo(db: Database) {
       })();
     },
 
-    updateBothShared(
-      userId: number,
-      id: number,
-      peerId: number,
-      data: UpdateSharedTransactionInput,
-    ) {
-      const base = {
-        amount: data.amount,
-        description: data.description,
-        date: data.date,
-        validated: data.validated ? 1 : 0,
-        userId,
-      };
-      db.transaction(() => {
-        updateSharedStmt.run({ ...base, accountId: data.this_account_id ?? null, id });
-        updateSharedStmt.run({ ...base, accountId: data.peer_account_id ?? null, id: peerId });
-      })();
-    },
-
     setValidated(userId: number, id: number, validated: boolean) {
       return validateTxStmt.run({
         userId,
@@ -369,13 +337,5 @@ export function createTransactionsRepo(db: Database) {
       updateReimbursementStatusStmt.run({ id, userId, status }),
 
     delete: (userId: number, id: number) => deleteStmt.run({ id, userId }),
-
-    deleteWithPeer(userId: number, id: number, peerId: number) {
-      const runDeleteWithPeer = db.transaction(() => {
-        deleteStmt.run({ id: peerId, userId });
-        deleteStmt.run({ id, userId });
-      });
-      return runDeleteWithPeer();
-    },
   };
 }

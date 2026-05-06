@@ -38,15 +38,6 @@ const transactionSchema = z
     { message: 'Exactly one of subcategory_id or splits must be provided' },
   );
 
-const transferUpdateSchema = z.object({
-  amount: z.number().positive(),
-  description: z.string().min(1).max(200),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  validated: z.boolean().default(false),
-  from_account_id: z.number().int().positive().optional(),
-  to_account_id: z.number().int().positive().optional(),
-});
-
 const querySchema = z.object({
   account_id: z.coerce.number().int().optional(),
   type: z.enum(TRANSACTION_TYPES).optional(),
@@ -55,22 +46,6 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
-
-function resolveTransferAccountIds(
-  isExpense: boolean,
-  from_account_id: number | undefined,
-  to_account_id: number | undefined,
-): { thisAccountId: number | undefined; peerAccountId: number | undefined } {
-  let thisAccountId: number | undefined;
-  if (from_account_id !== undefined) {
-    thisAccountId = isExpense ? from_account_id : to_account_id;
-  }
-  let peerAccountId: number | undefined;
-  if (to_account_id !== undefined) {
-    peerAccountId = isExpense ? to_account_id : from_account_id;
-  }
-  return { thisAccountId, peerAccountId };
-}
 
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
@@ -120,51 +95,25 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(404).json({ error: 'Transaction not found' });
       return;
     }
-
     if (tx.transfer_peer_id) {
-      const parsed = transferUpdateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ error: z.treeifyError(parsed.error) });
-        return;
-      }
-      const { from_account_id, to_account_id } = parsed.data;
-      if (from_account_id && !accountsRepo.exists(from_account_id, userId)) {
-        res.status(403).json({ error: 'Account not found or does not belong to user' });
-        return;
-      }
-      if (to_account_id && !accountsRepo.exists(to_account_id, userId)) {
-        res.status(403).json({ error: 'Account not found or does not belong to user' });
-        return;
-      }
-      // tx.type === 'expense' means this tx is the source leg, peer is the destination leg
-      const { thisAccountId, peerAccountId } = resolveTransferAccountIds(
-        tx.type === 'expense',
-        from_account_id,
-        to_account_id,
-      );
-      transactionsRepo.updateBothShared(userId, id, tx.transfer_peer_id, {
-        amount: parsed.data.amount,
-        description: parsed.data.description.trim(),
-        date: parsed.data.date,
-        validated: parsed.data.validated,
-        this_account_id: thisAccountId,
-        peer_account_id: peerAccountId,
-      });
-    } else {
-      const parsed = transactionSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ error: z.treeifyError(parsed.error) });
-        return;
-      }
-      if (!accountsRepo.exists(parsed.data.account_id, userId)) {
-        res.status(403).json({ error: 'Account not found or does not belong to user' });
-        return;
-      }
-      transactionsRepo.update(userId, id, {
-        ...parsed.data,
-        description: parsed.data.description.trim(),
-      });
+      res.status(400).json({ error: 'Use PUT /api/transfers/:id to update a transfer' });
+      return;
     }
+
+    const parsed = transactionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    if (!accountsRepo.exists(parsed.data.account_id, userId)) {
+      res.status(403).json({ error: 'Account not found or does not belong to user' });
+      return;
+    }
+
+    transactionsRepo.update(userId, id, {
+      ...parsed.data,
+      description: parsed.data.description.trim(),
+    });
 
     res.json(transactionsRepo.getWithDetails(id));
   });
@@ -195,13 +144,12 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(404).json({ error: 'Transaction not found' });
       return;
     }
-
     if (tx.transfer_peer_id) {
-      transactionsRepo.deleteWithPeer(userId, id, tx.transfer_peer_id);
-    } else {
-      transactionsRepo.delete(userId, id);
+      res.status(400).json({ error: 'Use DELETE /api/transfers/:id to delete a transfer' });
+      return;
     }
 
+    transactionsRepo.delete(userId, id);
     res.json({ ok: true });
   });
 

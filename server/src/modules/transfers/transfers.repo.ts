@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { Transaction } from '../transactions/transactions.types';
+import type { Transaction, UpdateSharedTransactionInput } from '../transactions/transactions.types';
 import type { TransferInput } from './transfers.types';
 
 const TX_WITH_DETAILS = `
@@ -14,81 +14,110 @@ const TX_WITH_DETAILS = `
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
   LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-  WHERE t.id = ?
+  WHERE t.id = :id
 `;
 
 export function createTransfersRepo(db: Database) {
-  return {
-    accountExists(accountId: number, userId: number): boolean {
-      return !!db
-        .prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?')
-        .get(accountId, userId);
-    },
+  const getTransferSubcatStmt = db.prepare<[], { id: number }>(
+    `SELECT id FROM subcategories WHERE name = 'Transfert'`,
+  );
+  const getTransferPmStmt = db.prepare<[], { id: number }>(
+    `SELECT id FROM payment_methods WHERE name = 'Transfert'`,
+  );
+  const insertTxStmt = db.prepare(`
+      INSERT INTO transactions
+      (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated)
+      VALUES
+          (:userId, :accountId, :type, :amount, :description, :subcategoryId, :date, :paymentMethodId, :notes, :validated)
+  `);
+  const setPeerStmt = db.prepare(
+    'UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id',
+  );
+  const getByIdStmt = db.prepare<{ id: number }, Transaction>(TX_WITH_DETAILS);
+  const updateSharedStmt = db.prepare(
+    `UPDATE transactions SET amount=:amount, description=:description, date=:date, validated=:validated,
+     account_id=COALESCE(:accountId, account_id) WHERE id=:id AND user_id=:userId`,
+  );
+  const deleteStmt = db.prepare('DELETE FROM transactions WHERE id = :id AND user_id = :userId');
 
+  return {
     create(
       userId: number,
       data: TransferInput,
     ): { expense: Transaction | undefined; income: Transaction | undefined } {
-      const transferSubcat = db
-        .prepare<[], { id: number }>(
-          `SELECT id
-                                                          FROM subcategories
-                                                          WHERE name = 'Transfert'`,
-        )
-        .get();
-      const transferPm = db
-        .prepare<[], { id: number }>(
-          `SELECT id
-                                                         FROM payment_methods
-                                                         WHERE name = 'Transfert'`,
-        )
-        .get();
-      const TRANSFER_SUBCAT_ID = transferSubcat?.id ?? null;
-      const TRANSFER_PM_ID = transferPm?.id ?? null;
-
-      const insertTx = db.prepare(
-        'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      );
-      const setPeer = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
-      const getTx = db.prepare<[number], Transaction>(TX_WITH_DETAILS);
+      const transferSubcat = getTransferSubcatStmt.get();
+      const transferPm = getTransferPmStmt.get();
+      const subcategoryId = transferSubcat?.id ?? null;
+      const paymentMethodId = transferPm?.id ?? null;
 
       return db.transaction(() => {
         const notes = data.notes ?? null;
         const validated = data.validated ? 1 : 0;
         const expenseId = Number(
-          insertTx.run(
+          insertTxStmt.run({
             userId,
-            data.from_account_id,
-            'expense',
-            data.amount,
-            data.description,
-            TRANSFER_SUBCAT_ID,
-            data.date,
-            TRANSFER_PM_ID,
+            accountId: data.from_account_id,
+            type: 'expense',
+            amount: data.amount,
+            description: data.description,
+            subcategoryId,
+            date: data.date,
+            paymentMethodId,
             notes,
             validated,
-          ).lastInsertRowid,
+          }).lastInsertRowid,
         );
         const incomeId = Number(
-          insertTx.run(
+          insertTxStmt.run({
             userId,
-            data.to_account_id,
-            'income',
-            data.amount,
-            data.description,
-            TRANSFER_SUBCAT_ID,
-            data.date,
-            TRANSFER_PM_ID,
+            accountId: data.to_account_id,
+            type: 'income',
+            amount: data.amount,
+            description: data.description,
+            subcategoryId,
+            date: data.date,
+            paymentMethodId,
             notes,
             validated,
-          ).lastInsertRowid,
+          }).lastInsertRowid,
         );
-        setPeer.run(incomeId, expenseId);
-        setPeer.run(expenseId, incomeId);
+        setPeerStmt.run({ peerId: incomeId, id: expenseId });
+        setPeerStmt.run({ peerId: expenseId, id: incomeId });
         return {
-          expense: getTx.get(expenseId) ?? undefined,
-          income: getTx.get(incomeId) ?? undefined,
+          expense: getByIdStmt.get({ id: expenseId }) ?? undefined,
+          income: getByIdStmt.get({ id: incomeId }) ?? undefined,
         };
+      })();
+    },
+
+    linkTransferPeers(id1: number, id2: number): void {
+      setPeerStmt.run({ peerId: id2, id: id1 });
+      setPeerStmt.run({ peerId: id1, id: id2 });
+    },
+
+    updateBothShared(
+      userId: number,
+      id: number,
+      peerId: number,
+      data: UpdateSharedTransactionInput,
+    ): void {
+      const base = {
+        amount: data.amount,
+        description: data.description,
+        date: data.date,
+        validated: data.validated ? 1 : 0,
+        userId,
+      };
+      db.transaction(() => {
+        updateSharedStmt.run({ ...base, accountId: data.this_account_id ?? null, id });
+        updateSharedStmt.run({ ...base, accountId: data.peer_account_id ?? null, id: peerId });
+      })();
+    },
+
+    deleteWithPeer(userId: number, id: number, peerId: number) {
+      return db.transaction(() => {
+        deleteStmt.run({ id: peerId, userId });
+        deleteStmt.run({ id, userId });
       })();
     },
   };

@@ -7,8 +7,10 @@ import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';
 import {
   useDeleteTransaction,
+  useDeleteTransfer,
   useTransactions,
   useUpdateTransaction,
+  useUpdateTransfer,
 } from '@/hooks/useTransactions.ts';
 import { type Filters, Transaction } from '@/types.ts';
 
@@ -47,8 +49,10 @@ export function useTransactionsManager(initialAccountId?: number) {
 
   // --- APPELS API (Hooks de données) ---
   const { data: result, isLoading, isFetching } = useTransactions({ ...filters, page, limit });
-  const updateTx = useUpdateTransaction();
+  const updateTxMutation = useUpdateTransaction();
+  const updateTransferMutation = useUpdateTransfer();
   const deleteTxMutation = useDeleteTransaction();
+  const deleteTransferMutation = useDeleteTransfer();
 
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
@@ -71,10 +75,13 @@ export function useTransactionsManager(initialAccountId?: number) {
   const handleDelete = () => {
     if (modal.type !== 'delete') return;
 
-    deleteTxMutation.mutate(modal.tx.id, {
+    const isTransfer = modal.tx.transfer_peer_id !== null;
+    const mutation = isTransfer ? deleteTransferMutation : deleteTxMutation;
+
+    mutation.mutate(modal.tx.id, {
       onSuccess: () => {
         closeAll();
-        showToast(modal.tx.transfer_peer_id ? 'Transfert supprimé' : 'Transaction supprimée');
+        showToast(isTransfer ? 'Transfert supprimé' : 'Transaction supprimée');
       },
       onError: (e) => showToast(e.message),
     });
@@ -83,23 +90,28 @@ export function useTransactionsManager(initialAccountId?: number) {
   const handleUpdate = (data: TxFormState) => {
     if (modal.type !== 'edit') return;
 
-    // On construit le payload en utilisant txToEdit
-    const payload = modal.tx.transfer_peer_id
-      ? {
+    if (modal.tx.transfer_peer_id !== null) {
+      updateTransferMutation.mutate(
+        {
           id: modal.tx.id,
           amount: Number.parseFloat(data.amount),
           description: data.description,
           date: data.date,
-          type: modal.tx.type,
-          account_id: modal.tx.account_id,
-          subcategory_id: modal.tx.subcategory_id ?? 0,
-          payment_method_id: modal.tx.payment_method_id ?? 0,
-          notes: modal.tx.notes,
           validated: !!modal.tx.validated,
           from_account_id: Number.parseInt(data.account_id) || undefined,
           to_account_id: Number.parseInt(data.to_account_id) || undefined,
-        }
-      : {
+        },
+        {
+          onSuccess: () => {
+            closeAll();
+            showToast('Transfert modifié ✓');
+          },
+          onError: (e) => showToast(e.message),
+        },
+      );
+    } else {
+      updateTxMutation.mutate(
+        {
           id: modal.tx.id,
           type: data.type,
           amount: Number.parseFloat(data.amount),
@@ -111,16 +123,16 @@ export function useTransactionsManager(initialAccountId?: number) {
           payment_method_id: Number.parseInt(data.payment_method_id),
           notes: data.notes || null,
           validated: data.validated,
-        };
-
-    updateTx.mutate(payload, {
-      onSuccess: () => {
-        // On ferme tout en cas de succès
-        closeAll();
-        showToast('Transaction modifiée ✓');
-      },
-      onError: (e) => showToast(e.message),
-    });
+        },
+        {
+          onSuccess: () => {
+            closeAll();
+            showToast('Transaction modifiée ✓');
+          },
+          onError: (e) => showToast(e.message),
+        },
+      );
+    }
   };
 
   // On expose tout ce dont le composant a besoin
@@ -140,7 +152,11 @@ export function useTransactionsManager(initialAccountId?: number) {
       modal,
       isLoading,
       isFetching,
-      isPending: updateTx.isPending || deleteTxMutation.isPending,
+      isPending:
+        updateTxMutation.isPending ||
+        updateTransferMutation.isPending ||
+        deleteTxMutation.isPending ||
+        deleteTransferMutation.isPending,
     },
     actions: {
       openAdd,
