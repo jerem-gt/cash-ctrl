@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { BuyInput, SellInput, StockOperation, StockPosition } from './stocks.types';
+import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
 
 function recalcPosition(db: Database, accountId: number, ticker: string): void {
   const ops = db
@@ -40,6 +40,22 @@ function recalcPosition(db: Database, accountId: number, ticker: string): void {
 }
 
 export function createStocksRepo(db: Database) {
+  const getAllTickersStmt = db
+    .prepare<[], string>(
+      `
+    SELECT DISTINCT ticker FROM stock_positions WHERE quantity > 0
+  `,
+    )
+    .pluck();
+  const getStockPriceStmt = db.prepare<{ ticker: string }, StockPrice>(`
+    SELECT ticker, price, currency, name, fetched_at FROM stock_prices WHERE ticker = :ticker
+  `);
+
+  const upsertPriceStmt = db.prepare(`
+    INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at)
+    VALUES (:ticker, :price, :currency, :name, datetime('now'))
+  `);
+
   return {
     accountBelongsToUser(accountId: number, userId: number): boolean {
       return !!db
@@ -74,24 +90,6 @@ export function createStocksRepo(db: Database) {
            ORDER BY sp.ticker`,
         )
         .all(accountId);
-    },
-
-    getPosition(accountId: number, ticker: string): StockPosition | undefined {
-      return (
-        db
-          .prepare<[number, string], StockPosition>(
-            `SELECT sp.id, sp.account_id, sp.ticker, sp.quantity, sp.avg_price,
-                    sprice.price      AS current_price,
-                    COALESCE(sprice.currency, 'EUR') AS currency,
-                    sprice.name       AS name,
-                    sprice.fetched_at AS price_fetched_at,
-                    sp.updated_at, sp.created_at
-             FROM stock_positions sp
-             LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
-             WHERE sp.account_id = ? AND sp.ticker = ?`,
-          )
-          .get(accountId, ticker) ?? undefined
-      );
     },
 
     getOperations(accountId: number): StockOperation[] {
@@ -196,20 +194,10 @@ export function createStocksRepo(db: Database) {
       })();
     },
 
-    getAllTickers(): string[] {
-      return db
-        .prepare<[], { ticker: string }>(
-          'SELECT DISTINCT ticker FROM stock_positions WHERE quantity > 0',
-        )
-        .all()
-        .map((r) => r.ticker);
-    },
-
-    upsertPrice(ticker: string, price: number, currency: string): void {
-      db.prepare(
-        "INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at) VALUES (?, ?, ?, datetime('now'))",
-      ).run(ticker, price, currency);
-    },
+    getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }),
+    getAllTickers: () => getAllTickersStmt.all(),
+    upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
+      upsertPriceStmt.run({ ticker, price, currency, name }),
 
     getOperationById(operationId: number): StockOperation | undefined {
       return (

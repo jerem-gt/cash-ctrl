@@ -89,6 +89,24 @@ const TX_WITH_DETAILS = `
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
 export function createTransactionsRepo(db: Database) {
+  const getCountByCategoryIdStmt = db
+    .prepare<
+      { categoryId: number },
+      number
+    >('SELECT COUNT(*) as n FROM transactions WHERE subcategory_id in (select id from subcategories where category_id = :categoryId)')
+    .pluck();
+  const getCountBySubcategoryIdStmt = db
+    .prepare<
+      { subcategoryId: number },
+      number
+    >('SELECT COUNT(*) as cnt FROM transactions WHERE subcategory_id = :subcategoryId')
+    .pluck();
+  const getCountByPaymentMethodIdStmt = db
+    .prepare<
+      { paymentMethodId: number },
+      number
+    >('SELECT COUNT(*) as cnt FROM transactions WHERE payment_method_id = :paymentMethodId')
+    .pluck();
   const getByIdStmt = db.prepare<{ id: number; userId: number }, Transaction>(
     `SELECT * FROM transactions WHERE id = :id AND user_id = :userId`,
   );
@@ -164,6 +182,12 @@ export function createTransactionsRepo(db: Database) {
   };
 
   return {
+    getCountByCategoryId: (categoryId: number): number =>
+      getCountByCategoryIdStmt.get({ categoryId }) ?? 0,
+    getCountBySubcategoryId: (subcategoryId: number): number =>
+      getCountBySubcategoryIdStmt.get({ subcategoryId }) ?? 0,
+    getCountByPaymentMethodId: (paymentMethodId: number): number =>
+      getCountByPaymentMethodIdStmt.get({ paymentMethodId }) ?? 0,
     getByUserId(userId: number, filters: TransactionFilters): PaginatedResult<Transaction> {
       const page = Math.max(1, filters.page ?? 1);
       const limit = Math.min(100, Math.max(1, filters.limit ?? 25));

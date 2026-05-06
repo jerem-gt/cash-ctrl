@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth } from '../../middleware.js';
+import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
 
 const schema = z
@@ -17,6 +18,7 @@ const schema = z
 
 export function createAccountTypesRouter(db: Database): Router {
   const accountTypesRepo = createAccountTypesRepo(db);
+  const accountsRepo = createAccountsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -64,7 +66,7 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(404).json({ error: 'Account type not found' });
       return;
     }
-    const cnt = accountTypesRepo.getAccountCount(id);
+    const cnt = accountsRepo.countByAccountTypeId(id);
     if (cnt > 0) {
       res.status(409).json({ error: `Ce type est utilisé par ${cnt} compte(s).` });
       return;

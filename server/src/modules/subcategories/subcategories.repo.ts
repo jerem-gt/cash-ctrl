@@ -7,51 +7,31 @@ import type {
 } from './subcategories.types';
 
 export function createSubcategoriesRepo(db: Database) {
+  const getAllStmt = db.prepare<[], SubcategoryWithCount>(`
+      SELECT sub.*, COUNT(t.id) as tx_count
+      FROM subcategories sub
+      LEFT JOIN transactions t ON t.subcategory_id = sub.id
+      GROUP BY sub.id
+      ORDER BY sub.category_id, sub.created_at
+  `);
+  const getByIdStmt = db.prepare<{ id: number }, Subcategory>(
+    'SELECT * FROM subcategories WHERE id = :id',
+  );
+  const createStmt = db.prepare(
+    'INSERT INTO subcategories (category_id, name) VALUES (:category_id, :name)',
+  );
+  const updateStmt = db.prepare('UPDATE subcategories SET name = :name WHERE id = :id');
+  const deleteStmt = db.prepare('DELETE FROM subcategories WHERE id = :id');
+
   return {
-    getAll(): SubcategoryWithCount[] {
-      return db
-        .prepare<[], SubcategoryWithCount>(
-          `
-        SELECT sub.*, COUNT(t.id) as tx_count
-        FROM subcategories sub
-        LEFT JOIN transactions t ON t.subcategory_id = sub.id
-        GROUP BY sub.id
-        ORDER BY sub.category_id, sub.created_at
-      `,
-        )
-        .all();
-    },
+    getAll: () => getAllStmt.all(),
 
-    getById(id: number): Subcategory | undefined {
-      return (
-        db.prepare<[number], Subcategory>('SELECT * FROM subcategories WHERE id = ?').get(id) ??
-        undefined
-      );
-    },
+    getById: (id: number) => getByIdStmt.get({ id }),
 
-    getTxCount(id: number): number {
-      return (
-        db
-          .prepare<
-            [number],
-            { n: number }
-          >('SELECT COUNT(*) as n FROM transactions WHERE subcategory_id = ?')
-          .get(id)?.n ?? 0
-      );
-    },
+    create: (data: CreateSubcategoryInput) => createStmt.run(data),
 
-    create(data: CreateSubcategoryInput) {
-      return db
-        .prepare('INSERT INTO subcategories (category_id, name) VALUES (?, ?)')
-        .run(data.category_id, data.name);
-    },
+    update: (id: number, name: string) => updateStmt.run({ id, name }),
 
-    update(id: number, name: string) {
-      return db.prepare('UPDATE subcategories SET name = ? WHERE id = ?').run(name, id);
-    },
-
-    delete(id: number) {
-      return db.prepare('DELETE FROM subcategories WHERE id = ?').run(id);
-    },
+    delete: (id: number) => deleteStmt.run({ id }),
   };
 }

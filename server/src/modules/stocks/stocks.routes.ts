@@ -101,7 +101,7 @@ export function createStocksRouter(db: Database): Router {
 
   router.get('/price/:ticker', async (req, res) => {
     const { ticker } = req.params;
-    const price = await getOrRefreshPrice(db, ticker);
+    const price = await getOrRefreshPrice(repo, ticker);
     if (!price) {
       res.status(404).json({ error: `Cotation introuvable pour ${ticker}` });
       return;

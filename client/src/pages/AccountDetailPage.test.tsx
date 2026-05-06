@@ -152,7 +152,7 @@ describe('AccountDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('modifiée'),
+      expect(document.getElementById('toast')?.textContent).toContain('Transfert modifié'),
     );
   });
 

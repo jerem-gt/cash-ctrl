@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { CreateScheduledInput } from './scheduled.types';
+import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
 
 const SCHED_COLUMS = `
   s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,
@@ -34,12 +34,14 @@ const GET_BY_ID_SQL = `
 `;
 
 export function createScheduledRepo(db: Database) {
+  const getActiveByUserIdStmt = db.prepare<{ userId: number }, ScheduledTransaction>(
+    'SELECT * FROM scheduled_transactions WHERE user_id = :userId AND active = 1',
+  );
   const getByUserIdStmt = db.prepare(GET_BY_USER_ID_SQL);
   const getByIdStmt = db.prepare(GET_BY_ID_SQL);
   const existsStmt = db.prepare(
     'SELECT 1 FROM scheduled_transactions WHERE id = :id AND user_id = :userId',
   );
-  const getTransferPmIdStmt = db.prepare(`SELECT id FROM payment_methods WHERE name = 'Transfert'`);
   const deleteFutureTransactionsStmt = db.prepare(
     'DELETE FROM transactions WHERE scheduled_id = :id AND user_id = :userId AND date > :today AND validated = 0',
   );
@@ -80,11 +82,15 @@ export function createScheduledRepo(db: Database) {
     AND user_id = :user_id
   `);
 
+  const updateLastGeneratedUntilStmt = db.prepare(`
+    UPDATE scheduled_transactions SET last_generated_until = :lastGeneratedUntil WHERE id = :id
+  `);
+
   return {
+    getActiveByUserId: (userId: number) => getActiveByUserIdStmt.all({ userId }),
     getByUserId: (userId: number) => getByUserIdStmt.all({ userId }),
     getById: (id: number, userId: number) => getByIdStmt.get({ id, userId }),
     exists: (id: number, userId: number) => !!existsStmt.get({ id, userId }),
-    getTransferPmId: () => (getTransferPmIdStmt.get() as { id: number } | undefined)?.id,
 
     create(userId: number, data: CreateScheduledInput) {
       return insertStmt.run({
@@ -106,6 +112,10 @@ export function createScheduledRepo(db: Database) {
         });
       });
       return runUpdate();
+    },
+
+    updateLastGeneratedUntil(id: number, lastGeneratedUntil: string) {
+      updateLastGeneratedUntilStmt.run({ id, lastGeneratedUntil });
     },
 
     delete(userId: number, id: number) {

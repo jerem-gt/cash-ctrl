@@ -39,7 +39,8 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS user_settings
         (
             user_id   INTEGER PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
-            lead_days INTEGER NOT NULL DEFAULT 30
+            lead_days INTEGER NOT NULL DEFAULT 30,
+            updated_at    TEXT DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS users

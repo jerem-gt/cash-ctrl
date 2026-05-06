@@ -75,124 +75,73 @@ const ACCOUNT_SELECT = `
 
 export function createAccountsRepo(db: Database) {
   const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
+  const getCountByAccountTypeIdStmt = db
+    .prepare<
+      { accountTypeId: number },
+      number
+    >('SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = :accountTypeId')
+    .pluck();
+  const getCountByBankIdStmt = db
+    .prepare<
+      { bankId: number },
+      number
+    >('SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = :bankId')
+    .pluck();
+  const getByUserIdStmt = db.prepare<{ userId: number }, Account>(
+    `${ACCOUNT_SELECT} WHERE a.user_id = :userId ORDER BY a.created_at`,
+  );
+  const getByIdStmt = db.prepare<{ id: number; userId: number }, Account>(
+    `${ACCOUNT_SELECT} WHERE a.id = :id AND a.user_id = :userId`,
+  );
+
+  const createStmt = db.prepare(
+    'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date) VALUES (:user_id, :name, :bank_id, :account_type_id, :initial_balance, :opening_date)',
+  );
+  const updateStmt = db.prepare(
+    'UPDATE accounts SET name = :name, bank_id = :bank_id, account_type_id = :account_type_id, initial_balance = :initial_balance, opening_date = :opening_date WHERE id = :id AND user_id = :user_id',
+  );
+  const updateClosedAtStmt = db.prepare(
+    'UPDATE accounts SET closed_at = :closedAt WHERE id = :id AND user_id = :userId',
+  );
+  const deleteStmt = db.prepare('DELETE FROM accounts WHERE id = :id AND user_id = :userId');
 
   return {
     exists: (id: number, userId: number) => !!existsStmt.get({ id, userId }),
+    countByAccountTypeId: (accountTypeId: number): number =>
+      getCountByAccountTypeIdStmt.get({ accountTypeId }) ?? 0,
+    countByBankId: (bankId: number): number => getCountByBankIdStmt.get({ bankId }) ?? 0,
 
-    getByUserId(userId: number): Account[] {
-      return db
-        .prepare<[number], Account>(`${ACCOUNT_SELECT} WHERE a.user_id = ? ORDER BY a.created_at`)
-        .all(userId);
-    },
+    getByUserId: (userId: number): Account[] => getByUserIdStmt.all({ userId }),
 
-    getById(id: number, userId: number): Account | undefined {
-      return (
-        db
-          .prepare<[number, number], Account>(`${ACCOUNT_SELECT} WHERE a.id = ? AND a.user_id = ?`)
-          .get(id, userId) ?? undefined
-      );
-    },
+    getById: (id: number, userId: number): Account | undefined => getByIdStmt.get({ id, userId }),
 
-    create(userId: number, data: CreateAccountInput) {
-      return db
-        .prepare(
-          'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date) VALUES (?, ?, ?, ?, ?, ?)',
-        )
-        .run(
-          userId,
-          data.name,
-          data.bank_id,
-          data.account_type_id,
-          data.initial_balance,
-          data.opening_date,
-        );
-    },
+    create: (userId: number, data: CreateAccountInput) =>
+      createStmt.run({
+        ...data,
+        user_id: userId,
+      }),
 
-    update(userId: number, id: number, data: UpdateAccountInput) {
-      return db
-        .prepare(
-          'UPDATE accounts SET name = ?, bank_id = ?, account_type_id = ?, initial_balance = ?, opening_date = ? WHERE id = ? AND user_id = ?',
-        )
-        .run(
-          data.name,
-          data.bank_id,
-          data.account_type_id,
-          data.initial_balance,
-          data.opening_date,
-          id,
-          userId,
-        );
-    },
+    update: (userId: number, id: number, data: UpdateAccountInput) =>
+      updateStmt.run({
+        ...data,
+        id,
+        user_id: userId,
+      }),
 
-    delete(userId: number, id: number) {
-      return db.prepare('DELETE FROM accounts WHERE id = ? AND user_id = ?').run(id, userId);
-    },
+    delete: (userId: number, id: number) => deleteStmt.run({ userId, id }),
 
-    reopen(userId: number, id: number) {
-      return db
-        .prepare('UPDATE accounts SET closed_at = NULL WHERE id = ? AND user_id = ?')
-        .run(id, userId);
-    },
+    reopen: (userId: number, id: number) =>
+      updateClosedAtStmt.run({
+        closedAt: null,
+        id,
+        userId,
+      }),
 
-    close(userId: number, id: number, data: CloseAccountInput) {
-      const account = db
-        .prepare<[number, number], { balance: number; name: string }>(
-          `SELECT ${BALANCE_SUBQUERY.replace('a.initial_balance', 'a.initial_balance')} , a.name
-           FROM accounts a WHERE a.id = ? AND a.user_id = ?`,
-        )
-        .get(id, userId);
-
-      if (!account) return;
-
-      const balance = Math.round(account.balance * 100) / 100;
-
-      return db.transaction(() => {
-        if (balance !== 0 && data.transfer_to_account_id) {
-          const transferSubcat = db
-            .prepare<[], { id: number }>(`SELECT id FROM subcategories WHERE name = 'Transfert'`)
-            .get();
-          const transferPm = db
-            .prepare<[], { id: number }>(`SELECT id FROM payment_methods WHERE name = 'Transfert'`)
-            .get();
-          const subcatId = transferSubcat?.id ?? null;
-          const pmId = transferPm?.id ?? null;
-
-          const insert = db.prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)',
-          );
-          const setPeer = db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?');
-          const description = `Virement de clôture — ${account.name}`;
-          const amount = Math.abs(balance);
-
-          const [fromId, toId] =
-            balance > 0 ? [id, data.transfer_to_account_id] : [data.transfer_to_account_id, id];
-
-          const expId = Number(
-            insert.run(
-              userId,
-              fromId,
-              'expense',
-              amount,
-              description,
-              subcatId,
-              data.closed_at,
-              pmId,
-            ).lastInsertRowid,
-          );
-          const incId = Number(
-            insert.run(userId, toId, 'income', amount, description, subcatId, data.closed_at, pmId)
-              .lastInsertRowid,
-          );
-          setPeer.run(incId, expId);
-          setPeer.run(expId, incId);
-        }
-
-        db.prepare('UPDATE accounts SET closed_at = ? WHERE id = ? AND user_id = ?').run(
-          data.closed_at,
-          id,
-          userId,
-        );
-      })();
-    },
+    close: (userId: number, id: number, data: CloseAccountInput) =>
+      updateClosedAtStmt.run({
+        closedAt: data.closed_at,
+        id,
+        userId,
+      }),
   };
 }

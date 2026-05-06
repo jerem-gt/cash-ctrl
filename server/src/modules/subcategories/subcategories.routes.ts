@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { requireAuth } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo';
+import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createSubcategoriesRepo } from './subcategories.repo';
 
 const createSchema = z.object({
@@ -18,6 +19,7 @@ const updateSchema = z.object({
 export function createSubcategoriesRouter(db: Database): Router {
   const repo = createSubcategoriesRepo(db);
   const catsRepo = createCategoriesRepo(db);
+  const txRepo = createTransactionsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -63,13 +65,11 @@ export function createSubcategoriesRouter(db: Database): Router {
       res.status(404).json({ error: 'Sous-catégorie introuvable' });
       return;
     }
-    const n = repo.getTxCount(id);
+    const n = txRepo.getCountBySubcategoryId(id);
     if (n > 0) {
-      res
-        .status(409)
-        .json({
-          error: `Cette sous-catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
-        });
+      res.status(409).json({
+        error: `Cette sous-catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
+      });
       return;
     }
     repo.delete(id);

@@ -31,10 +31,9 @@ function resolveTransferAccountIds(
   from_account_id: number | undefined,
   to_account_id: number | undefined,
 ): { thisAccountId: number | undefined; peerAccountId: number | undefined } {
-  const thisAccountId =
-    from_account_id !== undefined ? (isExpense ? from_account_id : to_account_id) : undefined;
-  const peerAccountId =
-    to_account_id !== undefined ? (isExpense ? to_account_id : from_account_id) : undefined;
+  const [thisAccountId, peerAccountId] = isExpense
+    ? [from_account_id, to_account_id]
+    : [to_account_id, from_account_id];
   return { thisAccountId, peerAccountId };
 }
 

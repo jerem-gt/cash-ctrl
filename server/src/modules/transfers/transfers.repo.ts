@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { getTransferIds } from '../../lib/administrationDataConstants';
 import type { Transaction, UpdateSharedTransactionInput } from '../transactions/transactions.types';
 import type { TransferInput } from './transfers.types';
 
@@ -18,17 +19,11 @@ const TX_WITH_DETAILS = `
 `;
 
 export function createTransfersRepo(db: Database) {
-  const getTransferSubcatStmt = db.prepare<[], { id: number }>(
-    `SELECT id FROM subcategories WHERE name = 'Transfert'`,
-  );
-  const getTransferPmStmt = db.prepare<[], { id: number }>(
-    `SELECT id FROM payment_methods WHERE name = 'Transfert'`,
-  );
   const insertTxStmt = db.prepare(`
       INSERT INTO transactions
-      (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated)
+      (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated, scheduled_id)
       VALUES
-          (:userId, :accountId, :type, :amount, :description, :subcategoryId, :date, :paymentMethodId, :notes, :validated)
+          (:userId, :accountId, :type, :amount, :description, :subcategoryId, :date, :paymentMethodId, :notes, :validated, :scheduledId)
   `);
   const setPeerStmt = db.prepare(
     'UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id',
@@ -41,16 +36,9 @@ export function createTransfersRepo(db: Database) {
   const deleteStmt = db.prepare('DELETE FROM transactions WHERE id = :id AND user_id = :userId');
 
   return {
-    create(
-      userId: number,
-      data: TransferInput,
-    ): { expense: Transaction | undefined; income: Transaction | undefined } {
-      const transferSubcat = getTransferSubcatStmt.get();
-      const transferPm = getTransferPmStmt.get();
-      const subcategoryId = transferSubcat?.id ?? null;
-      const paymentMethodId = transferPm?.id ?? null;
-
+    create(userId: number, data: TransferInput): { expense: Transaction; income: Transaction } {
       return db.transaction(() => {
+        const transferIds = getTransferIds(db);
         const notes = data.notes ?? null;
         const validated = data.validated ? 1 : 0;
         const expenseId = Number(
@@ -60,11 +48,12 @@ export function createTransfersRepo(db: Database) {
             type: 'expense',
             amount: data.amount,
             description: data.description,
-            subcategoryId,
+            subcategoryId: transferIds.subcategoryId,
             date: data.date,
-            paymentMethodId,
+            paymentMethodId: transferIds.paymentMethodId,
             notes,
             validated,
+            scheduledId: data.scheduled_id,
           }).lastInsertRowid,
         );
         const incomeId = Number(
@@ -74,25 +63,21 @@ export function createTransfersRepo(db: Database) {
             type: 'income',
             amount: data.amount,
             description: data.description,
-            subcategoryId,
+            subcategoryId: transferIds.subcategoryId,
             date: data.date,
-            paymentMethodId,
+            paymentMethodId: transferIds.paymentMethodId,
             notes,
             validated,
+            scheduledId: data.scheduled_id,
           }).lastInsertRowid,
         );
         setPeerStmt.run({ peerId: incomeId, id: expenseId });
         setPeerStmt.run({ peerId: expenseId, id: incomeId });
         return {
-          expense: getByIdStmt.get({ id: expenseId }) ?? undefined,
-          income: getByIdStmt.get({ id: incomeId }) ?? undefined,
+          expense: getByIdStmt.get({ id: expenseId })!,
+          income: getByIdStmt.get({ id: incomeId })!,
         };
       })();
-    },
-
-    linkTransferPeers(id1: number, id2: number): void {
-      setPeerStmt.run({ peerId: id2, id: id1 });
-      setPeerStmt.run({ peerId: id1, id: id2 });
     },
 
     updateBothShared(
