@@ -2,6 +2,7 @@ import type BetterSqlite3 from 'better-sqlite3';
 
 import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
+import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
 import {
   applyWeekend,
   dateStr,
@@ -18,6 +19,7 @@ function insertTransfer(
   transferSubcategoryId: number,
   transferPmId: number,
   txRepo: ReturnType<typeof createTransactionsRepo>,
+  transfersRepo: ReturnType<typeof createTransfersRepo>,
 ): void {
   const expenseId = txRepo.createScheduled(sched.user_id, {
     account_id: sched.account_id,
@@ -43,7 +45,7 @@ function insertTransfer(
     scheduled_id: sched.id,
   });
 
-  txRepo.linkTransferPeers(expenseId, incomeId);
+  transfersRepo.linkTransferPeers(expenseId, incomeId);
 }
 
 function generateForSchedule(
@@ -54,6 +56,7 @@ function generateForSchedule(
   transferSubcategoryId: number | undefined,
   transferPmId: number | undefined,
   txRepo: ReturnType<typeof createTransactionsRepo>,
+  transfersRepo: ReturnType<typeof createTransfersRepo>,
 ): void {
   let nominal: Date;
 
@@ -75,7 +78,14 @@ function generateForSchedule(
       const actualStr = dateStr(actual);
 
       if (isTransfer && transferSubcategoryId && transferPmId) {
-        insertTransfer(sched, actualStr, transferSubcategoryId, transferPmId, txRepo);
+        insertTransfer(
+          sched,
+          actualStr,
+          transferSubcategoryId,
+          transferPmId,
+          txRepo,
+          transfersRepo,
+        );
       } else if (!isTransfer) {
         txRepo.createScheduled(sched.user_id, {
           account_id: sched.account_id,
@@ -206,6 +216,7 @@ export function generateScheduledTransactions(userId: number, database: Db): voi
   );
 
   const txRepo = createTransactionsRepo(database);
+  const transfersRepo = createTransfersRepo(database);
 
   for (const sched of schedules) {
     generateForSchedule(
@@ -216,6 +227,7 @@ export function generateScheduledTransactions(userId: number, database: Db): voi
       transferSubcat?.id,
       transferPm?.id,
       txRepo,
+      transfersRepo,
     );
   }
 

@@ -12,8 +12,10 @@ import {
   useCreateTransaction,
   useCreateTransfer,
   useDeleteTransaction,
+  useDeleteTransfer,
   useTransactions,
   useUpdateTransaction,
+  useUpdateTransfer,
   useValidateTransaction,
 } from './useTransactions';
 
@@ -87,12 +89,7 @@ describe('useCreateTransaction', () => {
 
 describe('useUpdateTransaction', () => {
   it('met à jour une transaction et invalide le cache', async () => {
-    const wrapper = createWrapper();
-    // Peupler le cache de transactions pour couvrir setQueriesData
-    const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
-    await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
-
-    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper: createWrapper() });
     act(() => {
       result.current.mutate({
         id: 10,
@@ -109,26 +106,23 @@ describe('useUpdateTransaction', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+});
 
-  it('met à jour le peer de transfert si transfer_peer_id est défini', async () => {
+describe('useUpdateTransfer', () => {
+  it('met à jour un transfert et met à jour le peer dans le cache', async () => {
     const txWithPeer = { ...TRANSACTIONS.data[0], transfer_peer_id: 11 };
-    server.use(http.put('/api/transactions/:id', () => HttpResponse.json(txWithPeer)));
+    server.use(http.put('/api/transfers/:id', () => HttpResponse.json(txWithPeer)));
     const wrapper = createWrapper();
     const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
     await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
 
-    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    const { result } = renderHook(() => useUpdateTransfer(), { wrapper });
     act(() => {
       result.current.mutate({
         id: 10,
-        account_id: 1,
-        type: 'expense',
         amount: 30,
         description: 'Transfert modifié',
-        subcategory_id: 1,
         date: '2026-01-01',
-        payment_method_id: 1,
-        notes: null,
         validated: false,
       });
     });
@@ -139,6 +133,16 @@ describe('useUpdateTransaction', () => {
 describe('useDeleteTransaction', () => {
   it('supprime une transaction et passe en succès', async () => {
     const { result } = renderHook(() => useDeleteTransaction(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate(10);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useDeleteTransfer', () => {
+  it('supprime un transfert et passe en succès', async () => {
+    const { result } = renderHook(() => useDeleteTransfer(), { wrapper: createWrapper() });
     act(() => {
       result.current.mutate(10);
     });

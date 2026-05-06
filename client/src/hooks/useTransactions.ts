@@ -15,6 +15,14 @@ type UpdatePayload = {
   payment_method_id: number;
   notes: string | null;
   validated: boolean;
+};
+
+type UpdateTransferPayload = {
+  id: number;
+  amount: number;
+  description: string;
+  date: string;
+  validated: boolean;
   from_account_id?: number;
   to_account_id?: number;
 };
@@ -41,6 +49,17 @@ export function useUpdateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useUpdateTransfer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateTransferPayload) => transfersApi.update(id, data),
     onSuccess: (updated) => {
       qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
         old
@@ -71,6 +90,17 @@ export function useDeleteTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: transactionsApi.remove,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useDeleteTransfer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: transfersApi.remove,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['accounts'] });
