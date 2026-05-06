@@ -90,26 +90,7 @@ export function useTransactionsManager(initialAccountId?: number) {
   const handleUpdate = (data: TxFormState) => {
     if (modal.type !== 'edit') return;
 
-    if (modal.tx.transfer_peer_id !== null) {
-      updateTransferMutation.mutate(
-        {
-          id: modal.tx.id,
-          amount: Number.parseFloat(data.amount),
-          description: data.description,
-          date: data.date,
-          validated: !!modal.tx.validated,
-          from_account_id: Number.parseInt(data.account_id) || undefined,
-          to_account_id: Number.parseInt(data.to_account_id) || undefined,
-        },
-        {
-          onSuccess: () => {
-            closeAll();
-            showToast('Transfert modifié ✓');
-          },
-          onError: (e) => showToast(e.message),
-        },
-      );
-    } else {
+    if (modal.tx.transfer_peer_id === null) {
       updateTxMutation.mutate(
         {
           id: modal.tx.id,
@@ -128,6 +109,25 @@ export function useTransactionsManager(initialAccountId?: number) {
           onSuccess: () => {
             closeAll();
             showToast('Transaction modifiée ✓');
+          },
+          onError: (e) => showToast(e.message),
+        },
+      );
+    } else {
+      updateTransferMutation.mutate(
+        {
+          id: modal.tx.id,
+          amount: Number.parseFloat(data.amount),
+          description: data.description,
+          date: data.date,
+          validated: !!modal.tx.validated,
+          from_account_id: Number.parseInt(data.account_id) || undefined,
+          to_account_id: Number.parseInt(data.to_account_id) || undefined,
+        },
+        {
+          onSuccess: () => {
+            closeAll();
+            showToast('Transfert modifié ✓');
           },
           onError: (e) => showToast(e.message),
         },
