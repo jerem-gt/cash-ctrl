@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
+import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createBanksRepo } from './banks.repo';
 
 const schema = z.object({
@@ -23,6 +24,7 @@ const upload = multer({
 
 export function createBanksRouter(db: Database): Router {
   const banksRepo = createBanksRepo(db);
+  const accountsRepo = createAccountsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -80,7 +82,7 @@ export function createBanksRouter(db: Database): Router {
       res.status(404).json({ error: 'Bank not found' });
       return;
     }
-    const cnt = banksRepo.getAccountCount(id);
+    const cnt = accountsRepo.countByBankId(id);
     if (cnt > 0) {
       res.status(409).json({ error: `Cette banque est utilisée par ${cnt} compte(s).` });
       return;

@@ -3,6 +3,7 @@ import { Response, Router } from 'express';
 import { z } from 'zod';
 
 import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../constants';
+import { getTransferIds } from '../../lib/administrationDataConstants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
@@ -51,6 +52,7 @@ function checkTransferConstraints(
 
 export function createScheduledRouter(db: Database): Router {
   const scheduledRepo = createScheduledRepo(db);
+  const transferIds = getTransferIds(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -66,7 +68,7 @@ export function createScheduledRouter(db: Database): Router {
     }
 
     const d = parsed.data;
-    if (!checkTransferConstraints(d, scheduledRepo.getTransferPmId(), res)) return;
+    if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
 
     const userId = sessionUserId(req);
     const result = scheduledRepo.create(userId, { ...d, description: d.description.trim() });
@@ -90,7 +92,7 @@ export function createScheduledRouter(db: Database): Router {
     }
 
     const d = parsed.data;
-    if (!checkTransferConstraints(d, scheduledRepo.getTransferPmId(), res)) return;
+    if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
 
     scheduledRepo.update(id, userId, { ...d, description: d.description.trim() });
     generateScheduledTransactions(userId, db);

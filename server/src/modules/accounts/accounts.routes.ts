@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import { createTransfersRepo } from '../transfers/transfers.repo';
 import { createAccountsRepo } from './accounts.repo';
 
 const accountSchema = z.object({
@@ -15,6 +16,7 @@ const accountSchema = z.object({
 
 export function createAccountsRouter(db: Database): Router {
   const accountsRepo = createAccountsRepo(db);
+  const transfersRepo = createTransfersRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -89,7 +91,27 @@ export function createAccountsRouter(db: Database): Router {
         .json({ error: 'Le solde doit être nul ou un compte de destination est requis' });
       return;
     }
-    accountsRepo.close(userId, id, parsed.data);
+
+    // Transfert à faire avant clôture
+    db.transaction(() => {
+      if (balance !== 0 && parsed.data.transfer_to_account_id) {
+        const description = `Virement de clôture — ${account.name}`;
+        const amount = Math.abs(balance);
+        const [fromId, toId] =
+          balance > 0
+            ? [id, parsed.data.transfer_to_account_id]
+            : [parsed.data.transfer_to_account_id, id];
+        transfersRepo.create(userId, {
+          amount: amount,
+          date: parsed.data.closed_at,
+          description: description,
+          from_account_id: fromId,
+          to_account_id: toId,
+          validated: true,
+        });
+      }
+      accountsRepo.close(userId, id, parsed.data);
+    })();
     res.json(accountsRepo.getById(id, userId));
   });
 

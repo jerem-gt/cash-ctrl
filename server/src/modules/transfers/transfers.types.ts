@@ -6,4 +6,5 @@ export interface TransferInput {
   date: string;
   notes?: string | null;
   validated?: boolean;
+  scheduled_id?: number;
 }

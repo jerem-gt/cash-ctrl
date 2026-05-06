@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth } from '../../middleware.js';
+import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createCategoriesRepo } from './categories.repo';
 
 const categorySchema = z.object({
@@ -16,6 +17,7 @@ const categorySchema = z.object({
 
 export function createCategoriesRouter(db: Database): Router {
   const categoriesRepo = createCategoriesRepo(db);
+  const txRepo = createTransactionsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -62,13 +64,11 @@ export function createCategoriesRouter(db: Database): Router {
       res.status(404).json({ error: 'Category not found' });
       return;
     }
-    const n = categoriesRepo.getTxCount(id);
+    const n = txRepo.getCountByCategoryId(id);
     if (n > 0) {
-      res
-        .status(409)
-        .json({
-          error: `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
-        });
+      res.status(409).json({
+        error: `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
+      });
       return;
     }
     categoriesRepo.delete(id);
