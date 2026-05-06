@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { type SubmitEvent, useMemo, useState } from 'react';
 
 import { BankSelect } from '@/components/BankSelect';
 import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
@@ -133,7 +133,7 @@ export function LoanFormModal(props: Readonly<Props>) {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -181,6 +181,7 @@ export function LoanFormModal(props: Readonly<Props>) {
   };
 
   const nonLoanAccounts = accounts.filter((a) => !a.is_loan && !a.closed_at);
+  const submitButtonText = props.mode === 'create' ? 'Créer le prêt' : 'Enregistrer';
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
@@ -282,7 +283,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               Annuler
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? '…' : props.mode === 'create' ? 'Créer le prêt' : 'Enregistrer'}
+              {isPending ? '…' : submitButtonText}
             </Button>
           </div>
         </form>
