@@ -7,6 +7,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
+import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
 
 import { usePendingReimbursements, useSetReimbursementStatus } from '../hooks/useReimbursements';
@@ -19,16 +20,7 @@ export default function DashboardPage() {
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
   const colorMap = useMemo(() => {
-    return Object.fromEntries(
-      categories.map((c, i) => {
-        // On calcule une teinte (0-360) répartie uniformément
-        const hue = (i * 360) / categories.length;
-        // On fixe saturation (60-70%) et luminosité (50-60%) pour un rendu propre
-        const randomColor = `hsl(${hue}, 65%, 55%)`;
-
-        return [c.name, randomColor];
-      }),
-    );
+    return Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)]));
   }, [categories]);
 
   const transactions = useMemo(() => result?.data ?? [], [result]);
