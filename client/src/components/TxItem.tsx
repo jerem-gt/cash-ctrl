@@ -44,7 +44,8 @@ export function TxItem({
   const rowClass = validated ? 'bg-white border-green-200 hover:border-green-300' : stateClass;
 
   const typeColor = tx.type === 'income' ? 'text-green-800' : 'text-red-700';
-  const amountColor = validated ? 'text-stone-400' : typeColor;
+  const dimmedColor = tx.type === 'income' ? 'text-green-600/50' : 'text-red-500/50';
+  const amountColor = validated ? typeColor : dimmedColor;
 
   return (
     <div
@@ -54,7 +55,7 @@ export function TxItem({
       <span className="text-base leading-none shrink-0 w-4 text-center">{pmIcon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className={`text-sm font-medium truncate ${validated ? 'text-stone-400' : ''}`}>
+          <p className={`text-sm font-medium truncate ${validated ? '' : 'text-stone-400'}`}>
             {tx.description}
           </p>
           {isTransfer && <Badge variant="blue">↔ Transfert</Badge>}
