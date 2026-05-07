@@ -25,7 +25,7 @@ export default function DashboardPage() {
 
   const transactions = useMemo(() => result?.data ?? [], [result]);
   const nonTransfers = useMemo(
-    () => transactions.filter((t) => t.transfer_peer_id === null),
+    () => transactions.filter((t) => t.transfer_peer_id === null && !!t.validated),
     [transactions],
   );
 

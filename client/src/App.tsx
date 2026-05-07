@@ -38,7 +38,7 @@ function AppShell() {
   return (
     <div className="flex min-h-screen bg-stone-100">
       <Sidebar username={me.username} />
-      <main className="ml-56 flex-1 p-9 max-w-[calc(100vw-14rem)]">
+      <main className="ml-72 flex-1 p-9 max-w-[calc(100vw-18rem)]">
         <Suspense fallback={<div className="text-sm text-stone-400">Chargement…</div>}>
           <Routes>
             <Route path="/" element={<DashboardPage />} />

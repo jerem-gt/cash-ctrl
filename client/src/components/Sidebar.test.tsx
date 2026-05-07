@@ -17,11 +17,10 @@ describe('Sidebar', () => {
     expect(screen.getByText('Comptes')).toBeInTheDocument();
   });
 
-  it('affiche les liens de navigation bas de page', () => {
+  it('affiche le bouton paramètres', async () => {
     renderWithProviders(<Sidebar username="usertest" />);
-    expect(screen.getByText('Gestion des comptes')).toBeInTheDocument();
-    expect(screen.getByText('Planifications')).toBeInTheDocument();
-    expect(screen.getByText('Configuration')).toBeInTheDocument();
+    expect(screen.getByText('⚙')).toBeInTheDocument();
+    expect(await screen.findByTitle(/Menu/i)).toBeInTheDocument();
   });
 
   it("affiche le nom d'utilisateur", () => {

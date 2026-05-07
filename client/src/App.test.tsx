@@ -22,7 +22,7 @@ describe('App', () => {
   it('affiche la sidebar après authentification', async () => {
     render(<App />);
     await screen.findByTitle(/Déconnexion/i);
-    expect(screen.getByText('Planifications')).toBeInTheDocument();
+    expect(screen.getByText('Suivi Personnel')).toBeInTheDocument();
   });
 
   it('définit le titre du document après authentification', async () => {
