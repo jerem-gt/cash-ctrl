@@ -52,7 +52,6 @@ function checkTransferConstraints(
 
 export function createScheduledRouter(db: Database): Router {
   const scheduledRepo = createScheduledRepo(db);
-  const transferIds = getTransferIds(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -67,10 +66,11 @@ export function createScheduledRouter(db: Database): Router {
       return;
     }
 
+    const userId = sessionUserId(req);
+    const transferIds = getTransferIds(db, userId);
     const d = parsed.data;
     if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
 
-    const userId = sessionUserId(req);
     const result = scheduledRepo.create(userId, { ...d, description: d.description.trim() });
     generateScheduledTransactions(userId, db);
     res.status(201).json(scheduledRepo.getById(Number(result.lastInsertRowid), userId));
@@ -91,6 +91,7 @@ export function createScheduledRouter(db: Database): Router {
       return;
     }
 
+    const transferIds = getTransferIds(db, userId);
     const d = parsed.data;
     if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
 

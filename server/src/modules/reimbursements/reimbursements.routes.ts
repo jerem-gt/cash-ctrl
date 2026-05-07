@@ -56,7 +56,7 @@ export function createReimbursementsRouter(db: Database): Router {
       return;
     }
 
-    repo.link(transactionId, parsed.data.linked_transaction_id);
+    repo.link(userId, transactionId, parsed.data.linked_transaction_id);
     res.status(201).json(repo.getByTransactionId(transactionId, userId));
   });
 

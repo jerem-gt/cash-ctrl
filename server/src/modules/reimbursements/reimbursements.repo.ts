@@ -35,7 +35,7 @@ export function createReimbursementsRepo(db: Database) {
       ORDER BY lt.date DESC
     `);
   const linkStmt = db.prepare(
-    'INSERT OR IGNORE INTO reimbursements (transaction_id, linked_transaction_id) VALUES (:txId, :linkedTxId)',
+    'INSERT OR IGNORE INTO reimbursements (user_id, transaction_id, linked_transaction_id) VALUES (:userId, :txId, :linkedTxId)',
   );
   const unlinkStmt = db.prepare(
     'DELETE FROM reimbursements WHERE transaction_id = :txId AND linked_transaction_id = :linkedTxId',
@@ -46,7 +46,8 @@ export function createReimbursementsRepo(db: Database) {
       getReimbursementsByTxStmt.all({ txId, userId }),
     getPendingWithSummary: (userId: number) => getPendingWithSummaryStmt.all({ userId }),
 
-    link: (txId: number, linkedTxId: number) => linkStmt.run({ txId, linkedTxId }),
+    link: (userId: number, txId: number, linkedTxId: number) =>
+      linkStmt.run({ userId, txId, linkedTxId }),
     unlink: (txId: number, linkedTxId: number) => unlinkStmt.run({ txId, linkedTxId }),
   };
 }

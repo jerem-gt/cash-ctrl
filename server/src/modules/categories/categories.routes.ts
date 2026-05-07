@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createCategoriesRepo } from './categories.repo';
 
@@ -12,13 +12,14 @@ const categorySchema = z.object({
 });
 
 export function createCategoriesRouter(db: Database): Router {
-  const categoriesRepo = createCategoriesRepo(db);
   const txRepo = createTransactionsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (_req, res) => {
-    res.json(categoriesRepo.getAll());
+  const getRepo = (req: Request) => createCategoriesRepo(db, sessionUserId(req));
+
+  router.get('/', (req, res) => {
+    res.json(getRepo(req).getAll());
   });
 
   router.post('/', (req, res) => {
@@ -27,16 +28,18 @@ export function createCategoriesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const result = categoriesRepo.create({
+    const repo = getRepo(req);
+    const result = repo.create({
       name: parsed.data.name.trim(),
       icon: parsed.data.icon,
     });
-    res.status(201).json(categoriesRepo.getById(Number(result.lastInsertRowid)));
+    res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!categoriesRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Category not found' });
       return;
     }
@@ -45,16 +48,17 @@ export function createCategoriesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    categoriesRepo.update(id, {
+    repo.update(id, {
       name: parsed.data.name.trim(),
       icon: parsed.data.icon,
     });
-    res.json(categoriesRepo.getById(id));
+    res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!categoriesRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Category not found' });
       return;
     }
@@ -65,7 +69,7 @@ export function createCategoriesRouter(db: Database): Router {
       });
       return;
     }
-    categoriesRepo.delete(id);
+    repo.delete(id);
     res.json({ ok: true });
   });
 

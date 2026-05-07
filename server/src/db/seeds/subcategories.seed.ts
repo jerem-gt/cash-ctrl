@@ -82,16 +82,18 @@ const DEFAULT_SUBCATEGORIES = [
   { name: 'Autre', category_name: 'Autre' },
 ];
 
-export function seedSubcategories(db: Database) {
-  const categories = db.prepare('SELECT id, name FROM categories').all() as {
+export function seedSubcategories(db: Database, userId: number) {
+  const categories = db
+    .prepare('SELECT id, name FROM categories WHERE user_id = ?')
+    .all(userId) as {
     id: number;
     name: string;
   }[];
   const categoryMap = new Map(categories.map((c) => [c.name, c.id]));
 
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO subcategories (name, category_id)
-    VALUES (?, ?)
+    INSERT OR IGNORE INTO subcategories (user_id, category_id, name)
+    VALUES (?, ?, ?)
   `);
 
   db.transaction(() => {
@@ -99,7 +101,7 @@ export function seedSubcategories(db: Database) {
       const parentId = categoryMap.get(sub.category_name);
 
       if (parentId) {
-        stmt.run(sub.name, parentId);
+        stmt.run(userId, parentId, sub.name);
       } else {
         logger.warn(
           `Attention : La catégorie parente "${sub.category_name}" n'existe pas pour la sous-catégorie "${sub.name}"`,

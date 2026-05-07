@@ -89,7 +89,7 @@ export function createStocksRouter(db: Database): Router {
     }
 
     try {
-      const operation = repo.updateOperation(operationId, {
+      const operation = repo.updateOperation(operationId, userId, {
         account_id: accountId,
         ...parsed.data,
       });

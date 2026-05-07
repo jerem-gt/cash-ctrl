@@ -9,7 +9,9 @@ describe('/api/loans', () => {
 
   beforeAll(async () => {
     ctx = await createTestContext();
-    ctx.db.prepare("INSERT INTO account_types (name, is_loan) VALUES ('Prêt', 1)").run();
+    ctx.db
+      .prepare("INSERT INTO account_types (user_id, name, is_loan) VALUES (?, 'Prêt', 1)")
+      .run(ctx.userId);
 
     const src = await ctx.agent.post('/api/accounts').send({
       name: 'Compte courant source',

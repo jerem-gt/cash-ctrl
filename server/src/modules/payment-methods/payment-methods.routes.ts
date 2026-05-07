@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createPaymentMethodsRepo } from './payment-methods.repo';
 
@@ -12,13 +12,14 @@ const schema = z.object({
 });
 
 export function createPaymentMethodsRouter(db: Database): Router {
-  const paymentMethodsRepo = createPaymentMethodsRepo(db);
   const txRepo = createTransactionsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (_req, res) => {
-    res.json(paymentMethodsRepo.getAll());
+  const getRepo = (req: Request) => createPaymentMethodsRepo(db, sessionUserId(req));
+
+  router.get('/', (req, res) => {
+    res.json(getRepo(req).getAll());
   });
 
   router.post('/', (req, res) => {
@@ -27,16 +28,18 @@ export function createPaymentMethodsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const result = paymentMethodsRepo.create({
+    const repo = getRepo(req);
+    const result = repo.create({
       name: parsed.data.name.trim(),
       icon: parsed.data.icon,
     });
-    res.status(201).json(paymentMethodsRepo.getById(Number(result.lastInsertRowid)));
+    res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!paymentMethodsRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Payment method not found' });
       return;
     }
@@ -45,26 +48,25 @@ export function createPaymentMethodsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    paymentMethodsRepo.update(id, { name: parsed.data.name.trim(), icon: parsed.data.icon });
-    res.json(paymentMethodsRepo.getById(id));
+    repo.update(id, { name: parsed.data.name.trim(), icon: parsed.data.icon });
+    res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!paymentMethodsRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Payment method not found' });
       return;
     }
     const n = txRepo.getCountByPaymentMethodId(id);
     if (n > 0) {
-      res
-        .status(409)
-        .json({
-          error: `Ce moyen de paiement est utilisé par ${n} transaction(s) et ne peut pas être supprimé.`,
-        });
+      res.status(409).json({
+        error: `Ce moyen de paiement est utilisé par ${n} transaction(s) et ne peut pas être supprimé.`,
+      });
       return;
     }
-    paymentMethodsRepo.delete(id);
+    repo.delete(id);
     res.json({ ok: true });
   });
 

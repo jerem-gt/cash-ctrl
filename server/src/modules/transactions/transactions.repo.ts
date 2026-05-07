@@ -139,8 +139,8 @@ export function createTransactionsRepo(db: Database) {
            :paymentMethodId, :notes, :reimbursementStatus, :scheduledId)
   `);
   const insertSplitStmt = db.prepare(`
-      INSERT INTO transaction_splits (transaction_id, subcategory_id, amount)
-      VALUES (:txId, :subcategoryId, :amount)
+      INSERT INTO transaction_splits (user_id, transaction_id, subcategory_id, amount)
+      VALUES (:userId, :txId, :subcategoryId, :amount)
   `);
   const updateTxStmt = db.prepare(`
       UPDATE transactions
@@ -297,6 +297,7 @@ export function createTransactionsRepo(db: Database) {
           const txId = Number(result.lastInsertRowid);
           for (const s of data.splits) {
             insertSplitStmt.run({
+              userId,
               txId,
               subcategoryId: s.subcategory_id,
               amount: s.amount,
@@ -342,7 +343,12 @@ export function createTransactionsRepo(db: Database) {
         deleteSplitsByTxIdStmt.run({ txId: id });
         if (data.splits?.length) {
           for (const s of data.splits) {
-            insertSplitStmt.run({ txId: id, subcategoryId: s.subcategory_id, amount: s.amount });
+            insertSplitStmt.run({
+              userId,
+              txId: id,
+              subcategoryId: s.subcategory_id,
+              amount: s.amount,
+            });
           }
         }
         return result;

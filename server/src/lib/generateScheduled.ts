@@ -121,7 +121,7 @@ export function generateScheduledTransactions(userId: number, database: Db): voi
   const scheduledRepo = createScheduledRepo(database);
   const schedules = scheduledRepo.getActiveByUserId(userId);
 
-  const txRepo = createTransactionsRepo(database, userId);
+  const txRepo = createTransactionsRepo(database);
   const transfersRepo = createTransfersRepo(database);
 
   for (const sched of schedules) {

@@ -7,11 +7,16 @@ import { seedPaymentMethods } from './seeds/paymentMethods.seed';
 import { seedSubcategories } from './seeds/subcategories.seed';
 import { seedAdminUser } from './seeds/users.seed';
 
+export function seedUserData(db: Database, userId: number) {
+  seedAccountTypes(db, userId);
+  seedCategories(db, userId);
+  seedSubcategories(db, userId);
+  seedPaymentMethods(db, userId);
+}
+
 export function seedDatabase(db: Database) {
   seedBanks(db);
-  seedAccountTypes(db);
-  seedCategories(db);
-  seedSubcategories(db);
-  seedPaymentMethods(db);
   seedAdminUser(db);
+  const admin = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number } | undefined;
+  if (admin) seedUserData(db, admin.id);
 }

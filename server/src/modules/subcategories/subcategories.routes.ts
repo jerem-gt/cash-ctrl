@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createSubcategoriesRepo } from './subcategories.repo';
@@ -17,14 +17,15 @@ const updateSchema = z.object({
 });
 
 export function createSubcategoriesRouter(db: Database): Router {
-  const repo = createSubcategoriesRepo(db);
-  const catsRepo = createCategoriesRepo(db);
   const txRepo = createTransactionsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (_req, res) => {
-    res.json(repo.getAll());
+  const getRepo = (req: Request) => createSubcategoriesRepo(db, sessionUserId(req));
+  const getCatsRepo = (req: Request) => createCategoriesRepo(db, sessionUserId(req));
+
+  router.get('/', (req, res) => {
+    res.json(getRepo(req).getAll());
   });
 
   router.post('/', (req, res) => {
@@ -33,10 +34,11 @@ export function createSubcategoriesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    if (!catsRepo.getById(parsed.data.category_id)) {
+    if (!getCatsRepo(req).getById(parsed.data.category_id)) {
       res.status(404).json({ error: 'Catégorie introuvable' });
       return;
     }
+    const repo = getRepo(req);
     const result = repo.create({
       category_id: parsed.data.category_id,
       name: parsed.data.name.trim(),
@@ -46,6 +48,7 @@ export function createSubcategoriesRouter(db: Database): Router {
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
+    const repo = getRepo(req);
     if (!repo.getById(id)) {
       res.status(404).json({ error: 'Sous-catégorie introuvable' });
       return;
@@ -61,6 +64,7 @@ export function createSubcategoriesRouter(db: Database): Router {
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
+    const repo = getRepo(req);
     if (!repo.getById(id)) {
       res.status(404).json({ error: 'Sous-catégorie introuvable' });
       return;
