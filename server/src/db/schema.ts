@@ -68,7 +68,6 @@ export function initSchema(db: Database) {
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             name       TEXT UNIQUE NOT NULL,
-            color      TEXT NOT NULL DEFAULT '#9E9A92',
             icon       TEXT NOT NULL,
             created_at TEXT          DEFAULT (datetime('now'))
         );

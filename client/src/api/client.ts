@@ -112,9 +112,9 @@ export const accountsApi = {
 // Categories
 export const categoriesApi = {
   list: () => request<Category[]>('GET', '/api/categories'),
-  create: (payload: { name: string; color: string; icon: string }) =>
+  create: (payload: { name: string; icon: string }) =>
     request<Category>('POST', '/api/categories', payload),
-  update: (id: number, payload: { name: string; color: string; icon: string }) =>
+  update: (id: number, payload: { name: string; icon: string }) =>
     request<Category>('PUT', `/api/categories/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
 };

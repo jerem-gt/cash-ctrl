@@ -46,7 +46,7 @@ export function CategoriesManager() {
             </p>
             <CategoryEditor
               key={resetCreationFormKey}
-              initialValues={{ name: '', color: '#9E9A92', icon: '❓' }}
+              initialValues={{ name: '', icon: '❓' }}
               isPending={createCategory.isPending}
               onSave={(values) => handleSaveCategory(values)}
             />

@@ -20,7 +20,7 @@ vi.mock('emoji-picker-react', () => ({
 
 describe('CategoryEditor', () => {
   const defaultProps = {
-    initialValues: { name: 'Courses', color: '#ff0000', icon: '🛒' },
+    initialValues: { name: 'Courses', icon: '🛒' },
     onSave: vi.fn(),
     onCancel: vi.fn(),
     isPending: false,
@@ -47,7 +47,6 @@ describe('CategoryEditor', () => {
 
     expect(onSave).toHaveBeenCalledWith({
       name: 'Supermarché',
-      color: '#ff0000',
       icon: '🛒',
     });
   });

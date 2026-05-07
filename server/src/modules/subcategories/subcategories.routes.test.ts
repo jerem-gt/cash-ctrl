@@ -14,7 +14,7 @@ describe('/api/subcategories', () => {
     // Création d'une catégorie parente pour les tests de sous-catégories
     const catRes = await ctx.agent
       .post('/api/categories')
-      .send({ name: 'Catégorie Parent', color: '#123456', icon: '❓' });
+      .send({ name: 'Catégorie Parent', icon: '❓' });
     categoryId = catRes.body.id;
   });
 

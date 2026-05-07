@@ -42,7 +42,6 @@ export function CategoryDetails({
               <CategoryEditor
                 initialValues={{
                   name: selectedCategory.name,
-                  color: selectedCategory.color,
                   icon: selectedCategory.icon,
                 }}
                 isPending={updateCat.isPending}
@@ -62,10 +61,6 @@ export function CategoryDetails({
                     {selectedCategory.name}
                   </h2>
                   <div className="flex items-center gap-2 mt-2">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: selectedCategory.color }}
-                    />
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                       Catégorie principale
                     </span>

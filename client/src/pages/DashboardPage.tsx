@@ -18,10 +18,18 @@ export default function DashboardPage() {
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
-  const colorMap = useMemo(
-    () => Object.fromEntries(categories.map((c) => [c.name, c.color])),
-    [categories],
-  );
+  const colorMap = useMemo(() => {
+    return Object.fromEntries(
+      categories.map((c, i) => {
+        // On calcule une teinte (0-360) répartie uniformément
+        const hue = (i * 360) / categories.length;
+        // On fixe saturation (60-70%) et luminosité (50-60%) pour un rendu propre
+        const randomColor = `hsl(${hue}, 65%, 55%)`;
+
+        return [c.name, randomColor];
+      }),
+    );
+  }, [categories]);
 
   const transactions = useMemo(() => result?.data ?? [], [result]);
   const nonTransfers = useMemo(
@@ -48,7 +56,7 @@ export default function DashboardPage() {
     return Object.entries(map).map(([name, value]) => ({
       name,
       value,
-      fill: colorMap[name] ?? '#9E9A92',
+      fill: colorMap[name],
     }));
   }, [nonTransfers, colorMap]);
 
@@ -156,7 +164,7 @@ export default function DashboardPage() {
                   >
                     <div
                       className="w-2 h-2 rounded-sm shrink-0"
-                      style={{ background: colorMap[d.name] ?? '#9E9A92' }}
+                      style={{ background: colorMap[d.name] }}
                     />
                     {d.name} <strong className="text-stone-700">{fmt(d.value)}</strong>
                   </div>
@@ -239,13 +247,13 @@ export default function DashboardPage() {
                   <th className="pb-2" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[0.04]">
+              <tbody className="divide-y divide-black/4">
                 {pendingReimbursements.map((item) => {
                   const remaining = item.amount - item.total_reimbursed;
                   return (
                     <tr key={item.id} className="group">
                       <td className="py-2 pr-3">
-                        <p className="font-medium text-stone-700 truncate max-w-[160px]">
+                        <p className="font-medium text-stone-700 truncate max-w-40">
                           {item.description}
                         </p>
                         <p className="text-stone-400 text-[10px]">

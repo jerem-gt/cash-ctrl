@@ -21,47 +21,31 @@ describe('/api/categories', () => {
   });
 
   it('POST / creates a category', async () => {
-    const res = await ctx.agent
-      .post('/api/categories')
-      .send({ name: 'Vacances', color: '#FF5733', icon: '❓' });
+    const res = await ctx.agent.post('/api/categories').send({ name: 'Vacances', icon: '❓' });
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('Vacances');
-    expect(res.body.color).toBe('#FF5733');
-  });
-
-  it('POST / returns 400 for invalid color format', async () => {
-    const res = await ctx.agent.post('/api/categories').send({ name: 'Test', color: 'red' });
-    expect(res.status).toBe(400);
   });
 
   it('POST / returns 400 when name is missing', async () => {
-    const res = await ctx.agent.post('/api/categories').send({ color: '#123456' });
+    const res = await ctx.agent.post('/api/categories').send({ icon: '❓' });
     expect(res.status).toBe(400);
   });
 
   it('PUT /:id updates a category', async () => {
-    const create = await ctx.agent
-      .post('/api/categories')
-      .send({ name: 'ToUpdate', color: '#AABBCC', icon: '❓' });
+    const create = await ctx.agent.post('/api/categories').send({ name: 'ToUpdate', icon: '❓' });
     const id = create.body.id;
-    const res = await ctx.agent
-      .put(`/api/categories/${id}`)
-      .send({ name: 'Updated', color: '#112233', icon: '❓' });
+    const res = await ctx.agent.put(`/api/categories/${id}`).send({ name: 'Updated', icon: '❓' });
     expect(res.status).toBe(200);
     expect(res.body.name).toBe('Updated');
   });
 
   it('PUT /:id returns 404 for unknown category', async () => {
-    const res = await ctx.agent
-      .put('/api/categories/99999')
-      .send({ name: 'x', color: '#000000', icon: '❓' });
+    const res = await ctx.agent.put('/api/categories/99999').send({ name: 'x', icon: '❓' });
     expect(res.status).toBe(404);
   });
 
   it('DELETE /:id removes a category', async () => {
-    const create = await ctx.agent
-      .post('/api/categories')
-      .send({ name: 'ToDelete', color: '#000000', icon: '❓' });
+    const create = await ctx.agent.post('/api/categories').send({ name: 'ToDelete', icon: '❓' });
     const id = create.body.id;
     const res = await ctx.agent.delete(`/api/categories/${id}`);
     expect(res.status).toBe(200);

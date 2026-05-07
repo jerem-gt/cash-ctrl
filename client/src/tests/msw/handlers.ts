@@ -55,9 +55,7 @@ export const handlers = [
 
   // Categories
   http.get('/api/categories', () => HttpResponse.json(CATEGORIES)),
-  http.post('/api/categories', () =>
-    HttpResponse.json({ id: 99, name: 'Nouvelle cat', color: '#ffffff' }),
-  ),
+  http.post('/api/categories', () => HttpResponse.json({ id: 99, name: 'Nouvelle cat' })),
   http.put('/api/categories/:id', () => HttpResponse.json(CATEGORIES[0])),
   http.delete('/api/categories/:id', () => HttpResponse.json({ ok: true })),
 
