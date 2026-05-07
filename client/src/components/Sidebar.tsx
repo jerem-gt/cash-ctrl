@@ -16,6 +16,7 @@ import type { Account } from '@/types';
 const NAV_BOTTOM = [
   { to: '/accounts', label: 'Gestion des comptes', icon: '▣', end: true },
   { to: '/scheduled', label: 'Planifications', icon: '🗓' },
+  { to: '/import', label: 'Importer QIF', icon: '⇪' },
   { to: '/settings', label: 'Configuration', icon: '⚙' },
 ];
 
