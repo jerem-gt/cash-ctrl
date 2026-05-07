@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "db:reset": "tsx src/db/resetDb.ts",
     "db:reset:dev": "tsx src/db/devSeed.ts"
   },
   "dependencies": {

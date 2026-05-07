@@ -5,6 +5,7 @@ import {
   ACCOUNTS,
   BANKS,
   CATEGORIES,
+  IMPORT_RESULT,
   LOAN,
   LOAN_INSTALLMENTS,
   PAYMENT_METHODS,
@@ -112,6 +113,9 @@ export const handlers = [
   http.patch('/api/reimbursements/:transactionId/status', () =>
     HttpResponse.json({ ...TRANSACTIONS.data[0], reimbursement_status: 'en_attente' }),
   ),
+
+  // Import
+  http.post('/api/import/qif', () => HttpResponse.json(IMPORT_RESULT, { status: 201 })),
 
   // Export
   http.get(

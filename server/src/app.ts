@@ -9,6 +9,7 @@ import { createAuthRouter } from './modules/auth/auth.routes';
 import { createBanksRouter } from './modules/banks/banks.routes';
 import { createCategoriesRouter } from './modules/categories/categories.routes';
 import { createExportRouter } from './modules/export/export.routes';
+import { createImportRouter } from './modules/import/import.routes';
 import { createLoansRouter } from './modules/loans/loans.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
 import { createReimbursementsRouter } from './modules/reimbursements/reimbursements.routes';
@@ -28,7 +29,7 @@ export interface AppOptions {
 export function createApp(db: Database, options?: AppOptions): express.Application {
   const app = express();
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
 
@@ -68,6 +69,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/transfers', createTransfersRouter(db));
   app.use('/api/reimbursements', createReimbursementsRouter(db));
   app.use('/api/export', createExportRouter(db));
+  app.use('/api/import', createImportRouter(db));
   app.use('/api/categories', createCategoriesRouter(db));
   app.use('/api/subcategories', createSubcategoriesRouter(db));
   app.use('/api/account-types', createAccountTypesRouter(db));

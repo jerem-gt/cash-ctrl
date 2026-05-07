@@ -290,6 +290,57 @@ export const reimbursementsApi = {
     }),
 };
 
+// Import
+export interface ImportExecuteBody {
+  newAccounts: {
+    qif_name: string;
+    name: string;
+    bank_id: number | null;
+    account_type_id: number | null;
+    initial_balance: number;
+    opening_date: string;
+  }[];
+  newSubcategories: {
+    qif_key: string;
+    category_id?: number;
+    new_category_name?: string;
+    new_category_icon?: string;
+    subcategory_name: string;
+  }[];
+  transactions: {
+    account_id: number | null;
+    new_account_qif_name: string | null;
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    subcategory_id: number | null;
+    new_subcategory_key: string | null;
+    date: string;
+    notes: string | null;
+    validated: boolean;
+  }[];
+  transfers: {
+    from_account_id: number | null;
+    from_account_qif_name: string | null;
+    to_account_id: number | null;
+    to_account_qif_name: string | null;
+    amount: number;
+    description: string;
+    date: string;
+    notes: string | null;
+    validated: boolean;
+  }[];
+}
+
+export interface ImportResult {
+  transactions: number;
+  transfers: number;
+}
+
+export const importApi = {
+  executeQif: (body: ImportExecuteBody) => request<ImportResult>('POST', '/api/import/qif', body),
+};
+
 // Transactions
 export const transactionsApi = {
   list: (filters?: TransactionFilters) => {

@@ -1,3 +1,4 @@
+import { ImportResult } from '@/api/client.ts';
 import type {
   Account,
   AccountType,
@@ -288,3 +289,8 @@ export const LOAN_INSTALLMENTS: LoanInstallment[] = [
     transaction_validated: 0,
   },
 ];
+
+export const IMPORT_RESULT: ImportResult = {
+  transactions: 3,
+  transfers: 4,
+};
