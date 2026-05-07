@@ -106,8 +106,8 @@ export function createLoansRepo(db: Database) {
     VALUES (:account_id, :user_id, :principal_amount, :interest_rate, :duration_months, :start_date, :monthly_payment, :source_account_id)`,
   );
   const insertInstallmentStmt = db.prepare(
-    `INSERT INTO loan_installments (loan_id, installment_number, due_date, total_amount, principal_amount, interest_amount)
-    VALUES (:loan_id, :installment_number, :due_date, :total_amount, :principal_amount, :interest_amount)`,
+    `INSERT INTO loan_installments (user_id, loan_id, installment_number, due_date, total_amount, principal_amount, interest_amount)
+    VALUES (:user_id, :loan_id, :installment_number, :due_date, :total_amount, :principal_amount, :interest_amount)`,
   );
 
   // Pour updateLoan()
@@ -153,7 +153,7 @@ export function createLoansRepo(db: Database) {
       getAllPendingInstallmentsStmt.all({ loanId, dueDate }),
 
     create(userId: number, data: CreateLoanInput): Loan {
-      const accountTypeId = getAccountTypeIds(db).atPretId;
+      const accountTypeId = getAccountTypeIds(db, userId).atPretId;
       if (!accountTypeId) {
         throw new Error("Type de compte 'Prêt' introuvable");
       }
@@ -194,6 +194,7 @@ export function createLoansRepo(db: Database) {
           insertInstallmentStmt.run({
             ...row,
             loan_id: loanId,
+            user_id: userId,
           });
         }
 
@@ -282,6 +283,7 @@ export function createLoansRepo(db: Database) {
       })();
     },
 
-    updateInstallmentTxId: (id: number, txId: number) => updateInstallmentTxIdStmt.run(id, txId),
+    updateInstallmentTxId: (id: number, txId: number) =>
+      updateInstallmentTxIdStmt.run({ id, txId }),
   };
 }

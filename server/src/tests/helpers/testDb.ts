@@ -3,7 +3,7 @@ import type { Database } from 'better-sqlite3';
 import { createDb } from '../../db/init';
 import { initSchema } from '../../db/schema';
 
-// IDs des données seed (stables car AUTOINCREMENT depuis 1)
+// IDs des données seed (stables car AUTOINCREMENT depuis 1 à chaque DB fraîche)
 export const SEED = {
   BANK_ID: 1, // 'DefaultBank'
   AT_COURANT: 1, // 'Courant'
@@ -20,23 +20,93 @@ export const SEED = {
   PM_TRANSFERT: 3,
 } as const;
 
-export function seedTestReferenceData(db: Database) {
-  db.exec(`
-    INSERT INTO banks (name) VALUES ('DefaultBank');
-    INSERT INTO account_types (name, is_investment) VALUES ('Courant', 0), ('Épargne', 0), ('Bourse', 1);
-    INSERT INTO categories (name, icon) VALUES
-      ('Revenus divers', '💰'), ('Revenus du travail', '💼'), ('Alimentation', '🍴'), ('Loisirs', '🎮'), ('Logement', '🏠'), ('Transfert', '🔄');
-    INSERT INTO subcategories (name, category_id) VALUES
-      ('Autre', 1), ('Salaire', 2), ('Supermarché', 3), ('Cinéma', 4), ('Loyer', 5), ('Transfert', 6);
-    INSERT INTO payment_methods (name) VALUES
-      ('Virement'), ('Carte Bancaire'), ('Transfert');
-  `);
+export function seedTestReferenceData(db: Database, userId: number) {
+  db.prepare('INSERT OR IGNORE INTO banks (name) VALUES (?)').run('DefaultBank');
+
+  db.prepare(
+    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
+  ).run(userId, 'Courant', 0, 0);
+  db.prepare(
+    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
+  ).run(userId, 'Épargne', 0, 0);
+  db.prepare(
+    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
+  ).run(userId, 'Bourse', 1, 0);
+
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Revenus divers',
+    '💰',
+  );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Revenus du travail',
+    '💼',
+  );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Alimentation',
+    '🍴',
+  );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Loisirs',
+    '🎮',
+  );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Logement',
+    '🏠',
+  );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Transfert',
+    '🔄',
+  );
+
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Autre',
+    1,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Salaire',
+    2,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Supermarché',
+    3,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Cinéma',
+    4,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Loyer',
+    5,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Transfert',
+    6,
+  );
+
+  db.prepare('INSERT INTO payment_methods (user_id, name) VALUES (?, ?)').run(userId, 'Virement');
+  db.prepare('INSERT INTO payment_methods (user_id, name) VALUES (?, ?)').run(
+    userId,
+    'Carte Bancaire',
+  );
+  db.prepare('INSERT INTO payment_methods (user_id, name) VALUES (?, ?)').run(userId, 'Transfert');
 }
 
 export function createTestDb(): Database {
   const db = createDb(':memory:');
   initSchema(db);
-  seedTestReferenceData(db);
+  db.prepare('INSERT INTO banks (name) VALUES (?)').run('DefaultBank');
   return db;
 }
 
@@ -54,6 +124,8 @@ export function setupFixtures(): Fixtures {
     db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('test', 'x')
       .lastInsertRowid,
   );
+  seedTestReferenceData(db, userId);
+
   const accountId = Number(
     db
       .prepare(

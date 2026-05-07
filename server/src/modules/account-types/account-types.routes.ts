@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth } from '../../middleware.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
 
@@ -17,13 +17,14 @@ const schema = z
   });
 
 export function createAccountTypesRouter(db: Database): Router {
-  const accountTypesRepo = createAccountTypesRepo(db);
   const accountsRepo = createAccountsRepo(db);
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (_req, res) => {
-    res.json(accountTypesRepo.getAll());
+  const getRepo = (req: Request) => createAccountTypesRepo(db, sessionUserId(req));
+
+  router.get('/', (req, res) => {
+    res.json(getRepo(req).getAll());
   });
 
   router.post('/', (req, res) => {
@@ -32,17 +33,19 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const result = accountTypesRepo.create(
+    const repo = getRepo(req);
+    const result = repo.create(
       parsed.data.name.trim(),
       parsed.data.is_investment,
       parsed.data.is_loan,
     );
-    res.status(201).json(accountTypesRepo.getById(Number(result.lastInsertRowid)));
+    res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!accountTypesRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Account type not found' });
       return;
     }
@@ -51,18 +54,14 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    accountTypesRepo.update(
-      id,
-      parsed.data.name.trim(),
-      parsed.data.is_investment,
-      parsed.data.is_loan,
-    );
-    res.json(accountTypesRepo.getById(id));
+    repo.update(id, parsed.data.name.trim(), parsed.data.is_investment, parsed.data.is_loan);
+    res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!accountTypesRepo.getById(id)) {
+    const repo = getRepo(req);
+    if (!repo.getById(id)) {
       res.status(404).json({ error: 'Account type not found' });
       return;
     }
@@ -71,7 +70,7 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(409).json({ error: `Ce type est utilisé par ${cnt} compte(s).` });
       return;
     }
-    accountTypesRepo.delete(id);
+    repo.delete(id);
     res.json({ ok: true });
   });
 

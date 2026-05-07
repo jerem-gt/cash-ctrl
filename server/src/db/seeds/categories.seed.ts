@@ -19,15 +19,15 @@ const DEFAULT_CATEGORIES = [
   { name: 'Autre', icon: '❓' },
 ];
 
-export function seedCategories(db: Database) {
+export function seedCategories(db: Database, userId: number) {
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO categories (name, icon)
-    VALUES (?, ?)
+    INSERT OR IGNORE INTO categories (user_id, name, icon)
+    VALUES (?, ?, ?)
   `);
 
   db.transaction(() => {
     for (const c of DEFAULT_CATEGORIES) {
-      stmt.run(c.name, c.icon);
+      stmt.run(userId, c.name, c.icon);
     }
   })();
 }

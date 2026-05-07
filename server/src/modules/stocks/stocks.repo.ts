@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 
 import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
 
-function recalcPosition(db: Database, accountId: number, ticker: string): void {
+function recalcPosition(db: Database, accountId: number, ticker: string, userId: number): void {
   const ops = db
     .prepare<
       [number, string],
@@ -29,13 +29,13 @@ function recalcPosition(db: Database, accountId: number, ticker: string): void {
     );
   } else {
     db.prepare(
-      `INSERT INTO stock_positions (account_id, ticker, quantity, avg_price, updated_at)
-       VALUES (?, ?, ?, ?, datetime('now'))
+      `INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(account_id, ticker) DO UPDATE SET
          quantity   = excluded.quantity,
          avg_price  = excluded.avg_price,
          updated_at = datetime('now')`,
-    ).run(accountId, ticker, qty, avgPrice);
+    ).run(userId, accountId, ticker, qty, avgPrice);
   }
 }
 
@@ -115,9 +115,10 @@ export function createStocksRepo(db: Database) {
 
         const opResult = db
           .prepare(
-            'INSERT INTO stock_operations (account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
+            userId,
             input.account_id,
             transactionId,
             input.ticker,
@@ -129,7 +130,7 @@ export function createStocksRepo(db: Database) {
           );
         const operationId = Number(opResult.lastInsertRowid);
 
-        recalcPosition(db, input.account_id, input.ticker);
+        recalcPosition(db, input.account_id, input.ticker, userId);
 
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
@@ -170,9 +171,10 @@ export function createStocksRepo(db: Database) {
 
         const opResult = db
           .prepare(
-            'INSERT INTO stock_operations (account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
+            userId,
             input.account_id,
             transactionId,
             input.ticker,
@@ -184,7 +186,7 @@ export function createStocksRepo(db: Database) {
           );
         const operationId = Number(opResult.lastInsertRowid);
 
-        recalcPosition(db, input.account_id, input.ticker);
+        recalcPosition(db, input.account_id, input.ticker, userId);
 
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
@@ -209,6 +211,7 @@ export function createStocksRepo(db: Database) {
 
     updateOperation(
       operationId: number,
+      userId: number,
       input: {
         account_id: number;
         quantity: number;
@@ -245,7 +248,7 @@ export function createStocksRepo(db: Database) {
           'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
         ).run(totalAmount, description, input.date, op.transaction_id);
 
-        recalcPosition(db, input.account_id, op.ticker);
+        recalcPosition(db, input.account_id, op.ticker, userId);
 
         return db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')

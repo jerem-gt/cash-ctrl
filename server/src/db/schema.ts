@@ -67,14 +67,17 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS categories
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT UNIQUE NOT NULL,
-            icon       TEXT NOT NULL,
-            created_at TEXT          DEFAULT (datetime('now'))
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            name       TEXT    NOT NULL,
+            icon       TEXT    NOT NULL,
+            created_at TEXT    DEFAULT (datetime('now')),
+            UNIQUE (user_id, name)
         );
 
         CREATE TABLE IF NOT EXISTS subcategories
         (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             category_id INTEGER NOT NULL REFERENCES categories (id) ON DELETE CASCADE,
             name        TEXT    NOT NULL,
             created_at  TEXT    DEFAULT (datetime('now')),
@@ -84,15 +87,18 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS account_types
         (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            name          TEXT UNIQUE NOT NULL,
-            is_investment INTEGER     NOT NULL DEFAULT 0,
-            is_loan       INTEGER     NOT NULL DEFAULT 0,
-            created_at    TEXT                 DEFAULT (datetime('now'))
+            user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            name          TEXT    NOT NULL,
+            is_investment INTEGER NOT NULL DEFAULT 0,
+            is_loan       INTEGER NOT NULL DEFAULT 0,
+            created_at    TEXT             DEFAULT (datetime('now')),
+            UNIQUE (user_id, name)
         );
 
         CREATE TABLE IF NOT EXISTS stock_positions
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             ticker     TEXT    NOT NULL,
             quantity   REAL    NOT NULL DEFAULT 0,
@@ -105,6 +111,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS stock_operations
         (
             id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id          INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id       INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             transaction_id   INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             ticker           TEXT    NOT NULL,
@@ -140,9 +147,11 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS payment_methods
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT UNIQUE NOT NULL,
-            icon       TEXT        NOT NULL DEFAULT '',
-            created_at TEXT                 DEFAULT (datetime('now'))
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            name       TEXT    NOT NULL,
+            icon       TEXT    NOT NULL DEFAULT '',
+            created_at TEXT             DEFAULT (datetime('now')),
+            UNIQUE (user_id, name)
         );
 
         CREATE TABLE IF NOT EXISTS transactions
@@ -168,6 +177,7 @@ export function initSchema(db: Database) {
 
         CREATE TABLE IF NOT EXISTS reimbursements
         (
+            user_id               INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             transaction_id        INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             linked_transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             PRIMARY KEY (transaction_id, linked_transaction_id)
@@ -176,6 +186,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS transaction_splits
         (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             subcategory_id INTEGER NOT NULL REFERENCES subcategories (id),
             amount         REAL    NOT NULL CHECK (amount > 0)
@@ -200,6 +211,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS loan_installments
         (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id             INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             loan_id             INTEGER NOT NULL REFERENCES loans (id) ON DELETE CASCADE,
             installment_number  INTEGER NOT NULL,
             due_date            TEXT    NOT NULL,

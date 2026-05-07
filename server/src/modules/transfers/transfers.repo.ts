@@ -38,7 +38,7 @@ export function createTransfersRepo(db: Database) {
   return {
     create(userId: number, data: TransferInput): { expense: Transaction; income: Transaction } {
       return db.transaction(() => {
-        const transferIds = getTransferIds(db);
+        const transferIds = getTransferIds(db, userId);
         const notes = data.notes ?? null;
         const validated = data.validated ? 1 : 0;
         const expenseId = Number(

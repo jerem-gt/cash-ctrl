@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import supertest from 'supertest';
 
 import { createApp } from '../../app.js';
-import { createTestDb } from './testDb';
+import { createTestDb, seedTestReferenceData } from './testDb';
 
 export const TEST_USER = 'testuser';
 export const TEST_PASS = 'test-password-123';
@@ -21,8 +21,10 @@ export async function createTestContext(): Promise<TestContext> {
 
   const hash = bcrypt.hashSync(TEST_PASS, 4);
   const userId = Number(
-    db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(TEST_USER, hash).lastInsertRowid,
+    db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(TEST_USER, hash)
+      .lastInsertRowid,
   );
+  seedTestReferenceData(db, userId);
 
   await agent.post('/api/auth/login').send({ username: TEST_USER, password: TEST_PASS });
 

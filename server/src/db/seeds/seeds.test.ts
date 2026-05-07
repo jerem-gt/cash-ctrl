@@ -41,7 +41,9 @@ describe('seedBanks', () => {
 describe('seedAccountTypes', () => {
   it('inserts account types coherent with the schema', () => {
     const db = createFreshDb();
-    seedAccountTypes(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedAccountTypes(db, id);
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
     expect(rows).toHaveLength(5);
     expect(rows.map((r) => r.name)).toContain('Courant');
@@ -51,8 +53,10 @@ describe('seedAccountTypes', () => {
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
     const db = createFreshDb();
-    seedAccountTypes(db);
-    seedAccountTypes(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedAccountTypes(db, id);
+    seedAccountTypes(db, id);
     const count = (db.prepare('SELECT COUNT(*) as c FROM account_types').get() as { c: number }).c;
     expect(count).toBe(5);
   });
@@ -61,7 +65,9 @@ describe('seedAccountTypes', () => {
 describe('seedCategories', () => {
   it('inserts 10 categories with valid name coherent with the schema', () => {
     const db = createFreshDb();
-    seedCategories(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedCategories(db, id);
     const rows = db.prepare('SELECT name FROM categories').all() as {
       name: string;
     }[];
@@ -73,8 +79,10 @@ describe('seedCategories', () => {
 describe('seedSubcategories', () => {
   it('inserts 10 subcategories with valid name and category_id coherent with the schema', () => {
     const db = createFreshDb();
-    seedCategories(db);
-    seedSubcategories(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedCategories(db, id);
+    seedSubcategories(db, id);
     const rows = db.prepare('SELECT name, category_id FROM subcategories').all() as {
       name: string;
       category_id: string;
@@ -87,7 +95,9 @@ describe('seedSubcategories', () => {
 describe('seedPaymentMethods', () => {
   it('inserts 5 payment methods with name and icon coherent with the schema', () => {
     const db = createFreshDb();
-    seedPaymentMethods(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedPaymentMethods(db, id);
     const rows = db.prepare('SELECT name, icon FROM payment_methods').all() as {
       name: string;
       icon: string;
@@ -98,8 +108,10 @@ describe('seedPaymentMethods', () => {
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
     const db = createFreshDb();
-    seedPaymentMethods(db);
-    seedPaymentMethods(db);
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedPaymentMethods(db, id);
+    seedPaymentMethods(db, id);
     const count = (db.prepare('SELECT COUNT(*) as c FROM payment_methods').get() as { c: number })
       .c;
     expect(count).toBe(DEFAULT_PAYMENT_METHODS.length);

@@ -7,6 +7,8 @@ import {
   TransactionType,
   WeekendHandling,
 } from '../constants';
+import { createLoansRepo } from '../modules/loans/loans.repo';
+import { createTransfersRepo } from '../modules/transfers/transfers.repo';
 import { createDb, DATA_DIR, initDatabase } from './init';
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
@@ -29,6 +31,8 @@ initDatabase(db);
 console.log('Schéma et données de référence initialisés.');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const USER_ID = 1;
+
 function lookupId(table: string, name: string): number {
   const row = db.prepare(`SELECT id FROM ${table} WHERE name = ?`).get(name) as
     | { id: number }
@@ -37,41 +41,46 @@ function lookupId(table: string, name: string): number {
   return row.id;
 }
 
-const USER_ID = 1;
+function lookupUserScopedId(table: string, name: string): number {
+  const row = db
+    .prepare(`SELECT id FROM ${table} WHERE name = ? AND user_id = ?`)
+    .get(name, USER_ID) as { id: number } | undefined;
+  if (!row) throw new Error(`${table} : "${name}" introuvable pour user ${USER_ID}`);
+  return row.id;
+}
 
 const bankBNP = lookupId('banks', 'BNP Paribas');
 const bankBourso = lookupId('banks', 'BoursoBank');
 const bankCA = lookupId('banks', 'Crédit Agricole');
 const bankRevolut = lookupId('banks', 'Revolut');
 
-const typeCourant = lookupId('account_types', 'Courant');
-const typeLivret = lookupId('account_types', 'Livret');
-const typeEpargne = lookupId('account_types', 'Épargne');
-const typeBourse = lookupId('account_types', 'Bourse');
-const typeAutre = lookupId('account_types', 'Autre');
+const typeCourant = lookupUserScopedId('account_types', 'Courant');
+const typeEpargne = lookupUserScopedId('account_types', 'Épargne');
+const typeBourse = lookupUserScopedId('account_types', 'Bourse');
+const typeAutre = lookupUserScopedId('account_types', 'Autre');
 
-const subcatSalaire = lookupId('subcategories', 'Salaire');
-const subcatLoyer = lookupId('subcategories', 'Loyer');
-const subcatElec = lookupId('subcategories', 'Électricité');
-const subcatSupermarche = lookupId('subcategories', 'Supermarché');
-const subcatRestaurant = lookupId('subcategories', 'Restaurant');
-const subcatStreaming = lookupId('subcategories', 'Streaming');
-const subcatBTM = lookupId('subcategories', 'Bus/Tram/Metro');
-const subcatPharmacie = lookupId('subcategories', 'Pharmacie');
-const subcatMedecin = lookupId('subcategories', 'Médecin');
-const subcatInterets = lookupId('subcategories', 'Intérêts');
-const subcatVetements = lookupId('subcategories', 'Vêtements');
-const subcatVTC = lookupId('subcategories', 'VTC');
-const subcatVacances = lookupId('subcategories', 'Vacances');
-const subcatCinema = lookupId('subcategories', 'Cinéma');
-const subcatAutre = lookupId('subcategories', 'Autre');
+const subcatSalaire = lookupUserScopedId('subcategories', 'Salaire');
+const subcatLoyer = lookupUserScopedId('subcategories', 'Loyer');
+const subcatElec = lookupUserScopedId('subcategories', 'Électricité');
+const subcatSupermarche = lookupUserScopedId('subcategories', 'Supermarché');
+const subcatRestaurant = lookupUserScopedId('subcategories', 'Restaurant');
+const subcatStreaming = lookupUserScopedId('subcategories', 'Streaming');
+const subcatBTM = lookupUserScopedId('subcategories', 'Bus/Tram/Metro');
+const subcatPharmacie = lookupUserScopedId('subcategories', 'Pharmacie');
+const subcatMedecin = lookupUserScopedId('subcategories', 'Médecin');
+const subcatInterets = lookupUserScopedId('subcategories', 'Intérêts');
+const subcatVetements = lookupUserScopedId('subcategories', 'Vêtements');
+const subcatVTC = lookupUserScopedId('subcategories', 'VTC');
+const subcatVacances = lookupUserScopedId('subcategories', 'Vacances');
+const subcatCinema = lookupUserScopedId('subcategories', 'Cinéma');
+const subcatAutre = lookupUserScopedId('subcategories', 'Autre');
 
-const subcatTransfert = lookupId('subcategories', 'Transfert');
+const subcatTransfert = lookupUserScopedId('subcategories', 'Transfert');
 
-const pmVirement = lookupId('payment_methods', 'Virement');
-const pmCB = lookupId('payment_methods', 'Carte Bancaire');
-const pmPrelevement = lookupId('payment_methods', 'Prélèvement');
-const pmTransfert = lookupId('payment_methods', 'Transfert');
+const pmVirement = lookupUserScopedId('payment_methods', 'Virement');
+const pmCB = lookupUserScopedId('payment_methods', 'Carte Bancaire');
+const pmPrelevement = lookupUserScopedId('payment_methods', 'Prélèvement');
+const pmTransfert = lookupUserScopedId('payment_methods', 'Transfert');
 
 // ── Comptes ───────────────────────────────────────────────────────────────────
 function insertAccount(
@@ -93,7 +102,7 @@ function insertAccount(
 
 // Deux comptes chez BNP (même banque), puis 3 banques différentes + un PEA
 const accBNPCourant = insertAccount('Compte BNP', bankBNP, typeCourant, 500, '2022-01-10');
-const accBNPLivret = insertAccount('Livret A BNP', bankBNP, typeLivret, 1000, '2022-01-10');
+const accBNPLivret = insertAccount('Livret A BNP', bankBNP, typeEpargne, 1000, '2022-01-10');
 const accBourso = insertAccount('Compte Bourso', bankBourso, typeCourant, 200, '2023-03-15');
 const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, 5000, '2020-06-01');
 const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, '2024-01-01');
@@ -273,7 +282,7 @@ insertTx({
   payment_method_id: pmCB,
   validated: 1,
 });
-insertTx({
+const pharmacieId = insertTx({
   account_id: accBNPCourant,
   type: 'expense',
   amount: 22.5,
@@ -489,18 +498,34 @@ insertTransfer(
   '2026-03-20',
 );
 
+// ── Remboursements ────────────────────────────────────────────────────────────
+// Remboursement Sécu pour la dépense Pharmacie
+const secuRembId = insertTx({
+  account_id: accBNPCourant,
+  type: 'income',
+  amount: 15.75,
+  description: 'Remboursement Sécu — Pharmacie',
+  subcategory_id: subcatPharmacie,
+  date: '2026-04-01',
+  payment_method_id: pmVirement,
+  validated: 1,
+});
+db.prepare(
+  'INSERT INTO reimbursements (user_id, transaction_id, linked_transaction_id) VALUES (?, ?, ?)',
+).run(USER_ID, pharmacieId, secuRembId);
+
 // ── Bourse (PEA) ─────────────────────────────────────────────────────────────
 const stmtStockTx = db.prepare(`
   INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes)
   VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)
 `);
 const stmtStockOp = db.prepare(`
-  INSERT INTO stock_operations (account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 const stmtPositionBuy = db.prepare(`
-  INSERT INTO stock_positions (account_id, ticker, quantity, avg_price, updated_at)
-  VALUES (?, ?, ?, ?, datetime('now'))
+  INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
+  VALUES (?, ?, ?, ?, ?, datetime('now'))
   ON CONFLICT(account_id, ticker) DO UPDATE SET
     avg_price  = (quantity * avg_price + excluded.quantity * excluded.avg_price) / (quantity + excluded.quantity),
     quantity   = quantity + excluded.quantity,
@@ -528,8 +553,8 @@ function insertStockBuy(
   const txId = Number(
     stmtStockTx.run(USER_ID, accountId, 'expense', totalAmount, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(accountId, txId, ticker, 'buy', quantity, pricePerShare, fees, date);
-  stmtPositionBuy.run(accountId, ticker, quantity, pricePerShare);
+  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'buy', quantity, pricePerShare, fees, date);
+  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
 }
 
 function insertStockSell(
@@ -545,7 +570,7 @@ function insertStockSell(
   const txId = Number(
     stmtStockTx.run(USER_ID, accountId, 'income', netAmount, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(accountId, txId, ticker, 'sell', quantity, pricePerShare, fees, date);
+  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'sell', quantity, pricePerShare, fees, date);
   stmtPositionSell.run(quantity, accountId, ticker);
 }
 
@@ -565,6 +590,48 @@ insertStockSell(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15');
 stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
 stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
 stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
+
+// ── Prêts ─────────────────────────────────────────────────────────────────────
+const loansRepo = createLoansRepo(db);
+const transfersRepo = createTransfersRepo(db);
+
+// Prêt voiture : 12 000 € à 3 % sur 60 mois, démarré juillet 2023
+const carLoan = loansRepo.create(USER_ID, {
+  name: 'Prêt voiture',
+  bank_id: bankBNP,
+  opening_date: '2023-07-01',
+  principal_amount: 12000,
+  interest_rate: 0.03,
+  duration_months: 60,
+  start_date: '2023-07-01',
+  source_account_id: accBNPCourant,
+});
+
+// Marquer les mensualités passées (≤ aujourd'hui) comme payées
+const paidInstallments = db
+  .prepare(
+    `SELECT id, installment_number, due_date, total_amount
+     FROM loan_installments WHERE loan_id = ? AND due_date <= '2026-05-07'
+     ORDER BY installment_number`,
+  )
+  .all(carLoan.id) as {
+  id: number;
+  installment_number: number;
+  due_date: string;
+  total_amount: number;
+}[];
+
+for (const inst of paidInstallments) {
+  const transferTxs = transfersRepo.create(USER_ID, {
+    amount: inst.total_amount,
+    date: inst.due_date,
+    description: `Mensualité n°${inst.installment_number} — Prêt voiture`,
+    from_account_id: accBNPCourant,
+    to_account_id: carLoan.account_id,
+    validated: true,
+  });
+  loansRepo.updateInstallmentTxId(inst.id, transferTxs.income.id);
+}
 
 // ── Planifications ────────────────────────────────────────────────────────────
 const stmtSched = db.prepare(`
@@ -732,12 +799,16 @@ insertScheduled({
 });
 
 console.log('Jeu de données de développement chargé.');
-console.log('  Comptes       : 6 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut)');
+console.log('  Comptes       : 7 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, Prêt voiture)');
 console.log(
-  '  Transactions  : ~42 (dont 8 virements liés, 5 opérations boursières, 3 remboursements)',
+  `  Transactions  : ~${44 + paidInstallments.length * 2} (dont 8 virements liés, 5 opérations boursières, ${paidInstallments.length} mensualités payées, 1 remboursement Sécu)`,
 );
 console.log(
   '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€)',
 );
+console.log(
+  `  Prêts         : 1 (Prêt voiture 12 000€ à 3%, ${paidInstallments.length}/60 mensualités payées)`,
+);
+console.log('  Remboursements: 1 lien (Pharmacie → Sécu 15,75€)');
 console.log('  Planifications: 6');
 console.log('  Identifiants  : admin / changeme');
