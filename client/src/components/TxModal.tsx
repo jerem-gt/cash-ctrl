@@ -93,7 +93,8 @@ function initCore(
     description: source.description,
     category_id: source.category_id == null ? '' : String(source.category_id),
     subcategory_id: source.subcategory_id == null ? '' : String(source.subcategory_id),
-    account_id: fixedAccountId ? String(fixedAccountId) : account_id,
+    account_id:
+      fixedAccountId && !(isTransfer && tx !== null) ? String(fixedAccountId) : account_id,
     to_account_id,
     payment_method_id: String(source.payment_method_id),
   };
