@@ -31,12 +31,8 @@ export function createCategoriesRepo(db: Database) {
   const getByIdStmt = db.prepare<{ id: number }, Category>(
     'SELECT * FROM categories WHERE id = :id',
   );
-  const createStmt = db.prepare(
-    'INSERT INTO categories (name, color, icon) VALUES (:name, :color, :icon)',
-  );
-  const updateStmt = db.prepare(
-    'UPDATE categories SET name = :name, color = :color, icon = :icon WHERE id = :id',
-  );
+  const createStmt = db.prepare('INSERT INTO categories (name, icon) VALUES (:name, :icon)');
+  const updateStmt = db.prepare('UPDATE categories SET name = :name, icon = :icon WHERE id = :id');
   const deleteStmt = db.prepare('DELETE FROM categories WHERE id = :id');
 
   return {

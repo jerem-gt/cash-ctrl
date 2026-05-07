@@ -59,15 +59,14 @@ describe('seedAccountTypes', () => {
 });
 
 describe('seedCategories', () => {
-  it('inserts 10 categories with valid name and color coherent with the schema', () => {
+  it('inserts 10 categories with valid name coherent with the schema', () => {
     const db = createFreshDb();
     seedCategories(db);
-    const rows = db.prepare('SELECT name, color FROM categories').all() as {
+    const rows = db.prepare('SELECT name FROM categories').all() as {
       name: string;
-      color: string;
     }[];
     expect(rows).toHaveLength(14);
-    expect(rows.every((r) => r.name && /^#[0-9A-Fa-f]{6}$/.test(r.color))).toBe(true);
+    expect(rows.every((r) => r.name)).toBe(true);
   });
 });
 

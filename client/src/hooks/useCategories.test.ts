@@ -23,7 +23,7 @@ describe('useCreateCategory', () => {
   it('crée une catégorie avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useCreateCategory(), { wrapper: Wrapper });
-    result.current.mutate({ name: 'Loisirs', color: '#3b82f6', icon: '❓' });
+    result.current.mutate({ name: 'Loisirs', icon: '❓' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });
@@ -32,7 +32,7 @@ describe('useUpdateCategory', () => {
   it('met à jour une catégorie avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateCategory(), { wrapper: Wrapper });
-    result.current.mutate({ id: 1, name: 'Courses', color: '#22c55e', icon: '❓' });
+    result.current.mutate({ id: 1, name: 'Courses', icon: '❓' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

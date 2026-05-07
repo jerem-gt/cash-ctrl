@@ -8,10 +8,6 @@ import { createCategoriesRepo } from './categories.repo';
 
 const categorySchema = z.object({
   name: z.string().min(1).max(50),
-  color: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/)
-    .default('#9E9A92'),
   icon: z.string().min(1).max(64),
 });
 
@@ -33,7 +29,6 @@ export function createCategoriesRouter(db: Database): Router {
     }
     const result = categoriesRepo.create({
       name: parsed.data.name.trim(),
-      color: parsed.data.color,
       icon: parsed.data.icon,
     });
     res.status(201).json(categoriesRepo.getById(Number(result.lastInsertRowid)));
@@ -52,7 +47,6 @@ export function createCategoriesRouter(db: Database): Router {
     }
     categoriesRepo.update(id, {
       name: parsed.data.name.trim(),
-      color: parsed.data.color,
       icon: parsed.data.icon,
     });
     res.json(categoriesRepo.getById(id));

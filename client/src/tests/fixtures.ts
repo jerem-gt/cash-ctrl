@@ -99,14 +99,12 @@ export const CATEGORIES: Category[] = [
   {
     id: 1,
     name: 'Alimentation',
-    color: '#22c55e',
     icon: '🍴',
     subcategories: [{ id: 1, name: 'Supermarché' }],
   },
   {
     id: 2,
     name: 'Logement',
-    color: '#5C6BC0',
     icon: '🏠',
     subcategories: [{ id: 2, name: 'Loyer' }],
   },

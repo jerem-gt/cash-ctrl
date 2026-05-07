@@ -25,7 +25,6 @@ export interface TransactionSplit {
 export interface Category {
   id: number;
   name: string;
-  color: string;
   icon: string;
   tx_count?: number;
   subcategories: Subcategory[];

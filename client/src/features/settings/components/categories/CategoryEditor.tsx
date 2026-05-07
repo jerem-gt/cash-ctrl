@@ -3,7 +3,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 
 const EmojiPicker = React.lazy(() => import('emoji-picker-react'));
 
-export type CategoryForm = { name: string; color: string; icon: string };
+export type CategoryForm = { name: string; icon: string };
 
 interface CategoryEditorProps {
   initialValues: CategoryForm;
@@ -38,25 +38,15 @@ export function CategoryEditor({
 
   return (
     <div className="flex items-center gap-2 w-full animate-in fade-in zoom-in-95 duration-200">
-      {/* SÉLECTEUR EMOJI & COULEUR COMBINÉ */}
-      <div className="relative flex items-center shrink-0 gap-1 bg-stone-100/50 p-1 rounded-lg border border-black/3">
+      {/* SÉLECTEUR EMOJI */}
+      <div className="relative flex items-center shrink-0 gap-1 bg-stone-100/50 rounded-lg border border-black/3">
         <button
           type="button"
           onClick={() => setShowPicker(!showPicker)}
           className="w-7 h-7 flex items-center justify-center text-base hover:bg-white rounded-md transition-all shadow-sm"
-          style={{ borderLeft: `3px solid ${form.color}` }} // Rappel de la couleur sur le bord de l'icône
         >
           {form.icon}
         </button>
-
-        {/* Input couleur discret (petit carré à la fin) */}
-        <input
-          type="color"
-          value={form.color}
-          onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-          className="w-4 h-4 rounded-full cursor-pointer border-none p-0 overflow-hidden"
-          title="Changer la couleur"
-        />
 
         {showPicker && (
           <>
