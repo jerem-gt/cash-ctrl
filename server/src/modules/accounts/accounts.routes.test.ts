@@ -56,11 +56,12 @@ describe('/api/accounts', () => {
     expect(res.status).toBe(400);
   });
 
-  it('POST / returns 400 on missing opening_date', async () => {
+  it('POST / succeeds without opening_date', async () => {
     const res = await ctx.agent
       .post('/api/accounts')
       .send({ name: 'X', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(201);
+    expect(res.body.opening_date).toBeNull();
   });
 
   it('PUT /:id updates an account', async () => {

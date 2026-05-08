@@ -26,7 +26,7 @@ export interface LoanInstallment {
 export interface CreateLoanInput {
   name: string;
   bank_id: number | null;
-  opening_date: string;
+  opening_date: string | null;
   principal_amount: number;
   interest_rate: number;
   duration_months: number;
@@ -42,6 +42,6 @@ export interface UpdateInstallmentInput {
 export interface UpdateLoanInput {
   name: string;
   bank_id: number | null;
-  opening_date: string;
+  opening_date: string | null;
   source_account_id: number;
 }

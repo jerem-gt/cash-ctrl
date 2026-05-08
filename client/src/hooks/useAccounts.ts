@@ -29,7 +29,7 @@ export function useUpdateAccount() {
       bank_id: number | null;
       account_type_id: number | null;
       initial_balance: number;
-      opening_date: string;
+      opening_date: string | null;
     }) => accountsApi.update(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });

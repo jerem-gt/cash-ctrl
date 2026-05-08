@@ -88,7 +88,7 @@ export default function AccountsPage() {
         bank_id: Number.parseInt(data.bank_id) || null,
         account_type_id: Number.parseInt(data.account_type_id) || null,
         initial_balance: Number.parseFloat(data.initial_balance) || 0,
-        opening_date: data.opening_date,
+        opening_date: data.opening_date || null,
       },
       {
         onSuccess: () => {

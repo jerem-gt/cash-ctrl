@@ -7,7 +7,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
-import { fmtDate, today } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { parseQif, type QifParseResult } from '@/lib/qif-parser';
 import type { Account, AccountType, Bank, Category } from '@/types';
 
@@ -108,7 +108,7 @@ function AccountMappingRow({
         bank_id: banks[0]?.id ?? null,
         account_type_id: accountTypes[0]?.id ?? null,
         initial_balance: 0,
-        opening_date: today(),
+        opening_date: null,
       });
     }
   };
@@ -214,8 +214,8 @@ function AccountMappingRow({
                 <input
                   type="date"
                   className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
-                  value={choice.opening_date}
-                  onChange={(e) => onChange({ ...choice, opening_date: e.target.value })}
+                  value={choice.opening_date ?? ''}
+                  onChange={(e) => onChange({ ...choice, opening_date: e.target.value || null })}
                 />
               </div>
             </div>
@@ -366,6 +366,10 @@ export default function ImportPage() {
   const [dateFormat, setDateFormat] = useState<'MM/DD' | 'DD/MM'>('DD/MM');
   const [accountChoices, setAccountChoices] = useState<Map<string, AccountChoice>>(new Map());
   const [categoryChoices, setCategoryChoices] = useState<Map<string, CategoryChoice>>(new Map());
+
+  const setAccountChoice = useCallback((qifName: string, c: AccountChoice) => {
+    setAccountChoices((prev) => new Map(prev).set(qifName, c));
+  }, []);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -397,7 +401,7 @@ export default function ImportPage() {
             bank_id: banks[0]?.id ?? null,
             account_type_id: accountTypes[0]?.id ?? null,
             initial_balance: 0,
-            opening_date: today(),
+            opening_date: null,
           });
           const accChoices = new Map<string, AccountChoice>();
           for (const acc of result.accounts) accChoices.set(acc, makeDefaultAccChoice(acc));
@@ -589,7 +593,7 @@ export default function ImportPage() {
                 accounts={activeAccounts}
                 accountTypes={accountTypes}
                 banks={banks}
-                onChange={(c) => setAccountChoices((prev) => new Map(prev).set(qifName, c))}
+                onChange={(c) => setAccountChoice(qifName, c)}
               />
             ))}
             {(() => {
@@ -610,7 +614,7 @@ export default function ImportPage() {
                       accounts={activeAccounts}
                       accountTypes={accountTypes}
                       banks={banks}
-                      onChange={(c) => setAccountChoices((prev) => new Map(prev).set(qifName, c))}
+                      onChange={(c) => setAccountChoice(qifName, c)}
                     />
                   ))}
                 </>

@@ -39,7 +39,7 @@ function calcMonthlyPayment(principal: number, annualRate: number, months: numbe
 const EMPTY_FORM = (today: string): FormState => ({
   name: '',
   bank_id: '',
-  opening_date: today,
+  opening_date: '',
   start_date: addMonths(today, 1),
   principal_amount: '',
   interest_rate: '',
@@ -61,7 +61,7 @@ export function LoanFormModal(props: Readonly<Props>) {
       return {
         name: account.name,
         bank_id: String(account.bank_id ?? ''),
-        opening_date: account.opening_date ?? today,
+        opening_date: account.opening_date ?? '',
         start_date: l.start_date,
         principal_amount: String(l.principal_amount),
         interest_rate: (l.interest_rate * 100).toLocaleString('en-US', {
@@ -103,10 +103,6 @@ export function LoanFormModal(props: Readonly<Props>) {
       showToast('Donnez un nom au prêt.');
       return false;
     }
-    if (!form.opening_date) {
-      showToast('Renseignez la date de souscription.');
-      return false;
-    }
     if (!form.start_date) {
       showToast('Renseignez la date de première mensualité.');
       return false;
@@ -146,7 +142,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         {
           name: form.name.trim(),
           bank_id: Number.parseInt(form.bank_id) || null,
-          opening_date: form.opening_date,
+          opening_date: form.opening_date || null,
           principal_amount: principal,
           interest_rate: rate / 100,
           duration_months: months,
@@ -166,7 +162,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         {
           name: form.name.trim(),
           bank_id: Number.parseInt(form.bank_id) || null,
-          opening_date: form.opening_date,
+          opening_date: form.opening_date || null,
           source_account_id: Number.parseInt(form.source_account_id),
         },
         {

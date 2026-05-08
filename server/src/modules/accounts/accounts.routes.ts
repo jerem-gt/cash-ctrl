@@ -11,7 +11,11 @@ const accountSchema = z.object({
   bank_id: z.number().int().positive().nullable().default(null),
   account_type_id: z.number().int().positive().nullable().default(null),
   initial_balance: z.coerce.number().default(0),
-  opening_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis'),
+  opening_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis')
+    .nullable()
+    .default(null),
 });
 
 export function createAccountsRouter(db: Database): Router {

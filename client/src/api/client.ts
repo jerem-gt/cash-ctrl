@@ -94,7 +94,7 @@ type AccountPayload = {
   bank_id: number | null;
   account_type_id: number | null;
   initial_balance: number;
-  opening_date: string;
+  opening_date: string | null;
 };
 
 // Accounts
@@ -243,7 +243,7 @@ export const stocksApi = {
 export type CreateLoanPayload = {
   name: string;
   bank_id: number | null;
-  opening_date: string;
+  opening_date: string | null;
   principal_amount: number;
   interest_rate: number;
   duration_months: number;
@@ -254,7 +254,7 @@ export type CreateLoanPayload = {
 export type UpdateLoanPayload = {
   name: string;
   bank_id: number | null;
-  opening_date: string;
+  opening_date: string | null;
   source_account_id: number;
 };
 
@@ -298,7 +298,7 @@ export interface ImportExecuteBody {
     bank_id: number | null;
     account_type_id: number | null;
     initial_balance: number;
-    opening_date: string;
+    opening_date: string | null;
   }[];
   newSubcategories: {
     qif_key: string;
