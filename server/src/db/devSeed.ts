@@ -562,15 +562,24 @@ function insertStockBuy(
   fees: number,
   date: string,
 ): void {
-  const priceCents = toCents(pricePerShare);
   const feesCents = toCents(fees);
-  const totalCents = Math.round(quantity * priceCents + feesCents);
+  const totalCents = Math.round(quantity * pricePerShare * 100) + feesCents;
   const description = `Achat ${quantity} × ${ticker}`;
   const txId = Number(
     stmtStockTx.run(USER_ID, accountId, 'expense', totalCents, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'buy', quantity, priceCents, feesCents, date);
-  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, priceCents);
+  stmtStockOp.run(
+    USER_ID,
+    accountId,
+    txId,
+    ticker,
+    'buy',
+    quantity,
+    pricePerShare,
+    feesCents,
+    date,
+  );
+  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
 }
 
 function insertStockSell(
@@ -581,14 +590,23 @@ function insertStockSell(
   fees: number,
   date: string,
 ): void {
-  const priceCents = toCents(pricePerShare);
   const feesCents = toCents(fees);
-  const netCents = Math.round(quantity * priceCents - feesCents);
+  const netCents = Math.round(quantity * pricePerShare * 100) - feesCents;
   const description = `Vente ${quantity} × ${ticker}`;
   const txId = Number(
     stmtStockTx.run(USER_ID, accountId, 'income', netCents, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'sell', quantity, priceCents, feesCents, date);
+  stmtStockOp.run(
+    USER_ID,
+    accountId,
+    txId,
+    ticker,
+    'sell',
+    quantity,
+    pricePerShare,
+    feesCents,
+    date,
+  );
   stmtPositionSell.run(quantity, accountId, ticker);
 }
 
@@ -605,9 +623,9 @@ insertStockBuy(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20');
 insertStockSell(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15');
 
 // Cours actuels simulés (normalement mis à jour par Yahoo Finance)
-stmtPrice.run('DCAM.PA', toCents(11.85), 'EUR', 'DCAM Amundi Diversifié');
-stmtPrice.run('AAPL', toCents(185.5), 'USD', 'Apple Inc.');
-stmtPrice.run('LVMH.PA', toCents(610), 'EUR', 'LVMH Moët Hennessy');
+stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
+stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
+stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
 
 // ── Prêts ─────────────────────────────────────────────────────────────────────
 const loansRepo = createLoansRepo(db);

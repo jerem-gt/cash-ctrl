@@ -102,7 +102,7 @@ export function initSchema(db: Database) {
             account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             ticker     TEXT    NOT NULL,
             quantity   REAL    NOT NULL DEFAULT 0,
-            avg_price  INTEGER NOT NULL DEFAULT 0,
+            avg_price  REAL    NOT NULL DEFAULT 0,
             updated_at TEXT             DEFAULT (datetime('now')),
             created_at TEXT             DEFAULT (datetime('now')),
             UNIQUE (account_id, ticker)
@@ -117,7 +117,7 @@ export function initSchema(db: Database) {
             ticker           TEXT    NOT NULL,
             type             TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
             quantity         REAL    NOT NULL,
-            price_per_share  INTEGER NOT NULL,
+            price_per_share  REAL    NOT NULL,
             fees             INTEGER NOT NULL DEFAULT 0,
             date             TEXT    NOT NULL,
             created_at       TEXT             DEFAULT (datetime('now'))
@@ -129,7 +129,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS stock_prices
         (
             ticker     TEXT PRIMARY KEY,
-            price      INTEGER NOT NULL,
+            price      REAL    NOT NULL,
             currency   TEXT NOT NULL DEFAULT 'EUR',
             fetched_at TEXT NOT NULL,
             name       TEXT
