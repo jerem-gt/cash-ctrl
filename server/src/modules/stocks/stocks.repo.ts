@@ -262,11 +262,11 @@ export function createStocksRepo(db: Database) {
 
         recalcPosition(db, input.account_id, op.ticker, userId);
 
-        return mapOperation(
-          db
-            .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-            .get(operationId),
-        );
+        const updatedOp = db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(operationId);
+        if (!updatedOp) throw new Error('Opération introuvable après mise à jour');
+        return mapOperation(updatedOp);
       })();
     },
   };

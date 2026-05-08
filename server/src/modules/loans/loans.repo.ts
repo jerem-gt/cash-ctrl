@@ -220,7 +220,9 @@ export function createLoansRepo(db: Database) {
           });
         }
 
-        return mapLoan(getLoanById.get({ id: loanId }));
+        const created = getLoanById.get({ id: loanId });
+        if (!created) throw new Error('Prêt introuvable après création');
+        return mapLoan(created);
       })();
     },
 
@@ -258,7 +260,9 @@ export function createLoansRepo(db: Database) {
           });
         }
 
-        return mapLoan(getLoanById.get({ id: loanId }));
+        const updated = getLoanById.get({ id: loanId });
+        if (!updated) throw new Error('Prêt introuvable après mise à jour');
+        return mapLoan(updated);
       })();
     },
 
@@ -303,7 +307,9 @@ export function createLoansRepo(db: Database) {
           }
         }
 
-        return mapInstallment(getInstallmentById.get({ id: installmentId }));
+        const inst = getInstallmentById.get({ id: installmentId });
+        if (!inst) throw new Error('Échéance introuvable après mise à jour');
+        return mapInstallment(inst);
       })();
     },
 
