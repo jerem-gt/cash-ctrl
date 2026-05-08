@@ -22,7 +22,7 @@ function parseSplits(row: TransactionRow): Transaction {
   const result: Transaction = {
     ...rest,
     amount: toEuros(rest.amount),
-    loan_principal: rest.loan_principal != null ? toEuros(rest.loan_principal) : undefined,
+    loan_principal: rest.loan_principal == null ? null : toEuros(rest.loan_principal),
   };
   if (splits_json) {
     const splits = JSON.parse(splits_json) as TransactionSplit[];
@@ -30,11 +30,7 @@ function parseSplits(row: TransactionRow): Transaction {
   }
   if (stock_operation_json) {
     const op = JSON.parse(stock_operation_json) as NonNullable<Transaction['stock_operation']>;
-    result.stock_operation = {
-      ...op,
-      price_per_share: toEuros(op.price_per_share),
-      fees: toEuros(op.fees),
-    };
+    result.stock_operation = { ...op, fees: toEuros(op.fees) };
   }
   return result;
 }
