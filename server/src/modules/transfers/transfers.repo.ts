@@ -1,8 +1,14 @@
 import type { Database } from 'better-sqlite3';
 
 import { getTransferIds } from '../../lib/administrationDataConstants';
+import { toCents, toEuros } from '../../lib/money';
 import type { Transaction, UpdateSharedTransactionInput } from '../transactions/transactions.types';
 import type { TransferInput } from './transfers.types';
+
+function mapTx(row: Transaction | null | undefined): Transaction | undefined {
+  if (!row) return undefined;
+  return { ...row, amount: toEuros(row.amount) };
+}
 
 const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
@@ -41,12 +47,13 @@ export function createTransfersRepo(db: Database) {
         const transferIds = getTransferIds(db, userId);
         const notes = data.notes ?? null;
         const validated = data.validated ? 1 : 0;
+        const amountCents = toCents(data.amount);
         const expenseId = Number(
           insertTxStmt.run({
             userId,
             accountId: data.from_account_id,
             type: 'expense',
-            amount: data.amount,
+            amount: amountCents,
             description: data.description,
             subcategoryId: transferIds.subcategoryId,
             date: data.date,
@@ -61,7 +68,7 @@ export function createTransfersRepo(db: Database) {
             userId,
             accountId: data.to_account_id,
             type: 'income',
-            amount: data.amount,
+            amount: amountCents,
             description: data.description,
             subcategoryId: transferIds.subcategoryId,
             date: data.date,
@@ -74,8 +81,8 @@ export function createTransfersRepo(db: Database) {
         setPeerStmt.run({ peerId: incomeId, id: expenseId });
         setPeerStmt.run({ peerId: expenseId, id: incomeId });
         return {
-          expense: getByIdStmt.get({ id: expenseId })!,
-          income: getByIdStmt.get({ id: incomeId })!,
+          expense: mapTx(getByIdStmt.get({ id: expenseId }))!,
+          income: mapTx(getByIdStmt.get({ id: incomeId }))!,
         };
       })();
     },
@@ -94,8 +101,9 @@ export function createTransfersRepo(db: Database) {
         userId,
       };
       db.transaction(() => {
-        updateSharedStmt.run({ ...base, accountId: data.this_account_id ?? null, id });
-        updateSharedStmt.run({ ...base, accountId: data.peer_account_id ?? null, id: peerId });
+        const base2 = { ...base, amount: toCents(data.amount) };
+        updateSharedStmt.run({ ...base2, accountId: data.this_account_id ?? null, id });
+        updateSharedStmt.run({ ...base2, accountId: data.peer_account_id ?? null, id: peerId });
       })();
     },
 

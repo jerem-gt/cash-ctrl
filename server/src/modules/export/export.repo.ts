@@ -1,11 +1,12 @@
 import type { Database } from 'better-sqlite3';
 
+import { toEuros } from '../../lib/money';
 import { ExportAccount, ExportTransaction, ExportTxRow } from './export.types';
 
 export function createExportRepo(db: Database) {
   return {
     getCsvRows(userId: number): ExportTxRow[] {
-      return db
+      const rows = db
         .prepare<[number], ExportTxRow>(
           `
                 SELECT t.date,
@@ -28,10 +29,11 @@ export function createExportRepo(db: Database) {
             `,
         )
         .all(userId);
+      return rows.map((r) => ({ ...r, amount: toEuros(r.amount) }));
     },
 
     getAccounts(userId: number): ExportAccount[] {
-      return db
+      const rows = db
         .prepare<[number], ExportAccount>(
           `
                 SELECT a.id,
@@ -47,10 +49,11 @@ export function createExportRepo(db: Database) {
             `,
         )
         .all(userId);
+      return rows.map((r) => ({ ...r, initial_balance: toEuros(r.initial_balance) }));
     },
 
     getTransactions(userId: number): ExportTransaction[] {
-      return db
+      const rows = db
         .prepare<[number], ExportTransaction>(
           `
                 SELECT t.id,
@@ -77,6 +80,7 @@ export function createExportRepo(db: Database) {
             `,
         )
         .all(userId);
+      return rows.map((r) => ({ ...r, amount: toEuros(r.amount) }));
     },
   };
 }

@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { toEuros } from '../../lib/money';
 import type { PendingReimbursement, Reimbursement } from './reimbursements.types';
 
 export function createReimbursementsRepo(db: Database) {
@@ -43,8 +44,16 @@ export function createReimbursementsRepo(db: Database) {
 
   return {
     getByTransactionId: (txId: number, userId: number) =>
-      getReimbursementsByTxStmt.all({ txId, userId }),
-    getPendingWithSummary: (userId: number) => getPendingWithSummaryStmt.all({ userId }),
+      getReimbursementsByTxStmt.all({ txId, userId }).map((r) => ({
+        ...r,
+        amount: toEuros(r.amount),
+      })),
+    getPendingWithSummary: (userId: number) =>
+      getPendingWithSummaryStmt.all({ userId }).map((r) => ({
+        ...r,
+        amount: toEuros(r.amount),
+        total_reimbursed: toEuros(r.total_reimbursed),
+      })),
 
     link: (userId: number, txId: number, linkedTxId: number) =>
       linkStmt.run({ userId, txId, linkedTxId }),

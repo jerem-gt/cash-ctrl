@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { getAccountTypeIds } from '../../lib/administrationDataConstants';
+import { toCents, toEuros } from '../../lib/money';
 import type {
   CreateLoanInput,
   Loan,
@@ -8,6 +9,23 @@ import type {
   UpdateInstallmentInput,
   UpdateLoanInput,
 } from './loans.types.js';
+
+function mapLoan(row: Loan): Loan {
+  return {
+    ...row,
+    principal_amount: toEuros(row.principal_amount),
+    monthly_payment: toEuros(row.monthly_payment),
+  };
+}
+
+function mapInstallment<T extends LoanInstallment>(row: T): T {
+  return {
+    ...row,
+    total_amount: toEuros(row.total_amount),
+    principal_amount: toEuros(row.principal_amount),
+    interest_amount: toEuros(row.interest_amount),
+  };
+}
 
 function addMonths(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -150,7 +168,7 @@ export function createLoansRepo(db: Database) {
   return {
     getAllActiveByUserId: (userId: number) => getAllActiveByUserIdStmt.all({ userId }),
     getPendingInstallments: (loanId: number, dueDate: string) =>
-      getAllPendingInstallmentsStmt.all({ loanId, dueDate }),
+      getAllPendingInstallmentsStmt.all({ loanId, dueDate }).map(mapInstallment),
 
     create(userId: number, data: CreateLoanInput): Loan {
       const accountTypeId = getAccountTypeIds(db, userId).atPretId;
@@ -177,7 +195,7 @@ export function createLoansRepo(db: Database) {
           name: data.name,
           bankId: data.bank_id,
           accountTypeId,
-          initialBalance: -data.principal_amount,
+          initialBalance: toCents(-data.principal_amount),
           openingDate: data.opening_date,
         });
         const accountId = Number(accountResult.lastInsertRowid);
@@ -186,27 +204,33 @@ export function createLoansRepo(db: Database) {
           ...data,
           account_id: accountId,
           user_id: userId,
-          monthly_payment: monthlyPayment,
+          principal_amount: toCents(data.principal_amount),
+          monthly_payment: toCents(monthlyPayment),
         });
         const loanId = Number(loanResult.lastInsertRowid);
 
         for (const row of schedule) {
           insertInstallmentStmt.run({
             ...row,
+            total_amount: toCents(row.total_amount),
+            principal_amount: toCents(row.principal_amount),
+            interest_amount: toCents(row.interest_amount),
             loan_id: loanId,
             user_id: userId,
           });
         }
 
-        return getLoanById.get({ id: loanId })!;
+        return mapLoan(getLoanById.get({ id: loanId })!);
       })();
     },
 
-    getByAccountId: (accountId: number, userId: number) =>
-      getByAccountIdStmt.get({ accountId, userId }),
+    getByAccountId: (accountId: number, userId: number) => {
+      const row = getByAccountIdStmt.get({ accountId, userId });
+      return row ? mapLoan(row) : undefined;
+    },
 
     getInstallments: (loanId: number, userId: number) =>
-      getInstallmentsByLoanId.all({ loanId, userId }),
+      getInstallmentsByLoanId.all({ loanId, userId }).map(mapInstallment),
 
     updateLoan(userId: number, loanId: number, data: UpdateLoanInput): Loan | null {
       const loan = getLoanById.get({ id: loanId });
@@ -234,7 +258,7 @@ export function createLoansRepo(db: Database) {
           });
         }
 
-        return getLoanById.get({ id: loanId })!;
+        return mapLoan(getLoanById.get({ id: loanId })!);
       })();
     },
 
@@ -256,14 +280,14 @@ export function createLoansRepo(db: Database) {
       return db.transaction(() => {
         updateInstallmentBasicStmt.run({
           dueDate: data.due_date,
-          totalAmount: data.total_amount,
+          totalAmount: toCents(data.total_amount),
           id: installmentId,
         });
 
         if (row.transaction_id) {
           updateTransactionStmt.run({
             date: data.due_date,
-            amount: data.total_amount,
+            amount: toCents(data.total_amount),
             id: row.transaction_id,
             userId,
           });
@@ -272,14 +296,14 @@ export function createLoansRepo(db: Database) {
           if (peerId) {
             updateTransactionStmt.run({
               date: data.due_date,
-              amount: data.total_amount,
+              amount: toCents(data.total_amount),
               id: peerId,
               userId,
             });
           }
         }
 
-        return getInstallmentById.get({ id: installmentId })!;
+        return mapInstallment(getInstallmentById.get({ id: installmentId })!);
       })();
     },
 

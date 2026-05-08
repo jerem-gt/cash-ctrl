@@ -1,11 +1,25 @@
 import type { Database } from 'better-sqlite3';
 
+import { toCents, toEuros } from '../../lib/money';
 import type {
   Account,
   CloseAccountInput,
   CreateAccountInput,
   UpdateAccountInput,
 } from './accounts.types';
+
+function mapAccount(row: Account): Account {
+  return {
+    ...row,
+    initial_balance: toEuros(row.initial_balance),
+    balance: toEuros(row.balance),
+    balance_all: toEuros(row.balance_all),
+    balance_stocks: toEuros(row.balance_stocks),
+    capital_restant_du: row.capital_restant_du != null ? toEuros(row.capital_restant_du) : null,
+    capital_restant_du_all:
+      row.capital_restant_du_all != null ? toEuros(row.capital_restant_du_all) : null,
+  };
+}
 
 const BALANCE_SUBQUERY = `
   a.initial_balance + COALESCE(
@@ -111,19 +125,24 @@ export function createAccountsRepo(db: Database) {
       getCountByAccountTypeIdStmt.get({ accountTypeId }) ?? 0,
     countByBankId: (bankId: number): number => getCountByBankIdStmt.get({ bankId }) ?? 0,
 
-    getByUserId: (userId: number): Account[] => getByUserIdStmt.all({ userId }),
+    getByUserId: (userId: number): Account[] => getByUserIdStmt.all({ userId }).map(mapAccount),
 
-    getById: (id: number, userId: number): Account | undefined => getByIdStmt.get({ id, userId }),
+    getById: (id: number, userId: number): Account | undefined => {
+      const row = getByIdStmt.get({ id, userId });
+      return row ? mapAccount(row) : undefined;
+    },
 
     create: (userId: number, data: CreateAccountInput) =>
       createStmt.run({
         ...data,
+        initial_balance: toCents(data.initial_balance),
         user_id: userId,
       }),
 
     update: (userId: number, id: number, data: UpdateAccountInput) =>
       updateStmt.run({
         ...data,
+        initial_balance: toCents(data.initial_balance),
         id,
         user_id: userId,
       }),

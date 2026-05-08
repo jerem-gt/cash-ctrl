@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+const toCents = (n: number) => Math.round(n * 100);
+
 import {
   RecurrenceUnit,
   ReimbursementStatus,
@@ -101,12 +103,24 @@ function insertAccount(
 }
 
 // Deux comptes chez BNP (même banque), puis 3 banques différentes + un PEA
-const accBNPCourant = insertAccount('Compte BNP', bankBNP, typeCourant, 500, '2022-01-10');
-const accBNPLivret = insertAccount('Livret A BNP', bankBNP, typeEpargne, 1000, '2022-01-10');
-const accBourso = insertAccount('Compte Bourso', bankBourso, typeCourant, 200, '2023-03-15');
-const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, 5000, '2020-06-01');
+const accBNPCourant = insertAccount('Compte BNP', bankBNP, typeCourant, toCents(500), '2022-01-10');
+const accBNPLivret = insertAccount(
+  'Livret A BNP',
+  bankBNP,
+  typeEpargne,
+  toCents(1000),
+  '2022-01-10',
+);
+const accBourso = insertAccount(
+  'Compte Bourso',
+  bankBourso,
+  typeCourant,
+  toCents(200),
+  '2023-03-15',
+);
+const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, toCents(5000), '2020-06-01');
 const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, '2024-01-01');
-const accPEA = insertAccount('PEA BoursoBank', bankBourso, typeBourse, 5000, '2024-01-01');
+const accPEA = insertAccount('PEA BoursoBank', bankBourso, typeBourse, toCents(5000), '2024-01-01');
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 type TxInput = {
@@ -135,7 +149,7 @@ function insertTx(tx: TxInput): number {
       USER_ID,
       tx.account_id,
       tx.type,
-      tx.amount,
+      toCents(tx.amount),
       tx.description,
       tx.subcategory_id,
       tx.date,
@@ -548,13 +562,15 @@ function insertStockBuy(
   fees: number,
   date: string,
 ): void {
-  const totalAmount = quantity * pricePerShare + fees;
+  const priceCents = toCents(pricePerShare);
+  const feesCents = toCents(fees);
+  const totalCents = Math.round(quantity * priceCents + feesCents);
   const description = `Achat ${quantity} × ${ticker}`;
   const txId = Number(
-    stmtStockTx.run(USER_ID, accountId, 'expense', totalAmount, description, date).lastInsertRowid,
+    stmtStockTx.run(USER_ID, accountId, 'expense', totalCents, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'buy', quantity, pricePerShare, fees, date);
-  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
+  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'buy', quantity, priceCents, feesCents, date);
+  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, priceCents);
 }
 
 function insertStockSell(
@@ -565,12 +581,14 @@ function insertStockSell(
   fees: number,
   date: string,
 ): void {
-  const netAmount = quantity * pricePerShare - fees;
+  const priceCents = toCents(pricePerShare);
+  const feesCents = toCents(fees);
+  const netCents = Math.round(quantity * priceCents - feesCents);
   const description = `Vente ${quantity} × ${ticker}`;
   const txId = Number(
-    stmtStockTx.run(USER_ID, accountId, 'income', netAmount, description, date).lastInsertRowid,
+    stmtStockTx.run(USER_ID, accountId, 'income', netCents, description, date).lastInsertRowid,
   );
-  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'sell', quantity, pricePerShare, fees, date);
+  stmtStockOp.run(USER_ID, accountId, txId, ticker, 'sell', quantity, priceCents, feesCents, date);
   stmtPositionSell.run(quantity, accountId, ticker);
 }
 
@@ -587,9 +605,9 @@ insertStockBuy(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20');
 insertStockSell(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15');
 
 // Cours actuels simulés (normalement mis à jour par Yahoo Finance)
-stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
-stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
-stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
+stmtPrice.run('DCAM.PA', toCents(11.85), 'EUR', 'DCAM Amundi Diversifié');
+stmtPrice.run('AAPL', toCents(185.5), 'USD', 'Apple Inc.');
+stmtPrice.run('LVMH.PA', toCents(610), 'EUR', 'LVMH Moët Hennessy');
 
 // ── Prêts ─────────────────────────────────────────────────────────────────────
 const loansRepo = createLoansRepo(db);
@@ -608,18 +626,8 @@ const carLoan = loansRepo.create(USER_ID, {
 });
 
 // Marquer les mensualités passées (≤ aujourd'hui) comme payées
-const paidInstallments = db
-  .prepare(
-    `SELECT id, installment_number, due_date, total_amount
-     FROM loan_installments WHERE loan_id = ? AND due_date <= '2026-05-07'
-     ORDER BY installment_number`,
-  )
-  .all(carLoan.id) as {
-  id: number;
-  installment_number: number;
-  due_date: string;
-  total_amount: number;
-}[];
+// getPendingInstallments retourne les montants en euros (conversion cents→euros dans le repo)
+const paidInstallments = loansRepo.getPendingInstallments(carLoan.id, '2026-05-07');
 
 for (const inst of paidInstallments) {
   const transferTxs = transfersRepo.create(USER_ID, {
