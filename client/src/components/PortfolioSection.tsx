@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { StockOperationModal } from '@/components/StockOperationModal';
 import { Button, showToast } from '@/components/ui';
 import { useRefreshPrices, useStockPositions } from '@/hooks/useStocks';
+import { fmtStockPrice } from '@/lib/format';
 import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
@@ -43,18 +44,13 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
         <div>
           <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
           <p className="font-medium text-stone-700 tabular-nums">
-            {pos.avg_price.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+            {fmtStockPrice(pos.avg_price, pos.currency)}
           </p>
         </div>
         <div>
           <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Cours</p>
           <p className="font-medium text-stone-700 tabular-nums">
-            {pos.current_price == null
-              ? '—'
-              : pos.current_price.toLocaleString('fr-FR', {
-                  style: 'currency',
-                  currency: pos.currency,
-                })}
+            {pos.current_price == null ? '—' : fmtStockPrice(pos.current_price, pos.currency)}
           </p>
         </div>
         <div>
