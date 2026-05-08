@@ -1,6 +1,11 @@
 import type { Database } from 'better-sqlite3';
 
+import { toCents, toEuros } from '../../lib/money';
 import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
+
+function mapScheduled(row: ScheduledTransaction): ScheduledTransaction {
+  return { ...row, amount: toEuros(row.amount) };
+}
 
 const SCHED_COLUMS = `
   s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,
@@ -87,14 +92,19 @@ export function createScheduledRepo(db: Database) {
   `);
 
   return {
-    getActiveByUserId: (userId: number) => getActiveByUserIdStmt.all({ userId }),
-    getByUserId: (userId: number) => getByUserIdStmt.all({ userId }),
-    getById: (id: number, userId: number) => getByIdStmt.get({ id, userId }),
+    getActiveByUserId: (userId: number) => getActiveByUserIdStmt.all({ userId }).map(mapScheduled),
+    getByUserId: (userId: number) =>
+      (getByUserIdStmt.all({ userId }) as ScheduledTransaction[]).map(mapScheduled),
+    getById: (id: number, userId: number) => {
+      const row = getByIdStmt.get({ id, userId }) as ScheduledTransaction | undefined;
+      return row ? mapScheduled(row) : undefined;
+    },
     exists: (id: number, userId: number) => !!existsStmt.get({ id, userId }),
 
     create(userId: number, data: CreateScheduledInput) {
       return insertStmt.run({
         ...data,
+        amount: toCents(data.amount),
         user_id: userId,
         active: data.active ? 1 : 0,
       });
@@ -106,6 +116,7 @@ export function createScheduledRepo(db: Database) {
         deleteFutureTransactionsStmt.run({ id, userId, today });
         updateStmt.run({
           ...data,
+          amount: toCents(data.amount),
           id: id,
           user_id: userId,
           active: data.active ? 1 : 0,

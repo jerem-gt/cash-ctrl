@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { getTransferIds } from '../../lib/administrationDataConstants.js';
+import { toCents } from '../../lib/money.js';
 import type { ImportExecuteBody, ImportResult } from './import.types.js';
 
 export function createImportRepo(db: Database) {
@@ -39,7 +40,7 @@ export function createImportRepo(db: Database) {
             name: na.name,
             bank_id: na.bank_id,
             account_type_id: na.account_type_id,
-            initial_balance: na.initial_balance,
+            initial_balance: toCents(na.initial_balance),
             opening_date: na.opening_date,
           });
           accountMap.set(na.qif_name, Number(res.lastInsertRowid));
@@ -79,7 +80,7 @@ export function createImportRepo(db: Database) {
             userId,
             accountId,
             type: tx.type,
-            amount: tx.amount,
+            amount: toCents(tx.amount),
             description: tx.description,
             subcategoryId,
             date: tx.date,
@@ -95,12 +96,13 @@ export function createImportRepo(db: Database) {
         for (const tf of body.transfers) {
           const fromId = resolveAccount(tf.from_account_id, tf.from_account_qif_name);
           const toId = resolveAccount(tf.to_account_id, tf.to_account_qif_name);
+          const tfCents = toCents(tf.amount);
           const expenseId = Number(
             insertTxStmt.run({
               userId,
               accountId: fromId,
               type: 'expense',
-              amount: tf.amount,
+              amount: tfCents,
               description: tf.description,
               subcategoryId: transferSubcatId ?? null,
               date: tf.date,
@@ -114,7 +116,7 @@ export function createImportRepo(db: Database) {
               userId,
               accountId: toId,
               type: 'income',
-              amount: tf.amount,
+              amount: tfCents,
               description: tf.description,
               subcategoryId: transferSubcatId ?? null,
               date: tf.date,

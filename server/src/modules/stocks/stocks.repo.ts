@@ -1,6 +1,19 @@
 import type { Database } from 'better-sqlite3';
 
+import { toCents, toEuros } from '../../lib/money';
 import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
+
+function mapPosition(row: StockPosition): StockPosition {
+  return {
+    ...row,
+    avg_price: toEuros(row.avg_price),
+    current_price: row.current_price != null ? toEuros(row.current_price) : undefined,
+  };
+}
+
+function mapOperation(row: StockOperation): StockOperation {
+  return { ...row, price_per_share: toEuros(row.price_per_share), fees: toEuros(row.fees) };
+}
 
 function recalcPosition(db: Database, accountId: number, ticker: string, userId: number): void {
   const ops = db
@@ -35,7 +48,7 @@ function recalcPosition(db: Database, accountId: number, ticker: string, userId:
          quantity   = excluded.quantity,
          avg_price  = excluded.avg_price,
          updated_at = datetime('now')`,
-    ).run(userId, accountId, ticker, qty, avgPrice);
+    ).run(userId, accountId, ticker, qty, Math.round(avgPrice));
   }
 }
 
@@ -75,34 +88,10 @@ export function createStocksRepo(db: Database) {
       return !!row?.is_investment;
     },
 
-    getPositions(accountId: number): StockPosition[] {
-      return db
-        .prepare<[number], StockPosition>(
-          `SELECT sp.id, sp.account_id, sp.ticker, sp.quantity, sp.avg_price,
-                  sprice.price      AS current_price,
-                  COALESCE(sprice.currency, 'EUR') AS currency,
-                  sprice.name       AS name,
-                  sprice.fetched_at AS price_fetched_at,
-                  sp.updated_at, sp.created_at
-           FROM stock_positions sp
-           LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
-           WHERE sp.account_id = ?
-           ORDER BY sp.ticker`,
-        )
-        .all(accountId);
-    },
-
-    getOperations(accountId: number): StockOperation[] {
-      return db
-        .prepare<
-          [number],
-          StockOperation
-        >('SELECT * FROM stock_operations WHERE account_id = ? ORDER BY date DESC, created_at DESC')
-        .all(accountId);
-    },
-
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {
-      const totalAmount = input.quantity * input.price_per_share + input.fees;
+      const priceCents = toCents(input.price_per_share);
+      const feesCents = toCents(input.fees);
+      const totalCents = Math.round(input.quantity * priceCents + feesCents);
       const description = input.description ?? `Achat ${input.quantity} × ${input.ticker}`;
 
       return db.transaction(() => {
@@ -110,7 +99,7 @@ export function createStocksRepo(db: Database) {
           .prepare(
             'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
           )
-          .run(userId, input.account_id, 'expense', totalAmount, description, input.date);
+          .run(userId, input.account_id, 'expense', totalCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
 
         const opResult = db
@@ -124,8 +113,8 @@ export function createStocksRepo(db: Database) {
             input.ticker,
             'buy',
             input.quantity,
-            input.price_per_share,
-            input.fees,
+            priceCents,
+            feesCents,
             input.date,
           );
         const operationId = Number(opResult.lastInsertRowid);
@@ -136,7 +125,7 @@ export function createStocksRepo(db: Database) {
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
           .get(operationId)!;
 
-        return { operation, transaction_id: transactionId };
+        return { operation: mapOperation(operation), transaction_id: transactionId };
       })();
     },
 
@@ -154,8 +143,10 @@ export function createStocksRepo(db: Database) {
         );
       }
 
-      const totalAmount = input.quantity * input.price_per_share - input.fees;
-      if (totalAmount <= 0) {
+      const priceCents = toCents(input.price_per_share);
+      const feesCents = toCents(input.fees);
+      const totalCents = Math.round(input.quantity * priceCents - feesCents);
+      if (totalCents <= 0) {
         throw new Error('Le montant net après frais doit être positif');
       }
 
@@ -166,7 +157,7 @@ export function createStocksRepo(db: Database) {
           .prepare(
             'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
           )
-          .run(userId, input.account_id, 'income', totalAmount, description, input.date);
+          .run(userId, input.account_id, 'income', totalCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
 
         const opResult = db
@@ -180,8 +171,8 @@ export function createStocksRepo(db: Database) {
             input.ticker,
             'sell',
             input.quantity,
-            input.price_per_share,
-            input.fees,
+            priceCents,
+            feesCents,
             input.date,
           );
         const operationId = Number(opResult.lastInsertRowid);
@@ -192,21 +183,50 @@ export function createStocksRepo(db: Database) {
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
           .get(operationId)!;
 
-        return { operation, transaction_id: transactionId };
+        return { operation: mapOperation(operation), transaction_id: transactionId };
       })();
     },
 
-    getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }),
+    getPositions: (accountId: number): StockPosition[] =>
+      db
+        .prepare<[number], StockPosition>(
+          `SELECT sp.id, sp.account_id, sp.ticker, sp.quantity, sp.avg_price,
+                  sprice.price      AS current_price,
+                  COALESCE(sprice.currency, 'EUR') AS currency,
+                  sprice.name       AS name,
+                  sprice.fetched_at AS price_fetched_at,
+                  sp.updated_at, sp.created_at
+           FROM stock_positions sp
+           LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+           WHERE sp.account_id = ?
+           ORDER BY sp.ticker`,
+        )
+        .all(accountId)
+        .map(mapPosition),
+
+    getOperations: (accountId: number): StockOperation[] =>
+      db
+        .prepare<
+          [number],
+          StockOperation
+        >('SELECT * FROM stock_operations WHERE account_id = ? ORDER BY date DESC, created_at DESC')
+        .all(accountId)
+        .map(mapOperation),
+
+    getStockPrice: (ticker: string) => {
+      const row = getStockPriceStmt.get({ ticker });
+      return row ? { ...row, price: toEuros(row.price) } : undefined;
+    },
     getAllTickers: () => getAllTickersStmt.all(),
     upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
-      upsertPriceStmt.run({ ticker, price, currency, name }),
+      upsertPriceStmt.run({ ticker, price: toCents(price), currency, name }),
 
     getOperationById(operationId: number): StockOperation | undefined {
-      return (
+      const row =
         db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId) ?? undefined
-      );
+          .get(operationId) ?? undefined;
+      return row ? mapOperation(row) : undefined;
     },
 
     updateOperation(
@@ -227,12 +247,15 @@ export function createStocksRepo(db: Database) {
           .get(operationId);
         if (!op) throw new Error('Opération introuvable');
 
-        const totalAmount =
+        const priceCents = toCents(input.price_per_share);
+        const feesCents = toCents(input.fees);
+        const totalCents = Math.round(
           op.type === 'buy'
-            ? input.quantity * input.price_per_share + input.fees
-            : input.quantity * input.price_per_share - input.fees;
+            ? input.quantity * priceCents + feesCents
+            : input.quantity * priceCents - feesCents,
+        );
 
-        if (totalAmount <= 0) throw new Error('Le montant net doit être positif');
+        if (totalCents <= 0) throw new Error('Le montant net doit être positif');
 
         const description =
           input.description ??
@@ -242,17 +265,19 @@ export function createStocksRepo(db: Database) {
 
         db.prepare(
           'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ? WHERE id = ?',
-        ).run(input.quantity, input.price_per_share, input.fees, input.date, operationId);
+        ).run(input.quantity, priceCents, feesCents, input.date, operationId);
 
         db.prepare(
           'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
-        ).run(totalAmount, description, input.date, op.transaction_id);
+        ).run(totalCents, description, input.date, op.transaction_id);
 
         recalcPosition(db, input.account_id, op.ticker, userId);
 
-        return db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId)!;
+        return mapOperation(
+          db
+            .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+            .get(operationId)!,
+        );
       })();
     },
   };

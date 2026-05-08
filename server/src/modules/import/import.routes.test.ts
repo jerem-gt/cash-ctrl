@@ -164,7 +164,7 @@ describe('POST /api/import/qif', () => {
     const row = ctx.db.prepare('SELECT * FROM transactions WHERE account_id = ?').get(accountId) as
       | { amount: number; validated: number; notes: string }
       | undefined;
-    expect(row?.amount).toBe(150);
+    expect(row?.amount).toBe(15000); // stored in cents (150 € × 100)
     expect(row?.validated).toBe(1);
     expect(row?.notes).toBe('note test');
   });
@@ -271,9 +271,10 @@ describe('POST /api/import/qif', () => {
       newAccounts: [newAccount],
     });
 
-    const acc = ctx.db
-      .prepare("SELECT initial_balance FROM accounts WHERE name = 'Épargne import'")
-      .get() as { initial_balance: number } | undefined;
+    const accountsRes = await ctx.agent.get('/api/accounts');
+    const acc = (accountsRes.body as { name: string; initial_balance: number }[]).find(
+      (a) => a.name === 'Épargne import',
+    );
     expect(acc?.initial_balance).toBe(1000);
   });
 

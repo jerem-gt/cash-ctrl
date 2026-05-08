@@ -1,6 +1,7 @@
 import type { Database, Statement } from 'better-sqlite3';
 
 import { ReimbursementStatus } from '../../constants';
+import { toCents, toEuros } from '../../lib/money';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
@@ -18,13 +19,22 @@ interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'>
 
 function parseSplits(row: TransactionRow): Transaction {
   const { splits_json, stock_operation_json, ...rest } = row;
-  const result: Transaction = rest;
+  const result: Transaction = {
+    ...rest,
+    amount: toEuros(rest.amount),
+    loan_principal: rest.loan_principal != null ? toEuros(rest.loan_principal) : undefined,
+  };
   if (splits_json) {
     const splits = JSON.parse(splits_json) as TransactionSplit[];
-    if (splits.length > 0) result.splits = splits;
+    if (splits.length > 0) result.splits = splits.map((s) => ({ ...s, amount: toEuros(s.amount) }));
   }
   if (stock_operation_json) {
-    result.stock_operation = JSON.parse(stock_operation_json) as Transaction['stock_operation'];
+    const op = JSON.parse(stock_operation_json) as NonNullable<Transaction['stock_operation']>;
+    result.stock_operation = {
+      ...op,
+      price_per_share: toEuros(op.price_per_share),
+      fees: toEuros(op.fees),
+    };
   }
   return result;
 }
@@ -264,14 +274,17 @@ export function createTransactionsRepo(db: Database) {
             date: firstTx.date,
             id: firstTx.id,
           });
-          balance_before_page = row?.sum ?? 0;
+          balance_before_page = toEuros(row?.sum ?? 0);
         }
       }
 
       return { data, total, page, totalPages, balance_before_page };
     },
 
-    getById: (id: number, userId: number) => getByIdStmt.get({ id, userId }) ?? undefined,
+    getById: (id: number, userId: number) => {
+      const row = getByIdStmt.get({ id, userId });
+      return row ? { ...row, amount: toEuros(row.amount) } : undefined;
+    },
 
     getWithDetails(id: number) {
       const row = getByIdWithDetailsStmt.get({ id });
@@ -284,14 +297,14 @@ export function createTransactionsRepo(db: Database) {
           userId,
           accountId: data.account_id,
           type: data.type,
-          amount: data.amount,
+          amount: toCents(data.amount),
           description: data.description,
           subcategoryId: data.subcategory_id,
           date: data.date,
           paymentMethodId: data.payment_method_id,
           notes: data.notes,
           reimbursementStatus: data.reimbursement_status ?? null,
-          scheduledId: null, // Toujours null pour une transaction manuelle
+          scheduledId: null,
         });
         if (data.splits?.length) {
           const txId = Number(result.lastInsertRowid);
@@ -300,7 +313,7 @@ export function createTransactionsRepo(db: Database) {
               userId,
               txId,
               subcategoryId: s.subcategory_id,
-              amount: s.amount,
+              amount: toCents(s.amount),
             });
           }
         }
@@ -313,13 +326,13 @@ export function createTransactionsRepo(db: Database) {
         userId,
         accountId: data.account_id,
         type: data.type,
-        amount: data.amount,
+        amount: toCents(data.amount),
         description: data.description,
         subcategoryId: data.subcategory_id,
         date: data.date,
         paymentMethodId: data.payment_method_id,
         notes: data.notes,
-        reimbursementStatus: null, // Toujours null pour du récurrent au moment de la génération
+        reimbursementStatus: null,
         scheduledId: data.scheduled_id,
       });
       return Number(result.lastInsertRowid);
@@ -330,7 +343,7 @@ export function createTransactionsRepo(db: Database) {
         const result = updateTxStmt.run({
           accountId: data.account_id,
           type: data.type,
-          amount: data.amount,
+          amount: toCents(data.amount),
           description: data.description,
           subcategoryId: data.subcategory_id,
           date: data.date,
@@ -347,7 +360,7 @@ export function createTransactionsRepo(db: Database) {
               userId,
               txId: id,
               subcategoryId: s.subcategory_id,
-              amount: s.amount,
+              amount: toCents(s.amount),
             });
           }
         }

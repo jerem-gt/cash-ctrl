@@ -18,7 +18,7 @@ export function initSchema(db: Database) {
             user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(TRANSACTION_TYPES)})),
-            amount               REAL    NOT NULL CHECK (amount > 0),
+            amount               INTEGER NOT NULL CHECK (amount > 0),
             description          TEXT    NOT NULL,
             subcategory_id       INTEGER REFERENCES subcategories (id),
             payment_method_id    INTEGER REFERENCES payment_methods (id),
@@ -58,7 +58,7 @@ export function initSchema(db: Database) {
             name            TEXT    NOT NULL,
             bank_id         INTEGER NOT NULL REFERENCES banks (id),
             account_type_id INTEGER NOT NULL REFERENCES account_types (id),
-            initial_balance REAL    NOT NULL DEFAULT 0,
+            initial_balance INTEGER NOT NULL DEFAULT 0,
             opening_date    TEXT,
             closed_at       TEXT,
             created_at      TEXT             DEFAULT (datetime('now'))
@@ -102,7 +102,7 @@ export function initSchema(db: Database) {
             account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             ticker     TEXT    NOT NULL,
             quantity   REAL    NOT NULL DEFAULT 0,
-            avg_price  REAL    NOT NULL DEFAULT 0,
+            avg_price  INTEGER NOT NULL DEFAULT 0,
             updated_at TEXT             DEFAULT (datetime('now')),
             created_at TEXT             DEFAULT (datetime('now')),
             UNIQUE (account_id, ticker)
@@ -117,8 +117,8 @@ export function initSchema(db: Database) {
             ticker           TEXT    NOT NULL,
             type             TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
             quantity         REAL    NOT NULL,
-            price_per_share  REAL    NOT NULL,
-            fees             REAL    NOT NULL DEFAULT 0,
+            price_per_share  INTEGER NOT NULL,
+            fees             INTEGER NOT NULL DEFAULT 0,
             date             TEXT    NOT NULL,
             created_at       TEXT             DEFAULT (datetime('now'))
         );
@@ -129,7 +129,7 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS stock_prices
         (
             ticker     TEXT PRIMARY KEY,
-            price      REAL NOT NULL,
+            price      INTEGER NOT NULL,
             currency   TEXT NOT NULL DEFAULT 'EUR',
             fetched_at TEXT NOT NULL,
             name       TEXT
@@ -160,7 +160,7 @@ export function initSchema(db: Database) {
             user_id               INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id            INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             type                  TEXT    NOT NULL CHECK (type IN (${sqlIn(TRANSACTION_TYPES)})),
-            amount                REAL    NOT NULL CHECK (amount > 0),
+            amount                INTEGER NOT NULL CHECK (amount > 0),
             description           TEXT    NOT NULL,
             subcategory_id        INTEGER REFERENCES subcategories (id),
             date                  TEXT    NOT NULL,
@@ -189,7 +189,7 @@ export function initSchema(db: Database) {
             user_id        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             subcategory_id INTEGER NOT NULL REFERENCES subcategories (id),
-            amount         REAL    NOT NULL CHECK (amount > 0)
+            amount         INTEGER NOT NULL CHECK (amount > 0)
         );
 
         CREATE INDEX IF NOT EXISTS idx_splits_txid ON transaction_splits(transaction_id);
@@ -199,11 +199,11 @@ export function initSchema(db: Database) {
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
             account_id        INTEGER NOT NULL UNIQUE REFERENCES accounts (id) ON DELETE CASCADE,
             user_id           INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-            principal_amount  REAL    NOT NULL CHECK (principal_amount > 0),
+            principal_amount  INTEGER NOT NULL CHECK (principal_amount > 0),
             interest_rate     REAL    NOT NULL CHECK (interest_rate >= 0),
             duration_months   INTEGER NOT NULL CHECK (duration_months > 0),
             start_date        TEXT    NOT NULL,
-            monthly_payment   REAL    NOT NULL,
+            monthly_payment   INTEGER NOT NULL,
             source_account_id INTEGER NOT NULL REFERENCES accounts (id),
             created_at        TEXT             DEFAULT (datetime('now'))
         );
@@ -215,9 +215,9 @@ export function initSchema(db: Database) {
             loan_id             INTEGER NOT NULL REFERENCES loans (id) ON DELETE CASCADE,
             installment_number  INTEGER NOT NULL,
             due_date            TEXT    NOT NULL,
-            total_amount        REAL    NOT NULL CHECK (total_amount > 0),
-            principal_amount    REAL    NOT NULL,
-            interest_amount     REAL    NOT NULL,
+            total_amount        INTEGER NOT NULL CHECK (total_amount > 0),
+            principal_amount    INTEGER NOT NULL,
+            interest_amount     INTEGER NOT NULL,
             transaction_id      INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             UNIQUE (loan_id, installment_number)
         );
