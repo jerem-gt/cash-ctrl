@@ -265,7 +265,7 @@ export function createStocksRepo(db: Database) {
         return mapOperation(
           db
             .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-            .get(operationId)!,
+            .get(operationId),
         );
       })();
     },

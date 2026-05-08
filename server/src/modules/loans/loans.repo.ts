@@ -220,7 +220,7 @@ export function createLoansRepo(db: Database) {
           });
         }
 
-        return mapLoan(getLoanById.get({ id: loanId })!);
+        return mapLoan(getLoanById.get({ id: loanId }));
       })();
     },
 
@@ -258,7 +258,7 @@ export function createLoansRepo(db: Database) {
           });
         }
 
-        return mapLoan(getLoanById.get({ id: loanId })!);
+        return mapLoan(getLoanById.get({ id: loanId }));
       })();
     },
 
@@ -303,7 +303,7 @@ export function createLoansRepo(db: Database) {
           }
         }
 
-        return mapInstallment(getInstallmentById.get({ id: installmentId })!);
+        return mapInstallment(getInstallmentById.get({ id: installmentId }));
       })();
     },
 
