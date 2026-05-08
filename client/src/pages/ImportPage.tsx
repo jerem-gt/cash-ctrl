@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { importApi } from '@/api/client';
@@ -351,6 +351,7 @@ function CategoryMappingRow({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ImportPage() {
+  const queryClient = useQueryClient();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: accountTypes = [] } = useAccountTypes();
@@ -451,7 +452,12 @@ export default function ImportPage() {
 
   const importableCount = previewItems.filter((it) => it.kind !== 'skip').length;
   const skippedCount = previewItems.filter((it) => it.kind === 'skip').length;
-  const transferCount = previewItems.filter((it) => it.kind === 'transfer').length;
+  const selectedTxCount = previewItems.filter(
+    (it, i) => it.kind === 'transaction' && selected.has(i),
+  ).length;
+  const selectedTfCount = previewItems.filter(
+    (it, i) => it.kind === 'transfer' && selected.has(i),
+  ).length;
 
   const goToPreview = () => {
     const initialSelected = new Set<number>();
@@ -466,6 +472,7 @@ export default function ImportPage() {
     const body = buildExecuteBody(previewItems, selected, accountChoices, categoryChoices);
     try {
       await importMutation.mutateAsync(body);
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setStep('done');
     } catch {
       /* error shown inline */
@@ -672,8 +679,8 @@ export default function ImportPage() {
         <div className="flex flex-col gap-6">
           <div className="flex gap-4">
             {[
-              { value: selected.size, label: 'à importer' },
-              { value: transferCount, label: 'virements' },
+              { value: selectedTxCount, label: 'transactions' },
+              { value: selectedTfCount, label: 'virements' },
               { value: skippedCount, label: 'ignorées' },
             ].map(({ value, label }) => (
               <div
@@ -799,9 +806,14 @@ export default function ImportPage() {
           </Card>
 
           {importMutation.isError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              Erreur : {importMutation.error.message}
-            </p>
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="font-medium mb-1">Erreur lors de l'importation :</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {importMutation.error.message.split('\n').map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <div className="flex justify-between">
