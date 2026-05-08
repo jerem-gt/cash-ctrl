@@ -81,7 +81,17 @@ export function createImportRouter(db: Database): Router {
   router.post('/qif', (req, res) => {
     const parsed = executeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      const errors = parsed.error.issues.map((issue) => {
+        if (issue.path.length === 0) return issue.message;
+        const [type, index, ...rest] = issue.path;
+        if ((type === 'transactions' || type === 'transfers') && typeof index === 'number') {
+          const label = type === 'transactions' ? 'Transaction' : 'Virement';
+          const field = rest.length > 0 ? ` (${rest.join('.')})` : '';
+          return `${label} ${index + 1}${field} : ${issue.message}`;
+        }
+        return `${issue.path.join('.')} : ${issue.message}`;
+      });
+      res.status(400).json({ error: errors.join('\n') });
       return;
     }
     const result = repo.execute(sessionUserId(req), parsed.data);
