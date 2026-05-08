@@ -31,12 +31,10 @@ describe('AccountModal — mode création', () => {
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('nom'));
   });
 
-  it("toast si soumis sans date d'ouverture", async () => {
+  it('toast si soumis sans banque', async () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountModal mode="create" {...baseProps} />);
     await user.type(screen.getByPlaceholderText(/compte courant/i), 'Mon compte');
-    // Choisir une banque pour passer la validation banque
-    // (le BankSelect affiche "— Choisir —")
     await user.click(screen.getByRole('button', { name: 'Créer' }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('banque'));
   });
@@ -54,10 +52,8 @@ describe('AccountModal — mode création', () => {
     const onClose = vi.fn();
     renderWithProviders(<AccountModal mode="create" {...baseProps} onClose={onClose} />);
 
-    // 1. Remplissage complet du formulaire
+    // 1. Remplissage du formulaire
     await user.type(screen.getByPlaceholderText(/compte courant/i), 'Mon nouveau compte');
-    // On remplit la date pour éviter le toast d'erreur de validation
-    await user.type(screen.getByLabelText(/opening-date/i), '2026-04-25');
     // On choisit la banque
     await user.click(screen.getByLabelText(/sélectionner une banque/i));
     await user.click(screen.getByRole('button', { name: BANKS[0].name }));

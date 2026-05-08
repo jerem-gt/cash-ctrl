@@ -17,7 +17,7 @@ export type AccountChoice =
       bank_id: number | null;
       account_type_id: number | null;
       initial_balance: number;
-      opening_date: string;
+      opening_date: string | null;
     }
   | { action: 'skip' };
 
@@ -189,7 +189,13 @@ export function resolveTransferItem(
   let description: string;
   let notes: string | null;
 
-  if (peerIdx !== -1) {
+  if (peerIdx === -1) {
+    if (!tx.transferTarget) return skip('Virement sans contrepartie');
+    fromQifName = tx.amount < 0 ? tx.qifAccountName : tx.transferTarget;
+    toQifName = tx.amount < 0 ? tx.transferTarget : tx.qifAccountName;
+    description = tx.description || 'Virement';
+    notes = tx.memo;
+  } else {
     processed.add(peerIdx);
     const peer = parsed.transactions[peerIdx];
     const fromTx = tx.amount < 0 ? tx : peer;
@@ -198,12 +204,6 @@ export function resolveTransferItem(
     toQifName = toTx.qifAccountName;
     description = fromTx.description || toTx.description || 'Virement';
     notes = tx.memo ?? peer.memo ?? null;
-  } else {
-    if (!tx.transferTarget) return skip('Virement sans contrepartie');
-    fromQifName = tx.amount < 0 ? tx.qifAccountName : tx.transferTarget;
-    toQifName = tx.amount < 0 ? tx.transferTarget : tx.qifAccountName;
-    description = tx.description || 'Virement';
-    notes = tx.memo;
   }
 
   const fromInfo = resolveAccountInfo(fromQifName, accountChoices.get(fromQifName), accounts);
@@ -223,7 +223,7 @@ export function resolveTransferItem(
     toAccountQifName: toInfo.newAccountQifName,
     toAccountName: toInfo.accountName,
     notes,
-    validated: tx.cleared,
+    validated: true,
   };
 }
 
@@ -294,7 +294,7 @@ export function resolvePreview(
       newSubcategoryKey,
       categoryLabel,
       notes: tx.memo,
-      validated: tx.cleared,
+      validated: true,
     });
   }
 

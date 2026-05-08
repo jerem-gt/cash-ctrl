@@ -65,11 +65,6 @@ export function AccountModal(props: Readonly<Props>) {
       showToast('Choisissez une banque.');
       return;
     }
-    if (!form.opening_date) {
-      showToast("Renseignez la date d'ouverture.");
-      return;
-    }
-
     if (isEdit) {
       (props as EditProps).onSave({ ...form, account_type_id: effectiveAccountTypeId });
       return;
@@ -81,7 +76,7 @@ export function AccountModal(props: Readonly<Props>) {
         bank_id: Number.parseInt(form.bank_id) || null,
         account_type_id: Number.parseInt(effectiveAccountTypeId) || null,
         initial_balance: Number.parseFloat(form.initial_balance) || 0,
-        opening_date: form.opening_date,
+        opening_date: form.opening_date || null,
       },
       {
         onSuccess: () => {

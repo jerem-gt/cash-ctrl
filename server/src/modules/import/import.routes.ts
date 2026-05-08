@@ -11,7 +11,11 @@ const newAccountSchema = z.object({
   bank_id: z.number().int().positive().nullable(),
   account_type_id: z.number().int().positive().nullable(),
   initial_balance: z.number().default(0),
-  opening_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  opening_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
 });
 
 const newSubcategorySchema = z
