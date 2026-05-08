@@ -222,7 +222,7 @@ describe("ImportPage — exécution de l'import", () => {
     renderImportPage();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
-    await screen.findByText(/erreur lors de l'importation/i);
+    expect(await screen.findByText(/erreur lors de l'importation/i)).toBeInTheDocument();
   });
 
   it('le bouton "Nouvelle importation" réinitialise la page', async () => {
