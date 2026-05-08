@@ -204,7 +204,11 @@ export function Sidebar({ username }: Readonly<Props>) {
       <div className="relative mt-auto border-t border-white/[0.07]">
         {menuOpen && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setMenuOpen(false)}
+              aria-hidden="true"
+            />
             <div className="absolute bottom-full left-0 right-0 z-20 bg-sidebar-bg border-t border-white/[0.07] py-1">
               {NAV_BOTTOM.map(({ to, label, icon, end }) => (
                 <NavLink

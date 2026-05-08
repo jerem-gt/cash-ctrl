@@ -809,8 +809,8 @@ export default function ImportPage() {
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               <p className="font-medium mb-1">Erreur lors de l'importation :</p>
               <ul className="list-disc list-inside space-y-0.5">
-                {importMutation.error.message.split('\n').map((line, i) => (
-                  <li key={i}>{line}</li>
+                {importMutation.error.message.split('\n').map((line) => (
+                  <li key={line}>{line}</li>
                 ))}
               </ul>
             </div>
