@@ -4,15 +4,11 @@ import { toCents, toEuros } from '../../lib/money';
 import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
 
 function mapPosition(row: StockPosition): StockPosition {
-  return {
-    ...row,
-    avg_price: toEuros(row.avg_price),
-    current_price: row.current_price != null ? toEuros(row.current_price) : undefined,
-  };
+  return { ...row };
 }
 
 function mapOperation(row: StockOperation): StockOperation {
-  return { ...row, price_per_share: toEuros(row.price_per_share), fees: toEuros(row.fees) };
+  return { ...row, fees: toEuros(row.fees) };
 }
 
 function recalcPosition(db: Database, accountId: number, ticker: string, userId: number): void {
@@ -48,7 +44,7 @@ function recalcPosition(db: Database, accountId: number, ticker: string, userId:
          quantity   = excluded.quantity,
          avg_price  = excluded.avg_price,
          updated_at = datetime('now')`,
-    ).run(userId, accountId, ticker, qty, Math.round(avgPrice));
+    ).run(userId, accountId, ticker, qty, avgPrice);
   }
 }
 
@@ -89,9 +85,8 @@ export function createStocksRepo(db: Database) {
     },
 
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {
-      const priceCents = toCents(input.price_per_share);
       const feesCents = toCents(input.fees);
-      const totalCents = Math.round(input.quantity * priceCents + feesCents);
+      const totalCents = Math.round(input.quantity * input.price_per_share * 100) + feesCents;
       const description = input.description ?? `Achat ${input.quantity} × ${input.ticker}`;
 
       return db.transaction(() => {
@@ -113,7 +108,7 @@ export function createStocksRepo(db: Database) {
             input.ticker,
             'buy',
             input.quantity,
-            priceCents,
+            input.price_per_share,
             feesCents,
             input.date,
           );
@@ -143,9 +138,8 @@ export function createStocksRepo(db: Database) {
         );
       }
 
-      const priceCents = toCents(input.price_per_share);
       const feesCents = toCents(input.fees);
-      const totalCents = Math.round(input.quantity * priceCents - feesCents);
+      const totalCents = Math.round(input.quantity * input.price_per_share * 100) - feesCents;
       if (totalCents <= 0) {
         throw new Error('Le montant net après frais doit être positif');
       }
@@ -171,7 +165,7 @@ export function createStocksRepo(db: Database) {
             input.ticker,
             'sell',
             input.quantity,
-            priceCents,
+            input.price_per_share,
             feesCents,
             input.date,
           );
@@ -213,13 +207,10 @@ export function createStocksRepo(db: Database) {
         .all(accountId)
         .map(mapOperation),
 
-    getStockPrice: (ticker: string) => {
-      const row = getStockPriceStmt.get({ ticker });
-      return row ? { ...row, price: toEuros(row.price) } : undefined;
-    },
+    getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }) ?? undefined,
     getAllTickers: () => getAllTickersStmt.all(),
     upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
-      upsertPriceStmt.run({ ticker, price: toCents(price), currency, name }),
+      upsertPriceStmt.run({ ticker, price, currency, name }),
 
     getOperationById(operationId: number): StockOperation | undefined {
       const row =
@@ -247,13 +238,11 @@ export function createStocksRepo(db: Database) {
           .get(operationId);
         if (!op) throw new Error('Opération introuvable');
 
-        const priceCents = toCents(input.price_per_share);
         const feesCents = toCents(input.fees);
-        const totalCents = Math.round(
+        const totalCents =
           op.type === 'buy'
-            ? input.quantity * priceCents + feesCents
-            : input.quantity * priceCents - feesCents,
-        );
+            ? Math.round(input.quantity * input.price_per_share * 100) + feesCents
+            : Math.round(input.quantity * input.price_per_share * 100) - feesCents;
 
         if (totalCents <= 0) throw new Error('Le montant net doit être positif');
 
@@ -265,7 +254,7 @@ export function createStocksRepo(db: Database) {
 
         db.prepare(
           'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ? WHERE id = ?',
-        ).run(input.quantity, priceCents, feesCents, input.date, operationId);
+        ).run(input.quantity, input.price_per_share, feesCents, input.date, operationId);
 
         db.prepare(
           'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',

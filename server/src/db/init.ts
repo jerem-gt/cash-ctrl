@@ -10,7 +10,7 @@ export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data
 
 // Each entry converts the DB from version N to N+1.
 const MIGRATIONS: Array<(db: DatabaseType) => void> = [
-  // v0 → v1: convert all monetary REAL columns to INTEGER cents
+  // v0 → v1: convert monetary REAL columns to INTEGER cents
   (db) => {
     db.exec(`
       UPDATE accounts            SET initial_balance  = ROUND(initial_balance  * 100);
@@ -29,6 +29,15 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
         price_per_share  = ROUND(price_per_share  * 100),
         fees             = ROUND(fees             * 100);
       UPDATE stock_prices     SET price           = ROUND(price           * 100);
+    `);
+  },
+  // v1 → v2: revert stock price columns to REAL — cotations avec 4+ décimales (ex. CW8 649.6528)
+  // fees reste en centimes (montant fixe)
+  (db) => {
+    db.exec(`
+      UPDATE stock_positions  SET avg_price      = avg_price      / 100.0;
+      UPDATE stock_operations SET price_per_share = price_per_share / 100.0;
+      UPDATE stock_prices     SET price           = price           / 100.0;
     `);
   },
 ];
