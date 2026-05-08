@@ -14,6 +14,11 @@ const DEFAULT_BANKS: { name: string; domain: string }[] = [
   { name: 'BforBank', domain: 'bforbank.com' },
   { name: 'Monabanq', domain: 'monabanq.com' },
   { name: 'ING', domain: 'ing.com' },
+  { name: 'Bourse Direct', domain: 'https://www.boursedirect.fr' },
+  { name: 'Soon', domain: '' },
+  { name: 'Orange Bank', domain: 'https://www.orangeobk.fr' },
+  { name: 'Crédit du Nord', domain: 'particuliers.sg.fr/sg-credit-du-nord' },
+  { name: 'Natixis', domain: 'interepargne.natixis.com' },
 ];
 
 export function seedBanks(db: Database) {

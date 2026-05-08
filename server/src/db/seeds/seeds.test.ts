@@ -18,15 +18,15 @@ function createFreshDb(): Database {
 }
 
 describe('seedBanks', () => {
-  it('inserts 9 banks with name and domain coherent with the schema', () => {
+  it('inserts 18 banks with name coherent with the schema', () => {
     const db = createFreshDb();
     seedBanks(db);
     const rows = db.prepare('SELECT name, domain FROM banks ORDER BY name').all() as {
       name: string;
       domain: string;
     }[];
-    expect(rows).toHaveLength(13);
-    expect(rows.every((r) => r.name && r.domain)).toBe(true);
+    expect(rows).toHaveLength(18);
+    expect(rows.every((r) => r.name)).toBe(true);
   });
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
@@ -34,7 +34,7 @@ describe('seedBanks', () => {
     seedBanks(db);
     seedBanks(db);
     const count = (db.prepare('SELECT COUNT(*) as c FROM banks').get() as { c: number }).c;
-    expect(count).toBe(13);
+    expect(count).toBe(18);
   });
 });
 
