@@ -205,8 +205,9 @@ export function initSchema(db: Database) {
             start_date        TEXT    NOT NULL,
             monthly_payment    INTEGER NOT NULL,
             source_account_id  INTEGER NOT NULL REFERENCES accounts (id),
-            deposit_account_id INTEGER NOT NULL REFERENCES accounts (id),
-            created_at         TEXT             DEFAULT (datetime('now'))
+            deposit_account_id     INTEGER NOT NULL REFERENCES accounts (id),
+            deposit_transaction_id INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            created_at             TEXT             DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS loan_installments

@@ -98,7 +98,7 @@ describe('/api/loans', () => {
       expect(Math.abs(totalPrincipal - 12000)).toBeLessThan(0.02);
     });
 
-    it('cree une transaction income sur le compte credite a hauteur du capital', async () => {
+    it('cree un transfert de versement entre le compte-pret et le compte credite', async () => {
       const res = await ctx.agent.post('/api/loans').send({
         name: 'Pret avec versement',
         bank_id: SEED.BANK_ID,
@@ -112,12 +112,22 @@ describe('/api/loans', () => {
       });
       expect(res.status).toBe(201);
 
-      const txRes = await ctx.agent.get(`/api/transactions?account_id=${depositAccountId}`);
-      const tx = (txRes.body.data as { type: string; amount: number; date: string }[]).find(
+      // Income sur le compte crédité
+      const txDep = await ctx.agent.get(`/api/transactions?account_id=${depositAccountId}`);
+      const income = (txDep.body.data as { type: string; amount: number; date: string; transfer_peer_id: number | null }[]).find(
         (t) => t.type === 'income' && t.amount === 5000,
       );
-      expect(tx).toBeDefined();
-      expect(tx?.date).toBe('2024-03-01');
+      expect(income).toBeDefined();
+      expect(income?.date).toBe('2024-03-01');
+      expect(income?.transfer_peer_id).not.toBeNull();
+
+      // Expense sur le compte-prêt
+      const loanAccountId = res.body.account_id;
+      const txLoan = await ctx.agent.get(`/api/transactions?account_id=${loanAccountId}`);
+      const expense = (txLoan.body.data as { type: string; amount: number }[]).find(
+        (t) => t.type === 'expense' && t.amount === 5000,
+      );
+      expect(expense).toBeDefined();
     });
 
     it('retourne 400 pour un payload invalide', async () => {

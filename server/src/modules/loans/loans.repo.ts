@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 
 import { getAccountTypeIds } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
+import { createTransfersRepo } from '../transfers/transfers.repo.js';
 import type {
   CreateLoanInput,
   Loan,
@@ -71,8 +72,13 @@ function buildSchedule(
 }
 
 export function createLoansRepo(db: Database) {
+  const transfersRepo = createTransfersRepo(db);
+
   const getByAccountIdStmt = db.prepare<{ accountId: number; userId: number }, Loan>(
     'SELECT * FROM loans WHERE account_id = :accountId AND user_id = :userId',
+  );
+  const getLoanByAccountIdStmt = db.prepare<{ accountId: number }, Loan>(
+    'SELECT * FROM loans WHERE account_id = :accountId',
   );
   const getInstallmentsByLoanId = db.prepare<{ userId: number; loanId: number }, LoanInstallment>(
     `SELECT li.*,
@@ -120,12 +126,8 @@ export function createLoansRepo(db: Database) {
     VALUES (:userId, :name, :bankId, :accountTypeId, :initialBalance, :openingDate)`,
   );
   const insertLoanStmt = db.prepare(
-    `INSERT INTO loans (account_id, user_id, principal_amount, interest_rate, duration_months, start_date, monthly_payment, source_account_id, deposit_account_id)
-    VALUES (:account_id, :user_id, :principal_amount, :interest_rate, :duration_months, :start_date, :monthly_payment, :source_account_id, :deposit_account_id)`,
-  );
-  const insertDepositTransactionStmt = db.prepare(
-    `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-     VALUES (:userId, :accountId, 'income', :amount, :description, :date, 1)`,
+    `INSERT INTO loans (account_id, user_id, principal_amount, interest_rate, duration_months, start_date, monthly_payment, source_account_id, deposit_account_id, deposit_transaction_id)
+    VALUES (:account_id, :user_id, :principal_amount, :interest_rate, :duration_months, :start_date, :monthly_payment, :source_account_id, :deposit_account_id, :deposit_transaction_id)`,
   );
   const insertInstallmentStmt = db.prepare(
     `INSERT INTO loan_installments (user_id, loan_id, installment_number, due_date, total_amount, principal_amount, interest_amount)
@@ -169,6 +171,15 @@ export function createLoansRepo(db: Database) {
     .prepare('SELECT transfer_peer_id AS id FROM transactions WHERE id = :id')
     .pluck();
 
+  // Pour cleanupTransactions()
+  const getInstallmentPeerTxIdsStmt = db.prepare<{ loanId: number }, { peer_id: number }>(
+    `SELECT t.transfer_peer_id AS peer_id
+     FROM loan_installments li
+     JOIN transactions t ON li.transaction_id = t.id
+     WHERE li.loan_id = :loanId AND t.transfer_peer_id IS NOT NULL`,
+  );
+  const deleteTxStmt = db.prepare('DELETE FROM transactions WHERE id = :id');
+
   return {
     getAllActiveByUserId: (userId: number) => getAllActiveByUserIdStmt.all({ userId }),
     getPendingInstallments: (loanId: number, dueDate: string) =>
@@ -194,15 +205,26 @@ export function createLoansRepo(db: Database) {
       );
 
       return db.transaction(() => {
+        // Compte-prêt à 0 — le transfert de versement crée l'expense qui l'amène à -principal
         const accountResult = insertAccountStmt.run({
           userId,
           name: data.name,
           bankId: data.bank_id,
           accountTypeId,
-          initialBalance: toCents(-data.principal_amount),
+          initialBalance: 0,
           openingDate: data.opening_date,
         });
         const accountId = Number(accountResult.lastInsertRowid);
+
+        // Transfert de versement : expense sur compte-prêt, income sur deposit_account
+        const disbursement = transfersRepo.create(userId, {
+          from_account_id: accountId,
+          to_account_id: data.deposit_account_id,
+          amount: data.principal_amount,
+          description: data.name,
+          date: data.opening_date ?? data.start_date,
+          validated: true,
+        });
 
         const loanResult = insertLoanStmt.run({
           ...data,
@@ -210,16 +232,9 @@ export function createLoansRepo(db: Database) {
           user_id: userId,
           principal_amount: toCents(data.principal_amount),
           monthly_payment: toCents(monthlyPayment),
+          deposit_transaction_id: disbursement.income.id,
         });
         const loanId = Number(loanResult.lastInsertRowid);
-
-        insertDepositTransactionStmt.run({
-          userId,
-          accountId: data.deposit_account_id,
-          amount: toCents(data.principal_amount),
-          description: data.name,
-          date: data.opening_date ?? data.start_date,
-        });
 
         for (const row of schedule) {
           insertInstallmentStmt.run({
@@ -327,5 +342,26 @@ export function createLoansRepo(db: Database) {
 
     updateInstallmentTxId: (id: number, txId: number) =>
       updateInstallmentTxIdStmt.run({ id, txId }),
+
+    cleanupTransactions(accountId: number): void {
+      const loan = getLoanByAccountIdStmt.get({ accountId });
+      if (!loan) return;
+
+      const peerTxIds = getInstallmentPeerTxIdsStmt.all({ loanId: loan.id });
+
+      db.transaction(() => {
+        // Supprimer les expenses de remboursement sur le compte débiteur
+        for (const { peer_id } of peerTxIds) {
+          deleteTxStmt.run({ id: peer_id });
+        }
+
+        // Supprimer le transfert de versement (income sur deposit_account + son peer expense)
+        if (loan.deposit_transaction_id) {
+          const peerId = getTransferPeerIdStmt.get({ id: loan.deposit_transaction_id });
+          deleteTxStmt.run({ id: loan.deposit_transaction_id });
+          if (peerId) deleteTxStmt.run({ id: peerId as number });
+        }
+      })();
+    },
   };
 }

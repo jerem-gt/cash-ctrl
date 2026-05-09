@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import { createLoansRepo } from '../loans/loans.repo.js';
 import { createTransfersRepo } from '../transfers/transfers.repo';
 import { createAccountsRepo } from './accounts.repo';
 
@@ -20,6 +21,7 @@ const accountSchema = z.object({
 
 export function createAccountsRouter(db: Database): Router {
   const accountsRepo = createAccountsRepo(db);
+  const loansRepo = createLoansRepo(db);
   const transfersRepo = createTransfersRepo(db);
   const router = Router();
   router.use(requireAuth);
@@ -58,9 +60,13 @@ export function createAccountsRouter(db: Database): Router {
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
     const userId = sessionUserId(req);
-    if (!accountsRepo.getById(id, userId)) {
+    const account = accountsRepo.getById(id, userId);
+    if (!account) {
       res.status(404).json({ error: 'Account not found' });
       return;
+    }
+    if (account.is_loan) {
+      loansRepo.cleanupTransactions(id);
     }
     accountsRepo.delete(userId, id);
     res.json({ ok: true });
