@@ -24,8 +24,7 @@ type Props = BuyProps | SellProps;
 
 export function StockOperationModal(props: Readonly<Props>) {
   const { mode, accountId, onClose } = props;
-  const position =
-    mode === 'sell' ? (props as SellProps).position : (props as BuyProps).position;
+  const position = mode === 'sell' ? (props as SellProps).position : (props as BuyProps).position;
 
   const buy = useBuyStock(accountId);
   const sell = useSellStock(accountId);

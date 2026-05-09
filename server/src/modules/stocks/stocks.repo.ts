@@ -1,6 +1,9 @@
 import type { Database } from 'better-sqlite3';
 
-import { getBankFeesSubcategoryId, getPrelevementPaymentMethodId } from '../../lib/administrationDataConstants';
+import {
+  getBankFeesSubcategoryId,
+  getPrelevementPaymentMethodId,
+} from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
 import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
 
@@ -106,7 +109,16 @@ export function createStocksRepo(db: Database) {
             .prepare(
               'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
             )
-            .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+            .run(
+              userId,
+              input.account_id,
+              'expense',
+              feesCents,
+              `Frais — ${description}`,
+              subcategoryId,
+              input.date,
+              paymentMethodId,
+            );
           feesTransactionId = Number(feesTxResult.lastInsertRowid);
         }
 
@@ -176,7 +188,16 @@ export function createStocksRepo(db: Database) {
             .prepare(
               'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
             )
-            .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+            .run(
+              userId,
+              input.account_id,
+              'expense',
+              feesCents,
+              `Frais — ${description}`,
+              subcategoryId,
+              input.date,
+              paymentMethodId,
+            );
           feesTransactionId = Number(feesTxResult.lastInsertRowid);
         }
 
@@ -295,7 +316,16 @@ export function createStocksRepo(db: Database) {
               .prepare(
                 'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
               )
-              .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+              .run(
+                userId,
+                input.account_id,
+                'expense',
+                feesCents,
+                `Frais — ${description}`,
+                subcategoryId,
+                input.date,
+                paymentMethodId,
+              );
             newFeesTransactionId = Number(feesTxResult.lastInsertRowid);
           }
         } else if (op.fees_transaction_id) {
@@ -305,7 +335,14 @@ export function createStocksRepo(db: Database) {
 
         db.prepare(
           'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ?, fees_transaction_id = ? WHERE id = ?',
-        ).run(input.quantity, input.price_per_share, feesCents, input.date, newFeesTransactionId, operationId);
+        ).run(
+          input.quantity,
+          input.price_per_share,
+          feesCents,
+          input.date,
+          newFeesTransactionId,
+          operationId,
+        );
 
         recalcPosition(db, input.account_id, op.ticker, userId);
 

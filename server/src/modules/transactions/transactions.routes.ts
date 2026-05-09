@@ -154,7 +154,8 @@ export function createTransactionsRouter(db: Database): Router {
       .get(id);
     if (isStockFeesTx) {
       res.status(400).json({
-        error: "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
+        error:
+          "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
       });
       return;
     }
