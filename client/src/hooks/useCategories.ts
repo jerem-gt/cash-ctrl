@@ -1,9 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { categoriesApi } from '@/api/client';
+import type { Category } from '@/types';
+
+const byName = (a: { name: string }, b: { name: string }) =>
+  a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+const sortCategories = (cats: Category[]) =>
+  [...cats].sort(byName).map((c) => ({ ...c, subcategories: [...c.subcategories].sort(byName) }));
 
 export function useCategories() {
-  return useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: categoriesApi.list,
+    select: sortCategories,
+  });
 }
 
 export function useCreateCategory() {

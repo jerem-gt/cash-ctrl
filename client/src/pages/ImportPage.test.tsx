@@ -52,7 +52,7 @@ function renderImportPage() {
 
 async function uploadQif(user: ReturnType<typeof userEvent.setup>) {
   const file = new File(['!Type:Bank'], 'test.qif', { type: 'text/plain' });
-  await user.upload(screen.getByLabelText(/déposez votre fichier qif ici/i), file);
+  await user.upload(screen.getByLabelText(/sélectionner un fichier qif ou xhb/i), file);
 }
 
 async function goToCategories(user: ReturnType<typeof userEvent.setup>) {
@@ -77,15 +77,15 @@ describe('ImportPage — étape Upload', () => {
 
   it('affiche la zone de dépôt par défaut', () => {
     renderImportPage();
-    expect(screen.getByText(/déposez votre fichier qif ici/i)).toBeInTheDocument();
+    expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
   });
 
-  it('refuse un fichier non .qif', () => {
+  it('refuse un fichier non .qif/.xhb', () => {
     renderImportPage();
     const badFile = new File(['data'], 'export.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(/déposez votre fichier qif ici/i) as HTMLInputElement;
+    const input = screen.getByLabelText(/sélectionner un fichier qif ou xhb/i) as HTMLInputElement;
     fireEvent.change(input, { target: { files: [badFile] } });
-    expect(screen.getByText(/le fichier doit avoir l'extension .qif/i)).toBeInTheDocument();
+    expect(screen.getByText(/le fichier doit avoir l'extension .qif ou .xhb/i)).toBeInTheDocument();
   });
 
   it("passe à l'étape Comptes après un upload .qif", async () => {
@@ -236,6 +236,6 @@ describe("ImportPage — exécution de l'import", () => {
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
     await user.click(await screen.findByRole('button', { name: /nouvelle importation/i }));
-    expect(screen.getByText(/déposez votre fichier qif ici/i)).toBeInTheDocument();
+    expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
   });
 });

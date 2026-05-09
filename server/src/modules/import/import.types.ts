@@ -26,6 +26,7 @@ export interface ImportTransactionInput {
   date: string;
   notes: string | null;
   validated: boolean;
+  payment_method_id: number | null;
 }
 
 export interface ImportTransferInput {

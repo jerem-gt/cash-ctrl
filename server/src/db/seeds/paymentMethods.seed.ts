@@ -1,11 +1,12 @@
 import type { Database } from 'better-sqlite3';
 
 export const DEFAULT_PAYMENT_METHODS = [
-  { name: 'Chèque', icon: '📝' },
-  { name: 'Virement', icon: '↔️' },
   { name: 'Carte Bancaire', icon: '💳' },
+  { name: 'Chèque', icon: '📝' },
   { name: 'Prélèvement', icon: '↕️' },
+  { name: 'Retrait', icon: '💵' },
   { name: 'Transfert', icon: '🔄' },
+  { name: 'Virement', icon: '↔️' },
 ];
 
 export function seedPaymentMethods(db: Database, userId: number) {

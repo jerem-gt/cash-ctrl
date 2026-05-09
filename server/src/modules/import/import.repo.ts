@@ -84,7 +84,7 @@ export function createImportRepo(db: Database) {
             description: tx.description,
             subcategoryId,
             date: tx.date,
-            paymentMethodId: paymentMethodId ?? null,
+            paymentMethodId: tx.payment_method_id ?? null,
             notes: tx.notes,
             validated: tx.validated ? 1 : 0,
           });
