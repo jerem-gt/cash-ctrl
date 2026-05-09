@@ -10,6 +10,13 @@ export function getTransferIds(db: Database, userId: number) {
   return { subcategoryId: subcat?.id ?? undefined, paymentMethodId: pm?.id ?? undefined };
 }
 
+export function getInterestSubcategoryId(db: Database, userId: number): number | undefined {
+  const subcat = db
+    .prepare(`SELECT id FROM subcategories WHERE name = 'Frais bancaires' AND user_id = ?`)
+    .get(userId) as { id: number } | undefined;
+  return subcat?.id;
+}
+
 export function getAccountTypeIds(db: Database, userId: number) {
   const atPret = db
     .prepare(`SELECT id FROM account_types WHERE name = 'Prêt' AND user_id = ?`)

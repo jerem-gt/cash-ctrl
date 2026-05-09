@@ -114,9 +114,14 @@ describe('/api/loans', () => {
 
       // Income sur le compte crédité
       const txDep = await ctx.agent.get(`/api/transactions?account_id=${depositAccountId}`);
-      const income = (txDep.body.data as { type: string; amount: number; date: string; transfer_peer_id: number | null }[]).find(
-        (t) => t.type === 'income' && t.amount === 5000,
-      );
+      const income = (
+        txDep.body.data as {
+          type: string;
+          amount: number;
+          date: string;
+          transfer_peer_id: number | null;
+        }[]
+      ).find((t) => t.type === 'income' && t.amount === 5000);
       expect(income).toBeDefined();
       expect(income?.date).toBe('2024-03-01');
       expect(income?.transfer_peer_id).not.toBeNull();
