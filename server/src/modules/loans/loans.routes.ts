@@ -19,6 +19,7 @@ const createLoanSchema = z.object({
   duration_months: z.number().int().min(1).max(600),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD requis'),
   source_account_id: z.number().int().positive(),
+  deposit_account_id: z.number().int().positive(),
 });
 
 const updateLoanSchema = z.object({

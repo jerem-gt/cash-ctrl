@@ -20,6 +20,7 @@ type FormState = {
   interest_rate: string;
   duration_months: string;
   source_account_id: string;
+  deposit_account_id: string;
 };
 
 function addMonths(dateStr: string, n: number): string {
@@ -45,6 +46,7 @@ const EMPTY_FORM = (today: string): FormState => ({
   interest_rate: '',
   duration_months: '',
   source_account_id: '',
+  deposit_account_id: '',
 });
 
 export function LoanFormModal(props: Readonly<Props>) {
@@ -69,6 +71,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         }),
         duration_months: String(l.duration_months),
         source_account_id: String(l.source_account_id),
+        deposit_account_id: String(l.deposit_account_id),
       };
     }
     return EMPTY_FORM(today);
@@ -126,6 +129,10 @@ export function LoanFormModal(props: Readonly<Props>) {
       showToast('Choisissez le compte à débiter.');
       return false;
     }
+    if (!isEdit && !form.deposit_account_id) {
+      showToast('Choisissez le compte à créditer.');
+      return false;
+    }
     return true;
   };
 
@@ -148,6 +155,7 @@ export function LoanFormModal(props: Readonly<Props>) {
           duration_months: months,
           start_date: form.start_date,
           source_account_id: Number.parseInt(form.source_account_id),
+          deposit_account_id: Number.parseInt(form.deposit_account_id),
         },
         {
           onSuccess: () => {
@@ -263,8 +271,29 @@ export function LoanFormModal(props: Readonly<Props>) {
               </span>
             </div>
           )}
+          {!isEdit && (
+            <FormGroup label="Compte crédité à l'ouverture">
+              <Select
+                aria-label="Choisir le compte crédité à l'ouverture"
+                value={form.deposit_account_id}
+                onChange={set('deposit_account_id')}
+              >
+                <option value="">— Choisir un compte —</option>
+                {nonLoanAccounts.map((a) => (
+                  <option key={a.id} value={String(a.id)}>
+                    {a.name}
+                    {a.bank ? ` (${a.bank})` : ''}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
+          )}
           <FormGroup label="Compte à débiter pour les remboursements">
-            <Select value={form.source_account_id} onChange={set('source_account_id')}>
+            <Select
+              aria-label="Choisir le compte à débiter pour les remboursements"
+              value={form.source_account_id}
+              onChange={set('source_account_id')}
+            >
               <option value="">— Choisir un compte —</option>
               {nonLoanAccounts.map((a) => (
                 <option key={a.id} value={String(a.id)}>

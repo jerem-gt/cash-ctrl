@@ -56,8 +56,14 @@ describe('LoanFormModal — mode creation', () => {
     await user.type(screen.getByPlaceholderText('Ex : 3.5'), '5');
     await user.type(screen.getByPlaceholderText('Ex : 240'), '36');
 
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, ['1']);
+    const selectCompteCred = await screen.findByLabelText(
+      /Choisir le compte crédité à l'ouverture/i,
+    );
+    await user.selectOptions(selectCompteCred, ['1']);
+    const selectCompteDeb = await screen.findByLabelText(
+      /Choisir le compte à débiter pour les remboursements/i,
+    );
+    await user.selectOptions(selectCompteDeb, ['1']);
 
     await user.click(screen.getByRole('button', { name: 'Créer le prêt' }));
 
@@ -80,8 +86,14 @@ describe('LoanFormModal — mode creation', () => {
     await user.type(screen.getByPlaceholderText('Ex : 3.5'), '5');
     await user.type(screen.getByPlaceholderText('Ex : 240'), '36');
 
-    const select = screen.getByRole('combobox');
-    await user.selectOptions(select, ['1']);
+    const selectCompteCred = await screen.findByLabelText(
+      /Choisir le compte crédité à l'ouverture/i,
+    );
+    await user.selectOptions(selectCompteCred, ['1']);
+    const selectCompteDeb = await screen.findByLabelText(
+      /Choisir le compte à débiter pour les remboursements/i,
+    );
+    await user.selectOptions(selectCompteDeb, ['1']);
 
     await user.click(screen.getByRole('button', { name: 'Créer le prêt' }));
 

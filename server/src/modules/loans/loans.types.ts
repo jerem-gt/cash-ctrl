@@ -8,6 +8,7 @@ export interface Loan {
   start_date: string;
   monthly_payment: number;
   source_account_id: number;
+  deposit_account_id: number;
   created_at: string;
 }
 
@@ -32,6 +33,7 @@ export interface CreateLoanInput {
   duration_months: number;
   start_date: string;
   source_account_id: number;
+  deposit_account_id: number;
 }
 
 export interface UpdateInstallmentInput {
