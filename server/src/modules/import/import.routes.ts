@@ -42,6 +42,7 @@ const transactionSchema = z
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     notes: z.string().max(1000).nullable(),
     validated: z.boolean(),
+    payment_method_id: z.number().int().positive().nullable().default(null),
   })
   .refine((d) => d.account_id !== null || d.new_account_qif_name !== null, {
     message: 'account_id ou new_account_qif_name requis',

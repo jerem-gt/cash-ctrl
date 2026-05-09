@@ -6,7 +6,8 @@ import {
   type QifTransaction,
 } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';
-import type { Account, Category } from '@/types';
+import type { XhbParseResult } from '@/lib/xhb-parser';
+import type { Account, Category, PaymentMethod } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export type PreviewItem =
       categoryLabel: string;
       notes: string | null;
       validated: boolean;
+      paymentMethodId: number | null;
     }
   | {
       kind: 'transfer';
@@ -302,6 +304,7 @@ export function resolvePreview(
       categoryLabel,
       notes: tx.memo,
       validated: true,
+      paymentMethodId: null,
     });
   }
 
@@ -381,6 +384,7 @@ export function buildExecuteBody(
         date: item.date,
         notes: item.notes,
         validated: item.validated,
+        payment_method_id: item.paymentMethodId,
       });
     }
   }
@@ -391,4 +395,152 @@ export function buildExecuteBody(
     transactions,
     transfers,
   };
+}
+
+// ─── XHB-specific helpers ─────────────────────────────────────────────────────
+
+export const XHB_PAYMODE_NAMES: Record<number, string> = {
+  0: 'Aucun',
+  1: 'Carte de crédit',
+  2: 'Chèque',
+  3: 'Espèces',
+  4: 'Virement',
+  5: 'Virement interne',
+  6: 'Carte de débit',
+  7: 'Ordre permanent',
+  8: 'Paiement électronique',
+  9: 'Dépôt',
+  10: 'Frais bancaires',
+  11: 'Prélèvement',
+};
+
+export function findAutoPaymentMethod(
+  paymode: number,
+  paymentMethods: PaymentMethod[],
+): number | null {
+  const name = XHB_PAYMODE_NAMES[paymode];
+  if (!name) return null;
+  const match = paymentMethods.find((pm) => pm.name.toLowerCase() === name.toLowerCase());
+  return match?.id ?? null;
+}
+
+export function resolveXhbPreview(
+  parsed: XhbParseResult,
+  accountChoices: Map<string, AccountChoice>,
+  categoryChoices: Map<string, CategoryChoice>,
+  paymodeChoices: Map<number, number | null>,
+  accounts: Account[],
+  categories: Category[],
+): PreviewItem[] {
+  const items: PreviewItem[] = [];
+
+  // Transfers first (indices 0..transfers.length-1)
+  for (let i = 0; i < parsed.transfers.length; i++) {
+    const tf = parsed.transfers[i];
+    const fromInfo = resolveAccountInfo(
+      tf.fromAccountName,
+      accountChoices.get(tf.fromAccountName),
+      accounts,
+    );
+    const toInfo = resolveAccountInfo(
+      tf.toAccountName,
+      accountChoices.get(tf.toAccountName),
+      accounts,
+    );
+
+    if (!fromInfo.resolved || !toInfo.resolved) {
+      items.push({
+        kind: 'skip',
+        idx: i,
+        date: tf.date,
+        amount: tf.amount,
+        description: tf.description,
+        reason: 'Compte non mappé',
+      });
+      continue;
+    }
+
+    const fromAccount =
+      fromInfo.accountId != null ? accounts.find((a) => a.id === fromInfo.accountId) : undefined;
+    const toAccount =
+      toInfo.accountId != null ? accounts.find((a) => a.id === toInfo.accountId) : undefined;
+    const description = transferLabel(
+      { name: fromInfo.accountName, bank: fromAccount?.bank },
+      { name: toInfo.accountName, bank: toAccount?.bank },
+    );
+
+    items.push({
+      kind: 'transfer',
+      idxPrimary: i,
+      date: tf.date,
+      amount: tf.amount,
+      description,
+      fromAccountId: fromInfo.accountId,
+      fromAccountQifName: fromInfo.newAccountQifName,
+      fromAccountName: fromInfo.accountName,
+      toAccountId: toInfo.accountId,
+      toAccountQifName: toInfo.newAccountQifName,
+      toAccountName: toInfo.accountName,
+      notes: tf.notes,
+      validated: tf.validated,
+    });
+  }
+
+  // Regular transactions (indices offset by transfers count)
+  const offset = parsed.transfers.length;
+  for (let i = 0; i < parsed.transactions.length; i++) {
+    const tx = parsed.transactions[i];
+    const accInfo = resolveAccountInfo(
+      tx.accountName,
+      accountChoices.get(tx.accountName),
+      accounts,
+    );
+
+    if (!accInfo.resolved) {
+      items.push({
+        kind: 'skip',
+        idx: offset + i,
+        date: tx.date,
+        amount: Math.abs(tx.amount),
+        description: tx.description,
+        reason: 'Compte non mappé',
+      });
+      continue;
+    }
+
+    const catInfo = resolveCategoryInfo(tx.categoryString, categoryChoices, categories);
+    if (catInfo === null) {
+      items.push({
+        kind: 'skip',
+        idx: offset + i,
+        date: tx.date,
+        amount: Math.abs(tx.amount),
+        description: tx.description,
+        reason: 'Catégorie ignorée',
+      });
+      continue;
+    }
+
+    const { subcategoryId, newSubcategoryKey, categoryLabel } = catInfo;
+
+    items.push({
+      kind: 'transaction',
+      idx: offset + i,
+      date: tx.date,
+      type: tx.amount >= 0 ? 'income' : 'expense',
+      amount: Math.abs(tx.amount),
+      description: tx.description || '(sans description)',
+      accountId: accInfo.accountId,
+      newAccountQifName: accInfo.newAccountQifName,
+      accountName: accInfo.accountName,
+      subcategoryId,
+      newSubcategoryKey,
+      categoryLabel,
+      notes: tx.notes,
+      validated: tx.validated,
+      paymentMethodId: paymodeChoices.get(tx.paymode) ?? null,
+    });
+  }
+
+  return items;
 }

@@ -488,6 +488,7 @@ describe('buildExecuteBody', () => {
     categoryLabel: 'Alimentation / Supermarché',
     notes: null,
     validated: false,
+    paymentMethodId: null,
   };
   const transferItem: PreviewItem = {
     kind: 'transfer',

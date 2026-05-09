@@ -63,7 +63,7 @@ describe('seedAccountTypes', () => {
 });
 
 describe('seedCategories', () => {
-  it('inserts 10 categories with valid name coherent with the schema', () => {
+  it('inserts 14 categories with valid name coherent with the schema', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -77,7 +77,7 @@ describe('seedCategories', () => {
 });
 
 describe('seedSubcategories', () => {
-  it('inserts 10 subcategories with valid name and category_id coherent with the schema', () => {
+  it('inserts 64 subcategories with valid name and category_id coherent with the schema', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -93,7 +93,7 @@ describe('seedSubcategories', () => {
 });
 
 describe('seedPaymentMethods', () => {
-  it('inserts 5 payment methods with name and icon coherent with the schema', () => {
+  it('inserts 6 payment methods with name and icon coherent with the schema', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -102,7 +102,7 @@ describe('seedPaymentMethods', () => {
       name: string;
       icon: string;
     }[];
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(6);
     expect(rows.every((r) => r.name)).toBe(true);
   });
 
