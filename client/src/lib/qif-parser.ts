@@ -37,7 +37,7 @@ function applyTxField(tx: PartialTx, code: string, value: string): void {
       tx.category ??= value;
       break;
     case 'M':
-      tx.memo = value || null;
+      tx.memo = value && value !== '(NULL)' ? value : null;
       break;
     case 'C':
       tx.cleared = value === 'X' || value === '*';

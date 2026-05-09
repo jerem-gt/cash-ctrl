@@ -174,6 +174,12 @@ describe('parseQif', () => {
       const result = parseQif(qif);
       expect(result.transactions).toHaveLength(1);
     });
+
+    it('retourne null pour un mémo "(NULL)" (export HomeBank)', () => {
+      const qif = `!Type:Bank\nD01/01/2024\nT-10.00\nPTest\nM(NULL)\n^`;
+      const result = parseQif(qif);
+      expect(result.transactions[0].memo).toBeNull();
+    });
   });
 });
 

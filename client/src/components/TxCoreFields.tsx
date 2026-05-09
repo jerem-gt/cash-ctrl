@@ -1,5 +1,6 @@
 import { AccountSelect } from '@/components/AccountSelect';
 import { FormGroup, Input, Select } from '@/components/ui';
+import { transferLabel } from '@/lib/transfer-label';
 import type { Account, Subcategory } from '@/types';
 
 export interface TxCoreState {
@@ -25,15 +26,6 @@ interface Props {
   fixedAccountId?: number;
   /** Masque les sélecteurs catégorie/sous-catégorie (mode ventilation). */
   hideCategories?: boolean;
-}
-
-type AccountRef = { name: string; bank?: string | null };
-
-function transferLabel(src?: AccountRef, dest?: AccountRef): string {
-  if (!src) return '';
-  if (!dest) return `${src.name} →`;
-  if (src.bank && dest.bank && src.bank !== dest.bank) return `${src.bank} → ${dest.bank}`;
-  return `${src.name} → ${dest.name}`;
 }
 
 export function TxCoreFields({

@@ -438,6 +438,36 @@ describe('resolvePreview', () => {
     const items = resolvePreview(parsed, 'DD/MM', choices, new Map(), [ACCOUNT, acc2], CATEGORIES);
     expect(items).toHaveLength(1);
   });
+
+  it('génère la description du virement avec noms de comptes si même banque', () => {
+    const acc2: Account = { ...ACCOUNT, id: 2, name: 'Épargne', bank: 'BNP' };
+    const parsed = {
+      ...baseParsed,
+      transactions: [makeTx({ isTransfer: true, transferTarget: 'ACC2', amount: -500 })],
+    };
+    const choices = new Map<string, AccountChoice>([
+      ['ACC1', { action: 'map', account_id: 1 }],
+      ['ACC2', { action: 'map', account_id: 2 }],
+    ]);
+    const items = resolvePreview(parsed, 'DD/MM', choices, new Map(), [ACCOUNT, acc2], CATEGORIES);
+    expect(items[0].kind).toBe('transfer');
+    if (items[0].kind === 'transfer') expect(items[0].description).toBe('Courant → Épargne');
+  });
+
+  it('génère la description du virement avec noms de banques si banques différentes', () => {
+    const acc2: Account = { ...ACCOUNT, id: 2, name: 'Épargne', bank: 'Boursorama' };
+    const parsed = {
+      ...baseParsed,
+      transactions: [makeTx({ isTransfer: true, transferTarget: 'ACC2', amount: -500 })],
+    };
+    const choices = new Map<string, AccountChoice>([
+      ['ACC1', { action: 'map', account_id: 1 }],
+      ['ACC2', { action: 'map', account_id: 2 }],
+    ]);
+    const items = resolvePreview(parsed, 'DD/MM', choices, new Map(), [ACCOUNT, acc2], CATEGORIES);
+    expect(items[0].kind).toBe('transfer');
+    if (items[0].kind === 'transfer') expect(items[0].description).toBe('BNP → Boursorama');
+  });
 });
 
 // ─── buildExecuteBody ─────────────────────────────────────────────────────────
