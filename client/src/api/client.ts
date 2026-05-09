@@ -351,6 +351,7 @@ export const transactionsApi = {
     if (filters?.category_id != null) params.set('category_id', String(filters.category_id));
     if (filters?.subcategory_id != null)
       params.set('subcategory_id', String(filters.subcategory_id));
+    if (filters?.description_contains) params.set('description_contains', filters.description_contains);
     if (filters?.page != null) params.set('page', String(filters.page));
     if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();

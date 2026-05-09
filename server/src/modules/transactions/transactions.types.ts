@@ -84,6 +84,7 @@ export interface TransactionFilters {
   type?: TransactionType;
   category_id?: number;
   subcategory_id?: number;
+  description_contains?: string;
   page?: number;
   limit?: number;
 }

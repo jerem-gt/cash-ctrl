@@ -218,6 +218,10 @@ export function createTransactionsRepo(db: Database) {
         conditions.push('t.subcategory_id = :subcategory_id');
         params.subcategory_id = filters.subcategory_id;
       }
+      if (filters.description_contains) {
+        conditions.push('t.description LIKE :description_contains');
+        params.description_contains = `%${filters.description_contains}%`;
+      }
 
       const whereClause = `WHERE ${conditions.join(' AND ')}`;
 

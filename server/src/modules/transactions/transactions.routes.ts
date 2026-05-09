@@ -43,6 +43,7 @@ const querySchema = z.object({
   type: z.enum(TRANSACTION_TYPES).optional(),
   category_id: z.coerce.number().int().optional(),
   subcategory_id: z.coerce.number().int().optional(),
+  description_contains: z.string().trim().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
