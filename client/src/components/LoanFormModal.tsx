@@ -243,7 +243,7 @@ export function LoanFormModal(props: Readonly<Props>) {
                 onChange={set('interest_rate')}
                 placeholder="Ex : 3.5"
                 min="0"
-                step="0.01"
+                step="0.001"
                 disabled={isEdit}
                 title={isEdit ? 'Non modifiable après création' : undefined}
               />
