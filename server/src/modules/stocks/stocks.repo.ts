@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { getBankFeesSubcategoryId, getPrelevementPaymentMethodId } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
 import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
 
@@ -86,7 +87,7 @@ export function createStocksRepo(db: Database) {
 
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {
       const feesCents = toCents(input.fees);
-      const totalCents = Math.round(input.quantity * input.price_per_share * 100) + feesCents;
+      const mainCents = Math.round(input.quantity * input.price_per_share * 100);
       const description = input.description ?? `Achat ${input.quantity} × ${input.ticker}`;
 
       return db.transaction(() => {
@@ -94,17 +95,30 @@ export function createStocksRepo(db: Database) {
           .prepare(
             'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
           )
-          .run(userId, input.account_id, 'expense', totalCents, description, input.date);
+          .run(userId, input.account_id, 'expense', mainCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
+
+        let feesTransactionId: number | null = null;
+        if (feesCents > 0) {
+          const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+          const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+          const feesTxResult = db
+            .prepare(
+              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+            )
+            .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+          feesTransactionId = Number(feesTxResult.lastInsertRowid);
+        }
 
         const opResult = db
           .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
             userId,
             input.account_id,
             transactionId,
+            feesTransactionId,
             input.ticker,
             'buy',
             input.quantity,
@@ -139,8 +153,8 @@ export function createStocksRepo(db: Database) {
       }
 
       const feesCents = toCents(input.fees);
-      const totalCents = Math.round(input.quantity * input.price_per_share * 100) - feesCents;
-      if (totalCents <= 0) {
+      const mainCents = Math.round(input.quantity * input.price_per_share * 100);
+      if (mainCents - feesCents <= 0) {
         throw new Error('Le montant net après frais doit être positif');
       }
 
@@ -151,17 +165,30 @@ export function createStocksRepo(db: Database) {
           .prepare(
             'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
           )
-          .run(userId, input.account_id, 'income', totalCents, description, input.date);
+          .run(userId, input.account_id, 'income', mainCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
+
+        let feesTransactionId: number | null = null;
+        if (feesCents > 0) {
+          const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+          const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+          const feesTxResult = db
+            .prepare(
+              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+            )
+            .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+          feesTransactionId = Number(feesTxResult.lastInsertRowid);
+        }
 
         const opResult = db
           .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           )
           .run(
             userId,
             input.account_id,
             transactionId,
+            feesTransactionId,
             input.ticker,
             'sell',
             input.quantity,
@@ -239,12 +266,10 @@ export function createStocksRepo(db: Database) {
         if (!op) throw new Error('Opération introuvable');
 
         const feesCents = toCents(input.fees);
-        const totalCents =
-          op.type === 'buy'
-            ? Math.round(input.quantity * input.price_per_share * 100) + feesCents
-            : Math.round(input.quantity * input.price_per_share * 100) - feesCents;
+        const mainCents = Math.round(input.quantity * input.price_per_share * 100);
 
-        if (totalCents <= 0) throw new Error('Le montant net doit être positif');
+        if (op.type === 'sell' && mainCents - feesCents <= 0)
+          throw new Error('Le montant net doit être positif');
 
         const description =
           input.description ??
@@ -253,12 +278,34 @@ export function createStocksRepo(db: Database) {
             : `Vente ${input.quantity} × ${op.ticker}`);
 
         db.prepare(
-          'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ? WHERE id = ?',
-        ).run(input.quantity, input.price_per_share, feesCents, input.date, operationId);
+          'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
+        ).run(mainCents, description, input.date, op.transaction_id);
+
+        let newFeesTransactionId: number | null = op.fees_transaction_id ?? null;
+
+        if (feesCents > 0) {
+          if (op.fees_transaction_id) {
+            db.prepare(
+              'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
+            ).run(feesCents, `Frais — ${description}`, input.date, op.fees_transaction_id);
+          } else {
+            const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+            const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+            const feesTxResult = db
+              .prepare(
+                'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+              )
+              .run(userId, input.account_id, 'expense', feesCents, `Frais — ${description}`, subcategoryId, input.date, paymentMethodId);
+            newFeesTransactionId = Number(feesTxResult.lastInsertRowid);
+          }
+        } else if (op.fees_transaction_id) {
+          db.prepare('DELETE FROM transactions WHERE id = ?').run(op.fees_transaction_id);
+          newFeesTransactionId = null;
+        }
 
         db.prepare(
-          'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
-        ).run(totalCents, description, input.date, op.transaction_id);
+          'UPDATE stock_operations SET quantity = ?, price_per_share = ?, fees = ?, date = ?, fees_transaction_id = ? WHERE id = ?',
+        ).run(input.quantity, input.price_per_share, feesCents, input.date, newFeesTransactionId, operationId);
 
         recalcPosition(db, input.account_id, op.ticker, userId);
 

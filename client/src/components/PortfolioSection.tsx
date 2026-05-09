@@ -8,6 +8,7 @@ import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
   pos: StockPosition;
+  onBuy: (pos: StockPosition) => void;
   onSell: (pos: StockPosition) => void;
 }
 
@@ -18,7 +19,7 @@ const getPnlColor = (pnl: number | null) => {
   return 'text-stone-500'; // Cas pnl === 0
 };
 
-function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
+function PositionRow({ pos, onBuy, onSell }: Readonly<PositionRowProps>) {
   const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
   const costBasis = pos.avg_price * pos.quantity;
   const pnl = marketValue == null ? null : marketValue - costBasis;
@@ -82,13 +83,22 @@ function PositionRow({ pos, onSell }: Readonly<PositionRowProps>) {
         )}
       </div>
 
-      <button
-        onClick={() => onSell(pos)}
-        className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all shrink-0"
-        title="Vendre"
-      >
-        Vendre
-      </button>
+      <div className="flex gap-1 shrink-0">
+        <button
+          onClick={() => onBuy(pos)}
+          className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+          title="Acheter"
+        >
+          Acheter
+        </button>
+        <button
+          onClick={() => onSell(pos)}
+          className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+          title="Vendre"
+        >
+          Vendre
+        </button>
+      </div>
     </div>
   );
 }
@@ -101,6 +111,7 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useStockPositions(accountId);
   const refresh = useRefreshPrices(accountId);
   const [showBuy, setShowBuy] = useState(false);
+  const [buyPosition, setBuyPosition] = useState<StockPosition | null>(null);
   const [sellPosition, setSellPosition] = useState<StockPosition | null>(null);
 
   const totalMarketValue = positions.reduce(
@@ -133,7 +144,7 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
     portfolioContent = (
       <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
         {positions.map((pos) => (
-          <PositionRow key={pos.ticker} pos={pos} onSell={setSellPosition} />
+          <PositionRow key={pos.ticker} pos={pos} onBuy={setBuyPosition} onSell={setSellPosition} />
         ))}
 
         {positions.length > 1 && (
@@ -166,7 +177,7 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
                 {totalPnlPct.toFixed(2)} %
               </p>
             </div>
-            <div className="w-10" />
+            <div className="w-[5.5rem]" />
           </div>
         )}
       </div>
@@ -195,6 +206,14 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
 
       {showBuy && (
         <StockOperationModal mode="buy" accountId={accountId} onClose={() => setShowBuy(false)} />
+      )}
+      {buyPosition && (
+        <StockOperationModal
+          mode="buy"
+          accountId={accountId}
+          position={buyPosition}
+          onClose={() => setBuyPosition(null)}
+        />
       )}
       {sellPosition && (
         <StockOperationModal

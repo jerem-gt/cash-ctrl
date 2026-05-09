@@ -149,6 +149,15 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(400).json({ error: 'Use DELETE /api/transfers/:id to delete a transfer' });
       return;
     }
+    const isStockFeesTx = db
+      .prepare('SELECT 1 FROM stock_operations WHERE fees_transaction_id = ?')
+      .get(id);
+    if (isStockFeesTx) {
+      res.status(400).json({
+        error: "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
+      });
+      return;
+    }
 
     transactionsRepo.delete(userId, id);
     res.json({ ok: true });

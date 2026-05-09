@@ -9,6 +9,7 @@ import type { StockPosition } from '@/types';
 interface BuyProps {
   mode: 'buy';
   accountId: number;
+  position?: StockPosition;
   onClose: () => void;
 }
 
@@ -23,7 +24,8 @@ type Props = BuyProps | SellProps;
 
 export function StockOperationModal(props: Readonly<Props>) {
   const { mode, accountId, onClose } = props;
-  const position = mode === 'sell' ? (props as SellProps).position : undefined;
+  const position =
+    mode === 'sell' ? (props as SellProps).position : (props as BuyProps).position;
 
   const buy = useBuyStock(accountId);
   const sell = useSellStock(accountId);
@@ -39,9 +41,9 @@ export function StockOperationModal(props: Readonly<Props>) {
   const pps = Number.parseFloat(price) || 0;
   const f = Number.parseFloat(fees) || 0;
   const amount = calculateTotalAmount(mode, qty, pps, f);
-  const maxQty = position?.quantity;
 
   const isBuy = mode === 'buy';
+  const maxQty = isBuy ? undefined : position?.quantity;
   const actionLabel = isBuy ? 'Acheter' : 'Vendre';
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
@@ -77,8 +79,8 @@ export function StockOperationModal(props: Readonly<Props>) {
               value={ticker}
               onChange={(e) => setTicker(e.target.value)}
               placeholder="ex : DCAM.PA, AAPL"
-              disabled={!isBuy && !!position}
-              autoFocus={isBuy || !position}
+              disabled={!!position}
+              autoFocus={!position}
             />
           </FormGroup>
 
@@ -96,7 +98,7 @@ export function StockOperationModal(props: Readonly<Props>) {
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder={isBuy ? '10' : '5'}
-                autoFocus={!isBuy && !!position}
+                autoFocus={!!position}
               />
             </FormGroup>
             <FormGroup label="Prix unitaire (€)" htmlFor="op-price">

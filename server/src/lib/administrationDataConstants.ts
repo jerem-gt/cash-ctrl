@@ -10,11 +10,18 @@ export function getTransferIds(db: Database, userId: number) {
   return { subcategoryId: subcat?.id ?? undefined, paymentMethodId: pm?.id ?? undefined };
 }
 
-export function getInterestSubcategoryId(db: Database, userId: number): number | undefined {
+export function getBankFeesSubcategoryId(db: Database, userId: number): number | undefined {
   const subcat = db
     .prepare(`SELECT id FROM subcategories WHERE name = 'Frais bancaires' AND user_id = ?`)
     .get(userId) as { id: number } | undefined;
   return subcat?.id;
+}
+
+export function getPrelevementPaymentMethodId(db: Database, userId: number): number | undefined {
+  const pm = db
+    .prepare(`SELECT id FROM payment_methods WHERE name = 'Prélèvement' AND user_id = ?`)
+    .get(userId) as { id: number } | undefined;
+  return pm?.id;
 }
 
 export function getAccountTypeIds(db: Database, userId: number) {

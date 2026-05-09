@@ -82,6 +82,7 @@ export const STOCK_OPERATIONS: StockOperation[] = [
     id: 1,
     account_id: 3,
     transaction_id: 20,
+    fees_transaction_id: null,
     ticker: 'DCAM.PA',
     type: 'buy',
     quantity: 10,
