@@ -209,9 +209,9 @@ export function resolveTransferItem(
   if (!fromInfo.resolved || !toInfo.resolved) return skip('Compte non mappé');
 
   const fromAccount =
-    fromInfo.accountId != null ? accounts.find((a) => a.id === fromInfo.accountId) : undefined;
+    fromInfo.accountId == null ? undefined : accounts.find((a) => a.id === fromInfo.accountId);
   const toAccount =
-    toInfo.accountId != null ? accounts.find((a) => a.id === toInfo.accountId) : undefined;
+    toInfo.accountId == null ? undefined : accounts.find((a) => a.id === toInfo.accountId);
   const description = transferLabel(
     { name: fromInfo.accountName, bank: fromAccount?.bank },
     { name: toInfo.accountName, bank: toAccount?.bank },
