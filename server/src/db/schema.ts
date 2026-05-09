@@ -203,9 +203,10 @@ export function initSchema(db: Database) {
             interest_rate     REAL    NOT NULL CHECK (interest_rate >= 0),
             duration_months   INTEGER NOT NULL CHECK (duration_months > 0),
             start_date        TEXT    NOT NULL,
-            monthly_payment   INTEGER NOT NULL,
-            source_account_id INTEGER NOT NULL REFERENCES accounts (id),
-            created_at        TEXT             DEFAULT (datetime('now'))
+            monthly_payment    INTEGER NOT NULL,
+            source_account_id  INTEGER NOT NULL REFERENCES accounts (id),
+            deposit_account_id INTEGER NOT NULL REFERENCES accounts (id),
+            created_at         TEXT             DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS loan_installments

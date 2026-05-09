@@ -6,6 +6,7 @@ import { SEED } from '../../tests/helpers/testDb.js';
 describe('/api/loans', () => {
   let ctx: TestContext;
   let sourceAccountId: number;
+  let depositAccountId: number;
 
   beforeAll(async () => {
     ctx = await createTestContext();
@@ -21,6 +22,15 @@ describe('/api/loans', () => {
       opening_date: '2024-01-01',
     });
     sourceAccountId = src.body.id;
+
+    const dep = await ctx.agent.post('/api/accounts').send({
+      name: 'Compte courant dépôt',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      initial_balance: 0,
+      opening_date: '2024-01-01',
+    });
+    depositAccountId = dep.body.id;
   });
 
   // --- Creation ---------------------------------------------------------------
@@ -36,6 +46,7 @@ describe('/api/loans', () => {
         duration_months: 12,
         start_date: '2027-02-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
 
       expect(res.status).toBe(201);
@@ -58,6 +69,7 @@ describe('/api/loans', () => {
         duration_months: 12,
         start_date: '2027-02-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
 
       expect(res.status).toBe(201);
@@ -74,6 +86,7 @@ describe('/api/loans', () => {
         duration_months: 24,
         start_date: '2027-02-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
 
       expect(res.status).toBe(201);
@@ -83,6 +96,28 @@ describe('/api/loans', () => {
         0,
       );
       expect(Math.abs(totalPrincipal - 12000)).toBeLessThan(0.02);
+    });
+
+    it('cree une transaction income sur le compte credite a hauteur du capital', async () => {
+      const res = await ctx.agent.post('/api/loans').send({
+        name: 'Pret avec versement',
+        bank_id: SEED.BANK_ID,
+        opening_date: '2024-03-01',
+        principal_amount: 5000,
+        interest_rate: 0.05,
+        duration_months: 12,
+        start_date: '2027-04-01',
+        source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
+      });
+      expect(res.status).toBe(201);
+
+      const txRes = await ctx.agent.get(`/api/transactions?account_id=${depositAccountId}`);
+      const tx = (txRes.body.data as { type: string; amount: number; date: string }[]).find(
+        (t) => t.type === 'income' && t.amount === 5000,
+      );
+      expect(tx).toBeDefined();
+      expect(tx?.date).toBe('2024-03-01');
     });
 
     it('retourne 400 pour un payload invalide', async () => {
@@ -110,6 +145,7 @@ describe('/api/loans', () => {
         duration_months: 240,
         start_date: '2027-02-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
       loanAccountId = createRes.body.account_id;
     });
@@ -143,6 +179,7 @@ describe('/api/loans', () => {
         duration_months: 24,
         start_date: '2027-02-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
       loanId = createRes.body.id;
       loanAccountId = createRes.body.account_id;
@@ -154,6 +191,7 @@ describe('/api/loans', () => {
         bank_id: SEED.BANK_ID,
         opening_date: '2024-06-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
 
       expect(res.status).toBe(200);
@@ -177,6 +215,7 @@ describe('/api/loans', () => {
         bank_id: SEED.BANK_ID,
         opening_date: '2024-01-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
       expect(res.status).toBe(404);
     });
@@ -198,6 +237,7 @@ describe('/api/loans', () => {
         duration_months: 12,
         start_date: '2027-01-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
       loanId = createRes.body.id;
     });
@@ -246,6 +286,7 @@ describe('/api/loans', () => {
         duration_months: 6,
         start_date: '2027-01-01',
         source_account_id: sourceAccountId,
+        deposit_account_id: depositAccountId,
       });
       loanId = createRes.body.id;
 

@@ -641,6 +641,7 @@ const carLoan = loansRepo.create(USER_ID, {
   duration_months: 60,
   start_date: '2023-07-01',
   source_account_id: accBNPCourant,
+  deposit_account_id: accBNPCourant,
 });
 
 // Marquer les mensualités passées (≤ aujourd'hui) comme payées

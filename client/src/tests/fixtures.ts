@@ -251,6 +251,7 @@ export const LOAN: Loan = {
   start_date: '2024-02-01',
   monthly_payment: 359.61,
   source_account_id: 1,
+  deposit_account_id: 2,
   created_at: '2024-01-01T00:00:00',
 };
 

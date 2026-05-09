@@ -249,6 +249,7 @@ export type CreateLoanPayload = {
   duration_months: number;
   start_date: string;
   source_account_id: number;
+  deposit_account_id: number;
 };
 
 export type UpdateLoanPayload = {

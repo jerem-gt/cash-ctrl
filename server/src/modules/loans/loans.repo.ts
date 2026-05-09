@@ -120,8 +120,12 @@ export function createLoansRepo(db: Database) {
     VALUES (:userId, :name, :bankId, :accountTypeId, :initialBalance, :openingDate)`,
   );
   const insertLoanStmt = db.prepare(
-    `INSERT INTO loans (account_id, user_id, principal_amount, interest_rate, duration_months, start_date, monthly_payment, source_account_id)
-    VALUES (:account_id, :user_id, :principal_amount, :interest_rate, :duration_months, :start_date, :monthly_payment, :source_account_id)`,
+    `INSERT INTO loans (account_id, user_id, principal_amount, interest_rate, duration_months, start_date, monthly_payment, source_account_id, deposit_account_id)
+    VALUES (:account_id, :user_id, :principal_amount, :interest_rate, :duration_months, :start_date, :monthly_payment, :source_account_id, :deposit_account_id)`,
+  );
+  const insertDepositTransactionStmt = db.prepare(
+    `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
+     VALUES (:userId, :accountId, 'income', :amount, :description, :date, 1)`,
   );
   const insertInstallmentStmt = db.prepare(
     `INSERT INTO loan_installments (user_id, loan_id, installment_number, due_date, total_amount, principal_amount, interest_amount)
@@ -208,6 +212,14 @@ export function createLoansRepo(db: Database) {
           monthly_payment: toCents(monthlyPayment),
         });
         const loanId = Number(loanResult.lastInsertRowid);
+
+        insertDepositTransactionStmt.run({
+          userId,
+          accountId: data.deposit_account_id,
+          amount: toCents(data.principal_amount),
+          description: data.name,
+          date: data.opening_date ?? data.start_date,
+        });
 
         for (const row of schedule) {
           insertInstallmentStmt.run({

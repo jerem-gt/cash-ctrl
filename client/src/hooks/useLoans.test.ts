@@ -60,6 +60,7 @@ describe('useCreateLoan', () => {
       duration_months: 36,
       start_date: '2024-02-01',
       source_account_id: 1,
+      deposit_account_id: 2,
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -85,6 +86,7 @@ describe('useCreateLoan', () => {
       duration_months: 12,
       start_date: '2024-02-01',
       source_account_id: 1,
+      deposit_account_id: 2,
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
