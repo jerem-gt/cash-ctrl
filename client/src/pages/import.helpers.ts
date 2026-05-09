@@ -5,6 +5,7 @@ import {
   type QifParseResult,
   type QifTransaction,
 } from '@/lib/qif-parser';
+import { transferLabel } from '@/lib/transfer-label';
 import type { Account, Category } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -186,14 +187,12 @@ export function resolveTransferItem(
 
   let fromQifName: string;
   let toQifName: string;
-  let description: string;
   let notes: string | null;
 
   if (peerIdx === -1) {
     if (!tx.transferTarget) return skip('Virement sans contrepartie');
     fromQifName = tx.amount < 0 ? tx.qifAccountName : tx.transferTarget;
     toQifName = tx.amount < 0 ? tx.transferTarget : tx.qifAccountName;
-    description = tx.description || 'Virement';
     notes = tx.memo;
   } else {
     processed.add(peerIdx);
@@ -202,13 +201,21 @@ export function resolveTransferItem(
     const toTx = tx.amount < 0 ? peer : tx;
     fromQifName = fromTx.qifAccountName;
     toQifName = toTx.qifAccountName;
-    description = fromTx.description || toTx.description || 'Virement';
     notes = tx.memo ?? peer.memo ?? null;
   }
 
   const fromInfo = resolveAccountInfo(fromQifName, accountChoices.get(fromQifName), accounts);
   const toInfo = resolveAccountInfo(toQifName, accountChoices.get(toQifName), accounts);
   if (!fromInfo.resolved || !toInfo.resolved) return skip('Compte non mappé');
+
+  const fromAccount =
+    fromInfo.accountId != null ? accounts.find((a) => a.id === fromInfo.accountId) : undefined;
+  const toAccount =
+    toInfo.accountId != null ? accounts.find((a) => a.id === toInfo.accountId) : undefined;
+  const description = transferLabel(
+    { name: fromInfo.accountName, bank: fromAccount?.bank },
+    { name: toInfo.accountName, bank: toAccount?.bank },
+  );
 
   return {
     kind: 'transfer',
