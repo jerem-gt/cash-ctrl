@@ -95,11 +95,18 @@ describe('/api/stocks', () => {
       expect(res.body.operation.fees).toBe(1.5);
       expect(res.body.transaction_id).toBeGreaterThan(0);
 
-      // Vérifie que la transaction a le bon montant (10 * 12 + 1.5 = 121.5)
+      // Tx principale : montant brut sans frais (10 * 12 = 120)
       const txRes = await ctx.agent.get('/api/transactions');
       const tx = txRes.body.data.find((t: { id: number }) => t.id === res.body.transaction_id);
       expect(tx.type).toBe('expense');
-      expect(tx.amount).toBe(121.5);
+      expect(tx.amount).toBe(120);
+      // Tx de frais séparée (1.5 €)
+      const feesTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.operation.fees_transaction_id,
+      );
+      expect(feesTx).toBeDefined();
+      expect(feesTx.type).toBe('expense');
+      expect(feesTx.amount).toBe(1.5);
     });
 
     it('met à jour la position après achat', async () => {
@@ -197,11 +204,18 @@ describe('/api/stocks', () => {
       expect(res.body.operation.type).toBe('sell');
       expect(res.body.operation.quantity).toBe(3);
 
-      // Montant net = 3 * 220 - 1 = 659
+      // Tx principale : montant brut (3 * 220 = 660), frais séparés
       const txRes = await ctx.agent.get('/api/transactions');
       const tx = txRes.body.data.find((t: { id: number }) => t.id === res.body.transaction_id);
       expect(tx.type).toBe('income');
-      expect(tx.amount).toBe(659);
+      expect(tx.amount).toBe(660);
+      // Tx de frais séparée (1 €)
+      const feesTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.operation.fees_transaction_id,
+      );
+      expect(feesTx).toBeDefined();
+      expect(feesTx.type).toBe('expense');
+      expect(feesTx.amount).toBe(1);
     });
 
     it('met à jour la quantité restante après vente partielle', async () => {
@@ -312,7 +326,14 @@ describe('/api/stocks', () => {
 
       const txRes = await ctx.agent.get('/api/transactions');
       const tx = txRes.body.data.find((t: { id: number }) => t.id === buyRes.body.transaction_id);
-      expect(tx.amount).toBe(502.5);
+      // Tx principale : montant brut sans frais (5 * 100 = 500)
+      expect(tx.amount).toBe(500);
+      // Tx de frais créée lors de la mise à jour (2.5 €)
+      const feesTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.fees_transaction_id,
+      );
+      expect(feesTx).toBeDefined();
+      expect(feesTx.amount).toBe(2.5);
     });
 
     it('retourne 404 pour une opération inconnue', async () => {
