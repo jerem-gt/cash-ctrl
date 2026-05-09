@@ -18,6 +18,7 @@ export interface StockOperation {
   id: number;
   account_id: number;
   transaction_id: number;
+  fees_transaction_id: number | null;
   ticker: string;
   type: StockOperationType;
   quantity: number;

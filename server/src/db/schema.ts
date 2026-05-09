@@ -110,21 +110,29 @@ export function initSchema(db: Database) {
 
         CREATE TABLE IF NOT EXISTS stock_operations
         (
-            id               INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id          INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-            account_id       INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            transaction_id   INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
-            ticker           TEXT    NOT NULL,
-            type             TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
-            quantity         REAL    NOT NULL,
-            price_per_share  REAL    NOT NULL,
-            fees             INTEGER NOT NULL DEFAULT 0,
-            date             TEXT    NOT NULL,
-            created_at       TEXT             DEFAULT (datetime('now'))
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            transaction_id       INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            fees_transaction_id  INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            ticker               TEXT    NOT NULL,
+            type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
+            quantity             REAL    NOT NULL,
+            price_per_share      REAL    NOT NULL,
+            fees                 INTEGER NOT NULL DEFAULT 0,
+            date                 TEXT    NOT NULL,
+            created_at           TEXT             DEFAULT (datetime('now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_stock_txid ON stock_operations(transaction_id);
         CREATE INDEX IF NOT EXISTS idx_stock_ops_account_ticker ON stock_operations (account_id, ticker);
+
+        CREATE TRIGGER IF NOT EXISTS stock_op_fees_cleanup
+        AFTER DELETE ON stock_operations
+        WHEN OLD.fees_transaction_id IS NOT NULL
+        BEGIN
+            DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
+        END;
 
         CREATE TABLE IF NOT EXISTS stock_prices
         (

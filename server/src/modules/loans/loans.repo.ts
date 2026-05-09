@@ -1,6 +1,10 @@
 import type { Database } from 'better-sqlite3';
 
-import { getAccountTypeIds, getInterestSubcategoryId } from '../../lib/administrationDataConstants';
+import {
+  getAccountTypeIds,
+  getBankFeesSubcategoryId,
+  getPrelevementPaymentMethodId,
+} from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
 import { createTransfersRepo } from '../transfers/transfers.repo.js';
 import type {
@@ -134,8 +138,8 @@ export function createLoansRepo(db: Database) {
     VALUES (:user_id, :loan_id, :installment_number, :due_date, :total_amount, :principal_amount, :interest_amount)`,
   );
   const insertInterestExpenseStmt = db.prepare(
-    `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, validated)
-     VALUES (:userId, :accountId, 'expense', :amount, :description, :subcategoryId, :date, 1)`,
+    `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, payment_method_id, date, validated)
+     VALUES (:userId, :accountId, 'expense', :amount, :description, :subcategoryId, :paymentMethodId, :date, 1)`,
   );
 
   // Pour updateLoan()
@@ -253,13 +257,15 @@ export function createLoansRepo(db: Database) {
 
         const totalInterests = schedule.reduce((sum, r) => sum + r.interest_amount, 0);
         if (totalInterests > 0) {
-          const subcategoryId = getInterestSubcategoryId(db, userId);
+          const subcategoryId = getBankFeesSubcategoryId(db, userId);
+          const paymentMethodId = getPrelevementPaymentMethodId(db, userId);
           insertInterestExpenseStmt.run({
             userId,
             accountId,
             amount: toCents(totalInterests),
             description: `Intérêts — ${data.name}`,
             subcategoryId: subcategoryId ?? null,
+            paymentMethodId: paymentMethodId ?? null,
             date: data.opening_date ?? data.start_date,
           });
         }
