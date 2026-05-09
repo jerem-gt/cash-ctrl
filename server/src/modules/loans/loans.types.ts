@@ -9,6 +9,7 @@ export interface Loan {
   monthly_payment: number;
   source_account_id: number;
   deposit_account_id: number;
+  deposit_transaction_id: number | null;
   created_at: string;
 }
 

@@ -7,6 +7,7 @@ export interface Account {
   bank: string;
   type: string;
   is_investment: number;
+  is_loan: number;
   initial_balance: number;
   opening_date: string | null;
   closed_at: string | null;

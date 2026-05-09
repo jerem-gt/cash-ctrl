@@ -109,6 +109,51 @@ describe('/api/accounts', () => {
     const res = await ctx.agent.delete('/api/accounts/99999');
     expect(res.status).toBe(404);
   });
+
+  it('DELETE /:id supprime les transactions du compte debiteur et crediteur quand le compte est un pret', async () => {
+    ctx.db
+      .prepare("INSERT INTO account_types (user_id, name, is_loan) VALUES (?, 'Prêt', 1)")
+      .run(ctx.userId);
+
+    const src = await ctx.agent.post('/api/accounts').send({
+      name: 'Source',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      initial_balance: 50000,
+      opening_date: '2024-01-01',
+    });
+    const dep = await ctx.agent.post('/api/accounts').send({
+      name: 'Dépôt',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      initial_balance: 0,
+      opening_date: '2024-01-01',
+    });
+
+    const loan = await ctx.agent.post('/api/loans').send({
+      name: 'Pret a supprimer',
+      bank_id: SEED.BANK_ID,
+      opening_date: '2024-01-01',
+      principal_amount: 10000,
+      interest_rate: 0,
+      duration_months: 12,
+      start_date: '2027-02-01',
+      source_account_id: src.body.id,
+      deposit_account_id: dep.body.id,
+    });
+    const loanAccountId = loan.body.account_id;
+
+    const del = await ctx.agent.delete(`/api/accounts/${loanAccountId}`);
+    expect(del.status).toBe(200);
+
+    // La transaction de versement sur le compte crédité est supprimée
+    const depTxs = await ctx.agent.get(`/api/transactions?account_id=${dep.body.id}`);
+    expect(depTxs.body.data).toHaveLength(0);
+
+    // Aucune transaction orpheline sur le compte source
+    const srcTxs = await ctx.agent.get(`/api/transactions?account_id=${src.body.id}`);
+    expect(srcTxs.body.data).toHaveLength(0);
+  });
 });
 
 describe('POST /api/accounts/:id/close', () => {
