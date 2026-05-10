@@ -15,7 +15,6 @@ const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
-const ImportPage = lazy(() => import('@/pages/ImportPage'));
 
 function AppShell() {
   // Ajoute (dev) au titre si on est hors production
@@ -48,7 +47,6 @@ function AppShell() {
             <Route path="/accounts/:id" element={<AccountDetailPage />} />
             <Route path="/scheduled" element={<ScheduledPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/import" element={<ImportPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

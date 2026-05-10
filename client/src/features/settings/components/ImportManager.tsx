@@ -1,18 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { importApi, type JsonFullImportResult } from '@/api/client';
-import { Button, Card, Select } from '@/components/ui';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useAccountTypes } from '@/hooks/useAccountTypes';
-import { useBanks } from '@/hooks/useBanks';
-import { useCategories } from '@/hooks/useCategories';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { fmtDate } from '@/lib/format';
-import { parseQif, type QifParseResult } from '@/lib/qif-parser';
-import { parseXhb, type XhbParseResult } from '@/lib/xhb-parser';
-import type { Account, AccountType, Bank, Category, PaymentMethod } from '@/types';
-
+import { importApi, JsonFullImportResult } from '@/api/client.ts';
+import { Button, Card, Select } from '@/components/ui.tsx';
+import { useAccounts } from '@/hooks/useAccounts.ts';
+import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
+import { useBanks } from '@/hooks/useBanks.ts';
+import { useCategories } from '@/hooks/useCategories.ts';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';
+import { fmtDate } from '@/lib/format.ts';
+import { parseQif, QifParseResult } from '@/lib/qif-parser.ts';
+import { parseXhb, XhbParseResult } from '@/lib/xhb-parser.ts';
 import {
   type AccountChoice,
   buildExecuteBody,
@@ -22,7 +20,8 @@ import {
   resolvePreview,
   resolveXhbPreview,
   XHB_PAYMODE_NAMES,
-} from './import.helpers';
+} from '@/pages/import.helpers.ts';
+import { Account, AccountType, Bank, Category, PaymentMethod } from '@/types.ts';
 
 type Step = 'upload' | 'accounts' | 'categories' | 'paymethods' | 'preview' | 'confirm' | 'done';
 type ParsedFile =
@@ -444,7 +443,7 @@ function PaymodeMappingRow({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function ImportPage() {
+export default function ImportManager() {
   const queryClient = useQueryClient();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
@@ -697,7 +696,6 @@ export default function ImportPage() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="font-serif text-3xl text-stone-800 mb-1">Importation</h1>
       <p className="text-sm text-stone-400 mb-8">
         Importez des transactions depuis un fichier QIF, HomeBank (XHB) ou JSON CashCtrl.
       </p>

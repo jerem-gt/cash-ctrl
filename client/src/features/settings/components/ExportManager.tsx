@@ -58,7 +58,7 @@ export default function ExportManager() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-stone-500 mb-4">
+      <p className="text-sm text-stone-400 mb-8">
         Exportez toutes vos données au format JSON CashCtrl.
       </p>
 

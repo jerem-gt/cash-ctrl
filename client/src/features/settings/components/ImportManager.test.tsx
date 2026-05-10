@@ -3,12 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findTransferPeer, parseQif } from '@/lib/qif-parser';
-import { parseXhb } from '@/lib/xhb-parser';
+import { findTransferPeer, parseQif } from '@/lib/qif-parser.ts';
+import { parseXhb } from '@/lib/xhb-parser.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
-import { server } from '@/tests/msw/server';
+import { server } from '@/tests/msw/server.ts';
 
-import ImportPage from './ImportPage';
+import ImportManager from './ImportManager';
 
 vi.mock('@/lib/qif-parser', () => ({
   parseQif: vi.fn(() => ({
@@ -90,8 +90,8 @@ const validJsonData = {
   loans: [],
 };
 
-function renderImportPage() {
-  return renderWithProviders(<ImportPage />);
+function renderImportManager() {
+  return renderWithProviders(<ImportManager />);
 }
 
 async function uploadQif(user: ReturnType<typeof userEvent.setup>) {
@@ -134,18 +134,18 @@ async function goToPreviewNoMapping(user: ReturnType<typeof userEvent.setup>) {
 
 // ─── Upload step ──────────────────────────────────────────────────────────────
 
-describe('ImportPage — étape Upload', () => {
+describe('ImportManager — étape Upload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('affiche la zone de dépôt par défaut', () => {
-    renderImportPage();
+    renderImportManager();
     expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
   });
 
   it('refuse un fichier non .qif/.xhb', () => {
-    renderImportPage();
+    renderImportManager();
     const badFile = new File(['data'], 'export.csv', { type: 'text/csv' });
     const input = screen.getByLabelText(
       /sélectionner un fichier qif, xhb ou json/i,
@@ -157,7 +157,7 @@ describe('ImportPage — étape Upload', () => {
   });
 
   it("passe à l'étape Comptes après un upload .qif", async () => {
-    renderImportPage();
+    renderImportManager();
     await uploadQif(userEvent.setup());
     await screen.findByText(/mapping des comptes/i);
     expect(screen.getByText('ACC1')).toBeInTheDocument();
@@ -166,20 +166,20 @@ describe('ImportPage — étape Upload', () => {
 
 // ─── Accounts step ────────────────────────────────────────────────────────────
 
-describe('ImportPage — étape Comptes', () => {
+describe('ImportManager — étape Comptes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('affiche le compte QIF détecté', async () => {
-    renderImportPage();
+    renderImportManager();
     await uploadQif(userEvent.setup());
     expect(await screen.findByText('ACC1')).toBeInTheDocument();
   });
 
   it('affiche le formulaire de création quand action = Créer', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
     await user.selectOptions(actionSelect, 'create');
@@ -190,7 +190,7 @@ describe('ImportPage — étape Comptes', () => {
 
   it('affiche le sélecteur de compte existant quand action = Mapper', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
     await user.selectOptions(actionSelect, 'map');
@@ -200,21 +200,21 @@ describe('ImportPage — étape Comptes', () => {
 
 // ─── Categories step ──────────────────────────────────────────────────────────
 
-describe('ImportPage — étape Catégories', () => {
+describe('ImportManager — étape Catégories', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('affiche la catégorie QIF détectée', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToCategories(user);
     expect(await screen.findByText('Alimentation')).toBeInTheDocument();
   });
 
   it('permet de mapper vers une sous-catégorie existante', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToCategories(user);
     const catSelect = await screen.findByRole('combobox', { name: /action pour Alimentation/i });
     await user.selectOptions(catSelect, 'map');
@@ -224,14 +224,14 @@ describe('ImportPage — étape Catégories', () => {
 
 // ─── Preview step ─────────────────────────────────────────────────────────────
 
-describe('ImportPage — étape Aperçu', () => {
+describe('ImportManager — étape Aperçu', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('affiche les transactions à importer', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     expect(await screen.findByText('Courses')).toBeInTheDocument();
     expect(screen.getByText('Salaire')).toBeInTheDocument();
@@ -239,7 +239,7 @@ describe('ImportPage — étape Aperçu', () => {
 
   it('désactiver le bouton import quand aucune transaction sélectionnée', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     // Désélectionner toutes les transactions via "tout décocher"
     const checkboxes = await screen.findAllByRole('checkbox');
@@ -250,7 +250,7 @@ describe('ImportPage — étape Aperçu', () => {
 
   it('décoche individuellement une transaction', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     const checkboxes = await screen.findAllByRole('checkbox');
     // checkboxes[0] = tout, checkboxes[1] = première transaction
@@ -261,7 +261,7 @@ describe('ImportPage — étape Aperçu', () => {
 
 // ─── Import execution ─────────────────────────────────────────────────────────
 
-describe("ImportPage — exécution de l'import", () => {
+describe("ImportManager — exécution de l'import", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -273,7 +273,7 @@ describe("ImportPage — exécution de l'import", () => {
       ),
     );
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
     await screen.findByText(/importation terminée/i);
@@ -287,7 +287,7 @@ describe("ImportPage — exécution de l'import", () => {
       ),
     );
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
     expect(await screen.findByText(/erreur lors de l'importation/i)).toBeInTheDocument();
@@ -300,7 +300,7 @@ describe("ImportPage — exécution de l'import", () => {
       ),
     );
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
     await user.click(await screen.findByRole('button', { name: /nouvelle importation/i }));
@@ -310,21 +310,21 @@ describe("ImportPage — exécution de l'import", () => {
 
 // ─── Format JSON ──────────────────────────────────────────────────────────────
 
-describe('ImportPage — format JSON', () => {
+describe('ImportManager — format JSON', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("passe à l'étape Confirmer après un upload JSON valide", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadJson(user);
     expect(await screen.findByText(/contenu du fichier/i)).toBeInTheDocument();
   });
 
   it('affiche une erreur pour un JSON avec version incorrecte', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     const badJson = JSON.stringify({ version: '2.0', amounts_in_cents: true });
     const file = new File([badJson], 'bad.json', { type: 'application/json' });
     await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
@@ -333,7 +333,7 @@ describe('ImportPage — format JSON', () => {
 
   it('affiche une erreur si le JSON est syntaxiquement invalide', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     const file = new File(['this is not json'], 'bad.json', { type: 'application/json' });
     await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
     expect(await screen.findByText(/erreur lors de la lecture du fichier/i)).toBeInTheDocument();
@@ -341,7 +341,7 @@ describe('ImportPage — format JSON', () => {
 
   it("affiche les statistiques dans l'étape Confirmer", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadJson(user);
     await screen.findByText(/contenu du fichier/i);
     expect(screen.getByText('comptes')).toBeInTheDocument();
@@ -351,7 +351,7 @@ describe('ImportPage — format JSON', () => {
 
   it("exécute l'import JSON et affiche le succès avec les stats", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadJson(user);
     await screen.findByText(/contenu du fichier/i);
     await user.click(screen.getByRole('button', { name: /importer/i }));
@@ -368,7 +368,7 @@ describe('ImportPage — format JSON', () => {
       ),
     );
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadJson(user);
     await screen.findByText(/contenu du fichier/i);
     await user.click(screen.getByRole('button', { name: /importer/i }));
@@ -377,7 +377,7 @@ describe('ImportPage — format JSON', () => {
 
   it("le bouton Retour réinitialise vers l'upload", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadJson(user);
     await screen.findByText(/contenu du fichier/i);
     await user.click(screen.getByRole('button', { name: /← retour/i }));
@@ -387,14 +387,14 @@ describe('ImportPage — format JSON', () => {
 
 // ─── Format XHB ──────────────────────────────────────────────────────────────
 
-describe('ImportPage — format XHB', () => {
+describe('ImportManager — format XHB', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("passe à l'étape Comptes après un upload XHB", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     expect(await screen.findByText(/mapping des comptes/i)).toBeInTheDocument();
     expect(screen.getByText('CompteXHB')).toBeInTheDocument();
@@ -410,14 +410,14 @@ describe('ImportPage — format XHB', () => {
       uniquePaymodes: [],
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     expect(await screen.findByText(/aucune transaction trouvée/i)).toBeInTheDocument();
   });
 
   it("progresse jusqu'à l'étape Méthodes de paiement", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     await user.click(await screen.findByRole('button', { name: /catégories →/i }));
     await user.click(await screen.findByRole('button', { name: /méthodes de paiement →/i }));
@@ -447,7 +447,7 @@ describe('ImportPage — format XHB', () => {
       uniquePaymodes: [],
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     expect(await screen.findByText('CompteXHB')).toBeInTheDocument();
   });
@@ -475,14 +475,14 @@ describe('ImportPage — format XHB', () => {
       uniquePaymodes: [],
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     expect(await screen.findByText('CompteXHB')).toBeInTheDocument();
   });
 
   it("permet de modifier le mapping d'un mode de paiement et revenir aux catégories", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadXhb(user);
     await user.click(await screen.findByRole('button', { name: /catégories →/i }));
     await user.click(await screen.findByRole('button', { name: /méthodes de paiement →/i }));
@@ -498,14 +498,14 @@ describe('ImportPage — format XHB', () => {
 
 // ─── AccountMappingRow ────────────────────────────────────────────────────────
 
-describe('ImportPage — AccountMappingRow', () => {
+describe('ImportManager — AccountMappingRow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("sélectionner 'Ignorer' masque le formulaire de création", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
     await user.selectOptions(actionSelect, 'skip');
@@ -514,7 +514,7 @@ describe('ImportPage — AccountMappingRow', () => {
 
   it('changer le compte cible quand action = Mapper', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
     await user.selectOptions(actionSelect, 'map');
@@ -525,7 +525,7 @@ describe('ImportPage — AccountMappingRow', () => {
 
   it('modifier les champs du formulaire de création de compte', async () => {
     const user = userEvent.setup();
-    const { container } = renderImportPage();
+    const { container } = renderImportManager();
     await uploadQif(user);
 
     // Le formulaire est déjà visible (action par défaut = 'create')
@@ -552,14 +552,14 @@ describe('ImportPage — AccountMappingRow', () => {
 
 // ─── CategoryMappingRow ───────────────────────────────────────────────────────
 
-describe('ImportPage — CategoryMappingRow', () => {
+describe('ImportManager — CategoryMappingRow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("sélectionner 'Créer' affiche le formulaire de catégorie", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToCategories(user);
     const catSelect = await screen.findByRole('combobox', { name: /action pour Alimentation/i });
     await user.selectOptions(catSelect, 'create');
@@ -568,7 +568,7 @@ describe('ImportPage — CategoryMappingRow', () => {
 
   it('changer la sous-catégorie cible quand action = Mapper', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToCategories(user);
     const catSelect = await screen.findByRole('combobox', { name: /action pour Alimentation/i });
     await user.selectOptions(catSelect, 'map');
@@ -581,7 +581,7 @@ describe('ImportPage — CategoryMappingRow', () => {
 
   it('modifier les champs du formulaire de création de catégorie', async () => {
     const user = userEvent.setup();
-    const { container } = renderImportPage();
+    const { container } = renderImportManager();
     await goToCategories(user);
     const catSelect = await screen.findByRole('combobox', { name: /action pour Alimentation/i });
     await user.selectOptions(catSelect, 'create');
@@ -605,14 +605,14 @@ describe('ImportPage — CategoryMappingRow', () => {
 
 // ─── Navigation et interactions QIF supplémentaires ──────────────────────────
 
-describe('ImportPage — navigation et interactions QIF supplémentaires', () => {
+describe('ImportManager — navigation et interactions QIF supplémentaires', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("le bouton ← Retour de l'étape Comptes revient à l'upload", async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     await user.click(await screen.findByRole('button', { name: /← retour/i }));
     expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
@@ -639,7 +639,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
       detectedDateFormat: 'DD/MM',
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', {
       name: /action pour CompteVirement/i,
@@ -657,7 +657,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
       detectedDateFormat: 'DD/MM',
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     expect(await screen.findByText(/aucune transaction trouvée/i)).toBeInTheDocument();
   });
@@ -683,14 +683,14 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
       detectedDateFormat: 'DD/MM',
     });
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     expect(await screen.findByText(/comptes de virement détectés/i)).toBeInTheDocument();
     expect(screen.getByText('CompteVirement')).toBeInTheDocument();
   });
 
   it("handleDrop déclenche le chargement d'un fichier QIF", async () => {
-    renderImportPage();
+    renderImportManager();
     const file = new File(['!Type:Bank'], 'test.qif', { type: 'text/plain' });
     const dropZone = screen.getByText(/déposez votre fichier ici/i).closest('label');
     fireEvent.drop(dropZone!, { dataTransfer: { files: [file] } });
@@ -698,7 +698,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
   });
 
   it("les événements dragOver et dragLeave s'exécutent sans erreur", () => {
-    renderImportPage();
+    renderImportManager();
     const dropZone = screen.getByText(/déposez votre fichier ici/i).closest('label');
     fireEvent.dragOver(dropZone!);
     fireEvent.dragLeave(dropZone!);
@@ -707,7 +707,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('bascule le format de date vers MM/DD', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     const mmddButton = await screen.findByRole('button', { name: /mm\/dd/i });
     await user.click(mmddButton);
@@ -716,7 +716,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('le bouton ← Retour de Catégories revient à Comptes', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToCategories(user);
     await user.click(screen.getByRole('button', { name: /← retour/i }));
     expect(await screen.findByText(/mapping des comptes/i)).toBeInTheDocument();
@@ -724,7 +724,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('le bouton ← Retour de Prévisualisation revient à Catégories', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /← retour/i }));
     expect(await screen.findByText(/mapping des catégories/i)).toBeInTheDocument();
@@ -732,7 +732,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('selectAll après deselectAll resélectionne tous les éléments', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     const checkboxes = await screen.findAllByRole('checkbox');
     await user.click(checkboxes[0]); // deselectAll
@@ -743,7 +743,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('coche un élément après deselectAll (branche n.add)', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     const checkboxes = await screen.findAllByRole('checkbox');
     await user.click(checkboxes[0]); // deselectAll → selected = {}
@@ -753,7 +753,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
   it('affiche les lignes ignorées dans la table de prévisualisation', async () => {
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreviewNoMapping(user);
     expect(await screen.findByText(/catégorie ignorée/i)).toBeInTheDocument();
   });
@@ -781,7 +781,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
     vi.mocked(findTransferPeer).mockReturnValueOnce(-1);
 
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await uploadQif(user);
     await user.click(await screen.findByRole('button', { name: /catégories →/i }));
     await user.click(await screen.findByRole('button', { name: /aperçu →/i }));
@@ -796,7 +796,7 @@ describe('ImportPage — navigation et interactions QIF supplémentaires', () =>
 
 // ─── Voir les transactions ────────────────────────────────────────────────────
 
-describe("ImportPage — 'Voir les transactions'", () => {
+describe("ImportManager — 'Voir les transactions'", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('navigue vers /transactions au clic', async () => {
@@ -806,7 +806,7 @@ describe("ImportPage — 'Voir les transactions'", () => {
       ),
     );
     const user = userEvent.setup();
-    renderImportPage();
+    renderImportManager();
     await goToPreview(user);
     await user.click(await screen.findByRole('button', { name: /importer/i }));
     await screen.findByText(/importation terminée/i);
