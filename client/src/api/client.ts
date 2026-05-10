@@ -339,8 +339,19 @@ export interface ImportResult {
   transfers: number;
 }
 
+export interface JsonFullImportResult {
+  accounts: number;
+  transactions: number;
+  transfers: number;
+  scheduled: number;
+  stockOperations: number;
+  loans: number;
+}
+
 export const importApi = {
   executeQif: (body: ImportExecuteBody) => request<ImportResult>('POST', '/api/import/qif', body),
+  executeJsonFull: (body: unknown) =>
+    request<JsonFullImportResult>('POST', '/api/import/json-full', body),
 };
 
 // Transactions

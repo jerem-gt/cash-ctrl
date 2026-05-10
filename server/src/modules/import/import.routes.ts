@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import type { FullExport } from '../export/export.types.js';
 import { createImportRepo } from './import.repo.js';
 
 const newAccountSchema = z.object({
@@ -74,6 +75,148 @@ const executeSchema = z.object({
   transfers: z.array(transferSchema),
 });
 
+const splitSchema = z.object({
+  subcategory_id: z.number().int().positive(),
+  amount: z.number().int().positive(),
+});
+
+const fullTransactionSchema = z.object({
+  id: z.number().int().positive(),
+  account_id: z.number().int().positive(),
+  type: z.enum(['income', 'expense']),
+  amount: z.number().int().positive(),
+  description: z.string().max(200),
+  subcategory_id: z.number().int().positive().nullable(),
+  payment_method_id: z.number().int().positive().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  validated: z.number().int(),
+  notes: z.string().nullable(),
+  transfer_peer_id: z.number().int().positive().nullable(),
+  reimbursement_status: z.enum(['en_attente', 'rembourse']).nullable(),
+  scheduled_id: z.number().int().positive().nullable(),
+  splits: z.array(splitSchema),
+});
+
+const jsonFullSchema = z.object({
+  version: z.literal('1.0'),
+  amounts_in_cents: z.literal(true),
+  account_types: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(100),
+      is_investment: z.number().int(),
+      is_loan: z.number().int(),
+    }),
+  ),
+  banks: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(100),
+      logo: z.string().nullable(),
+      domain: z.string().nullable(),
+    }),
+  ),
+  accounts: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(100),
+      bank_id: z.number().int().positive().nullable(),
+      account_type_id: z.number().int().positive(),
+      initial_balance: z.number().int(),
+      opening_date: z.string().nullable(),
+      closed_at: z.string().nullable(),
+    }),
+  ),
+  categories: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(50),
+      icon: z.string().max(64),
+      subcategories: z.array(
+        z.object({
+          id: z.number().int().positive(),
+          name: z.string().min(1).max(50),
+        }),
+      ),
+    }),
+  ),
+  payment_methods: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(100),
+      icon: z.string().max(64),
+    }),
+  ),
+  transactions: z.array(fullTransactionSchema),
+  scheduled_transactions: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      account_id: z.number().int().positive(),
+      type: z.enum(['income', 'expense']),
+      amount: z.number().int().positive(),
+      description: z.string().max(200),
+      subcategory_id: z.number().int().positive().nullable(),
+      payment_method_id: z.number().int().positive().nullable(),
+      notes: z.string().nullable(),
+      recurrence_unit: z.string().min(1),
+      recurrence_interval: z.number().int().positive(),
+      recurrence_day: z.number().int().nullable(),
+      recurrence_month: z.number().int().nullable(),
+      to_account_id: z.number().int().positive().nullable(),
+      weekend_handling: z.string().min(1),
+      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      end_date: z.string().nullable(),
+      active: z.number().int(),
+    }),
+  ),
+  stock_positions: z.array(
+    z.object({
+      account_id: z.number().int().positive(),
+      ticker: z.string().min(1).max(20),
+      quantity: z.number(),
+      avg_price: z.number(),
+    }),
+  ),
+  stock_operations: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      account_id: z.number().int().positive(),
+      transaction_id: z.number().int().positive(),
+      fees_transaction_id: z.number().int().positive().nullable(),
+      ticker: z.string().min(1).max(20),
+      type: z.enum(['buy', 'sell']),
+      quantity: z.number(),
+      price_per_share: z.number(),
+      fees: z.number().int(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+  ),
+  loans: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      account_id: z.number().int().positive(),
+      principal_amount: z.number().int().positive(),
+      interest_rate: z.number(),
+      duration_months: z.number().int().positive(),
+      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      monthly_payment: z.number().int().positive(),
+      source_account_id: z.number().int().positive(),
+      deposit_account_id: z.number().int().positive(),
+      deposit_transaction_id: z.number().int().positive().nullable(),
+      installments: z.array(
+        z.object({
+          installment_number: z.number().int().positive(),
+          due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          total_amount: z.number().int(),
+          principal_amount: z.number().int(),
+          interest_amount: z.number().int(),
+          transaction_id: z.number().int().positive().nullable(),
+        }),
+      ),
+    }),
+  ),
+});
+
 export function createImportRouter(db: Database): Router {
   const repo = createImportRepo(db);
   const router = Router();
@@ -96,6 +239,20 @@ export function createImportRouter(db: Database): Router {
       return;
     }
     const result = repo.execute(sessionUserId(req), parsed.data);
+    res.status(201).json(result);
+  });
+
+  router.post('/json-full', (req, res) => {
+    const parsed = jsonFullSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues
+        .slice(0, 5)
+        .map((i) => `${i.path.join('.')}: ${i.message}`)
+        .join('\n');
+      res.status(400).json({ error: msg });
+      return;
+    }
+    const result = repo.executeJsonFull(sessionUserId(req), parsed.data as FullExport);
     res.status(201).json(result);
   });
 

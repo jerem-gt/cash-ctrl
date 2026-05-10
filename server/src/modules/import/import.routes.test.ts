@@ -400,3 +400,648 @@ describe('POST /api/import/qif', () => {
     expect(res.body).toEqual({ transactions: 0, transfers: 0 });
   });
 });
+
+// ─── POST /api/import/json-full ───────────────────────────────────────────────
+
+type JsonExportTx = {
+  id: number;
+  account_id: number;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  subcategory_id: number | null;
+  payment_method_id: number | null;
+  date: string;
+  validated: number;
+  notes: string | null;
+  transfer_peer_id: number | null;
+  reimbursement_status: 'en_attente' | 'rembourse' | null;
+  scheduled_id: number | null;
+  splits: Array<{ subcategory_id: number; amount: number }>;
+};
+
+const EMPTY_EXPORT = {
+  version: '1.0' as const,
+  amounts_in_cents: true as const,
+  account_types: [] as Array<{ id: number; name: string; is_investment: number; is_loan: number }>,
+  banks: [] as Array<{ id: number; name: string; logo: string | null; domain: string | null }>,
+  accounts: [] as Array<{
+    id: number;
+    name: string;
+    bank_id: number | null;
+    account_type_id: number;
+    initial_balance: number;
+    opening_date: string | null;
+    closed_at: string | null;
+  }>,
+  categories: [] as Array<{
+    id: number;
+    name: string;
+    icon: string;
+    subcategories: Array<{ id: number; name: string }>;
+  }>,
+  payment_methods: [] as Array<{ id: number; name: string; icon: string }>,
+  transactions: [] as JsonExportTx[],
+  scheduled_transactions: [] as Array<{
+    id: number;
+    account_id: number;
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    subcategory_id: number | null;
+    payment_method_id: number | null;
+    notes: string | null;
+    recurrence_unit: string;
+    recurrence_interval: number;
+    recurrence_day: number | null;
+    recurrence_month: number | null;
+    to_account_id: number | null;
+    weekend_handling: string;
+    start_date: string;
+    end_date: string | null;
+    active: number;
+  }>,
+  stock_positions: [] as Array<{
+    account_id: number;
+    ticker: string;
+    quantity: number;
+    avg_price: number;
+  }>,
+  stock_operations: [] as Array<{
+    id: number;
+    account_id: number;
+    transaction_id: number;
+    fees_transaction_id: number | null;
+    ticker: string;
+    type: 'buy' | 'sell';
+    quantity: number;
+    price_per_share: number;
+    fees: number;
+    date: string;
+  }>,
+  loans: [] as Array<{
+    id: number;
+    account_id: number;
+    principal_amount: number;
+    interest_rate: number;
+    duration_months: number;
+    start_date: string;
+    monthly_payment: number;
+    source_account_id: number;
+    deposit_account_id: number;
+    deposit_transaction_id: number | null;
+    installments: Array<{
+      installment_number: number;
+      due_date: string;
+      total_amount: number;
+      principal_amount: number;
+      interest_amount: number;
+      transaction_id: number | null;
+    }>;
+  }>,
+};
+
+// Export-side IDs (high numbers, distinct from DB auto-increment IDs)
+const EX_AT1 = 10,
+  EX_AT2 = 11;
+const EX_BANK1 = 10,
+  EX_BANK2 = 11;
+const EX_ACC1 = 20,
+  EX_ACC2 = 21,
+  EX_ACC3 = 22;
+const EX_CAT1 = 10,
+  EX_CAT2 = 11;
+const EX_SC1 = 30,
+  EX_SC2 = 31,
+  EX_SC3 = 32;
+const EX_PM1 = 10,
+  EX_PM2 = 11;
+const EX_TX1 = 100,
+  EX_TX2 = 101,
+  EX_TX3 = 102;
+
+const defaultBankExport = { id: EX_BANK1, name: 'DefaultBank', logo: null, domain: null };
+const courantAtExport = { id: EX_AT1, name: 'Courant', is_investment: 0, is_loan: 0 };
+
+const makeExportAccount = (id: number, name: string, bankId = EX_BANK1, atId = EX_AT1) => ({
+  id,
+  name,
+  bank_id: bankId,
+  account_type_id: atId,
+  initial_balance: 0,
+  opening_date: null,
+  closed_at: null,
+});
+
+const makeExportTx = (
+  id: number,
+  accountId: number,
+  overrides: Partial<JsonExportTx> = {},
+): JsonExportTx => ({
+  id,
+  account_id: accountId,
+  type: 'expense',
+  amount: 5000,
+  description: 'Test',
+  subcategory_id: null,
+  payment_method_id: null,
+  date: '2024-01-15',
+  validated: 0,
+  notes: null,
+  transfer_peer_id: null,
+  reimbursement_status: null,
+  scheduled_id: null,
+  splits: [],
+  ...overrides,
+});
+
+describe('POST /api/import/json-full', () => {
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    ctx = await createTestContext();
+  });
+
+  // ─── Auth ──────────────────────────────────────────────────────────────────
+
+  it('retourne 401 sans authentification', async () => {
+    const res = await supertest(ctx.app).post('/api/import/json-full').send(EMPTY_EXPORT);
+    expect(res.status).toBe(401);
+  });
+
+  // ─── Validation Zod ────────────────────────────────────────────────────────
+
+  it('retourne 400 si la version est incorrecte', async () => {
+    const res = await ctx.agent
+      .post('/api/import/json-full')
+      .send({ ...EMPTY_EXPORT, version: '2.0' });
+    expect(res.status).toBe(400);
+  });
+
+  // ─── Export vide ───────────────────────────────────────────────────────────
+
+  it('retourne 201 avec zéros pour un export vide', async () => {
+    const res = await ctx.agent.post('/api/import/json-full').send(EMPTY_EXPORT);
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({
+      accounts: 0,
+      transactions: 0,
+      transfers: 0,
+      scheduled: 0,
+      stockOperations: 0,
+      loans: 0,
+    });
+  });
+
+  // ─── buildAccountTypeMap ──────────────────────────────────────────────────
+
+  it('réutilise un type de compte existant et crée un nouveau', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [
+        courantAtExport,
+        { id: EX_AT2, name: 'Type Nouveau', is_investment: 0, is_loan: 0 },
+      ],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte AT A'),
+        makeExportAccount(EX_ACC2, 'Compte AT B', EX_BANK1, EX_AT2),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.accounts).toBe(2);
+    const newType = ctx.db
+      .prepare("SELECT id FROM account_types WHERE name = 'Type Nouveau'")
+      .get();
+    expect(newType).toBeDefined();
+  });
+
+  // ─── buildBankMap ─────────────────────────────────────────────────────────
+
+  it('réutilise une banque existante et crée une nouvelle', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [
+        defaultBankExport,
+        { id: EX_BANK2, name: 'Banque Nouvelle', logo: null, domain: null },
+      ],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte Banque A'),
+        makeExportAccount(EX_ACC2, 'Compte Banque B', EX_BANK2),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const newBank = ctx.db.prepare("SELECT id FROM banks WHERE name = 'Banque Nouvelle'").get();
+    expect(newBank).toBeDefined();
+  });
+
+  // ─── buildAccountMap ──────────────────────────────────────────────────────
+
+  it('réutilise un compte existant (par nom) et crée les nouveaux', async () => {
+    await ctx.agent.post('/api/accounts').send({
+      name: 'Compte Existant',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      initial_balance: 0,
+      opening_date: '2020-01-01',
+    });
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte Existant'), // Found by name → not counted
+        makeExportAccount(EX_ACC2, 'Compte Nouveau Import'), // Created
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.accounts).toBe(1);
+  });
+
+  // ─── buildSubcategoryMap ──────────────────────────────────────────────────
+
+  it('réutilise catégorie/sous-catégorie existante et en crée de nouvelles', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      categories: [
+        {
+          id: EX_CAT1,
+          name: 'Alimentation',
+          icon: '🍴',
+          subcategories: [
+            { id: EX_SC1, name: 'Supermarché' }, // existing
+            { id: EX_SC2, name: 'Restaurant' }, // new
+          ],
+        },
+        {
+          id: EX_CAT2,
+          name: 'Catégorie Nouvelle',
+          icon: '📁',
+          subcategories: [{ id: EX_SC3, name: 'Sous-cat Nouvelle' }],
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(
+      ctx.db.prepare("SELECT id FROM categories WHERE name = 'Catégorie Nouvelle'").get(),
+    ).toBeDefined();
+    expect(
+      ctx.db.prepare("SELECT id FROM subcategories WHERE name = 'Restaurant'").get(),
+    ).toBeDefined();
+  });
+
+  // ─── buildPaymentMethodMap ────────────────────────────────────────────────
+
+  it('réutilise un moyen de paiement existant et en crée un nouveau', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      payment_methods: [
+        { id: EX_PM1, name: 'Virement', icon: '🔄' }, // existing
+        { id: EX_PM2, name: 'Nouveau PM', icon: '💳' }, // new
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(
+      ctx.db.prepare("SELECT id FROM payment_methods WHERE name = 'Nouveau PM'").get(),
+    ).toBeDefined();
+  });
+
+  // ─── insertTransactions ───────────────────────────────────────────────────
+
+  it('importe des transactions avec mapping subcategory/payment_method, ignore compte inconnu', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Compte Tx')],
+      categories: [
+        {
+          id: EX_CAT1,
+          name: 'Alimentation',
+          icon: '🍴',
+          subcategories: [{ id: EX_SC1, name: 'Supermarché' }],
+        },
+      ],
+      payment_methods: [{ id: EX_PM1, name: 'Virement', icon: '🔄' }],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, { subcategory_id: EX_SC1, payment_method_id: EX_PM1 }),
+        makeExportTx(EX_TX2, EX_ACC1, { type: 'income', amount: 10000 }),
+        makeExportTx(EX_TX3, 99), // unknown account → skipped
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.transactions).toBe(2);
+    const count = ctx.db.prepare('SELECT COUNT(*) AS n FROM transactions').get() as { n: number };
+    expect(count.n).toBe(2);
+    const tx = ctx.db
+      .prepare('SELECT subcategory_id, payment_method_id FROM transactions ORDER BY id LIMIT 1')
+      .get() as { subcategory_id: number | null; payment_method_id: number | null };
+    expect(tx.subcategory_id).not.toBeNull();
+    expect(tx.payment_method_id).not.toBeNull();
+  });
+
+  // ─── linkTransferPeers ────────────────────────────────────────────────────
+
+  it('importe un virement et lie les deux transactions par transfer_peer_id', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte From'),
+        makeExportAccount(EX_ACC2, 'Compte To'),
+      ],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, { transfer_peer_id: EX_TX2, type: 'expense' }),
+        makeExportTx(EX_TX2, EX_ACC2, { transfer_peer_id: EX_TX1, type: 'income' }),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.transfers).toBe(1);
+    const txs = ctx.db
+      .prepare('SELECT id, transfer_peer_id FROM transactions ORDER BY id')
+      .all() as Array<{ id: number; transfer_peer_id: number | null }>;
+    expect(txs).toHaveLength(2);
+    expect(txs[0].transfer_peer_id).toBe(txs[1].id);
+    expect(txs[1].transfer_peer_id).toBe(txs[0].id);
+  });
+
+  it("ne lie pas le peer quand l'autre côté du virement est ignoré (compte inconnu)", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Compte Peer Valid')],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, { transfer_peer_id: EX_TX2 }),
+        makeExportTx(EX_TX2, 99, { transfer_peer_id: EX_TX1 }), // skipped
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const txs = ctx.db.prepare('SELECT transfer_peer_id FROM transactions').all() as Array<{
+      transfer_peer_id: number | null;
+    }>;
+    expect(txs).toHaveLength(1);
+    expect(txs[0].transfer_peer_id).toBeNull();
+  });
+
+  // ─── insertSplits ─────────────────────────────────────────────────────────
+
+  it('importe une transaction avec des splits correctement mappés', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Compte Splits')],
+      categories: [
+        {
+          id: EX_CAT1,
+          name: 'Alimentation',
+          icon: '🍴',
+          subcategories: [
+            { id: EX_SC1, name: 'Supermarché' },
+            { id: EX_SC2, name: 'Restaurant' },
+          ],
+        },
+      ],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, {
+          splits: [
+            { subcategory_id: EX_SC1, amount: 3000 },
+            { subcategory_id: EX_SC2, amount: 2000 },
+          ],
+        }),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const splits = ctx.db.prepare('SELECT * FROM transaction_splits').all();
+    expect(splits).toHaveLength(2);
+  });
+
+  // ─── importScheduled ──────────────────────────────────────────────────────
+
+  it('importe des transactions planifiées avec et sans to_account_id', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte Sched'),
+        makeExportAccount(EX_ACC2, 'Compte Sched Dest'),
+      ],
+      scheduled_transactions: [
+        {
+          id: 10,
+          account_id: EX_ACC1,
+          type: 'expense' as const,
+          amount: 50000,
+          description: 'Loyer',
+          subcategory_id: null,
+          payment_method_id: null,
+          notes: null,
+          recurrence_unit: 'month',
+          recurrence_interval: 1,
+          recurrence_day: 1,
+          recurrence_month: null,
+          to_account_id: null,
+          weekend_handling: 'allow',
+          start_date: '2024-01-01',
+          end_date: null,
+          active: 1,
+        },
+        {
+          id: 11,
+          account_id: EX_ACC1,
+          type: 'expense' as const,
+          amount: 20000,
+          description: 'Virement planifié',
+          subcategory_id: null,
+          payment_method_id: null,
+          notes: null,
+          recurrence_unit: 'month',
+          recurrence_interval: 1,
+          recurrence_day: null,
+          recurrence_month: null,
+          to_account_id: EX_ACC2,
+          weekend_handling: 'allow',
+          start_date: '2024-02-01',
+          end_date: null,
+          active: 1,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.scheduled).toBe(2);
+    const scheds = ctx.db
+      .prepare('SELECT to_account_id FROM scheduled_transactions ORDER BY id')
+      .all() as Array<{ to_account_id: number | null }>;
+    expect(scheds[0].to_account_id).toBeNull();
+    expect(scheds[1].to_account_id).not.toBeNull();
+  });
+
+  // ─── importStockPositions + importStockOperations ─────────────────────────
+
+  it('importe positions et opérations boursières, ignore opération si compte/tx inconnu', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [{ id: EX_AT1, name: 'Bourse', is_investment: 1, is_loan: 0 }],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Portefeuille Import')],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, { amount: 150000, description: 'Achat AAPL' }),
+        makeExportTx(EX_TX2, EX_ACC1, { amount: 500, description: 'Frais AAPL' }),
+      ],
+      stock_positions: [{ account_id: EX_ACC1, ticker: 'AAPL', quantity: 10, avg_price: 15000 }],
+      stock_operations: [
+        {
+          id: 10,
+          account_id: EX_ACC1,
+          transaction_id: EX_TX1,
+          fees_transaction_id: EX_TX2,
+          ticker: 'AAPL',
+          type: 'buy' as const,
+          quantity: 10,
+          price_per_share: 15000,
+          fees: 500,
+          date: '2024-01-15',
+        },
+        {
+          // Unknown account → skipped
+          id: 11,
+          account_id: 99,
+          transaction_id: EX_TX1,
+          fees_transaction_id: null,
+          ticker: 'AAPL',
+          type: 'buy' as const,
+          quantity: 5,
+          price_per_share: 15000,
+          fees: 0,
+          date: '2024-01-15',
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.stockOperations).toBe(1);
+    const pos = ctx.db
+      .prepare("SELECT quantity FROM stock_positions WHERE ticker = 'AAPL'")
+      .get() as { quantity: number } | undefined;
+    expect(pos?.quantity).toBe(10);
+    const ops = ctx.db.prepare('SELECT fees_transaction_id FROM stock_operations').all() as Array<{
+      fees_transaction_id: number | null;
+    }>;
+    expect(ops).toHaveLength(1);
+    expect(ops[0].fees_transaction_id).not.toBeNull();
+  });
+
+  // ─── importLoans ──────────────────────────────────────────────────────────
+
+  it('importe un prêt avec ses échéances et deposit_transaction_id mappé', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte Prêt'),
+        makeExportAccount(EX_ACC2, 'Source Prêt'),
+        makeExportAccount(EX_ACC3, 'Dépôt Prêt'),
+      ],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC3, {
+          amount: 1000000,
+          type: 'income',
+          description: 'Versement prêt',
+        }),
+      ],
+      loans: [
+        {
+          id: 10,
+          account_id: EX_ACC1,
+          principal_amount: 1000000,
+          interest_rate: 3.5,
+          duration_months: 12,
+          start_date: '2024-01-01',
+          monthly_payment: 90000,
+          source_account_id: EX_ACC2,
+          deposit_account_id: EX_ACC3,
+          deposit_transaction_id: EX_TX1,
+          installments: [
+            {
+              installment_number: 1,
+              due_date: '2024-02-01',
+              total_amount: 90000,
+              principal_amount: 87083,
+              interest_amount: 2917,
+              transaction_id: null,
+            },
+          ],
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.loans).toBe(1);
+    expect(ctx.db.prepare('SELECT * FROM loan_installments').all()).toHaveLength(1);
+    const loan = ctx.db.prepare('SELECT deposit_transaction_id FROM loans').get() as {
+      deposit_transaction_id: number | null;
+    };
+    expect(loan.deposit_transaction_id).not.toBeNull();
+  });
+
+  it('ignore un prêt dupliqué sur le même compte (INSERT OR IGNORE → changes === 0)', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Compte Prêt Dup'),
+        makeExportAccount(EX_ACC2, 'Source Dup'),
+        makeExportAccount(EX_ACC3, 'Dépôt Dup'),
+      ],
+      loans: [
+        {
+          id: 10,
+          account_id: EX_ACC1,
+          principal_amount: 1000000,
+          interest_rate: 3.5,
+          duration_months: 12,
+          start_date: '2024-01-01',
+          monthly_payment: 90000,
+          source_account_id: EX_ACC2,
+          deposit_account_id: EX_ACC3,
+          deposit_transaction_id: null,
+          installments: [],
+        },
+        {
+          // Same export account_id → maps to same DB account → INSERT OR IGNORE silences duplicate
+          id: 11,
+          account_id: EX_ACC1,
+          principal_amount: 500000,
+          interest_rate: 2.5,
+          duration_months: 6,
+          start_date: '2024-06-01',
+          monthly_payment: 85000,
+          source_account_id: EX_ACC2,
+          deposit_account_id: EX_ACC3,
+          deposit_transaction_id: null,
+          installments: [],
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.loans).toBe(1);
+    expect(ctx.db.prepare('SELECT * FROM loans').all()).toHaveLength(1);
+  });
+});
