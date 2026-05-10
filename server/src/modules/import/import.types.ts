@@ -52,3 +52,12 @@ export interface ImportResult {
   transactions: number;
   transfers: number;
 }
+
+export interface JsonFullImportResult {
+  accounts: number;
+  transactions: number;
+  transfers: number;
+  scheduled: number;
+  stockOperations: number;
+  loans: number;
+}

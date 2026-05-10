@@ -8,6 +8,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 describe('/api/export', () => {
   let ctx: TestContext;
+  let accountId: number;
 
   beforeAll(async () => {
     ctx = await createTestContext();
@@ -17,7 +18,7 @@ describe('/api/export', () => {
       account_type_id: SEED.AT_COURANT,
       opening_date: '2020-01-01',
     });
-    const accountId = acc.body.id;
+    accountId = acc.body.id;
     await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'income',
@@ -38,54 +39,57 @@ describe('/api/export', () => {
     });
   });
 
-  describe('GET /csv', () => {
-    it('returns 401 without auth', async () => {
-      expect((await supertest(ctx.app).get('/api/export/csv')).status).toBe(401);
+  describe('GET /json-full', () => {
+    it('retourne 401 sans authentification', async () => {
+      expect((await supertest(ctx.app).get('/api/export/json-full')).status).toBe(401);
     });
 
-    it('returns a CSV file with correct content-type', async () => {
-      const res = await ctx.agent.get('/api/export/csv');
+    it('retourne un JSON avec la structure complète', async () => {
+      const res = await ctx.agent.get('/api/export/json-full');
       expect(res.status).toBe(200);
-      expect(res.headers['content-type']).toMatch(/text\/csv/);
-    });
-
-    it('CSV contains a header row', async () => {
-      const res = await ctx.agent.get('/api/export/csv');
-      const lines = res.text.split('\n');
-      expect(lines[0]).toContain('Date');
-      expect(lines[0]).toContain('Montant');
-    });
-
-    it('CSV has correct number of data rows', async () => {
-      const res = await ctx.agent.get('/api/export/csv');
-      const lines = res.text
-        .replace(/^\uFEFF/, '')
-        .split('\n')
-        .filter(Boolean);
-      expect(lines.length).toBe(3); // header + 2 transactions
-    });
-
-    it('expense amounts are negative in CSV', async () => {
-      const res = await ctx.agent.get('/api/export/csv');
-      const lines = res.text.split('\n');
-      const expenseLine = lines.find((l) => l.includes('Courses'));
-      expect(expenseLine).toContain('-50.00');
-    });
-  });
-
-  describe('GET /json', () => {
-    it('returns a JSON backup with correct structure', async () => {
-      const res = await ctx.agent.get('/api/export/json');
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('exported_at');
+      expect(res.body.version).toBe('1.0');
+      expect(res.body.amounts_in_cents).toBe(true);
       expect(Array.isArray(res.body.accounts)).toBe(true);
       expect(Array.isArray(res.body.transactions)).toBe(true);
+      expect(Array.isArray(res.body.categories)).toBe(true);
+      expect(Array.isArray(res.body.payment_methods)).toBe(true);
+      expect(Array.isArray(res.body.scheduled_transactions)).toBe(true);
+      expect(Array.isArray(res.body.stock_positions)).toBe(true);
+      expect(Array.isArray(res.body.loans)).toBe(true);
     });
 
-    it('JSON contains the expected transactions', async () => {
-      const res = await ctx.agent.get('/api/export/json');
+    it('contient les transactions avec les montants en centimes', async () => {
+      const res = await ctx.agent.get('/api/export/json-full');
       expect(res.body.transactions.length).toBe(2);
+      const income = res.body.transactions.find((t: { type: string }) => t.type === 'income');
+      expect(income.amount).toBe(200000);
+    });
+
+    it('filtre par accountIds', async () => {
+      const res = await ctx.agent.get(`/api/export/json-full?accountIds=${accountId}`);
+      expect(res.status).toBe(200);
       expect(res.body.accounts.length).toBe(1);
+      expect(res.body.accounts[0].id).toBe(accountId);
+      expect(res.body.transactions.length).toBe(2);
+    });
+
+    it('retourne un tableau vide si accountIds ne correspond à aucun compte', async () => {
+      const res = await ctx.agent.get('/api/export/json-full?accountIds=999999');
+      expect(res.status).toBe(200);
+      expect(res.body.accounts.length).toBe(0);
+      expect(res.body.transactions.length).toBe(0);
+    });
+
+    it('les transactions contiennent un tableau splits', async () => {
+      const res = await ctx.agent.get('/api/export/json-full');
+      for (const tx of res.body.transactions) {
+        expect(Array.isArray(tx.splits)).toBe(true);
+      }
+    });
+
+    it('retourne le header Content-Disposition correct', async () => {
+      const res = await ctx.agent.get('/api/export/json-full');
+      expect(res.headers['content-disposition']).toMatch(/cashctrl-full-/);
     });
   });
 });

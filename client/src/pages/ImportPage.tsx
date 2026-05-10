@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { importApi } from '@/api/client';
+import { importApi, type JsonFullImportResult } from '@/api/client';
 import { Button, Card, Select } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
@@ -24,20 +24,33 @@ import {
   XHB_PAYMODE_NAMES,
 } from './import.helpers';
 
-type Step = 'upload' | 'accounts' | 'categories' | 'paymethods' | 'preview' | 'done';
-type ParsedFile = { format: 'qif'; data: QifParseResult } | { format: 'xhb'; data: XhbParseResult };
+type Step = 'upload' | 'accounts' | 'categories' | 'paymethods' | 'preview' | 'confirm' | 'done';
+type ParsedFile =
+  | { format: 'qif'; data: QifParseResult }
+  | { format: 'xhb'; data: XhbParseResult }
+  | { format: 'json'; data: unknown };
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
-function StepIndicator({ step, isXhb }: Readonly<{ step: Step; isXhb: boolean }>) {
-  const steps: { id: Step; label: string }[] = [
-    { id: 'upload', label: 'Fichier' },
-    { id: 'accounts', label: 'Comptes' },
-    { id: 'categories', label: 'Catégories' },
-    ...(isXhb ? [{ id: 'paymethods' as Step, label: 'Paiements' }] : []),
-    { id: 'preview', label: 'Aperçu' },
-    { id: 'done', label: 'Terminé' },
-  ];
+function StepIndicator({
+  step,
+  format,
+}: Readonly<{ step: Step; format: 'qif' | 'xhb' | 'json' | null }>) {
+  const steps: { id: Step; label: string }[] =
+    format === 'json'
+      ? [
+          { id: 'upload', label: 'Fichier' },
+          { id: 'confirm', label: 'Confirmer' },
+          { id: 'done', label: 'Terminé' },
+        ]
+      : [
+          { id: 'upload', label: 'Fichier' },
+          { id: 'accounts', label: 'Comptes' },
+          { id: 'categories', label: 'Catégories' },
+          ...(format === 'xhb' ? [{ id: 'paymethods' as Step, label: 'Paiements' }] : []),
+          { id: 'preview', label: 'Aperçu' },
+          { id: 'done', label: 'Terminé' },
+        ];
   const current = steps.findIndex((s) => s.id === step);
   const containerStyles = {
     active: 'bg-stone-900 text-white',
@@ -416,6 +429,7 @@ export default function ImportPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importMutation = useMutation({ mutationFn: importApi.executeQif });
+  const jsonImportMutation = useMutation({ mutationFn: importApi.executeJsonFull });
 
   const isXhb = parsedFile?.format === 'xhb';
 
@@ -424,9 +438,10 @@ export default function ImportPage() {
       const nameLower = file.name.toLowerCase();
       const isQifFile = nameLower.endsWith('.qif');
       const isXhbFile = nameLower.endsWith('.xhb');
+      const isJsonFile = nameLower.endsWith('.json');
 
-      if (!isQifFile && !isXhbFile) {
-        setParseError("Le fichier doit avoir l'extension .qif ou .xhb");
+      if (!isQifFile && !isXhbFile && !isJsonFile) {
+        setParseError("Le fichier doit avoir l'extension .qif, .xhb ou .json");
         return;
       }
       setParseError('');
@@ -444,6 +459,19 @@ export default function ImportPage() {
       reader.onload = (e) => {
         const text = e.target?.result as string;
         try {
+          if (isJsonFile) {
+            const data = JSON.parse(text) as { version?: unknown; amounts_in_cents?: unknown };
+            if (data.version !== '1.0' || data.amounts_in_cents !== true) {
+              setParseError(
+                'Format JSON invalide ou version non supportée (attendu: version 1.0).',
+              );
+              return;
+            }
+            setParsedFile({ format: 'json', data });
+            setFileName(file.name);
+            setStep('confirm');
+            return;
+          }
           if (isQifFile) {
             const result = parseQif(text);
             if (result.transactions.length === 0) {
@@ -548,6 +576,7 @@ export default function ImportPage() {
         categories,
       );
     }
+    if (parsedFile.format === 'json') return [];
     return resolveXhbPreview(
       parsedFile.data,
       accountChoices,
@@ -614,7 +643,7 @@ export default function ImportPage() {
 
   // Account list shown in the accounts step
   const accountsToMap: string[] = (() => {
-    if (!parsedFile) return [];
+    if (!parsedFile || parsedFile.format === 'json') return [];
     if (parsedFile.format === 'qif') return parsedFile.data.accounts;
     return parsedFile.data.accounts;
   })();
@@ -625,19 +654,21 @@ export default function ImportPage() {
       ? parsedFile.data.uniqueTransferTargets.filter((t) => !parsedFile.data.accounts.includes(t))
       : [];
 
-  const uniqueCategories =
+  const uniqueCategories: string[] =
     parsedFile?.format === 'qif'
       ? parsedFile.data.uniqueCategories
-      : (parsedFile?.data.uniqueCategories ?? []);
+      : parsedFile?.format === 'xhb'
+        ? parsedFile.data.uniqueCategories
+        : [];
 
   return (
     <div className="max-w-4xl">
       <h1 className="font-serif text-3xl text-stone-800 mb-1">Importation</h1>
       <p className="text-sm text-stone-400 mb-8">
-        Importez des transactions depuis un fichier QIF ou HomeBank (XHB).
+        Importez des transactions depuis un fichier QIF, HomeBank (XHB) ou JSON CashCtrl.
       </p>
 
-      <StepIndicator step={step} isXhb={isXhb} />
+      <StepIndicator step={step} format={parsedFile?.format ?? null} />
 
       {/* ── Step 1: Upload ── */}
       {step === 'upload' && (
@@ -653,13 +684,15 @@ export default function ImportPage() {
           >
             <div className="text-4xl mb-3 text-stone-300">⇪</div>
             <p className="text-sm font-medium text-stone-600 mb-1">Déposez votre fichier ici</p>
-            <p className="text-xs text-stone-400">QIF ou XHB (HomeBank) — cliquez pour parcourir</p>
+            <p className="text-xs text-stone-400">
+              QIF, XHB (HomeBank) ou JSON CashCtrl — cliquez pour parcourir
+            </p>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".qif,.xhb"
+              accept=".qif,.xhb,.json"
               className="sr-only"
-              aria-label="Sélectionner un fichier QIF ou XHB"
+              aria-label="Sélectionner un fichier QIF, XHB ou JSON"
               onChange={(e) => {
                 if (e.target.files?.[0]) handleFile(e.target.files[0]);
               }}
@@ -695,7 +728,7 @@ export default function ImportPage() {
                     </span>
                   )}
                 </>
-              ) : (
+              ) : parsedFile.format === 'xhb' ? (
                 <>
                   <span>{parsedFile.data.transactions.length} transactions</span>
                   <span>{parsedFile.data.transfers.length} virements</span>
@@ -704,7 +737,7 @@ export default function ImportPage() {
                     <span>{parsedFile.data.uniquePaymodes.length} mode(s) de paiement</span>
                   )}
                 </>
-              )}
+              ) : null}
             </div>
           </Card>
 
@@ -858,6 +891,110 @@ export default function ImportPage() {
           </div>
         </div>
       )}
+
+      {/* ── Step JSON: Confirm ── */}
+      {step === 'confirm' &&
+        parsedFile?.format === 'json' &&
+        (() => {
+          const d = parsedFile.data as Record<string, unknown[]>;
+          const txs = (d.transactions ?? []) as Array<{ transfer_peer_id: unknown }>;
+          const transferCount = txs.filter((t) => t.transfer_peer_id !== null).length / 2;
+          const stats = [
+            { value: (d.accounts ?? []).length, label: 'comptes' },
+            { value: txs.length - transferCount * 2, label: 'transactions' },
+            { value: Math.round(transferCount), label: 'virements' },
+            { value: (d.scheduled_transactions ?? []).length, label: 'planifiées' },
+            { value: (d.stock_operations ?? []).length, label: 'opér. bourse' },
+            { value: (d.loans ?? []).length, label: 'prêts' },
+          ].filter(({ value }) => value > 0);
+          const cats = (d.categories ?? []) as Array<{ subcategories: unknown[] }>;
+          const subcatCount = cats.reduce((s, c) => s + c.subcategories.length, 0);
+
+          const handleJsonImport = async () => {
+            try {
+              await jsonImportMutation.mutateAsync(parsedFile.data);
+              await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+              setStep('done');
+            } catch {
+              /* error shown inline */
+            }
+          };
+
+          return (
+            <div className="flex flex-col gap-6">
+              <div className="flex gap-4 flex-wrap">
+                {stats.map(({ value, label }) => (
+                  <div
+                    key={label}
+                    className="flex-1 min-w-[90px] bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
+                  >
+                    <p className="text-2xl font-serif text-stone-800">{value}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Card>
+                <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
+                  Contenu du fichier
+                </p>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-stone-600">
+                  <span>Catégories</span>
+                  <span className="text-stone-800 font-medium">
+                    {cats.length} ({subcatCount} sous-catégories)
+                  </span>
+                  <span>Moyens de paiement</span>
+                  <span className="text-stone-800 font-medium">
+                    {(d.payment_methods ?? []).length}
+                  </span>
+                  <span>Types de compte</span>
+                  <span className="text-stone-800 font-medium">
+                    {(d.account_types ?? []).length}
+                  </span>
+                  <span>Positions bourse</span>
+                  <span className="text-stone-800 font-medium">
+                    {(d.stock_positions ?? []).length}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400 mt-4">
+                  Les comptes, catégories et moyens de paiement existants (même nom) seront
+                  réutilisés, pas dupliqués. Les transactions seront ajoutées.
+                </p>
+              </Card>
+
+              {jsonImportMutation.isError && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <p className="font-medium mb-1">Erreur lors de l'importation :</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {jsonImportMutation.error.message.split('\n').map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <Button
+                  onClick={() => {
+                    setStep('upload');
+                    setParsedFile(null);
+                    setFileName('');
+                    jsonImportMutation.reset();
+                  }}
+                >
+                  ← Retour
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleJsonImport}
+                  disabled={jsonImportMutation.isPending}
+                >
+                  {jsonImportMutation.isPending ? 'Importation…' : 'Importer'}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
 
       {/* ── Step 4/5: Preview ── */}
       {step === 'preview' && (
@@ -1015,25 +1152,49 @@ export default function ImportPage() {
       )}
 
       {/* ── Step 5/6: Done ── */}
-      {step === 'done' && importMutation.data && (
+      {step === 'done' && (importMutation.data ?? jsonImportMutation.data) && (
         <Card>
           <div className="text-center py-8">
             <div className="text-5xl mb-4">✓</div>
             <h2 className="font-serif text-2xl text-stone-800 mb-2">Importation terminée</h2>
-            <div className="flex justify-center gap-8 mt-6 mb-8">
-              <div>
-                <p className="text-3xl font-serif text-stone-800">
-                  {importMutation.data.transactions}
-                </p>
-                <p className="text-xs text-stone-400 mt-1">transactions importées</p>
+            {importMutation.data && (
+              <div className="flex justify-center gap-8 mt-6 mb-8">
+                <div>
+                  <p className="text-3xl font-serif text-stone-800">
+                    {importMutation.data.transactions}
+                  </p>
+                  <p className="text-xs text-stone-400 mt-1">transactions importées</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-serif text-stone-800">
+                    {importMutation.data.transfers}
+                  </p>
+                  <p className="text-xs text-stone-400 mt-1">virements importés</p>
+                </div>
               </div>
-              <div>
-                <p className="text-3xl font-serif text-stone-800">
-                  {importMutation.data.transfers}
-                </p>
-                <p className="text-xs text-stone-400 mt-1">virements importés</p>
-              </div>
-            </div>
+            )}
+            {jsonImportMutation.data &&
+              (() => {
+                const r: JsonFullImportResult = jsonImportMutation.data;
+                const stats = [
+                  { value: r.accounts, label: 'comptes créés' },
+                  { value: r.transactions, label: 'transactions' },
+                  { value: r.transfers, label: 'virements' },
+                  { value: r.scheduled, label: 'planifiées' },
+                  { value: r.stockOperations, label: 'opér. bourse' },
+                  { value: r.loans, label: 'prêts' },
+                ].filter(({ value }) => value > 0);
+                return (
+                  <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
+                    {stats.map(({ value, label }) => (
+                      <div key={label}>
+                        <p className="text-3xl font-serif text-stone-800">{value}</p>
+                        <p className="text-xs text-stone-400 mt-1">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             <div className="flex justify-center gap-3">
               <Button
                 onClick={() => {
@@ -1041,6 +1202,7 @@ export default function ImportPage() {
                   setParsedFile(null);
                   setFileName('');
                   importMutation.reset();
+                  jsonImportMutation.reset();
                 }}
               >
                 Nouvelle importation

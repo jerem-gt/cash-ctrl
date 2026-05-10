@@ -116,15 +116,17 @@ export const handlers = [
 
   // Import
   http.post('/api/import/qif', () => HttpResponse.json(IMPORT_RESULT, { status: 201 })),
+  http.post('/api/import/json-full', () =>
+    HttpResponse.json(
+      { accounts: 1, transactions: 5, transfers: 2, scheduled: 0, stockOperations: 0, loans: 0 },
+      { status: 201 },
+    ),
+  ),
 
   // Export
   http.get(
-    '/api/export/csv',
-    () => new HttpResponse(new Blob(['col1,col2'], { type: 'text/csv' })),
-  ),
-  http.get(
-    '/api/export/json',
-    () => new HttpResponse(new Blob(['[]'], { type: 'application/json' })),
+    '/api/export/json-full',
+    () => new HttpResponse(new Blob(['{}'], { type: 'application/json' })),
   ),
 
   // Loans (specific patterns before generic /:loanId)
