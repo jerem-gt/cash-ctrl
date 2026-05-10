@@ -105,7 +105,7 @@ export default function ExportManager() {
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-xs text-stone-400">
-              {selectedIds.size} compte{selectedIds.size !== 1 ? 's' : ''} · catégories et moyens de
+              {selectedIds.size} compte{selectedIds.size === 1 ? '' : 's'} · catégories et moyens de
               paiement toujours inclus
             </p>
             <Button
