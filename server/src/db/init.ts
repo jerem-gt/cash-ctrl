@@ -9,19 +9,7 @@ import { seedDatabase } from './seed';
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 
 // Each entry converts the DB from version N to N+1.
-const MIGRATIONS: Array<(db: DatabaseType) => void> = [
-  (db) => {
-    db.exec(`
-      ALTER TABLE stock_operations ADD COLUMN fees_transaction_id INTEGER REFERENCES transactions (id) ON DELETE SET NULL;
-      CREATE TRIGGER IF NOT EXISTS stock_op_fees_cleanup
-      AFTER DELETE ON stock_operations
-      WHEN OLD.fees_transaction_id IS NOT NULL
-      BEGIN
-          DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
-      END;
-    `);
-  },
-];
+const MIGRATIONS: Array<(db: DatabaseType) => void> = [];
 
 function runMigrations(db: DatabaseType) {
   const version = db.pragma('user_version', { simple: true }) as number;
