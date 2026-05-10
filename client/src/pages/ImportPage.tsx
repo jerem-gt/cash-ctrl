@@ -30,6 +30,44 @@ type ParsedFile =
   | { format: 'xhb'; data: XhbParseResult }
   | { format: 'json'; data: unknown };
 
+function parsedFileStatsNode(pf: ParsedFile) {
+  if (pf.format === 'qif') {
+    return (
+      <>
+        <span>{pf.data.transactions.length} transactions</span>
+        <span>{pf.data.uniqueCategories.length} catégories</span>
+        {pf.data.uniqueTransferTargets.length > 0 && (
+          <span>{pf.data.uniqueTransferTargets.length} compte(s) de virement</span>
+        )}
+      </>
+    );
+  }
+  if (pf.format === 'xhb') {
+    return (
+      <>
+        <span>{pf.data.transactions.length} transactions</span>
+        <span>{pf.data.transfers.length} virements</span>
+        <span>{pf.data.uniqueCategories.length} catégories</span>
+        {pf.data.uniquePaymodes.length > 0 && (
+          <span>{pf.data.uniquePaymodes.length} mode(s) de paiement</span>
+        )}
+      </>
+    );
+  }
+  return null;
+}
+
+function findBankByName(bankname: string, banks: Bank[]): number | null {
+  if (!bankname) return banks[0]?.id ?? null;
+  const lower = bankname.toLowerCase();
+  const exact = banks.find((b) => b.name.toLowerCase() === lower);
+  if (exact) return exact.id;
+  const partial = banks.find(
+    (b) => b.name.toLowerCase().includes(lower) || lower.includes(b.name.toLowerCase()),
+  );
+  return partial?.id ?? banks[0]?.id ?? null;
+}
+
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 function StepIndicator({
@@ -455,93 +493,91 @@ export default function ImportPage() {
         opening_date: null,
       });
 
+      const handleJsonFile = (text: string): boolean => {
+        const data = JSON.parse(text) as { version?: unknown; amounts_in_cents?: unknown };
+        if (data.version !== '1.0' || data.amounts_in_cents !== true) {
+          setParseError('Format JSON invalide ou version non supportée (attendu: version 1.0).');
+          return false;
+        }
+        setParsedFile({ format: 'json', data });
+        setFileName(file.name);
+        setStep('confirm');
+        return true;
+      };
+
+      const handleQifFile = (text: string): boolean => {
+        const result = parseQif(text);
+        if (result.transactions.length === 0) {
+          setParseError('Aucune transaction trouvée dans ce fichier.');
+          return false;
+        }
+        setParsedFile({ format: 'qif', data: result });
+        setFileName(file.name);
+        setDateFormat(result.detectedDateFormat === 'MM/DD' ? 'MM/DD' : 'DD/MM');
+
+        const accChoices = new Map<string, AccountChoice>();
+        for (const acc of result.accounts) accChoices.set(acc, makeDefaultAccChoice(acc));
+        for (const target of result.uniqueTransferTargets) {
+          if (!accChoices.has(target)) accChoices.set(target, makeDefaultAccChoice(target));
+        }
+        setAccountChoices(accChoices);
+
+        const catChoices = new Map<string, CategoryChoice>();
+        for (const qifCat of result.uniqueCategories) {
+          catChoices.set(qifCat, findAutoCategory(qifCat, categories) ?? { action: 'skip' });
+        }
+        setCategoryChoices(catChoices);
+        setPaymodeChoices(new Map());
+        return true;
+      };
+
+      const handleXhbFile = (text: string): boolean => {
+        const result = parseXhb(text);
+        if (result.transactions.length + result.transfers.length === 0) {
+          setParseError('Aucune transaction trouvée dans ce fichier.');
+          return false;
+        }
+        setParsedFile({ format: 'xhb', data: result });
+        setFileName(file.name);
+
+        const accChoices = new Map<string, AccountChoice>();
+        for (const accName of result.accounts) {
+          const details = result.accountDetails.get(accName);
+          accChoices.set(accName, {
+            action: 'create',
+            name: accName,
+            bank_id: findBankByName(details?.bankname ?? '', banks),
+            account_type_id: accountTypes[0]?.id ?? null,
+            initial_balance: details?.initial ?? 0,
+            opening_date: null,
+          });
+        }
+        setAccountChoices(accChoices);
+
+        const catChoices = new Map<string, CategoryChoice>();
+        for (const cat of result.uniqueCategories) {
+          catChoices.set(cat, findAutoCategory(cat, categories) ?? { action: 'skip' });
+        }
+        setCategoryChoices(catChoices);
+
+        const pmChoices = new Map<number, number | null>();
+        for (const paymode of result.uniquePaymodes) {
+          pmChoices.set(paymode, findAutoPaymentMethod(paymode, paymentMethods));
+        }
+        setPaymodeChoices(pmChoices);
+        return true;
+      };
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
         try {
           if (isJsonFile) {
-            const data = JSON.parse(text) as { version?: unknown; amounts_in_cents?: unknown };
-            if (data.version !== '1.0' || data.amounts_in_cents !== true) {
-              setParseError(
-                'Format JSON invalide ou version non supportée (attendu: version 1.0).',
-              );
-              return;
-            }
-            setParsedFile({ format: 'json', data });
-            setFileName(file.name);
-            setStep('confirm');
+            handleJsonFile(text);
             return;
           }
-          if (isQifFile) {
-            const result = parseQif(text);
-            if (result.transactions.length === 0) {
-              setParseError('Aucune transaction trouvée dans ce fichier.');
-              return;
-            }
-            setParsedFile({ format: 'qif', data: result });
-            setFileName(file.name);
-            setDateFormat(result.detectedDateFormat === 'MM/DD' ? 'MM/DD' : 'DD/MM');
-
-            const accChoices = new Map<string, AccountChoice>();
-            for (const acc of result.accounts) accChoices.set(acc, makeDefaultAccChoice(acc));
-            for (const target of result.uniqueTransferTargets) {
-              if (!accChoices.has(target)) accChoices.set(target, makeDefaultAccChoice(target));
-            }
-            setAccountChoices(accChoices);
-
-            const catChoices = new Map<string, CategoryChoice>();
-            for (const qifCat of result.uniqueCategories) {
-              catChoices.set(qifCat, findAutoCategory(qifCat, categories) ?? { action: 'skip' });
-            }
-            setCategoryChoices(catChoices);
-            setPaymodeChoices(new Map());
-          } else {
-            const result = parseXhb(text);
-            if (result.transactions.length + result.transfers.length === 0) {
-              setParseError('Aucune transaction trouvée dans ce fichier.');
-              return;
-            }
-            setParsedFile({ format: 'xhb', data: result });
-            setFileName(file.name);
-
-            const findBankByName = (bankname: string): number | null => {
-              if (!bankname) return banks[0]?.id ?? null;
-              const lower = bankname.toLowerCase();
-              const exact = banks.find((b) => b.name.toLowerCase() === lower);
-              if (exact) return exact.id;
-              const partial = banks.find(
-                (b) => b.name.toLowerCase().includes(lower) || lower.includes(b.name.toLowerCase()),
-              );
-              return partial?.id ?? banks[0]?.id ?? null;
-            };
-
-            const accChoices = new Map<string, AccountChoice>();
-            for (const accName of result.accounts) {
-              const details = result.accountDetails.get(accName);
-              accChoices.set(accName, {
-                action: 'create',
-                name: accName,
-                bank_id: findBankByName(details?.bankname ?? ''),
-                account_type_id: accountTypes[0]?.id ?? null,
-                initial_balance: details?.initial ?? 0,
-                opening_date: null,
-              });
-            }
-            setAccountChoices(accChoices);
-
-            const catChoices = new Map<string, CategoryChoice>();
-            for (const cat of result.uniqueCategories) {
-              catChoices.set(cat, findAutoCategory(cat, categories) ?? { action: 'skip' });
-            }
-            setCategoryChoices(catChoices);
-
-            const pmChoices = new Map<number, number | null>();
-            for (const paymode of result.uniquePaymodes) {
-              pmChoices.set(paymode, findAutoPaymentMethod(paymode, paymentMethods));
-            }
-            setPaymodeChoices(pmChoices);
-          }
-          setStep('accounts');
+          const ok = isQifFile ? handleQifFile(text) : handleXhbFile(text);
+          if (ok) setStep('accounts');
         } catch {
           setParseError('Erreur lors de la lecture du fichier.');
         }
@@ -654,12 +690,10 @@ export default function ImportPage() {
       ? parsedFile.data.uniqueTransferTargets.filter((t) => !parsedFile.data.accounts.includes(t))
       : [];
 
-  const uniqueCategories: string[] =
-    parsedFile?.format === 'qif'
-      ? parsedFile.data.uniqueCategories
-      : parsedFile?.format === 'xhb'
-        ? parsedFile.data.uniqueCategories
-        : [];
+  let uniqueCategories: string[] = [];
+  if (parsedFile?.format === 'qif' || parsedFile?.format === 'xhb') {
+    uniqueCategories = parsedFile.data.uniqueCategories;
+  }
 
   return (
     <div className="max-w-4xl">
@@ -718,26 +752,7 @@ export default function ImportPage() {
               <span className="uppercase text-[10px] font-bold tracking-widest text-stone-400 self-center">
                 {parsedFile.format}
               </span>
-              {parsedFile.format === 'qif' ? (
-                <>
-                  <span>{parsedFile.data.transactions.length} transactions</span>
-                  <span>{parsedFile.data.uniqueCategories.length} catégories</span>
-                  {parsedFile.data.uniqueTransferTargets.length > 0 && (
-                    <span>
-                      {parsedFile.data.uniqueTransferTargets.length} compte(s) de virement
-                    </span>
-                  )}
-                </>
-              ) : parsedFile.format === 'xhb' ? (
-                <>
-                  <span>{parsedFile.data.transactions.length} transactions</span>
-                  <span>{parsedFile.data.transfers.length} virements</span>
-                  <span>{parsedFile.data.uniqueCategories.length} catégories</span>
-                  {parsedFile.data.uniquePaymodes.length > 0 && (
-                    <span>{parsedFile.data.uniquePaymodes.length} mode(s) de paiement</span>
-                  )}
-                </>
-              ) : null}
+              {parsedFileStatsNode(parsedFile)}
             </div>
           </Card>
 
@@ -926,7 +941,7 @@ export default function ImportPage() {
                 {stats.map(({ value, label }) => (
                   <div
                     key={label}
-                    className="flex-1 min-w-[90px] bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
+                    className="flex-1 min-w-22.5 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
                   >
                     <p className="text-2xl font-serif text-stone-800">{value}</p>
                     <p className="text-xs text-stone-400 mt-0.5">{label}</p>
