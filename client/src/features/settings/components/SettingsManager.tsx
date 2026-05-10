@@ -9,7 +9,14 @@ export const tabs = [
       { key: 'accountTypes', label: 'Types de compte' },
     ],
   },
-  { section: 'export', label: 'Export', items: [{ key: 'export', label: 'Export' }] },
+  {
+    section: 'data',
+    label: 'Données',
+    items: [
+      { key: 'export', label: 'Export' },
+      { key: 'import', label: 'Import' },
+    ],
+  },
   { section: 'security', label: 'Sécurité', items: [{ key: 'password', label: 'Mot de passe' }] },
 ] as const;
 

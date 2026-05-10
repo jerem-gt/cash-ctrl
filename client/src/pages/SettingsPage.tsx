@@ -11,6 +11,7 @@ import {
 } from '@/features/settings';
 
 import ExportManager from '../features/settings/components/ExportManager.tsx';
+import ImportManager from '../features/settings/components/ImportManager.tsx';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('categories');
@@ -35,6 +36,7 @@ export default function SettingsPage() {
           {activeTab === 'paymentMethods' && <PaymentMethodsManager />}
           {activeTab === 'accountTypes' && <AccountTypesManager />}
           {activeTab === 'export' && <ExportManager />}
+          {activeTab === 'import' && <ImportManager />}
           {activeTab === 'password' && <PasswordChangeCard />}
         </div>
       </div>
