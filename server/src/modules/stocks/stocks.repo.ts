@@ -15,43 +15,6 @@ function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
 }
 
-function recalcPosition(db: Database, accountId: number, ticker: string, userId: number): void {
-  const ops = db
-    .prepare<
-      [number, string],
-      { type: string; quantity: number; price_per_share: number }
-    >('SELECT type, quantity, price_per_share FROM stock_operations WHERE account_id = ? AND ticker = ? ORDER BY date, id')
-    .all(accountId, ticker);
-
-  let qty = 0;
-  let avgPrice = 0;
-  for (const op of ops) {
-    if (op.type === 'buy') {
-      const newQty = qty + op.quantity;
-      avgPrice = newQty > 0 ? (qty * avgPrice + op.quantity * op.price_per_share) / newQty : 0;
-      qty = newQty;
-    } else {
-      qty -= op.quantity;
-    }
-  }
-
-  if (qty <= 0) {
-    db.prepare('DELETE FROM stock_positions WHERE account_id = ? AND ticker = ?').run(
-      accountId,
-      ticker,
-    );
-  } else {
-    db.prepare(
-      `INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(account_id, ticker) DO UPDATE SET
-         quantity   = excluded.quantity,
-         avg_price  = excluded.avg_price,
-         updated_at = datetime('now')`,
-    ).run(userId, accountId, ticker, qty, avgPrice);
-  }
-}
-
 export function createStocksRepo(db: Database) {
   const getAllTickersStmt = db
     .prepare<[], string>(
@@ -140,8 +103,6 @@ export function createStocksRepo(db: Database) {
           );
         const operationId = Number(opResult.lastInsertRowid);
 
-        recalcPosition(db, input.account_id, input.ticker, userId);
-
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
           .get(operationId)!;
@@ -218,8 +179,6 @@ export function createStocksRepo(db: Database) {
             input.date,
           );
         const operationId = Number(opResult.lastInsertRowid);
-
-        recalcPosition(db, input.account_id, input.ticker, userId);
 
         const operation = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
@@ -343,8 +302,6 @@ export function createStocksRepo(db: Database) {
           newFeesTransactionId,
           operationId,
         );
-
-        recalcPosition(db, input.account_id, op.ticker, userId);
 
         const updatedOp = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')

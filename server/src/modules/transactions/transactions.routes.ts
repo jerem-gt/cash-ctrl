@@ -6,6 +6,7 @@ import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
+import { recalcPosition } from '../stocks/stocks.service';
 import { createTransactionsRepo } from './transactions.repo';
 
 const transactionSchema = z
@@ -159,8 +160,15 @@ export function createTransactionsRouter(db: Database): Router {
       });
       return;
     }
+    const op = db
+      .prepare('SELECT account_id, ticker FROM stock_operations WHERE transaction_id = ?')
+      .get(id) as { account_id: number; ticker: string } | undefined;
 
     transactionsRepo.delete(userId, id);
+    if (op) {
+      recalcPosition(db, op.account_id, op.ticker, userId);
+    }
+
     res.json({ ok: true });
   });
 

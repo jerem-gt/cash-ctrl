@@ -11,6 +11,9 @@ const DEFAULT_SUBCATEGORIES = [
   { name: 'Mobile', category_name: 'Logement' },
   { name: 'Mobilier', category_name: 'Logement' },
   { name: 'Travaux', category_name: 'Logement' },
+  { name: 'Eau', category_name: 'Logement' },
+  { name: 'Déménagement', category_name: 'Logement' },
+  { name: "Frais d'agence", category_name: 'Logement' },
 
   { name: 'Achat', category_name: 'Automobile' },
   { name: 'Administratif', category_name: 'Automobile' },
@@ -41,7 +44,9 @@ const DEFAULT_SUBCATEGORIES = [
   { name: 'Courrier', category_name: 'Vie quotidienne' },
   { name: 'Retrait', category_name: 'Vie quotidienne' },
   { name: 'Vêtements', category_name: 'Vie quotidienne' },
+  { name: 'Hôtel', category_name: 'Vie quotidienne' },
   { name: 'Frais bancaires', category_name: 'Vie quotidienne' },
+  { name: 'Frais professionnels', category_name: 'Vie quotidienne' },
 
   { name: 'Cadeau', category_name: 'Loisirs' },
   { name: 'Chèques vacances', category_name: 'Loisirs' },
@@ -63,6 +68,8 @@ const DEFAULT_SUBCATEGORIES = [
   { name: 'Intéressement', category_name: 'Revenus du travail' },
   { name: 'Participation', category_name: 'Revenus du travail' },
   { name: 'Remboursement de frais', category_name: 'Revenus du travail' },
+  { name: 'Cotisation retraite', category_name: 'Revenus du travail' },
+  { name: 'CSE', category_name: 'Revenus du travail' },
 
   { name: 'APL', category_name: 'Prestations sociales' },
   { name: 'Chômage', category_name: 'Prestations sociales' },

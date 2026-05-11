@@ -14,7 +14,7 @@ function mapAccount(row: Account): Account {
     initial_balance: toEuros(row.initial_balance),
     balance: toEuros(row.balance),
     balance_all: toEuros(row.balance_all),
-    balance_stocks: toEuros(row.balance_stocks),
+    balance_stocks: row.balance_stocks,
     capital_restant_du: row.capital_restant_du == null ? null : toEuros(row.capital_restant_du),
     capital_restant_du_all:
       row.capital_restant_du_all == null ? null : toEuros(row.capital_restant_du_all),

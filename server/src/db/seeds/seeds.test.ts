@@ -77,7 +77,7 @@ describe('seedCategories', () => {
 });
 
 describe('seedSubcategories', () => {
-  it('inserts 64 subcategories with valid name and category_id coherent with the schema', () => {
+  it('inserts 71 subcategories with valid name and category_id coherent with the schema', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -87,7 +87,7 @@ describe('seedSubcategories', () => {
       name: string;
       category_id: string;
     }[];
-    expect(rows).toHaveLength(64);
+    expect(rows).toHaveLength(71);
     expect(rows.every((r) => r.name && r.category_id)).toBe(true);
   });
 });
