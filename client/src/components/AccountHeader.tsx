@@ -15,7 +15,7 @@ const LoanHeader = ({ value }: { value: number }) => (
     <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
       Capital restant dû
     </span>
-    <p className="font-serif text-4xl leading-none text-red-700">{fmtDec(value)}</p>
+    <p className="font-sans text-4xl leading-none text-red-700">{fmtDec(value)}</p>
   </div>
 );
 
@@ -45,7 +45,7 @@ const StatItem = ({
       {label}
     </span>
     <p
-      className={`font-serif ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${value < 0 ? 'text-red-700' : ''}`}
+      className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${value < 0 ? 'text-red-700' : ''}`}
     >
       {fmtDec(value)}
     </p>
@@ -68,7 +68,7 @@ const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }
       Solde disponible
     </span>
     <p
-      className={`font-serif text-4xl leading-none ${value < 0 ? 'text-red-700' : 'text-stone-900'}`}
+      className={`font-sans text-4xl leading-none ${value < 0 ? 'text-red-700' : 'text-stone-900'}`}
     >
       {fmtDec(value ?? 0)}
     </p>
@@ -128,7 +128,7 @@ export function AccountHeader({
                 )}
               </div>
 
-              <h2 className="font-serif text-4xl text-stone-900 tracking-tight">
+              <h2 className="font-sans text-4xl text-stone-900 tracking-tight">
                 {account.name ?? 'Compte'}
               </h2>
 

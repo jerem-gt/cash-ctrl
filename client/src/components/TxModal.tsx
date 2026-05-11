@@ -436,7 +436,7 @@ export function TxModal(props: Readonly<Props>) {
     return (
       <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-          <h3 className="font-serif text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
+          <h3 className="font-sans text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
           <TxModalHeader
             isEdit={isEdit}
             isTransferEdit={isTransferEdit}
@@ -453,7 +453,7 @@ export function TxModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-        <h3 className="font-serif text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
+        <h3 className="font-sans text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
 
         <TxModalHeader
           isEdit={isEdit}

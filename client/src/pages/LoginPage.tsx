@@ -21,7 +21,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-stone-100 flex items-center justify-center p-6">
       <div className="bg-white border border-black/[0.07] rounded-2xl p-8 w-full max-w-sm shadow-lg">
-        <h1 className="font-serif text-2xl mb-1">
+        <h1 className="font-sans text-2xl mb-1">
           {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
         </h1>
         <p className="text-sm text-stone-400 mb-7">Connectez-vous pour accéder à vos comptes</p>

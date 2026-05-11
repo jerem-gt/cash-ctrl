@@ -1,4 +1,9 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+} from 'react';
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
@@ -41,7 +46,7 @@ export function Metric({ label, value, sub, variant = 'default' }: Readonly<Metr
   return (
     <Card size="sm">
       <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
-      <p className={`font-serif text-2xl ${colors[variant]}`}>{value}</p>
+      <p className={`font-sans text-2xl ${colors[variant]}`}>{value}</p>
       {sub && <p className="text-[11px] text-stone-300 mt-1">{sub}</p>}
     </Card>
   );
@@ -288,7 +293,7 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-sm shadow-xl">
-        <h3 className="font-serif text-xl mb-2">{title}</h3>
+        <h3 className="font-sans text-xl mb-2">{title}</h3>
         <p className="text-sm text-stone-500 leading-relaxed mb-6">{body}</p>
         <div className="flex gap-2 justify-end">
           <Button onClick={onCancel} disabled={isPending}>

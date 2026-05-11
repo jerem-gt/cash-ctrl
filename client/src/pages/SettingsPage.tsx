@@ -20,7 +20,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-8">
       {/* Header de la page */}
       <div>
-        <h1 className="text-3xl font-serif tracking-tight">Paramètres</h1>
+        <h1 className="text-3xl font-sans tracking-tight">Paramètres</h1>
         <p className="text-sm text-black/40">Administration et gestion de l'application</p>
       </div>
 

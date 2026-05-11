@@ -52,7 +52,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-serif text-xl mb-1">Modifier l&apos;opération</h3>
+        <h3 className="font-sans text-xl mb-1">Modifier l&apos;opération</h3>
         <p className="text-[11px] text-stone-400 mb-5">
           {isBuy ? 'Achat' : 'Vente'} —{' '}
           <span className="font-mono font-bold text-stone-600">{op.ticker}</span>
@@ -109,7 +109,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               {isBuy ? 'Montant total' : 'Montant net reçu'}
             </p>
             <p
-              className={`font-serif text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
+              className={`font-sans text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
             >
               {totalAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </p>

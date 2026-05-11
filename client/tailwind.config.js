@@ -4,20 +4,19 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
-        serif: ['DM Serif Display', 'serif'],
+        sans: ['Inter', 'DM Sans', 'sans-serif'],
       },
       colors: {
         brand: {
-          50:  '#eaf2e2',
+          50: '#eaf2e2',
           100: '#d0e6b8',
           400: '#7DBB4A',
           600: '#5A8A2A',
           800: '#2C4F0E',
         },
         sidebar: {
-          bg:     '#141210',
-          fg:     '#F4F1EB',
+          bg: '#141210',
+          fg: '#F4F1EB',
           accent: '#8BBF5A',
         },
       },

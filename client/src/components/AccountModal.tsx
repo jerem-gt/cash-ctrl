@@ -93,7 +93,7 @@ export function AccountModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-serif text-xl mb-5">
+        <h3 className="font-sans text-xl mb-5">
           {isEdit ? 'Modifier le compte' : 'Ajouter un compte'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3">

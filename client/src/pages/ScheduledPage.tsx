@@ -229,7 +229,7 @@ function ScheduledModal({
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl p-7 w-full max-w-2xl shadow-xl my-4">
-        <h3 className="font-serif text-xl mb-5">{title}</h3>
+        <h3 className="font-sans text-xl mb-5">{title}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Champs communs : type, montant, description, catégorie, comptes, moyen de paiement */}
           <TxCoreFields
@@ -532,7 +532,7 @@ export default function ScheduledPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-serif text-2xl tracking-tight">Planifications</h2>
+        <h2 className="font-sans text-2xl tracking-tight">Planifications</h2>
         <p className="text-sm text-stone-400 mt-0.5">Récurrences automatiques</p>
       </div>
 
