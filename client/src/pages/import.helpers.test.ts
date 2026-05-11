@@ -133,6 +133,7 @@ describe('resolveAccountInfo', () => {
       action: 'create',
       name: 'Nouveau',
       bank_id: 1,
+      bank_name: 'BNP',
       account_type_id: 1,
       initial_balance: 0,
       opening_date: '2024-01-01',
@@ -141,7 +142,8 @@ describe('resolveAccountInfo', () => {
     expect(r.resolved).toBe(true);
     expect(r.accountId).toBeNull();
     expect(r.newAccountQifName).toBe('QIF_ACC');
-    expect(r.accountName).toBe('Nouveau (nouveau)');
+    expect(r.accountName).toBe('Nouveau');
+    expect(r.bankName).toBe('BNP');
   });
 });
 
@@ -549,6 +551,7 @@ describe('buildExecuteBody', () => {
           action: 'create',
           name: 'Nouveau',
           bank_id: 1,
+          bank_name: null,
           account_type_id: 1,
           initial_balance: 0,
           opening_date: '2024-01-01',
@@ -571,6 +574,7 @@ describe('buildExecuteBody', () => {
           action: 'create',
           name: 'Compte',
           bank_id: null,
+          bank_name: null,
           account_type_id: null,
           initial_balance: 0,
           opening_date: '2024-01-01',
@@ -617,6 +621,7 @@ describe('buildExecuteBody', () => {
           action: 'create',
           name: 'From',
           bank_id: null,
+          bank_name: null,
           account_type_id: null,
           initial_balance: 0,
           opening_date: '2024-01-01',
@@ -628,6 +633,7 @@ describe('buildExecuteBody', () => {
           action: 'create',
           name: 'To',
           bank_id: null,
+          bank_name: null,
           account_type_id: null,
           initial_balance: 0,
           opening_date: '2024-01-01',

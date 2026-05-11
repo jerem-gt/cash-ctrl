@@ -19,6 +19,13 @@ const buySchema = z.object({
 
 const sellSchema = buySchema;
 
+const transferSchema = z.object({
+  to_account_id: z.number().int().positive(),
+  ticker: z.string().min(1).max(20),
+  quantity: z.number().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 const editOperationSchema = z.object({
   quantity: z.number().positive(),
   price_per_share: z.number().positive(),
@@ -66,6 +73,49 @@ export function createStocksRouter(db: Database): Router {
       recalcPosition(db, data.account_id, data.ticker, userId);
       res.status(201).json(result);
     });
+  });
+
+  router.post('/:accountId/transfer', (req, res) => {
+    const fromAccountId = Number.parseInt(req.params.accountId, 10);
+    const userId = sessionUserId(req);
+
+    if (!repo.accountBelongsToUser(fromAccountId, userId)) {
+      res.status(403).json({ error: 'Compte source introuvable' });
+      return;
+    }
+    if (!repo.isInvestmentAccount(fromAccountId)) {
+      res.status(400).json({ error: "Le compte source n'est pas un compte d'investissement" });
+      return;
+    }
+
+    const parsed = transferSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+
+    const { to_account_id } = parsed.data;
+    if (!repo.accountBelongsToUser(to_account_id, userId)) {
+      res.status(403).json({ error: 'Compte destination introuvable' });
+      return;
+    }
+    if (!repo.isInvestmentAccount(to_account_id)) {
+      res.status(400).json({ error: "Le compte destination n'est pas un compte d'investissement" });
+      return;
+    }
+    if (to_account_id === fromAccountId) {
+      res.status(400).json({ error: 'Les comptes source et destination doivent être différents' });
+      return;
+    }
+
+    try {
+      const result = repo.transfer(userId, { from_account_id: fromAccountId, ...parsed.data });
+      recalcPosition(db, fromAccountId, parsed.data.ticker, userId);
+      recalcPosition(db, parsed.data.to_account_id, parsed.data.ticker, userId);
+      res.status(201).json(result);
+    } catch (err) {
+      res.status(400).json({ error: (err as Error).message });
+    }
   });
 
   router.put('/:accountId/operations/:operationId', (req, res) => {

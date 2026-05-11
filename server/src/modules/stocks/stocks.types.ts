@@ -17,7 +17,7 @@ export interface StockPosition {
 export interface StockOperation {
   id: number;
   account_id: number;
-  transaction_id: number;
+  transaction_id: number | null;
   fees_transaction_id: number | null;
   ticker: string;
   type: StockOperationType;
@@ -25,6 +25,7 @@ export interface StockOperation {
   price_per_share: number;
   fees: number;
   date: string;
+  transfer_peer_id: number | null;
   created_at: string;
 }
 
@@ -54,4 +55,12 @@ export interface SellInput {
   fees: number;
   date: string;
   description?: string;
+}
+
+export interface TransferInput {
+  from_account_id: number;
+  to_account_id: number;
+  ticker: string;
+  quantity: number;
+  date: string;
 }

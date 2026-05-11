@@ -15,6 +15,7 @@ import { createPaymentMethodsRouter } from './modules/payment-methods/payment-me
 import { createReimbursementsRouter } from './modules/reimbursements/reimbursements.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
+import { createStatsRouter } from './modules/stats/stats.routes';
 import { createStocksRouter } from './modules/stocks/stocks.routes';
 import { createSubcategoriesRouter } from './modules/subcategories/subcategories.routes';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes';
@@ -79,6 +80,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/settings', createSettingsRouter(db));
   app.use('/api/stocks', createStocksRouter(db));
   app.use('/api/loans', createLoansRouter(db));
+  app.use('/api/stats', createStatsRouter(db));
 
   app.use(globalErrorHandler);
 

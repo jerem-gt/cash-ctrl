@@ -12,12 +12,12 @@ import type {
   TransactionSplit,
 } from './transactions.types';
 
-interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'> {
+export interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'> {
   splits_json: string | null;
   stock_operation_json: string | null;
 }
 
-function parseSplits(row: TransactionRow): Transaction {
+export function parseSplits(row: TransactionRow): Transaction {
   const { splits_json, stock_operation_json, ...rest } = row;
   const result: Transaction = {
     ...rest,
@@ -51,8 +51,8 @@ const SPLITS_SUBQUERY = `
   ) AS splits_json`;
 
 const STOCK_OPERATION_SUBQUERY = `
-  CASE 
-    WHEN so.id IS NOT NULL THEN 
+  CASE
+    WHEN so.id IS NOT NULL THEN
       json_object(
         'id', so.id,
         'account_id', so.account_id,
@@ -63,12 +63,13 @@ const STOCK_OPERATION_SUBQUERY = `
         'price_per_share', so.price_per_share,
         'fees', so.fees,
         'date', so.date,
+        'transfer_peer_id', so.transfer_peer_id,
         'created_at', so.created_at
       )
-    ELSE NULL 
+    ELSE NULL
   END AS stock_operation_json`;
 
-const TX_WITH_DETAILS = `
+export const TX_WITH_DETAILS = `
   SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
          t.subcategory_id, t.payment_method_id,
          t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.reimbursement_status, t.created_at,
@@ -181,10 +182,13 @@ export function createTransactionsRepo(db: Database) {
   const getDynamicStmt = (baseSql: string, filterKeys: string[]) => {
     const sortedKeys = [...filterKeys].sort(collator.compare);
     const cacheKey = baseSql + sortedKeys.join(',');
-    if (!getStatementCache.has(cacheKey)) {
-      getStatementCache.set(cacheKey, db.prepare(baseSql));
+
+    let stmt = getStatementCache.get(cacheKey);
+    if (!stmt) {
+      stmt = db.prepare(baseSql);
+      getStatementCache.set(cacheKey, stmt);
     }
-    return getStatementCache.get(cacheKey)!;
+    return stmt;
   };
 
   return {

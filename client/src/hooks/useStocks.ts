@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { type StockOperationPayload, stocksApi, type UpdateOperationPayload } from '@/api/client';
+import {
+  type StockOperationPayload,
+  stocksApi,
+  type TransferStockPayload,
+  type UpdateOperationPayload,
+} from '@/api/client';
 
 export function useStockPositions(accountId: number) {
   return useQuery({
@@ -50,6 +55,20 @@ export function useRefreshPrices(accountId: number) {
     mutationFn: () => stocksApi.refreshPrices(),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock-positions', accountId] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
+export function useTransferStock(fromAccountId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: TransferStockPayload) => stocksApi.transfer(fromAccountId, payload),
+    onSuccess: ({ inOperation }) => {
+      qc.invalidateQueries({ queryKey: ['stock-positions', fromAccountId] });
+      qc.invalidateQueries({ queryKey: ['stock-operations', fromAccountId] });
+      qc.invalidateQueries({ queryKey: ['stock-positions', inOperation.account_id] });
+      qc.invalidateQueries({ queryKey: ['stock-operations', inOperation.account_id] });
       qc.invalidateQueries({ queryKey: ['accounts'] });
     },
   });

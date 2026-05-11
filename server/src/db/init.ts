@@ -9,7 +9,49 @@ import { seedDatabase } from './seed';
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 
 // Each entry converts the DB from version N to N+1.
-const MIGRATIONS: Array<(db: DatabaseType) => void> = [];
+const MIGRATIONS: Array<(db: DatabaseType) => void> = [
+  // v0 → v1 : rebuild stock_operations — nullable transaction_id, new types, transfer_peer_id
+  (db) => {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE stock_operations_new (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          account_id          INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+          transaction_id      INTEGER REFERENCES transactions(id) ON DELETE CASCADE,
+          fees_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+          ticker              TEXT NOT NULL,
+          type                TEXT NOT NULL CHECK (type IN ('buy', 'sell', 'transfer_in', 'transfer_out')),
+          quantity            REAL NOT NULL,
+          price_per_share     REAL NOT NULL,
+          fees                INTEGER NOT NULL DEFAULT 0,
+          date                TEXT NOT NULL,
+          transfer_peer_id    INTEGER REFERENCES stock_operations_new(id) ON DELETE SET NULL,
+          created_at          TEXT DEFAULT (datetime('now'))
+        )
+      `);
+      db.exec(`
+        INSERT INTO stock_operations_new
+          (id, user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date, transfer_peer_id, created_at)
+        SELECT id, user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date, NULL, created_at
+        FROM stock_operations
+      `);
+      db.exec('DROP TRIGGER IF EXISTS stock_op_fees_cleanup');
+      db.exec('DROP TABLE stock_operations');
+      db.exec('ALTER TABLE stock_operations_new RENAME TO stock_operations');
+      db.exec('CREATE INDEX idx_stock_txid ON stock_operations(transaction_id)');
+      db.exec('CREATE INDEX idx_stock_ops_account_ticker ON stock_operations(account_id, ticker)');
+      db.exec(`
+        CREATE TRIGGER stock_op_fees_cleanup
+        AFTER DELETE ON stock_operations
+        WHEN OLD.fees_transaction_id IS NOT NULL
+        BEGIN
+          DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
+        END
+      `);
+    })();
+  },
+];
 
 function runMigrations(db: DatabaseType) {
   const version = db.pragma('user_version', { simple: true }) as number;

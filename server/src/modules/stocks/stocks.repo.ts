@@ -5,7 +5,14 @@ import {
   getPrelevementPaymentMethodId,
 } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
-import { BuyInput, SellInput, StockOperation, StockPosition, StockPrice } from './stocks.types';
+import {
+  BuyInput,
+  SellInput,
+  StockOperation,
+  StockPosition,
+  StockPrice,
+  TransferInput,
+} from './stocks.types';
 
 function mapPosition(row: StockPosition): StockPosition {
   return { ...row };
@@ -213,6 +220,73 @@ export function createStocksRepo(db: Database) {
         >('SELECT * FROM stock_operations WHERE account_id = ? ORDER BY date DESC, created_at DESC')
         .all(accountId)
         .map(mapOperation),
+
+    transfer(
+      userId: number,
+      input: TransferInput,
+    ): { outOperation: StockOperation; inOperation: StockOperation } {
+      const position = db
+        .prepare<
+          [number, string],
+          { quantity: number; avg_price: number }
+        >('SELECT quantity, avg_price FROM stock_positions WHERE account_id = ? AND ticker = ?')
+        .get(input.from_account_id, input.ticker);
+
+      if (!position || position.quantity < input.quantity) {
+        throw new Error(
+          `Position insuffisante : ${position?.quantity ?? 0} action(s) disponible(s)`,
+        );
+      }
+
+      const avgPrice = position.avg_price;
+
+      return db.transaction(() => {
+        const outResult = db
+          .prepare(
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, 0, ?)',
+          )
+          .run(
+            userId,
+            input.from_account_id,
+            input.ticker,
+            'transfer_out',
+            input.quantity,
+            avgPrice,
+            input.date,
+          );
+        const outId = Number(outResult.lastInsertRowid);
+
+        const inResult = db
+          .prepare(
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date, transfer_peer_id) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, 0, ?, ?)',
+          )
+          .run(
+            userId,
+            input.to_account_id,
+            input.ticker,
+            'transfer_in',
+            input.quantity,
+            avgPrice,
+            input.date,
+            outId,
+          );
+        const inId = Number(inResult.lastInsertRowid);
+
+        db.prepare('UPDATE stock_operations SET transfer_peer_id = ? WHERE id = ?').run(
+          inId,
+          outId,
+        );
+
+        const outOp = db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(outId)!;
+        const inOp = db
+          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+          .get(inId)!;
+
+        return { outOperation: mapOperation(outOp), inOperation: mapOperation(inOp) };
+      })();
+    },
 
     getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }) ?? undefined,
     getAllTickers: () => getAllTickersStmt.all(),

@@ -17,6 +17,7 @@ export type AccountChoice =
       action: 'create';
       name: string;
       bank_id: number | null;
+      bank_name: string | null;
       account_type_id: number | null;
       initial_balance: number;
       opening_date: string | null;
@@ -85,9 +86,9 @@ export type CategoryInfo = {
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
 export function findAutoCategory(qifCat: string, categories: Category[]): CategoryChoice | null {
-  const parts = qifCat.split(':');
-  const subcatName = parts[parts.length - 1].trim().toLowerCase();
-  const catName = parts.length > 1 ? parts[0].trim().toLowerCase() : null;
+  const parts = qifCat.split(':').map((p) => p.trim().toLowerCase());
+  const [subcatName = ''] = parts.slice(-1);
+  const catName = parts.length > 1 ? parts[0] : null;
 
   for (const cat of categories) {
     if (catName && cat.name.toLowerCase() !== catName) continue;
@@ -105,10 +106,17 @@ export function resolveAccountInfo(
   accountId: number | null;
   newAccountQifName: string | null;
   accountName: string;
+  bankName: string | null;
   resolved: boolean;
 } {
   if (!choice || choice.action === 'skip') {
-    return { accountId: null, newAccountQifName: null, accountName: qifName, resolved: false };
+    return {
+      accountId: null,
+      newAccountQifName: null,
+      accountName: qifName,
+      bankName: null,
+      resolved: false,
+    };
   }
   if (choice.action === 'map') {
     const acc = accounts.find((a) => a.id === choice.account_id);
@@ -116,13 +124,15 @@ export function resolveAccountInfo(
       accountId: choice.account_id,
       newAccountQifName: null,
       accountName: acc?.name ?? '',
+      bankName: acc?.bank ?? null,
       resolved: true,
     };
   }
   return {
     accountId: null,
     newAccountQifName: qifName,
-    accountName: `${choice.name} (nouveau)`,
+    accountName: choice.name,
+    bankName: choice.bank_name,
     resolved: true,
   };
 }
@@ -210,13 +220,9 @@ export function resolveTransferItem(
   const toInfo = resolveAccountInfo(toQifName, accountChoices.get(toQifName), accounts);
   if (!fromInfo.resolved || !toInfo.resolved) return skip('Compte non mappé');
 
-  const fromAccount =
-    fromInfo.accountId == null ? undefined : accounts.find((a) => a.id === fromInfo.accountId);
-  const toAccount =
-    toInfo.accountId == null ? undefined : accounts.find((a) => a.id === toInfo.accountId);
   const description = transferLabel(
-    { name: fromInfo.accountName, bank: fromAccount?.bank },
-    { name: toInfo.accountName, bank: toAccount?.bank },
+    { name: fromInfo.accountName, bank: fromInfo.bankName },
+    { name: toInfo.accountName, bank: toInfo.bankName },
   );
 
   return {
@@ -460,13 +466,9 @@ export function resolveXhbPreview(
       continue;
     }
 
-    const fromAccount =
-      fromInfo.accountId == null ? undefined : accounts.find((a) => a.id === fromInfo.accountId);
-    const toAccount =
-      toInfo.accountId == null ? undefined : accounts.find((a) => a.id === toInfo.accountId);
     const description = transferLabel(
-      { name: fromInfo.accountName, bank: fromAccount?.bank },
-      { name: toInfo.accountName, bank: toAccount?.bank },
+      { name: fromInfo.accountName, bank: fromInfo.bankName },
+      { name: toInfo.accountName, bank: toInfo.bankName },
     );
 
     items.push({

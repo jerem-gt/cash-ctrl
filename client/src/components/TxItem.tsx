@@ -1,8 +1,9 @@
 import { AccountBadge } from '@/components/AccountBadge';
 import { Badge } from '@/components/ui';
+import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useValidateTransaction } from '@/hooks/useTransactions';
-import { fmtDate, fmtDec, today } from '@/lib/format';
+import { fmtDec, today } from '@/lib/format';
 import type { Account, Transaction } from '@/types';
 
 interface Props {
@@ -32,7 +33,11 @@ export function TxItem({
   const logo = account?.bank ? (logoMap?.[account.bank] ?? null) : null;
   const validate = useValidateTransaction();
   const { data: paymentMethods = [] } = usePaymentMethods();
+  const { data: categories = [] } = useCategories();
 
+  const catIcon = tx.payment_method
+    ? (categories.find((m) => m.id === tx.category_id)?.icon ?? '')
+    : '';
   const pmIcon = tx.payment_method
     ? (paymentMethods.find((m) => m.name === tx.payment_method)?.icon ?? '')
     : '';
@@ -50,88 +55,131 @@ export function TxItem({
   return (
     <div
       title={tx.notes || undefined}
-      className={`flex items-center gap-3 px-4 py-3 border rounded-xl transition-colors ${rowClass}`}
+      className={`flex items-center gap-3 px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
     >
-      <span className="text-base leading-none shrink-0 w-4 text-center">{pmIcon}</span>
+      {/* GAUCHE : Bloc Date Style "Calendrier" */}
+      <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
+        <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
+          {/* Ex: MAI. */}
+          {new Intl.DateTimeFormat('fr-FR', { month: 'short' })
+            .format(new Date(tx.date))
+            .replace('.', '')}
+        </span>
+        <span className="text-sm font-bold text-stone-700 leading-none mt-0.5">
+          {new Intl.DateTimeFormat('fr-FR', { day: '2-digit' }).format(new Date(tx.date))}
+        </span>
+      </div>
+
+      {/* ICONE */}
+      <span className="text-base leading-none shrink-0 w-5 text-center">{catIcon}</span>
+
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className={`text-sm font-medium truncate ${validated ? '' : 'text-stone-400'}`}>
-            {tx.description}
-          </p>
-          {isTransfer && <Badge variant="blue">↔ Transfert</Badge>}
-          {!isTransfer && tx.splits && tx.splits.length > 0 && (
-            <Badge variant="indigo">⊕ Ventilée</Badge>
-          )}
-          {isFuture && !validated && <Badge variant="indigo">↻ À venir</Badge>}
-          {isScheduled && !isFuture && (
-            <span className="text-[10px] text-stone-300 shrink-0" title="Transaction planifiée">
+        <div className="flex items-center gap-2 mb-0.5">
+          {/* Indicateur de planification discret avant le texte */}
+          {isScheduled && (
+            <span className="text-[12px] text-indigo-400 shrink-0" title="Transaction planifiée">
               ↻
             </span>
           )}
-          {validated && <Badge variant="green">✓ Validée</Badge>}
-          {tx.reimbursement_status === 'en_attente' && <Badge variant="amber">↩ En attente</Badge>}
-          {tx.reimbursement_status === 'rembourse' && <Badge variant="stone">↩ Remboursé</Badge>}
+
+          <p
+            className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
+          >
+            {tx.description}
+          </p>
+
+          <div className="flex gap-1 shrink-0">
+            {/* Si c'est à venir ET planifié, on peut adapter le badge */}
+            {isFuture && !validated && (
+              <Badge variant="indigo">{isScheduled ? '↻ À venir' : 'À venir'}</Badge>
+            )}
+            {isTransfer && <Badge variant="blue">↔</Badge>}
+            {tx.reimbursement_status === 'en_attente' && <Badge variant="amber">En attente</Badge>}
+          </div>
         </div>
-        <p className="text-[11px] text-stone-400 mt-0.5 flex items-center gap-1 flex-wrap">
-          <span>{tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.category} ·</span>
-          {accounts && logoMap ? (
-            <AccountBadge name={tx.account_name ?? ''} bank={account?.bank} logo={logo} />
-          ) : null}
-          {accounts && logoMap && <span>·</span>}
-          <span>{fmtDate(tx.date)}</span>
+
+        <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
+          <span className="truncate text-stone-500 font-medium">
+            {tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.subcategory}
+          </span>
+
+          {accounts && logoMap && (
+            <>
+              <span className="opacity-30">·</span>
+              <AccountBadge name={tx.account_name ?? ''} logo={logo} />
+            </>
+          )}
+
           {tx.payment_method && (
             <>
-              <span>·</span>
-              <span>{tx.payment_method}</span>
+              <span className="opacity-30">·</span>
+              {/* L'emoji pmIcon enfin aligné */}
+              <span className="inline-flex items-center translate-y-[0.5px] text-[13px] leading-none">
+                {pmIcon}
+              </span>
             </>
           )}
         </p>
       </div>
-      <div className="text-right shrink-0">
-        <div className={`text-sm font-medium tabular-nums ${amountColor}`}>
-          {tx.type === 'income' ? '+' : '−'}
-          {fmtDec(tx.amount)}
-        </div>
-        {runningBalance != null && (
-          <div className="text-[11px] text-stone-400 tabular-nums" title="Solde courant">
-            {fmtDec(runningBalance)}
+
+      {/* DROITE : Finances (Toujours visibles) */}
+      <div className="flex items-center gap-4 shrink-0">
+        <div className="text-right min-w-[75px]">
+          <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
+            {tx.type === 'income' ? '+' : '−'}
+            {fmtDec(tx.amount)}
           </div>
-        )}
+          {runningBalance != null && (
+            <div
+              className="text-[10px] text-stone-400 tabular-nums leading-tight"
+              title="Solde courant"
+            >
+              {fmtDec(runningBalance)}
+            </div>
+          )}
+        </div>
+
+        {/* ACTIONS : Boutons toujours visibles */}
+        <div className="flex items-center gap-0 border-l border-stone-100 pl-2">
+          <button
+            onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
+            className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'}`}
+            title={validated ? 'Marquer comme non validée' : 'Valider'}
+          >
+            <span className="block scale-110">✓</span>
+          </button>
+
+          {onEdit && (
+            <button
+              onClick={() => onEdit(tx)}
+              className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+              title="Modifier"
+            >
+              <span className="text-[12px]">✎</span>
+            </button>
+          )}
+
+          {onDuplicate && (
+            <button
+              onClick={() => onDuplicate(tx)}
+              className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+              title="Dupliquer"
+            >
+              <span className="text-[14px]">⧉</span>
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              onClick={() => onDelete(tx)}
+              className="p-1.5 text-stone-300 hover:text-red-400 hover:bg-red-50 rounded-md transition-colors"
+              title="Supprimer"
+            >
+              <span className="text-lg leading-none">×</span>
+            </button>
+          )}
+        </div>
       </div>
-      <button
-        onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
-        disabled={validate.isPending}
-        className={`transition-colors text-base leading-none px-1 ${validated ? 'text-green-500 hover:text-stone-400' : 'text-stone-300 hover:text-green-500'}`}
-        title={validated ? 'Marquer comme non validée' : 'Valider'}
-      >
-        ✓
-      </button>
-      {onEdit && (
-        <button
-          onClick={() => onEdit(tx)}
-          className="text-stone-300 hover:text-stone-600 transition-colors text-sm leading-none px-1"
-          title="Modifier"
-        >
-          ✎
-        </button>
-      )}
-      {onDuplicate && (
-        <button
-          onClick={() => onDuplicate(tx)}
-          className="text-stone-300 hover:text-stone-600 transition-colors text-sm leading-none px-1"
-          title="Dupliquer"
-        >
-          ⧉
-        </button>
-      )}
-      {onDelete && (
-        <button
-          onClick={() => onDelete(tx)}
-          className="text-stone-300 hover:text-red-400 transition-colors text-lg leading-none px-1"
-        >
-          ×
-        </button>
-      )}
     </div>
   );
 }
