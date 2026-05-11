@@ -1,6 +1,6 @@
 export const RECURRENCE_UNITS = ['day', 'week', 'month', 'year'] as const;
 export const REIMBURSEMENT_STATUSES = ['en_attente', 'rembourse'] as const;
-export const STOCK_OPERATION_TYPES = ['buy', 'sell'] as const;
+export const STOCK_OPERATION_TYPES = ['buy', 'sell', 'transfer_in', 'transfer_out'] as const;
 export const TRANSACTION_TYPES = ['income', 'expense'] as const;
 export const WEEKEND_HANDLING = ['allow', 'before', 'after'] as const;
 

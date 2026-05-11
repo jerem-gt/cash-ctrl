@@ -98,14 +98,15 @@ export interface StockPosition {
 export interface StockOperation {
   id: number;
   account_id: number;
-  transaction_id: number;
+  transaction_id: number | null;
   fees_transaction_id: number | null;
   ticker: string;
-  type: 'buy' | 'sell';
+  type: 'buy' | 'sell' | 'transfer_in' | 'transfer_out';
   quantity: number;
   price_per_share: number;
   fees: number;
   date: string;
+  transfer_peer_id: number | null;
   created_at: string;
 }
 
@@ -225,4 +226,25 @@ export interface PaginatedTransactions {
   page: number;
   totalPages: number;
   balance_before_page?: number;
+}
+
+export interface MonthlyStat {
+  month: string; // YYYY-MM
+  income: number;
+  expense: number;
+}
+
+export interface DashboardStats {
+  month_income: number;
+  month_expense: number;
+  monthly: MonthlyStat[];
+  expenses_by_category: Array<{ category: string; amount: number }>;
+  recent: Transaction[];
+  to_validate: Transaction[];
+  upcoming: Transaction[];
+}
+
+export interface BalanceHistoryData {
+  account_types: string[];
+  data: Array<Record<string, string | number>>;
 }

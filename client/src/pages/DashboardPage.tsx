@@ -1,102 +1,68 @@
 import { useMemo } from 'react';
-import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  LabelList,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import { TxItem } from '@/components/TxItem';
 import { Card, CardTitle, Empty, Metric } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useBalanceHistory, useDashboardStats } from '@/hooks/useStats';
 import { generateColor } from '@/lib/colors.ts';
-import { fmt, fmtDate, fmtDec, isSameMonth, isThisMonth, monthLabel, today } from '@/lib/format';
+import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
 import { usePendingReimbursements, useSetReimbursementStatus } from '../hooks/useReimbursements';
 
 export default function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
-  const { data: result } = useTransactions({ limit: 10000 });
+  const { data: stats } = useDashboardStats();
+  const { data: balanceHistory } = useBalanceHistory();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
-  const colorMap = useMemo(() => {
-    return Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)]));
-  }, [categories]);
-
-  const transactions = useMemo(() => result?.data ?? [], [result]);
-  const nonTransfers = useMemo(
-    () => transactions.filter((t) => t.transfer_peer_id === null && !!t.validated),
-    [transactions],
+  const colorMap = useMemo(
+    () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
+    [categories],
   );
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
-  const monthIncome = nonTransfers
-    .filter((t) => t.type === 'income' && isThisMonth(t.date))
-    .reduce((s, t) => s + t.amount, 0);
-  const monthExpense = nonTransfers
-    .filter((t) => t.type === 'expense' && isThisMonth(t.date))
-    .reduce((s, t) => s + t.amount, 0);
+  const totalBalance = accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0);
+  const monthIncome = stats?.month_income ?? 0;
+  const monthExpense = stats?.month_expense ?? 0;
   const bilan = monthIncome - monthExpense;
 
-  const catData = useMemo(() => {
-    const map: Record<string, number> = {};
-    nonTransfers
-      .filter((t) => t.type === 'expense' && isThisMonth(t.date))
-      .forEach((t) => {
-        map[t.category] = (map[t.category] ?? 0) + t.amount;
-      });
-    return Object.entries(map).map(([name, value]) => ({
-      name,
-      value,
-      fill: colorMap[name],
-    }));
-  }, [nonTransfers, colorMap]);
+  const catData = useMemo(
+    () =>
+      (stats?.expenses_by_category ?? []).map((d) => ({
+        name: d.category,
+        value: d.amount,
+        fill: colorMap[d.category],
+      })),
+    [stats, colorMap],
+  );
 
   const barData = useMemo(
     () =>
-      Array.from({ length: 6 }, (_, i) => {
-        const offset = 5 - i;
-        return {
-          month: monthLabel(offset),
-          Revenus: nonTransfers
-            .filter((t) => t.type === 'income' && isSameMonth(t.date, offset))
-            .reduce((s, t) => s + t.amount, 0),
-          Depenses: nonTransfers
-            .filter((t) => t.type === 'expense' && isSameMonth(t.date, offset))
-            .reduce((s, t) => s + t.amount, 0),
-        };
-      }),
-    [nonTransfers],
+      (stats?.monthly ?? []).map((m, i) => ({
+        month: monthLabel(5 - i),
+        Revenus: m.income,
+        Depenses: m.expense,
+      })),
+    [stats],
   );
 
-  const todayStr = today();
-
-  const recent = useMemo(
-    () =>
-      transactions
-        .filter((t) => !!t.validated)
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 6),
-    [transactions],
-  );
-
-  const toValidate = useMemo(
-    () =>
-      transactions
-        .filter((t) => !t.validated && t.date <= todayStr)
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 5),
-    [transactions, todayStr],
-  );
-
-  const upcoming = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.scheduled_id !== null && t.date > todayStr)
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 5),
-    [transactions, todayStr],
-  );
+  const recent = stats?.recent ?? [];
+  const toValidate = stats?.to_validate ?? [];
+  const upcoming = stats?.upcoming ?? [];
 
   const { data: pendingReimbursements = [] } = usePendingReimbursements();
   const setReimbursementStatus = useSetReimbursementStatus();
@@ -106,7 +72,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-serif text-2xl tracking-tight">Tableau de bord</h2>
+        <h2 className="font-sans text-2xl tracking-tight">Tableau de bord</h2>
         <p className="text-sm text-stone-400 mt-0.5">Vue d'ensemble de vos finances</p>
       </div>
 
@@ -301,6 +267,76 @@ export default function DashboardPage() {
           </div>
         )}
       </Card>
+
+      {/* Patrimoine par type de compte */}
+      {balanceHistory &&
+        balanceHistory.data.length > 0 &&
+        (() => {
+          const types = balanceHistory.account_types;
+          const dataWithTotal = balanceHistory.data.map((d) => ({
+            ...d,
+            _total: types.reduce((s, t) => s + Number(d[t] ?? 0), 0),
+          }));
+          return (
+            <Card>
+              <CardTitle>Patrimoine net par type de compte</CardTitle>
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
+                {types.map((type, i) => (
+                  <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
+                    <div
+                      className="w-2 h-2 rounded-sm shrink-0"
+                      style={{ background: generateColor(i) }}
+                    />
+                    {type}
+                  </div>
+                ))}
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={dataWithTotal}
+                  barGap={2}
+                  margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
+                >
+                  <XAxis dataKey="year" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => fmt(v)}
+                    width={70}
+                  />
+                  <Tooltip
+                    formatter={(v, name) =>
+                      name === '_total' ? null : [fmtDec(Number(v)), String(name)]
+                    }
+                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                  />
+                  {types.map((type, i) => {
+                    const isLast = i === types.length - 1;
+                    return (
+                      <Bar
+                        key={type}
+                        dataKey={type}
+                        stackId="a"
+                        fill={generateColor(i)}
+                        radius={isLast ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                      >
+                        {isLast && (
+                          <LabelList
+                            dataKey="_total"
+                            position="top"
+                            formatter={(v: unknown) => fmt(Number(v ?? 0))}
+                            style={{ fontSize: 10, fill: '#78716c' }}
+                          />
+                        )}
+                      </Bar>
+                    );
+                  })}
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          );
+        })()}
     </div>
   );
 }

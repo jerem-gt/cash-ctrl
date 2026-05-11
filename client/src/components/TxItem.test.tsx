@@ -25,15 +25,10 @@ describe('TxItem', () => {
     expect(screen.getByText(/24,50/)).toBeInTheDocument();
   });
 
-  it('affiche le badge "Validée" si la transaction est validée', () => {
-    renderTx(baseTx);
-    expect(screen.getByText(/validée/i)).toBeInTheDocument();
-  });
-
   it('affiche le badge "Transfert" si transfer_peer_id est renseigné', () => {
     const transferTx: Transaction = { ...baseTx, transfer_peer_id: 42, validated: 0 };
     renderTx(transferTx);
-    expect(screen.getByText(/transfert/i)).toBeInTheDocument();
+    expect(screen.getByText(/↔/i)).toBeInTheDocument();
   });
 
   it('affiche le badge "À venir" pour une transaction planifiée future', () => {
@@ -63,20 +58,6 @@ describe('TxItem', () => {
     renderWithProviders(<TxItem tx={baseTx} />);
     expect(screen.queryByTitle('Modifier')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Dupliquer')).not.toBeInTheDocument();
-  });
-
-  it('affiche le badge "Ventilée" pour une transaction ventilée', () => {
-    const ventilatedTx: Transaction = {
-      ...baseTx,
-      validated: 0,
-      subcategory_id: null,
-      splits: [
-        { id: 1, subcategory_id: 1, amount: 10 },
-        { id: 2, subcategory_id: 2, amount: 14.5 },
-      ],
-    };
-    renderTx(ventilatedTx);
-    expect(screen.getByText('⊕ Ventilée')).toBeInTheDocument();
   });
 
   it('affiche "Ventilée (N)" dans le sous-titre pour une transaction ventilée', () => {

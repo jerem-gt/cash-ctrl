@@ -75,32 +75,48 @@ export function Sidebar({ username }: Readonly<Props>) {
         accounts: accs,
       }));
   }, [accounts, groupBy]);
+  const soldeTotal = useMemo(() => {
+    return groups.reduce(
+      (total, group) =>
+        total + group.accounts.reduce((s, a) => s + (a.balance || 0) + (a.balance_stocks || 0), 0),
+      0,
+    );
+  }, [groups]);
 
   return (
     <aside className="fixed inset-y-0 left-0 w-72 bg-sidebar-bg text-sidebar-fg flex flex-col z-50">
       {/* Logo */}
       <NavLink to="/" className="block px-6 py-6 hover:bg-white/5 transition-colors group">
-        <h1 className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
+          <img src="/favicon.svg" alt="logo cash-ctrl" className="h-[2em] w-auto" />
           {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
         </h1>
         <p className="text-xs uppercase tracking-[0.2em] text-white/30 mt-1">Suivi Personnel</p>
       </NavLink>
 
+      {/* Solde */}
+      <div className="flex flex-col items-center py-6 border border-white/5">
+        <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">
+          Patrimoine Net
+        </span>
+        <span className="text-4xl font-bold text-white tracking-tight">{fmt(soldeTotal)}</span>
+      </div>
+
       {/* Nav */}
-      <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden flex flex-col">
-        <div className="flex-1">
+      <nav className="flex-1 py-4 flex flex-col overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <NavLink
             to="/transactions"
-            className="flex items-center px-6 py-2 text-xs uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors font-semibold"
+            className="flex items-center justify-between px-6 py-2 text-xs uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors font-semibold"
           >
-            Comptes
+            <span>Comptes</span>
           </NavLink>
           {/* Comptes */}
           <div
-            className={`border-l-2 transition-colors duration-100 ${accountsActive ? 'border-sidebar-accent' : 'border-transparent'}`}
+            className={`flex flex-col flex-1 overflow-hidden border-l-2 transition-colors duration-100 ${accountsActive ? 'border-sidebar-accent' : 'border-transparent'}`}
           >
             <div
-              className={`flex items-center px-4 py-2 transition-colors duration-100 ${
+              className={`flex items-center px-4 py-2 shrink-0 transition-colors duration-100 ${
                 accountsActive ? 'bg-white/6' : ''
               }`}
             >
@@ -129,7 +145,7 @@ export function Sidebar({ username }: Readonly<Props>) {
             </div>
 
             {accounts.length > 0 && (
-              <div className="pb-1">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden pb-1">
                 {groups.map((group) => {
                   const isCollapsed = collapsedGroups.has(group.label);
                   return (
@@ -138,9 +154,11 @@ export function Sidebar({ username }: Readonly<Props>) {
                         <span className="text-sm font-semibold text-white/50">{group.label}</span>
                         <span className="flex items-center gap-1">
                           <span
-                            className={`text-sm font-bold tabular-nums ${group.accounts.reduce((s, a) => s + a.balance, 0) < 0 ? 'text-red-400/60' : 'text-white/45'}`}
+                            className={`text-sm font-bold tabular-nums ${group.accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0) < 0 ? 'text-red-400/60' : 'text-white/45'}`}
                           >
-                            {fmt(group.accounts.reduce((s, a) => s + a.balance, 0))}
+                            {fmt(
+                              group.accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0),
+                            )}
                           </span>
                           <button
                             onClick={() => toggleGroup(group.label)}
@@ -183,9 +201,9 @@ export function Sidebar({ username }: Readonly<Props>) {
                                 <span className="truncate">{acc.name}</span>
                               </span>
                               <span
-                                className={`tabular-nums shrink-0 ${acc.balance < 0 ? 'text-red-400/70' : ''}`}
+                                className={`tabular-nums shrink-0 ${acc.balance + acc.balance_stocks < 0 ? 'text-red-400/70' : ''}`}
                               >
-                                {fmt(acc.balance)}
+                                {fmt(acc.balance + acc.balance_stocks)}
                               </span>
                             </NavLink>
                           );

@@ -2,8 +2,10 @@ import type {
   Account,
   AccountType,
   AppVersion,
+  BalanceHistoryData,
   Bank,
   Category,
+  DashboardStats,
   Loan,
   LoanInstallment,
   PaginatedTransactions,
@@ -216,6 +218,13 @@ export type StockOperationPayload = {
 
 export type UpdateOperationPayload = Omit<StockOperationPayload, 'ticker'>;
 
+export type TransferStockPayload = {
+  to_account_id: number;
+  ticker: string;
+  quantity: number;
+  date: string;
+};
+
 export const stocksApi = {
   positions: (accountId: number) =>
     request<StockPosition[]>('GET', `/api/stocks/${accountId}/positions`),
@@ -237,6 +246,12 @@ export const stocksApi = {
   refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
   updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>
     request<StockOperation>('PUT', `/api/stocks/${accountId}/operations/${operationId}`, payload),
+  transfer: (accountId: number, payload: TransferStockPayload) =>
+    request<{ outOperation: StockOperation; inOperation: StockOperation }>(
+      'POST',
+      `/api/stocks/${accountId}/transfer`,
+      payload,
+    ),
 };
 
 // Loans
@@ -257,6 +272,11 @@ export type UpdateLoanPayload = {
   bank_id: number | null;
   opening_date: string | null;
   source_account_id: number;
+};
+
+export const statsApi = {
+  dashboard: () => request<DashboardStats>('GET', '/api/stats'),
+  balanceHistory: () => request<BalanceHistoryData>('GET', '/api/stats/balance-history'),
 };
 
 export const loansApi = {

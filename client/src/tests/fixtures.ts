@@ -89,6 +89,7 @@ export const STOCK_OPERATIONS: StockOperation[] = [
     price_per_share: 12,
     fees: 1.5,
     date: '2026-04-01',
+    transfer_peer_id: null,
     created_at: '2026-04-01T10:00:00',
   },
 ];

@@ -113,7 +113,7 @@ export function initSchema(db: Database) {
             id                   INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            transaction_id       INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            transaction_id       INTEGER REFERENCES transactions (id) ON DELETE CASCADE,
             fees_transaction_id  INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             ticker               TEXT    NOT NULL,
             type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(STOCK_OPERATION_TYPES)})),
@@ -121,6 +121,7 @@ export function initSchema(db: Database) {
             price_per_share      REAL    NOT NULL,
             fees                 INTEGER NOT NULL DEFAULT 0,
             date                 TEXT    NOT NULL,
+            transfer_peer_id     INTEGER REFERENCES stock_operations (id) ON DELETE SET NULL,
             created_at           TEXT             DEFAULT (datetime('now'))
         );
 

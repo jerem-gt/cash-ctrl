@@ -163,6 +163,7 @@ function AccountMappingRow({
         action: 'create',
         name: qifName || 'Nouveau compte',
         bank_id: banks[0]?.id ?? null,
+        bank_name: banks[0]?.name ?? null,
         account_type_id: accountTypes[0]?.id ?? null,
         initial_balance: choice?.action === 'create' ? choice.initial_balance : 0,
         opening_date: null,
@@ -221,9 +222,14 @@ function AccountMappingRow({
                 <Select
                   className="flex-1"
                   value={choice.bank_id ?? ''}
-                  onChange={(e) =>
-                    onChange({ ...choice, bank_id: e.target.value ? Number(e.target.value) : null })
-                  }
+                  onChange={(e) => {
+                    const bank = banks.find((b) => b.id === Number(e.target.value));
+                    onChange({
+                      ...choice,
+                      bank_id: bank?.id ?? null,
+                      bank_name: bank?.name ?? null,
+                    });
+                  }}
                 >
                   <option value="">— aucune —</option>
                   {banks.map((b) => (
@@ -487,6 +493,7 @@ export default function ImportManager() {
         action: 'create',
         name: name || 'Nouveau compte',
         bank_id: banks[0]?.id ?? null,
+        bank_name: banks[0]?.name ?? null,
         account_type_id: accountTypes[0]?.id ?? null,
         initial_balance: initialBalance,
         opening_date: null,
@@ -542,10 +549,13 @@ export default function ImportManager() {
         const accChoices = new Map<string, AccountChoice>();
         for (const accName of result.accounts) {
           const details = result.accountDetails.get(accName);
+          const bankId = findBankByName(details?.bankname ?? '', banks);
+          const bankName = banks.find((b) => b.id === bankId)?.name ?? null;
           accChoices.set(accName, {
             action: 'create',
             name: accName,
-            bank_id: findBankByName(details?.bankname ?? '', banks),
+            bank_id: bankId,
+            bank_name: bankName,
             account_type_id: accountTypes[0]?.id ?? null,
             initial_balance: details?.initial ?? 0,
             opening_date: null,
@@ -941,7 +951,7 @@ export default function ImportManager() {
                     key={label}
                     className="flex-1 min-w-22.5 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
                   >
-                    <p className="text-2xl font-serif text-stone-800">{value}</p>
+                    <p className="text-2xl font-sans text-stone-800">{value}</p>
                     <p className="text-xs text-stone-400 mt-0.5">{label}</p>
                   </div>
                 ))}
@@ -1022,7 +1032,7 @@ export default function ImportManager() {
                 key={label}
                 className="flex-1 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
               >
-                <p className="text-2xl font-serif text-stone-800">{value}</p>
+                <p className="text-2xl font-sans text-stone-800">{value}</p>
                 <p className="text-xs text-stone-400 mt-0.5">{label}</p>
               </div>
             ))}
@@ -1098,7 +1108,9 @@ export default function ImportManager() {
                             {item.description}
                           </td>
                           <td className="py-1.5 pr-3 text-indigo-600">
-                            {item.fromAccountName} → {item.toAccountName}
+                            {item.fromAccountName}
+                            {item.fromAccountQifName ? ' (nouveau)' : ''} → {item.toAccountName}
+                            {item.toAccountQifName ? ' (nouveau)' : ''}
                           </td>
                           <td className="py-1.5 pr-3 text-stone-400 italic">virement</td>
                           <td className="py-1.5 text-right tabular-nums text-indigo-600">
@@ -1124,7 +1136,10 @@ export default function ImportManager() {
                         <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
                           {item.description}
                         </td>
-                        <td className="py-1.5 pr-3 text-stone-600">{item.accountName}</td>
+                        <td className="py-1.5 pr-3 text-stone-600">
+                          {item.accountName}
+                          {item.newAccountQifName ? ' (nouveau)' : ''}
+                        </td>
                         <td className="py-1.5 pr-3 text-stone-400">{item.categoryLabel || '—'}</td>
                         <td
                           className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-green-700' : 'text-stone-800'}`}
@@ -1169,17 +1184,17 @@ export default function ImportManager() {
         <Card>
           <div className="text-center py-8">
             <div className="text-5xl mb-4">✓</div>
-            <h2 className="font-serif text-2xl text-stone-800 mb-2">Importation terminée</h2>
+            <h2 className="font-sans text-2xl text-stone-800 mb-2">Importation terminée</h2>
             {importMutation.data && (
               <div className="flex justify-center gap-8 mt-6 mb-8">
                 <div>
-                  <p className="text-3xl font-serif text-stone-800">
+                  <p className="text-3xl font-sans text-stone-800">
                     {importMutation.data.transactions}
                   </p>
                   <p className="text-xs text-stone-400 mt-1">transactions importées</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-serif text-stone-800">
+                  <p className="text-3xl font-sans text-stone-800">
                     {importMutation.data.transfers}
                   </p>
                   <p className="text-xs text-stone-400 mt-1">virements importés</p>
@@ -1201,7 +1216,7 @@ export default function ImportManager() {
                   <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
                     {stats.map(({ value, label }) => (
                       <div key={label}>
-                        <p className="text-3xl font-serif text-stone-800">{value}</p>
+                        <p className="text-3xl font-sans text-stone-800">{value}</p>
                         <p className="text-xs text-stone-400 mt-1">{label}</p>
                       </div>
                     ))}

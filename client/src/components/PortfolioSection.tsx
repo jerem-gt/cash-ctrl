@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react';
 
 import { StockOperationModal } from '@/components/StockOperationModal';
+import { TransferStockModal } from '@/components/TransferStockModal';
 import { Button, showToast } from '@/components/ui';
 import { useRefreshPrices, useStockPositions } from '@/hooks/useStocks';
 import { fmtStockPrice } from '@/lib/format';
@@ -10,6 +11,7 @@ interface PositionRowProps {
   pos: StockPosition;
   onBuy: (pos: StockPosition) => void;
   onSell: (pos: StockPosition) => void;
+  onTransfer: (pos: StockPosition) => void;
 }
 
 const getPnlColor = (pnl: number | null) => {
@@ -19,7 +21,7 @@ const getPnlColor = (pnl: number | null) => {
   return 'text-stone-500'; // Cas pnl === 0
 };
 
-function PositionRow({ pos, onBuy, onSell }: Readonly<PositionRowProps>) {
+function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowProps>) {
   const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
   const costBasis = pos.avg_price * pos.quantity;
   const pnl = marketValue == null ? null : marketValue - costBasis;
@@ -98,6 +100,13 @@ function PositionRow({ pos, onBuy, onSell }: Readonly<PositionRowProps>) {
         >
           Vendre
         </button>
+        <button
+          onClick={() => onTransfer(pos)}
+          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+          title="Transférer vers un autre compte"
+        >
+          Transférer
+        </button>
       </div>
     </div>
   );
@@ -113,6 +122,7 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
   const [showBuy, setShowBuy] = useState(false);
   const [buyPosition, setBuyPosition] = useState<StockPosition | null>(null);
   const [sellPosition, setSellPosition] = useState<StockPosition | null>(null);
+  const [transferPosition, setTransferPosition] = useState<StockPosition | null>(null);
 
   const totalMarketValue = positions.reduce(
     (sum, p) => sum + (p.current_price == null ? 0 : p.current_price * p.quantity),
@@ -144,7 +154,13 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
     portfolioContent = (
       <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
         {positions.map((pos) => (
-          <PositionRow key={pos.ticker} pos={pos} onBuy={setBuyPosition} onSell={setSellPosition} />
+          <PositionRow
+            key={pos.ticker}
+            pos={pos}
+            onBuy={setBuyPosition}
+            onSell={setSellPosition}
+            onTransfer={setTransferPosition}
+          />
         ))}
 
         {positions.length > 1 && (
@@ -221,6 +237,13 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
           accountId={accountId}
           position={sellPosition}
           onClose={() => setSellPosition(null)}
+        />
+      )}
+      {transferPosition && (
+        <TransferStockModal
+          accountId={accountId}
+          position={transferPosition}
+          onClose={() => setTransferPosition(null)}
         />
       )}
     </>
