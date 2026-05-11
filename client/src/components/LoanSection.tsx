@@ -18,7 +18,7 @@ function LoanStat({ label, value }: Readonly<{ label: string; value: string }>) 
       <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
         {label}
       </span>
-      <span className="font-serif text-lg text-stone-900">{value}</span>
+      <span className="font-sans text-lg text-stone-900">{value}</span>
     </div>
   );
 }
@@ -225,11 +225,11 @@ export function LoanSection({ account, onClose }: Readonly<Props>) {
             <div className="flex justify-between items-end mb-2">
               <div>
                 <span className="text-[10px] text-stone-400 block mb-0.5">Remboursé</span>
-                <span className="font-serif text-lg text-stone-900">{fmtDec(paidPrincipal)}</span>
+                <span className="font-sans text-lg text-stone-900">{fmtDec(paidPrincipal)}</span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-stone-400 block mb-0.5">Restant dû</span>
-                <span className="font-serif text-lg text-red-700">{fmtDec(capitalRestantDu)}</span>
+                <span className="font-sans text-lg text-red-700">{fmtDec(capitalRestantDu)}</span>
               </div>
             </div>
             <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
@@ -249,11 +249,11 @@ export function LoanSection({ account, onClose }: Readonly<Props>) {
             <div className="flex justify-between items-end mb-2">
               <div>
                 <span className="text-[10px] text-stone-400 block mb-0.5">Payés</span>
-                <span className="font-serif text-lg text-stone-900">{fmtDec(paidInterest)}</span>
+                <span className="font-sans text-lg text-stone-900">{fmtDec(paidInterest)}</span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-stone-400 block mb-0.5">Restants</span>
-                <span className="font-serif text-lg text-stone-900">
+                <span className="font-sans text-lg text-stone-900">
                   {fmtDec(remainingInterest)}
                 </span>
               </div>

@@ -68,7 +68,7 @@ export function StockOperationModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-serif text-xl mb-5">
+        <h3 className="font-sans text-xl mb-5">
           {isBuy ? 'Acheter des actions' : 'Vendre des actions'}
         </h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -139,7 +139,7 @@ export function StockOperationModal(props: Readonly<Props>) {
             <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
               {isBuy ? 'Total dépense' : 'Montant net reçu'}
             </p>
-            <p className={`font-serif text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
+            <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
               {amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </p>
           </div>

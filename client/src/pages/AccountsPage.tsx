@@ -104,7 +104,7 @@ export default function AccountsPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="font-serif text-2xl tracking-tight">Comptes</h2>
+          <h2 className="font-sans text-2xl tracking-tight">Comptes</h2>
           <p className="text-sm text-stone-400 mt-0.5">
             Cliquez sur un compte pour voir ses transactions
           </p>
@@ -161,7 +161,7 @@ export default function AccountsPage() {
                     {label}
                   </span>
                   <span
-                    className={`font-serif text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}
+                    className={`font-sans text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}
                   >
                     {fmtDec(subtotal)}
                   </span>
@@ -317,7 +317,7 @@ function AccountCard({
         </div>
       </div>
       <p
-        className={`font-serif text-3xl ${acc.is_loan || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
+        className={`font-sans text-3xl ${acc.is_loan || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
       >
         {fmtDec(displayBal)}
       </p>
@@ -372,7 +372,7 @@ function ClosedAccountCard({
           </button>
         </div>
       </div>
-      <p className="font-serif text-3xl text-stone-400">{fmtDec(acc.balance)}</p>
+      <p className="font-sans text-3xl text-stone-400">{fmtDec(acc.balance)}</p>
       {acc.closed_at && (
         <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium mt-4">
           Clôturé le {fmtDate(acc.closed_at)}

@@ -190,7 +190,7 @@ export function LoanFormModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-        <h3 className="font-serif text-xl mb-5">
+        <h3 className="font-sans text-xl mb-5">
           {props.mode === 'create' ? 'Nouveau prêt' : 'Modifier le prêt'}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -266,7 +266,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               <span className="text-xs text-stone-500 uppercase tracking-wide font-medium">
                 Mensualité estimée
               </span>
-              <span className="font-serif text-xl text-stone-900">
+              <span className="font-sans text-xl text-stone-900">
                 {monthlyPayment.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
               </span>
             </div>
