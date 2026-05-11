@@ -35,26 +35,6 @@ export function TransactionsList({
     );
   }, [account, state.transactions, state.balance_before_page]);
 
-  if (state.isLoading) {
-    return (
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 px-4 py-3 border rounded-xl border-black/[0.07] bg-white"
-          >
-            <Skeleton className="w-4 h-4 shrink-0" />
-            <div className="flex-1 flex flex-col gap-2">
-              <Skeleton className="h-3.5 w-3/4" />
-              <Skeleton className="h-2.5 w-2/5" />
-            </div>
-            <Skeleton className="w-14 h-3.5 shrink-0" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex gap-3 flex-wrap items-center">
@@ -74,19 +54,38 @@ export function TransactionsList({
         </Button>
       </div>
       <div className="flex flex-col gap-2">
-        {state.transactions.length === 0 && <Empty>{emptyMessage}</Empty>}
-        {state.transactions.map((t, i) => (
-          <TxItem
-            key={t.id}
-            tx={t}
-            accounts={account ? undefined : state.accounts}
-            logoMap={logoMap}
-            runningBalance={account == null ? undefined : runningBalances[i]}
-            onEdit={actions.openEdit}
-            onDuplicate={actions.openDuplicate}
-            onDelete={actions.openDelete}
-          />
-        ))}
+        {state.isLoading ? (
+          // Le Skeleton s'affiche ici uniquement à la place des items
+          Array.from({ length: 6 }, (_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-4 py-3 border rounded-xl border-black/[0.07] bg-white"
+            >
+              <Skeleton className="w-4 h-4 shrink-0" />
+              <div className="flex-1 flex flex-col gap-2">
+                <Skeleton className="h-3.5 w-3/4" />
+                <Skeleton className="h-2.5 w-2/5" />
+              </div>
+              <Skeleton className="w-14 h-3.5 shrink-0" />
+            </div>
+          ))
+        ) : (
+          <>
+            {state.transactions.length === 0 && <Empty>{emptyMessage}</Empty>}
+            {state.transactions.map((t, i) => (
+              <TxItem
+                key={t.id}
+                tx={t}
+                accounts={account ? undefined : state.accounts}
+                logoMap={logoMap}
+                runningBalance={account == null ? undefined : runningBalances[i]}
+                onEdit={actions.openEdit}
+                onDuplicate={actions.openDuplicate}
+                onDelete={actions.openDelete}
+              />
+            ))}
+          </>
+        )}
       </div>
       {(state.totalPages > 1 || state.total > 10) && (
         <Pagination

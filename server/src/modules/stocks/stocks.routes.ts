@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
-import { getOrRefreshPrice, refreshAllPrices } from './stocks.service.js';
+import { getOrRefreshPrice, recalcPosition, refreshAllPrices } from './stocks.service.js';
 
 const buySchema = z.object({
   account_id: z.number().int().positive(),
@@ -55,6 +55,7 @@ export function createStocksRouter(db: Database): Router {
   router.post('/:accountId/buy', (req, res) => {
     handleStockAction(req, res, repo, buySchema, ({ userId, data }) => {
       const result = repo.buy(userId, data);
+      recalcPosition(db, data.account_id, data.ticker, userId);
       res.status(201).json(result);
     });
   });
@@ -62,6 +63,7 @@ export function createStocksRouter(db: Database): Router {
   router.post('/:accountId/sell', (req, res) => {
     handleStockAction(req, res, repo, sellSchema, ({ userId, data }) => {
       const result = repo.sell(userId, data);
+      recalcPosition(db, data.account_id, data.ticker, userId);
       res.status(201).json(result);
     });
   });
@@ -93,6 +95,7 @@ export function createStocksRouter(db: Database): Router {
         account_id: accountId,
         ...parsed.data,
       });
+      recalcPosition(db, accountId, op.ticker, userId);
       res.json(operation);
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });

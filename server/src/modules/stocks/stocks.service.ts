@@ -81,3 +81,48 @@ export function startPriceRefreshInterval(
     });
   }, intervalMs);
 }
+
+export function recalcPosition(
+  db: Database,
+  accountId: number,
+  ticker: string,
+  userId: number,
+): void {
+  const ops = db
+    .prepare(
+      'SELECT type, quantity, price_per_share FROM stock_operations WHERE account_id = :accountId AND ticker = :ticker ORDER BY date, id',
+    )
+    .all({ accountId, ticker }) as Array<{
+    type: string;
+    quantity: number;
+    price_per_share: number;
+  }>;
+
+  let totalQty = 0;
+  let avgPrice = 0;
+  for (const { type, quantity, price_per_share } of ops) {
+    if (type === 'buy' || type === 'transfer_in') {
+      const totalCost = totalQty * avgPrice + quantity * price_per_share;
+      totalQty += quantity;
+      avgPrice = totalQty > 0 ? totalCost / totalQty : 0;
+    } else {
+      totalQty -= quantity;
+    }
+  }
+
+  if (totalQty <= 0) {
+    db.prepare(
+      'DELETE FROM stock_positions WHERE account_id = :accountId AND ticker = :ticker',
+    ).run({ accountId, ticker });
+    return;
+  }
+
+  db.prepare(
+    `INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
+     VALUES (:userId, :accountId, :ticker, :quantity, :avgPrice, datetime('now'))
+     ON CONFLICT(account_id, ticker) DO UPDATE SET
+       quantity   = excluded.quantity,
+       avg_price  = excluded.avg_price,
+       updated_at = datetime('now')`,
+  ).run({ userId, accountId, ticker, quantity: totalQty, avgPrice });
+}
