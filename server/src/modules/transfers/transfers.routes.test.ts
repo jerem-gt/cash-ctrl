@@ -144,4 +144,92 @@ describe('/api/transfers', () => {
     const res = await ctx.agent.delete(`/api/transfers/${txRes.body.id}`);
     expect(res.status).toBe(400);
   });
+
+  it('PUT /:id updates the accounts of both legs', async () => {
+    // 1. Créer un transfert initial
+    const create = await ctx.agent.post('/api/transfers').send({
+      from_account_id: fromId,
+      to_account_id: toId,
+      amount: 100,
+      date: TODAY,
+    });
+    const expenseId = create.body.expense.id;
+    const incomeId = create.body.income.id;
+
+    // 2. Créer un troisième compte pour le test
+    const a3 = await ctx.agent.post('/api/accounts').send({
+      name: 'Nouveau Compte',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    const newAccountId = a3.body.id;
+
+    // 3. Modifier le compte source (from_account_id)
+    const res = await ctx.agent.put(`/api/transfers/${expenseId}`).send({
+      amount: 100,
+      description: 'Transfert déplacé',
+      date: TODAY,
+      from_account_id: newAccountId,
+    });
+
+    expect(res.status).toBe(200);
+
+    // Vérifier que la jambe "expense" pointe sur le nouveau compte
+    const checkExpense = await ctx.agent.get('/api/transactions');
+    const updatedExpense = checkExpense.body.data.find((t: { id: number }) => t.id === expenseId);
+    expect(updatedExpense.account_id).toBe(newAccountId);
+
+    // Vérifier que la jambe "income" n'a pas bougé (toujours sur toId)
+    const updatedIncome = checkExpense.body.data.find((t: { id: number }) => t.id === incomeId);
+    expect(updatedIncome.account_id).toBe(toId);
+  });
+
+  it('PUT /:id returns 403 if the new account does not belong to user', async () => {
+    const create = await ctx.agent.post('/api/transfers').send({
+      from_account_id: fromId,
+      to_account_id: toId,
+      amount: 100,
+      date: TODAY,
+    });
+
+    const res = await ctx.agent.put(`/api/transfers/${create.body.expense.id}`).send({
+      amount: 100,
+      description: 'Hack',
+      date: TODAY,
+      from_account_id: 99999, // ID inexistant ou appartenant à autrui
+    });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('PUT /:id returns 404 for non-existent transfer', async () => {
+    const res = await ctx.agent.put('/api/transfers/99999').send({
+      amount: 100,
+      description: 'Inexistant',
+      date: TODAY,
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('DELETE /:id returns 404 for non-existent transfer', async () => {
+    const res = await ctx.agent.delete('/api/transfers/99999');
+    expect(res.status).toBe(404);
+  });
+
+  it('POST / works with optional notes and validated status', async () => {
+    const res = await ctx.agent.post('/api/transfers').send({
+      from_account_id: fromId,
+      to_account_id: toId,
+      amount: 50,
+      date: TODAY,
+      notes: 'Ma note secrète',
+      validated: true,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.expense.notes).toBe('Ma note secrète');
+    expect(res.body.expense.validated).toBe(1);
+    expect(res.body.income.validated).toBe(1);
+  });
 });
