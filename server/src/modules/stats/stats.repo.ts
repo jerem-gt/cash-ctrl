@@ -60,7 +60,7 @@ export function createStatsRepo(db: Database) {
           WHERE user_id = ? AND validated = 1 AND transfer_peer_id IS NULL
             AND date >= ? AND date < ?
           GROUP BY month
-          ORDER BY month ASC`,
+          ORDER BY month`,
         )
         .all(userId, sixMonthsStart, nextMonthStart);
 

@@ -140,10 +140,10 @@ export function createTransactionsRepo(db: Database) {
   const insertTxStmt = db.prepare(`
       INSERT INTO transactions
       (user_id, account_id, type, amount, description, subcategory_id, date,
-       payment_method_id, notes, reimbursement_status, scheduled_id)
+       payment_method_id, notes, reimbursement_status, scheduled_id, validated)
       VALUES
           (:userId, :accountId, :type, :amount, :description, :subcategoryId, :date,
-           :paymentMethodId, :notes, :reimbursementStatus, :scheduledId)
+           :paymentMethodId, :notes, :reimbursementStatus, :scheduledId, :validated)
   `);
   const insertSplitStmt = db.prepare(`
       INSERT INTO transaction_splits (user_id, transaction_id, subcategory_id, amount)
@@ -309,6 +309,7 @@ export function createTransactionsRepo(db: Database) {
           notes: data.notes,
           reimbursementStatus: data.reimbursement_status ?? null,
           scheduledId: null,
+          validated: data.validated ? 1 : 0,
         });
         if (data.splits?.length) {
           const txId = Number(result.lastInsertRowid);
@@ -338,6 +339,7 @@ export function createTransactionsRepo(db: Database) {
         notes: data.notes,
         reimbursementStatus: null,
         scheduledId: data.scheduled_id,
+        validated: 0,
       });
       return Number(result.lastInsertRowid);
     },

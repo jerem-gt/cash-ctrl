@@ -402,6 +402,7 @@ export const transactionsApi = {
     payment_method_id: number;
     notes?: string | null;
     reimbursement_status?: 'en_attente' | 'rembourse' | null;
+    validated: boolean;
   }) => request<Transaction>('POST', '/api/transactions', payload),
   update: (
     id: number,

@@ -66,7 +66,7 @@ export function createStocksRepo(db: Database) {
       return db.transaction(() => {
         const txResult = db
           .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
           )
           .run(userId, input.account_id, 'expense', mainCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
@@ -77,7 +77,7 @@ export function createStocksRepo(db: Database) {
           const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
           const feesTxResult = db
             .prepare(
-              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)',
             )
             .run(
               userId,
@@ -143,7 +143,7 @@ export function createStocksRepo(db: Database) {
       return db.transaction(() => {
         const txResult = db
           .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)',
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
           )
           .run(userId, input.account_id, 'income', mainCents, description, input.date);
         const transactionId = Number(txResult.lastInsertRowid);
@@ -154,7 +154,7 @@ export function createStocksRepo(db: Database) {
           const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
           const feesTxResult = db
             .prepare(
-              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+              'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)',
             )
             .run(
               userId,
