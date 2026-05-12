@@ -306,6 +306,7 @@ function runSubmitTx(ctx: TxCtx): void {
       date: ctx.date,
       payment_method_id: Number.parseInt(ctx.core.payment_method_id),
       reimbursement_status: ctx.core.type === 'expense' ? ctx.reimbursementStatus : null,
+      validated: ctx.validated,
     },
     {
       onSuccess: () => {

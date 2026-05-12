@@ -81,6 +81,7 @@ describe('useCreateTransaction', () => {
         date: '2026-01-01',
         payment_method_id: 1,
         notes: null,
+        validated: false,
       });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
