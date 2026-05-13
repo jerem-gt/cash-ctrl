@@ -272,6 +272,145 @@ describe('/api/stocks', () => {
     });
   });
 
+  // ─── Transfer ─────────────────────────────────────────────────────────────
+
+  describe('POST /:accountId/transfer', () => {
+    let bourseAccountId2: number;
+
+    beforeAll(async () => {
+      const bourse2 = await ctx.agent.post('/api/accounts').send({
+        name: 'CTO Test',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_BOURSE,
+        initial_balance: 3000,
+        opening_date: '2024-01-01',
+      });
+      bourseAccountId2 = bourse2.body.id;
+    });
+
+    it('crée deux opérations et deux transactions transfer liées', async () => {
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'TRF.PA',
+        quantity: 10,
+        price_per_share: 50,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: bourseAccountId2,
+        ticker: 'TRF.PA',
+        quantity: 4,
+        date: TODAY,
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.outOperation.type).toBe('transfer_out');
+      expect(res.body.outOperation.ticker).toBe('TRF.PA');
+      expect(res.body.outOperation.quantity).toBe(4);
+      expect(res.body.inOperation.type).toBe('transfer_in');
+      expect(res.body.inOperation.quantity).toBe(4);
+      expect(res.body.outOperation.transaction_id).toBeGreaterThan(0);
+      expect(res.body.inOperation.transaction_id).toBeGreaterThan(0);
+
+      const txRes = await ctx.agent.get('/api/transactions');
+      const expenseTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.outOperation.transaction_id,
+      );
+      const incomeTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.inOperation.transaction_id,
+      );
+
+      expect(expenseTx).toBeDefined();
+      expect(expenseTx.type).toBe('expense');
+      expect(expenseTx.description).toBe('Transfert 4 × TRF.PA');
+      expect(expenseTx.amount).toBe(200); // 4 * 50 €
+
+      expect(incomeTx).toBeDefined();
+      expect(incomeTx.type).toBe('income');
+      expect(incomeTx.description).toBe('Transfert 4 × TRF.PA');
+      expect(incomeTx.amount).toBe(200);
+
+      expect(expenseTx.transfer_peer_id).toBe(incomeTx.id);
+      expect(incomeTx.transfer_peer_id).toBe(expenseTx.id);
+    });
+
+    it('met à jour les positions des deux comptes en conservant le PRU', async () => {
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'TRF2.PA',
+        quantity: 10,
+        price_per_share: 100,
+        fees: 0,
+        date: TODAY,
+      });
+
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: bourseAccountId2,
+        ticker: 'TRF2.PA',
+        quantity: 3,
+        date: TODAY,
+      });
+
+      const fromPos = await ctx.agent.get(`/api/stocks/${bourseAccountId}/positions`);
+      const toPos = await ctx.agent.get(`/api/stocks/${bourseAccountId2}/positions`);
+
+      const fromTicker = fromPos.body.find((p: { ticker: string }) => p.ticker === 'TRF2.PA');
+      const toTicker = toPos.body.find((p: { ticker: string }) => p.ticker === 'TRF2.PA');
+
+      expect(fromTicker.quantity).toBe(7);
+      expect(toTicker.quantity).toBe(3);
+      expect(toTicker.avg_price).toBe(100);
+    });
+
+    it('retourne 400 si position insuffisante', async () => {
+      const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: bourseAccountId2,
+        ticker: 'GHOST.PA',
+        quantity: 1,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("retourne 400 si le compte destination n'est pas un compte investissement", async () => {
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'STD.PA',
+        quantity: 5,
+        price_per_share: 10,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: standardAccountId,
+        ticker: 'STD.PA',
+        quantity: 1,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si source et destination sont identiques', async () => {
+      const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: bourseAccountId,
+        ticker: 'TRF.PA',
+        quantity: 1,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 403 pour un compte source inconnu', async () => {
+      const res = await ctx.agent.post('/api/stocks/99999/transfer').send({
+        to_account_id: bourseAccountId2,
+        ticker: 'TRF.PA',
+        quantity: 1,
+        date: TODAY,
+      });
+      expect(res.status).toBe(403);
+    });
+  });
+
   // ─── Édition d'opération ──────────────────────────────────────────────────
 
   describe('PUT /:accountId/operations/:operationId', () => {
