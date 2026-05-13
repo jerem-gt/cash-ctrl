@@ -3,6 +3,7 @@ import type { Database } from 'better-sqlite3';
 import {
   getBankFeesSubcategoryId,
   getPrelevementPaymentMethodId,
+  getTransferIds,
 } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
 import {
@@ -240,14 +241,61 @@ export function createStocksRepo(db: Database) {
 
       const avgPrice = position.avg_price;
 
+      const description = `Transfert ${input.quantity} × ${input.ticker}`;
+      const amountCents = toCents(input.quantity * avgPrice);
+
       return db.transaction(() => {
-        const outResult = db
+        const { subcategoryId, paymentMethodId } = getTransferIds(db, userId);
+
+        const expenseTxResult = db
           .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, 0, ?)',
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)',
           )
           .run(
             userId,
             input.from_account_id,
+            'expense',
+            amountCents,
+            description,
+            subcategoryId ?? null,
+            input.date,
+            paymentMethodId ?? null,
+          );
+        const expenseTxId = Number(expenseTxResult.lastInsertRowid);
+
+        const incomeTxResult = db
+          .prepare(
+            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)',
+          )
+          .run(
+            userId,
+            input.to_account_id,
+            'income',
+            amountCents,
+            description,
+            subcategoryId ?? null,
+            input.date,
+            paymentMethodId ?? null,
+          );
+        const incomeTxId = Number(incomeTxResult.lastInsertRowid);
+
+        db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?').run(
+          incomeTxId,
+          expenseTxId,
+        );
+        db.prepare('UPDATE transactions SET transfer_peer_id = ? WHERE id = ?').run(
+          expenseTxId,
+          incomeTxId,
+        );
+
+        const outResult = db
+          .prepare(
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 0, ?)',
+          )
+          .run(
+            userId,
+            input.from_account_id,
+            expenseTxId,
             input.ticker,
             'transfer_out',
             input.quantity,
@@ -258,11 +306,12 @@ export function createStocksRepo(db: Database) {
 
         const inResult = db
           .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date, transfer_peer_id) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, 0, ?, ?)',
+            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date, transfer_peer_id) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 0, ?, ?)',
           )
           .run(
             userId,
             input.to_account_id,
+            incomeTxId,
             input.ticker,
             'transfer_in',
             input.quantity,
