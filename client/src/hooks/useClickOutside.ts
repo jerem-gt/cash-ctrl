@@ -5,7 +5,7 @@ export function useClickOutside<T extends HTMLElement>(onClose: () => void) {
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) onClose();
     }
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);

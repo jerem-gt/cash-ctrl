@@ -59,11 +59,18 @@ async function fetchYahooPrice(ticker: string): Promise<StockPrice | null> {
     });
     if (!res.ok) return null;
     const data = (await res.json()) as {
-      chart?: { result?: Array<{ meta?: { regularMarketPrice?: number; currency?: string } }> };
+      chart?: {
+        result?: Array<{
+          meta?: {
+            regularMarketPrice?: number;
+            currency?: string;
+            longName?: string;
+            shortName?: string;
+          };
+        }>;
+      };
     };
-    const meta = data.chart?.result?.[0]?.meta as
-      | { regularMarketPrice?: number; currency?: string; longName?: string; shortName?: string }
-      | undefined;
+    const meta = data.chart?.result?.[0]?.meta;
     if (!meta?.regularMarketPrice) return null;
     return {
       ticker: ticker,
