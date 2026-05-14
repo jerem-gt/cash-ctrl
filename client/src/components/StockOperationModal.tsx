@@ -1,5 +1,6 @@
 import { type SyntheticEvent, useState } from 'react';
 
+import { isIsin, TickerInput } from '@/components/TickerInput';
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useBuyStock, useSellStock } from '@/hooks/useStocks';
 import { today } from '@/lib/format';
@@ -72,12 +73,12 @@ export function StockOperationModal(props: Readonly<Props>) {
           {isBuy ? 'Acheter des actions' : 'Vendre des actions'}
         </h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Ticker Yahoo Finance" htmlFor="op-ticker">
-            <Input
+          <FormGroup label="Ticker ou ISIN" htmlFor="op-ticker">
+            <TickerInput
               id="op-ticker"
               value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-              placeholder="ex : DCAM.PA, AAPL"
+              onChange={setTicker}
+              placeholder="ex : DCAM.PA, AAPL ou FR0014000MR3"
               disabled={!!position}
               autoFocus={!position}
             />
@@ -151,7 +152,13 @@ export function StockOperationModal(props: Readonly<Props>) {
             <Button
               type="submit"
               variant="primary"
-              disabled={mutation.isPending || !ticker.trim() || qty <= 0 || pps <= 0}
+              disabled={
+                mutation.isPending ||
+                !ticker.trim() ||
+                isIsin(ticker.trim()) ||
+                qty <= 0 ||
+                pps <= 0
+              }
             >
               {mutation.isPending ? '…' : actionLabel}
             </Button>

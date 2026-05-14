@@ -6,6 +6,45 @@ import { StockPrice } from './stocks.types';
 
 const PRICE_TTL_MS = 15 * 60 * 1000;
 
+export interface StockSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
+export async function searchByQuery(query: string): Promise<StockSearchResult[]> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0&enableFuzzyQuery=false`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'cashctrl/1.0' },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      quotes?: Array<{
+        symbol?: string;
+        shortname?: string;
+        longname?: string;
+        exchange?: string;
+        exchDisp?: string;
+        quoteType?: string;
+      }>;
+    };
+    const ALLOWED_TYPES = new Set(['EQUITY', 'ETF', 'FUND', 'MUTUALFUND']);
+    return (data.quotes ?? [])
+      .filter((q) => q.symbol && ALLOWED_TYPES.has(q.quoteType ?? ''))
+      .map((q) => ({
+        symbol: q.symbol!,
+        name: q.longname ?? q.shortname ?? q.symbol!,
+        exchange: q.exchDisp ?? q.exchange ?? '',
+        type: q.quoteType ?? '',
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export interface PriceRepository {
   getStockPrice(ticker: string): StockPrice | undefined;
   upsertPrice(ticker: string, price: number, currency: string, name: string | null): unknown;

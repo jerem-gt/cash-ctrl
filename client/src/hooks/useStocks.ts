@@ -3,9 +3,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type StockOperationPayload,
   stocksApi,
+  type StockSearchResult,
   type TransferStockPayload,
   type UpdateOperationPayload,
 } from '@/api/client';
+
+const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/i;
+
+export function useStockSearch(query: string) {
+  return useQuery<StockSearchResult[]>({
+    queryKey: ['stock-search', query.toUpperCase()],
+    queryFn: () => stocksApi.search(query),
+    enabled: ISIN_REGEX.test(query.trim()),
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export function useStockPositions(accountId: number) {
   return useQuery({
