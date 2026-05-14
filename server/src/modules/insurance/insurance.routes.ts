@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { getOrRefreshPrice, type PriceRepository } from '../stocks/stocks.service.js';
+import { getOrRefreshPrice } from '../stocks/stocks.service.js';
 import { handleInsuranceAction } from './insurance.handlers.js';
 import { createInsuranceRepo } from './insurance.repo.js';
 import { recalcUcPosition, refreshInsurancePrices } from './insurance.service.js';
@@ -114,7 +114,7 @@ export function createInsuranceRouter(db: Database): Router {
     }
 
     const support = repo.getSupportById(supportId);
-    if (!support || support.account_id !== accountId) {
+    if (support?.account_id !== accountId) {
       res.status(404).json({ error: 'Support introuvable' });
       return;
     }
@@ -164,7 +164,7 @@ export function createInsuranceRouter(db: Database): Router {
   router.post('/:accountId/versement', (req, res) => {
     handleInsuranceAction(req, res, repo, versementSchema, ({ userId, data }) => {
       const support = repo.getSupportById(data.support_id);
-      if (!support || support.account_id !== data.account_id) {
+      if (support?.account_id !== data.account_id) {
         res.status(404).json({ error: 'Support introuvable' });
         return;
       }
@@ -179,7 +179,7 @@ export function createInsuranceRouter(db: Database): Router {
   router.post('/:accountId/rachat', (req, res) => {
     handleInsuranceAction(req, res, repo, rachatSchema, ({ userId, data }) => {
       const support = repo.getSupportById(data.support_id);
-      if (!support || support.account_id !== data.account_id) {
+      if (support?.account_id !== data.account_id) {
         res.status(404).json({ error: 'Support introuvable' });
         return;
       }
@@ -201,11 +201,11 @@ export function createInsuranceRouter(db: Database): Router {
       }
       const fromSupport = repo.getSupportById(data.from_support_id);
       const toSupport = repo.getSupportById(data.to_support_id);
-      if (!fromSupport || fromSupport.account_id !== data.account_id) {
+      if (fromSupport?.account_id !== data.account_id) {
         res.status(404).json({ error: 'Support source introuvable' });
         return;
       }
-      if (!toSupport || toSupport.account_id !== data.account_id) {
+      if (toSupport?.account_id !== data.account_id) {
         res.status(404).json({ error: 'Support destination introuvable' });
         return;
       }
@@ -223,7 +223,7 @@ export function createInsuranceRouter(db: Database): Router {
   router.post('/:accountId/interets', (req, res) => {
     handleInsuranceAction(req, res, repo, interetsSchema, ({ userId, data }) => {
       const support = repo.getSupportById(data.support_id);
-      if (!support || support.account_id !== data.account_id) {
+      if (support?.account_id !== data.account_id) {
         res.status(404).json({ error: 'Support introuvable' });
         return;
       }
@@ -240,7 +240,7 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.get('/price/:ticker', async (req, res) => {
     const { ticker } = req.params;
-    const price = await getOrRefreshPrice(repo as PriceRepository, ticker);
+    const price = await getOrRefreshPrice(repo, ticker);
     if (!price) {
       res.status(404).json({ error: `VL introuvable pour ${ticker}` });
       return;
