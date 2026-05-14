@@ -3,6 +3,7 @@ export interface FullExportAccountType {
   name: string;
   is_investment: number;
   is_loan: number;
+  envelope_type: string | null;
 }
 
 export interface FullExportBank {
@@ -125,6 +126,29 @@ export interface FullExportLoan {
   installments: FullExportLoanInstallment[];
 }
 
+export interface FullExportInsuranceSupport {
+  id: number;
+  account_id: number;
+  name: string;
+  type: string;
+  ticker: string | null;
+}
+
+export interface FullExportInsuranceOperation {
+  id: number;
+  account_id: number;
+  support_id: number;
+  transaction_id: number | null;
+  fees_transaction_id: number | null;
+  type: string;
+  quantity: number | null;
+  price_per_unit: number | null;
+  amount: number;
+  fees: number;
+  date: string;
+  arbitrage_peer_id: number | null;
+}
+
 export interface FullExport {
   version: '1.0';
   exported_at: string;
@@ -139,4 +163,6 @@ export interface FullExport {
   stock_positions: FullExportStockPosition[];
   stock_operations: FullExportStockOperation[];
   loans: FullExportLoan[];
+  insurance_supports: FullExportInsuranceSupport[];
+  insurance_operations: FullExportInsuranceOperation[];
 }

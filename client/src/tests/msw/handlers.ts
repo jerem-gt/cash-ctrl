@@ -6,6 +6,8 @@ import {
   BANKS,
   CATEGORIES,
   IMPORT_RESULT,
+  INSURANCE_OPERATIONS,
+  INSURANCE_POSITIONS,
   LOAN,
   LOAN_INSTALLMENTS,
   PAYMENT_METHODS,
@@ -170,6 +172,60 @@ export const handlers = [
     HttpResponse.json(LOAN_INSTALLMENTS[0]),
   ),
   http.patch('/api/loans/:loanId', () => HttpResponse.json(LOAN)),
+
+  // Insurance
+  http.get('/api/insurance/:accountId/supports', () => HttpResponse.json([])),
+  http.post('/api/insurance/:accountId/supports', () =>
+    HttpResponse.json(
+      {
+        id: 99,
+        account_id: 10,
+        name: 'Nouveau support',
+        type: 'euro',
+        ticker: null,
+        created_at: '2024-01-01',
+      },
+      { status: 201 },
+    ),
+  ),
+  http.delete('/api/insurance/:accountId/supports/:supportId', () =>
+    HttpResponse.json({ ok: true }),
+  ),
+  http.get('/api/insurance/:accountId/positions', () => HttpResponse.json(INSURANCE_POSITIONS)),
+  http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(INSURANCE_OPERATIONS)),
+  http.post('/api/insurance/:accountId/versement', () =>
+    HttpResponse.json({ operation: INSURANCE_OPERATIONS[0], transaction_id: 101 }, { status: 201 }),
+  ),
+  http.post('/api/insurance/:accountId/rachat', () =>
+    HttpResponse.json(
+      { operation: { ...INSURANCE_OPERATIONS[0], type: 'rachat' }, transaction_id: 102 },
+      { status: 201 },
+    ),
+  ),
+  http.post('/api/insurance/:accountId/arbitrage', () =>
+    HttpResponse.json(
+      {
+        outOperation: { ...INSURANCE_OPERATIONS[0], type: 'arbitrage_out' },
+        inOperation: { ...INSURANCE_OPERATIONS[0], id: 2, type: 'arbitrage_in' },
+      },
+      { status: 201 },
+    ),
+  ),
+  http.post('/api/insurance/:accountId/interets', () =>
+    HttpResponse.json(
+      { operation: { ...INSURANCE_OPERATIONS[0], type: 'interets' }, transaction_id: 103 },
+      { status: 201 },
+    ),
+  ),
+  http.get('/api/insurance/price/:ticker', () =>
+    HttpResponse.json({
+      ticker: 'LU1681043599.SW',
+      price: 42.1,
+      currency: 'EUR',
+      fetched_at: '2026-05-14T10:00:00',
+    }),
+  ),
+  http.post('/api/insurance/:accountId/prices/refresh', () => HttpResponse.json({ ok: true })),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

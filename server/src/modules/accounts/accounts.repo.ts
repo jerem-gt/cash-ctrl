@@ -15,6 +15,7 @@ function mapAccount(row: Account): Account {
     balance: toEuros(row.balance),
     balance_all: toEuros(row.balance_all),
     balance_stocks: row.balance_stocks,
+    balance_insurance: row.balance_insurance,
     capital_restant_du: row.capital_restant_du == null ? null : toEuros(row.capital_restant_du),
     capital_restant_du_all:
       row.capital_restant_du_all == null ? null : toEuros(row.capital_restant_du_all),
@@ -43,6 +44,22 @@ const BALANCE_STOCKS_SUBQUERY = `
      WHERE sp.account_id = a.id),
     0
   ) AS balance_stocks`;
+
+const BALANCE_INSURANCE_SUBQUERY = `
+  COALESCE(
+    (SELECT SUM(ip.quantity * COALESCE(sprice.price, 0))
+     FROM insurance_positions ip
+     JOIN insurance_supports ins ON ip.support_id = ins.id
+     LEFT JOIN stock_prices sprice ON ins.ticker = sprice.ticker
+     WHERE ip.account_id = a.id AND ins.type = 'uc'),
+    0
+  ) + COALESCE(
+    (SELECT SUM(CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets') THEN io.amount ELSE -io.amount END) * 1.0 / 100
+     FROM insurance_operations io
+     JOIN insurance_supports ins2 ON io.support_id = ins2.id
+     WHERE io.account_id = a.id AND ins2.type = 'euro'),
+    0
+  ) AS balance_insurance`;
 
 const CAPITAL_RESTANT_DU_SUBQUERY = `
   (SELECT l.principal_amount - COALESCE(
@@ -78,9 +95,11 @@ const ACCOUNT_SELECT = `
          COALESCE(at.name, '')          AS type,
          COALESCE(at.is_investment, 0)  AS is_investment,
          COALESCE(at.is_loan, 0)        AS is_loan,
+         at.envelope_type               AS envelope_type,
          ${BALANCE_SUBQUERY},
          ${BALANCE_ALL_SUBQUERY},
          ${BALANCE_STOCKS_SUBQUERY},
+         ${BALANCE_INSURANCE_SUBQUERY},
          ${CAPITAL_RESTANT_DU_SUBQUERY},
          ${CAPITAL_RESTANT_DU_ALL_SUBQUERY}
   FROM accounts a

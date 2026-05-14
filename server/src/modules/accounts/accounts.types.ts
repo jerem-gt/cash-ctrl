@@ -8,12 +8,14 @@ export interface Account {
   type: string;
   is_investment: number;
   is_loan: number;
+  envelope_type: string | null;
   initial_balance: number;
   opening_date: string | null;
   closed_at: string | null;
   balance: number;
   balance_all: number;
   balance_stocks: number;
+  balance_insurance: number;
   capital_restant_du: number | null;
   capital_restant_du_all: number | null;
   created_at: string;
