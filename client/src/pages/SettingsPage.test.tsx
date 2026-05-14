@@ -11,5 +11,6 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Types de compte')).toBeInTheDocument();
     expect(screen.getByText('Moyens de paiement')).toBeInTheDocument();
     expect(screen.getByText('Catégories')).toBeInTheDocument();
+    expect(screen.getByText('Backup')).toBeInTheDocument();
   });
 });

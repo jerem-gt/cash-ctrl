@@ -195,6 +195,16 @@ export interface ScheduledTransaction {
 
 export interface UserSettings {
   lead_days: number;
+  backup_enabled: boolean;
+  backup_frequency_h: number;
+  backup_max_files: number;
+  backup_last_at: string | null;
+}
+
+export interface BackupFile {
+  filename: string;
+  size: number;
+  created_at: string;
 }
 
 export interface AppVersion {

@@ -2,6 +2,7 @@ import type {
   Account,
   AccountType,
   AppVersion,
+  BackupFile,
   BalanceHistoryData,
   Bank,
   Category,
@@ -199,6 +200,17 @@ export const scheduledApi = {
 export const settingsApi = {
   get: () => request<UserSettings>('GET', '/api/settings'),
   update: (payload: UserSettings) => request<UserSettings>('PUT', '/api/settings', payload),
+};
+
+// Backup
+export type BackupRunResult =
+  | { skipped: false; filename: string }
+  | { skipped: true; filename: null };
+
+export const backupApi = {
+  list: () => request<BackupFile[]>('GET', '/api/backup/list'),
+  run: () => request<BackupRunResult>('POST', '/api/backup/run'),
+  downloadUrl: (filename: string) => `/api/backup/${encodeURIComponent(filename)}`,
 };
 
 // Version

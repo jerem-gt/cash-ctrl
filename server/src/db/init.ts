@@ -51,6 +51,19 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       `);
     })();
   },
+
+  // v1 → v2 : add backup settings columns to user_settings
+  (db) => {
+    db.exec(`ALTER TABLE user_settings ADD COLUMN backup_enabled     INTEGER NOT NULL DEFAULT 0`);
+    db.exec(`ALTER TABLE user_settings ADD COLUMN backup_frequency_h INTEGER NOT NULL DEFAULT 24`);
+    db.exec(`ALTER TABLE user_settings ADD COLUMN backup_max_files   INTEGER NOT NULL DEFAULT 7`);
+    db.exec(`ALTER TABLE user_settings ADD COLUMN backup_last_at     TEXT`);
+  },
+
+  // v2 → v3 : add backup_last_hash for change-detection
+  (db) => {
+    db.exec(`ALTER TABLE user_settings ADD COLUMN backup_last_hash TEXT`);
+  },
 ];
 
 function runMigrations(db: DatabaseType) {

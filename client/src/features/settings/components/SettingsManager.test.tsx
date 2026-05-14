@@ -10,5 +10,6 @@ describe('SettingsManager', () => {
     expect(await screen.findByText('Types de compte')).toBeInTheDocument();
     expect(await screen.findByText('Moyens de paiement')).toBeInTheDocument();
     expect(await screen.findByText('Catégories')).toBeInTheDocument();
+    expect(await screen.findByText('Backup')).toBeInTheDocument();
   });
 });

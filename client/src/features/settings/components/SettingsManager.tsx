@@ -15,6 +15,7 @@ export const tabs = [
     items: [
       { key: 'export', label: 'Export' },
       { key: 'import', label: 'Import' },
+      { key: 'backup', label: 'Backup' },
     ],
   },
   { section: 'security', label: 'Sécurité', items: [{ key: 'password', label: 'Mot de passe' }] },
