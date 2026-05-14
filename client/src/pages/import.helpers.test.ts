@@ -29,6 +29,7 @@ const ACCOUNT: Account = {
   closed_at: null,
   balance: 0,
   balance_stocks: 0,
+  balance_insurance: 0,
   balance_all: 0,
   capital_restant_du: null,
   capital_restant_du_all: null,
