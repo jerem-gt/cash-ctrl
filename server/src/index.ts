@@ -7,6 +7,7 @@ import express from 'express';
 
 import { createApp } from './app.js';
 import { createDb, initDatabase } from './db/init';
+import { startBackupInterval } from './lib/backup.js';
 import { logger } from './logger';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
@@ -65,4 +66,5 @@ app.listen(PORT, '0.0.0.0', () => {
     logger.error(String(err));
   });
   startPriceRefreshInterval(db);
+  startBackupInterval(db);
 });

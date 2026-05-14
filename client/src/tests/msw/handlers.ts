@@ -98,8 +98,41 @@ export const handlers = [
   http.delete('/api/scheduled/:id', () => HttpResponse.json({ ok: true })),
 
   // Settings
-  http.get('/api/settings', () => HttpResponse.json({ lead_days: 3 })),
-  http.put('/api/settings', () => HttpResponse.json({ lead_days: 30 })),
+  http.get('/api/settings', () =>
+    HttpResponse.json({
+      lead_days: 3,
+      backup_enabled: false,
+      backup_frequency_h: 24,
+      backup_max_files: 7,
+      backup_last_at: null,
+    }),
+  ),
+  http.put('/api/settings', () =>
+    HttpResponse.json({
+      lead_days: 30,
+      backup_enabled: false,
+      backup_frequency_h: 24,
+      backup_max_files: 7,
+      backup_last_at: null,
+    }),
+  ),
+
+  // Backup
+  http.get('/api/backup/list', () =>
+    HttpResponse.json([
+      {
+        filename: 'cashctrl-backup-2026-05-14T10-00-00.json',
+        size: 1024,
+        created_at: '2026-05-14T10:00:00Z',
+      },
+    ]),
+  ),
+  http.post('/api/backup/run', () =>
+    HttpResponse.json(
+      { skipped: false, filename: 'cashctrl-backup-2026-05-14T10-30-00-000.json' },
+      { status: 201 },
+    ),
+  ),
 
   // Reimbursements
   http.get('/api/reimbursements/pending', () => HttpResponse.json(PENDING_REIMBURSEMENTS)),

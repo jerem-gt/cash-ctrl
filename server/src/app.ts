@@ -6,6 +6,7 @@ import { globalErrorHandler, requestLogger } from './logger';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes';
 import { createAccountsRouter } from './modules/accounts/accounts.routes';
 import { createAuthRouter } from './modules/auth/auth.routes';
+import { createBackupRouter } from './modules/backup/backup.routes';
 import { createBanksRouter } from './modules/banks/banks.routes';
 import { createCategoriesRouter } from './modules/categories/categories.routes';
 import { createExportRouter } from './modules/export/export.routes';
@@ -25,6 +26,7 @@ import { SQLiteSessionStore } from './session-store.js';
 export interface AppOptions {
   sessionSecret?: string;
   secureCookies?: boolean;
+  backupDir?: string;
 }
 
 export function createApp(db: Database, options?: AppOptions): express.Application {
@@ -69,6 +71,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));
   app.use('/api/reimbursements', createReimbursementsRouter(db));
+  app.use('/api/backup', createBackupRouter(db, options?.backupDir));
   app.use('/api/export', createExportRouter(db));
   app.use('/api/import', createImportRouter(db));
   app.use('/api/categories', createCategoriesRouter(db));

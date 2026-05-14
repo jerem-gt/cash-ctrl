@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { PasswordChangeCard } from '@/components/PasswordChangeCard.tsx';
 import {
   AccountTypesManager,
+  BackupManager,
   BanksManager,
   CategoriesManager,
   PaymentMethodsManager,
@@ -37,6 +38,7 @@ export default function SettingsPage() {
           {activeTab === 'accountTypes' && <AccountTypesManager />}
           {activeTab === 'export' && <ExportManager />}
           {activeTab === 'import' && <ImportManager />}
+          {activeTab === 'backup' && <BackupManager />}
           {activeTab === 'password' && <PasswordChangeCard />}
         </div>
       </div>
