@@ -45,10 +45,12 @@ describe('seedAccountTypes', () => {
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedAccountTypes(db, id);
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(7);
     expect(rows.map((r) => r.name)).toContain('Courant');
     expect(rows.map((r) => r.name)).toContain('Épargne');
     expect(rows.map((r) => r.name)).toContain('Prêt');
+    expect(rows.map((r) => r.name)).toContain('Assurance Vie');
+    expect(rows.map((r) => r.name)).toContain('PER');
   });
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
@@ -58,7 +60,7 @@ describe('seedAccountTypes', () => {
     seedAccountTypes(db, id);
     seedAccountTypes(db, id);
     const count = (db.prepare('SELECT COUNT(*) as c FROM account_types').get() as { c: number }).c;
-    expect(count).toBe(5);
+    expect(count).toBe(7);
   });
 });
 

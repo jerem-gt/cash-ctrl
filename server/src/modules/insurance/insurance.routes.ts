@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { getOrRefreshPrice } from '../stocks/stocks.service.js';
+import { getOrRefreshPrice, type PriceRepository } from '../stocks/stocks.service.js';
 import { handleInsuranceAction } from './insurance.handlers.js';
 import { createInsuranceRepo } from './insurance.repo.js';
 import { recalcUcPosition, refreshInsurancePrices } from './insurance.service.js';
@@ -21,8 +21,18 @@ const versementSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: z.number().positive(),
-  quantity: z.number().positive().nullable().optional(),
-  price_per_unit: z.number().positive().nullable().optional(),
+  quantity: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
+  price_per_unit: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
   fees: z.number().min(0).default(0),
   date: z.string().regex(DATE_REGEX),
 });
@@ -34,10 +44,30 @@ const arbitrageSchema = z.object({
   from_support_id: z.number().int().positive(),
   to_support_id: z.number().int().positive(),
   from_amount: z.number().positive(),
-  from_quantity: z.number().positive().nullable().optional(),
-  from_price_per_unit: z.number().positive().nullable().optional(),
-  to_quantity: z.number().positive().nullable().optional(),
-  to_price_per_unit: z.number().positive().nullable().optional(),
+  from_quantity: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
+  from_price_per_unit: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
+  to_quantity: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
+  to_price_per_unit: z
+    .number()
+    .positive()
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null),
   fees: z.number().min(0).default(0),
   date: z.string().regex(DATE_REGEX),
 });
@@ -210,7 +240,7 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.get('/price/:ticker', async (req, res) => {
     const { ticker } = req.params;
-    const price = await getOrRefreshPrice(repo as Parameters<typeof getOrRefreshPrice>[0], ticker);
+    const price = await getOrRefreshPrice(repo as PriceRepository, ticker);
     if (!price) {
       res.status(404).json({ error: `VL introuvable pour ${ticker}` });
       return;

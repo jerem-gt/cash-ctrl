@@ -9,6 +9,8 @@ import {
   TransactionType,
   WeekendHandling,
 } from '../constants';
+import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
+import { recalcUcPosition } from '../modules/insurance/insurance.service';
 import { createLoansRepo } from '../modules/loans/loans.repo';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo';
 import { createDb, DATA_DIR, initDatabase } from './init';
@@ -55,11 +57,14 @@ const bankBNP = lookupId('banks', 'BNP Paribas');
 const bankBourso = lookupId('banks', 'BoursoBank');
 const bankCA = lookupId('banks', 'Crédit Agricole');
 const bankRevolut = lookupId('banks', 'Revolut');
+const bankLinxea = lookupId('banks', 'Linxea');
 
 const typeCourant = lookupUserScopedId('account_types', 'Courant');
 const typeEpargne = lookupUserScopedId('account_types', 'Épargne');
 const typeBourse = lookupUserScopedId('account_types', 'Bourse');
 const typeAutre = lookupUserScopedId('account_types', 'Autre');
+const typeAV = lookupUserScopedId('account_types', 'Assurance Vie');
+const typePER = lookupUserScopedId('account_types', 'PER');
 
 const subcatSalaire = lookupUserScopedId('subcategories', 'Salaire');
 const subcatLoyer = lookupUserScopedId('subcategories', 'Loyer');
@@ -121,6 +126,8 @@ const accBourso = insertAccount(
 const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, toCents(5000), '2020-06-01');
 const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, '2024-01-01');
 const accPEA = insertAccount('PEA BoursoBank', bankBourso, typeBourse, toCents(5000), '2024-01-01');
+const accAV = insertAccount('AV Linxea Spirit 2', bankLinxea, typeAV, 0, '2024-01-15');
+const accPER = insertAccount('PER Linxea Spirit PER', bankLinxea, typePER, 0, '2025-02-15');
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 type TxInput = {
@@ -627,6 +634,91 @@ stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
 stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
 stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
 
+// ── Assurance Vie & PER ────────────────────────────────────────────────────────
+const insuranceRepo = createInsuranceRepo(db);
+
+// AV — supports
+const avFondsEuro = insuranceRepo.createSupport(USER_ID, {
+  account_id: accAV,
+  name: 'Fonds Euro Linxea',
+  type: 'euro',
+  ticker: null,
+});
+const avAmundi = insuranceRepo.createSupport(USER_ID, {
+  account_id: accAV,
+  name: 'Amundi MSCI World ETF',
+  type: 'uc',
+  ticker: 'LU1681043599.SW',
+});
+
+// AV — fonds euro : versement → intérêts → rachat partiel
+insuranceRepo.versement(USER_ID, {
+  account_id: accAV,
+  support_id: avFondsEuro.id,
+  amount: 5000,
+  quantity: null,
+  price_per_unit: null,
+  fees: 0,
+  date: '2024-01-15',
+});
+insuranceRepo.interets(USER_ID, {
+  account_id: accAV,
+  support_id: avFondsEuro.id,
+  amount: 125,
+  date: '2025-01-01',
+});
+insuranceRepo.rachat(USER_ID, {
+  account_id: accAV,
+  support_id: avFondsEuro.id,
+  amount: 1000,
+  quantity: null,
+  price_per_unit: null,
+  fees: 0,
+  date: '2025-09-01',
+});
+// Solde fonds euro AV : 5 000 + 125 − 1 000 = 4 125 €
+
+// AV — UC (Amundi MSCI World) : 2 versements → PRU pondéré
+insuranceRepo.versement(USER_ID, {
+  account_id: accAV,
+  support_id: avAmundi.id,
+  amount: 2000,
+  quantity: 2000 / 41.2,
+  price_per_unit: 41.2,
+  fees: 0,
+  date: '2024-03-20',
+});
+insuranceRepo.versement(USER_ID, {
+  account_id: accAV,
+  support_id: avAmundi.id,
+  amount: 1000,
+  quantity: 1000 / 42.8,
+  price_per_unit: 42.8,
+  fees: 0,
+  date: '2024-11-10',
+});
+recalcUcPosition(db, accAV, avAmundi.id, USER_ID);
+// qty ≈ 71.91 parts, PRU ≈ 41.72 €
+stmtPrice.run('LU1681043599.SW', 42.5, 'EUR', 'Amundi MSCI World ETF');
+
+// PER — support fonds euro uniquement
+const perFondsEuro = insuranceRepo.createSupport(USER_ID, {
+  account_id: accPER,
+  name: 'Fonds Euro PER',
+  type: 'euro',
+  ticker: null,
+});
+insuranceRepo.versement(USER_ID, {
+  account_id: accPER,
+  support_id: perFondsEuro.id,
+  amount: 1500,
+  quantity: null,
+  price_per_unit: null,
+  fees: 0,
+  date: '2025-02-15',
+});
+// Solde fonds euro PER : 1 500 €
+
 // ── Prêts ─────────────────────────────────────────────────────────────────────
 const loansRepo = createLoansRepo(db);
 const transfersRepo = createTransfersRepo(db);
@@ -826,13 +918,19 @@ insertScheduled({
 });
 
 console.log('Jeu de données de développement chargé.');
-console.log('  Comptes       : 7 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, Prêt voiture)');
+console.log(
+  '  Comptes       : 9 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, PEA, AV Linxea, PER Linxea, Prêt voiture)',
+);
 console.log(
   `  Transactions  : ~${44 + paidInstallments.length * 2} (dont 8 virements liés, 5 opérations boursières, ${paidInstallments.length} mensualités payées, 1 remboursement Sécu)`,
 );
 console.log(
   '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€)',
 );
+console.log(
+  '  Assurance Vie : Fonds Euro 4 125€ + Amundi MSCI World ~71,91 parts (PRU ~41,72€, VL 42,50€)',
+);
+console.log('  PER           : Fonds Euro PER 1 500€');
 console.log(
   `  Prêts         : 1 (Prêt voiture 12 000€ à 3%, ${paidInstallments.length}/60 mensualités payées)`,
 );
