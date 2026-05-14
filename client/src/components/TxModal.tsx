@@ -321,7 +321,10 @@ function runSubmitTx(ctx: TxCtx): void {
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function TxModal(props: Readonly<Props>) {
-  const { accounts, logoMap, categories, paymentMethods, onClose } = props;
+  const { logoMap, categories, paymentMethods, onClose } = props;
+  const accounts = props.accounts.filter(
+    (a) => a.envelope_type !== 'life_insurance' && a.envelope_type !== 'per',
+  );
 
   const isEdit = props.mode === 'edit';
   const tx = isEdit ? props.tx : null;

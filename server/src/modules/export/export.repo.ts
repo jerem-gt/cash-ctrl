@@ -204,7 +204,7 @@ export function createExportRepo(db: Database) {
       const insuranceOperations = db
         .prepare<[number], FullExportInsuranceOperation>(
           `SELECT io.id, io.account_id, io.support_id, io.transaction_id, io.fees_transaction_id,
-                  io.type, io.quantity, io.price_per_unit, io.amount, io.fees, io.date, io.arbitrage_peer_id
+                  io.type, io.amount, io.fees, io.date, io.arbitrage_peer_id
            FROM insurance_operations io
            WHERE io.user_id = ? ${insOpIn}
            ORDER BY io.date, io.id`,

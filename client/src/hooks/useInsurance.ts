@@ -6,6 +6,7 @@ import {
   insuranceApi,
   type InsuranceFlowPayload,
   type InteretsPayload,
+  type RevaloriserPayload,
 } from '@/api/client';
 
 export function useInsurancePositions(accountId: number) {
@@ -96,13 +97,10 @@ export function useInterets(accountId: number) {
   });
 }
 
-export function useRefreshInsurancePrices(accountId: number) {
-  const qc = useQueryClient();
+export function useRevalorisation(accountId: number) {
+  const invalidate = useInvalidate(accountId);
   return useMutation({
-    mutationFn: () => insuranceApi.refreshPrices(accountId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
-      qc.invalidateQueries({ queryKey: ['accounts'] });
-    },
+    mutationFn: (payload: RevaloriserPayload) => insuranceApi.revaloriser(accountId, payload),
+    onSuccess: invalidate,
   });
 }

@@ -47,17 +47,10 @@ const BALANCE_STOCKS_SUBQUERY = `
 
 const BALANCE_INSURANCE_SUBQUERY = `
   COALESCE(
-    (SELECT SUM(ip.quantity * COALESCE(sprice.price, 0))
-     FROM insurance_positions ip
-     JOIN insurance_supports ins ON ip.support_id = ins.id
-     LEFT JOIN stock_prices sprice ON ins.ticker = sprice.ticker
-     WHERE ip.account_id = a.id AND ins.type = 'uc'),
-    0
-  ) + COALESCE(
-    (SELECT SUM(CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets') THEN io.amount ELSE -io.amount END) * 1.0 / 100
+    (SELECT SUM(CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation')
+                THEN io.amount ELSE -io.amount END) * 1.0 / 100
      FROM insurance_operations io
-     JOIN insurance_supports ins2 ON io.support_id = ins2.id
-     WHERE io.account_id = a.id AND ins2.type = 'euro'),
+     WHERE io.account_id = a.id),
     0
   ) AS balance_insurance`;
 

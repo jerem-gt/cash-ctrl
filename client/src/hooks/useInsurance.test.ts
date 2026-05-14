@@ -13,7 +13,7 @@ import {
   useInsuranceSupports,
   useInterets,
   useRachat,
-  useRefreshInsurancePrices,
+  useRevalorisation,
   useVersement,
 } from './useInsurance';
 
@@ -91,8 +91,6 @@ describe('useVersement', () => {
       result.current.mutate({
         support_id: 1,
         amount: 1000,
-        quantity: null,
-        price_per_unit: null,
         fees: 0,
         date: '2026-01-01',
       });
@@ -108,8 +106,6 @@ describe('useRachat', () => {
       result.current.mutate({
         support_id: 1,
         amount: 500,
-        quantity: null,
-        price_per_unit: null,
         fees: 0,
         date: '2026-01-01',
       });
@@ -126,10 +122,6 @@ describe('useArbitrage', () => {
         from_support_id: 1,
         to_support_id: 2,
         from_amount: 500,
-        from_quantity: null,
-        from_price_per_unit: null,
-        to_quantity: null,
-        to_price_per_unit: null,
         fees: 0,
         date: '2026-01-01',
       });
@@ -148,13 +140,11 @@ describe('useInterets', () => {
   });
 });
 
-describe('useRefreshInsurancePrices', () => {
-  it('rafraîchit les prix et invalide le cache', async () => {
-    const { result } = renderHook(() => useRefreshInsurancePrices(10), {
-      wrapper: createWrapper(),
-    });
+describe('useRevalorisation', () => {
+  it('crée une revalorisation et invalide le cache', async () => {
+    const { result } = renderHook(() => useRevalorisation(10), { wrapper: createWrapper() });
     act(() => {
-      result.current.mutate();
+      result.current.mutate({ support_id: 2, amount: 150, date: '2026-01-01' });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });

@@ -15,13 +15,13 @@ function renderSection(accountId = 10) {
 describe('InsuranceSection', () => {
   it('affiche les supports après chargement', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     expect(screen.getByText('Amundi MSCI World')).toBeInTheDocument();
   });
 
   it('affiche le badge Euro pour un fonds euro', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     expect(screen.getByText('Euro')).toBeInTheDocument();
   });
 
@@ -31,9 +31,9 @@ describe('InsuranceSection', () => {
     expect(screen.getByText('UC')).toBeInTheDocument();
   });
 
-  it('affiche le solde pour un fonds euro', async () => {
+  it('affiche la valeur pour un support', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     expect(screen.getAllByText(/5\s*000/).length).toBeGreaterThan(0);
   });
 
@@ -47,27 +47,22 @@ describe('InsuranceSection', () => {
     );
   });
 
-  it('affiche le bouton "Actualiser les VL" quand des UC sont présentes', async () => {
+  it("n'affiche pas le bouton Actualiser les VL", async () => {
     renderSection();
     await screen.findByText('Amundi MSCI World');
-    expect(screen.getByRole('button', { name: /actualiser les vl/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /actualiser les vl/i })).not.toBeInTheDocument();
   });
 
-  it("n'affiche pas le bouton Actualiser les VL si aucune UC", async () => {
-    server.use(
-      http.get('/api/insurance/:accountId/positions', () =>
-        HttpResponse.json([INSURANCE_POSITIONS[0]]),
-      ),
-    );
+  it('affiche le bouton Revaloriser uniquement pour les UC', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
-    expect(screen.queryByRole('button', { name: /actualiser les vl/i })).not.toBeInTheDocument();
+    await screen.findByText('Amundi MSCI World');
+    expect(screen.getByRole('button', { name: /revaloriser/i })).toBeInTheDocument();
   });
 
   it('ouvre le modal Verser au clic sur Verser', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     const versBtn = screen.getAllByRole('button', { name: /verser/i })[0];
     await user.click(versBtn);
     expect(screen.getByText(/Versement — Fonds Euro Sécurité/i)).toBeInTheDocument();
@@ -76,7 +71,7 @@ describe('InsuranceSection', () => {
   it('ouvre le modal Racheter au clic sur Racheter', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     const rachatBtn = screen.getAllByRole('button', { name: /racheter/i })[0];
     await user.click(rachatBtn);
     expect(screen.getByText(/Rachat — Fonds Euro Sécurité/i)).toBeInTheDocument();
@@ -85,7 +80,7 @@ describe('InsuranceSection', () => {
   it('ouvre le modal Arbitrer au clic sur Arbitrer', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     const arbitreBtn = screen.getAllByRole('button', { name: /arbitrer/i })[0];
     await user.click(arbitreBtn);
     expect(screen.getByText(/Arbitrage depuis/i)).toBeInTheDocument();
@@ -93,39 +88,37 @@ describe('InsuranceSection', () => {
 
   it('affiche le bouton Intérêts uniquement pour les fonds euro', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     expect(screen.getByRole('button', { name: /intérêts/i })).toBeInTheDocument();
+  });
+
+  it('ouvre le modal Revaloriser pour une UC', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Amundi MSCI World');
+    await user.click(screen.getByRole('button', { name: /revaloriser/i }));
+    expect(screen.getByText(/Revalorisation — Amundi MSCI World/i)).toBeInTheDocument();
   });
 
   it('ouvre le modal Ajouter un support', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getByRole('button', { name: /\+ support/i }));
     expect(screen.getByText('Ajouter un support')).toBeInTheDocument();
   });
 
   it('affiche la ligne Total quand plusieurs supports', async () => {
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await screen.findByText('Amundi MSCI World');
     expect(screen.getByText('Total enveloppe')).toBeInTheDocument();
-  });
-
-  it('actualise les VL et affiche un toast', async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findByText('Amundi MSCI World');
-    await user.click(screen.getByRole('button', { name: /actualiser les vl/i }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('VL mises à jour'),
-    );
   });
 
   it('soumet le versement fonds euro et affiche un toast', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /verser/i })[0]);
     await screen.findByText(/Versement — Fonds Euro Sécurité/i);
     const amountInput = screen.getByRole('spinbutton', { name: /montant versé/i });
@@ -140,7 +133,7 @@ describe('InsuranceSection', () => {
   it('soumet les intérêts fonds euro et affiche un toast', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getByRole('button', { name: /intérêts/i }));
     await screen.findByText(/Intérêts — Fonds Euro Sécurité/i);
     const amountInput = screen.getByRole('spinbutton', { name: /montant des intérêts/i });
@@ -155,7 +148,7 @@ describe('InsuranceSection', () => {
   it('soumet le rachat fonds euro et affiche un toast', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /racheter/i })[0]);
     await screen.findByText(/Rachat — Fonds Euro Sécurité/i);
     const amountInput = screen.getByRole('spinbutton', { name: /montant racheté/i });
@@ -170,25 +163,48 @@ describe('InsuranceSection', () => {
   it("soumet l'arbitrage et affiche un toast", async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /arbitrer/i })[0]);
     await screen.findByText(/Arbitrage depuis Fonds Euro Sécurité/i);
     await user.type(screen.getByRole('spinbutton', { name: /montant arbitré/i }), '1000');
-    await user.type(screen.getByRole('spinbutton', { name: /vl destination/i }), '42');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Arbitrage enregistré'),
     );
   });
 
+  it('soumet une revalorisation UC et affiche un toast', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Amundi MSCI World');
+    await user.click(screen.getByRole('button', { name: /revaloriser/i }));
+    await screen.findByText(/Revalorisation — Amundi MSCI World/i);
+    await user.type(screen.getByRole('spinbutton', { name: /plus\/moins-value/i }), '150');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Revalorisation enregistrée'),
+    );
+  });
+
   it('supprime un support et affiche un toast', async () => {
     const user = userEvent.setup();
     renderSection();
-    await screen.findByText('Fonds Euro Sécurité');
+    await screen.findAllByText('Fonds Euro Sécurité');
     const deleteButtons = screen.getAllByTitle('Supprimer le support');
     await user.click(deleteButtons[0]);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Support supprimé'),
     );
+  });
+
+  it("n'affiche pas le bouton Intérêts pour les UC", async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/positions', () =>
+        HttpResponse.json([INSURANCE_POSITIONS[1]]),
+      ),
+    );
+    renderSection();
+    await screen.findByText('Amundi MSCI World');
+    expect(screen.queryByRole('button', { name: /intérêts/i })).not.toBeInTheDocument();
   });
 });

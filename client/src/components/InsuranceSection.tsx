@@ -2,16 +2,16 @@ import { type ReactNode, useState } from 'react';
 
 import {
   useDeleteInsuranceSupport,
+  useInsuranceOperations,
   useInsurancePositions,
-  useRefreshInsurancePrices,
 } from '@/hooks/useInsurance';
-import { fmtStockPrice } from '@/lib/format';
-import type { InsuranceSupportView } from '@/types';
+import type { InsuranceOperation, InsuranceSupportView } from '@/types';
 
 import { AddInsuranceSupportModal } from './AddInsuranceSupportModal';
 import { InsuranceArbitrageModal } from './InsuranceArbitrageModal';
 import { InsuranceInteretsModal } from './InsuranceInteretsModal';
 import { InsuranceRachatModal } from './InsuranceRachatModal';
+import { InsuranceRevalorisationModal } from './InsuranceRevalorisationModal';
 import { InsuranceVersementModal } from './InsuranceVersementModal';
 import { Button, showToast } from './ui';
 
@@ -26,6 +26,7 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
   const [showRachat, setShowRachat] = useState(false);
   const [showArbitrage, setShowArbitrage] = useState(false);
   const [showInterets, setShowInterets] = useState(false);
+  const [showRevalorisation, setShowRevalorisation] = useState(false);
   const deleteSupport = useDeleteInsuranceSupport(accountId);
 
   const handleDelete = () => {
@@ -58,51 +59,9 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
           )}
         </div>
 
-        <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-          {support.type === 'euro' ? (
-            <>
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Solde</p>
-                <p className="font-medium text-stone-700 tabular-nums">
-                  {support.balance == null ? '—' : fmtEur(support.balance)}
-                </p>
-              </div>
-              <div />
-              <div />
-              <div />
-            </>
-          ) : (
-            <>
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Parts</p>
-                <p className="font-medium text-stone-700 tabular-nums">
-                  {support.quantity == null ? '—' : support.quantity.toFixed(6)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
-                <p className="font-medium text-stone-700 tabular-nums">
-                  {support.avg_price == null
-                    ? '—'
-                    : fmtStockPrice(support.avg_price, support.current_price_currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">VL</p>
-                <p className="font-medium text-stone-700 tabular-nums">
-                  {support.current_price == null
-                    ? '—'
-                    : fmtStockPrice(support.current_price, support.current_price_currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
-                  Valorisation
-                </p>
-                <p className="font-medium text-stone-700 tabular-nums">{fmtEur(support.value)}</p>
-              </div>
-            </>
-          )}
+        <div className="flex-1">
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valeur</p>
+          <p className="font-medium text-stone-700 tabular-nums">{fmtEur(support.value)}</p>
         </div>
 
         <div className="shrink-0 text-right">
@@ -134,6 +93,14 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
               className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
             >
               Intérêts
+            </button>
+          )}
+          {support.type === 'uc' && (
+            <button
+              onClick={() => setShowRevalorisation(true)}
+              className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
+            >
+              Revaloriser
             </button>
           )}
           <button
@@ -175,7 +142,79 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
           onClose={() => setShowInterets(false)}
         />
       )}
+      {showRevalorisation && support.type === 'uc' && (
+        <InsuranceRevalorisationModal
+          accountId={accountId}
+          support={support}
+          onClose={() => setShowRevalorisation(false)}
+        />
+      )}
     </>
+  );
+}
+
+const OP_CONFIG: Record<
+  InsuranceOperation['type'],
+  { label: string; badgeClass: string; sign: (op: InsuranceOperation) => number }
+> = {
+  versement: {
+    label: 'Versement',
+    badgeClass: 'bg-green-100 text-green-700',
+    sign: (op) => op.amount,
+  },
+  rachat: { label: 'Rachat', badgeClass: 'bg-red-100 text-red-700', sign: (op) => -op.amount },
+  arbitrage_in: {
+    label: 'Arbitrage ←',
+    badgeClass: 'bg-blue-100 text-blue-700',
+    sign: (op) => op.amount,
+  },
+  arbitrage_out: {
+    label: 'Arbitrage →',
+    badgeClass: 'bg-blue-100 text-blue-700',
+    sign: (op) => -op.amount,
+  },
+  interets: {
+    label: 'Intérêts',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    sign: (op) => op.amount,
+  },
+  revalorisation: {
+    label: 'Revalorisation',
+    badgeClass: 'bg-violet-100 text-violet-700',
+    sign: (op) => op.amount,
+  },
+};
+
+function OperationRow({ op }: Readonly<{ op: InsuranceOperation }>) {
+  const cfg = OP_CONFIG[op.type];
+  const signed = cfg.sign(op);
+  const fmtEur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors">
+      <span className="text-[10px] text-stone-400 w-20 shrink-0 tabular-nums">
+        {fmtDate(op.date)}
+      </span>
+      <span
+        className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ${cfg.badgeClass}`}
+      >
+        {cfg.label}
+      </span>
+      <span className="text-sm text-stone-600 flex-1 truncate">{op.support_name}</span>
+      {op.fees > 0 && (
+        <span className="text-[10px] text-stone-400 shrink-0">frais {fmtEur(op.fees)}</span>
+      )}
+      <span
+        className={`text-sm font-medium tabular-nums shrink-0 ${
+          signed >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}
+      >
+        {signed >= 0 ? '+' : ''}
+        {fmtEur(signed)}
+      </span>
+    </div>
   );
 }
 
@@ -185,36 +224,21 @@ interface Props {
 
 export function InsuranceSection({ accountId }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useInsurancePositions(accountId);
-  const refresh = useRefreshInsurancePrices(accountId);
+  const { data: operations = [] } = useInsuranceOperations(accountId);
   const [showAdd, setShowAdd] = useState(false);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
-  const hasUc = positions.some((p) => p.type === 'uc');
-
-  const handleRefresh = () => {
-    refresh.mutate(undefined, {
-      onSuccess: () => showToast('VL mises à jour ✓'),
-      onError: (err) => showToast(err.message),
-    });
-  };
 
   return (
     <>
-      <div>
+      <div className="mb-4">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
             Enveloppe
           </p>
-          <div className="flex gap-2">
-            {hasUc && (
-              <Button size="sm" onClick={handleRefresh} disabled={refresh.isPending}>
-                {refresh.isPending ? '…' : '↻ Actualiser les VL'}
-              </Button>
-            )}
-            <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
-              + Support
-            </Button>
-          </div>
+          <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
+            + Support
+          </Button>
         </div>
 
         {(() => {
@@ -254,6 +278,21 @@ export function InsuranceSection({ accountId }: Readonly<Props>) {
           }
           return content;
         })()}
+      </div>
+
+      <div>
+        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
+          Historique
+        </p>
+        {operations.length === 0 ? (
+          <div className="text-sm text-stone-300 text-center py-6">Aucune opération</div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden divide-y divide-stone-50">
+            {operations.map((op) => (
+              <OperationRow key={op.id} op={op} />
+            ))}
+          </div>
+        )}
       </div>
 
       {showAdd && (

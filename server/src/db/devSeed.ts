@@ -10,7 +10,6 @@ import {
   WeekendHandling,
 } from '../constants';
 import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
-import { recalcUcPosition } from '../modules/insurance/insurance.service';
 import { createLoansRepo } from '../modules/loans/loans.repo';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo';
 import { createDb, DATA_DIR, initDatabase } from './init';
@@ -656,8 +655,6 @@ insuranceRepo.versement(USER_ID, {
   account_id: accAV,
   support_id: avFondsEuro.id,
   amount: 5000,
-  quantity: null,
-  price_per_unit: null,
   fees: 0,
   date: '2024-01-15',
 });
@@ -671,20 +668,16 @@ insuranceRepo.rachat(USER_ID, {
   account_id: accAV,
   support_id: avFondsEuro.id,
   amount: 1000,
-  quantity: null,
-  price_per_unit: null,
   fees: 0,
   date: '2025-09-01',
 });
 // Solde fonds euro AV : 5 000 + 125 − 1 000 = 4 125 €
 
-// AV — UC (Amundi MSCI World) : 2 versements → PRU pondéré
+// AV — UC (Amundi MSCI World) : 2 versements + revalorisation annuelle
 insuranceRepo.versement(USER_ID, {
   account_id: accAV,
   support_id: avAmundi.id,
   amount: 2000,
-  quantity: 2000 / 41.2,
-  price_per_unit: 41.2,
   fees: 0,
   date: '2024-03-20',
 });
@@ -692,14 +685,16 @@ insuranceRepo.versement(USER_ID, {
   account_id: accAV,
   support_id: avAmundi.id,
   amount: 1000,
-  quantity: 1000 / 42.8,
-  price_per_unit: 42.8,
   fees: 0,
   date: '2024-11-10',
 });
-recalcUcPosition(db, accAV, avAmundi.id, USER_ID);
-// qty ≈ 71.91 parts, PRU ≈ 41.72 €
-stmtPrice.run('LU1681043599.SW', 42.5, 'EUR', 'Amundi MSCI World ETF');
+insuranceRepo.revaloriser(USER_ID, {
+  account_id: accAV,
+  support_id: avAmundi.id,
+  amount: 150,
+  date: '2025-01-01',
+});
+// Valeur UC AV : 2 000 + 1 000 + 150 = 3 150 €
 
 // PER — support fonds euro uniquement
 const perFondsEuro = insuranceRepo.createSupport(USER_ID, {
@@ -712,8 +707,6 @@ insuranceRepo.versement(USER_ID, {
   account_id: accPER,
   support_id: perFondsEuro.id,
   amount: 1500,
-  quantity: null,
-  price_per_unit: null,
   fees: 0,
   date: '2025-02-15',
 });

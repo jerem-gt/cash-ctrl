@@ -1,11 +1,11 @@
-import { type SubmitEvent, useState } from 'react';
+import { useState } from 'react';
 
-import { insuranceApi } from '@/api/client';
+import { useAccounts } from '@/hooks/useAccounts';
 import { useVersement } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, FormGroup, Input, Select, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -15,40 +15,25 @@ interface Props {
 
 export function InsuranceVersementModal({ accountId, support, onClose }: Readonly<Props>) {
   const [amount, setAmount] = useState('');
-  const [vl, setVl] = useState(support.current_price == null ? '' : String(support.current_price));
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
-  const [vlLoading, setVlLoading] = useState(false);
+  const [sourceAccountId, setSourceAccountId] = useState<number | null>(null);
   const versement = useVersement(accountId);
+  const { data: allAccounts = [] } = useAccounts();
 
-  const isUc = support.type === 'uc';
-  const amountNum = Number.parseFloat(amount) || 0;
-  const vlNum = Number.parseFloat(vl) || 0;
-  const quantity = isUc && vlNum > 0 ? amountNum / vlNum : null;
+  const sourceAccounts = allAccounts.filter(
+    (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
+  );
 
-  const fetchVl = async () => {
-    if (!support.ticker) return;
-    setVlLoading(true);
-    try {
-      const price = await insuranceApi.price(support.ticker);
-      setVl(String(price.price));
-    } catch {
-      showToast('VL introuvable');
-    } finally {
-      setVlLoading(false);
-    }
-  };
-
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     versement.mutate(
       {
         support_id: support.id,
-        amount: amountNum,
-        quantity: isUc ? quantity : null,
-        price_per_unit: isUc ? vlNum : null,
+        amount: Number.parseFloat(amount),
         fees: Number.parseFloat(fees) || 0,
         date,
+        source_account_id: sourceAccountId,
       },
       {
         onSuccess: () => {
@@ -74,42 +59,33 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              autoFocus={!isUc}
+              autoFocus
             />
           </FormGroup>
 
-          {isUc && (
+          {sourceAccounts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="vers-vl"
-                  className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
-                >
-                  VL (€ / part)
-                </label>
-                {support.ticker && (
-                  <button
-                    type="button"
-                    onClick={fetchVl}
-                    disabled={vlLoading}
-                    className="text-[10px] text-blue-500 hover:text-blue-700 disabled:opacity-50"
-                  >
-                    {vlLoading ? '…' : '↻ Récupérer'}
-                  </button>
-                )}
-              </div>
-              <Input
-                id="vers-vl"
-                type="number"
-                step="0.000001"
-                min="0.000001"
-                value={vl}
-                onChange={(e) => setVl(e.target.value)}
-                required
-              />
-              {quantity != null && vlNum > 0 && (
-                <p className="text-[10px] text-stone-400">≈ {quantity.toFixed(6)} parts allouées</p>
-              )}
+              <label
+                htmlFor="vers-source"
+                className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              >
+                Depuis le compte
+                <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
+                  (optionnel)
+                </span>
+              </label>
+              <Select
+                id="vers-source"
+                value={sourceAccountId ?? ''}
+                onChange={(e) => setSourceAccountId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">— Aucun —</option>
+                {sourceAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
             </div>
           )}
 
@@ -139,11 +115,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
             <Button type="button" onClick={onClose} disabled={versement.isPending}>
               Annuler
             </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={!amount || (isUc && !vl) || versement.isPending}
-            >
+            <Button variant="primary" type="submit" disabled={!amount || versement.isPending}>
               {versement.isPending ? '…' : 'Enregistrer'}
             </Button>
           </div>

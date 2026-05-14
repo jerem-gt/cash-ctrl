@@ -76,6 +76,54 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       db.exec('SELECT 1 FROM account_types');
     })();
   },
+
+  // v5 → v6 : supprimer quantity/price_per_unit de insurance_operations, ajouter revalorisation, supprimer insurance_positions
+  (db) => {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE insurance_operations_new (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          account_id          INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+          support_id          INTEGER NOT NULL REFERENCES insurance_supports(id) ON DELETE CASCADE,
+          transaction_id      INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+          fees_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+          type                TEXT NOT NULL CHECK (type IN ('versement','rachat','arbitrage_in','arbitrage_out','interets','revalorisation')),
+          amount              INTEGER NOT NULL,
+          fees                INTEGER NOT NULL DEFAULT 0,
+          date                TEXT NOT NULL,
+          arbitrage_peer_id   INTEGER REFERENCES insurance_operations_new(id) ON DELETE SET NULL,
+          created_at          TEXT DEFAULT (datetime('now'))
+        )
+      `);
+      db.exec(`
+        INSERT INTO insurance_operations_new
+          (id, user_id, account_id, support_id, transaction_id, fees_transaction_id,
+           type, amount, fees, date, arbitrage_peer_id, created_at)
+        SELECT id, user_id, account_id, support_id, transaction_id, fees_transaction_id,
+               type, amount, fees, date, arbitrage_peer_id, created_at
+        FROM insurance_operations
+      `);
+      db.exec('DROP TRIGGER IF EXISTS insurance_op_fees_cleanup');
+      db.exec('DROP TABLE insurance_operations');
+      db.exec('ALTER TABLE insurance_operations_new RENAME TO insurance_operations');
+      db.exec(
+        'CREATE INDEX IF NOT EXISTS idx_ins_ops_account ON insurance_operations (account_id)',
+      );
+      db.exec(
+        'CREATE INDEX IF NOT EXISTS idx_ins_ops_support ON insurance_operations (support_id)',
+      );
+      db.exec(`
+        CREATE TRIGGER insurance_op_fees_cleanup
+        AFTER DELETE ON insurance_operations
+        WHEN OLD.fees_transaction_id IS NOT NULL
+        BEGIN
+          DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
+        END
+      `);
+      db.exec('DROP TABLE IF EXISTS insurance_positions');
+    })();
+  },
 ];
 
 function runMigrations(db: DatabaseType) {

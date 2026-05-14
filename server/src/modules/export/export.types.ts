@@ -139,8 +139,6 @@ export interface FullExportInsuranceOperation {
   transaction_id: number | null;
   fees_transaction_id: number | null;
   type: string;
-  quantity: number | null;
-  price_per_unit: number | null;
   amount: number;
   fees: number;
   date: string;

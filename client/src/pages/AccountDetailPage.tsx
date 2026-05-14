@@ -83,18 +83,22 @@ export default function AccountDetailPage() {
         </div>
       )}
 
-      {/* Transaction list */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-          Transactions
-        </p>
-      </div>
-      <TransactionsList
-        key={account?.id}
-        account={account}
-        logoMap={logoMap}
-        emptyMessage="Aucune transaction sur ce compte"
-      />
+      {/* Transaction list — masquée pour les comptes AV/PER */}
+      {!isInsurance && (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+              Transactions
+            </p>
+          </div>
+          <TransactionsList
+            key={account?.id}
+            account={account}
+            logoMap={logoMap}
+            emptyMessage="Aucune transaction sur ce compte"
+          />
+        </>
+      )}
 
       {loanCloseOpen && account && (
         <CloseAccountModal
