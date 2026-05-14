@@ -5,7 +5,12 @@ import { z } from 'zod';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
-import { getOrRefreshPrice, recalcPosition, refreshAllPrices } from './stocks.service.js';
+import {
+  getOrRefreshPrice,
+  recalcPosition,
+  refreshAllPrices,
+  searchByQuery,
+} from './stocks.service.js';
 
 const buySchema = z.object({
   account_id: z.number().int().positive(),
@@ -150,6 +155,16 @@ export function createStocksRouter(db: Database): Router {
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
     }
+  });
+
+  router.get('/search', async (req, res) => {
+    const q = String(req.query.q ?? '').trim();
+    if (!q || q.length < 3) {
+      res.json([]);
+      return;
+    }
+    const results = await searchByQuery(q);
+    res.json(results);
   });
 
   router.get('/price/:ticker', async (req, res) => {

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useCreateInsuranceSupport } from '@/hooks/useInsurance';
 import type { InsuranceSupportType } from '@/types';
 
+import { isIsin, TickerInput } from './TickerInput';
 import { Button, FormGroup, Input, showToast } from './ui';
 
 interface Props {
@@ -67,12 +68,12 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
           </div>
 
           {type === 'uc' && (
-            <FormGroup label="Ticker Yahoo Finance" htmlFor="add-support-ticker">
-              <Input
+            <FormGroup label="Ticker ou ISIN" htmlFor="add-support-ticker">
+              <TickerInput
                 id="add-support-ticker"
                 value={ticker}
-                onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                placeholder="ex: LU1681043599.SW"
+                onChange={(v) => setTicker(v.toUpperCase())}
+                placeholder="ex: LU1681043599.SW ou LU1681043599"
                 className="font-mono"
               />
             </FormGroup>
@@ -82,7 +83,11 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
             <Button type="button" onClick={onClose} disabled={create.isPending}>
               Annuler
             </Button>
-            <Button variant="primary" type="submit" disabled={!name || create.isPending}>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={!name || create.isPending || isIsin(ticker)}
+            >
               Ajouter
             </Button>
           </div>
