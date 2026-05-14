@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
@@ -486,6 +486,238 @@ describe('/api/insurance', () => {
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
       expect(res.status).toBe(400);
+    });
+
+    it('supprime une UC sans position (qty = 0)', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC sans parts',
+        type: 'uc',
+      });
+      const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
+      expect(res.status).toBe(200);
+    });
+
+    it('retourne 400 pour une UC avec des parts', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC avec parts',
+        type: 'uc',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 1000,
+        quantity: 10,
+        price_per_unit: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 403 pour un compte inconnu', async () => {
+      const res = await ctx.agent.delete('/api/insurance/99999/supports/1');
+      expect(res.status).toBe(403);
+    });
+
+    it('retourne 404 pour un support inconnu', async () => {
+      const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/99999`);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ─── Arbitrage UC→Euro ────────────────────────────────────────────────────
+
+  describe('POST /:accountId/arbitrage (UC → Euro)', () => {
+    let ucSupportId: number;
+    let euroSupportId: number;
+
+    beforeAll(async () => {
+      const u = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC Source Arbitrage',
+        type: 'uc',
+      });
+      ucSupportId = u.body.id;
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: ucSupportId,
+        amount: 2000,
+        quantity: 20,
+        price_per_unit: 100,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const e = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Dest Arbitrage',
+        type: 'euro',
+      });
+      euroSupportId = e.body.id;
+    });
+
+    it('crée un arbitrage UC → Euro et met à jour les positions', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: ucSupportId,
+        to_support_id: euroSupportId,
+        from_amount: 500,
+        from_quantity: 5,
+        from_price_per_unit: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.outOperation.type).toBe('arbitrage_out');
+    });
+
+    it('retourne 400 si quantité UC insuffisante', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: ucSupportId,
+        to_support_id: euroSupportId,
+        from_amount: 99999,
+        from_quantity: 9999,
+        from_price_per_unit: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // ─── Erreurs 404 support introuvable ─────────────────────────────────────
+
+  describe('404 support introuvable', () => {
+    it('versement avec support inexistant → 404', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: 99999,
+        amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('rachat avec support inexistant → 404', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: 99999,
+        amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('interets avec support inexistant → 404', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/interets`).send({
+        support_id: 99999,
+        amount: 100,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('arbitrage avec from_support inexistant → 404', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC dest 404',
+        type: 'uc',
+      });
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: 99999,
+        to_support_id: sup.body.id,
+        from_amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('arbitrage avec to_support inexistant → 404', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro src 404',
+        type: 'euro',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 500,
+        fees: 0,
+        date: TODAY,
+      });
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: sup.body.id,
+        to_support_id: 99999,
+        from_amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ─── Erreur de validation (handler) ──────────────────────────────────────
+
+  describe('Erreurs de validation', () => {
+    it('retourne 400 pour un corps invalide (versement)', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: 1,
+        amount: -100,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // ─── Prix (GET /price/:ticker, POST /prices/refresh) ─────────────────────
+
+  describe('GET /price/:ticker', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('retourne le prix si disponible', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              chart: { result: [{ meta: { regularMarketPrice: 42.5, currency: 'EUR' } }] },
+            }),
+        }),
+      );
+      const res = await ctx.agent.get('/api/insurance/price/LU1681043599.SW');
+      expect(res.status).toBe(200);
+      expect(res.body.price).toBe(42.5);
+    });
+
+    it('retourne 404 si le prix est introuvable', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+      const res = await ctx.agent.get('/api/insurance/price/UNKNOWN.TICKER');
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /:accountId/prices/refresh', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('rafraîchit les prix et retourne ok', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              chart: { result: [{ meta: { regularMarketPrice: 15, currency: 'EUR' } }] },
+            }),
+        }),
+      );
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/prices/refresh`);
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+    });
+
+    it('retourne 403 pour un compte inconnu', async () => {
+      const res = await ctx.agent.post('/api/insurance/99999/prices/refresh');
+      expect(res.status).toBe(403);
     });
   });
 

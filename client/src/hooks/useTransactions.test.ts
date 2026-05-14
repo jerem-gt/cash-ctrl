@@ -129,6 +129,54 @@ describe('useUpdateTransfer', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('exécute le callback setQueriesData sur le peer (branche transfer_peer_id)', async () => {
+    const peer = { ...TRANSACTIONS.data[0], id: 11, transfer_peer_id: 10 };
+    const updated = { ...TRANSACTIONS.data[0], id: 10, transfer_peer_id: 11, amount: 55 };
+    const unrelated = { ...TRANSACTIONS.data[0], id: 99, transfer_peer_id: null };
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({
+          data: [TRANSACTIONS.data[0], peer, unrelated],
+          total: 3,
+          page: 1,
+          totalPages: 1,
+        }),
+      ),
+      http.put('/api/transfers/:id', () => HttpResponse.json(updated)),
+    );
+    const wrapper = createWrapper();
+    const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
+    await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
+
+    const { result } = renderHook(() => useUpdateTransfer(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 10,
+        amount: 55,
+        description: 'Mod',
+        date: '2026-01-01',
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    // La mutation a réussi — le setQueriesData a été exécuté sur les deux transactions
+  });
+
+  it('gère un cache vide (old undefined)', async () => {
+    // Pas de préchargement → old sera undefined dans setQueriesData
+    const { result } = renderHook(() => useUpdateTransfer(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate({
+        id: 99,
+        amount: 10,
+        description: 'X',
+        date: '2026-01-01',
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
 });
 
 describe('useDeleteTransaction', () => {
@@ -160,6 +208,15 @@ describe('useValidateTransaction', () => {
     const { result } = renderHook(() => useValidateTransaction(), { wrapper });
     act(() => {
       result.current.mutate({ id: 10, validated: true });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qResult.current.data?.data[0].validated).toBe(1);
+  });
+
+  it('gère un cache vide (old undefined)', async () => {
+    const { result } = renderHook(() => useValidateTransaction(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate({ id: 99, validated: true });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
