@@ -16,6 +16,7 @@ import {
   SCHEDULED,
   STOCK_OPERATIONS,
   STOCK_POSITIONS,
+  STOCK_SEARCH_RESULTS,
   SUBCATEGORIES,
   TRANSACTIONS,
 } from '../fixtures';
@@ -251,4 +252,14 @@ export const handlers = [
     }),
   ),
   http.post('/api/stocks/prices/refresh', () => HttpResponse.json({ ok: true })),
+  http.post('/api/stocks/:accountId/transfer', () =>
+    HttpResponse.json(
+      {
+        outOperation: { ...STOCK_OPERATIONS[0], type: 'transfer_out' },
+        inOperation: { ...STOCK_OPERATIONS[0], id: 2, account_id: 5, type: 'transfer_in' },
+      },
+      { status: 201 },
+    ),
+  ),
+  http.get('/api/stocks/search', () => HttpResponse.json(STOCK_SEARCH_RESULTS)),
 ];

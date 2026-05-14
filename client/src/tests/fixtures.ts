@@ -76,6 +76,49 @@ export const ACCOUNTS: Account[] = [
   },
 ];
 
+export const INVESTMENT_ACCOUNT: Account = {
+  id: 3,
+  name: 'PEA',
+  bank_id: 1,
+  bank: 'BNP',
+  account_type_id: 3,
+  type: 'Bourse',
+  envelope_type: 'investment',
+  initial_balance: 0,
+  opening_date: '2024-01-01',
+  closed_at: null,
+  balance: 0,
+  balance_stocks: 3000,
+  balance_insurance: 0,
+  balance_all: 3000,
+  capital_restant_du: null,
+  capital_restant_du_all: null,
+};
+
+export const INVESTMENT_ACCOUNT_2: Account = {
+  id: 5,
+  name: 'CTO',
+  bank_id: 1,
+  bank: 'BNP',
+  account_type_id: 3,
+  type: 'Bourse',
+  envelope_type: 'investment',
+  initial_balance: 0,
+  opening_date: '2024-01-01',
+  closed_at: null,
+  balance: 0,
+  balance_stocks: 1500,
+  balance_insurance: 0,
+  balance_all: 1500,
+  capital_restant_du: null,
+  capital_restant_du_all: null,
+};
+
+export const STOCK_SEARCH_RESULTS = [
+  { symbol: 'DCAM.PA', name: 'Décathlon SA', exchange: 'Paris', type: 'EQUITY' },
+  { symbol: 'DCAM.DE', name: 'Decathlon', exchange: 'XETRA', type: 'EQUITY' },
+];
+
 export const ACCOUNT_TYPES: AccountType[] = [
   { id: 1, name: 'Courant', envelope_type: null, acc_count: 1 },
   { id: 3, name: 'Bourse', envelope_type: 'investment', acc_count: 1 },

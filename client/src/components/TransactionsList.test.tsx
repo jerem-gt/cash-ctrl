@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useTransactionsManager } from '@/hooks/useTransactionsManager.ts';
-import { ACCOUNTS, TRANSACTIONS } from '@/tests/fixtures.ts';
+import { ACCOUNTS, LOAN_ACCOUNT, TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { Transaction } from '@/types.ts';
 
@@ -183,6 +183,20 @@ describe('TransactionsList', () => {
     renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
 
     expect(screen.queryByTitle('Solde courant')).not.toBeInTheDocument();
+  });
+
+  it('utilise capital_restant_du_all comme solde de départ pour un compte prêt', () => {
+    const tx = {
+      ...TRANSACTIONS.data[0],
+      type: 'expense' as const,
+      amount: 200,
+      transfer_peer_id: null,
+    };
+    mockManager({ state: { transactions: [tx], total: 1 } });
+
+    renderWithProviders(<TransactionsList account={LOAN_ACCOUNT} logoMap={mockLogoMap} />);
+
+    expect(screen.getByTitle('Solde courant')).toBeInTheDocument();
   });
 
   it('décale le solde courant en fonction de balance_before_page (page 2+)', () => {
