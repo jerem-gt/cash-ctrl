@@ -103,7 +103,17 @@ export function createDb(filePath?: string) {
 }
 
 export function initDatabase(db: DatabaseType) {
+  const isFresh = !db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    .get();
+
   initSchema(db);
   seedDatabase(db);
-  runMigrations(db);
+
+  if (isFresh) {
+    // Fresh DB: schema already includes all columns — skip migrations
+    db.pragma(`user_version = ${MIGRATIONS.length}`);
+  } else {
+    runMigrations(db);
+  }
 }

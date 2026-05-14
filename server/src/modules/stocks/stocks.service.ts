@@ -6,6 +6,11 @@ import { StockPrice } from './stocks.types';
 
 const PRICE_TTL_MS = 15 * 60 * 1000;
 
+export interface PriceRepository {
+  getStockPrice(ticker: string): StockPrice | undefined;
+  upsertPrice(ticker: string, price: number, currency: string, name: string | null): unknown;
+}
+
 async function fetchYahooPrice(ticker: string): Promise<StockPrice | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
@@ -34,7 +39,7 @@ async function fetchYahooPrice(ticker: string): Promise<StockPrice | null> {
 }
 
 export async function refreshPrice(
-  stocksRepo: ReturnType<typeof createStocksRepo>,
+  stocksRepo: PriceRepository,
   ticker: string,
 ): Promise<StockPrice | null> {
   const fetched = await fetchYahooPrice(ticker);
@@ -45,7 +50,7 @@ export async function refreshPrice(
 }
 
 export async function getOrRefreshPrice(
-  stocksRepo: ReturnType<typeof createStocksRepo>,
+  stocksRepo: PriceRepository,
   ticker: string,
 ): Promise<StockPrice | null> {
   const cached = stocksRepo.getStockPrice(ticker);
