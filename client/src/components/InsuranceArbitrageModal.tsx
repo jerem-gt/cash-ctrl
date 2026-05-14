@@ -39,11 +39,13 @@ export function InsuranceArbitrageModal({
   const fromQty = fromIsUc && fromVlNum > 0 ? fromAmountNum / fromVlNum : null;
   const toQty = toIsUc && toVlNum > 0 ? fromAmountNum / toVlNum : null;
 
-  const maxFromAmount = fromIsUc
-    ? fromSupport.quantity == null
-      ? undefined
-      : fromSupport.quantity * (fromSupport.current_price ?? fromSupport.avg_price ?? 0)
-    : (fromSupport.balance ?? undefined);
+  let maxFromAmount: number | undefined;
+  if (!fromIsUc) {
+    maxFromAmount = fromSupport.balance ?? undefined;
+  } else if (fromSupport.quantity != null) {
+    maxFromAmount =
+      fromSupport.quantity * (fromSupport.current_price ?? fromSupport.avg_price ?? 0);
+  }
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();

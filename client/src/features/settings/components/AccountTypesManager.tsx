@@ -104,8 +104,11 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
               autoFocus
             />
             <div>
-              <label className="text-[11px] text-stone-500 block mb-1">Enveloppe</label>
+              <label htmlFor="edit-at-envelope" className="text-[11px] text-stone-500 block mb-1">
+                Enveloppe
+              </label>
               <select
+                id="edit-at-envelope"
                 value={envelopeType}
                 onChange={(e) => setEnvelopeType(e.target.value)}
                 className="text-sm border border-black/10 rounded-lg px-2 py-1.5 bg-white w-full focus:outline-none"
@@ -249,8 +252,11 @@ export function AccountTypesManager() {
             </button>
           </form>
           <div className="mt-2 ml-1">
-            <label className="text-[11px] text-stone-500 block mb-1">Enveloppe</label>
+            <label htmlFor="new-at-envelope" className="text-[11px] text-stone-500 block mb-1">
+              Enveloppe
+            </label>
             <select
+              id="new-at-envelope"
               value={newAtEnvelopeType}
               onChange={(e) => setNewAtEnvelopeType(e.target.value)}
               className="text-xs border border-black/10 rounded-lg px-2 py-1 bg-white focus:outline-none"

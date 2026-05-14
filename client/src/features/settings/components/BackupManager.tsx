@@ -1,5 +1,5 @@
 import { Download, HardDrive, Play } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { showToast } from '@/components/ui.tsx';
 import { useBackupList, useRunBackup } from '@/hooks/useBackup';
@@ -81,7 +81,7 @@ export function BackupManager() {
         result.skipped
           ? showToast('Aucune modification depuis le dernier backup')
           : showToast(`Backup créé : ${result.filename}`),
-      onError: (err) => showToast((err as Error).message),
+      onError: (err) => showToast(err.message),
     });
   };
 
@@ -97,14 +97,15 @@ export function BackupManager() {
 
         <div className="flex flex-col gap-5">
           {/* Activation */}
-          <label className="flex items-center justify-between gap-4 cursor-pointer">
-            <span className="text-sm font-medium text-stone-700">
+          <div className="flex items-center justify-between gap-4 cursor-pointer">
+            <span id="backup-enabled-label" className="text-sm font-medium text-stone-700">
               Activer le backup automatique
             </span>
             <button
               type="button"
               role="switch"
               aria-checked={current.backup_enabled}
+              aria-labelledby="backup-enabled-label"
               onClick={() =>
                 setForm((f) => ({ ...current, ...f, backup_enabled: !current.backup_enabled }))
               }
@@ -118,7 +119,7 @@ export function BackupManager() {
                 }`}
               />
             </button>
-          </label>
+          </div>
 
           {/* Fréquence */}
           <div className="flex items-center justify-between gap-4">
@@ -217,17 +218,23 @@ export function BackupManager() {
           Fichiers de backup
         </h2>
 
-        {backupsLoading ? (
-          <p className="text-sm text-stone-400">Chargement…</p>
-        ) : backups.length === 0 ? (
-          <p className="text-sm text-stone-400 italic">Aucun backup disponible.</p>
-        ) : (
-          <div className="flex flex-col">
-            {[...backups].reverse().map((file) => (
-              <BackupRow key={file.filename} file={file} />
-            ))}
-          </div>
-        )}
+        {(() => {
+          let content: ReactNode;
+          if (backupsLoading) {
+            content = <p className="text-sm text-stone-400">Chargement…</p>;
+          } else if (backups.length === 0) {
+            content = <p className="text-sm text-stone-400 italic">Aucun backup disponible.</p>;
+          } else {
+            content = (
+              <div className="flex flex-col">
+                {[...backups].reverse().map((file) => (
+                  <BackupRow key={file.filename} file={file} />
+                ))}
+              </div>
+            );
+          }
+          return content;
+        })()}
       </div>
     </div>
   );

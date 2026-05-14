@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import {
   useDeleteInsuranceSupport,
@@ -217,35 +217,43 @@ export function InsuranceSection({ accountId }: Readonly<Props>) {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-sm text-stone-400 py-4">Chargement…</div>
-        ) : positions.length === 0 ? (
-          <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
-            Aucun support — ajoutez un fonds euro ou une UC
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-            {positions.map((pos) => (
-              <SupportRow
-                key={pos.id}
-                support={pos}
-                allSupports={positions}
-                accountId={accountId}
-              />
-            ))}
-
-            {positions.length > 1 && (
-              <div className="flex items-center justify-between py-3 px-4 bg-stone-50 border-t border-stone-100">
-                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                  Total enveloppe
-                </span>
-                <span className="text-sm font-bold text-stone-800 tabular-nums">
-                  {totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                </span>
+        {(() => {
+          let content: ReactNode;
+          if (isLoading) {
+            content = <div className="text-sm text-stone-400 py-4">Chargement…</div>;
+          } else if (positions.length === 0) {
+            content = (
+              <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
+                Aucun support — ajoutez un fonds euro ou une UC
               </div>
-            )}
-          </div>
-        )}
+            );
+          } else {
+            content = (
+              <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
+                {positions.map((pos) => (
+                  <SupportRow
+                    key={pos.id}
+                    support={pos}
+                    allSupports={positions}
+                    accountId={accountId}
+                  />
+                ))}
+
+                {positions.length > 1 && (
+                  <div className="flex items-center justify-between py-3 px-4 bg-stone-50 border-t border-stone-100">
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                      Total enveloppe
+                    </span>
+                    <span className="text-sm font-bold text-stone-800 tabular-nums">
+                      {totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          }
+          return content;
+        })()}
       </div>
 
       {showAdd && (
