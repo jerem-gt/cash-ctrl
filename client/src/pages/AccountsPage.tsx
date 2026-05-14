@@ -151,7 +151,10 @@ export default function AccountsPage() {
           {groups.map(({ label, accounts: groupAccounts }) => {
             const subtotal = groupAccounts.reduce(
               (sum, acc) =>
-                sum + (acc.is_loan ? Math.max(0, acc.capital_restant_du ?? 0) : acc.balance),
+                sum +
+                (acc.envelope_type === 'loan'
+                  ? Math.max(0, acc.capital_restant_du ?? 0)
+                  : acc.balance),
               0,
             );
             return (
@@ -172,7 +175,9 @@ export default function AccountsPage() {
                       key={acc.id}
                       acc={acc}
                       logoMap={logoMap}
-                      onEdit={() => (acc.is_loan ? setLoanToEdit(acc) : setAccountToEdit(acc))}
+                      onEdit={() =>
+                        acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
+                      }
                       onDelete={() => setAccountToDelete(acc)}
                       onClose={() => setAccountToClose(acc)}
                     />
@@ -275,7 +280,7 @@ function AccountCard({
   onClose: () => void;
 }>) {
   const bal = acc.balance;
-  const displayBal = acc.is_loan ? Math.max(0, acc.capital_restant_du ?? 0) : bal;
+  const displayBal = acc.envelope_type === 'loan' ? Math.max(0, acc.capital_restant_du ?? 0) : bal;
   return (
     <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
       <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
@@ -317,7 +322,7 @@ function AccountCard({
         </div>
       </div>
       <p
-        className={`font-sans text-3xl ${acc.is_loan || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
+        className={`font-sans text-3xl ${acc.envelope_type === 'loan' || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
       >
         {fmtDec(displayBal)}
       </p>

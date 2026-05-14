@@ -93,8 +93,6 @@ const ACCOUNT_SELECT = `
          a.created_at,
          COALESCE(b.name, '')           AS bank,
          COALESCE(at.name, '')          AS type,
-         COALESCE(at.is_investment, 0)  AS is_investment,
-         COALESCE(at.is_loan, 0)        AS is_loan,
          at.envelope_type               AS envelope_type,
          ${BALANCE_SUBQUERY},
          ${BALANCE_ALL_SUBQUERY},

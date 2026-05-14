@@ -17,7 +17,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
   const transfer = useTransferStock(accountId);
 
   const investmentTargets = allAccounts.filter(
-    (a) => a.is_investment === 1 && a.id !== accountId && !a.closed_at,
+    (a) => a.envelope_type === 'investment' && a.id !== accountId && !a.closed_at,
   );
 
   const [toAccountId, setToAccountId] = useState<number>(investmentTargets[0]?.id ?? 0);

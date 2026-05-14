@@ -49,14 +49,14 @@ export function createStocksRepo(db: Database) {
 
     isInvestmentAccount(accountId: number): boolean {
       const row = db
-        .prepare<[number], { is_investment: number }>(
-          `SELECT COALESCE(at.is_investment, 0) AS is_investment
+        .prepare<[number], { envelope_type: string | null }>(
+          `SELECT at.envelope_type
            FROM accounts a
            LEFT JOIN account_types at ON a.account_type_id = at.id
            WHERE a.id = ?`,
         )
         .get(accountId);
-      return !!row?.is_investment;
+      return row?.envelope_type === 'investment';
     },
 
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {

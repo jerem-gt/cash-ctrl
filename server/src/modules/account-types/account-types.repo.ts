@@ -16,10 +16,10 @@ export function createAccountTypesRepo(db: Database, userId: number) {
   );
   const deleteStmt = db.prepare('DELETE FROM account_types WHERE id = :id AND user_id = :userId');
   const createStmt = db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (:userId, :name, :is_investment, :is_loan)',
+    'INSERT INTO account_types (user_id, name, envelope_type) VALUES (:userId, :name, :envelope_type)',
   );
   const updateStmt = db.prepare(
-    'UPDATE account_types SET name = :name, is_investment = :is_investment, is_loan = :is_loan WHERE id = :id AND user_id = :userId',
+    'UPDATE account_types SET name = :name, envelope_type = :envelope_type WHERE id = :id AND user_id = :userId',
   );
 
   return {
@@ -27,22 +27,11 @@ export function createAccountTypesRepo(db: Database, userId: number) {
 
     getById: (id: number) => getByIdStmt.get({ id, userId }),
 
-    create: (name: string, is_investment: boolean, is_loan: boolean) =>
-      createStmt.run({
-        userId,
-        name,
-        is_investment: is_investment ? 1 : 0,
-        is_loan: is_loan ? 1 : 0,
-      }),
+    create: (name: string, envelope_type: string | null) =>
+      createStmt.run({ userId, name, envelope_type }),
 
-    update: (id: number, name: string, is_investment: boolean, is_loan: boolean) =>
-      updateStmt.run({
-        id,
-        userId,
-        name,
-        is_investment: is_investment ? 1 : 0,
-        is_loan: is_loan ? 1 : 0,
-      }),
+    update: (id: number, name: string, envelope_type: string | null) =>
+      updateStmt.run({ id, userId, name, envelope_type }),
 
     delete: (id: number) => deleteStmt.run({ id, userId }),
   };

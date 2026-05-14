@@ -24,7 +24,7 @@ describe('useCreateAccountType', () => {
   it('crée un type avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useCreateAccountType(), { wrapper: Wrapper });
-    result.current.mutate({ name: 'PEA', is_investment: false, is_loan: false });
+    result.current.mutate({ name: 'PEA', envelope_type: null });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });
@@ -33,7 +33,7 @@ describe('useUpdateAccountType', () => {
   it('met à jour un type avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateAccountType(), { wrapper: Wrapper });
-    result.current.mutate({ id: 1, name: 'Livret', is_investment: false, is_loan: false });
+    result.current.mutate({ id: 1, name: 'Livret', envelope_type: null });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

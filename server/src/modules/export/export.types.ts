@@ -1,8 +1,6 @@
 export interface FullExportAccountType {
   id: number;
   name: string;
-  is_investment: number;
-  is_loan: number;
   envelope_type: string | null;
 }
 

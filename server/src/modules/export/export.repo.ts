@@ -33,7 +33,7 @@ export function createExportRepo(db: Database) {
 
       const accountTypes = db
         .prepare<[number], FullExportAccountType>(
-          `SELECT DISTINCT at.id, at.name, at.is_investment, at.is_loan, at.envelope_type
+          `SELECT DISTINCT at.id, at.name, at.envelope_type
            FROM account_types at
            JOIN accounts a ON a.account_type_id = at.id
            WHERE a.user_id = ? ${acctIn}`,

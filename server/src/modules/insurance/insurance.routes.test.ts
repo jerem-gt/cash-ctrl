@@ -496,7 +496,7 @@ describe('/api/insurance', () => {
       const res = await ctx.agent.get('/api/accounts');
       const account = res.body.find((a: { id: number }) => a.id === avAccountId);
       expect(account).toBeDefined();
-      expect(account.envelope_type).toBe('assurance_vie');
+      expect(account.envelope_type).toBe('life_insurance');
       expect(typeof account.balance_insurance).toBe('number');
     });
   });

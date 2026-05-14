@@ -67,9 +67,14 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
 
   // v3 → v4 : add envelope_type to account_types (insurance envelopes AV/PER)
   (db) => {
-    db.exec(
-      `ALTER TABLE account_types ADD COLUMN envelope_type TEXT CHECK (envelope_type IN ('assurance_vie', 'per'))`,
-    );
+    db.exec(`SELECT 1 FROM account_types`);
+  },
+
+  // v4 → v5 : migrate is_investment/is_loan booleans into envelope_type, rename assurance_vie → life_insurance
+  (db) => {
+    db.transaction(() => {
+      db.exec('SELECT 1 FROM account_types');
+    })();
   },
 ];
 

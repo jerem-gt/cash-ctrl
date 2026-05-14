@@ -112,7 +112,9 @@ describe('/api/accounts', () => {
 
   it('DELETE /:id supprime les transactions du compte debiteur et crediteur quand le compte est un pret', async () => {
     ctx.db
-      .prepare("INSERT INTO account_types (user_id, name, is_loan) VALUES (?, 'Prêt', 1)")
+      .prepare(
+        "INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, 'Prêt', 'loan')",
+      )
       .run(ctx.userId);
 
     const src = await ctx.agent.post('/api/accounts').send({

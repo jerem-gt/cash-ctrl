@@ -2,19 +2,15 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
+import { ENVELOPE_TYPES } from '../../constants.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
 
-const schema = z
-  .object({
-    name: z.string().min(1).max(50),
-    is_investment: z.boolean().default(false),
-    is_loan: z.boolean().default(false),
-  })
-  .refine((d) => !(d.is_investment && d.is_loan), {
-    message: 'Un type ne peut pas être à la fois investissement et prêt.',
-  });
+const schema = z.object({
+  name: z.string().min(1).max(50),
+  envelope_type: z.enum(ENVELOPE_TYPES).nullable().default(null),
+});
 
 export function createAccountTypesRouter(db: Database): Router {
   const accountsRepo = createAccountsRepo(db);
@@ -34,11 +30,7 @@ export function createAccountTypesRouter(db: Database): Router {
       return;
     }
     const repo = getRepo(req);
-    const result = repo.create(
-      parsed.data.name.trim(),
-      parsed.data.is_investment,
-      parsed.data.is_loan,
-    );
+    const result = repo.create(parsed.data.name.trim(), parsed.data.envelope_type);
     res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -54,7 +46,7 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    repo.update(id, parsed.data.name.trim(), parsed.data.is_investment, parsed.data.is_loan);
+    repo.update(id, parsed.data.name.trim(), parsed.data.envelope_type);
     res.json(repo.getById(id));
   });
 

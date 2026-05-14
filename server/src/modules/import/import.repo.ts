@@ -11,7 +11,7 @@ export function createImportRepo(db: Database) {
     `SELECT id FROM account_types WHERE user_id = ? AND name = ?`,
   );
   const insertAccountType = db.prepare(
-    `INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)`,
   );
   const findBankByName = db.prepare<[string], { id: number }>(
     `SELECT id FROM banks WHERE name = ?`,
@@ -95,9 +95,7 @@ export function createImportRepo(db: Database) {
       const existing = findAccountTypeByName.get(userId, at.name);
       const id = existing
         ? existing.id
-        : Number(
-            insertAccountType.run(userId, at.name, at.is_investment, at.is_loan).lastInsertRowid,
-          );
+        : Number(insertAccountType.run(userId, at.name, at.envelope_type).lastInsertRowid);
       map.set(at.id, id);
     }
     return map;

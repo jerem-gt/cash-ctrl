@@ -21,9 +21,10 @@ export default function AccountDetailPage() {
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
   const account = accounts.find((a) => a.id === accountId);
-  const isInvestment = !!account?.is_investment;
-  const isInsurance = !!account?.envelope_type;
-  const isLoan = !!account?.is_loan;
+  const isInvestment = account?.envelope_type === 'investment';
+  const isInsurance =
+    account?.envelope_type === 'life_insurance' || account?.envelope_type === 'per';
+  const isLoan = account?.envelope_type === 'loan';
   const [loanCloseOpen, setLoanCloseOpen] = useState(false);
 
   const { data: loanData } = useLoan(isLoan ? accountId : 0);

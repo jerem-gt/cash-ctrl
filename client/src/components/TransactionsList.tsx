@@ -26,9 +26,10 @@ export function TransactionsList({
 
   const runningBalances = useMemo(() => {
     if (account == null) return [];
-    const startingBalance = account.is_loan
-      ? (account.capital_restant_du_all ?? 0)
-      : account.balance_all;
+    const startingBalance =
+      account.envelope_type === 'loan'
+        ? (account.capital_restant_du_all ?? 0)
+        : account.balance_all;
     return computeRunningBalances(
       state.transactions,
       startingBalance - (state.balance_before_page ?? 0),

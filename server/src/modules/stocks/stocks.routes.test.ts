@@ -541,7 +541,7 @@ describe('/api/stocks', () => {
       const account = res.body.find((a: { id: number }) => a.id === bourseAccountId);
       expect(account).toBeDefined();
       expect(typeof account.balance_stocks).toBe('number');
-      expect(account.is_investment).toBe(1);
+      expect(account.envelope_type).toBe('investment');
     });
   });
 });

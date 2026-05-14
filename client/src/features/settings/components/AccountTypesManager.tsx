@@ -11,6 +11,28 @@ import {
 } from '@/hooks/useAccountTypes.ts';
 import { AccountType } from '@/types.ts';
 
+const ENVELOPE_LABELS: Record<string, string> = {
+  investment: 'Investissement',
+  loan: 'Prêt',
+  life_insurance: 'Assurance Vie',
+  per: 'PER',
+};
+
+const ENVELOPE_BADGE_CLASSES: Record<string, string> = {
+  investment: 'bg-indigo-50 text-indigo-500 border border-indigo-200',
+  loan: 'bg-amber-50 text-amber-700 border border-amber-200',
+  life_insurance: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  per: 'bg-blue-50 text-blue-700 border border-blue-200',
+};
+
+const ENVELOPE_OPTIONS = [
+  { value: '', label: 'Aucune' },
+  { value: 'investment', label: 'Investissement' },
+  { value: 'loan', label: 'Prêt' },
+  { value: 'life_insurance', label: 'Assurance Vie' },
+  { value: 'per', label: 'PER' },
+];
+
 function AccountTypeRow({
   at,
   selectedId,
@@ -43,14 +65,13 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(at.name);
-  const [isInvestment, setIsInvestment] = useState(!!at.is_investment);
-  const [isLoan, setIsLoan] = useState(!!at.is_loan);
+  const [envelopeType, setEnvelopeType] = useState(at.envelope_type ?? '');
 
   const handleSave = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     updateAt.mutate(
-      { id: at.id, name: name.trim(), is_investment: isInvestment, is_loan: isLoan },
+      { id: at.id, name: name.trim(), envelope_type: envelopeType || null },
       {
         onSuccess: () => {
           setEditing(false);
@@ -82,30 +103,20 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
               placeholder="Nom"
               autoFocus
             />
-            <label className="flex items-center gap-2 mt-1 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isInvestment}
-                onChange={(e) => {
-                  setIsInvestment(e.target.checked);
-                  if (e.target.checked) setIsLoan(false);
-                }}
-                className="w-4 h-4 accent-indigo-500"
-              />
-              <span className="text-sm text-stone-600">Compte d&apos;investissement</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isLoan}
-                onChange={(e) => {
-                  setIsLoan(e.target.checked);
-                  if (e.target.checked) setIsInvestment(false);
-                }}
-                className="w-4 h-4 accent-amber-500"
-              />
-              <span className="text-sm text-stone-600">Compte de prêt</span>
-            </label>
+            <div>
+              <label className="text-[11px] text-stone-500 block mb-1">Enveloppe</label>
+              <select
+                value={envelopeType}
+                onChange={(e) => setEnvelopeType(e.target.value)}
+                className="text-sm border border-black/10 rounded-lg px-2 py-1.5 bg-white w-full focus:outline-none"
+              >
+                {ENVELOPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex gap-2 mt-1">
               <button
                 type="submit"
@@ -119,8 +130,7 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
                 onClick={() => {
                   setEditing(false);
                   setName(at.name);
-                  setIsInvestment(!!at.is_investment);
-                  setIsLoan(!!at.is_loan);
+                  setEnvelopeType(at.envelope_type ?? '');
                 }}
                 className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
               >
@@ -142,14 +152,11 @@ function AccountTypeDetails({ at }: Readonly<{ at: AccountType }>) {
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                     Type de compte
                   </span>
-                  {!!at.is_investment && (
-                    <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
-                      Investissement
-                    </span>
-                  )}
-                  {!!at.is_loan && (
-                    <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
-                      Prêt
+                  {at.envelope_type && (
+                    <span
+                      className={`text-[10px] rounded px-1.5 py-0.5 font-medium ${ENVELOPE_BADGE_CLASSES[at.envelope_type] ?? 'bg-stone-50 text-stone-500 border border-stone-200'}`}
+                    >
+                      {ENVELOPE_LABELS[at.envelope_type] ?? at.envelope_type}
                     </span>
                   )}
                 </div>
@@ -191,8 +198,7 @@ export function AccountTypesManager() {
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
   const [newAtName, setNewAtName] = useState('');
-  const [newAtIsInvestment, setNewAtIsInvestment] = useState(false);
-  const [newAtIsLoan, setNewAtIsLoan] = useState(false);
+  const [newAtEnvelopeType, setNewAtEnvelopeType] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selectedAt = accountTypes.find((at) => at.id === selectedId);
 
@@ -205,12 +211,11 @@ export function AccountTypesManager() {
       return;
     }
     createAccountType.mutate(
-      { name: newAtName.trim(), is_investment: newAtIsInvestment, is_loan: newAtIsLoan },
+      { name: newAtName.trim(), envelope_type: newAtEnvelopeType || null },
       {
         onSuccess: () => {
           setNewAtName('');
-          setNewAtIsInvestment(false);
-          setNewAtIsLoan(false);
+          setNewAtEnvelopeType('');
           showToast('Type ajouté ✓');
         },
         onError: (err) => showToast(err.message),
@@ -243,30 +248,20 @@ export function AccountTypesManager() {
               {createAccountType.isPending ? '…' : 'Ajouter'}
             </button>
           </form>
-          <label className="flex items-center gap-2 mt-2 ml-1 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={newAtIsInvestment}
-              onChange={(e) => {
-                setNewAtIsInvestment(e.target.checked);
-                if (e.target.checked) setNewAtIsLoan(false);
-              }}
-              className="w-3.5 h-3.5 accent-indigo-500"
-            />
-            <span className="text-[11px] text-stone-500">Compte d&apos;investissement</span>
-          </label>
-          <label className="flex items-center gap-2 ml-1 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={newAtIsLoan}
-              onChange={(e) => {
-                setNewAtIsLoan(e.target.checked);
-                if (e.target.checked) setNewAtIsInvestment(false);
-              }}
-              className="w-3.5 h-3.5 accent-amber-500"
-            />
-            <span className="text-[11px] text-stone-500">Compte de prêt</span>
-          </label>
+          <div className="mt-2 ml-1">
+            <label className="text-[11px] text-stone-500 block mb-1">Enveloppe</label>
+            <select
+              value={newAtEnvelopeType}
+              onChange={(e) => setNewAtEnvelopeType(e.target.value)}
+              className="text-xs border border-black/10 rounded-lg px-2 py-1 bg-white focus:outline-none"
+            >
+              {ENVELOPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <ListContent
           isLoading={atsLoading}
