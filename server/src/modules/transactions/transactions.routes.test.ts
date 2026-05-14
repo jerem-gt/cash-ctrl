@@ -25,12 +25,12 @@ describe('/api/transactions', () => {
     accountId = await setupWithAccount(ctx);
   });
 
-  it('GET / returns 401 without auth', async () => {
+  it('GET / retourne 401 sans authentification', async () => {
     const res = await supertest(ctx.app).get('/api/transactions');
     expect(res.status).toBe(401);
   });
 
-  it('GET / returns paginated result initially', async () => {
+  it('GET / retourne un résultat paginé vide initialement', async () => {
     const res = await ctx.agent.get('/api/transactions');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
@@ -39,7 +39,7 @@ describe('/api/transactions', () => {
     expect(res.body.totalPages).toBe(1);
   });
 
-  it('POST / creates a transaction', async () => {
+  it('POST / crée une transaction', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'income',
@@ -54,7 +54,7 @@ describe('/api/transactions', () => {
     expect(res.body.account_name).toBe('Main');
   });
 
-  it('POST / returns 403 for a non-owned account', async () => {
+  it('POST / retourne 403 pour un compte non possédé', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
       account_id: 99999,
       type: 'income',
@@ -67,12 +67,12 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(403);
   });
 
-  it('POST / returns 400 for invalid data', async () => {
+  it('POST / retourne 400 pour données invalides', async () => {
     const res = await ctx.agent.post('/api/transactions').send({ account_id: accountId });
     expect(res.status).toBe(400);
   });
 
-  it('GET / filters by type', async () => {
+  it('GET / filtre par type', async () => {
     await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'expense',
@@ -87,7 +87,7 @@ describe('/api/transactions', () => {
     expect(res.body.data.every((t: { type: string }) => t.type === 'expense')).toBe(true);
   });
 
-  it('PUT /:id updates a normal transaction', async () => {
+  it('PUT /:id met à jour une transaction', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'expense',
@@ -112,7 +112,7 @@ describe('/api/transactions', () => {
     expect(res.body.description).toBe('Café maj');
   });
 
-  it('PUT /:id returns 404 for unknown transaction', async () => {
+  it('PUT /:id retourne 404 pour une transaction inconnue', async () => {
     const res = await ctx.agent.put('/api/transactions/99999').send({
       account_id: accountId,
       type: 'expense',
@@ -125,7 +125,7 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(404);
   });
 
-  it('PATCH /:id/validate toggles validated flag', async () => {
+  it('PATCH /:id/validate bascule le flag validé', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'income',
@@ -141,7 +141,7 @@ describe('/api/transactions', () => {
     expect(res.body.validated).toBe(1);
   });
 
-  it('DELETE /:id removes a transaction', async () => {
+  it('DELETE /:id supprime une transaction', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'expense',
@@ -156,7 +156,7 @@ describe('/api/transactions', () => {
     expect(del.status).toBe(200);
   });
 
-  it('DELETE /:id returns 404 for unknown transaction', async () => {
+  it('DELETE /:id retourne 404 pour une transaction inconnue', async () => {
     const res = await ctx.agent.delete('/api/transactions/99999');
     expect(res.status).toBe(404);
   });
@@ -257,7 +257,7 @@ describe('/api/transactions', () => {
     expect(tx.splits).toHaveLength(2);
   });
 
-  // ─── GET / filtres supplémentaires ────────────────────────────────────────
+  // ─── Filtres supplémentaires ───────────────────────────────────────────────
 
   it('GET / filtre par account_id', async () => {
     const acc2 = await ctx.agent.post('/api/accounts').send({
@@ -303,7 +303,7 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(400);
   });
 
-  // ─── PUT /:id cas limites (transaction normale) ───────────────────────────
+  // ─── PUT /:id cas limites ──────────────────────────────────────────────────
 
   it('PUT /:id retourne 400 pour données invalides', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
@@ -343,7 +343,7 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(403);
   });
 
-  // ─── PATCH /:id/validate cas limites ─────────────────────────────────────
+  // ─── PATCH /:id/validate cas limites ──────────────────────────────────────
 
   it('PATCH /:id/validate retourne 404 pour une transaction inconnue', async () => {
     const res = await ctx.agent.patch('/api/transactions/99999/validate').send({ validated: true });
@@ -384,107 +384,95 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(200);
     expect(res.body.validated).toBe(0);
   });
+});
 
-  describe('Transactions Pagination & Balance', () => {
-    beforeAll(async () => {
-      ctx = await createTestContext();
-      accountId = await setupWithAccount(ctx);
+// ─── Pagination & Solde ────────────────────────────────────────────────────────
+
+describe('/api/transactions — Pagination & Solde', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+  });
+
+  it('retourne un résultat vide initialement', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+    expect(res.body.total).toBe(0);
+    expect(res.body.balance_before_page).toBe(0);
+  });
+
+  it('calcule correctement balance_before_page sur la page 2', async () => {
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 100,
+      description: 'Salaire',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: '2024-01-01',
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 30,
+      description: 'Courses',
+      subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+      date: '2024-01-02',
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 20,
+      description: 'Loisirs',
+      subcategory_id: SEED.SUBCAT_CINEMA,
+      date: '2024-01-03',
+      payment_method_id: SEED.PM_VIREMENT,
     });
 
-    it('devrait retourner un résultat vide initialement (EMPTY_PAGINATED_RESULT)', async () => {
-      const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}`);
+    const resPage1 = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&limit=2&page=1`,
+    );
+    expect(resPage1.body.data).toHaveLength(2);
+    expect(resPage1.body.balance_before_page).toBe(0);
+    expect(resPage1.body.total).toBe(3);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toEqual([]);
-      expect(res.body.total).toBe(0);
-      expect(res.body.balance_before_page).toBe(0);
+    // Tri DESC par date : les deux transactions les plus récentes (-30, -20) sont en page 1
+    const resPage2 = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&limit=2&page=2`,
+    );
+    expect(resPage2.body.data).toHaveLength(1);
+    expect(resPage2.body.data[0].description).toBe('Salaire');
+    expect(resPage2.body.balance_before_page).toBe(-50);
+  });
+
+  it('trie par ID pour les transactions à date identique', async () => {
+    const commonDate = '2024-05-01';
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 1000,
+      date: commonDate,
+      description: 'Premier',
+      subcategory_id: SEED.SUBCAT_CINEMA,
+      payment_method_id: SEED.PM_VIREMENT,
+    });
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      date: commonDate,
+      description: 'Second',
+      subcategory_id: SEED.SUBCAT_CINEMA,
+      payment_method_id: SEED.PM_VIREMENT,
     });
 
-    it('devrait calculer correctement le balance_before_page sur la page 2', async () => {
-      // 1. On insère 3 transactions (limitera la page à 2 pour le test)
-      // Transaction la plus ancienne (sera en page 2)
-      await ctx.agent.post('/api/transactions').send({
-        account_id: accountId,
-        type: 'income',
-        amount: 100,
-        description: 'Salaire',
-        subcategory_id: SEED.SUBCAT_SALAIRE,
-        date: '2024-01-01',
-        payment_method_id: SEED.PM_VIREMENT,
-      });
-
-      // Transactions plus récentes (seront en page 1)
-      await ctx.agent.post('/api/transactions').send({
-        account_id: accountId,
-        type: 'expense',
-        amount: 30,
-        description: 'Courses',
-        subcategory_id: SEED.SUBCAT_SUPERMARCHE,
-        date: '2024-01-02',
-        payment_method_id: SEED.PM_VIREMENT,
-      });
-
-      await ctx.agent.post('/api/transactions').send({
-        account_id: accountId,
-        type: 'expense',
-        amount: 20,
-        description: 'Loisirs',
-        subcategory_id: SEED.SUBCAT_CINEMA,
-        date: '2024-01-03',
-        payment_method_id: SEED.PM_VIREMENT,
-      });
-
-      // 2. Test Page 1 (limit=2)
-      const resPage1 = await ctx.agent.get(
-        `/api/transactions?account_id=${accountId}&limit=2&page=1`,
-      );
-      expect(resPage1.body.data).toHaveLength(2);
-      expect(resPage1.body.balance_before_page).toBe(0); // Page 1 toujours 0
-      expect(resPage1.body.total).toBe(3);
-
-      // 3. Test Page 2 (limit=2)
-      const resPage2 = await ctx.agent.get(
-        `/api/transactions?account_id=${accountId}&limit=2&page=2`,
-      );
-
-      expect(resPage2.body.data).toHaveLength(1);
-      expect(resPage2.body.data[0].description).toBe('Salaire');
-
-      // Le solde AVANT la page 2 correspond à la somme des dépenses de la page 1 (-30 + -20 = -50)
-      // car on trie par date DESC (les plus récentes d'abord)
-      expect(resPage2.body.balance_before_page).toBe(-50);
-    });
-
-    it('devrait gérer le tri par ID en cas de dates identiques pour le solde', async () => {
-      const commonDate = '2024-05-01';
-
-      // Insertion de 2 transactions le même jour
-      await ctx.agent.post('/api/transactions').send({
-        account_id: accountId,
-        type: 'income',
-        amount: 1000,
-        date: commonDate,
-        description: 'Premier',
-        subcategory_id: SEED.SUBCAT_CINEMA,
-        payment_method_id: SEED.PM_VIREMENT,
-      });
-      await ctx.agent.post('/api/transactions').send({
-        account_id: accountId,
-        type: 'expense',
-        amount: 200,
-        date: commonDate,
-        description: 'Second',
-        subcategory_id: SEED.SUBCAT_CINEMA,
-        payment_method_id: SEED.PM_VIREMENT,
-      });
-
-      // On demande la page 2 avec une limite de 1
-      const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&limit=1&page=2`);
-
-      // La plus récente (ID le plus grand) est en page 1, la première est en page 2
-      expect(res.body.data[0].description).toBe('Premier');
-      // Le solde avant devrait être celui de la transaction "Second" (-200)
-      expect(res.body.balance_before_page).toBe(-200);
-    });
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&limit=1&page=2`);
+    expect(res.body.data[0].description).toBe('Premier');
+    expect(res.body.balance_before_page).toBe(-200);
   });
 });

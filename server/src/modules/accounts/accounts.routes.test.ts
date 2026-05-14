@@ -11,18 +11,18 @@ describe('/api/accounts', () => {
     ctx = await createTestContext();
   });
 
-  it('GET / returns 401 without auth', async () => {
+  it('GET / retourne 401 sans authentification', async () => {
     const res = await supertest(ctx.app).get('/api/accounts');
     expect(res.status).toBe(401);
   });
 
-  it('GET / returns empty array initially', async () => {
+  it('GET / retourne un tableau vide initialement', async () => {
     const res = await ctx.agent.get('/api/accounts');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
-  it('POST / creates an account', async () => {
+  it('POST / crée un compte', async () => {
     const res = await ctx.agent.post('/api/accounts').send({
       name: 'Courant',
       bank_id: SEED.BANK_ID,
@@ -38,7 +38,7 @@ describe('/api/accounts', () => {
     expect(res.body.type).toBe('Courant');
   });
 
-  it('POST / returns opening_date in response', async () => {
+  it('POST / retourne opening_date dans la réponse', async () => {
     const res = await ctx.agent.post('/api/accounts').send({
       name: 'WithDate',
       bank_id: SEED.BANK_ID,
@@ -49,14 +49,14 @@ describe('/api/accounts', () => {
     expect(res.body.opening_date).toBe('2023-05-10');
   });
 
-  it('POST / returns 400 on missing name', async () => {
+  it('POST / retourne 400 si le nom est manquant', async () => {
     const res = await ctx.agent
       .post('/api/accounts')
       .send({ bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT });
     expect(res.status).toBe(400);
   });
 
-  it('POST / succeeds without opening_date', async () => {
+  it('POST / réussit sans opening_date', async () => {
     const res = await ctx.agent
       .post('/api/accounts')
       .send({ name: 'X', bank_id: SEED.BANK_ID, account_type_id: SEED.AT_COURANT });
@@ -64,7 +64,7 @@ describe('/api/accounts', () => {
     expect(res.body.opening_date).toBeNull();
   });
 
-  it('PUT /:id updates an account', async () => {
+  it('PUT /:id met à jour un compte', async () => {
     const create = await ctx.agent.post('/api/accounts').send({
       name: 'ToUpdate',
       bank_id: SEED.BANK_ID,
@@ -85,12 +85,12 @@ describe('/api/accounts', () => {
     expect(res.body.type).toBe('Épargne');
   });
 
-  it('PUT /:id returns 404 for unknown account', async () => {
+  it('PUT /:id retourne 404 pour un compte inconnu', async () => {
     const res = await ctx.agent.put('/api/accounts/99999').send({ name: 'x' });
     expect(res.status).toBe(404);
   });
 
-  it('DELETE /:id deletes an account', async () => {
+  it('DELETE /:id supprime un compte', async () => {
     const create = await ctx.agent.post('/api/accounts').send({
       name: 'ToDelete',
       bank_id: SEED.BANK_ID,
@@ -105,12 +105,12 @@ describe('/api/accounts', () => {
     expect(get.body.find((a: { id: number }) => a.id === id)).toBeUndefined();
   });
 
-  it('DELETE /:id returns 404 for unknown account', async () => {
+  it('DELETE /:id retourne 404 pour un compte inconnu', async () => {
     const res = await ctx.agent.delete('/api/accounts/99999');
     expect(res.status).toBe(404);
   });
 
-  it('DELETE /:id supprime les transactions du compte debiteur et crediteur quand le compte est un pret', async () => {
+  it('DELETE /:id supprime les transactions associées quand le compte est un prêt', async () => {
     ctx.db
       .prepare(
         "INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, 'Prêt', 'loan')",

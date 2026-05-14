@@ -5,7 +5,6 @@ import { SEED } from '../../tests/helpers/testDb.js';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
-// Mock Yahoo Finance fetch so tests don't hit the network
 const MOCK_FETCH_PRICE = { price: 15.5, currency: 'EUR' };
 
 function mockFetchSuccess() {
