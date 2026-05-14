@@ -285,7 +285,7 @@ export type CreateSupportPayload = {
   ticker?: string | null;
 };
 
-export type VersementPayload = {
+export type InsuranceFlowPayload = {
   support_id: number;
   amount: number;
   quantity?: number | null;
@@ -293,8 +293,6 @@ export type VersementPayload = {
   fees: number;
   date: string;
 };
-
-export type RachatPayload = VersementPayload;
 
 export type ArbitragePayload = {
   from_support_id: number;
@@ -325,13 +323,13 @@ export const insuranceApi = {
     request<InsuranceSupportView[]>('GET', `/api/insurance/${accountId}/positions`),
   operations: (accountId: number) =>
     request<InsuranceOperation[]>('GET', `/api/insurance/${accountId}/operations`),
-  versement: (accountId: number, payload: VersementPayload) =>
+  versement: (accountId: number, payload: InsuranceFlowPayload) =>
     request<{ operation: InsuranceOperation; transaction_id: number }>(
       'POST',
       `/api/insurance/${accountId}/versement`,
       payload,
     ),
-  rachat: (accountId: number, payload: RachatPayload) =>
+  rachat: (accountId: number, payload: InsuranceFlowPayload) =>
     request<{ operation: InsuranceOperation; transaction_id: number }>(
       'POST',
       `/api/insurance/${accountId}/rachat`,

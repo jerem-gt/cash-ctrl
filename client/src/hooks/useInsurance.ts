@@ -4,9 +4,8 @@ import {
   type ArbitragePayload,
   type CreateSupportPayload,
   insuranceApi,
+  type InsuranceFlowPayload,
   type InteretsPayload,
-  type RachatPayload,
-  type VersementPayload,
 } from '@/api/client';
 
 export function useInsurancePositions(accountId: number) {
@@ -68,7 +67,7 @@ export function useDeleteInsuranceSupport(accountId: number) {
 export function useVersement(accountId: number) {
   const invalidate = useInvalidate(accountId);
   return useMutation({
-    mutationFn: (payload: VersementPayload) => insuranceApi.versement(accountId, payload),
+    mutationFn: (payload: InsuranceFlowPayload) => insuranceApi.versement(accountId, payload),
     onSuccess: invalidate,
   });
 }
@@ -76,7 +75,7 @@ export function useVersement(accountId: number) {
 export function useRachat(accountId: number) {
   const invalidate = useInvalidate(accountId);
   return useMutation({
-    mutationFn: (payload: RachatPayload) => insuranceApi.rachat(accountId, payload),
+    mutationFn: (payload: InsuranceFlowPayload) => insuranceApi.rachat(accountId, payload),
     onSuccess: invalidate,
   });
 }

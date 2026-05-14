@@ -84,7 +84,7 @@ export function runBackup(db: Database, userId: number, backupDir = BACKUP_DIR):
   }
 
   // Include milliseconds to guarantee uniqueness within the same second
-  const timestamp = now.toISOString().replace(/:/g, '-').replace('.', '-').replace('Z', '');
+  const timestamp = now.toISOString().replaceAll(':', '-').replaceAll('.', '-').replace('Z', '');
   const filename = `cashctrl-backup-${timestamp}.json`;
   fs.writeFileSync(path.join(backupDir, filename), JSON.stringify(data, null, 2), 'utf-8');
 
