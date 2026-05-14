@@ -24,11 +24,12 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
   const vlNum = Number.parseFloat(vl) || 0;
   const quantity = isUc && vlNum > 0 ? amountNum / vlNum : null;
 
-  const maxAmount = isUc
-    ? support.quantity != null
-      ? support.quantity * (support.current_price ?? support.avg_price ?? 0)
-      : undefined
-    : (support.balance ?? undefined);
+  let maxAmount: number | undefined;
+  if (!isUc) {
+    maxAmount = support.balance ?? undefined;
+  } else if (support.quantity != null) {
+    maxAmount = support.quantity * (support.current_price ?? support.avg_price ?? 0);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
