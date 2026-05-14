@@ -22,7 +22,7 @@ function mapOperation(row: InsuranceOperation): InsuranceOperation {
     ...row,
     amount: toEuros(row.amount),
     fees: toEuros(row.fees),
-    price_per_unit: row.price_per_unit != null ? toEuros(row.price_per_unit) : null,
+    price_per_unit: row.price_per_unit == null ? null : toEuros(row.price_per_unit),
   };
 }
 
@@ -147,7 +147,7 @@ export function createInsuranceRepo(db: Database) {
             current_price,
             current_price_currency: priceRow?.currency ?? 'EUR',
             balance: null,
-            value: current_price != null ? current_price * quantity : avg_price * quantity,
+            value: current_price == null ? avg_price * quantity : current_price * quantity,
           };
         } else {
           const balanceCents = this.getEuroBalanceCents(accountId, s.id);
@@ -192,7 +192,7 @@ export function createInsuranceRepo(db: Database) {
       const feesCents = toCents(input.fees);
       const support = this.getSupportById(input.support_id)!;
       const priceCents =
-        input.price_per_unit != null ? Math.round(input.price_per_unit * 100) : null;
+        input.price_per_unit == null ? null : Math.round(input.price_per_unit * 100);
       const description =
         support.type === 'uc'
           ? `Versement UC — ${support.name}`
@@ -271,7 +271,7 @@ export function createInsuranceRepo(db: Database) {
 
       const support = this.getSupportById(input.support_id)!;
       const priceCents =
-        input.price_per_unit != null ? Math.round(input.price_per_unit * 100) : null;
+        input.price_per_unit == null ? null : Math.round(input.price_per_unit * 100);
 
       if (support.type === 'uc') {
         const availableQty = this.getUcPositionQty(input.account_id, input.support_id);
@@ -363,9 +363,9 @@ export function createInsuranceRepo(db: Database) {
       const fromAmountCents = toCents(input.from_amount);
       const feesCents = toCents(input.fees);
       const fromPriceCents =
-        input.from_price_per_unit != null ? Math.round(input.from_price_per_unit * 100) : null;
+        input.from_price_per_unit == null ? null : Math.round(input.from_price_per_unit * 100);
       const toPriceCents =
-        input.to_price_per_unit != null ? Math.round(input.to_price_per_unit * 100) : null;
+        input.to_price_per_unit == null ? null : Math.round(input.to_price_per_unit * 100);
 
       if (fromSupport.type === 'uc') {
         const availableQty = this.getUcPositionQty(input.account_id, input.from_support_id);

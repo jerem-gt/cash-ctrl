@@ -30,6 +30,8 @@ export function createExportRepo(db: Database) {
       const stockPosIn = hasFilter ? `AND sp.account_id IN (${idList})` : '';
       const stockOpIn = hasFilter ? `AND so.account_id IN (${idList})` : '';
       const loanIn = hasFilter ? `AND l.account_id IN (${idList})` : '';
+      const insIn = hasFilter ? `AND ins.account_id IN (${idList})` : '';
+      const insOpIn = hasFilter ? `AND io.account_id IN (${idList})` : '';
 
       const accountTypes = db
         .prepare<[number], FullExportAccountType>(
@@ -195,7 +197,7 @@ export function createExportRepo(db: Database) {
         .prepare<[number], FullExportInsuranceSupport>(
           `SELECT ins.id, ins.account_id, ins.name, ins.type, ins.ticker
            FROM insurance_supports ins
-           WHERE ins.user_id = ? ${hasFilter ? `AND ins.account_id IN (${idList})` : ''}`,
+           WHERE ins.user_id = ? ${insIn}`,
         )
         .all(userId);
 
@@ -204,7 +206,7 @@ export function createExportRepo(db: Database) {
           `SELECT io.id, io.account_id, io.support_id, io.transaction_id, io.fees_transaction_id,
                   io.type, io.quantity, io.price_per_unit, io.amount, io.fees, io.date, io.arbitrage_peer_id
            FROM insurance_operations io
-           WHERE io.user_id = ? ${hasFilter ? `AND io.account_id IN (${idList})` : ''}
+           WHERE io.user_id = ? ${insOpIn}
            ORDER BY io.date, io.id`,
         )
         .all(userId);
