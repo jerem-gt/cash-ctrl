@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { insuranceApi } from '@/api/client';
 import { useVersement } from '@/hooks/useInsurance';
@@ -15,7 +15,7 @@ interface Props {
 
 export function InsuranceVersementModal({ accountId, support, onClose }: Readonly<Props>) {
   const [amount, setAmount] = useState('');
-  const [vl, setVl] = useState(support.current_price != null ? String(support.current_price) : '');
+  const [vl, setVl] = useState(support.current_price == null ? '' : String(support.current_price));
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
   const [vlLoading, setVlLoading] = useState(false);
@@ -39,7 +39,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     versement.mutate(
       {
