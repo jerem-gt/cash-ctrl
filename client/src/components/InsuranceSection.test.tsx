@@ -151,4 +151,44 @@ describe('InsuranceSection', () => {
       expect(document.getElementById('toast')?.textContent).toContain('Intérêts enregistrés'),
     );
   });
+
+  it('soumet le rachat fonds euro et affiche un toast', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Fonds Euro Sécurité');
+    await user.click(screen.getAllByRole('button', { name: /racheter/i })[0]);
+    await screen.findByText(/Rachat — Fonds Euro Sécurité/i);
+    const amountInput = screen.getByRole('spinbutton', { name: /montant racheté/i });
+    await user.clear(amountInput);
+    await user.type(amountInput, '500');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Rachat enregistré'),
+    );
+  });
+
+  it("soumet l'arbitrage et affiche un toast", async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Fonds Euro Sécurité');
+    await user.click(screen.getAllByRole('button', { name: /arbitrer/i })[0]);
+    await screen.findByText(/Arbitrage depuis Fonds Euro Sécurité/i);
+    await user.type(screen.getByRole('spinbutton', { name: /montant arbitré/i }), '1000');
+    await user.type(screen.getByRole('spinbutton', { name: /vl destination/i }), '42');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Arbitrage enregistré'),
+    );
+  });
+
+  it('supprime un support et affiche un toast', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Fonds Euro Sécurité');
+    const deleteButtons = screen.getAllByTitle('Supprimer le support');
+    await user.click(deleteButtons[0]);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Support supprimé'),
+    );
+  });
 });
