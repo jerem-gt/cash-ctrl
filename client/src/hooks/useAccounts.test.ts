@@ -19,7 +19,7 @@ describe('useAccounts', () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useAccounts(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toHaveLength(2);
+    expect(result.current.data).toHaveLength(3);
     expect(result.current.data![0].name).toBe('Compte test');
   });
 });

@@ -64,6 +64,13 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
   (db) => {
     db.exec(`ALTER TABLE user_settings ADD COLUMN backup_last_hash TEXT`);
   },
+
+  // v3 → v4 : add envelope_type to account_types (insurance envelopes AV/PER)
+  (db) => {
+    db.exec(
+      `ALTER TABLE account_types ADD COLUMN envelope_type TEXT CHECK (envelope_type IN ('assurance_vie', 'per'))`,
+    );
+  },
 ];
 
 function runMigrations(db: DatabaseType) {

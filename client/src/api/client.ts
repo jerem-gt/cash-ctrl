@@ -7,6 +7,9 @@ import type {
   Bank,
   Category,
   DashboardStats,
+  InsuranceOperation,
+  InsuranceSupport,
+  InsuranceSupportView,
   Loan,
   LoanInstallment,
   PaginatedTransactions,
@@ -264,6 +267,82 @@ export const stocksApi = {
       `/api/stocks/${accountId}/transfer`,
       payload,
     ),
+};
+
+// Insurance
+export type CreateSupportPayload = {
+  name: string;
+  type: 'uc' | 'euro';
+  ticker?: string | null;
+};
+
+export type VersementPayload = {
+  support_id: number;
+  amount: number;
+  quantity?: number | null;
+  price_per_unit?: number | null;
+  fees: number;
+  date: string;
+};
+
+export type RachatPayload = VersementPayload;
+
+export type ArbitragePayload = {
+  from_support_id: number;
+  to_support_id: number;
+  from_amount: number;
+  from_quantity?: number | null;
+  from_price_per_unit?: number | null;
+  to_quantity?: number | null;
+  to_price_per_unit?: number | null;
+  fees: number;
+  date: string;
+};
+
+export type InteretsPayload = {
+  support_id: number;
+  amount: number;
+  date: string;
+};
+
+export const insuranceApi = {
+  supports: (accountId: number) =>
+    request<InsuranceSupport[]>('GET', `/api/insurance/${accountId}/supports`),
+  createSupport: (accountId: number, payload: CreateSupportPayload) =>
+    request<InsuranceSupport>('POST', `/api/insurance/${accountId}/supports`, payload),
+  deleteSupport: (accountId: number, supportId: number) =>
+    request<{ ok: boolean }>('DELETE', `/api/insurance/${accountId}/supports/${supportId}`),
+  positions: (accountId: number) =>
+    request<InsuranceSupportView[]>('GET', `/api/insurance/${accountId}/positions`),
+  operations: (accountId: number) =>
+    request<InsuranceOperation[]>('GET', `/api/insurance/${accountId}/operations`),
+  versement: (accountId: number, payload: VersementPayload) =>
+    request<{ operation: InsuranceOperation; transaction_id: number }>(
+      'POST',
+      `/api/insurance/${accountId}/versement`,
+      payload,
+    ),
+  rachat: (accountId: number, payload: RachatPayload) =>
+    request<{ operation: InsuranceOperation; transaction_id: number }>(
+      'POST',
+      `/api/insurance/${accountId}/rachat`,
+      payload,
+    ),
+  arbitrage: (accountId: number, payload: ArbitragePayload) =>
+    request<{ outOperation: InsuranceOperation; inOperation: InsuranceOperation }>(
+      'POST',
+      `/api/insurance/${accountId}/arbitrage`,
+      payload,
+    ),
+  interets: (accountId: number, payload: InteretsPayload) =>
+    request<{ operation: InsuranceOperation; transaction_id: number }>(
+      'POST',
+      `/api/insurance/${accountId}/interets`,
+      payload,
+    ),
+  price: (ticker: string) => request<StockPrice>('GET', `/api/insurance/price/${ticker}`),
+  refreshPrices: (accountId: number) =>
+    request<{ ok: boolean }>('POST', `/api/insurance/${accountId}/prices/refresh`),
 };
 
 // Loans

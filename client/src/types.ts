@@ -11,6 +11,7 @@ export interface AccountType {
   name: string;
   is_investment: number;
   is_loan: number;
+  envelope_type: string | null;
   acc_count?: number;
 }
 
@@ -45,14 +46,59 @@ export interface Account {
   type: string; // résolu par JOIN
   is_investment: number;
   is_loan: number;
+  envelope_type: string | null;
   initial_balance: number;
   opening_date: string | null;
   closed_at: string | null;
   balance: number;
   balance_all: number;
   balance_stocks: number;
+  balance_insurance: number;
   capital_restant_du: number | null;
   capital_restant_du_all: number | null;
+}
+
+export type InsuranceSupportType = 'uc' | 'euro';
+
+export interface InsuranceSupport {
+  id: number;
+  account_id: number;
+  name: string;
+  type: InsuranceSupportType;
+  ticker: string | null;
+  created_at: string;
+}
+
+export interface InsuranceSupportView {
+  id: number;
+  account_id: number;
+  name: string;
+  type: InsuranceSupportType;
+  ticker: string | null;
+  quantity: number | null;
+  avg_price: number | null;
+  current_price: number | null;
+  current_price_currency: string;
+  balance: number | null;
+  value: number;
+}
+
+export interface InsuranceOperation {
+  id: number;
+  account_id: number;
+  support_id: number;
+  support_name: string;
+  support_type: InsuranceSupportType;
+  transaction_id: number | null;
+  fees_transaction_id: number | null;
+  type: 'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets';
+  quantity: number | null;
+  price_per_unit: number | null;
+  amount: number;
+  fees: number;
+  date: string;
+  arbitrage_peer_id: number | null;
+  created_at: string;
 }
 
 export interface Loan {

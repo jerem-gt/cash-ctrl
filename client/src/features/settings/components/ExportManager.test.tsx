@@ -54,6 +54,6 @@ describe('ExportManager', () => {
     const compteTest = await screen.findByRole('checkbox', { name: /compte test/i });
     await user.click(compteTest);
     expect(compteTest).not.toBeChecked();
-    expect(screen.getByRole('button', { name: /télécharger \(1\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /télécharger \(2\)/i })).toBeInTheDocument();
   });
 });

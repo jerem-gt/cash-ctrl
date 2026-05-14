@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { AccountHeader } from '@/components/AccountHeader.tsx';
 import { CloseAccountModal } from '@/components/CloseAccountModal';
+import { InsuranceSection } from '@/components/InsuranceSection';
 import { LoanSection } from '@/components/LoanSection';
 import { PortfolioSection } from '@/components/PortfolioSection';
 import { TransactionsList } from '@/components/TransactionsList';
@@ -21,6 +22,7 @@ export default function AccountDetailPage() {
 
   const account = accounts.find((a) => a.id === accountId);
   const isInvestment = !!account?.is_investment;
+  const isInsurance = !!account?.envelope_type;
   const isLoan = !!account?.is_loan;
   const [loanCloseOpen, setLoanCloseOpen] = useState(false);
 
@@ -59,10 +61,17 @@ export default function AccountDetailPage() {
         capitalRestantDu={capitalRestantDu}
       />
 
-      {/* Portefeuille */}
+      {/* Portefeuille bourse */}
       {isInvestment && (
         <div className="px-1">
           <PortfolioSection accountId={accountId} />
+        </div>
+      )}
+
+      {/* Enveloppe assurance */}
+      {isInsurance && (
+        <div className="px-1">
+          <InsuranceSection accountId={accountId} />
         </div>
       )}
 

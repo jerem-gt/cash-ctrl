@@ -1,6 +1,9 @@
 import type { Database } from 'better-sqlite3';
 
 import {
+  ENVELOPE_TYPES,
+  INSURANCE_OPERATION_TYPES,
+  INSURANCE_SUPPORT_TYPES,
   RECURRENCE_UNITS,
   REIMBURSEMENT_STATUSES,
   STOCK_OPERATION_TYPES,
@@ -96,6 +99,7 @@ export function initSchema(db: Database) {
             name          TEXT    NOT NULL,
             is_investment INTEGER NOT NULL DEFAULT 0,
             is_loan       INTEGER NOT NULL DEFAULT 0,
+            envelope_type TEXT    CHECK (envelope_type IN (${sqlIn(ENVELOPE_TYPES)})),
             created_at    TEXT             DEFAULT (datetime('now')),
             UNIQUE (user_id, name)
         );
@@ -139,6 +143,59 @@ export function initSchema(db: Database) {
         BEGIN
             DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
         END;
+
+        CREATE TABLE IF NOT EXISTS insurance_supports
+        (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            name       TEXT    NOT NULL,
+            type       TEXT    NOT NULL CHECK (type IN (${sqlIn(INSURANCE_SUPPORT_TYPES)})),
+            ticker     TEXT,
+            created_at TEXT             DEFAULT (datetime('now')),
+            UNIQUE (account_id, name)
+        );
+
+        CREATE TABLE IF NOT EXISTS insurance_operations
+        (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id              INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            support_id           INTEGER NOT NULL REFERENCES insurance_supports (id) ON DELETE CASCADE,
+            transaction_id       INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            fees_transaction_id  INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(INSURANCE_OPERATION_TYPES)})),
+            quantity             REAL,
+            price_per_unit       INTEGER,
+            amount               INTEGER NOT NULL,
+            fees                 INTEGER NOT NULL DEFAULT 0,
+            date                 TEXT    NOT NULL,
+            arbitrage_peer_id    INTEGER REFERENCES insurance_operations (id) ON DELETE SET NULL,
+            created_at           TEXT             DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_ins_ops_account ON insurance_operations (account_id);
+        CREATE INDEX IF NOT EXISTS idx_ins_ops_support ON insurance_operations (support_id);
+
+        CREATE TRIGGER IF NOT EXISTS insurance_op_fees_cleanup
+        AFTER DELETE ON insurance_operations
+        WHEN OLD.fees_transaction_id IS NOT NULL
+        BEGIN
+            DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
+        END;
+
+        CREATE TABLE IF NOT EXISTS insurance_positions
+        (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+            support_id INTEGER NOT NULL REFERENCES insurance_supports (id) ON DELETE CASCADE,
+            quantity   REAL    NOT NULL,
+            avg_price  REAL    NOT NULL DEFAULT 0,
+            updated_at TEXT             DEFAULT (datetime('now')),
+            created_at TEXT             DEFAULT (datetime('now')),
+            UNIQUE (support_id)
+        );
 
         CREATE TABLE IF NOT EXISTS stock_prices
         (

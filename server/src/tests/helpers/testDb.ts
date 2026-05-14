@@ -9,6 +9,8 @@ export const SEED = {
   AT_COURANT: 1, // 'Courant'
   AT_EPARGNE: 2, // 'Épargne'
   AT_BOURSE: 3, // 'Bourse'
+  AT_AV: 4, // 'Assurance Vie'
+  AT_PER: 5, // 'PER'
   SUBCAT_AUTRE: 1,
   SUBCAT_SALAIRE: 2,
   SUBCAT_SUPERMARCHE: 3,
@@ -32,6 +34,12 @@ export function seedTestReferenceData(db: Database, userId: number) {
   db.prepare(
     'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
   ).run(userId, 'Bourse', 1, 0);
+  db.prepare(
+    'INSERT INTO account_types (user_id, name, is_investment, is_loan, envelope_type) VALUES (?, ?, ?, ?, ?)',
+  ).run(userId, 'Assurance Vie', 0, 0, 'assurance_vie');
+  db.prepare(
+    'INSERT INTO account_types (user_id, name, is_investment, is_loan, envelope_type) VALUES (?, ?, ?, ?, ?)',
+  ).run(userId, 'PER', 0, 0, 'per');
 
   db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
     userId,
