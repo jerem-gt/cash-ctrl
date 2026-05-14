@@ -5,7 +5,6 @@ import {
   getPrelevementPaymentMethodId,
 } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
-import { StockPrice } from '../stocks/stocks.types';
 import {
   ArbitrageInput,
   CreateSupportInput,
@@ -14,6 +13,7 @@ import {
   InsuranceSupportView,
   InteretsInput,
   RachatInput,
+  RevaloriserInput,
   VersementInput,
 } from './insurance.types';
 
@@ -22,26 +22,17 @@ function mapOperation(row: InsuranceOperation): InsuranceOperation {
     ...row,
     amount: toEuros(row.amount),
     fees: toEuros(row.fees),
-    price_per_unit: row.price_per_unit == null ? null : toEuros(row.price_per_unit),
   };
 }
 
 const OPERATION_SELECT = `
   SELECT io.id, io.account_id, io.support_id, ins.name AS support_name, ins.type AS support_type,
-         io.transaction_id, io.fees_transaction_id, io.type, io.quantity, io.price_per_unit,
+         io.transaction_id, io.fees_transaction_id, io.type,
          io.amount, io.fees, io.date, io.arbitrage_peer_id, io.created_at
   FROM insurance_operations io
   JOIN insurance_supports ins ON io.support_id = ins.id`;
 
 export function createInsuranceRepo(db: Database) {
-  const getStockPriceStmt = db.prepare<{ ticker: string }, StockPrice>(
-    `SELECT ticker, price, currency, name, fetched_at FROM stock_prices WHERE ticker = :ticker`,
-  );
-  const upsertPriceStmt = db.prepare(
-    `INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at)
-     VALUES (:ticker, :price, :currency, :name, datetime('now'))`,
-  );
-
   return {
     accountBelongsToUser(accountId: number, userId: number): boolean {
       return !!db
@@ -96,11 +87,11 @@ export function createInsuranceRepo(db: Database) {
       db.prepare('DELETE FROM insurance_supports WHERE id = ?').run(supportId);
     },
 
-    getEuroBalanceCents(accountId: number, supportId: number): number {
+    getBalanceCents(accountId: number, supportId: number): number {
       const row = db
         .prepare<[number, number], { balance: number }>(
           `SELECT COALESCE(
-             SUM(CASE WHEN type IN ('versement', 'arbitrage_in', 'interets') THEN amount ELSE -amount END),
+             SUM(CASE WHEN type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation') THEN amount ELSE -amount END),
              0
            ) AS balance
            FROM insurance_operations
@@ -110,63 +101,18 @@ export function createInsuranceRepo(db: Database) {
       return row?.balance ?? 0;
     },
 
-    getUcPositionQty(accountId: number, supportId: number): number {
-      const row = db
-        .prepare<
-          [number, number],
-          { quantity: number }
-        >('SELECT quantity FROM insurance_positions WHERE account_id = ? AND support_id = ?')
-        .get(accountId, supportId);
-      return row?.quantity ?? 0;
-    },
-
     // ─── Positions ───────────────────────────────────────────────────────────
 
     getPositions(accountId: number): InsuranceSupportView[] {
       const supports = this.getSupports(accountId);
-      return supports.map((s) => {
-        if (s.type === 'uc') {
-          const pos = db
-            .prepare<
-              [number],
-              { quantity: number; avg_price: number }
-            >('SELECT quantity, avg_price FROM insurance_positions WHERE support_id = ?')
-            .get(s.id);
-          const priceRow = s.ticker ? getStockPriceStmt.get({ ticker: s.ticker }) : null;
-          const quantity = pos?.quantity ?? 0;
-          const avg_price = pos ? toEuros(pos.avg_price) : 0;
-          const current_price = priceRow?.price ?? null;
-          return {
-            id: s.id,
-            account_id: s.account_id,
-            name: s.name,
-            type: 'uc' as const,
-            ticker: s.ticker,
-            quantity,
-            avg_price,
-            current_price,
-            current_price_currency: priceRow?.currency ?? 'EUR',
-            balance: null,
-            value: current_price == null ? avg_price * quantity : current_price * quantity,
-          };
-        } else {
-          const balanceCents = this.getEuroBalanceCents(accountId, s.id);
-          const balance = toEuros(balanceCents);
-          return {
-            id: s.id,
-            account_id: s.account_id,
-            name: s.name,
-            type: 'euro' as const,
-            ticker: null,
-            quantity: null,
-            avg_price: null,
-            current_price: null,
-            current_price_currency: 'EUR',
-            balance,
-            value: balance,
-          };
-        }
-      });
+      return supports.map((s) => ({
+        id: s.id,
+        account_id: s.account_id,
+        name: s.name,
+        type: s.type,
+        ticker: s.ticker,
+        value: toEuros(this.getBalanceCents(accountId, s.id)),
+      }));
     },
 
     // ─── Operations ──────────────────────────────────────────────────────────
@@ -187,28 +133,31 @@ export function createInsuranceRepo(db: Database) {
     versement(
       userId: number,
       input: VersementInput,
-    ): { operation: InsuranceOperation; transaction_id: number } {
+    ): { operation: InsuranceOperation; transaction_id: number | null } {
       const amountCents = toCents(input.amount);
       const feesCents = toCents(input.fees);
       const support = this.getSupportById(input.support_id)!;
-      const priceCents =
-        input.price_per_unit == null ? null : Math.round(input.price_per_unit * 100);
       const description =
         support.type === 'uc'
           ? `Versement UC — ${support.name}`
           : `Versement fonds euro — ${support.name}`;
 
+      const txAccountId = input.source_account_id ?? null;
+
       return db.transaction(() => {
-        const txResult = db
-          .prepare(
-            `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-             VALUES (?, ?, 'expense', ?, ?, ?, 1)`,
-          )
-          .run(userId, input.account_id, amountCents, description, input.date);
-        const transactionId = Number(txResult.lastInsertRowid);
+        let transactionId: number | null = null;
+        if (txAccountId != null) {
+          const txResult = db
+            .prepare(
+              `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
+               VALUES (?, ?, 'expense', ?, ?, ?, 1)`,
+            )
+            .run(userId, txAccountId, amountCents, description, input.date);
+          transactionId = Number(txResult.lastInsertRowid);
+        }
 
         let feesTransactionId: number | null = null;
-        if (feesCents > 0) {
+        if (feesCents > 0 && txAccountId != null) {
           const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
           const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
           const feesTx = db
@@ -218,7 +167,7 @@ export function createInsuranceRepo(db: Database) {
             )
             .run(
               userId,
-              input.account_id,
+              txAccountId,
               feesCents,
               `Frais — ${description}`,
               subcategoryId,
@@ -232,8 +181,8 @@ export function createInsuranceRepo(db: Database) {
           .prepare(
             `INSERT INTO insurance_operations
                (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, quantity, price_per_unit, amount, fees, date)
-             VALUES (?, ?, ?, ?, ?, 'versement', ?, ?, ?, ?, ?)`,
+                type, amount, fees, date)
+             VALUES (?, ?, ?, ?, ?, 'versement', ?, ?, ?)`,
           )
           .run(
             userId,
@@ -241,8 +190,6 @@ export function createInsuranceRepo(db: Database) {
             input.support_id,
             transactionId,
             feesTransactionId,
-            input.quantity ?? null,
-            priceCents,
             amountCents,
             feesCents,
             input.date,
@@ -261,7 +208,7 @@ export function createInsuranceRepo(db: Database) {
     rachat(
       userId: number,
       input: RachatInput,
-    ): { operation: InsuranceOperation; transaction_id: number } {
+    ): { operation: InsuranceOperation; transaction_id: number | null } {
       const amountCents = toCents(input.amount);
       const feesCents = toCents(input.fees);
 
@@ -269,42 +216,33 @@ export function createInsuranceRepo(db: Database) {
         throw new Error('Le montant net après frais doit être positif');
       }
 
-      const support = this.getSupportById(input.support_id)!;
-      const priceCents =
-        input.price_per_unit == null ? null : Math.round(input.price_per_unit * 100);
-
-      if (support.type === 'uc') {
-        const availableQty = this.getUcPositionQty(input.account_id, input.support_id);
-        if (input.quantity == null || input.quantity > availableQty) {
-          throw new Error(
-            `Quantité insuffisante : ${availableQty.toFixed(6)} part(s) disponible(s)`,
-          );
-        }
-      } else {
-        const balanceCents = this.getEuroBalanceCents(input.account_id, input.support_id);
-        if (amountCents > balanceCents) {
-          throw new Error(
-            `Solde insuffisant : ${toEuros(balanceCents).toFixed(2)} € disponible(s)`,
-          );
-        }
+      const balanceCents = this.getBalanceCents(input.account_id, input.support_id);
+      if (amountCents > balanceCents) {
+        throw new Error(`Solde insuffisant : ${toEuros(balanceCents).toFixed(2)} € disponible(s)`);
       }
 
+      const support = this.getSupportById(input.support_id)!;
       const description =
         support.type === 'uc'
           ? `Rachat UC — ${support.name}`
           : `Rachat fonds euro — ${support.name}`;
 
+      const txAccountId = input.dest_account_id ?? null;
+
       return db.transaction(() => {
-        const txResult = db
-          .prepare(
-            `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-             VALUES (?, ?, 'income', ?, ?, ?, 1)`,
-          )
-          .run(userId, input.account_id, amountCents, description, input.date);
-        const transactionId = Number(txResult.lastInsertRowid);
+        let transactionId: number | null = null;
+        if (txAccountId != null) {
+          const txResult = db
+            .prepare(
+              `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
+               VALUES (?, ?, 'income', ?, ?, ?, 1)`,
+            )
+            .run(userId, txAccountId, amountCents, description, input.date);
+          transactionId = Number(txResult.lastInsertRowid);
+        }
 
         let feesTransactionId: number | null = null;
-        if (feesCents > 0) {
+        if (feesCents > 0 && txAccountId != null) {
           const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
           const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
           const feesTx = db
@@ -314,7 +252,7 @@ export function createInsuranceRepo(db: Database) {
             )
             .run(
               userId,
-              input.account_id,
+              txAccountId,
               feesCents,
               `Frais — ${description}`,
               subcategoryId,
@@ -328,8 +266,8 @@ export function createInsuranceRepo(db: Database) {
           .prepare(
             `INSERT INTO insurance_operations
                (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, quantity, price_per_unit, amount, fees, date)
-             VALUES (?, ?, ?, ?, ?, 'rachat', ?, ?, ?, ?, ?)`,
+                type, amount, fees, date)
+             VALUES (?, ?, ?, ?, ?, 'rachat', ?, ?, ?)`,
           )
           .run(
             userId,
@@ -337,8 +275,6 @@ export function createInsuranceRepo(db: Database) {
             input.support_id,
             transactionId,
             feesTransactionId,
-            input.quantity ?? null,
-            priceCents,
             amountCents,
             feesCents,
             input.date,
@@ -362,25 +298,12 @@ export function createInsuranceRepo(db: Database) {
       const toSupport = this.getSupportById(input.to_support_id)!;
       const fromAmountCents = toCents(input.from_amount);
       const feesCents = toCents(input.fees);
-      const fromPriceCents =
-        input.from_price_per_unit == null ? null : Math.round(input.from_price_per_unit * 100);
-      const toPriceCents =
-        input.to_price_per_unit == null ? null : Math.round(input.to_price_per_unit * 100);
 
-      if (fromSupport.type === 'uc') {
-        const availableQty = this.getUcPositionQty(input.account_id, input.from_support_id);
-        if (input.from_quantity == null || input.from_quantity > availableQty) {
-          throw new Error(
-            `Quantité insuffisante sur ${fromSupport.name} : ${availableQty.toFixed(6)} part(s)`,
-          );
-        }
-      } else {
-        const balanceCents = this.getEuroBalanceCents(input.account_id, input.from_support_id);
-        if (fromAmountCents > balanceCents) {
-          throw new Error(
-            `Solde insuffisant sur ${fromSupport.name} : ${toEuros(balanceCents).toFixed(2)} €`,
-          );
-        }
+      const balanceCents = this.getBalanceCents(input.account_id, input.from_support_id);
+      if (fromAmountCents > balanceCents) {
+        throw new Error(
+          `Solde insuffisant sur ${fromSupport.name} : ${toEuros(balanceCents).toFixed(2)} €`,
+        );
       }
 
       return db.transaction(() => {
@@ -409,16 +332,14 @@ export function createInsuranceRepo(db: Database) {
           .prepare(
             `INSERT INTO insurance_operations
                (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, quantity, price_per_unit, amount, fees, date)
-             VALUES (?, ?, ?, NULL, ?, 'arbitrage_out', ?, ?, ?, ?, ?)`,
+                type, amount, fees, date)
+             VALUES (?, ?, ?, NULL, ?, 'arbitrage_out', ?, ?, ?)`,
           )
           .run(
             userId,
             input.account_id,
             input.from_support_id,
             feesTransactionId,
-            fromSupport.type === 'uc' ? (input.from_quantity ?? null) : null,
-            fromPriceCents,
             fromAmountCents,
             feesCents,
             input.date,
@@ -429,19 +350,10 @@ export function createInsuranceRepo(db: Database) {
           .prepare(
             `INSERT INTO insurance_operations
                (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, quantity, price_per_unit, amount, fees, date, arbitrage_peer_id)
-             VALUES (?, ?, ?, NULL, NULL, 'arbitrage_in', ?, ?, ?, 0, ?, ?)`,
+                type, amount, fees, date, arbitrage_peer_id)
+             VALUES (?, ?, ?, NULL, NULL, 'arbitrage_in', ?, 0, ?, ?)`,
           )
-          .run(
-            userId,
-            input.account_id,
-            input.to_support_id,
-            toSupport.type === 'uc' ? (input.to_quantity ?? null) : null,
-            toPriceCents,
-            fromAmountCents,
-            input.date,
-            outId,
-          );
+          .run(userId, input.account_id, input.to_support_id, fromAmountCents, input.date, outId);
         const inId = Number(inResult.lastInsertRowid);
 
         db.prepare('UPDATE insurance_operations SET arbitrage_peer_id = ? WHERE id = ?').run(
@@ -465,7 +377,7 @@ export function createInsuranceRepo(db: Database) {
     interets(
       userId: number,
       input: InteretsInput,
-    ): { operation: InsuranceOperation; transaction_id: number } {
+    ): { operation: InsuranceOperation; transaction_id: number | null } {
       const support = this.getSupportById(input.support_id)!;
       const amountCents = toCents(input.amount);
       const description = `Intérêts — ${support.name}`;
@@ -483,8 +395,8 @@ export function createInsuranceRepo(db: Database) {
           .prepare(
             `INSERT INTO insurance_operations
                (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, quantity, price_per_unit, amount, fees, date)
-             VALUES (?, ?, ?, ?, NULL, 'interets', NULL, NULL, ?, 0, ?)`,
+                type, amount, fees, date)
+             VALUES (?, ?, ?, ?, NULL, 'interets', ?, 0, ?)`,
           )
           .run(userId, input.account_id, input.support_id, transactionId, amountCents, input.date);
 
@@ -496,22 +408,25 @@ export function createInsuranceRepo(db: Database) {
       })();
     },
 
-    // ─── Prices ──────────────────────────────────────────────────────────────
+    // ─── Revalorisation ──────────────────────────────────────────────────────
 
-    getUcTickers(accountId: number): string[] {
-      return db
-        .prepare<[number], string>(
-          `SELECT DISTINCT ins.ticker
-           FROM insurance_positions ip
-           JOIN insurance_supports ins ON ip.support_id = ins.id
-           WHERE ip.account_id = ? AND ip.quantity > 0 AND ins.ticker IS NOT NULL`,
+    revaloriser(userId: number, input: RevaloriserInput): InsuranceOperation {
+      const amountCents = Math.round(input.amount * 100);
+
+      const opResult = db
+        .prepare(
+          `INSERT INTO insurance_operations
+             (user_id, account_id, support_id, transaction_id, fees_transaction_id,
+              type, amount, fees, date)
+           VALUES (?, ?, ?, NULL, NULL, 'revalorisation', ?, 0, ?)`,
         )
-        .pluck()
-        .all(accountId) as string[];
-    },
+        .run(userId, input.account_id, input.support_id, amountCents, input.date);
 
-    getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }) ?? undefined,
-    upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
-      upsertPriceStmt.run({ ticker, price, currency, name }),
+      const op = db
+        .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+        .get(Number(opResult.lastInsertRowid))!;
+
+      return mapOperation(op);
+    },
   };
 }

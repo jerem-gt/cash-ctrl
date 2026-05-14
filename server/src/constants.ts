@@ -9,6 +9,7 @@ export const INSURANCE_OPERATION_TYPES = [
   'arbitrage_in',
   'arbitrage_out',
   'interets',
+  'revalorisation',
 ] as const;
 export const INSURANCE_SUPPORT_TYPES = ['uc', 'euro'] as const;
 export const ENVELOPE_TYPES = ['life_insurance', 'per', 'investment', 'loan'] as const;

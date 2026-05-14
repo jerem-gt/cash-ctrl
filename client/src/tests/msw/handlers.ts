@@ -218,15 +218,26 @@ export const handlers = [
       { status: 201 },
     ),
   ),
-  http.get('/api/insurance/price/:ticker', () =>
+  http.post('/api/insurance/:accountId/revalorisation', () =>
+    HttpResponse.json(
+      { operation: { ...INSURANCE_OPERATIONS[0], type: 'revalorisation', amount: 150 } },
+      { status: 201 },
+    ),
+  ),
+
+  // Stats
+  http.get('/api/stats', () =>
     HttpResponse.json({
-      ticker: 'LU1681043599.SW',
-      price: 42.1,
-      currency: 'EUR',
-      fetched_at: '2026-05-14T10:00:00',
+      month_income: 0,
+      month_expense: 0,
+      monthly: [],
+      expenses_by_category: [],
+      recent: [],
+      to_validate: [],
+      upcoming: [],
     }),
   ),
-  http.post('/api/insurance/:accountId/prices/refresh', () => HttpResponse.json({ ok: true })),
+  http.get('/api/stats/balance-history', () => HttpResponse.json({ account_types: [], data: [] })),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

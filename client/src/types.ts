@@ -71,11 +71,6 @@ export interface InsuranceSupportView {
   name: string;
   type: InsuranceSupportType;
   ticker: string | null;
-  quantity: number | null;
-  avg_price: number | null;
-  current_price: number | null;
-  current_price_currency: string;
-  balance: number | null;
   value: number;
 }
 
@@ -87,9 +82,7 @@ export interface InsuranceOperation {
   support_type: InsuranceSupportType;
   transaction_id: number | null;
   fees_transaction_id: number | null;
-  type: 'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets';
-  quantity: number | null;
-  price_per_unit: number | null;
+  type: 'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets' | 'revalorisation';
   amount: number;
   fees: number;
   date: string;

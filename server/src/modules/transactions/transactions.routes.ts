@@ -76,8 +76,15 @@ export function createTransactionsRouter(db: Database): Router {
     }
     const userId = sessionUserId(req);
 
-    if (!accountsRepo.exists(parsed.data.account_id, userId)) {
+    const targetAccount = accountsRepo.getById(parsed.data.account_id, userId);
+    if (!targetAccount) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
+      return;
+    }
+    if (targetAccount.envelope_type === 'life_insurance' || targetAccount.envelope_type === 'per') {
+      res
+        .status(400)
+        .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
       return;
     }
 
@@ -107,8 +114,15 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    if (!accountsRepo.exists(parsed.data.account_id, userId)) {
+    const targetAccount = accountsRepo.getById(parsed.data.account_id, userId);
+    if (!targetAccount) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
+      return;
+    }
+    if (targetAccount.envelope_type === 'life_insurance' || targetAccount.envelope_type === 'per') {
+      res
+        .status(400)
+        .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
       return;
     }
 

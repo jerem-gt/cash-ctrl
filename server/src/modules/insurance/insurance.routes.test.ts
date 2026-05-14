@@ -32,6 +32,10 @@ describe('/api/insurance', () => {
     standardAccountId = courant.body.id;
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   // ─── Supports ─────────────────────────────────────────────────────────────
 
   describe('POST /:accountId/supports', () => {
@@ -101,6 +105,7 @@ describe('/api/insurance', () => {
         amount: 1000,
         fees: 0,
         date: TODAY,
+        source_account_id: standardAccountId,
       });
       expect(res.status).toBe(201);
       expect(res.body.operation.type).toBe('versement');
@@ -119,17 +124,18 @@ describe('/api/insurance', () => {
         amount: 500,
         fees: 2.5,
         date: TODAY,
+        source_account_id: standardAccountId,
       });
       expect(res.status).toBe(201);
       expect(res.body.operation.fees).toBe(2.5);
       expect(res.body.operation.fees_transaction_id).toBeGreaterThan(0);
     });
 
-    it('met à jour le solde fonds euro', async () => {
+    it('met à jour la valeur fonds euro', async () => {
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
       const pos = posRes.body.find((p: { id: number }) => p.id === euroSupportId);
       expect(pos).toBeDefined();
-      expect(pos.balance).toBeGreaterThan(0);
+      expect(pos.value).toBeGreaterThan(0);
     });
   });
 
@@ -146,32 +152,22 @@ describe('/api/insurance', () => {
       ucSupportId = sup.body.id;
     });
 
-    it('crée un versement UC avec quantité et VL', async () => {
+    it('crée un versement UC et retourne le montant', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: ucSupportId,
         amount: 1000,
-        quantity: 25.123456,
-        price_per_unit: 39.8,
         fees: 0,
         date: TODAY,
       });
       expect(res.status).toBe(201);
       expect(res.body.operation.type).toBe('versement');
-      expect(res.body.operation.quantity).toBeCloseTo(25.123456);
+      expect(res.body.operation.amount).toBe(1000);
     });
 
-    it('met à jour la position UC et calcule le PRU', async () => {
-      const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
-      const pos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
-      expect(pos).toBeDefined();
-      expect(pos.quantity).toBeCloseTo(25.123456);
-      expect(pos.avg_price).toBeCloseTo(39.8);
-    });
-
-    it('calcule le PRU pondéré sur deux versements', async () => {
+    it('accumule la valeur sur deux versements', async () => {
       const sup = (
         await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
-          name: 'UC PRU Test',
+          name: 'UC Valeur Test',
           type: 'uc',
         })
       ).body;
@@ -179,24 +175,19 @@ describe('/api/insurance', () => {
       await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: sup.id,
         amount: 1000,
-        quantity: 10,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
       await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: sup.id,
         amount: 1000,
-        quantity: 10,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
 
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
       const pos = posRes.body.find((p: { id: number }) => p.id === sup.id);
-      expect(pos.quantity).toBeCloseTo(20);
-      expect(pos.avg_price).toBeCloseTo(100);
+      expect(pos.value).toBeCloseTo(2000);
     });
   });
 
@@ -227,8 +218,6 @@ describe('/api/insurance', () => {
       await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: ucSupportId,
         amount: 2000,
-        quantity: 20,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -240,9 +229,11 @@ describe('/api/insurance', () => {
         amount: 1000,
         fees: 0,
         date: TODAY,
+        dest_account_id: standardAccountId,
       });
       expect(res.status).toBe(201);
       expect(res.body.operation.type).toBe('rachat');
+      expect(res.body.transaction_id).toBeGreaterThan(0);
 
       const txRes = await ctx.agent.get('/api/transactions');
       const tx = txRes.body.data.find((t: { id: number }) => t.id === res.body.transaction_id);
@@ -260,12 +251,10 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(400);
     });
 
-    it('crée un rachat UC et met à jour la position', async () => {
+    it('crée un rachat UC et met à jour la valeur', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
         support_id: ucSupportId,
         amount: 500,
-        quantity: 5,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -273,15 +262,13 @@ describe('/api/insurance', () => {
 
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
       const pos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
-      expect(pos.quantity).toBeCloseTo(15);
+      expect(pos.value).toBeCloseTo(1500);
     });
 
-    it('retourne 400 si quantité UC insuffisante', async () => {
+    it('retourne 400 si solde UC insuffisant', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
         support_id: ucSupportId,
         amount: 99999,
-        quantity: 9999,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -320,8 +307,6 @@ describe('/api/insurance', () => {
         from_support_id: euroSupportId,
         to_support_id: ucSupportId,
         from_amount: 1000,
-        to_quantity: 9.5,
-        to_price_per_unit: 105.26,
         fees: 0,
         date: TODAY,
       });
@@ -331,14 +316,12 @@ describe('/api/insurance', () => {
       expect(res.body.outOperation.transaction_id).toBeNull();
       expect(res.body.inOperation.transaction_id).toBeNull();
 
-      // Position UC créée
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
-      const pos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
-      expect(pos.quantity).toBeCloseTo(9.5);
+      const ucPos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
+      expect(ucPos.value).toBeCloseTo(1000);
 
-      // Solde euro diminué
       const euroPos = posRes.body.find((p: { id: number }) => p.id === euroSupportId);
-      expect(euroPos.balance).toBeCloseTo(2000);
+      expect(euroPos.value).toBeCloseTo(2000);
     });
 
     it('retourne 400 si supports identiques', async () => {
@@ -352,13 +335,11 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(400);
     });
 
-    it('retourne 400 si solde euro insuffisant', async () => {
+    it('retourne 400 si solde insuffisant', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
         from_support_id: euroSupportId,
         to_support_id: ucSupportId,
         from_amount: 99999,
-        to_quantity: 1,
-        to_price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -370,8 +351,6 @@ describe('/api/insurance', () => {
         from_support_id: euroSupportId,
         to_support_id: ucSupportId,
         from_amount: 500,
-        to_quantity: 4.76,
-        to_price_per_unit: 105,
         fees: 5,
         date: TODAY,
       });
@@ -424,7 +403,7 @@ describe('/api/insurance', () => {
 
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
       const pos = posRes.body.find((p: { id: number }) => p.id === euroSupportId);
-      expect(pos.balance).toBeCloseTo(10150);
+      expect(pos.value).toBeCloseTo(10150);
     });
 
     it('retourne 400 si le support est une UC', async () => {
@@ -434,6 +413,80 @@ describe('/api/insurance', () => {
         date: TODAY,
       });
       expect(res.status).toBe(400);
+    });
+  });
+
+  // ─── Revalorisation ───────────────────────────────────────────────────────
+
+  describe('POST /:accountId/revalorisation', () => {
+    let ucSupportId: number;
+    let euroSupportId: number;
+
+    beforeAll(async () => {
+      const u = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC Revalorisation',
+        type: 'uc',
+      });
+      ucSupportId = u.body.id;
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: ucSupportId,
+        amount: 3000,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const e = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Revalorisation',
+        type: 'euro',
+      });
+      euroSupportId = e.body.id;
+    });
+
+    it('enregistre une plus-value et met à jour la valeur', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/revalorisation`).send({
+        support_id: ucSupportId,
+        amount: 200,
+        date: TODAY,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.operation.type).toBe('revalorisation');
+      expect(res.body.operation.amount).toBeCloseTo(200);
+
+      const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
+      const pos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
+      expect(pos.value).toBeCloseTo(3200);
+    });
+
+    it('enregistre une moins-value (montant négatif)', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/revalorisation`).send({
+        support_id: ucSupportId,
+        amount: -150,
+        date: TODAY,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.operation.amount).toBeCloseTo(-150);
+
+      const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
+      const pos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
+      expect(pos.value).toBeCloseTo(3050);
+    });
+
+    it('retourne 400 si le support est un fonds euro', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/revalorisation`).send({
+        support_id: euroSupportId,
+        amount: 100,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 404 pour un support inconnu', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/revalorisation`).send({
+        support_id: 99999,
+        amount: 100,
+        date: TODAY,
+      });
+      expect(res.status).toBe(404);
     });
   });
 
@@ -464,7 +517,7 @@ describe('/api/insurance', () => {
   // ─── Suppression support ──────────────────────────────────────────────────
 
   describe('DELETE /:accountId/supports/:supportId', () => {
-    it('supprime un support vide (solde = 0 ou aucune position)', async () => {
+    it('supprime un support vide (valeur = 0)', async () => {
       const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
         name: 'Support à supprimer',
         type: 'euro',
@@ -488,25 +541,23 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(400);
     });
 
-    it('supprime une UC sans position (qty = 0)', async () => {
+    it('supprime une UC sans versement', async () => {
       const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
-        name: 'UC sans parts',
+        name: 'UC vide',
         type: 'uc',
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
       expect(res.status).toBe(200);
     });
 
-    it('retourne 400 pour une UC avec des parts', async () => {
+    it('retourne 400 pour une UC avec un solde positif', async () => {
       const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
-        name: 'UC avec parts',
+        name: 'UC avec solde',
         type: 'uc',
       });
       await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: sup.body.id,
         amount: 1000,
-        quantity: 10,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -540,8 +591,6 @@ describe('/api/insurance', () => {
       await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: ucSupportId,
         amount: 2000,
-        quantity: 20,
-        price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -553,27 +602,29 @@ describe('/api/insurance', () => {
       euroSupportId = e.body.id;
     });
 
-    it('crée un arbitrage UC → Euro et met à jour les positions', async () => {
+    it('crée un arbitrage UC → Euro et met à jour les valeurs', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
         from_support_id: ucSupportId,
         to_support_id: euroSupportId,
         from_amount: 500,
-        from_quantity: 5,
-        from_price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
       expect(res.status).toBe(201);
       expect(res.body.outOperation.type).toBe('arbitrage_out');
+
+      const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
+      const ucPos = posRes.body.find((p: { id: number }) => p.id === ucSupportId);
+      expect(ucPos.value).toBeCloseTo(1500);
+      const euroPos = posRes.body.find((p: { id: number }) => p.id === euroSupportId);
+      expect(euroPos.value).toBeCloseTo(500);
     });
 
-    it('retourne 400 si quantité UC insuffisante', async () => {
+    it('retourne 400 si solde UC insuffisant', async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
         from_support_id: ucSupportId,
         to_support_id: euroSupportId,
         from_amount: 99999,
-        from_quantity: 9999,
-        from_price_per_unit: 100,
         fees: 0,
         date: TODAY,
       });
@@ -661,63 +712,6 @@ describe('/api/insurance', () => {
         date: TODAY,
       });
       expect(res.status).toBe(400);
-    });
-  });
-
-  // ─── Prix (GET /price/:ticker, POST /prices/refresh) ─────────────────────
-
-  describe('GET /price/:ticker', () => {
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('retourne le prix si disponible', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              chart: { result: [{ meta: { regularMarketPrice: 42.5, currency: 'EUR' } }] },
-            }),
-        }),
-      );
-      const res = await ctx.agent.get('/api/insurance/price/LU1681043599.SW');
-      expect(res.status).toBe(200);
-      expect(res.body.price).toBe(42.5);
-    });
-
-    it('retourne 404 si le prix est introuvable', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-      const res = await ctx.agent.get('/api/insurance/price/UNKNOWN.TICKER');
-      expect(res.status).toBe(404);
-    });
-  });
-
-  describe('POST /:accountId/prices/refresh', () => {
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('rafraîchit les prix et retourne ok', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              chart: { result: [{ meta: { regularMarketPrice: 15, currency: 'EUR' } }] },
-            }),
-        }),
-      );
-      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/prices/refresh`);
-      expect(res.status).toBe(200);
-      expect(res.body.ok).toBe(true);
-    });
-
-    it('retourne 403 pour un compte inconnu', async () => {
-      const res = await ctx.agent.post('/api/insurance/99999/prices/refresh');
-      expect(res.status).toBe(403);
     });
   });
 

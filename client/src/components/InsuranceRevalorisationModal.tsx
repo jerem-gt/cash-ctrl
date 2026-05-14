@@ -1,6 +1,6 @@
 import { type SubmitEvent, useState } from 'react';
 
-import { useInterets } from '@/hooks/useInsurance';
+import { useRevalorisation } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
@@ -12,18 +12,22 @@ interface Props {
   onClose: () => void;
 }
 
-export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly<Props>) {
+export function InsuranceRevalorisationModal({ accountId, support, onClose }: Readonly<Props>) {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
-  const interets = useInterets(accountId);
+  const revalorisation = useRevalorisation(accountId);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    interets.mutate(
-      { support_id: support.id, amount: Number.parseFloat(amount), date },
+    revalorisation.mutate(
+      {
+        support_id: support.id,
+        amount: Number.parseFloat(amount),
+        date,
+      },
       {
         onSuccess: () => {
-          showToast('Intérêts enregistrés ✓');
+          showToast('Revalorisation enregistrée ✓');
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -34,28 +38,36 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-5">Intérêts — {support.name}</h3>
+        <h3 className="font-sans text-xl mb-1">Revalorisation — {support.name}</h3>
+        <p className="text-[11px] text-stone-400 mb-5">
+          Valeur actuelle :{' '}
+          {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+        </p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Montant des intérêts (€)" htmlFor="interets-amount">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="reval-amount"
+              className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+            >
+              Plus/moins-value (€)
+            </label>
             <Input
-              id="interets-amount"
+              id="reval-amount"
               type="number"
               step="0.01"
-              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
               autoFocus
             />
-            <p className="text-[10px] text-stone-400 mt-1">
-              Solde actuel :{' '}
-              {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+            <p className="text-[10px] text-stone-400">
+              Positif = gain, négatif = perte (frais inclus)
             </p>
-          </FormGroup>
+          </div>
 
-          <FormGroup label="Date" htmlFor="interets-date">
+          <FormGroup label="Date" htmlFor="reval-date">
             <Input
-              id="interets-date"
+              id="reval-date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -64,11 +76,11 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
           </FormGroup>
 
           <div className="flex gap-2 justify-end mt-1">
-            <Button type="button" onClick={onClose} disabled={interets.isPending}>
+            <Button type="button" onClick={onClose} disabled={revalorisation.isPending}>
               Annuler
             </Button>
-            <Button variant="primary" type="submit" disabled={!amount || interets.isPending}>
-              Enregistrer
+            <Button variant="primary" type="submit" disabled={!amount || revalorisation.isPending}>
+              {revalorisation.isPending ? '…' : 'Enregistrer'}
             </Button>
           </div>
         </form>

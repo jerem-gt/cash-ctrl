@@ -22,30 +22,9 @@ export function InsuranceArbitrageModal({
   const destinations = allSupports.filter((s) => s.id !== fromSupport.id);
   const [toSupportId, setToSupportId] = useState(destinations[0]?.id ?? 0);
   const [fromAmount, setFromAmount] = useState('');
-  const [fromVl, setFromVl] = useState('');
-  const [toVl, setToVl] = useState('');
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
   const arbitrage = useArbitrage(accountId);
-
-  const toSupport = allSupports.find((s) => s.id === toSupportId);
-  const fromIsUc = fromSupport.type === 'uc';
-  const toIsUc = toSupport?.type === 'uc';
-
-  const fromAmountNum = Number.parseFloat(fromAmount) || 0;
-  const fromVlNum = Number.parseFloat(fromVl) || 0;
-  const toVlNum = Number.parseFloat(toVl) || 0;
-
-  const fromQty = fromIsUc && fromVlNum > 0 ? fromAmountNum / fromVlNum : null;
-  const toQty = toIsUc && toVlNum > 0 ? fromAmountNum / toVlNum : null;
-
-  let maxFromAmount: number | undefined;
-  if (!fromIsUc) {
-    maxFromAmount = fromSupport.balance ?? undefined;
-  } else if (fromSupport.quantity != null) {
-    maxFromAmount =
-      fromSupport.quantity * (fromSupport.current_price ?? fromSupport.avg_price ?? 0);
-  }
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -53,11 +32,7 @@ export function InsuranceArbitrageModal({
       {
         from_support_id: fromSupport.id,
         to_support_id: toSupportId,
-        from_amount: fromAmountNum,
-        from_quantity: fromIsUc ? fromQty : null,
-        from_price_per_unit: fromIsUc ? fromVlNum : null,
-        to_quantity: toIsUc ? toQty : null,
-        to_price_per_unit: toIsUc ? toVlNum : null,
+        from_amount: Number.parseFloat(fromAmount),
         fees: Number.parseFloat(fees) || 0,
         date,
       },
@@ -114,12 +89,10 @@ export function InsuranceArbitrageModal({
               >
                 Montant arbitré (€)
               </label>
-              {maxFromAmount != null && (
-                <span className="text-[10px] text-stone-400">
-                  Max :{' '}
-                  {maxFromAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                </span>
-              )}
+              <span className="text-[10px] text-stone-400">
+                Max :{' '}
+                {fromSupport.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              </span>
             </div>
             <Input
               id="arb-from-amount"
@@ -132,44 +105,6 @@ export function InsuranceArbitrageModal({
               autoFocus
             />
           </div>
-
-          {fromIsUc && (
-            <FormGroup label="VL source (€ / part)" htmlFor="arb-from-vl">
-              <Input
-                id="arb-from-vl"
-                type="number"
-                step="0.000001"
-                min="0.000001"
-                value={fromVl}
-                onChange={(e) => setFromVl(e.target.value)}
-                required
-              />
-              {fromQty != null && fromVlNum > 0 && (
-                <p className="text-[10px] text-stone-400 mt-1">
-                  ≈ {fromQty.toFixed(6)} parts vendues
-                </p>
-              )}
-            </FormGroup>
-          )}
-
-          {toIsUc && (
-            <FormGroup label="VL destination (€ / part)" htmlFor="arb-to-vl">
-              <Input
-                id="arb-to-vl"
-                type="number"
-                step="0.000001"
-                min="0.000001"
-                value={toVl}
-                onChange={(e) => setToVl(e.target.value)}
-                required
-              />
-              {toQty != null && toVlNum > 0 && (
-                <p className="text-[10px] text-stone-400 mt-1">
-                  ≈ {toQty.toFixed(6)} parts achetées
-                </p>
-              )}
-            </FormGroup>
-          )}
 
           <div className="flex gap-3">
             <FormGroup label="Frais (€)" htmlFor="arb-fees">
@@ -200,13 +135,7 @@ export function InsuranceArbitrageModal({
             <Button
               variant="primary"
               type="submit"
-              disabled={
-                !fromAmount ||
-                !toSupportId ||
-                (fromIsUc && !fromVl) ||
-                (toIsUc && !toVl) ||
-                arbitrage.isPending
-              }
+              disabled={!fromAmount || !toSupportId || arbitrage.isPending}
             >
               {arbitrage.isPending ? '…' : 'Enregistrer'}
             </Button>

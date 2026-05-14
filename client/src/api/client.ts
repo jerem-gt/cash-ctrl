@@ -288,25 +288,27 @@ export type CreateSupportPayload = {
 export type InsuranceFlowPayload = {
   support_id: number;
   amount: number;
-  quantity?: number | null;
-  price_per_unit?: number | null;
   fees: number;
   date: string;
+  source_account_id?: number | null;
+  dest_account_id?: number | null;
 };
 
 export type ArbitragePayload = {
   from_support_id: number;
   to_support_id: number;
   from_amount: number;
-  from_quantity?: number | null;
-  from_price_per_unit?: number | null;
-  to_quantity?: number | null;
-  to_price_per_unit?: number | null;
   fees: number;
   date: string;
 };
 
 export type InteretsPayload = {
+  support_id: number;
+  amount: number;
+  date: string;
+};
+
+export type RevaloriserPayload = {
   support_id: number;
   amount: number;
   date: string;
@@ -347,9 +349,12 @@ export const insuranceApi = {
       `/api/insurance/${accountId}/interets`,
       payload,
     ),
-  price: (ticker: string) => request<StockPrice>('GET', `/api/insurance/price/${ticker}`),
-  refreshPrices: (accountId: number) =>
-    request<{ ok: boolean }>('POST', `/api/insurance/${accountId}/prices/refresh`),
+  revaloriser: (accountId: number, payload: RevaloriserPayload) =>
+    request<{ operation: InsuranceOperation }>(
+      'POST',
+      `/api/insurance/${accountId}/revalorisation`,
+      payload,
+    ),
 };
 
 // Loans

@@ -163,8 +163,6 @@ export function initSchema(db: Database) {
             transaction_id       INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             fees_transaction_id  INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(INSURANCE_OPERATION_TYPES)})),
-            quantity             REAL,
-            price_per_unit       INTEGER,
             amount               INTEGER NOT NULL,
             fees                 INTEGER NOT NULL DEFAULT 0,
             date                 TEXT    NOT NULL,
@@ -181,19 +179,6 @@ export function initSchema(db: Database) {
         BEGIN
             DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
         END;
-
-        CREATE TABLE IF NOT EXISTS insurance_positions
-        (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-            account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-            support_id INTEGER NOT NULL REFERENCES insurance_supports (id) ON DELETE CASCADE,
-            quantity   REAL    NOT NULL,
-            avg_price  REAL    NOT NULL DEFAULT 0,
-            updated_at TEXT             DEFAULT (datetime('now')),
-            created_at TEXT             DEFAULT (datetime('now')),
-            UNIQUE (support_id)
-        );
 
         CREATE TABLE IF NOT EXISTS stock_prices
         (

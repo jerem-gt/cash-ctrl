@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
+import { useAccounts } from '@/hooks/useAccounts';
 import { useRachat } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, FormGroup, Input, Select, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -14,33 +15,25 @@ interface Props {
 
 export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<Props>) {
   const [amount, setAmount] = useState('');
-  const [vl, setVl] = useState('');
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
+  const [destAccountId, setDestAccountId] = useState<number | null>(null);
   const rachat = useRachat(accountId);
+  const { data: allAccounts = [] } = useAccounts();
 
-  const isUc = support.type === 'uc';
-  const amountNum = Number.parseFloat(amount) || 0;
-  const vlNum = Number.parseFloat(vl) || 0;
-  const quantity = isUc && vlNum > 0 ? amountNum / vlNum : null;
+  const destAccounts = allAccounts.filter(
+    (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
+  );
 
-  let maxAmount: number | undefined;
-  if (!isUc) {
-    maxAmount = support.balance ?? undefined;
-  } else if (support.quantity != null) {
-    maxAmount = support.quantity * (support.current_price ?? support.avg_price ?? 0);
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     rachat.mutate(
       {
         support_id: support.id,
-        amount: amountNum,
-        quantity: isUc ? quantity : null,
-        price_per_unit: isUc ? vlNum : null,
+        amount: Number.parseFloat(amount),
         fees: Number.parseFloat(fees) || 0,
         date,
+        dest_account_id: destAccountId,
       },
       {
         onSuccess: () => {
@@ -65,11 +58,10 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               >
                 Montant racheté (€)
               </label>
-              {maxAmount != null && (
-                <span className="text-[10px] text-stone-400">
-                  Max : {maxAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                </span>
-              )}
+              <span className="text-[10px] text-stone-400">
+                Max :{' '}
+                {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              </span>
             </div>
             <Input
               id="rachat-amount"
@@ -83,23 +75,30 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
             />
           </div>
 
-          {isUc && (
-            <FormGroup label="VL (€ / part)" htmlFor="rachat-vl">
-              <Input
-                id="rachat-vl"
-                type="number"
-                step="0.000001"
-                min="0.000001"
-                value={vl}
-                onChange={(e) => setVl(e.target.value)}
-                required
-              />
-              {quantity != null && vlNum > 0 && (
-                <p className="text-[10px] text-stone-400 mt-1">
-                  ≈ {quantity.toFixed(6)} parts vendues
-                </p>
-              )}
-            </FormGroup>
+          {destAccounts.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="rachat-dest"
+                className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              >
+                <span>Vers le compte</span>
+                <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
+                  (optionnel)
+                </span>
+              </label>
+              <Select
+                id="rachat-dest"
+                value={destAccountId ?? ''}
+                onChange={(e) => setDestAccountId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">— Aucun —</option>
+                {destAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
           )}
 
           <div className="flex gap-3">
@@ -128,11 +127,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
             <Button type="button" onClick={onClose} disabled={rachat.isPending}>
               Annuler
             </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={!amount || (isUc && !vl) || rachat.isPending}
-            >
+            <Button variant="primary" type="submit" disabled={!amount || rachat.isPending}>
               {rachat.isPending ? '…' : 'Enregistrer'}
             </Button>
           </div>
