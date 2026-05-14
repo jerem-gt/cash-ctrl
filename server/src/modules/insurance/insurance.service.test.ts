@@ -116,7 +116,6 @@ describe('recalcUcPosition', () => {
   it('gère les opérations avec quantity null (interets)', () => {
     const { db, userId, accountId, supportId } = setupDb();
     insertOp(db, { userId, accountId, supportId }, 'versement', 10, 1500);
-    // interets ne modifie pas la quantité (type non reconnu → ignoré)
     insertOp(db, { userId, accountId, supportId }, 'interets', null, null);
 
     recalcUcPosition(db, accountId, supportId, userId);
