@@ -64,7 +64,7 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
               <div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Solde</p>
                 <p className="font-medium text-stone-700 tabular-nums">
-                  {support.balance != null ? fmtEur(support.balance) : '—'}
+                  {support.balance == null ? '—' : fmtEur(support.balance)}
                 </p>
               </div>
               <div />
@@ -76,23 +76,23 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
               <div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Parts</p>
                 <p className="font-medium text-stone-700 tabular-nums">
-                  {support.quantity != null ? support.quantity.toFixed(6) : '—'}
+                  {support.quantity == null ? '—' : support.quantity.toFixed(6)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
                 <p className="font-medium text-stone-700 tabular-nums">
-                  {support.avg_price != null
-                    ? fmtStockPrice(support.avg_price, support.current_price_currency)
-                    : '—'}
+                  {support.avg_price == null
+                    ? '—'
+                    : fmtStockPrice(support.avg_price, support.current_price_currency)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">VL</p>
                 <p className="font-medium text-stone-700 tabular-nums">
-                  {support.current_price != null
-                    ? fmtStockPrice(support.current_price, support.current_price_currency)
-                    : '—'}
+                  {support.current_price == null
+                    ? '—'
+                    : fmtStockPrice(support.current_price, support.current_price_currency)}
                 </p>
               </div>
               <div>

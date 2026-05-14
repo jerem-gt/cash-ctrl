@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { useArbitrage } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
@@ -40,12 +40,12 @@ export function InsuranceArbitrageModal({
   const toQty = toIsUc && toVlNum > 0 ? fromAmountNum / toVlNum : null;
 
   const maxFromAmount = fromIsUc
-    ? fromSupport.quantity != null
-      ? fromSupport.quantity * (fromSupport.current_price ?? fromSupport.avg_price ?? 0)
-      : undefined
+    ? fromSupport.quantity == null
+      ? undefined
+      : fromSupport.quantity * (fromSupport.current_price ?? fromSupport.avg_price ?? 0)
     : (fromSupport.balance ?? undefined);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     arbitrage.mutate(
       {
