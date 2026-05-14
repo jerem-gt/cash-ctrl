@@ -65,7 +65,7 @@ export function createAccountsRouter(db: Database): Router {
       res.status(404).json({ error: 'Account not found' });
       return;
     }
-    if (account.is_loan) {
+    if (account.envelope_type === 'loan') {
       loansRepo.cleanupTransactions(id);
     }
     accountsRepo.delete(userId, id);

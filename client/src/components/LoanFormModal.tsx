@@ -184,7 +184,7 @@ export function LoanFormModal(props: Readonly<Props>) {
     }
   };
 
-  const nonLoanAccounts = accounts.filter((a) => !a.is_loan && !a.closed_at);
+  const nonLoanAccounts = accounts.filter((a) => a.envelope_type !== 'loan' && !a.closed_at);
   const submitButtonText = props.mode === 'create' ? 'Créer le prêt' : 'Enregistrer';
 
   return (

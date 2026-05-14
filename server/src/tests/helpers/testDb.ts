@@ -25,21 +25,23 @@ export const SEED = {
 export function seedTestReferenceData(db: Database, userId: number) {
   db.prepare('INSERT OR IGNORE INTO banks (name) VALUES (?)').run('DefaultBank');
 
-  db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
-  ).run(userId, 'Courant', 0, 0);
-  db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
-  ).run(userId, 'Épargne', 0, 0);
-  db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan) VALUES (?, ?, ?, ?)',
-  ).run(userId, 'Bourse', 1, 0);
-  db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan, envelope_type) VALUES (?, ?, ?, ?, ?)',
-  ).run(userId, 'Assurance Vie', 0, 0, 'assurance_vie');
-  db.prepare(
-    'INSERT INTO account_types (user_id, name, is_investment, is_loan, envelope_type) VALUES (?, ?, ?, ?, ?)',
-  ).run(userId, 'PER', 0, 0, 'per');
+  db.prepare('INSERT INTO account_types (user_id, name) VALUES (?, ?)').run(userId, 'Courant');
+  db.prepare('INSERT INTO account_types (user_id, name) VALUES (?, ?)').run(userId, 'Épargne');
+  db.prepare('INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)').run(
+    userId,
+    'Bourse',
+    'investment',
+  );
+  db.prepare('INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)').run(
+    userId,
+    'Assurance Vie',
+    'life_insurance',
+  );
+  db.prepare('INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)').run(
+    userId,
+    'PER',
+    'per',
+  );
 
   db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
     userId,

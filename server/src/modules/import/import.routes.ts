@@ -104,8 +104,7 @@ const jsonFullSchema = z.object({
     z.object({
       id: z.number().int().positive(),
       name: z.string().min(1).max(100),
-      is_investment: z.number().int(),
-      is_loan: z.number().int(),
+      envelope_type: z.string().nullable().default(null),
     }),
   ),
   banks: z.array(

@@ -9,8 +9,6 @@ export interface Bank {
 export interface AccountType {
   id: number;
   name: string;
-  is_investment: number;
-  is_loan: number;
   envelope_type: string | null;
   acc_count?: number;
 }
@@ -44,8 +42,6 @@ export interface Account {
   bank: string; // résolu par JOIN
   account_type_id: number | null;
   type: string; // résolu par JOIN
-  is_investment: number;
-  is_loan: number;
   envelope_type: string | null;
   initial_balance: number;
   opening_date: string | null;

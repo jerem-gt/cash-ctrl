@@ -11,7 +11,7 @@ export const INSURANCE_OPERATION_TYPES = [
   'interets',
 ] as const;
 export const INSURANCE_SUPPORT_TYPES = ['uc', 'euro'] as const;
-export const ENVELOPE_TYPES = ['assurance_vie', 'per'] as const;
+export const ENVELOPE_TYPES = ['life_insurance', 'per', 'investment', 'loan'] as const;
 
 export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 export type ReimbursementStatus = (typeof REIMBURSEMENT_STATUSES)[number];

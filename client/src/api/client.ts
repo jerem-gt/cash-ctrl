@@ -88,9 +88,9 @@ export const banksApi = {
 // Account types
 export const accountTypesApi = {
   list: () => request<AccountType[]>('GET', '/api/account-types'),
-  create: (payload: { name: string; is_investment: boolean; is_loan: boolean }) =>
+  create: (payload: { name: string; envelope_type: string | null }) =>
     request<AccountType>('POST', '/api/account-types', payload),
-  update: (id: number, payload: { name: string; is_investment: boolean; is_loan: boolean }) =>
+  update: (id: number, payload: { name: string; envelope_type: string | null }) =>
     request<AccountType>('PUT', `/api/account-types/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
 };
@@ -222,6 +222,13 @@ export const versionApi = {
 };
 
 // Stocks
+export interface StockSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
 export type StockOperationPayload = {
   ticker: string;
   quantity: number;
@@ -257,6 +264,8 @@ export const stocksApi = {
       `/api/stocks/${accountId}/sell`,
       payload,
     ),
+  search: (q: string) =>
+    request<StockSearchResult[]>('GET', `/api/stocks/search?q=${encodeURIComponent(q)}`),
   price: (ticker: string) => request<StockPrice>('GET', `/api/stocks/price/${ticker}`),
   refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
   updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>

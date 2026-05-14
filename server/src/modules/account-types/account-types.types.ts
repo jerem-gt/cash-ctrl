@@ -1,8 +1,7 @@
 export interface AccountType {
   id: number;
   name: string;
-  is_investment: number;
-  is_loan: number;
+  envelope_type: string | null;
   created_at: string;
 }
 

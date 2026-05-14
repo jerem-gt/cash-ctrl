@@ -58,7 +58,7 @@ export function createInsuranceRepo(db: Database) {
            WHERE a.id = ?`,
         )
         .get(accountId);
-      return row?.envelope_type != null;
+      return row?.envelope_type === 'life_insurance' || row?.envelope_type === 'per';
     },
 
     // ─── Supports ────────────────────────────────────────────────────────────

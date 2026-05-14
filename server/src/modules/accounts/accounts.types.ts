@@ -6,8 +6,6 @@ export interface Account {
   account_type_id: number | null;
   bank: string;
   type: string;
-  is_investment: number;
-  is_loan: number;
   envelope_type: string | null;
   initial_balance: number;
   opening_date: string | null;

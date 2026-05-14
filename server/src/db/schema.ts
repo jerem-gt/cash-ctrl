@@ -97,8 +97,6 @@ export function initSchema(db: Database) {
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             name          TEXT    NOT NULL,
-            is_investment INTEGER NOT NULL DEFAULT 0,
-            is_loan       INTEGER NOT NULL DEFAULT 0,
             envelope_type TEXT    CHECK (envelope_type IN (${sqlIn(ENVELOPE_TYPES)})),
             created_at    TEXT             DEFAULT (datetime('now')),
             UNIQUE (user_id, name)
