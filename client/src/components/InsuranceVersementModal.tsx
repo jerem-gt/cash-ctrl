@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { useAccounts } from '@/hooks/useAccounts';
 import { useVersement } from '@/hooks/useInsurance';
@@ -25,7 +25,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
     (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     versement.mutate(
       {
@@ -69,7 +69,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
                 htmlFor="vers-source"
                 className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
               >
-                Depuis le compte
+                <span>Depuis le compte</span>
                 <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
                   (optionnel)
                 </span>

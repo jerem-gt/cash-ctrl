@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { useCreateInsuranceSupport } from '@/hooks/useInsurance';
 import type { InsuranceSupportType } from '@/types';
@@ -17,7 +17,7 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
   const [ticker, setTicker] = useState('');
   const create = useCreateInsuranceSupport(accountId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     create.mutate(
       { name, type, ticker: type === 'uc' && ticker ? ticker : null },
