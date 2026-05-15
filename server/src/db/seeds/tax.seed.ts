@@ -86,7 +86,7 @@ export function seedTaxData(db: Database) {
       );
       for (const b of y.brackets) {
         const minCents = toCents(b.min_income);
-        const maxCents = b.max_income != null ? toCents(b.max_income) : null;
+        const maxCents = b.max_income == null ? null : toCents(b.max_income);
         insertBracket.run(y.year, minCents, maxCents, b.rate, y.year, minCents);
       }
     }
