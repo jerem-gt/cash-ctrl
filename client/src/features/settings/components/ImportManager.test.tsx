@@ -293,7 +293,7 @@ describe("ImportManager — exécution de l'import", () => {
     expect(await screen.findByText(/erreur lors de l'importation/i)).toBeInTheDocument();
   });
 
-  it('le bouton "Nouvelle importation" réinitialise la page', async () => {
+  it(`le bouton "Nouvelle importation" réinitialise la page`, async () => {
     server.use(
       http.post('/api/import/qif', () =>
         HttpResponse.json({ transactions: 1, transfers: 0 }, { status: 201 }),

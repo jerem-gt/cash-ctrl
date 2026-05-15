@@ -47,7 +47,7 @@ describe('SubcategoryEditor', () => {
     expect(onSave).toHaveBeenCalled();
   });
 
-  it('désactive le bouton et affiche "..." quand isPending est vrai', () => {
+  it(`désactive le bouton et affiche "..." quand isPending est vrai`, () => {
     render(<SubcategoryEditor {...defaultProps} isPending={true} />);
 
     const submitBtn = screen.getByRole('button', { name: '...' });

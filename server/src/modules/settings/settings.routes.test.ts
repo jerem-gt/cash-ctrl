@@ -38,14 +38,12 @@ describe('/api/settings', () => {
   });
 
   it('PUT / active le backup', async () => {
-    const res = await ctx.agent
-      .put('/api/settings')
-      .send({
-        ...VALID_SETTINGS,
-        backup_enabled: true,
-        backup_frequency_h: 12,
-        backup_max_files: 3,
-      });
+    const res = await ctx.agent.put('/api/settings').send({
+      ...VALID_SETTINGS,
+      backup_enabled: true,
+      backup_frequency_h: 12,
+      backup_max_files: 3,
+    });
     expect(res.status).toBe(200);
     expect(res.body.backup_enabled).toBe(true);
     expect(res.body.backup_frequency_h).toBe(12);

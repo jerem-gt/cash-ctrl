@@ -32,7 +32,7 @@ describe('ScheduledPage', () => {
     expect(screen.getByText(/chaque mois/i)).toBeInTheDocument();
   });
 
-  it('affiche "Aucune planification" quand la liste est vide', async () => {
+  it(`affiche "Aucune planification" quand la liste est vide`, async () => {
     server.use(http.get('/api/scheduled', () => HttpResponse.json([])));
     renderWithProviders(<ScheduledPage />);
     expect(await screen.findByText('Aucune planification.')).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe('ScheduledPage', () => {
 
   // ─── ScheduledRow badges ───────────────────────────────────────────────────
 
-  it('affiche le badge "Suspendu" pour une planification inactive', async () => {
+  it(`affiche le badge "Suspendu" pour une planification inactive`, async () => {
     server.use(
       http.get('/api/scheduled', () => HttpResponse.json([{ ...SCHEDULED[0], active: 0 }])),
     );
@@ -152,7 +152,7 @@ describe('ScheduledPage', () => {
     expect(await screen.findByText('Suspendu')).toBeInTheDocument();
   });
 
-  it('affiche le badge "Transfert" pour un virement planifié', async () => {
+  it(`affiche le badge "Transfert" pour un virement planifié`, async () => {
     server.use(
       http.get('/api/scheduled', () =>
         HttpResponse.json([{ ...SCHEDULED[0], payment_method: 'Transfert', to_account_id: 2 }]),
