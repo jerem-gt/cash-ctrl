@@ -16,8 +16,49 @@ import type {
   StockOperation,
   StockPosition,
   Subcategory,
+  TaxYearData,
   Transaction,
 } from '@/types';
+
+export const TAX_YEARS: number[] = [2026, 2025, 2024];
+
+export const TAX_YEAR_DATA_2025: TaxYearData = {
+  year: 2025,
+  params: {
+    year: 2025,
+    abattement_rate: 0.1,
+    abattement_min: 495,
+    abattement_max: 14171,
+    pass: 47100,
+    created_at: '2025-01-01',
+  },
+  brackets: [
+    { id: 1, year: 2025, min_income: 0, max_income: 11497, rate: 0, created_at: '' },
+    { id: 2, year: 2025, min_income: 11497, max_income: 29315, rate: 11, created_at: '' },
+    { id: 3, year: 2025, min_income: 29315, max_income: 83823, rate: 30, created_at: '' },
+    { id: 4, year: 2025, min_income: 83823, max_income: 180294, rate: 41, created_at: '' },
+    { id: 5, year: 2025, min_income: 180294, max_income: null, rate: 45, created_at: '' },
+  ],
+};
+
+export const TAX_YEAR_DATA_2026: TaxYearData = {
+  year: 2026,
+  params: {
+    year: 2026,
+    abattement_rate: 0.1,
+    abattement_min: 509,
+    abattement_max: 14555,
+    pass: 48060,
+    created_at: '2026-01-01',
+  },
+  brackets: [
+    { id: 6, year: 2026, min_income: 0, max_income: 11600, rate: 0, created_at: '' },
+    { id: 7, year: 2026, min_income: 11600, max_income: 29579, rate: 11, created_at: '' },
+    { id: 8, year: 2026, min_income: 29579, max_income: 84577, rate: 30, created_at: '' },
+    { id: 9, year: 2026, min_income: 84577, max_income: 181917, rate: 41, created_at: '' },
+    { id: 10, year: 2026, min_income: 181917, max_income: null, rate: 45, created_at: '' },
+  ],
+};
 
 export const ACCOUNTS: Account[] = [
   {

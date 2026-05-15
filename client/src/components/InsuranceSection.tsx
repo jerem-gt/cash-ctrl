@@ -13,6 +13,7 @@ import { InsuranceInteretsModal } from './InsuranceInteretsModal';
 import { InsuranceRachatModal } from './InsuranceRachatModal';
 import { InsuranceRevalorisationModal } from './InsuranceRevalorisationModal';
 import { InsuranceVersementModal } from './InsuranceVersementModal';
+import { PerFiscalSimulatorModal } from './PerFiscalSimulatorModal';
 import { Button, showToast } from './ui';
 
 interface SupportRowProps {
@@ -220,12 +221,14 @@ function OperationRow({ op }: Readonly<{ op: InsuranceOperation }>) {
 
 interface Props {
   accountId: number;
+  isPer?: boolean;
 }
 
-export function InsuranceSection({ accountId }: Readonly<Props>) {
+export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useInsurancePositions(accountId);
   const { data: operations = [] } = useInsuranceOperations(accountId);
   const [showAdd, setShowAdd] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
 
@@ -236,9 +239,16 @@ export function InsuranceSection({ accountId }: Readonly<Props>) {
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
             Enveloppe
           </p>
-          <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
-            + Support
-          </Button>
+          <div className="flex items-center gap-2">
+            {isPer && (
+              <Button size="sm" onClick={() => setShowSimulator(true)}>
+                Simulateur fiscal
+              </Button>
+            )}
+            <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
+              + Support
+            </Button>
+          </div>
         </div>
 
         {(() => {
@@ -298,6 +308,7 @@ export function InsuranceSection({ accountId }: Readonly<Props>) {
       {showAdd && (
         <AddInsuranceSupportModal accountId={accountId} onClose={() => setShowAdd(false)} />
       )}
+      {showSimulator && <PerFiscalSimulatorModal onClose={() => setShowSimulator(false)} />}
     </>
   );
 }

@@ -54,6 +54,31 @@ export interface Account {
   capital_restant_du_all: number | null;
 }
 
+// ─── Tax / Fiscal ─────────────────────────────────────────────────────────────
+export interface TaxBracket {
+  id: number;
+  year: number;
+  min_income: number;
+  max_income: number | null;
+  rate: number;
+  created_at: string;
+}
+
+export interface TaxYearParams {
+  year: number;
+  abattement_rate: number;
+  abattement_min: number;
+  abattement_max: number;
+  pass: number;
+  created_at: string;
+}
+
+export interface TaxYearData {
+  year: number;
+  params: TaxYearParams;
+  brackets: TaxBracket[];
+}
+
 export type InsuranceSupportType = 'uc' | 'euro';
 
 export interface InsuranceSupport {

@@ -20,6 +20,7 @@ import type {
   StockOperation,
   StockPosition,
   StockPrice,
+  TaxYearData,
   Transaction,
   TransactionFilters,
   TransactionSplit,
@@ -355,6 +356,12 @@ export const insuranceApi = {
       `/api/insurance/${accountId}/revalorisation`,
       payload,
     ),
+};
+
+// Tax
+export const taxApi = {
+  years: () => request<number[]>('GET', '/api/tax/years'),
+  yearData: (year: number) => request<TaxYearData>('GET', `/api/tax/${year}`),
 };
 
 // Loans
