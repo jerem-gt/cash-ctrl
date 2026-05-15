@@ -53,6 +53,65 @@ const OPERATION_SELECT = `
   FROM insurance_operations io
   JOIN insurance_supports ins ON io.support_id = ins.id`;
 
+function insertInsuranceTxAndOp(
+  db: Database,
+  userId: number,
+  accountId: number,
+  supportId: number,
+  txAccountId: number | null,
+  txType: 'expense' | 'income',
+  opType: 'versement' | 'rachat',
+  amountCents: number,
+  feesCents: number,
+  description: string,
+  date: string,
+): { operation: InsuranceOperation; transaction_id: number | null } {
+  let transactionId: number | null = null;
+  if (txAccountId != null) {
+    const txResult = db
+      .prepare(
+        `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
+         VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      )
+      .run(userId, txAccountId, txType, amountCents, description, date);
+    transactionId = Number(txResult.lastInsertRowid);
+  }
+
+  const feesTransactionId = insertInsuranceFeesTransaction(
+    db,
+    userId,
+    txAccountId,
+    feesCents,
+    `Frais — ${description}`,
+    date,
+  );
+
+  const opResult = db
+    .prepare(
+      `INSERT INTO insurance_operations
+         (user_id, account_id, support_id, transaction_id, fees_transaction_id,
+          type, amount, fees, date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      userId,
+      accountId,
+      supportId,
+      transactionId,
+      feesTransactionId,
+      opType,
+      amountCents,
+      feesCents,
+      date,
+    );
+
+  const op = db
+    .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+    .get(Number(opResult.lastInsertRowid))!;
+
+  return { operation: mapOperation(op), transaction_id: transactionId };
+}
+
 export function createInsuranceRepo(db: Database) {
   return {
     accountBelongsToUser: (accountId: number, userId: number): boolean =>
@@ -155,51 +214,21 @@ export function createInsuranceRepo(db: Database) {
 
       const txAccountId = input.source_account_id ?? null;
 
-      return db.transaction(() => {
-        let transactionId: number | null = null;
-        if (txAccountId != null) {
-          const txResult = db
-            .prepare(
-              `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-               VALUES (?, ?, 'expense', ?, ?, ?, 1)`,
-            )
-            .run(userId, txAccountId, amountCents, description, input.date);
-          transactionId = Number(txResult.lastInsertRowid);
-        }
-
-        const feesTransactionId = insertInsuranceFeesTransaction(
+      return db.transaction(() =>
+        insertInsuranceTxAndOp(
           db,
           userId,
+          input.account_id,
+          input.support_id,
           txAccountId,
+          'expense',
+          'versement',
+          amountCents,
           feesCents,
-          `Frais — ${description}`,
+          description,
           input.date,
-        );
-
-        const opResult = db
-          .prepare(
-            `INSERT INTO insurance_operations
-               (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, amount, fees, date)
-             VALUES (?, ?, ?, ?, ?, 'versement', ?, ?, ?)`,
-          )
-          .run(
-            userId,
-            input.account_id,
-            input.support_id,
-            transactionId,
-            feesTransactionId,
-            amountCents,
-            feesCents,
-            input.date,
-          );
-
-        const op = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(Number(opResult.lastInsertRowid))!;
-
-        return { operation: mapOperation(op), transaction_id: transactionId };
-      })();
+        ),
+      )();
     },
 
     // ─── Rachat ──────────────────────────────────────────────────────────────
@@ -228,51 +257,21 @@ export function createInsuranceRepo(db: Database) {
 
       const txAccountId = input.dest_account_id ?? null;
 
-      return db.transaction(() => {
-        let transactionId: number | null = null;
-        if (txAccountId != null) {
-          const txResult = db
-            .prepare(
-              `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-               VALUES (?, ?, 'income', ?, ?, ?, 1)`,
-            )
-            .run(userId, txAccountId, amountCents, description, input.date);
-          transactionId = Number(txResult.lastInsertRowid);
-        }
-
-        const feesTransactionId = insertInsuranceFeesTransaction(
+      return db.transaction(() =>
+        insertInsuranceTxAndOp(
           db,
           userId,
+          input.account_id,
+          input.support_id,
           txAccountId,
+          'income',
+          'rachat',
+          amountCents,
           feesCents,
-          `Frais — ${description}`,
+          description,
           input.date,
-        );
-
-        const opResult = db
-          .prepare(
-            `INSERT INTO insurance_operations
-               (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-                type, amount, fees, date)
-             VALUES (?, ?, ?, ?, ?, 'rachat', ?, ?, ?)`,
-          )
-          .run(
-            userId,
-            input.account_id,
-            input.support_id,
-            transactionId,
-            feesTransactionId,
-            amountCents,
-            feesCents,
-            input.date,
-          );
-
-        const op = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(Number(opResult.lastInsertRowid))!;
-
-        return { operation: mapOperation(op), transaction_id: transactionId };
-      })();
+        ),
+      )();
     },
 
     // ─── Arbitrage ───────────────────────────────────────────────────────────
