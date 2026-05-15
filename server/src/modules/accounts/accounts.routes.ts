@@ -94,7 +94,10 @@ export function createAccountsRouter(db: Database): Router {
       res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
-    const balance = Math.round(account.balance * 100) / 100;
+    const isInsurance =
+      account.envelope_type === 'life_insurance' || account.envelope_type === 'per';
+    const balance =
+      Math.round((isInsurance ? account.balance_insurance : account.balance) * 100) / 100;
     if (balance !== 0 && !parsed.data.transfer_to_account_id) {
       res
         .status(400)

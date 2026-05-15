@@ -138,27 +138,27 @@ export function createStatsRepo(db: Database) {
       const years: string[] = [];
       for (let y = startYear; y <= currentYear; y++) years.push(y.toString());
 
-      const accountTypes = db
-        .prepare<[number], { name: string }>(
-          `SELECT DISTINCT COALESCE(at.name, 'Autre') AS name
-           FROM accounts a
-           LEFT JOIN account_types at ON a.account_type_id = at.id
-           WHERE a.user_id = ?
-           ORDER BY name`,
-        )
-        .all(userId)
-        .map((r) => r.name);
+      const hasAccounts =
+        (db
+          .prepare<
+            [number],
+            { cnt: number }
+          >('SELECT COUNT(*) AS cnt FROM accounts WHERE user_id = ?')
+          .get(userId)?.cnt ?? 0) > 0;
 
-      if (accountTypes.length === 0) return { account_types: [], data: [] };
+      if (!hasAccounts) return { account_types: [], data: [] };
+
+      const CATEGORIES = ['Prêts', 'Liquidités', 'Épargne', 'Fonds euros', 'Actions & UC'];
 
       // Cash balance per account at year-end (amounts in cents)
       const cashStmt = db.prepare<
         { userId: number; yearEnd: string },
-        { account_id: number; account_type: string; cash_cents: number }
+        { account_id: number; envelope_type: string | null; type_name: string; cash_cents: number }
       >(
         `SELECT
            a.id AS account_id,
-           COALESCE(at.name, 'Autre') AS account_type,
+           at.envelope_type,
+           COALESCE(at.name, 'Autre') AS type_name,
            a.initial_balance + COALESCE((
              SELECT SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END)
              FROM transactions
@@ -215,20 +215,122 @@ export function createStatsRepo(db: Database) {
         return result;
       };
 
+      // All insurance operations sorted chronologically — amounts stored in cents
+      const insuranceOps = db
+        .prepare<
+          [number],
+          {
+            account_id: number;
+            support_type: string;
+            op_type: string;
+            amount: number;
+            fees: number;
+            social_fees: number;
+            date: string;
+          }
+        >(
+          `SELECT io.account_id, ins.type AS support_type, io.type AS op_type, io.amount, io.fees, io.social_fees, io.date
+           FROM insurance_operations io
+           JOIN insurance_supports ins ON io.support_id = ins.id
+           WHERE io.user_id = ?
+           ORDER BY io.date, io.id`,
+        )
+        .all(userId);
+
+      const INSURANCE_POSITIVE_OPS = new Set([
+        'versement',
+        'arbitrage_in',
+        'interets',
+        'revalorisation',
+      ]);
+
+      // Cumulative euro/UC insurance values per account up to a given year-end (in cents).
+      const insuranceValuesAt = (
+        yearEnd: string,
+      ): { euro: Map<number, number>; uc: Map<number, number> } => {
+        const euro = new Map<number, number>();
+        const uc = new Map<number, number>();
+        for (const op of insuranceOps) {
+          if (op.date > yearEnd) break;
+          const gross = INSURANCE_POSITIVE_OPS.has(op.op_type) ? op.amount : -op.amount;
+          const delta = gross - op.fees - op.social_fees;
+          const map = op.support_type === 'euro' ? euro : uc;
+          map.set(op.account_id, (map.get(op.account_id) ?? 0) + delta);
+        }
+        return { euro, uc };
+      };
+
+      // Loan data: principal (in cents) and paid installment principals (in cents)
+      const loanData = db
+        .prepare<[number], { account_id: number; principal_cents: number; loan_id: number }>(
+          `SELECT account_id, principal_amount AS principal_cents, id AS loan_id
+           FROM loans WHERE user_id = ?`,
+        )
+        .all(userId);
+
+      type InstallmentRow = { loan_id: number; principal_cents: number; date: string };
+      const installmentRows: InstallmentRow[] =
+        loanData.length === 0
+          ? []
+          : db
+              .prepare<[number], InstallmentRow>(
+                `SELECT li.loan_id, li.principal_amount AS principal_cents, t.date
+                 FROM loan_installments li
+                 INNER JOIN transactions t ON t.id = li.transaction_id AND t.validated = 1
+                 WHERE li.user_id = ?
+                 ORDER BY t.date`,
+              )
+              .all(userId);
+
+      // Capital restant dû per loan account at year-end (in euros, positive = remaining debt)
+      const capitalRestantAt = (yearEnd: string): Map<number, number> => {
+        const repaidMap = new Map<number, number>();
+        for (const row of installmentRows) {
+          if (row.date > yearEnd) break;
+          repaidMap.set(row.loan_id, (repaidMap.get(row.loan_id) ?? 0) + row.principal_cents);
+        }
+        const result = new Map<number, number>();
+        for (const loan of loanData) {
+          const repaid = repaidMap.get(loan.loan_id) ?? 0;
+          result.set(loan.account_id, toEuros(Math.max(0, loan.principal_cents - repaid)));
+        }
+        return result;
+      };
+
       const data = years.map((year) => {
         const yearEnd = `${year}-12-31`;
         const cashRows = cashStmt.all({ userId, yearEnd });
         const bookValues = bookValuesAt(yearEnd);
+        const { euro: euroValues, uc: ucValues } = insuranceValuesAt(yearEnd);
+        const capitalRestant = capitalRestantAt(yearEnd);
+
         const point: Record<string, string | number> = { year };
-        for (const type of accountTypes) point[type] = 0;
+        for (const cat of CATEGORIES) point[cat] = 0;
+
         for (const row of cashRows) {
-          const total = toEuros(row.cash_cents) + (bookValues.get(row.account_id) ?? 0);
-          point[row.account_type] = Number(point[row.account_type]) + total;
+          if (row.envelope_type === 'loan') {
+            const debt = capitalRestant.get(row.account_id) ?? 0;
+            point['Prêts'] = Number(point['Prêts']) - debt;
+          } else if (row.envelope_type === 'investment') {
+            point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
+            point['Actions & UC'] =
+              Number(point['Actions & UC']) + (bookValues.get(row.account_id) ?? 0);
+          } else if (row.envelope_type === 'life_insurance' || row.envelope_type === 'per') {
+            point['Fonds euros'] =
+              Number(point['Fonds euros']) + toEuros(euroValues.get(row.account_id) ?? 0);
+            point['Actions & UC'] =
+              Number(point['Actions & UC']) + toEuros(ucValues.get(row.account_id) ?? 0);
+          } else if (row.type_name === 'Épargne') {
+            point['Épargne'] = Number(point['Épargne']) + toEuros(row.cash_cents);
+          } else {
+            point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
+          }
         }
+
         return point;
       });
 
-      return { account_types: accountTypes, data };
+      return { account_types: CATEGORIES, data };
     },
   };
 }

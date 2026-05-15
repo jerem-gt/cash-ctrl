@@ -72,8 +72,8 @@ describe('/api/stats', () => {
   });
 
   describe('getBalanceHistory avec Stocks', () => {
-    it('devrait compenser le cash par la book value lors d’un achat d’actions', async () => {
-      // On injecte 1000€ de cash via un revenu pour pouvoir acheter
+    it('devrait répartir cash non investi en Liquidités et book value en Actions & UC', async () => {
+      // Dépôt 1000€ puis achat 500€ => cash restant 500€, book value 500€
       await ctx.agent.post('/api/transactions').send({
         account_id: bourseAccountId,
         type: 'income',
@@ -85,8 +85,6 @@ describe('/api/stats', () => {
         validated: true,
       });
 
-      // Achat de 10 actions à 50€ (Total 500€)
-      // Le cash du compte va baisser de 500€, mais la book value va augmenter de 500€
       await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
         ticker: 'AAPL',
         quantity: 10,
@@ -98,13 +96,14 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
-      // Solde total = Cash (500) + Book Value (500) = 1000
-      // Si ton repo stats bug, il affichera 500 (ou 1500)
-      expect(yearData['Bourse']).toBe(1000);
+      // Liquidités = Courant initial (10) + Bourse cash non investi (500) = 510
+      expect(yearData['Liquidités']).toBe(510);
+      // Actions & UC = book value de l'achat (10 x 50)
+      expect(yearData['Actions & UC']).toBe(500);
     });
 
-    it('devrait refléter une vente avec plus-value', async () => {
-      // 1. Achat (Book Value 100€)
+    it('devrait refléter une vente avec plus-value dans Liquidités', async () => {
+      // Achat book value 100€, vente à 150€ => cash net +50€, plus de positions
       await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
         ticker: 'MSFT',
         quantity: 1,
@@ -113,8 +112,6 @@ describe('/api/stats', () => {
         date: '2023-01-01',
       });
 
-      // 2. Vente à 150€ (Plus-value de 50€)
-      // La book value tombe à 0, le cash augmente de 150€
       await ctx.agent.post(`/api/stocks/${bourseAccountId}/sell`).send({
         ticker: 'MSFT',
         quantity: 1,
@@ -126,8 +123,9 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
-      // Solde initial (0) - Achat (100) + Vente (150) = 50€
-      expect(yearData['Bourse']).toBe(50);
+      // Liquidités = Courant initial (10) + Bourse cash (-100 achat + 150 vente = 50) = 60
+      expect(yearData['Liquidités']).toBe(60);
+      expect(yearData['Actions & UC']).toBe(0);
     });
   });
 });

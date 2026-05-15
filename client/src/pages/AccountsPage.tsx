@@ -16,7 +16,7 @@ import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { useLoan } from '@/hooks/useLoans';
-import { accountSeniority } from '@/lib/account';
+import { accountDisplayBalance, accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { Account } from '@/types.ts';
 
@@ -154,7 +154,7 @@ export default function AccountsPage() {
                 sum +
                 (acc.envelope_type === 'loan'
                   ? Math.max(0, acc.capital_restant_du ?? 0)
-                  : acc.balance),
+                  : accountDisplayBalance(acc)),
               0,
             );
             return (
@@ -279,8 +279,10 @@ function AccountCard({
   onDelete: () => void;
   onClose: () => void;
 }>) {
-  const bal = acc.balance;
-  const displayBal = acc.envelope_type === 'loan' ? Math.max(0, acc.capital_restant_du ?? 0) : bal;
+  const displayBal =
+    acc.envelope_type === 'loan'
+      ? Math.max(0, acc.capital_restant_du ?? 0)
+      : accountDisplayBalance(acc);
   return (
     <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
       <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
@@ -322,7 +324,7 @@ function AccountCard({
         </div>
       </div>
       <p
-        className={`font-sans text-3xl ${acc.envelope_type === 'loan' || bal < 0 ? 'text-red-700' : 'text-stone-900'}`}
+        className={`font-sans text-3xl ${acc.envelope_type === 'loan' || displayBal < 0 ? 'text-red-700' : 'text-stone-900'}`}
       >
         {fmtDec(displayBal)}
       </p>
@@ -377,7 +379,7 @@ function ClosedAccountCard({
           </button>
         </div>
       </div>
-      <p className="font-sans text-3xl text-stone-400">{fmtDec(acc.balance)}</p>
+      <p className="font-sans text-3xl text-stone-400">{fmtDec(accountDisplayBalance(acc))}</p>
       {acc.closed_at && (
         <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium mt-4">
           Clôturé le {fmtDate(acc.closed_at)}

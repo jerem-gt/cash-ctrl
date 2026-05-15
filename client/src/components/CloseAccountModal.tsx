@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { useCloseAccount } from '@/hooks/useAccounts';
+import { accountDisplayBalance } from '@/lib/account';
 import { fmtDec, today } from '@/lib/format';
 import type { Account } from '@/types';
 
@@ -12,7 +13,7 @@ interface Props {
 }
 
 export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly<Props>) {
-  const balance = Math.round(account.balance * 100) / 100;
+  const balance = Math.round(accountDisplayBalance(account) * 100) / 100;
   const needsTransfer = balance !== 0;
 
   const [closedAt, setClosedAt] = useState(today());

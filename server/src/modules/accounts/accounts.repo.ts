@@ -47,8 +47,10 @@ const BALANCE_STOCKS_SUBQUERY = `
 
 const BALANCE_INSURANCE_SUBQUERY = `
   COALESCE(
-    (SELECT SUM(CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation')
-                THEN io.amount ELSE -io.amount END) * 1.0 / 100
+    (SELECT SUM(
+       (CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation')
+             THEN io.amount ELSE -io.amount END) - io.fees - io.social_fees
+     ) * 1.0 / 100
      FROM insurance_operations io
      WHERE io.account_id = a.id),
     0
