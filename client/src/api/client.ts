@@ -178,8 +178,10 @@ export type ScheduledPayload = {
   type: 'income' | 'expense';
   amount: number;
   description: string;
-  subcategory_id: number;
-  payment_method_id: number;
+  subcategory_id: number | null;
+  payment_method_id: number | null;
+  insurance_support_id: number | null;
+  insurance_fees: number;
   notes: string | null;
   recurrence_unit: 'day' | 'week' | 'month' | 'year';
   recurrence_interval: number;
@@ -290,6 +292,7 @@ export type InsuranceFlowPayload = {
   support_id: number;
   amount: number;
   fees: number;
+  social_fees?: number;
   date: string;
   source_account_id?: number | null;
   dest_account_id?: number | null;
@@ -322,6 +325,18 @@ export const insuranceApi = {
     request<InsuranceSupport>('POST', `/api/insurance/${accountId}/supports`, payload),
   deleteSupport: (accountId: number, supportId: number) =>
     request<{ ok: boolean }>('DELETE', `/api/insurance/${accountId}/supports/${supportId}`),
+  deleteOperation: (accountId: number, operationId: number) =>
+    request<{ ok: boolean }>('DELETE', `/api/insurance/${accountId}/operations/${operationId}`),
+  updateOperation: (
+    accountId: number,
+    operationId: number,
+    payload: { amount: number; fees: number; social_fees?: number; date: string },
+  ) =>
+    request<InsuranceOperation>(
+      'PUT',
+      `/api/insurance/${accountId}/operations/${operationId}`,
+      payload,
+    ),
   positions: (accountId: number) =>
     request<InsuranceSupportView[]>('GET', `/api/insurance/${accountId}/positions`),
   operations: (accountId: number) =>

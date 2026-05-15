@@ -274,6 +274,61 @@ describe('/api/insurance', () => {
       });
       expect(res.status).toBe(400);
     });
+
+    it('crée une transaction de prélèvements sociaux sur le compte AV', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: euroSupportId,
+        amount: 500,
+        fees: 0,
+        social_fees: 10,
+        date: TODAY,
+        dest_account_id: standardAccountId,
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.operation.social_fees).toBe(10);
+      expect(res.body.operation.social_fees_transaction_id).toBeGreaterThan(0);
+
+      const txRes = await ctx.agent.get('/api/transactions');
+      const socialTx = txRes.body.data.find(
+        (t: { id: number }) => t.id === res.body.operation.social_fees_transaction_id,
+      );
+      expect(socialTx).toBeDefined();
+      expect(socialTx.type).toBe('expense');
+      expect(socialTx.amount).toBe(10);
+      expect(socialTx.account_id).toBe(avAccountId);
+    });
+
+    it('retourne 400 si montant net après prélèvements sociaux est nul ou négatif', async () => {
+      const res = await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: euroSupportId,
+        amount: 100,
+        fees: 60,
+        social_fees: 50,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('les prélèvements sociaux réduisent la valeur du support', async () => {
+      const posBefore = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
+      const valueBefore = posBefore.body.find((p: { id: number }) => p.id === ucSupportId)
+        .value as number;
+
+      await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: ucSupportId,
+        amount: 100,
+        fees: 0,
+        social_fees: 25,
+        date: TODAY,
+      });
+
+      const posAfter = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
+      const valueAfter = posAfter.body.find((p: { id: number }) => p.id === ucSupportId)
+        .value as number;
+
+      // support value must drop by amount + social_fees = 125
+      expect(valueAfter - valueBefore).toBeCloseTo(-125, 2);
+    });
   });
 
   // ─── Arbitrage ────────────────────────────────────────────────────────────
@@ -701,6 +756,99 @@ describe('/api/insurance', () => {
     });
   });
 
+  // ─── Suppression d'opération ─────────────────────────────────────────────
+
+  describe('DELETE /:accountId/operations/:operationId', () => {
+    it('supprime un versement et sa transaction associée', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Delete Test',
+        type: 'euro',
+      });
+      const vers = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 500,
+        fees: 0,
+        date: TODAY,
+        source_account_id: standardAccountId,
+      });
+      const opId = vers.body.operation.id;
+      const txId = vers.body.transaction_id;
+
+      const del = await ctx.agent.delete(`/api/insurance/${avAccountId}/operations/${opId}`);
+      expect(del.status).toBe(200);
+
+      const ops = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
+      expect(ops.body.find((o: { id: number }) => o.id === opId)).toBeUndefined();
+
+      const txs = await ctx.agent.get('/api/transactions');
+      expect(txs.body.data.find((t: { id: number }) => t.id === txId)).toBeUndefined();
+    });
+
+    it("supprime une paire d'arbitrage entière", async () => {
+      const from = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Arb Del',
+        type: 'euro',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: from.body.id,
+        amount: 1000,
+        fees: 0,
+        date: TODAY,
+      });
+      const to = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC Arb Del',
+        type: 'uc',
+      });
+      const arb = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: from.body.id,
+        to_support_id: to.body.id,
+        from_amount: 300,
+        fees: 0,
+        date: TODAY,
+      });
+      const outId = arb.body.outOperation.id;
+      const inId = arb.body.inOperation.id;
+
+      const del = await ctx.agent.delete(`/api/insurance/${avAccountId}/operations/${outId}`);
+      expect(del.status).toBe(200);
+
+      const ops = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
+      expect(ops.body.find((o: { id: number }) => o.id === outId)).toBeUndefined();
+      expect(ops.body.find((o: { id: number }) => o.id === inId)).toBeUndefined();
+    });
+
+    it('retourne 404 pour une opération inconnue', async () => {
+      const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/operations/99999`);
+      expect(res.status).toBe(404);
+    });
+
+    it('retourne 403 pour un compte inconnu', async () => {
+      const res = await ctx.agent.delete('/api/insurance/99999/operations/1');
+      expect(res.status).toBe(403);
+    });
+
+    it("supprimer la transaction supprime l'opération associée", async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Reverse Del',
+        type: 'euro',
+      });
+      const vers = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 200,
+        fees: 0,
+        date: TODAY,
+        source_account_id: standardAccountId,
+      });
+      const opId = vers.body.operation.id;
+      const txId = vers.body.transaction_id;
+
+      await ctx.agent.delete(`/api/transactions/${txId}`);
+
+      const ops = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
+      expect(ops.body.find((o: { id: number }) => o.id === opId)).toBeUndefined();
+    });
+  });
+
   // ─── Erreur de validation (handler) ──────────────────────────────────────
 
   describe('Erreurs de validation', () => {
@@ -715,6 +863,144 @@ describe('/api/insurance', () => {
     });
   });
 
+  // ─── Modification d'opération ─────────────────────────────────────────────
+
+  describe('PUT /:accountId/operations/:operationId', () => {
+    let versementOpId: number;
+    let versementOpWithFeesId: number;
+    let arbitrageOutOpId: number;
+    let revalorOpId: number;
+    let editSupportId: number;
+
+    beforeAll(async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Fonds Euro Edition',
+        type: 'euro',
+      });
+      editSupportId = sup.body.id;
+
+      const v1 = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: editSupportId,
+        amount: 2000,
+        fees: 0,
+        date: TODAY,
+        source_account_id: standardAccountId,
+      });
+      versementOpId = v1.body.operation.id;
+
+      const v2 = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: editSupportId,
+        amount: 1000,
+        fees: 5,
+        date: TODAY,
+        source_account_id: standardAccountId,
+      });
+      versementOpWithFeesId = v2.body.operation.id;
+
+      const ucSup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC Edition',
+        type: 'uc',
+      });
+      const arb = await ctx.agent.post(`/api/insurance/${avAccountId}/arbitrage`).send({
+        from_support_id: editSupportId,
+        to_support_id: ucSup.body.id,
+        from_amount: 500,
+        fees: 0,
+        date: TODAY,
+      });
+      arbitrageOutOpId = arb.body.outOperation.id;
+
+      const revSup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'UC Revalo Edit',
+        type: 'uc',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: revSup.body.id,
+        amount: 500,
+        fees: 0,
+        date: TODAY,
+      });
+      const rev = await ctx.agent.post(`/api/insurance/${avAccountId}/revalorisation`).send({
+        support_id: revSup.body.id,
+        amount: 10,
+        date: TODAY,
+      });
+      revalorOpId = rev.body.operation.id;
+    });
+
+    it("met à jour le montant et la date d'un versement", async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${versementOpId}`)
+        .send({ amount: 2500, fees: 0, date: TODAY });
+      expect(res.status).toBe(200);
+      expect(res.body.amount).toBe(2500);
+      expect(res.body.date).toBe(TODAY);
+    });
+
+    it('met à jour les frais et la transaction de frais associée', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${versementOpWithFeesId}`)
+        .send({ amount: 1000, fees: 10, date: TODAY });
+      expect(res.status).toBe(200);
+      expect(res.body.fees).toBe(10);
+      expect(res.body.fees_transaction_id).toBeGreaterThan(0);
+    });
+
+    it('supprime la transaction de frais si frais passe à 0', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${versementOpWithFeesId}`)
+        .send({ amount: 1000, fees: 0, date: TODAY });
+      expect(res.status).toBe(200);
+      expect(res.body.fees).toBe(0);
+      expect(res.body.fees_transaction_id).toBeNull();
+    });
+
+    it('crée une transaction de frais si frais passe de 0 à > 0', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${versementOpId}`)
+        .send({ amount: 2500, fees: 3, date: TODAY });
+      expect(res.status).toBe(200);
+      expect(res.body.fees).toBe(3);
+      expect(res.body.fees_transaction_id).toBeGreaterThan(0);
+    });
+
+    it('met à jour une revalorisation avec un montant négatif', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${revalorOpId}`)
+        .send({ amount: -5, fees: 0, date: TODAY });
+      expect(res.status).toBe(200);
+      expect(res.body.amount).toBe(-5);
+    });
+
+    it('retourne 400 pour un arbitrage', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${arbitrageOutOpId}`)
+        .send({ amount: 100, fees: 0, date: TODAY });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si montant négatif sur un versement', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/${versementOpId}`)
+        .send({ amount: -100, fees: 0, date: TODAY });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 404 pour une opération inconnue', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/${avAccountId}/operations/99999`)
+        .send({ amount: 100, fees: 0, date: TODAY });
+      expect(res.status).toBe(404);
+    });
+
+    it('retourne 403 pour un compte inconnu', async () => {
+      const res = await ctx.agent
+        .put(`/api/insurance/99999/operations/${versementOpId}`)
+        .send({ amount: 100, fees: 0, date: TODAY });
+      expect(res.status).toBe(403);
+    });
+  });
+
   // ─── balance_insurance dans /api/accounts ────────────────────────────────
 
   describe('balance_insurance dans /api/accounts', () => {
@@ -724,6 +1010,39 @@ describe('/api/insurance', () => {
       expect(account).toBeDefined();
       expect(account.envelope_type).toBe('life_insurance');
       expect(typeof account.balance_insurance).toBe('number');
+    });
+
+    it('déduit les prélèvements sociaux du balance_insurance', async () => {
+      const supRes = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Balance Test',
+        type: 'euro',
+      });
+      const supportId = supRes.body.id as number;
+
+      const before = (await ctx.agent.get('/api/accounts')).body.find(
+        (a: { id: number }) => a.id === avAccountId,
+      ).balance_insurance as number;
+
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: supportId,
+        amount: 1000,
+        fees: 0,
+        date: TODAY,
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: supportId,
+        amount: 200,
+        fees: 0,
+        social_fees: 30,
+        date: TODAY,
+      });
+
+      const after = (await ctx.agent.get('/api/accounts')).body.find(
+        (a: { id: number }) => a.id === avAccountId,
+      ).balance_insurance as number;
+
+      // net effect: +1000 (versement) - 200 (rachat) - 30 (prél. sociaux) = +770
+      expect(after - before).toBeCloseTo(770, 2);
     });
   });
 });

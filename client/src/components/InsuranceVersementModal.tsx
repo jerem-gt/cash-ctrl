@@ -1,11 +1,13 @@
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useMemo, useState } from 'react';
 
 import { useAccounts } from '@/hooks/useAccounts';
+import { useBanks } from '@/hooks/useBanks';
 import { useVersement } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
-import { Button, FormGroup, Input, Select, showToast } from './ui';
+import { AccountSelect } from './AccountSelect';
+import { Button, FormGroup, Input, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -17,13 +19,15 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
   const [amount, setAmount] = useState('');
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
-  const [sourceAccountId, setSourceAccountId] = useState<number | null>(null);
+  const [sourceAccountId, setSourceAccountId] = useState('');
   const versement = useVersement(accountId);
   const { data: allAccounts = [] } = useAccounts();
+  const { data: banks = [] } = useBanks();
 
   const sourceAccounts = allAccounts.filter(
     (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
   );
+  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -33,7 +37,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
         amount: Number.parseFloat(amount),
         fees: Number.parseFloat(fees) || 0,
         date,
-        source_account_id: sourceAccountId,
+        source_account_id: sourceAccountId ? Number(sourceAccountId) : null,
       },
       {
         onSuccess: () => {
@@ -74,18 +78,14 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
                   (optionnel)
                 </span>
               </label>
-              <Select
+              <AccountSelect
                 id="vers-source"
-                value={sourceAccountId ?? ''}
-                onChange={(e) => setSourceAccountId(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">— Aucun —</option>
-                {sourceAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </Select>
+                value={sourceAccountId}
+                onChange={setSourceAccountId}
+                accounts={sourceAccounts}
+                logoMap={logoMap}
+                placeholder="— Aucun —"
+              />
             </div>
           )}
 

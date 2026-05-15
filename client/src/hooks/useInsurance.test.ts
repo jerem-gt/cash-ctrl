@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   useArbitrage,
   useCreateInsuranceSupport,
+  useDeleteInsuranceOperation,
   useDeleteInsuranceSupport,
   useInsuranceOperations,
   useInsurancePositions,
@@ -14,6 +15,7 @@ import {
   useInterets,
   useRachat,
   useRevalorisation,
+  useUpdateInsuranceOperation,
   useVersement,
 } from './useInsurance';
 
@@ -145,6 +147,30 @@ describe('useRevalorisation', () => {
     const { result } = renderHook(() => useRevalorisation(10), { wrapper: createWrapper() });
     act(() => {
       result.current.mutate({ support_id: 2, amount: 150, date: '2026-01-01' });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useDeleteInsuranceOperation', () => {
+  it('supprime une opération et invalide le cache', async () => {
+    const { result } = renderHook(() => useDeleteInsuranceOperation(10), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate(1);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useUpdateInsuranceOperation', () => {
+  it('met à jour une opération et invalide le cache', async () => {
+    const { result } = renderHook(() => useUpdateInsuranceOperation(10), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({ operationId: 1, amount: 2000, fees: 0, date: '2026-01-01' });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });

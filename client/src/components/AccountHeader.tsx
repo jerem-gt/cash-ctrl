@@ -6,6 +6,7 @@ interface AccountHeaderProps {
   account: Account;
   logoMap: Record<string, string | null>;
   isInvestment: boolean;
+  isInsurance: boolean;
   isLoan: boolean;
   capitalRestantDu: number;
 }
@@ -62,6 +63,20 @@ const StatItem = ({
   </div>
 );
 
+const InsuranceHeader = ({ account }: { account: Account }) => (
+  <div className="flex flex-col md:flex-row items-stretch bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-5">
+    <StatItem label="Fonds euros & UC" value={account.balance_insurance} />
+    {account.balance_stocks > 0 && (
+      <>
+        <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+        <StatItem label="Portefeuille" value={account.balance_stocks} />
+      </>
+    )}
+    <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+    <StatItem label="Total" value={account.balance_insurance + account.balance_stocks} isMain />
+  </div>
+);
+
 const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => (
   <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-50">
     <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
@@ -85,6 +100,7 @@ export function AccountHeader({
   account,
   logoMap,
   isInvestment,
+  isInsurance,
   isLoan,
   capitalRestantDu,
 }: Readonly<AccountHeaderProps>) {
@@ -152,7 +168,8 @@ export function AccountHeader({
           {/* Section Solde */}
           {isLoan && <LoanHeader value={capitalRestantDu} />}
           {isInvestment && <InvestmentHeader account={account} />}
-          {!isLoan && !isInvestment && (
+          {isInsurance && <InsuranceHeader account={account} />}
+          {!isLoan && !isInvestment && !isInsurance && (
             <DefaultHeader value={account.balance} valueAll={account.balance_all} />
           )}
         </div>

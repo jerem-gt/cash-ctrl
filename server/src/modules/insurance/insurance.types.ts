@@ -17,9 +17,11 @@ export interface InsuranceOperation {
   support_type: InsuranceSupportType;
   transaction_id: number | null;
   fees_transaction_id: number | null;
+  social_fees_transaction_id: number | null;
   type: InsuranceOperationType;
   amount: number;
   fees: number;
+  social_fees: number;
   date: string;
   arbitrage_peer_id: number | null;
   created_at: string;
@@ -55,6 +57,7 @@ export interface RachatInput {
   support_id: number;
   amount: number;
   fees: number;
+  social_fees: number;
   date: string;
   dest_account_id?: number | null;
 }
@@ -79,5 +82,12 @@ export interface RevaloriserInput {
   account_id: number;
   support_id: number;
   amount: number;
+  date: string;
+}
+
+export interface UpdateOperationInput {
+  amount: number;
+  fees: number;
+  social_fees: number;
   date: string;
 }

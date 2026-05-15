@@ -31,10 +31,14 @@ describe('InsuranceVersementModal', () => {
   });
 
   it(`affiche le sélecteur "Depuis le compte" avec les comptes standards`, async () => {
+    const user = userEvent.setup();
     renderModal();
-    await screen.findByText('Compte test');
-    expect(screen.getByText('Livret A')).toBeInTheDocument();
-    expect(screen.queryByText('AV Suravenir')).not.toBeInTheDocument();
+
+    await user.click(await screen.findByLabelText(/depuis le compte/i));
+    await screen.findByRole('listbox');
+    expect(screen.getByRole('option', { name: /Compte test/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Livret A/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /AV Suravenir/i })).not.toBeInTheDocument();
   });
 
   it('soumet sans compte source et affiche un toast', async () => {
@@ -55,8 +59,9 @@ describe('InsuranceVersementModal', () => {
     const user = userEvent.setup();
     renderModal();
 
-    await screen.findByText('Compte test');
-    await user.selectOptions(screen.getByRole('combobox'), '1');
+    await user.click(await screen.findByLabelText(/depuis le compte/i));
+    await screen.findByRole('listbox');
+    await user.click(screen.getByRole('option', { name: /Compte test/i }));
     await user.type(screen.getByLabelText(/montant versé/i), '500');
     await user.click(screen.getByRole('button', { name: /enregistrer/i }));
 

@@ -58,17 +58,25 @@ export function TxItem({
       className={`flex items-center gap-3 px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
     >
       {/* GAUCHE : Bloc Date Style "Calendrier" */}
-      <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
-        <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
-          {/* Ex: MAI. */}
-          {new Intl.DateTimeFormat('fr-FR', { month: 'short' })
-            .format(new Date(tx.date))
-            .replace('.', '')}
-        </span>
-        <span className="text-sm font-bold text-stone-700 leading-none mt-0.5">
-          {new Intl.DateTimeFormat('fr-FR', { day: '2-digit' }).format(new Date(tx.date))}
-        </span>
-      </div>
+      {(() => {
+        const d = new Date(tx.date);
+        const isCurrentYear = d.getFullYear() === new Date().getFullYear();
+        return (
+          <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
+            <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
+              {new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(d).replace('.', '')}
+            </span>
+            <span className="text-sm font-bold text-stone-700 leading-none mt-0.5">
+              {new Intl.DateTimeFormat('fr-FR', { day: '2-digit' }).format(d)}
+            </span>
+            {!isCurrentYear && (
+              <span className="text-[8px] text-stone-400 leading-none mt-0.5">
+                {d.getFullYear()}
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ICONE */}
       <span className="text-base leading-none shrink-0 w-5 text-center">{catIcon}</span>

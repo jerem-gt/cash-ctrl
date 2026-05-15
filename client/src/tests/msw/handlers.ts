@@ -195,6 +195,12 @@ export const handlers = [
   http.delete('/api/insurance/:accountId/supports/:supportId', () =>
     HttpResponse.json({ ok: true }),
   ),
+  http.put('/api/insurance/:accountId/operations/:operationId', () =>
+    HttpResponse.json({ ...INSURANCE_OPERATIONS[0], amount: 2000 }),
+  ),
+  http.delete('/api/insurance/:accountId/operations/:operationId', () =>
+    HttpResponse.json({ ok: true }),
+  ),
   http.get('/api/insurance/:accountId/positions', () => HttpResponse.json(INSURANCE_POSITIONS)),
   http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(INSURANCE_OPERATIONS)),
   http.post('/api/insurance/:accountId/versement', () =>

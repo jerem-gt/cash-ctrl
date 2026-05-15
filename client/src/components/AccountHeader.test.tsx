@@ -10,6 +10,7 @@ const props = {
   account: ACCOUNTS[0],
   logoMap: logoMap,
   isInvestment: false,
+  isInsurance: false,
   isLoan: false,
   capitalRestantDu: 0,
 };

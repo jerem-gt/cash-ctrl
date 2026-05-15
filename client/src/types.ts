@@ -107,9 +107,11 @@ export interface InsuranceOperation {
   support_type: InsuranceSupportType;
   transaction_id: number | null;
   fees_transaction_id: number | null;
+  social_fees_transaction_id: number | null;
   type: 'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets' | 'revalorisation';
   amount: number;
   fees: number;
+  social_fees: number;
   date: string;
   arbitrage_peer_id: number | null;
   created_at: string;
@@ -241,6 +243,9 @@ export interface ScheduledTransaction {
   category: string; // résolu par JOIN
   payment_method_id: number | null;
   payment_method: string; // résolu par JOIN
+  insurance_support_id: number | null;
+  insurance_fees: number;
+  insurance_support_name: string;
   notes: string | null;
   recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;

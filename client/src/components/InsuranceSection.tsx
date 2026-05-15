@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react';
 
 import {
+  useDeleteInsuranceOperation,
   useDeleteInsuranceSupport,
   useInsuranceOperations,
   useInsurancePositions,
@@ -9,6 +10,7 @@ import type { InsuranceOperation, InsuranceSupportView } from '@/types';
 
 import { AddInsuranceSupportModal } from './AddInsuranceSupportModal';
 import { InsuranceArbitrageModal } from './InsuranceArbitrageModal';
+import { InsuranceEditOperationModal } from './InsuranceEditOperationModal';
 import { InsuranceInteretsModal } from './InsuranceInteretsModal';
 import { InsuranceRachatModal } from './InsuranceRachatModal';
 import { InsuranceRevalorisationModal } from './InsuranceRevalorisationModal';
@@ -186,7 +188,11 @@ const OP_CONFIG: Record<
   },
 };
 
-function OperationRow({ op }: Readonly<{ op: InsuranceOperation }>) {
+function OperationRow({
+  op,
+  onEdit,
+  onDelete,
+}: Readonly<{ op: InsuranceOperation; onEdit: () => void; onDelete: () => void }>) {
   const cfg = OP_CONFIG[op.type];
   const signed = cfg.sign(op);
   const fmtEur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -207,6 +213,11 @@ function OperationRow({ op }: Readonly<{ op: InsuranceOperation }>) {
       {op.fees > 0 && (
         <span className="text-[10px] text-stone-400 shrink-0">frais {fmtEur(op.fees)}</span>
       )}
+      {op.social_fees > 0 && (
+        <span className="text-[10px] text-stone-400 shrink-0">
+          prél. soc. {fmtEur(op.social_fees)}
+        </span>
+      )}
       <span
         className={`text-sm font-medium tabular-nums shrink-0 ${
           signed >= 0 ? 'text-green-600' : 'text-red-600'
@@ -215,6 +226,20 @@ function OperationRow({ op }: Readonly<{ op: InsuranceOperation }>) {
         {signed >= 0 ? '+' : ''}
         {fmtEur(signed)}
       </span>
+      <button
+        onClick={onEdit}
+        className="text-stone-300 hover:text-stone-500 text-xs leading-none shrink-0 transition-colors px-1"
+        title="Modifier"
+      >
+        ✎
+      </button>
+      <button
+        onClick={onDelete}
+        className="text-stone-300 hover:text-red-400 text-base leading-none shrink-0 transition-colors"
+        title="Supprimer"
+      >
+        ×
+      </button>
     </div>
   );
 }
@@ -227,8 +252,10 @@ interface Props {
 export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useInsurancePositions(accountId);
   const { data: operations = [] } = useInsuranceOperations(accountId);
+  const deleteOp = useDeleteInsuranceOperation(accountId);
   const [showAdd, setShowAdd] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
+  const [editingOp, setEditingOp] = useState<InsuranceOperation | null>(null);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
 
@@ -299,7 +326,12 @@ export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) 
         ) : (
           <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden divide-y divide-stone-50">
             {operations.map((op) => (
-              <OperationRow key={op.id} op={op} />
+              <OperationRow
+                key={op.id}
+                op={op}
+                onEdit={() => setEditingOp(op)}
+                onDelete={() => deleteOp.mutate(op.id, { onError: (e) => showToast(e.message) })}
+              />
             ))}
           </div>
         )}
@@ -309,6 +341,13 @@ export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) 
         <AddInsuranceSupportModal accountId={accountId} onClose={() => setShowAdd(false)} />
       )}
       {showSimulator && <PerFiscalSimulatorModal onClose={() => setShowSimulator(false)} />}
+      {editingOp && (
+        <InsuranceEditOperationModal
+          accountId={accountId}
+          op={editingOp}
+          onClose={() => setEditingOp(null)}
+        />
+      )}
     </>
   );
 }
