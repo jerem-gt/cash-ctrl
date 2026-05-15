@@ -24,6 +24,62 @@ function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
 }
 
+function insertStockTxAndOp(
+  db: Database,
+  userId: number,
+  input: {
+    account_id: number;
+    ticker: string;
+    quantity: number;
+    price_per_share: number;
+    date: string;
+  },
+  txType: 'expense' | 'income',
+  opType: 'buy' | 'sell',
+  mainCents: number,
+  feesCents: number,
+  description: string,
+): { operation: StockOperation; transaction_id: number } {
+  const txResult = db
+    .prepare(
+      'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
+    )
+    .run(userId, input.account_id, txType, mainCents, description, input.date);
+  const transactionId = Number(txResult.lastInsertRowid);
+
+  const feesTransactionId = insertStockFeesTransaction(
+    db,
+    userId,
+    input.account_id,
+    feesCents,
+    `Frais — ${description}`,
+    input.date,
+  );
+
+  const opResult = db
+    .prepare(
+      'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    )
+    .run(
+      userId,
+      input.account_id,
+      transactionId,
+      feesTransactionId,
+      input.ticker,
+      opType,
+      input.quantity,
+      input.price_per_share,
+      feesCents,
+      input.date,
+    );
+
+  const operation = db
+    .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
+    .get(Number(opResult.lastInsertRowid))!;
+
+  return { operation: mapOperation(operation), transaction_id: transactionId };
+}
+
 function insertStockFeesTransaction(
   db: Database,
   userId: number,
@@ -81,47 +137,9 @@ export function createStocksRepo(db: Database) {
       const mainCents = Math.round(input.quantity * input.price_per_share * 100);
       const description = input.description ?? `Achat ${input.quantity} × ${input.ticker}`;
 
-      return db.transaction(() => {
-        const txResult = db
-          .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
-          )
-          .run(userId, input.account_id, 'expense', mainCents, description, input.date);
-        const transactionId = Number(txResult.lastInsertRowid);
-
-        const feesTransactionId = insertStockFeesTransaction(
-          db,
-          userId,
-          input.account_id,
-          feesCents,
-          `Frais — ${description}`,
-          input.date,
-        );
-
-        const opResult = db
-          .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          )
-          .run(
-            userId,
-            input.account_id,
-            transactionId,
-            feesTransactionId,
-            input.ticker,
-            'buy',
-            input.quantity,
-            input.price_per_share,
-            feesCents,
-            input.date,
-          );
-        const operationId = Number(opResult.lastInsertRowid);
-
-        const operation = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId)!;
-
-        return { operation: mapOperation(operation), transaction_id: transactionId };
-      })();
+      return db.transaction(() =>
+        insertStockTxAndOp(db, userId, input, 'expense', 'buy', mainCents, feesCents, description),
+      )();
     },
 
     sell(userId: number, input: SellInput): { operation: StockOperation; transaction_id: number } {
@@ -146,47 +164,9 @@ export function createStocksRepo(db: Database) {
 
       const description = input.description ?? `Vente ${input.quantity} × ${input.ticker}`;
 
-      return db.transaction(() => {
-        const txResult = db
-          .prepare(
-            'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
-          )
-          .run(userId, input.account_id, 'income', mainCents, description, input.date);
-        const transactionId = Number(txResult.lastInsertRowid);
-
-        const feesTransactionId = insertStockFeesTransaction(
-          db,
-          userId,
-          input.account_id,
-          feesCents,
-          `Frais — ${description}`,
-          input.date,
-        );
-
-        const opResult = db
-          .prepare(
-            'INSERT INTO stock_operations (user_id, account_id, transaction_id, fees_transaction_id, ticker, type, quantity, price_per_share, fees, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          )
-          .run(
-            userId,
-            input.account_id,
-            transactionId,
-            feesTransactionId,
-            input.ticker,
-            'sell',
-            input.quantity,
-            input.price_per_share,
-            feesCents,
-            input.date,
-          );
-        const operationId = Number(opResult.lastInsertRowid);
-
-        const operation = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId)!;
-
-        return { operation: mapOperation(operation), transaction_id: transactionId };
-      })();
+      return db.transaction(() =>
+        insertStockTxAndOp(db, userId, input, 'income', 'sell', mainCents, feesCents, description),
+      )();
     },
 
     getPositions: (accountId: number): StockPosition[] =>
