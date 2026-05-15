@@ -44,6 +44,7 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 - **Runner**: **Vitest** est le test runner global du projet.
 - **Client Testing**: Utiliser `@testing-library/react` et `jsdom`.
 - **Mocks**: Utiliser **MSW** (Mock Service Worker) pour intercepter les appels API et `vi.fn()` pour les mocks unitaires.
+- **Intitulés de tests** : toujours utiliser des guillemets doubles `"` pour les chaînes passées à `it()`, `describe()` et `test()`. Les apostrophes françaises (`d'`, `l'`, `n'`...) dans une single-quoted string cassent le parser oxc/esbuild sans warning.
 
 ## Project Structure
 - `client/src/` : Code source React.

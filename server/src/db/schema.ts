@@ -277,5 +277,27 @@ export function initSchema(db: Database) {
             transaction_id      INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             UNIQUE (loan_id, installment_number)
         );
+
+        CREATE TABLE IF NOT EXISTS tax_brackets
+        (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            year             INTEGER NOT NULL,
+            min_income_cents INTEGER NOT NULL,
+            max_income_cents INTEGER,
+            rate             REAL    NOT NULL,
+            created_at       TEXT    DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_tax_brackets_year ON tax_brackets(year);
+
+        CREATE TABLE IF NOT EXISTS tax_year_params
+        (
+            year                 INTEGER PRIMARY KEY,
+            abattement_rate      REAL    NOT NULL DEFAULT 0.1,
+            abattement_min_cents INTEGER NOT NULL,
+            abattement_max_cents INTEGER NOT NULL,
+            pass_cents           INTEGER NOT NULL,
+            created_at           TEXT    DEFAULT (datetime('now'))
+        );
     `);
 }

@@ -72,7 +72,7 @@ export default function AccountDetailPage() {
       {/* Enveloppe assurance */}
       {isInsurance && (
         <div className="px-1">
-          <InsuranceSection accountId={accountId} />
+          <InsuranceSection accountId={accountId} isPer={account?.envelope_type === 'per'} />
         </div>
       )}
 

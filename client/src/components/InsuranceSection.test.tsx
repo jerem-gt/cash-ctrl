@@ -8,8 +8,8 @@ import { INSURANCE_POSITIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
-function renderSection(accountId = 10) {
-  return renderWithProviders(<InsuranceSection accountId={accountId} />);
+function renderSection(accountId = 10, isPer = false) {
+  return renderWithProviders(<InsuranceSection accountId={accountId} isPer={isPer} />);
 }
 
 describe('InsuranceSection', () => {
@@ -184,6 +184,26 @@ describe('InsuranceSection', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Revalorisation enregistrée'),
     );
+  });
+
+  it("n'affiche pas le bouton Simulateur fiscal pour une Assurance Vie (isPer=false)", async () => {
+    renderSection(10, false);
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.queryByRole('button', { name: /simulateur fiscal/i })).not.toBeInTheDocument();
+  });
+
+  it('affiche le bouton Simulateur fiscal pour un PER (isPer=true)', async () => {
+    renderSection(10, true);
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.getByRole('button', { name: /simulateur fiscal/i })).toBeInTheDocument();
+  });
+
+  it('ouvre la modale simulateur au clic sur Simulateur fiscal', async () => {
+    const user = userEvent.setup();
+    renderSection(10, true);
+    await screen.findAllByText('Fonds Euro Sécurité');
+    await user.click(screen.getByRole('button', { name: /simulateur fiscal/i }));
+    expect(screen.getByText('Simulateur fiscal PER')).toBeInTheDocument();
   });
 
   it('supprime un support et affiche un toast', async () => {

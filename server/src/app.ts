@@ -20,6 +20,7 @@ import { createSettingsRouter } from './modules/settings/settings.routes';
 import { createStatsRouter } from './modules/stats/stats.routes';
 import { createStocksRouter } from './modules/stocks/stocks.routes';
 import { createSubcategoriesRouter } from './modules/subcategories/subcategories.routes';
+import { createTaxRouter } from './modules/tax/tax.routes';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes';
 import { createTransfersRouter } from './modules/transfers/transfers.routes';
 import { SQLiteSessionStore } from './session-store.js';
@@ -86,6 +87,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/insurance', createInsuranceRouter(db));
   app.use('/api/loans', createLoansRouter(db));
   app.use('/api/stats', createStatsRouter(db));
+  app.use('/api/tax', createTaxRouter(db));
 
   app.use(globalErrorHandler);
 

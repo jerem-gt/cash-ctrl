@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 
 import { createDb } from '../../db/init';
 import { initSchema } from '../../db/schema';
+import { seedTaxData } from '../../db/seeds/tax.seed';
 
 // IDs des données seed (stables car AUTOINCREMENT depuis 1 à chaque DB fraîche)
 export const SEED = {
@@ -117,6 +118,7 @@ export function createTestDb(): Database {
   const db = createDb(':memory:');
   initSchema(db);
   db.prepare('INSERT INTO banks (name) VALUES (?)').run('DefaultBank');
+  seedTaxData(db);
   return db;
 }
 

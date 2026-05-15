@@ -18,6 +18,9 @@ import {
   STOCK_POSITIONS,
   STOCK_SEARCH_RESULTS,
   SUBCATEGORIES,
+  TAX_YEAR_DATA_2025,
+  TAX_YEAR_DATA_2026,
+  TAX_YEARS,
   TRANSACTIONS,
 } from '../fixtures';
 
@@ -224,6 +227,14 @@ export const handlers = [
       { status: 201 },
     ),
   ),
+
+  // Tax
+  http.get('/api/tax/years', () => HttpResponse.json(TAX_YEARS)),
+  http.get('/api/tax/:year', ({ params }) => {
+    if (String(params.year) === '2026') return HttpResponse.json(TAX_YEAR_DATA_2026);
+    if (String(params.year) === '2025') return HttpResponse.json(TAX_YEAR_DATA_2025);
+    return HttpResponse.json({ error: 'Barème introuvable' }, { status: 404 });
+  }),
 
   // Stats
   http.get('/api/stats', () =>
