@@ -53,19 +53,35 @@ const OPERATION_SELECT = `
   FROM insurance_operations io
   JOIN insurance_supports ins ON io.support_id = ins.id`;
 
+type InsuranceTxAndOpOpts = {
+  accountId: number;
+  supportId: number;
+  txAccountId: number | null;
+  txType: 'expense' | 'income';
+  opType: 'versement' | 'rachat';
+  amountCents: number;
+  feesCents: number;
+  description: string;
+  date: string;
+};
+
 function insertInsuranceTxAndOp(
   db: Database,
   userId: number,
-  accountId: number,
-  supportId: number,
-  txAccountId: number | null,
-  txType: 'expense' | 'income',
-  opType: 'versement' | 'rachat',
-  amountCents: number,
-  feesCents: number,
-  description: string,
-  date: string,
+  opts: InsuranceTxAndOpOpts,
 ): { operation: InsuranceOperation; transaction_id: number | null } {
+  const {
+    accountId,
+    supportId,
+    txAccountId,
+    txType,
+    opType,
+    amountCents,
+    feesCents,
+    description,
+    date,
+  } = opts;
+
   let transactionId: number | null = null;
   if (txAccountId != null) {
     const txResult = db
@@ -215,19 +231,17 @@ export function createInsuranceRepo(db: Database) {
       const txAccountId = input.source_account_id ?? null;
 
       return db.transaction(() =>
-        insertInsuranceTxAndOp(
-          db,
-          userId,
-          input.account_id,
-          input.support_id,
+        insertInsuranceTxAndOp(db, userId, {
+          accountId: input.account_id,
+          supportId: input.support_id,
           txAccountId,
-          'expense',
-          'versement',
+          txType: 'expense',
+          opType: 'versement',
           amountCents,
           feesCents,
           description,
-          input.date,
-        ),
+          date: input.date,
+        }),
       )();
     },
 
@@ -258,19 +272,17 @@ export function createInsuranceRepo(db: Database) {
       const txAccountId = input.dest_account_id ?? null;
 
       return db.transaction(() =>
-        insertInsuranceTxAndOp(
-          db,
-          userId,
-          input.account_id,
-          input.support_id,
+        insertInsuranceTxAndOp(db, userId, {
+          accountId: input.account_id,
+          supportId: input.support_id,
           txAccountId,
-          'income',
-          'rachat',
+          txType: 'income',
+          opType: 'rachat',
           amountCents,
           feesCents,
           description,
-          input.date,
-        ),
+          date: input.date,
+        }),
       )();
     },
 
