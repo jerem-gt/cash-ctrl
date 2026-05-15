@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
 import {
   getBankFeesSubcategoryId,
   getPrelevementPaymentMethodId,
@@ -25,6 +26,26 @@ function mapOperation(row: InsuranceOperation): InsuranceOperation {
   };
 }
 
+function insertInsuranceFeesTransaction(
+  db: Database,
+  userId: number,
+  accountId: number | null,
+  feesCents: number,
+  feesDescription: string,
+  date: string,
+): number | null {
+  if (feesCents <= 0 || accountId == null) return null;
+  const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+  const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+  const result = db
+    .prepare(
+      `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
+       VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
+    )
+    .run(userId, accountId, feesCents, feesDescription, subcategoryId, date, paymentMethodId);
+  return Number(result.lastInsertRowid);
+}
+
 const OPERATION_SELECT = `
   SELECT io.id, io.account_id, io.support_id, ins.name AS support_name, ins.type AS support_type,
          io.transaction_id, io.fees_transaction_id, io.type,
@@ -34,22 +55,12 @@ const OPERATION_SELECT = `
 
 export function createInsuranceRepo(db: Database) {
   return {
-    accountBelongsToUser(accountId: number, userId: number): boolean {
-      return !!db
-        .prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?')
-        .get(accountId, userId);
-    },
+    accountBelongsToUser: (accountId: number, userId: number): boolean =>
+      checkAccountOwnership(db, accountId, userId),
 
     isInsuranceAccount(accountId: number): boolean {
-      const row = db
-        .prepare<[number], { envelope_type: string | null }>(
-          `SELECT at.envelope_type
-           FROM accounts a
-           LEFT JOIN account_types at ON a.account_type_id = at.id
-           WHERE a.id = ?`,
-        )
-        .get(accountId);
-      return row?.envelope_type === 'life_insurance' || row?.envelope_type === 'per';
+      const type = getAccountEnvelopeType(db, accountId);
+      return type === 'life_insurance' || type === 'per';
     },
 
     // ─── Supports ────────────────────────────────────────────────────────────
@@ -156,26 +167,14 @@ export function createInsuranceRepo(db: Database) {
           transactionId = Number(txResult.lastInsertRowid);
         }
 
-        let feesTransactionId: number | null = null;
-        if (feesCents > 0 && txAccountId != null) {
-          const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-          const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-          const feesTx = db
-            .prepare(
-              `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
-               VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
-            )
-            .run(
-              userId,
-              txAccountId,
-              feesCents,
-              `Frais — ${description}`,
-              subcategoryId,
-              input.date,
-              paymentMethodId,
-            );
-          feesTransactionId = Number(feesTx.lastInsertRowid);
-        }
+        const feesTransactionId = insertInsuranceFeesTransaction(
+          db,
+          userId,
+          txAccountId,
+          feesCents,
+          `Frais — ${description}`,
+          input.date,
+        );
 
         const opResult = db
           .prepare(
@@ -241,26 +240,14 @@ export function createInsuranceRepo(db: Database) {
           transactionId = Number(txResult.lastInsertRowid);
         }
 
-        let feesTransactionId: number | null = null;
-        if (feesCents > 0 && txAccountId != null) {
-          const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-          const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-          const feesTx = db
-            .prepare(
-              `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
-               VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
-            )
-            .run(
-              userId,
-              txAccountId,
-              feesCents,
-              `Frais — ${description}`,
-              subcategoryId,
-              input.date,
-              paymentMethodId,
-            );
-          feesTransactionId = Number(feesTx.lastInsertRowid);
-        }
+        const feesTransactionId = insertInsuranceFeesTransaction(
+          db,
+          userId,
+          txAccountId,
+          feesCents,
+          `Frais — ${description}`,
+          input.date,
+        );
 
         const opResult = db
           .prepare(
@@ -307,26 +294,14 @@ export function createInsuranceRepo(db: Database) {
       }
 
       return db.transaction(() => {
-        let feesTransactionId: number | null = null;
-        if (feesCents > 0) {
-          const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-          const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-          const feesTx = db
-            .prepare(
-              `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
-               VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
-            )
-            .run(
-              userId,
-              input.account_id,
-              feesCents,
-              `Frais arbitrage — ${fromSupport.name} → ${toSupport.name}`,
-              subcategoryId,
-              input.date,
-              paymentMethodId,
-            );
-          feesTransactionId = Number(feesTx.lastInsertRowid);
-        }
+        const feesTransactionId = insertInsuranceFeesTransaction(
+          db,
+          userId,
+          input.account_id,
+          feesCents,
+          `Frais arbitrage — ${fromSupport.name} → ${toSupport.name}`,
+          input.date,
+        );
 
         const outResult = db
           .prepare(

@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
+import { parseBody } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createPaymentMethodsRepo } from './payment-methods.repo';
@@ -23,16 +24,10 @@ export function createPaymentMethodsRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, schema, req.body);
+    if (!data) return;
     const repo = getRepo(req);
-    const result = repo.create({
-      name: parsed.data.name.trim(),
-      icon: parsed.data.icon,
-    });
+    const result = repo.create({ name: data.name.trim(), icon: data.icon });
     res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -43,12 +38,9 @@ export function createPaymentMethodsRouter(db: Database): Router {
       res.status(404).json({ error: 'Payment method not found' });
       return;
     }
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    repo.update(id, { name: parsed.data.name.trim(), icon: parsed.data.icon });
+    const data = parseBody(res, schema, req.body);
+    if (!data) return;
+    repo.update(id, { name: data.name.trim(), icon: data.icon });
     res.json(repo.getById(id));
   });
 
