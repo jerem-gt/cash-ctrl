@@ -303,7 +303,7 @@ function CategoryMappingRow({
   onChange: (c: CategoryChoice) => void;
 }>) {
   const parts = qifCategory.split(':');
-  const [defaultSubcatName] = [...parts].reverse();
+  const defaultSubcatName = parts.at(-1)!;
   const action = choice?.action ?? 'skip';
 
   const handleActionChange = (newAction: string) => {
