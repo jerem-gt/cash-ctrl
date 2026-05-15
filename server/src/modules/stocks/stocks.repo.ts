@@ -33,13 +33,16 @@ function insertStockTxAndOp(
     quantity: number;
     price_per_share: number;
     date: string;
+    description?: string;
   },
   txType: 'expense' | 'income',
   opType: 'buy' | 'sell',
   mainCents: number,
   feesCents: number,
-  description: string,
 ): { operation: StockOperation; transaction_id: number } {
+  const descriptionPrefix = opType === 'buy' ? 'Achat' : 'Vente';
+  const description =
+    input.description ?? `${descriptionPrefix} ${input.quantity} × ${input.ticker}`;
   const txResult = db
     .prepare(
       'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 1)',
@@ -135,10 +138,9 @@ export function createStocksRepo(db: Database) {
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {
       const feesCents = toCents(input.fees);
       const mainCents = Math.round(input.quantity * input.price_per_share * 100);
-      const description = input.description ?? `Achat ${input.quantity} × ${input.ticker}`;
 
       return db.transaction(() =>
-        insertStockTxAndOp(db, userId, input, 'expense', 'buy', mainCents, feesCents, description),
+        insertStockTxAndOp(db, userId, input, 'expense', 'buy', mainCents, feesCents),
       )();
     },
 
@@ -162,10 +164,8 @@ export function createStocksRepo(db: Database) {
         throw new Error('Le montant net après frais doit être positif');
       }
 
-      const description = input.description ?? `Vente ${input.quantity} × ${input.ticker}`;
-
       return db.transaction(() =>
-        insertStockTxAndOp(db, userId, input, 'income', 'sell', mainCents, feesCents, description),
+        insertStockTxAndOp(db, userId, input, 'income', 'sell', mainCents, feesCents),
       )();
     },
 
