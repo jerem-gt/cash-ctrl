@@ -19,6 +19,9 @@ export interface ScheduledTransaction {
   recurrence_day: number | null;
   recurrence_month: number | null;
   to_account_id: number | null;
+  insurance_support_id: number | null;
+  insurance_fees: number;
+  insurance_support_name: string;
   weekend_handling: WeekendHandling;
   start_date: string;
   end_date: string | null;
@@ -34,8 +37,10 @@ export interface CreateScheduledInput {
   type: TransactionType;
   amount: number;
   description: string;
-  subcategory_id: number;
-  payment_method_id: number;
+  subcategory_id: number | null;
+  payment_method_id: number | null;
+  insurance_support_id: number | null;
+  insurance_fees: number;
   notes: string | null;
   recurrence_unit: RecurrenceUnit;
   recurrence_interval: number;

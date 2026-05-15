@@ -4,26 +4,29 @@ import { toCents, toEuros } from '../../lib/money';
 import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
 
 function mapScheduled(row: ScheduledTransaction): ScheduledTransaction {
-  return { ...row, amount: toEuros(row.amount) };
+  return { ...row, amount: toEuros(row.amount), insurance_fees: toEuros(row.insurance_fees) };
 }
 
 const SCHED_COLUMS = `
   s.id, s.user_id, s.account_id, s.to_account_id, s.type, s.amount, s.description,
   s.subcategory_id, s.payment_method_id, s.notes,
   s.recurrence_unit, s.recurrence_interval, s.recurrence_day, s.recurrence_month,
-  s.weekend_handling, s.start_date, s.end_date, s.active, s.last_generated_until, s.created_at
+  s.weekend_handling, s.start_date, s.end_date, s.active, s.last_generated_until, s.created_at,
+  s.insurance_support_id, s.insurance_fees
 `;
 
 const GET_SQL = `
   SELECT ${SCHED_COLUMS}, a.name as account_name, sc.category_id,
          COALESCE(c.name, '') as category,
          COALESCE(sc.name, '') as subcategory,
-         COALESCE(pm.name, '') as payment_method
+         COALESCE(pm.name, '') as payment_method,
+         COALESCE(isup.name, '') as insurance_support_name
   FROM scheduled_transactions s
   JOIN accounts a ON s.account_id = a.id
   LEFT JOIN subcategories sc ON s.subcategory_id = sc.id
   LEFT JOIN categories c ON sc.category_id = c.id
   LEFT JOIN payment_methods pm ON s.payment_method_id = pm.id
+  LEFT JOIN insurance_supports isup ON s.insurance_support_id = isup.id
 `;
 
 const GET_BY_USER_ID_SQL = `
@@ -58,10 +61,10 @@ export function createScheduledRepo(db: Database) {
     INSERT INTO scheduled_transactions
     (user_id, account_id, to_account_id, type, amount, description, subcategory_id, payment_method_id, notes,
      recurrence_unit, recurrence_interval, recurrence_day, recurrence_month,
-     weekend_handling, start_date, end_date, active)
+     weekend_handling, start_date, end_date, active, insurance_support_id, insurance_fees)
     VALUES (:user_id, :account_id, :to_account_id, :type, :amount, :description, :subcategory_id, :payment_method_id, :notes,
             :recurrence_unit, :recurrence_interval, :recurrence_day, :recurrence_month,
-            :weekend_handling, :start_date, :end_date, :active)
+            :weekend_handling, :start_date, :end_date, :active, :insurance_support_id, :insurance_fees)
   `);
 
   const updateStmt = db.prepare(`
@@ -82,6 +85,8 @@ export function createScheduledRepo(db: Database) {
         start_date           = :start_date,
         end_date             = :end_date,
         active               = :active,
+        insurance_support_id = :insurance_support_id,
+        insurance_fees       = :insurance_fees,
         last_generated_until = NULL
     WHERE id = :id
     AND user_id = :user_id
@@ -105,6 +110,7 @@ export function createScheduledRepo(db: Database) {
       return insertStmt.run({
         ...data,
         amount: toCents(data.amount),
+        insurance_fees: toCents(data.insurance_fees),
         user_id: userId,
         active: data.active ? 1 : 0,
       });
@@ -117,6 +123,7 @@ export function createScheduledRepo(db: Database) {
         updateStmt.run({
           ...data,
           amount: toCents(data.amount),
+          insurance_fees: toCents(data.insurance_fees),
           id: id,
           user_id: userId,
           active: data.active ? 1 : 0,

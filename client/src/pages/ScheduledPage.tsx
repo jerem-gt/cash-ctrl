@@ -1,6 +1,7 @@
 import { type SyntheticEvent, useMemo, useState } from 'react';
 
 import type { ScheduledPayload } from '@/api/client';
+import { AccountSelect } from '@/components/AccountSelect';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import {
   Button,
@@ -15,6 +16,7 @@ import {
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
+import { useInsuranceSupports } from '@/hooks/useInsurance';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import {
   useCreateScheduled,
@@ -24,7 +26,13 @@ import {
 } from '@/hooks/useScheduled';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { fmtDec, today } from '@/lib/format';
-import type { RecurrenceUnit, ScheduledTransaction, Subcategory, WeekendHandling } from '@/types';
+import type {
+  Account,
+  RecurrenceUnit,
+  ScheduledTransaction,
+  Subcategory,
+  WeekendHandling,
+} from '@/types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,9 +74,16 @@ const WEEKEND_LABELS: Record<WeekendHandling, string> = {
   after: 'Décaler au lundi',
 };
 
+function isInsuranceAccount(a: Account) {
+  return a.envelope_type === 'life_insurance' || a.envelope_type === 'per';
+}
+
 // ─── Form state ───────────────────────────────────────────────────────────────
 
+type ScheduledMode = 'transaction' | 'transfer' | 'versement';
+
 type FormState = {
+  mode: ScheduledMode;
   account_id: string;
   to_account_id: string;
   type: 'income' | 'expense';
@@ -77,6 +92,8 @@ type FormState = {
   category_id: string;
   subcategory_id: string;
   payment_method_id: string;
+  insurance_support_id: string;
+  insurance_fees: string;
   notes: string;
   recurrence_unit: RecurrenceUnit;
   recurrence_interval: string;
@@ -90,6 +107,7 @@ type FormState = {
 
 function emptyForm(firstAccountId?: number): FormState {
   return {
+    mode: 'transaction',
     account_id: firstAccountId ? String(firstAccountId) : '',
     to_account_id: '',
     type: 'expense',
@@ -98,6 +116,8 @@ function emptyForm(firstAccountId?: number): FormState {
     category_id: '',
     subcategory_id: '',
     payment_method_id: '',
+    insurance_support_id: '',
+    insurance_fees: '0',
     notes: '',
     recurrence_unit: 'month',
     recurrence_interval: '1',
@@ -111,7 +131,14 @@ function emptyForm(firstAccountId?: number): FormState {
 }
 
 function schedToForm(s: ScheduledTransaction): FormState {
+  const mode: ScheduledMode =
+    s.insurance_support_id != null
+      ? 'versement'
+      : s.to_account_id != null
+        ? 'transfer'
+        : 'transaction';
   return {
+    mode,
     account_id: String(s.account_id),
     to_account_id: s.to_account_id == null ? '' : String(s.to_account_id),
     type: s.type,
@@ -120,6 +147,8 @@ function schedToForm(s: ScheduledTransaction): FormState {
     category_id: String(s.category_id ?? ''),
     subcategory_id: String(s.subcategory_id ?? ''),
     payment_method_id: String(s.payment_method_id ?? ''),
+    insurance_support_id: s.insurance_support_id == null ? '' : String(s.insurance_support_id),
+    insurance_fees: String(s.insurance_fees),
     notes: s.notes ?? '',
     recurrence_unit: s.recurrence_unit,
     recurrence_interval: String(s.recurrence_interval),
@@ -137,26 +166,61 @@ function formToPayload(
   paymentMethods: { id: number; name: string }[],
 ): ScheduledPayload {
   const unit = f.recurrence_unit;
-  const selectedPm = paymentMethods.find((m) => String(m.id) === f.payment_method_id);
-  const isTransfer = selectedPm?.name === 'Transfert';
-  return {
-    account_id: Number.parseInt(f.account_id),
-    to_account_id: isTransfer && f.to_account_id ? Number.parseInt(f.to_account_id) : null,
-    type: f.type,
+  const recurrenceDay =
+    unit === 'month' || unit === 'year' ? Number.parseInt(f.recurrence_day) || 1 : null;
+  const recurrenceMonth = unit === 'year' ? Number.parseInt(f.recurrence_month) || 1 : null;
+
+  const base = {
     amount: Number.parseFloat(f.amount),
     description: f.description.trim(),
-    subcategory_id: Number.parseInt(f.subcategory_id),
-    payment_method_id: Number.parseInt(f.payment_method_id),
     notes: f.notes.trim() || null,
     recurrence_unit: unit,
     recurrence_interval: Number.parseInt(f.recurrence_interval) || 1,
-    recurrence_day:
-      unit === 'month' || unit === 'year' ? Number.parseInt(f.recurrence_day) || 1 : null,
-    recurrence_month: unit === 'year' ? Number.parseInt(f.recurrence_month) || 1 : null,
+    recurrence_day: recurrenceDay,
+    recurrence_month: recurrenceMonth,
     weekend_handling: f.weekend_handling,
     start_date: f.start_date,
     end_date: f.end_date || null,
     active: f.active,
+  };
+
+  if (f.mode === 'transfer') {
+    const transferPm = paymentMethods.find((m) => m.name === 'Transfert');
+    return {
+      ...base,
+      account_id: Number.parseInt(f.account_id),
+      to_account_id: f.to_account_id ? Number.parseInt(f.to_account_id) : null,
+      type: 'expense',
+      subcategory_id: null,
+      payment_method_id: transferPm?.id ?? null,
+      insurance_support_id: null,
+      insurance_fees: 0,
+    };
+  }
+
+  if (f.mode === 'versement') {
+    return {
+      ...base,
+      account_id: Number.parseInt(f.account_id),
+      to_account_id: f.to_account_id ? Number.parseInt(f.to_account_id) : null,
+      type: 'expense',
+      subcategory_id: null,
+      payment_method_id: null,
+      insurance_support_id: f.insurance_support_id ? Number.parseInt(f.insurance_support_id) : null,
+      insurance_fees: Number.parseFloat(f.insurance_fees) || 0,
+    };
+  }
+
+  // transaction
+  return {
+    ...base,
+    account_id: Number.parseInt(f.account_id),
+    to_account_id: null,
+    type: f.type,
+    subcategory_id: Number.parseInt(f.subcategory_id) || null,
+    payment_method_id: Number.parseInt(f.payment_method_id) || null,
+    insurance_support_id: null,
+    insurance_fees: 0,
   };
 }
 
@@ -174,6 +238,12 @@ interface ModalProps {
   onCancel: () => void;
 }
 
+const MODE_LABELS: Record<ScheduledMode, string> = {
+  transaction: 'Transaction',
+  transfer: 'Transfert',
+  versement: 'Versement AV/PER',
+};
+
 function ScheduledModal({
   initial,
   accounts = [],
@@ -189,8 +259,31 @@ function ScheduledModal({
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const selectedPm = paymentMethods.find((m) => String(m.id) === form.payment_method_id);
-  const isTransfer = selectedPm?.name === 'Transfert';
+  const insuranceAccounts = accounts.filter(isInsuranceAccount);
+  const regularAccounts = accounts.filter((a) => !isInsuranceAccount(a));
+
+  const { data: supports = [] } = useInsuranceSupports(
+    form.mode === 'versement' ? Number(form.account_id) || 0 : 0,
+  );
+
+  const handleModeChange = (mode: ScheduledMode) => {
+    setForm((f) => ({
+      ...f,
+      mode,
+      account_id:
+        mode === 'versement'
+          ? insuranceAccounts[0]
+            ? String(insuranceAccounts[0].id)
+            : ''
+          : mode === 'transfer' || f.mode === 'versement'
+            ? regularAccounts[0]
+              ? String(regularAccounts[0].id)
+              : ''
+            : f.account_id,
+      to_account_id: '',
+      insurance_support_id: '',
+    }));
+  };
 
   const coreValue: TxCoreState = {
     type: form.type,
@@ -205,23 +298,29 @@ function ScheduledModal({
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (
-      !form.account_id ||
-      !form.amount ||
-      !form.description ||
-      !form.payment_method_id ||
-      !form.start_date
-    ) {
+    if (!form.amount || !form.description || !form.start_date) {
       showToast('Veuillez remplir tous les champs obligatoires.');
-      return;
-    }
-    if (isTransfer && !form.to_account_id) {
-      showToast('Veuillez choisir un compte destination.');
       return;
     }
     if (Number.parseFloat(form.amount) <= 0) {
       showToast('Le montant doit être positif.');
       return;
+    }
+    if (form.mode === 'transaction' && !form.account_id) {
+      showToast('Veuillez choisir un compte.');
+      return;
+    }
+    if (form.mode === 'transfer') {
+      if (!form.account_id || !form.to_account_id) {
+        showToast('Veuillez choisir les comptes source et destination.');
+        return;
+      }
+    }
+    if (form.mode === 'versement') {
+      if (!form.account_id || !form.insurance_support_id || !form.to_account_id) {
+        showToast('Veuillez choisir le compte AV/PER, le support et le compte source.');
+        return;
+      }
     }
     onSave(form);
   };
@@ -231,18 +330,61 @@ function ScheduledModal({
       <div className="bg-white rounded-2xl p-7 w-full max-w-2xl shadow-xl my-4">
         <h3 className="font-sans text-xl mb-5">{title}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Champs communs : type, montant, description, catégorie, comptes, moyen de paiement */}
-          <TxCoreFields
-            value={coreValue}
-            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-            accounts={accounts}
-            logoMap={logoMap}
-            categories={categories}
-            paymentMethods={paymentMethods}
-            isTransfer={!!form.to_account_id}
-          />
+          {/* Sélecteur de mode */}
+          <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
+            {(['transaction', 'transfer', 'versement'] as ScheduledMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => handleModeChange(m)}
+                className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-lg transition-all ${
+                  form.mode === m
+                    ? 'bg-white text-stone-800 shadow-sm'
+                    : 'text-stone-500 hover:text-stone-700'
+                }`}
+              >
+                {MODE_LABELS[m]}
+              </button>
+            ))}
+          </div>
 
-          {/* Ligne 3 : récurrence */}
+          {/* Champs selon le mode */}
+          {form.mode === 'transaction' && (
+            <TxCoreFields
+              value={coreValue}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+              accounts={accounts}
+              logoMap={logoMap}
+              categories={categories}
+              paymentMethods={paymentMethods}
+              isTransfer={false}
+            />
+          )}
+
+          {form.mode === 'transfer' && (
+            <TxCoreFields
+              value={coreValue}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+              accounts={accounts}
+              logoMap={logoMap}
+              categories={categories}
+              paymentMethods={paymentMethods}
+              isTransfer={true}
+            />
+          )}
+
+          {form.mode === 'versement' && (
+            <VersementFields
+              form={form}
+              patch={(updates) => setForm((f) => ({ ...f, ...updates }))}
+              insuranceAccounts={insuranceAccounts}
+              regularAccounts={regularAccounts}
+              logoMap={logoMap}
+              supports={supports}
+            />
+          )}
+
+          {/* Récurrence */}
           <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
               Récurrence
@@ -317,7 +459,7 @@ function ScheduledModal({
             </div>
           </div>
 
-          {/* Ligne 4 : dates + actif */}
+          {/* Dates + actif */}
           <div className="flex gap-3 flex-wrap items-end">
             <FormGroup label="Date de début">
               <Input
@@ -369,6 +511,123 @@ function ScheduledModal({
   );
 }
 
+// ─── Champs spécifiques Versement ─────────────────────────────────────────────
+
+function buildVersementDescription(
+  accountName: string,
+  support: { name: string; type: string } | undefined,
+): string {
+  if (!support) return '';
+  const prefix = accountName ? `${accountName} · ` : '';
+  return support.type === 'uc'
+    ? `Versement UC — ${prefix}${support.name}`
+    : `Versement fonds euro — ${prefix}${support.name}`;
+}
+
+interface VersementFieldsProps {
+  form: FormState;
+  patch: (updates: Partial<FormState>) => void;
+  insuranceAccounts: Account[];
+  regularAccounts: Account[];
+  logoMap: Record<string, string | null>;
+  supports: { id: number; name: string; type: string }[];
+}
+
+function VersementFields({
+  form,
+  patch,
+  insuranceAccounts,
+  regularAccounts,
+  logoMap,
+  supports,
+}: Readonly<VersementFieldsProps>) {
+  const accountName = insuranceAccounts.find((a) => String(a.id) === form.account_id)?.name ?? '';
+
+  const handleAvAccountChange = (v: string) => {
+    patch({ account_id: v, insurance_support_id: '', description: '' });
+  };
+
+  const handleSupportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const supportId = e.target.value;
+    const support = supports.find((s) => String(s.id) === supportId);
+    const autoDesc = buildVersementDescription(accountName, support);
+    patch({ insurance_support_id: supportId, description: autoDesc });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <FormGroup label="Compte AV / PER">
+          <AccountSelect
+            id="versement-av-account"
+            value={form.account_id}
+            onChange={handleAvAccountChange}
+            accounts={insuranceAccounts}
+            logoMap={logoMap}
+            placeholder="— Choisir —"
+          />
+        </FormGroup>
+        <FormGroup label="Support">
+          <Select
+            value={form.insurance_support_id}
+            onChange={handleSupportChange}
+            disabled={!form.account_id || supports.length === 0}
+          >
+            <option value="">— Choisir —</option>
+            {supports.map((s) => (
+              <option key={s.id} value={String(s.id)}>
+                {s.name} ({s.type === 'euro' ? 'Euro' : 'UC'})
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <FormGroup label="Compte source (débit)">
+          <AccountSelect
+            id="versement-source-account"
+            value={form.to_account_id}
+            onChange={(v) => patch({ to_account_id: v })}
+            accounts={regularAccounts}
+            logoMap={logoMap}
+            placeholder="— Choisir —"
+          />
+        </FormGroup>
+        <div className="flex gap-3">
+          <FormGroup label="Montant (€)" className="flex-1">
+            <Input
+              type="number"
+              value={form.amount}
+              onChange={(e) => patch({ amount: e.target.value })}
+              placeholder="0,00"
+              min="0.01"
+              step="0.01"
+            />
+          </FormGroup>
+          <FormGroup label="Frais (€)" className="w-28">
+            <Input
+              type="number"
+              value={form.insurance_fees}
+              onChange={(e) => patch({ insurance_fees: e.target.value })}
+              placeholder="0,00"
+              min="0"
+              step="0.01"
+            />
+          </FormGroup>
+        </div>
+      </div>
+      <FormGroup label="Description (modifiable)">
+        <Input
+          type="text"
+          value={form.description}
+          onChange={(e) => patch({ description: e.target.value })}
+          placeholder="Auto-généré à la sélection du support"
+        />
+      </FormGroup>
+    </div>
+  );
+}
+
 // ─── Ligne planification ──────────────────────────────────────────────────────
 
 interface RowProps {
@@ -379,13 +638,15 @@ interface RowProps {
 }
 
 function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>) {
-  const isTransfer = sched.payment_method === 'Transfert';
+  const isVersement = sched.insurance_support_id != null;
+  const isTransfer = !isVersement && sched.to_account_id != null;
   const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
+  const sourceAccount = isVersement ? accounts.find((a) => a.id === sched.to_account_id) : null;
 
   const typeColor = sched.type === 'income' ? 'text-green-800' : 'text-red-700';
-  const amountColor = isTransfer ? 'text-stone-500' : typeColor;
+  const amountColor = isTransfer || isVersement ? 'text-stone-500' : typeColor;
   const typeSign = sched.type === 'income' ? '+' : '−';
-  const amountSign = isTransfer ? '' : typeSign;
+  const amountSign = isTransfer || isVersement ? '' : typeSign;
 
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0 group">
@@ -397,6 +658,11 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
               ↔ Transfert
             </span>
           )}
+          {isVersement && (
+            <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+              ↑ Versement AV
+            </span>
+          )}
           {!sched.active && (
             <span className="text-[10px] bg-stone-100 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0">
               Suspendu
@@ -406,6 +672,8 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
         <p className="text-[11px] text-stone-400 mt-0.5">
           {recurrenceLabel(sched)} · {sched.account_name}
           {isTransfer && toAccount ? ` → ${toAccount.name}` : ''}
+          {isVersement && sched.insurance_support_name ? ` · ${sched.insurance_support_name}` : ''}
+          {isVersement && sourceAccount ? ` · depuis ${sourceAccount.name}` : ''}
           {sched.end_date ? ` · jusqu'au ${sched.end_date}` : ''}
         </p>
       </div>
@@ -453,7 +721,6 @@ export default function ScheduledPage() {
   const [pendingDelete, setPendingDelete] = useState<ScheduledTransaction | null>(null);
   const [leadDays, setLeadDays] = useState<string>('');
 
-  // Sync local leadDays input when settings load
   const settingsLeadDays = settings?.lead_days;
   const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
   const displayLeadDays = leadDays === '' ? defaultLeadDays : leadDays;
@@ -518,7 +785,7 @@ export default function ScheduledPage() {
     });
   };
 
-  const firstAccountId = accounts[0]?.id;
+  const firstAccountId = accounts.find((a) => !isInsuranceAccount(a))?.id;
 
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
