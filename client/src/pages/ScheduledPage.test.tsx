@@ -211,7 +211,7 @@ describe('ScheduledPage', () => {
     await user.click(screen.getByRole('button', { name: 'Modifier' }));
     await screen.findByText('Modifier la planification');
     const enregistrerBtns = screen.getAllByRole('button', { name: 'Enregistrer' });
-    await user.click(enregistrerBtns[enregistrerBtns.length - 1]);
+    await user.click(enregistrerBtns.at(-1)!);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mise à jour'),
     );
@@ -231,7 +231,7 @@ describe('ScheduledPage', () => {
     await user.click(screen.getByRole('button', { name: 'Modifier' }));
     await screen.findByText('Modifier la planification');
     const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
-    await user.click(btns[btns.length - 1]);
+    await user.click(btns.at(-1)!);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur mise à jour'),
     );
@@ -328,7 +328,7 @@ describe('ScheduledPage', () => {
     await screen.findByText('Nouvelle planification');
     // Soumettre sans remplir amount / description / payment_method
     const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
-    await user.click(btns[btns.length - 1]);
+    await user.click(btns.at(-1)!);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('obligatoires'),
     );

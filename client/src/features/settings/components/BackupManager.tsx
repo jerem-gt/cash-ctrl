@@ -227,7 +227,7 @@ export function BackupManager() {
           } else {
             content = (
               <div className="flex flex-col">
-                {[...backups].reverse().map((file) => (
+                {backups.toReversed().map((file) => (
                   <BackupRow key={file.filename} file={file} />
                 ))}
               </div>

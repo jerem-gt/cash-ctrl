@@ -26,7 +26,7 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.
 - **Path Aliases**: Utiliser `@/*` pour les imports dans `src/` (configuré dans `tsconfig.json`).
 - **Pratiques TS**: Interdiction des variables locales/paramètres inutilisés et des cas de fallthrough dans les switchs.
-- **Target**: ES2020 / ESNext.
+- **Target**: Client ES2023 / Server ES2024.
 
 ## Architecture & Tech Stack
 
