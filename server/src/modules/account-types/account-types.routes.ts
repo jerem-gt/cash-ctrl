@@ -3,6 +3,7 @@ import { Request, Router } from 'express';
 import { z } from 'zod';
 
 import { ENVELOPE_TYPES } from '../../constants.js';
+import { parseBody } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
@@ -24,13 +25,10 @@ export function createAccountTypesRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, schema, req.body);
+    if (!data) return;
     const repo = getRepo(req);
-    const result = repo.create(parsed.data.name.trim(), parsed.data.envelope_type);
+    const result = repo.create(data.name.trim(), data.envelope_type);
     res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -41,12 +39,9 @@ export function createAccountTypesRouter(db: Database): Router {
       res.status(404).json({ error: 'Account type not found' });
       return;
     }
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    repo.update(id, parsed.data.name.trim(), parsed.data.envelope_type);
+    const data = parseBody(res, schema, req.body);
+    if (!data) return;
+    repo.update(id, data.name.trim(), data.envelope_type);
     res.json(repo.getById(id));
   });
 

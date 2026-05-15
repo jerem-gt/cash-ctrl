@@ -1,14 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const toCents = (n: number) => Math.round(n * 100);
-
 import {
   RecurrenceUnit,
   ReimbursementStatus,
   TransactionType,
   WeekendHandling,
 } from '../constants';
+import { toCents } from '../lib/money';
 import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
 import { createLoansRepo } from '../modules/loans/loans.repo';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo';
@@ -372,36 +371,6 @@ insertTx({
 insertTx({
   account_id: accBourso,
   type: 'expense',
-  amount: 15.99,
-  description: 'Netflix',
-  subcategory_id: subcatStreaming,
-  date: '2026-03-15',
-  payment_method_id: pmCB,
-  validated: 1,
-});
-insertTx({
-  account_id: accBourso,
-  type: 'expense',
-  amount: 9.99,
-  description: 'Spotify',
-  subcategory_id: subcatStreaming,
-  date: '2026-03-15',
-  payment_method_id: pmCB,
-  validated: 1,
-});
-insertTx({
-  account_id: accBourso,
-  type: 'expense',
-  amount: 86.4,
-  description: 'Pass Navigo',
-  subcategory_id: subcatBTM,
-  date: '2026-03-03',
-  payment_method_id: pmPrelevement,
-  validated: 1,
-});
-insertTx({
-  account_id: accBourso,
-  type: 'expense',
   amount: 52,
   description: 'Cinéma + dîner',
   subcategory_id: subcatCinema,
@@ -560,73 +529,49 @@ const stmtPrice = db.prepare(`
   VALUES (?, ?, ?, datetime('now'), ?)
 `);
 
-function insertStockBuy(
+function insertStockOp(
   accountId: number,
   ticker: string,
   quantity: number,
   pricePerShare: number,
   fees: number,
   date: string,
+  type: 'buy' | 'sell',
 ): void {
   const feesCents = toCents(fees);
-  const totalCents = Math.round(quantity * pricePerShare * 100) + feesCents;
-  const description = `Achat ${quantity} × ${ticker}`;
+  const mainCents = Math.round(quantity * pricePerShare * 100);
+  const amount = type === 'buy' ? mainCents + feesCents : mainCents - feesCents;
+  const description =
+    type === 'buy' ? `Achat ${quantity} × ${ticker}` : `Vente ${quantity} × ${ticker}`;
   const txId = Number(
-    stmtStockTx.run(USER_ID, accountId, 'expense', totalCents, description, date).lastInsertRowid,
+    stmtStockTx.run(
+      USER_ID,
+      accountId,
+      type === 'buy' ? 'expense' : 'income',
+      amount,
+      description,
+      date,
+    ).lastInsertRowid,
   );
-  stmtStockOp.run(
-    USER_ID,
-    accountId,
-    txId,
-    ticker,
-    'buy',
-    quantity,
-    pricePerShare,
-    feesCents,
-    date,
-  );
-  stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
-}
-
-function insertStockSell(
-  accountId: number,
-  ticker: string,
-  quantity: number,
-  pricePerShare: number,
-  fees: number,
-  date: string,
-): void {
-  const feesCents = toCents(fees);
-  const netCents = Math.round(quantity * pricePerShare * 100) - feesCents;
-  const description = `Vente ${quantity} × ${ticker}`;
-  const txId = Number(
-    stmtStockTx.run(USER_ID, accountId, 'income', netCents, description, date).lastInsertRowid,
-  );
-  stmtStockOp.run(
-    USER_ID,
-    accountId,
-    txId,
-    ticker,
-    'sell',
-    quantity,
-    pricePerShare,
-    feesCents,
-    date,
-  );
-  stmtPositionSell.run(quantity, accountId, ticker);
+  stmtStockOp.run(USER_ID, accountId, txId, ticker, type, quantity, pricePerShare, feesCents, date);
+  if (type === 'buy') {
+    stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
+  } else {
+    stmtPositionSell.run(quantity, accountId, ticker);
+  }
 }
 
 // PEA BoursoBank — achats sur 3 titres, vente partielle sur LVMH.PA
 // DCAM.PA — ETF Amundi Diversifié : 2 achats → PRU ≈ 10,80 €
-insertStockBuy(accPEA, 'DCAM.PA', 20, 10.5, 0.99, '2025-01-15');
-insertStockBuy(accPEA, 'DCAM.PA', 15, 11.2, 0.99, '2025-03-10');
+insertStockOp(accPEA, 'DCAM.PA', 20, 10.5, 0.99, '2025-01-15', 'buy');
+insertStockOp(accPEA, 'DCAM.PA', 15, 11.2, 0.99, '2025-03-10', 'buy');
 
 // AAPL — Apple : 1 achat
-insertStockBuy(accPEA, 'AAPL', 5, 170, 1.99, '2025-02-10');
+insertStockOp(accPEA, 'AAPL', 5, 170, 1.99, '2025-02-10', 'buy');
 
 // LVMH.PA — LVMH : achat + vente partielle → 1 action en portefeuille
-insertStockBuy(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20');
-insertStockSell(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15');
+insertStockOp(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20', 'buy');
+insertStockOp(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15', 'sell');
 
 // Cours actuels simulés (normalement mis à jour par Yahoo Finance)
 stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
