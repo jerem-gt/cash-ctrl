@@ -17,9 +17,22 @@ const base = {
   active: true,
 };
 
+const versementBase = {
+  type: 'expense' as const,
+  amount: 200,
+  description: 'Versement PER mensuel',
+  recurrence_unit: 'month' as const,
+  recurrence_interval: 1,
+  start_date: TODAY,
+  active: true,
+};
+
 describe('/api/scheduled', () => {
   let ctx: TestContext;
   let accountId: number;
+  let account2Id: number;
+  let avAccountId: number;
+  let supportId: number;
 
   beforeAll(async () => {
     ctx = await createTestContext();
@@ -30,6 +43,27 @@ describe('/api/scheduled', () => {
       opening_date: '2020-01-01',
     });
     accountId = acc.body.id;
+
+    const acc2 = await ctx.agent.post('/api/accounts').send({
+      name: 'Épargne',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_EPARGNE,
+      opening_date: '2020-01-01',
+    });
+    account2Id = acc2.body.id;
+
+    const avAcc = await ctx.agent.post('/api/accounts').send({
+      name: 'Mon PER',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_PER,
+      opening_date: '2020-01-01',
+    });
+    avAccountId = avAcc.body.id;
+
+    const sup = await ctx.agent
+      .post(`/api/insurance/${avAccountId}/supports`)
+      .send({ account_id: avAccountId, name: 'Fonds Euro', type: 'euro' });
+    supportId = sup.body.id;
   });
 
   it('GET / returns array', async () => {
@@ -97,5 +131,50 @@ describe('/api/scheduled', () => {
 
   it('DELETE /:id returns 404 for unknown schedule', async () => {
     expect((await ctx.agent.delete('/api/scheduled/99999')).status).toBe(404);
+  });
+
+  it('POST / crée un versement planifié sur un compte AV/PER', async () => {
+    const res = await ctx.agent.post('/api/scheduled').send({
+      ...versementBase,
+      account_id: avAccountId,
+      to_account_id: accountId,
+      insurance_support_id: supportId,
+      insurance_fees: 0,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.insurance_support_id).toBe(supportId);
+    expect(res.body.insurance_support_name).toBe('Fonds Euro');
+  });
+
+  it('POST / retourne 400 si insurance_support_id mais compte non AV/PER', async () => {
+    const res = await ctx.agent.post('/api/scheduled').send({
+      ...versementBase,
+      account_id: accountId,
+      to_account_id: account2Id,
+      insurance_support_id: supportId,
+      insurance_fees: 0,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST / retourne 400 si versement sans compte source', async () => {
+    const res = await ctx.agent.post('/api/scheduled').send({
+      ...versementBase,
+      account_id: avAccountId,
+      insurance_support_id: supportId,
+      insurance_fees: 0,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST / crée un transfert planifié', async () => {
+    const res = await ctx.agent.post('/api/scheduled').send({
+      ...base,
+      account_id: accountId,
+      to_account_id: account2Id,
+      payment_method_id: SEED.PM_TRANSFERT,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.to_account_id).toBe(account2Id);
   });
 });

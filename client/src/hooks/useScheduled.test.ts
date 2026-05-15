@@ -18,6 +18,8 @@ const PAYLOAD = {
   description: 'Loyer',
   subcategory_id: 1,
   payment_method_id: 1,
+  insurance_support_id: null,
+  insurance_fees: 0,
   notes: null,
   recurrence_unit: 'month' as const,
   recurrence_interval: 1,

@@ -7,6 +7,11 @@ import { createSettingsRepo } from '../modules/settings/settings.repo';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
 import {
+  getBankFeesSubcategoryId,
+  getPrelevementPaymentMethodId,
+} from './administrationDataConstants.js';
+import { toCents } from './money.js';
+import {
   applyWeekend,
   dateStr,
   getFirstOccurrence,
@@ -15,6 +20,60 @@ import {
 } from './scheduledLogic.js';
 
 type Db = BetterSqlite3.Database;
+
+function generateInsuranceVersement(
+  db: Db,
+  userId: number,
+  sched: ScheduledTransaction,
+  actualStr: string,
+): void {
+  const amountCents = toCents(sched.amount);
+  const feesCents = toCents(sched.insurance_fees);
+
+  const txResult = db
+    .prepare(
+      `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated, scheduled_id)
+       VALUES (?, ?, 'expense', ?, ?, ?, 0, ?)`,
+    )
+    .run(userId, sched.to_account_id!, amountCents, sched.description, actualStr, sched.id);
+  const transactionId = Number(txResult.lastInsertRowid);
+
+  let feesTransactionId: number | null = null;
+  if (feesCents > 0) {
+    const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+    const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+    const feesResult = db
+      .prepare(
+        `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
+         VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
+      )
+      .run(
+        userId,
+        sched.to_account_id!,
+        feesCents,
+        `Frais — ${sched.description}`,
+        subcategoryId,
+        actualStr,
+        paymentMethodId,
+      );
+    feesTransactionId = Number(feesResult.lastInsertRowid);
+  }
+
+  db.prepare(
+    `INSERT INTO insurance_operations
+       (user_id, account_id, support_id, transaction_id, fees_transaction_id, type, amount, fees, date)
+     VALUES (?, ?, ?, ?, ?, 'versement', ?, ?, ?)`,
+  ).run(
+    userId,
+    sched.account_id,
+    sched.insurance_support_id!,
+    transactionId,
+    feesTransactionId,
+    amountCents,
+    feesCents,
+    actualStr,
+  );
+}
 
 function generateForSchedule(
   sched: ScheduledTransaction,
@@ -33,7 +92,8 @@ function generateForSchedule(
   }
 
   const endDate = sched.end_date ? parseDate(sched.end_date) : null;
-  const isTransfer = sched.to_account_id != null;
+  const isVersement = sched.insurance_support_id != null;
+  const isTransfer = !isVersement && sched.to_account_id != null;
   let lastNominal: string | null = null;
 
   txDb.transaction(() => {
@@ -43,7 +103,9 @@ function generateForSchedule(
       const actual = applyWeekend(nominal, sched.weekend_handling);
       const actualStr = dateStr(actual);
 
-      if (isTransfer) {
+      if (isVersement) {
+        generateInsuranceVersement(txDb, sched.user_id, sched, actualStr);
+      } else if (isTransfer) {
         transfersRepo.create(sched.user_id, {
           amount: sched.amount,
           date: actualStr,

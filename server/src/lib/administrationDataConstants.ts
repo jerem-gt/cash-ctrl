@@ -17,6 +17,13 @@ export function getBankFeesSubcategoryId(db: Database, userId: number): number |
   return subcat?.id;
 }
 
+export function getSocialFeesSubcategoryId(db: Database, userId: number): number | undefined {
+  const subcat = db
+    .prepare(`SELECT id FROM subcategories WHERE name = 'Prélèvements sociaux' AND user_id = ?`)
+    .get(userId) as { id: number } | undefined;
+  return subcat?.id;
+}
+
 export function getPrelevementPaymentMethodId(db: Database, userId: number): number | undefined {
   const pm = db
     .prepare(`SELECT id FROM payment_methods WHERE name = 'Prélèvement' AND user_id = ?`)
