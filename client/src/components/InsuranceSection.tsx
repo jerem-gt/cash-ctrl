@@ -22,9 +22,15 @@ interface SupportRowProps {
   support: InsuranceSupportView;
   allSupports: InsuranceSupportView[];
   accountId: number;
+  readOnly?: boolean;
 }
 
-function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProps>) {
+function SupportRow({
+  support,
+  allSupports,
+  accountId,
+  readOnly = false,
+}: Readonly<SupportRowProps>) {
   const [showVersement, setShowVersement] = useState(false);
   const [showRachat, setShowRachat] = useState(false);
   const [showArbitrage, setShowArbitrage] = useState(false);
@@ -71,49 +77,51 @@ function SupportRow({ support, allSupports, accountId }: Readonly<SupportRowProp
           <p className="text-sm font-bold text-stone-800 tabular-nums">{fmtEur(support.value)}</p>
         </div>
 
-        <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-          <button
-            onClick={() => setShowVersement(true)}
-            className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
-          >
-            Verser
-          </button>
-          <button
-            onClick={() => setShowRachat(true)}
-            className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
-          >
-            Racheter
-          </button>
-          <button
-            onClick={() => setShowArbitrage(true)}
-            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
-          >
-            Arbitrer
-          </button>
-          {support.type === 'euro' && (
+        {!readOnly && (
+          <div className="flex gap-1 shrink-0 flex-wrap justify-end">
             <button
-              onClick={() => setShowInterets(true)}
-              className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
+              onClick={() => setShowVersement(true)}
+              className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
             >
-              Intérêts
+              Verser
             </button>
-          )}
-          {support.type === 'uc' && (
             <button
-              onClick={() => setShowRevalorisation(true)}
-              className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
+              onClick={() => setShowRachat(true)}
+              className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
             >
-              Revaloriser
+              Racheter
             </button>
-          )}
-          <button
-            onClick={handleDelete}
-            className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
-            title="Supprimer le support"
-          >
-            ×
-          </button>
-        </div>
+            <button
+              onClick={() => setShowArbitrage(true)}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+            >
+              Arbitrer
+            </button>
+            {support.type === 'euro' && (
+              <button
+                onClick={() => setShowInterets(true)}
+                className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
+              >
+                Intérêts
+              </button>
+            )}
+            {support.type === 'uc' && (
+              <button
+                onClick={() => setShowRevalorisation(true)}
+                className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
+              >
+                Revaloriser
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
+              title="Supprimer le support"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
 
       {showVersement && (
@@ -192,7 +200,7 @@ function OperationRow({
   op,
   onEdit,
   onDelete,
-}: Readonly<{ op: InsuranceOperation; onEdit: () => void; onDelete: () => void }>) {
+}: Readonly<{ op: InsuranceOperation; onEdit?: () => void; onDelete?: () => void }>) {
   const cfg = OP_CONFIG[op.type];
   const signed = cfg.sign(op);
   const fmtEur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -226,20 +234,24 @@ function OperationRow({
         {signed >= 0 ? '+' : ''}
         {fmtEur(signed)}
       </span>
-      <button
-        onClick={onEdit}
-        className="text-stone-300 hover:text-stone-500 text-xs leading-none shrink-0 transition-colors px-1"
-        title="Modifier"
-      >
-        ✎
-      </button>
-      <button
-        onClick={onDelete}
-        className="text-stone-300 hover:text-red-400 text-base leading-none shrink-0 transition-colors"
-        title="Supprimer"
-      >
-        ×
-      </button>
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          className="text-stone-300 hover:text-stone-500 text-xs leading-none shrink-0 transition-colors px-1"
+          title="Modifier"
+        >
+          ✎
+        </button>
+      )}
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          className="text-stone-300 hover:text-red-400 text-base leading-none shrink-0 transition-colors"
+          title="Supprimer"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }
@@ -247,9 +259,10 @@ function OperationRow({
 interface Props {
   accountId: number;
   isPer?: boolean;
+  readOnly?: boolean;
 }
 
-export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) {
+export function InsuranceSection({ accountId, isPer = false, readOnly = false }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useInsurancePositions(accountId);
   const { data: operations = [] } = useInsuranceOperations(accountId);
   const deleteOp = useDeleteInsuranceOperation(accountId);
@@ -272,9 +285,11 @@ export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) 
                 Simulateur fiscal
               </Button>
             )}
-            <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
-              + Support
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
+                + Support
+              </Button>
+            )}
           </div>
         </div>
 
@@ -297,6 +312,7 @@ export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) 
                     support={pos}
                     allSupports={positions}
                     accountId={accountId}
+                    readOnly={readOnly}
                   />
                 ))}
 
@@ -329,8 +345,12 @@ export function InsuranceSection({ accountId, isPer = false }: Readonly<Props>) 
               <OperationRow
                 key={op.id}
                 op={op}
-                onEdit={() => setEditingOp(op)}
-                onDelete={() => deleteOp.mutate(op.id, { onError: (e) => showToast(e.message) })}
+                onEdit={readOnly ? undefined : () => setEditingOp(op)}
+                onDelete={
+                  readOnly
+                    ? undefined
+                    : () => deleteOp.mutate(op.id, { onError: (e) => showToast(e.message) })
+                }
               />
             ))}
           </div>

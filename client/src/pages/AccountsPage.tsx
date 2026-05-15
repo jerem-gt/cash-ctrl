@@ -1,5 +1,6 @@
 import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
@@ -283,8 +284,12 @@ function AccountCard({
     acc.envelope_type === 'loan'
       ? Math.max(0, acc.capital_restant_du ?? 0)
       : accountDisplayBalance(acc);
+  const navigate = useNavigate();
   return (
-    <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
+    <div
+      className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group"
+      onClick={() => navigate(`/accounts/${acc.id}`)}
+    >
       <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
         <div className="flex gap-1 pointer-events-auto">
@@ -350,8 +355,12 @@ function ClosedAccountCard({
   onReopen: () => void;
   onDelete: () => void;
 }>) {
+  const navigate = useNavigate();
   return (
-    <div className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60">
+    <div
+      className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60 cursor-pointer hover:opacity-80 hover:shadow-sm transition-all"
+      onClick={() => navigate(`/accounts/${acc.id}`)}
+    >
       <div className="flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
         <div className="flex items-center gap-1">

@@ -25,6 +25,7 @@ export default function AccountDetailPage() {
   const isInsurance =
     account?.envelope_type === 'life_insurance' || account?.envelope_type === 'per';
   const isLoan = account?.envelope_type === 'loan';
+  const isClosed = !!account?.closed_at;
   const [loanCloseOpen, setLoanCloseOpen] = useState(false);
 
   const { data: loanData } = useLoan(isLoan ? accountId : 0);
@@ -66,14 +67,18 @@ export default function AccountDetailPage() {
       {/* Portefeuille bourse */}
       {isInvestment && (
         <div className="px-1">
-          <PortfolioSection accountId={accountId} />
+          <PortfolioSection accountId={accountId} readOnly={isClosed} />
         </div>
       )}
 
       {/* Enveloppe assurance */}
       {isInsurance && (
         <div className="px-1">
-          <InsuranceSection accountId={accountId} isPer={account?.envelope_type === 'per'} />
+          <InsuranceSection
+            accountId={accountId}
+            isPer={account?.envelope_type === 'per'}
+            readOnly={isClosed}
+          />
         </div>
       )}
 
@@ -97,6 +102,7 @@ export default function AccountDetailPage() {
             account={account}
             logoMap={logoMap}
             emptyMessage="Aucune transaction sur ce compte"
+            readOnly={isClosed}
           />
         </>
       )}

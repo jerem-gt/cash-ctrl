@@ -9,9 +9,9 @@ import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
   pos: StockPosition;
-  onBuy: (pos: StockPosition) => void;
-  onSell: (pos: StockPosition) => void;
-  onTransfer: (pos: StockPosition) => void;
+  onBuy?: (pos: StockPosition) => void;
+  onSell?: (pos: StockPosition) => void;
+  onTransfer?: (pos: StockPosition) => void;
 }
 
 const getPnlColor = (pnl: number | null) => {
@@ -85,38 +85,47 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
         )}
       </div>
 
-      <div className="flex gap-1 shrink-0">
-        <button
-          onClick={() => onBuy(pos)}
-          className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
-          title="Acheter"
-        >
-          Acheter
-        </button>
-        <button
-          onClick={() => onSell(pos)}
-          className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
-          title="Vendre"
-        >
-          Vendre
-        </button>
-        <button
-          onClick={() => onTransfer(pos)}
-          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
-          title="Transférer vers un autre compte"
-        >
-          Transférer
-        </button>
-      </div>
+      {(onBuy ?? onSell ?? onTransfer) && (
+        <div className="flex gap-1 shrink-0">
+          {onBuy && (
+            <button
+              onClick={() => onBuy(pos)}
+              className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+              title="Acheter"
+            >
+              Acheter
+            </button>
+          )}
+          {onSell && (
+            <button
+              onClick={() => onSell(pos)}
+              className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+              title="Vendre"
+            >
+              Vendre
+            </button>
+          )}
+          {onTransfer && (
+            <button
+              onClick={() => onTransfer(pos)}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+              title="Transférer vers un autre compte"
+            >
+              Transférer
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 interface Props {
   accountId: number;
+  readOnly?: boolean;
 }
 
-export function PortfolioSection({ accountId }: Readonly<Props>) {
+export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props>) {
   const { data: positions = [], isLoading } = useStockPositions(accountId);
   const refresh = useRefreshPrices(accountId);
   const [showBuy, setShowBuy] = useState(false);
@@ -157,9 +166,9 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
           <PositionRow
             key={pos.ticker}
             pos={pos}
-            onBuy={setBuyPosition}
-            onSell={setSellPosition}
-            onTransfer={setTransferPosition}
+            onBuy={readOnly ? undefined : setBuyPosition}
+            onSell={readOnly ? undefined : setSellPosition}
+            onTransfer={readOnly ? undefined : setTransferPosition}
           />
         ))}
 
@@ -211,9 +220,11 @@ export function PortfolioSection({ accountId }: Readonly<Props>) {
             <Button size="sm" onClick={handleRefresh} disabled={refresh.isPending}>
               {refresh.isPending ? '…' : '↻ Actualiser les cours'}
             </Button>
-            <Button size="sm" variant="primary" onClick={() => setShowBuy(true)}>
-              + Acheter
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="primary" onClick={() => setShowBuy(true)}>
+                + Acheter
+              </Button>
+            )}
           </div>
         </div>
 
