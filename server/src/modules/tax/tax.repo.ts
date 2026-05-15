@@ -26,7 +26,7 @@ function mapBracket(row: BracketRow): TaxBracket {
     id: row.id,
     year: row.year,
     min_income: toEuros(row.min_income_cents),
-    max_income: row.max_income_cents != null ? toEuros(row.max_income_cents) : null,
+    max_income: row.max_income_cents == null ? null : toEuros(row.max_income_cents),
     rate: row.rate,
     created_at: row.created_at,
   };
@@ -64,7 +64,7 @@ export function createTaxRepo(db: Database) {
         .prepare<
           [number],
           BracketRow
-        >('SELECT * FROM tax_brackets WHERE year = ? ORDER BY min_income_cents ASC')
+        >('SELECT * FROM tax_brackets WHERE year = ? ORDER BY min_income_cents')
         .all(year);
 
       return {

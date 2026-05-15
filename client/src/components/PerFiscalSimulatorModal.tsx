@@ -24,7 +24,7 @@ const PARTS_OPTIONS = [
 
 function BracketRow({ detail }: Readonly<{ detail: BracketDetail }>) {
   const label =
-    detail.max_income != null ? `Tranche ${detail.rate}%` : `Tranche ${detail.rate}% (supérieure)`;
+    detail.max_income == null ? `Tranche ${detail.rate}% (supérieure)` : `Tranche ${detail.rate}%`;
   return (
     <div className="flex items-center justify-between py-1 text-xs text-stone-600">
       <span className="text-stone-400">{label}</span>
@@ -80,8 +80,9 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
   const [fraisReels, setFraisReels] = useState('');
   const [appliquerPlafond, setAppliquerPlafond] = useState(true);
 
+  const resolvedYear = years.includes(selectedYear) ? selectedYear : years[0];
   const { data: yearData, isLoading: dataLoading } = useTaxYearData(
-    yearsLoading ? undefined : years.includes(selectedYear) ? selectedYear : years[0],
+    yearsLoading ? undefined : resolvedYear,
   );
 
   const result = useMemo<SimulationResult | null>(() => {
