@@ -35,6 +35,7 @@ const rachatSchema = z.object({
   support_id: z.number().int().positive(),
   amount: z.number().positive(),
   fees: z.number().min(0).default(0),
+  social_fees: z.number().min(0).default(0),
   date: z.string().regex(DATE_REGEX),
   dest_account_id: z
     .number()
@@ -65,6 +66,13 @@ const revaloriserSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: z.number(),
+  date: z.string().regex(DATE_REGEX),
+});
+
+const updateOperationSchema = z.object({
+  amount: z.number(),
+  fees: z.number().min(0).default(0),
+  social_fees: z.number().min(0).default(0),
   date: z.string().regex(DATE_REGEX),
 });
 
@@ -140,6 +148,48 @@ export function createInsuranceRouter(db: Database): Router {
       return;
     }
     res.json(repo.getOperations(accountId));
+  });
+
+  router.put('/:accountId/operations/:operationId', (req, res) => {
+    const accountId = Number.parseInt(req.params.accountId);
+    const operationId = Number.parseInt(req.params.operationId);
+    const userId = sessionUserId(req);
+
+    if (!repo.accountBelongsToUser(accountId, userId)) {
+      res.status(403).json({ error: 'Compte introuvable' });
+      return;
+    }
+
+    const parsed = updateOperationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const operation = repo.updateOperation(operationId, userId, parsed.data);
+      res.json(operation);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+      const status = msg.includes('introuvable') ? 404 : 400;
+      res.status(status).json({ error: msg });
+    }
+  });
+
+  router.delete('/:accountId/operations/:operationId', (req, res) => {
+    const accountId = Number.parseInt(req.params.accountId);
+    const operationId = Number.parseInt(req.params.operationId);
+    const userId = sessionUserId(req);
+    if (!repo.accountBelongsToUser(accountId, userId)) {
+      res.status(403).json({ error: 'Compte introuvable' });
+      return;
+    }
+    try {
+      repo.deleteOperation(operationId, userId);
+      res.json({ ok: true });
+    } catch {
+      res.status(404).json({ error: 'Opération introuvable' });
+    }
   });
 
   router.post('/:accountId/versement', (req, res) => {

@@ -4,6 +4,7 @@ import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/account
 import {
   getBankFeesSubcategoryId,
   getPrelevementPaymentMethodId,
+  getSocialFeesSubcategoryId,
 } from '../../lib/administrationDataConstants';
 import { toCents, toEuros } from '../../lib/money';
 import {
@@ -15,14 +16,23 @@ import {
   InteretsInput,
   RachatInput,
   RevaloriserInput,
+  UpdateOperationInput,
   VersementInput,
 } from './insurance.types';
+
+function getAccountName(db: Database, accountId: number): string {
+  const row = db
+    .prepare<[number], { name: string }>('SELECT name FROM accounts WHERE id = ?')
+    .get(accountId);
+  return row?.name ?? '';
+}
 
 function mapOperation(row: InsuranceOperation): InsuranceOperation {
   return {
     ...row,
     amount: toEuros(row.amount),
     fees: toEuros(row.fees),
+    social_fees: toEuros(row.social_fees),
   };
 }
 
@@ -33,9 +43,10 @@ function insertInsuranceFeesTransaction(
   feesCents: number,
   feesDescription: string,
   date: string,
+  subcategoryIdOverride?: number | null,
 ): number | null {
   if (feesCents <= 0 || accountId == null) return null;
-  const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
+  const subcategoryId = subcategoryIdOverride ?? getBankFeesSubcategoryId(db, userId) ?? null;
   const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
   const result = db
     .prepare(
@@ -48,8 +59,8 @@ function insertInsuranceFeesTransaction(
 
 const OPERATION_SELECT = `
   SELECT io.id, io.account_id, io.support_id, ins.name AS support_name, ins.type AS support_type,
-         io.transaction_id, io.fees_transaction_id, io.type,
-         io.amount, io.fees, io.date, io.arbitrage_peer_id, io.created_at
+         io.transaction_id, io.fees_transaction_id, io.social_fees_transaction_id, io.type,
+         io.amount, io.fees, io.social_fees, io.date, io.arbitrage_peer_id, io.created_at
   FROM insurance_operations io
   JOIN insurance_supports ins ON io.support_id = ins.id`;
 
@@ -63,6 +74,8 @@ type InsuranceTxAndOpOpts = {
   feesCents: number;
   description: string;
   date: string;
+  socialFeesCents?: number;
+  socialFeesTxAccountId?: number | null;
 };
 
 function insertInsuranceTxAndOp(
@@ -80,6 +93,8 @@ function insertInsuranceTxAndOp(
     feesCents,
     description,
     date,
+    socialFeesCents = 0,
+    socialFeesTxAccountId = null,
   } = opts;
 
   let transactionId: number | null = null;
@@ -102,12 +117,24 @@ function insertInsuranceTxAndOp(
     date,
   );
 
+  const socialSubcatId =
+    socialFeesCents > 0 ? (getSocialFeesSubcategoryId(db, userId) ?? null) : null;
+  const socialFeesTransactionId = insertInsuranceFeesTransaction(
+    db,
+    userId,
+    socialFeesTxAccountId,
+    socialFeesCents,
+    `Prélèvements sociaux — ${description}`,
+    date,
+    socialSubcatId,
+  );
+
   const opResult = db
     .prepare(
       `INSERT INTO insurance_operations
          (user_id, account_id, support_id, transaction_id, fees_transaction_id,
-          type, amount, fees, date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          social_fees_transaction_id, type, amount, fees, social_fees, date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       userId,
@@ -115,9 +142,11 @@ function insertInsuranceTxAndOp(
       supportId,
       transactionId,
       feesTransactionId,
+      socialFeesTransactionId,
       opType,
       amountCents,
       feesCents,
+      socialFeesCents,
       date,
     );
 
@@ -173,11 +202,32 @@ export function createInsuranceRepo(db: Database) {
       db.prepare('DELETE FROM insurance_supports WHERE id = ?').run(supportId);
     },
 
+    deleteOperation(operationId: number, userId: number): void {
+      const op = db
+        .prepare<
+          [number, number],
+          { transaction_id: number | null; arbitrage_peer_id: number | null }
+        >('SELECT transaction_id, arbitrage_peer_id FROM insurance_operations WHERE id = ? AND user_id = ?')
+        .get(operationId, userId);
+      if (!op) throw new Error('Opération introuvable');
+      const peerId = op.arbitrage_peer_id;
+      db.transaction(() => {
+        db.prepare('DELETE FROM insurance_operations WHERE id = ?').run(operationId);
+        // insurance_op_fees_cleanup trigger handles fees_transaction_id
+        if (op.transaction_id != null) {
+          db.prepare('DELETE FROM transactions WHERE id = ?').run(op.transaction_id);
+        }
+        if (peerId != null) {
+          db.prepare('DELETE FROM insurance_operations WHERE id = ?').run(peerId);
+        }
+      })();
+    },
+
     getBalanceCents(accountId: number, supportId: number): number {
       const row = db
         .prepare<[number, number], { balance: number }>(
           `SELECT COALESCE(
-             SUM(CASE WHEN type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation') THEN amount ELSE -amount END),
+             SUM((CASE WHEN type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation') THEN amount ELSE -amount END) - fees - social_fees),
              0
            ) AS balance
            FROM insurance_operations
@@ -214,6 +264,128 @@ export function createInsuranceRepo(db: Database) {
         .map(mapOperation);
     },
 
+    updateOperation(
+      operationId: number,
+      userId: number,
+      input: UpdateOperationInput,
+    ): InsuranceOperation {
+      return db.transaction(() => {
+        const op = db
+          .prepare<
+            [number, number],
+            {
+              id: number;
+              type: string;
+              transaction_id: number | null;
+              fees_transaction_id: number | null;
+              social_fees_transaction_id: number | null;
+              account_id: number;
+              support_name: string;
+            }
+          >(
+            `SELECT io.id, io.type, io.transaction_id, io.fees_transaction_id,
+                    io.social_fees_transaction_id, io.account_id, ins.name AS support_name
+             FROM insurance_operations io
+             JOIN insurance_supports ins ON io.support_id = ins.id
+             WHERE io.id = ? AND io.user_id = ?`,
+          )
+          .get(operationId, userId);
+
+        if (!op) throw new Error('Opération introuvable');
+        if (op.type === 'arbitrage_in' || op.type === 'arbitrage_out') {
+          throw new Error('Les arbitrages ne peuvent pas être modifiés');
+        }
+        if (op.type !== 'revalorisation' && input.amount <= 0) {
+          throw new Error('Le montant doit être positif');
+        }
+
+        const amountCents = toCents(input.amount);
+        const feesCents = op.type === 'versement' || op.type === 'rachat' ? toCents(input.fees) : 0;
+        const socialFeesCents = op.type === 'rachat' ? toCents(input.social_fees) : 0;
+
+        db.prepare(
+          'UPDATE insurance_operations SET amount = ?, fees = ?, social_fees = ?, date = ? WHERE id = ?',
+        ).run(amountCents, feesCents, socialFeesCents, input.date, operationId);
+
+        if (op.transaction_id != null) {
+          db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
+            amountCents,
+            input.date,
+            op.transaction_id,
+          );
+        }
+
+        if (op.fees_transaction_id != null) {
+          if (feesCents > 0) {
+            db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
+              feesCents,
+              input.date,
+              op.fees_transaction_id,
+            );
+          } else {
+            // FK ON DELETE SET NULL will clear fees_transaction_id automatically
+            db.prepare('DELETE FROM transactions WHERE id = ?').run(op.fees_transaction_id);
+          }
+        } else if (feesCents > 0 && op.transaction_id != null) {
+          const mainTx = db
+            .prepare<
+              [number],
+              { account_id: number; description: string }
+            >('SELECT account_id, description FROM transactions WHERE id = ?')
+            .get(op.transaction_id);
+          if (mainTx) {
+            const feesId = insertInsuranceFeesTransaction(
+              db,
+              userId,
+              mainTx.account_id,
+              feesCents,
+              `Frais — ${mainTx.description}`,
+              input.date,
+            );
+            if (feesId != null) {
+              db.prepare(
+                'UPDATE insurance_operations SET fees_transaction_id = ? WHERE id = ?',
+              ).run(feesId, operationId);
+            }
+          }
+        }
+
+        if (op.social_fees_transaction_id != null) {
+          if (socialFeesCents > 0) {
+            db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
+              socialFeesCents,
+              input.date,
+              op.social_fees_transaction_id,
+            );
+          } else {
+            // FK ON DELETE SET NULL will clear social_fees_transaction_id automatically
+            db.prepare('DELETE FROM transactions WHERE id = ?').run(op.social_fees_transaction_id);
+          }
+        } else if (socialFeesCents > 0) {
+          const socialSubcatId = getSocialFeesSubcategoryId(db, userId) ?? null;
+          const socialFeesId = insertInsuranceFeesTransaction(
+            db,
+            userId,
+            op.account_id,
+            socialFeesCents,
+            `Prélèvements sociaux — ${op.support_name}`,
+            input.date,
+            socialSubcatId,
+          );
+          if (socialFeesId != null) {
+            db.prepare(
+              'UPDATE insurance_operations SET social_fees_transaction_id = ? WHERE id = ?',
+            ).run(socialFeesId, operationId);
+          }
+        }
+
+        const updated = db
+          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+          .get(operationId)!;
+        return mapOperation(updated);
+      })();
+    },
+
     // ─── Versement ───────────────────────────────────────────────────────────
 
     versement(
@@ -223,10 +395,12 @@ export function createInsuranceRepo(db: Database) {
       const amountCents = toCents(input.amount);
       const feesCents = toCents(input.fees);
       const support = this.getSupportById(input.support_id)!;
+      const accountName = getAccountName(db, input.account_id);
+      const accountPrefix = accountName ? `${accountName} · ` : '';
       const description =
         support.type === 'uc'
-          ? `Versement UC — ${support.name}`
-          : `Versement fonds euro — ${support.name}`;
+          ? `Versement UC — ${accountPrefix}${support.name}`
+          : `Versement fonds euro — ${accountPrefix}${support.name}`;
 
       const txAccountId = input.source_account_id ?? null;
 
@@ -253,9 +427,10 @@ export function createInsuranceRepo(db: Database) {
     ): { operation: InsuranceOperation; transaction_id: number | null } {
       const amountCents = toCents(input.amount);
       const feesCents = toCents(input.fees);
+      const socialFeesCents = toCents(input.social_fees);
 
-      if (amountCents - feesCents <= 0) {
-        throw new Error('Le montant net après frais doit être positif');
+      if (amountCents - feesCents - socialFeesCents <= 0) {
+        throw new Error('Le montant net après frais et prélèvements sociaux doit être positif');
       }
 
       const balanceCents = this.getBalanceCents(input.account_id, input.support_id);
@@ -264,10 +439,12 @@ export function createInsuranceRepo(db: Database) {
       }
 
       const support = this.getSupportById(input.support_id)!;
+      const accountName = getAccountName(db, input.account_id);
+      const accountPrefix = accountName ? `${accountName} · ` : '';
       const description =
         support.type === 'uc'
-          ? `Rachat UC — ${support.name}`
-          : `Rachat fonds euro — ${support.name}`;
+          ? `Rachat UC — ${accountPrefix}${support.name}`
+          : `Rachat fonds euro — ${accountPrefix}${support.name}`;
 
       const txAccountId = input.dest_account_id ?? null;
 
@@ -282,6 +459,8 @@ export function createInsuranceRepo(db: Database) {
           feesCents,
           description,
           date: input.date,
+          socialFeesCents,
+          socialFeesTxAccountId: input.account_id,
         }),
       )();
     },

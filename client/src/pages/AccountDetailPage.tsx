@@ -58,6 +58,7 @@ export default function AccountDetailPage() {
         account={account}
         logoMap={logoMap}
         isInvestment={isInvestment}
+        isInsurance={isInsurance}
         isLoan={isLoan}
         capitalRestantDu={capitalRestantDu}
       />

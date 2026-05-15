@@ -161,13 +161,15 @@ export function initSchema(db: Database) {
             account_id           INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
             support_id           INTEGER NOT NULL REFERENCES insurance_supports (id) ON DELETE CASCADE,
             transaction_id       INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
-            fees_transaction_id  INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
-            type                 TEXT    NOT NULL CHECK (type IN (${sqlIn(INSURANCE_OPERATION_TYPES)})),
-            amount               INTEGER NOT NULL,
-            fees                 INTEGER NOT NULL DEFAULT 0,
-            date                 TEXT    NOT NULL,
-            arbitrage_peer_id    INTEGER REFERENCES insurance_operations (id) ON DELETE SET NULL,
-            created_at           TEXT             DEFAULT (datetime('now'))
+            fees_transaction_id          INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            social_fees_transaction_id   INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
+            type                         TEXT    NOT NULL CHECK (type IN (${sqlIn(INSURANCE_OPERATION_TYPES)})),
+            amount                       INTEGER NOT NULL,
+            fees                         INTEGER NOT NULL DEFAULT 0,
+            social_fees                  INTEGER NOT NULL DEFAULT 0,
+            date                         TEXT    NOT NULL,
+            arbitrage_peer_id            INTEGER REFERENCES insurance_operations (id) ON DELETE SET NULL,
+            created_at                   TEXT             DEFAULT (datetime('now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_ins_ops_account ON insurance_operations (account_id);
@@ -178,6 +180,13 @@ export function initSchema(db: Database) {
         WHEN OLD.fees_transaction_id IS NOT NULL
         BEGIN
             DELETE FROM transactions WHERE id = OLD.fees_transaction_id;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS insurance_op_social_fees_cleanup
+        AFTER DELETE ON insurance_operations
+        WHEN OLD.social_fees_transaction_id IS NOT NULL
+        BEGIN
+            DELETE FROM transactions WHERE id = OLD.social_fees_transaction_id;
         END;
 
         CREATE TABLE IF NOT EXISTS stock_prices
@@ -228,6 +237,12 @@ export function initSchema(db: Database) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, date DESC, created_at DESC);
+
+        CREATE TRIGGER IF NOT EXISTS tx_insurance_op_cleanup
+        BEFORE DELETE ON transactions
+        BEGIN
+            DELETE FROM insurance_operations WHERE transaction_id = OLD.id;
+        END;
 
         CREATE TABLE IF NOT EXISTS reimbursements
         (
@@ -300,4 +315,39 @@ export function initSchema(db: Database) {
             created_at           TEXT    DEFAULT (datetime('now'))
         );
     `);
+
+  // Migrations: add new columns if they don't exist yet
+  const schedCols = (db.pragma('table_info(scheduled_transactions)') as { name: string }[]).map(
+    (r) => r.name,
+  );
+  if (!schedCols.includes('insurance_support_id')) {
+    db.exec(
+      'ALTER TABLE scheduled_transactions ADD COLUMN insurance_support_id INTEGER REFERENCES insurance_supports(id) ON DELETE SET NULL',
+    );
+  }
+  if (!schedCols.includes('insurance_fees')) {
+    db.exec(
+      'ALTER TABLE scheduled_transactions ADD COLUMN insurance_fees INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
+  const ioCols = (db.pragma('table_info(insurance_operations)') as { name: string }[]).map(
+    (r) => r.name,
+  );
+  if (!ioCols.includes('social_fees')) {
+    db.exec('ALTER TABLE insurance_operations ADD COLUMN social_fees INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!ioCols.includes('social_fees_transaction_id')) {
+    db.exec(
+      'ALTER TABLE insurance_operations ADD COLUMN social_fees_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL',
+    );
+  }
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS insurance_op_social_fees_cleanup
+    AFTER DELETE ON insurance_operations
+    WHEN OLD.social_fees_transaction_id IS NOT NULL
+    BEGIN
+      DELETE FROM transactions WHERE id = OLD.social_fees_transaction_id;
+    END;
+  `);
 }

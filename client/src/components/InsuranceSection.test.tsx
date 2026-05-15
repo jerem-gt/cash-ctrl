@@ -227,4 +227,34 @@ describe('InsuranceSection', () => {
     await screen.findByText('Amundi MSCI World');
     expect(screen.queryByRole('button', { name: /intérêts/i })).not.toBeInTheDocument();
   });
+
+  it("affiche un bouton Modifier pour chaque opération de l'historique", async () => {
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.getAllByTitle('Modifier').length).toBeGreaterThan(0);
+  });
+
+  it("ouvre la modale d'édition au clic sur le bouton Modifier d'une opération", async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    await user.click(screen.getAllByTitle('Modifier')[0]);
+    expect(screen.getByText("Modifier l'opération")).toBeInTheDocument();
+  });
+
+  it("soumet la modification d'opération et affiche un toast", async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    await user.click(screen.getAllByTitle('Modifier')[0]);
+    await screen.findByText("Modifier l'opération");
+
+    await user.clear(screen.getByLabelText(/montant/i));
+    await user.type(screen.getByLabelText(/montant/i), '2000');
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Opération modifiée'),
+    );
+  });
 });

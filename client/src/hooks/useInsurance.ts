@@ -54,6 +54,34 @@ export function useCreateInsuranceSupport(accountId: number) {
   });
 }
 
+export function useDeleteInsuranceOperation(accountId: number) {
+  const invalidate = useInvalidate(accountId);
+  return useMutation({
+    mutationFn: (operationId: number) => insuranceApi.deleteOperation(accountId, operationId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateInsuranceOperation(accountId: number) {
+  const invalidate = useInvalidate(accountId);
+  return useMutation({
+    mutationFn: ({
+      operationId,
+      amount,
+      fees,
+      social_fees,
+      date,
+    }: {
+      operationId: number;
+      amount: number;
+      fees: number;
+      social_fees?: number;
+      date: string;
+    }) => insuranceApi.updateOperation(accountId, operationId, { amount, fees, social_fees, date }),
+    onSuccess: invalidate,
+  });
+}
+
 export function useDeleteInsuranceSupport(accountId: number) {
   const qc = useQueryClient();
   return useMutation({
