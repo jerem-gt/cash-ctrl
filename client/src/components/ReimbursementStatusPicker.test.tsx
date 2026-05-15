@@ -7,7 +7,7 @@ import { ReimbursementStatusPicker } from './ReimbursementStatusPicker';
 describe('ReimbursementStatusPicker', () => {
   const mockOnChange = vi.fn();
 
-  it('affiche uniquement le bouton "Activer" quand le statut est null', () => {
+  it(`affiche uniquement le bouton "Activer" quand le statut est null`, () => {
     render(<ReimbursementStatusPicker status={null} onChange={mockOnChange} />);
 
     expect(screen.getByText('Suivi remboursement')).toBeInTheDocument();
@@ -18,7 +18,7 @@ describe('ReimbursementStatusPicker', () => {
     expect(screen.queryByText('Remboursement terminé')).not.toBeInTheDocument();
   });
 
-  it('affiche le bouton "⚕ Actif" et les sélecteurs de statut quand le suivi est activé', () => {
+  it(`affiche le bouton "⚕ Actif" et les sélecteurs de statut quand le suivi est activé`, () => {
     render(<ReimbursementStatusPicker status="en_attente" onChange={mockOnChange} />);
 
     expect(screen.getByRole('button', { name: /actif/i })).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('ReimbursementStatusPicker', () => {
     expect(screen.getByRole('button', { name: 'Remboursement terminé' })).toBeInTheDocument();
   });
 
-  it('appelle onChange avec "en_attente" lors du clic sur "Activer"', async () => {
+  it(`appelle onChange avec "en_attente" lors du clic sur "Activer"`, async () => {
     const user = userEvent.setup();
     render(<ReimbursementStatusPicker status={null} onChange={mockOnChange} />);
 
@@ -34,7 +34,7 @@ describe('ReimbursementStatusPicker', () => {
     expect(mockOnChange).toHaveBeenCalledWith('en_attente');
   });
 
-  it('appelle onChange avec null lors du clic sur "⚕ Actif" (désactivation)', async () => {
+  it(`appelle onChange avec null lors du clic sur "⚕ Actif" (désactivation)`, async () => {
     const user = userEvent.setup();
     render(<ReimbursementStatusPicker status="rembourse" onChange={mockOnChange} />);
 
@@ -42,7 +42,7 @@ describe('ReimbursementStatusPicker', () => {
     expect(mockOnChange).toHaveBeenCalledWith(null);
   });
 
-  it('appelle onChange avec "rembourse" lors du clic sur le bouton correspondant', async () => {
+  it(`appelle onChange avec "rembourse" lors du clic sur le bouton correspondant`, async () => {
     const user = userEvent.setup();
     render(<ReimbursementStatusPicker status="en_attente" onChange={mockOnChange} />);
 
@@ -61,7 +61,7 @@ describe('ReimbursementStatusPicker', () => {
     expect(btnTermine).toHaveClass('bg-stone-50'); // Style inactif
   });
 
-  it('couvre la branche "false" de la ligne 31 (status est null)', () => {
+  it(`couvre la branche "false" de la ligne 31 (status est null)`, () => {
     // Quand status est null, le bloc après && ne doit pas être exécuté
     render(<ReimbursementStatusPicker status={null} onChange={mockOnChange} />);
 

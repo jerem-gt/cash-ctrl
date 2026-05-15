@@ -33,7 +33,7 @@ describe('calculateTotalAmount()', () => {
     expect(result).toBeCloseTo(0.07);
   });
 
-  it('considère tout mode autre que "buy" comme une vente', () => {
+  it(`considère tout mode autre que "buy" comme une vente`, () => {
     // Comportement actuel de ta fonction
     expect(calculateTotalAmount('anything', 10, 100, 5)).toBe(995);
   });

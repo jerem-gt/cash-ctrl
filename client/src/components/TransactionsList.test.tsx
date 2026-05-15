@@ -86,7 +86,7 @@ describe('TransactionsList', () => {
     expect(openAdd).toHaveBeenCalled();
   });
 
-  it('affiche la modale d’ajout quand le state du manager est "add"', () => {
+  it(`affiche la modale d’ajout quand le state du manager est "add"`, () => {
     mockManager({
       state: {
         modal: { type: 'add' },
@@ -120,7 +120,7 @@ describe('TransactionsList', () => {
     expect(screen.getByText('Nouvelle transaction')).toBeInTheDocument();
   });
 
-  it('affiche la modale de suppression quand le state est "delete"', () => {
+  it(`affiche la modale de suppression quand le state est "delete"`, () => {
     const tx = { id: 123, description: 'Courses', amount: -50 } as Transaction;
     mockManager({
       state: { modal: { type: 'delete', tx } },

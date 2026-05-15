@@ -37,7 +37,7 @@ describe('InsuranceSection', () => {
     expect(screen.getAllByText(/5\s*000/).length).toBeGreaterThan(0);
   });
 
-  it('affiche "Aucun support" quand portefeuille vide', async () => {
+  it(`affiche "Aucun support" quand portefeuille vide`, async () => {
     server.use(http.get('/api/insurance/:accountId/positions', () => HttpResponse.json([])));
     renderSection();
     await waitFor(() =>

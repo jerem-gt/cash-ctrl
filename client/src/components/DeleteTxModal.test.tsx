@@ -10,13 +10,13 @@ const baseTx = TRANSACTIONS.data[0];
 const transferTx: Transaction = { ...baseTx, transfer_peer_id: 42 };
 
 describe('DeleteTxModal', () => {
-  it('affiche "Supprimer la transaction" pour une transaction classique', () => {
+  it(`affiche "Supprimer la transaction" pour une transaction classique`, () => {
     render(<DeleteTxModal tx={baseTx} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('Supprimer la transaction')).toBeInTheDocument();
     expect(screen.getByText(/irréversible. Confirmer/i)).toBeInTheDocument();
   });
 
-  it('affiche "Supprimer le transfert" pour un transfert', () => {
+  it(`affiche "Supprimer le transfert" pour un transfert`, () => {
     render(<DeleteTxModal tx={transferTx} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('Supprimer le transfert')).toBeInTheDocument();
     expect(screen.getByText(/deux côtés/i)).toBeInTheDocument();

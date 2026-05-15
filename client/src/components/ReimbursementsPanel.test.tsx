@@ -13,12 +13,12 @@ const activeTx: Transaction = { ...baseTx, reimbursement_status: 'en_attente' };
 const reimbursedTx: Transaction = { ...baseTx, reimbursement_status: 'rembourse' };
 
 describe('ReimbursementsPanel — inactif', () => {
-  it('affiche le titre "Suivi remboursement"', () => {
+  it(`affiche le titre "Suivi remboursement"`, () => {
     renderWithProviders(<ReimbursementsPanel tx={baseTx} />);
     expect(screen.getByText('Suivi remboursement')).toBeInTheDocument();
   });
 
-  it('affiche "Activer" quand reimbursement_status est null', () => {
+  it(`affiche "Activer" quand reimbursement_status est null`, () => {
     renderWithProviders(<ReimbursementsPanel tx={baseTx} />);
     expect(screen.getByRole('button', { name: 'Activer' })).toBeInTheDocument();
   });
@@ -31,7 +31,7 @@ describe('ReimbursementsPanel — inactif', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('active le suivi en cliquant "Activer"', async () => {
+  it(`active le suivi en cliquant "Activer"`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={baseTx} />);
     await user.click(screen.getByRole('button', { name: 'Activer' }));
@@ -41,7 +41,7 @@ describe('ReimbursementsPanel — inactif', () => {
 });
 
 describe('ReimbursementsPanel — actif (en_attente)', () => {
-  it('affiche "↩ Actif" quand reimbursement_status est en_attente', () => {
+  it(`affiche "↩ Actif" quand reimbursement_status est en_attente`, () => {
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     expect(screen.getByRole('button', { name: /actif/i })).toBeInTheDocument();
   });
@@ -52,7 +52,7 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     expect(screen.getByRole('button', { name: /remboursement terminé/i })).toBeInTheDocument();
   });
 
-  it('désactive le suivi en cliquant "↩ Actif"', async () => {
+  it(`désactive le suivi en cliquant "↩ Actif"`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await user.click(screen.getByRole('button', { name: /actif/i }));
@@ -61,14 +61,14 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     );
   });
 
-  it('affiche le bouton "+ Lier un remboursement"', async () => {
+  it(`affiche le bouton "+ Lier un remboursement"`, async () => {
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /lier un remboursement/i })).toBeInTheDocument(),
     );
   });
 
-  it('affiche la section "Reste à charge"', async () => {
+  it(`affiche la section "Reste à charge"`, async () => {
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await waitFor(() => expect(screen.getByText(/reste à charge/i)).toBeInTheDocument());
   });
@@ -119,14 +119,14 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
 });
 
 describe('ReimbursementsPanel — actif (rembourse)', () => {
-  it('affiche "↩ Actif" quand reimbursement_status est rembourse', () => {
+  it(`affiche "↩ Actif" quand reimbursement_status est rembourse`, () => {
     renderWithProviders(<ReimbursementsPanel tx={reimbursedTx} />);
     expect(screen.getByRole('button', { name: /actif/i })).toBeInTheDocument();
   });
 });
 
 describe('ReimbursementsPanel — formulaire de liaison', () => {
-  it('affiche le select et les boutons Lier/Annuler après clic sur "+ Lier"', async () => {
+  it(`affiche le select et les boutons Lier/Annuler après clic sur "+ Lier"`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await waitFor(() =>
@@ -138,7 +138,7 @@ describe('ReimbursementsPanel — formulaire de liaison', () => {
     expect(screen.getByRole('button', { name: 'Annuler' })).toBeInTheDocument();
   });
 
-  it('"Annuler" ferme le formulaire de liaison', async () => {
+  it(`"Annuler" ferme le formulaire de liaison`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await waitFor(() =>
@@ -150,7 +150,7 @@ describe('ReimbursementsPanel — formulaire de liaison', () => {
     expect(screen.getByRole('button', { name: /lier un remboursement/i })).toBeInTheDocument();
   });
 
-  it('"Lier" est désactivé tant qu\'aucune transaction n\'est sélectionnée', async () => {
+  it(`"Lier" est désactivé tant qu'aucune transaction n'est sélectionnée`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     await waitFor(() =>
