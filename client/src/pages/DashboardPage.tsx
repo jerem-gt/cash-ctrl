@@ -5,6 +5,7 @@ import {
   LabelList,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,6 +18,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { useBalanceHistory, useDashboardStats } from '@/hooks/useStats';
+import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
@@ -35,7 +37,7 @@ export default function DashboardPage() {
     [categories],
   );
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0);
+  const totalBalance = accounts.reduce((s, a) => s + accountDisplayBalance(a), 0);
   const monthIncome = stats?.month_income ?? 0;
   const monthExpense = stats?.month_expense ?? 0;
   const bilan = monthIncome - monthExpense;
@@ -268,18 +270,19 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {/* Patrimoine par type de compte */}
+      {/* Patrimoine par catégorie */}
       {balanceHistory &&
         balanceHistory.data.length > 0 &&
         (() => {
           const types = balanceHistory.account_types;
+          const hasLoans = balanceHistory.data.some((d) => Number(d['Prêts'] ?? 0) < 0);
           const dataWithTotal = balanceHistory.data.map((d) => ({
             ...d,
-            _total: types.reduce((s, t) => s + Number(d[t] ?? 0), 0),
+            _total: types.reduce((s, t) => s + Math.max(0, Number(d[t] ?? 0)), 0),
           }));
           return (
             <Card>
-              <CardTitle>Patrimoine net par type de compte</CardTitle>
+              <CardTitle>Répartition du patrimoine</CardTitle>
               <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
                 {types.map((type, i) => (
                   <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
@@ -311,6 +314,7 @@ export default function DashboardPage() {
                     }
                     cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                   />
+                  {hasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
                   {types.map((type, i) => {
                     const isLast = i === types.length - 1;
                     return (

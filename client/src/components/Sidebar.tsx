@@ -9,6 +9,7 @@ import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
+import { accountDisplayBalance } from '@/lib/account';
 import { fmt } from '@/lib/format';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
@@ -75,13 +76,11 @@ export function Sidebar({ username }: Readonly<Props>) {
         accounts: accs,
       }));
   }, [accounts, groupBy]);
-  const soldeTotal = useMemo(() => {
-    return groups.reduce(
-      (total, group) =>
-        total + group.accounts.reduce((s, a) => s + (a.balance || 0) + (a.balance_stocks || 0), 0),
-      0,
-    );
-  }, [groups]);
+  const soldeTotal = useMemo(
+    () =>
+      groups.reduce((t, g) => t + g.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0), 0),
+    [groups],
+  );
 
   return (
     <aside className="fixed inset-y-0 left-0 w-72 bg-sidebar-bg text-sidebar-fg flex flex-col z-50">
@@ -154,11 +153,9 @@ export function Sidebar({ username }: Readonly<Props>) {
                         <span className="text-sm font-semibold text-white/50">{group.label}</span>
                         <span className="flex items-center gap-1">
                           <span
-                            className={`text-sm font-bold tabular-nums ${group.accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0) < 0 ? 'text-red-400/60' : 'text-white/45'}`}
+                            className={`text-sm font-bold tabular-nums ${group.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0) < 0 ? 'text-red-400/60' : 'text-white/45'}`}
                           >
-                            {fmt(
-                              group.accounts.reduce((s, a) => s + a.balance + a.balance_stocks, 0),
-                            )}
+                            {fmt(group.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0))}
                           </span>
                           <button
                             onClick={() => toggleGroup(group.label)}
@@ -201,9 +198,9 @@ export function Sidebar({ username }: Readonly<Props>) {
                                 <span className="truncate">{acc.name}</span>
                               </span>
                               <span
-                                className={`tabular-nums shrink-0 ${acc.balance + acc.balance_stocks < 0 ? 'text-red-400/70' : ''}`}
+                                className={`tabular-nums shrink-0 ${accountDisplayBalance(acc) < 0 ? 'text-red-400/70' : ''}`}
                               >
-                                {fmt(acc.balance + acc.balance_stocks)}
+                                {fmt(accountDisplayBalance(acc))}
                               </span>
                             </NavLink>
                           );
