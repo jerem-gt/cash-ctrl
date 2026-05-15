@@ -39,6 +39,10 @@ export function createStatsRepo(db: Database) {
       const nextMonthStart = firstDayOfMonth(-1);
       const sixMonthsStart = firstDayOfMonth(5);
 
+      const EXCLUDE_INSURANCE_TX = `AND id NOT IN (
+        SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL
+      )`;
+
       const metricsRow = db
         .prepare<[number, string, string], { income: number; expense: number }>(
           `SELECT
@@ -46,6 +50,7 @@ export function createStatsRepo(db: Database) {
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS expense
           FROM transactions
           WHERE user_id = ? AND validated = 1 AND transfer_peer_id IS NULL
+            ${EXCLUDE_INSURANCE_TX}
             AND date >= ? AND date < ?`,
         )
         .get(userId, thisMonthStart, nextMonthStart) ?? { income: 0, expense: 0 };
@@ -58,6 +63,7 @@ export function createStatsRepo(db: Database) {
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS expense
           FROM transactions
           WHERE user_id = ? AND validated = 1 AND transfer_peer_id IS NULL
+            ${EXCLUDE_INSURANCE_TX}
             AND date >= ? AND date < ?
           GROUP BY month
           ORDER BY month`,
@@ -82,6 +88,7 @@ export function createStatsRepo(db: Database) {
           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
           LEFT JOIN categories c ON sc.category_id = c.id
           WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
+            AND t.id NOT IN (SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL)
             AND t.type = 'expense' AND t.date >= ? AND t.date < ?
           GROUP BY category
           ORDER BY amount DESC`,
@@ -167,6 +174,21 @@ export function createStatsRepo(db: Database) {
          FROM accounts a
          LEFT JOIN account_types at ON a.account_type_id = at.id
          WHERE a.user_id = :userId`,
+      );
+
+      // Current market values (stock_positions × stock_prices) — used for current year only
+      // price in stock_prices is in euros, same unit as price_per_share in stock_operations
+      const marketValueRows = db
+        .prepare<[number], { account_id: number; market_value: number }>(
+          `SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS market_value
+           FROM stock_positions sp
+           LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+           WHERE sp.user_id = ?
+           GROUP BY sp.account_id`,
+        )
+        .all(userId);
+      const currentMarketValues = new Map<number, number>(
+        marketValueRows.map((r) => [r.account_id, r.market_value]),
       );
 
       // All stock operations sorted chronologically — fetched once for all years
@@ -299,8 +321,11 @@ export function createStatsRepo(db: Database) {
 
       const data = years.map((year) => {
         const yearEnd = `${year}-12-31`;
+        const isCurrentYear = Number.parseInt(year, 10) === currentYear;
         const cashRows = cashStmt.all({ userId, yearEnd });
-        const bookValues = bookValuesAt(yearEnd);
+        // Current year: use market value (matches dashboard "Solde total").
+        // Past years: use book value (cost basis) since historical prices aren't stored.
+        const stockValues = isCurrentYear ? currentMarketValues : bookValuesAt(yearEnd);
         const { euro: euroValues, uc: ucValues } = insuranceValuesAt(yearEnd);
         const capitalRestant = capitalRestantAt(yearEnd);
 
@@ -314,7 +339,7 @@ export function createStatsRepo(db: Database) {
           } else if (row.envelope_type === 'investment') {
             point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
             point['Actions & UC'] =
-              Number(point['Actions & UC']) + (bookValues.get(row.account_id) ?? 0);
+              Number(point['Actions & UC']) + (stockValues.get(row.account_id) ?? 0);
           } else if (row.envelope_type === 'life_insurance' || row.envelope_type === 'per') {
             point['Fonds euros'] =
               Number(point['Fonds euros']) + toEuros(euroValues.get(row.account_id) ?? 0);
