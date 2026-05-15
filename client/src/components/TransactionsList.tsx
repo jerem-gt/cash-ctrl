@@ -15,12 +15,14 @@ interface Props {
   account?: Account;
   logoMap: Record<string, string | null>;
   emptyMessage?: string;
+  readOnly?: boolean;
 }
 
 export function TransactionsList({
   account,
   logoMap,
   emptyMessage = 'Aucune transaction trouvée',
+  readOnly = false,
 }: Readonly<Props>) {
   const { state, actions } = useTransactionsManager(account?.id);
 
@@ -50,9 +52,11 @@ export function TransactionsList({
           showAccountSelect={!account}
         />
         <span className="text-xs text-stone-400 ml-auto">{state.total} transaction(s)</span>
-        <Button variant="primary" onClick={actions.openAdd}>
-          + Nouvelle transaction
-        </Button>
+        {!readOnly && (
+          <Button variant="primary" onClick={actions.openAdd}>
+            + Nouvelle transaction
+          </Button>
+        )}
       </div>
       <div className="flex flex-col gap-2">
         {state.isLoading ? (
@@ -80,9 +84,9 @@ export function TransactionsList({
                 accounts={account ? undefined : state.accounts}
                 logoMap={logoMap}
                 runningBalance={account == null ? undefined : runningBalances[i]}
-                onEdit={actions.openEdit}
-                onDuplicate={actions.openDuplicate}
-                onDelete={actions.openDelete}
+                onEdit={readOnly ? undefined : actions.openEdit}
+                onDuplicate={readOnly ? undefined : actions.openDuplicate}
+                onDelete={readOnly ? undefined : actions.openDelete}
               />
             ))}
           </>

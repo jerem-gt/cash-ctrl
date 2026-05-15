@@ -142,6 +142,14 @@ export function AccountHeader({
                     </span>
                   </>
                 )}
+                {account.closed_at && (
+                  <>
+                    <span className="text-stone-300">•</span>
+                    <span className="bg-stone-100 text-stone-500 border border-stone-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                      Clôturé
+                    </span>
+                  </>
+                )}
               </div>
 
               <h2 className="font-sans text-4xl text-stone-900 tracking-tight">
