@@ -70,7 +70,7 @@ function makeTx(
 // ─── findAutoCategory ─────────────────────────────────────────────────────────
 
 describe('findAutoCategory', () => {
-  it('mappe "Catégorie:Sous-catégorie" quand les deux correspondent', () => {
+  it(`mappe "Catégorie:Sous-catégorie" quand les deux correspondent`, () => {
     const r = findAutoCategory('Alimentation:Supermarché', CATEGORIES);
     expect(r).toEqual({ action: 'map', subcategory_id: 10 });
   });

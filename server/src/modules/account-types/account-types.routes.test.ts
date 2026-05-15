@@ -5,7 +5,9 @@ import { createTestContext, type TestContext } from '../../tests/helpers/testApp
 describe('/api/account-types', () => {
   let ctx: TestContext;
 
-  beforeAll(async () => { ctx = await createTestContext(); });
+  beforeAll(async () => {
+    ctx = await createTestContext();
+  });
 
   it('GET / returns array', async () => {
     const res = await ctx.agent.get('/api/account-types');

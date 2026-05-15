@@ -19,7 +19,7 @@ function renderDetail(id = '1') {
 }
 
 describe('AccountDetailPage', () => {
-  it('affiche "Compte introuvable" pour un id inexistant', async () => {
+  it(`affiche "Compte introuvable" pour un id inexistant`, async () => {
     renderDetail('999');
     await waitFor(() => expect(screen.getByText('Compte introuvable.')).toBeInTheDocument());
   });

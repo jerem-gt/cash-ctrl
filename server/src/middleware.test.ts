@@ -24,7 +24,7 @@ describe('requireAuth', () => {
     const res = mockRes();
     const next = vi.fn() as unknown as NextFunction;
     requireAuth(mockReq(), res, next);
-    expect((res.status as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(401);
+    expect(res.status as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
 });

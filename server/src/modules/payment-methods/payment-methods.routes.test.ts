@@ -5,7 +5,9 @@ import { createTestContext, type TestContext } from '../../tests/helpers/testApp
 describe('/api/payment-methods', () => {
   let ctx: TestContext;
 
-  beforeAll(async () => { ctx = await createTestContext(); });
+  beforeAll(async () => {
+    ctx = await createTestContext();
+  });
 
   it('GET / returns array', async () => {
     const res = await ctx.agent.get('/api/payment-methods');
@@ -14,7 +16,9 @@ describe('/api/payment-methods', () => {
   });
 
   it('POST / creates a payment method', async () => {
-    const res = await ctx.agent.post('/api/payment-methods').send({ name: 'Apple Pay', icon: '🍎' });
+    const res = await ctx.agent
+      .post('/api/payment-methods')
+      .send({ name: 'Apple Pay', icon: '🍎' });
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('Apple Pay');
     expect(res.body.icon).toBe('🍎');
@@ -39,7 +43,9 @@ describe('/api/payment-methods', () => {
   it('PUT /:id updates a payment method', async () => {
     const create = await ctx.agent.post('/api/payment-methods').send({ name: 'OldMethod' });
     const id = create.body.id;
-    const res = await ctx.agent.put(`/api/payment-methods/${id}`).send({ name: 'NewMethod', icon: '✨' });
+    const res = await ctx.agent
+      .put(`/api/payment-methods/${id}`)
+      .send({ name: 'NewMethod', icon: '✨' });
     expect(res.status).toBe(200);
     expect(res.body.name).toBe('NewMethod');
   });

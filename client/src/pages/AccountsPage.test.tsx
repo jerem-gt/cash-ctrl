@@ -69,7 +69,7 @@ describe('AccountsPage', () => {
     expect(await screen.findByText(/aucun compte pour l'instant/i)).toBeInTheDocument();
   });
 
-  it('ouvre le modal de création lors du clic sur "Nouveau compte"', async () => {
+  it(`ouvre le modal de création lors du clic sur "Nouveau compte"`, async () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
