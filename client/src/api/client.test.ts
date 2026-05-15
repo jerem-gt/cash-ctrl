@@ -42,7 +42,7 @@ describe('parseResponse / extractError', () => {
     await expect(transactionsApi.list()).rejects.toThrow(/champ A.*champ B/);
   });
 
-  it('utilise "Request failed" si le corps d\'erreur est vide', async () => {
+  it(`utilise "Request failed" si le corps d'erreur est vide`, async () => {
     server.use(http.get('/api/transactions', () => HttpResponse.json({}, { status: 500 })));
     await expect(transactionsApi.list()).rejects.toThrow('Request failed');
   });

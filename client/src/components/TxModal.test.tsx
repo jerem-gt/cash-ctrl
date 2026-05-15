@@ -34,7 +34,7 @@ const editProps = {
 };
 
 describe('TxModal — mode création', () => {
-  it('affiche le titre "Nouvelle transaction"', () => {
+  it(`affiche le titre "Nouvelle transaction"`, () => {
     renderWithProviders(<TxModal {...createProps} />);
     expect(screen.getByText('Nouvelle transaction')).toBeInTheDocument();
   });
@@ -45,19 +45,19 @@ describe('TxModal — mode création', () => {
     expect(screen.getByRole('button', { name: 'Transfert' })).toBeInTheDocument();
   });
 
-  it('affiche le bouton "Ajouter"', () => {
+  it(`affiche le bouton "Ajouter"`, () => {
     renderWithProviders(<TxModal {...createProps} />);
     expect(screen.getByRole('button', { name: 'Ajouter' })).toBeInTheDocument();
   });
 
-  it('bascule le titre en "Nouveau transfert" au clic sur l\'onglet Transfert', async () => {
+  it(`bascule le titre en "Nouveau transfert" au clic sur l'onglet Transfert`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...createProps} />);
     await user.click(screen.getByRole('button', { name: 'Transfert' }));
     expect(screen.getByText('Nouveau transfert')).toBeInTheDocument();
   });
 
-  it('affiche "Transférer" comme bouton de soumission en mode transfert', async () => {
+  it(`affiche "Transférer" comme bouton de soumission en mode transfert`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...createProps} />);
     await user.click(screen.getByRole('button', { name: 'Transfert' }));
@@ -148,12 +148,12 @@ describe('TxModal — mode création', () => {
 });
 
 describe('TxModal — ventilation', () => {
-  it('affiche le bouton "Ventiler" en mode création', () => {
+  it(`affiche le bouton "Ventiler" en mode création`, () => {
     renderWithProviders(<TxModal {...createProps} />);
     expect(screen.getByRole('button', { name: 'Ventiler' })).toBeInTheDocument();
   });
 
-  it('pas de bouton "Ventiler" en mode transfert', async () => {
+  it(`pas de bouton "Ventiler" en mode transfert`, async () => {
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...createProps} />);
     await user.click(screen.getByRole('button', { name: 'Transfert' }));
@@ -188,29 +188,29 @@ describe('TxModal — ventilation', () => {
 });
 
 describe('TxModal — mode duplication', () => {
-  it('affiche le titre "Dupliquer la transaction"', () => {
+  it(`affiche le titre "Dupliquer la transaction"`, () => {
     renderWithProviders(<TxModal {...createProps} duplicateFrom={baseTx} />);
     expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
   });
 
-  it('affiche le titre "Dupliquer le transfert" pour un transfert dupliqué', () => {
+  it(`affiche le titre "Dupliquer le transfert" pour un transfert dupliqué`, () => {
     renderWithProviders(<TxModal {...createProps} duplicateFrom={transferTx} />);
     expect(screen.getByText('Dupliquer le transfert')).toBeInTheDocument();
   });
 });
 
 describe('TxModal — mode édition', () => {
-  it('affiche le titre "Modifier la transaction"', () => {
+  it(`affiche le titre "Modifier la transaction"`, () => {
     renderWithProviders(<TxModal {...editProps} />);
     expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
   });
 
-  it('affiche le bouton "Enregistrer"', () => {
+  it(`affiche le bouton "Enregistrer"`, () => {
     renderWithProviders(<TxModal {...editProps} />);
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument();
   });
 
-  it('affiche la note "deux legs" pour un transfert en édition', () => {
+  it(`affiche la note "deux legs" pour un transfert en édition`, () => {
     renderWithProviders(<TxModal {...editProps} tx={transferTx} />);
     expect(screen.getByText(/deux legs/i)).toBeInTheDocument();
   });

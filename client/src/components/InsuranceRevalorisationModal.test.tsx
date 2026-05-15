@@ -34,7 +34,7 @@ describe('InsuranceRevalorisationModal', () => {
     expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
   });
 
-  it('affiche l\'indice "Positif = gain, négatif = perte"', () => {
+  it(`affiche l'indice "Positif = gain, négatif = perte"`, () => {
     renderModal();
     expect(screen.getByText(/positif = gain, négatif = perte/i)).toBeInTheDocument();
   });

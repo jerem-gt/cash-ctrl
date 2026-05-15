@@ -170,7 +170,7 @@ describe('Pagination', () => {
     expect(onChange).toHaveBeenCalledWith(5);
   });
 
-  it("navigue à la page saisie après Entrée", async () => {
+  it('navigue à la page saisie après Entrée', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<Pagination {...base} onChange={onChange} />);

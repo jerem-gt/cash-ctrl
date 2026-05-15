@@ -25,7 +25,7 @@ describe('PortfolioSection', () => {
     expect(screen.getByText('10')).toBeInTheDocument();
   });
 
-  it('affiche "Aucune position ouverte" quand le portefeuille est vide', async () => {
+  it(`affiche "Aucune position ouverte" quand le portefeuille est vide`, async () => {
     server.use(http.get('/api/stocks/:accountId/positions', () => HttpResponse.json([])));
     renderPortfolio();
     await waitFor(() => expect(screen.getByText('Aucune position ouverte')).toBeInTheDocument());

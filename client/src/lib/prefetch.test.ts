@@ -11,7 +11,7 @@ function makeQc() {
 }
 
 describe('prefetchForRoute', () => {
-  it('précharge accounts, banks, categories et transactions pour "/"', () => {
+  it(`précharge accounts, banks, categories et transactions pour "/"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
@@ -21,7 +21,7 @@ describe('prefetchForRoute', () => {
     expect(keys.some((k) => Array.isArray(k) && k[0] === 'transactions')).toBe(true);
   });
 
-  it('précharge accounts, banks, categories, payment-methods et transactions pour "/transactions"', () => {
+  it(`précharge accounts, banks, categories, payment-methods et transactions pour "/transactions"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/transactions');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
@@ -32,7 +32,7 @@ describe('prefetchForRoute', () => {
     expect(keys.some((k) => Array.isArray(k) && k[0] === 'transactions')).toBe(true);
   });
 
-  it('précharge accounts, categories, payment-methods et scheduled pour "/scheduled"', () => {
+  it(`précharge accounts, categories, payment-methods et scheduled pour "/scheduled"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/scheduled');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
@@ -42,7 +42,7 @@ describe('prefetchForRoute', () => {
     expect(keys).toContainEqual(['scheduled']);
   });
 
-  it('précharge accounts, banks et account-types pour "/accounts"', () => {
+  it(`précharge accounts, banks et account-types pour "/accounts"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/accounts');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
@@ -51,7 +51,7 @@ describe('prefetchForRoute', () => {
     expect(keys).toContainEqual(['account-types']);
   });
 
-  it('précharge categories, account-types, banks, payment-methods et settings pour "/settings"', () => {
+  it(`précharge categories, account-types, banks, payment-methods et settings pour "/settings"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/settings');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);

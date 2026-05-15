@@ -11,7 +11,7 @@ beforeEach(() => {
 });
 
 describe('useAccountsGroupBy', () => {
-  it('retourne "bank" par défaut', () => {
+  it(`retourne "bank" par défaut`, () => {
     const { result } = renderHook(() => useAccountsGroupBy());
     expect(result.current).toBe('bank');
   });

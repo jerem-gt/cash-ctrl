@@ -30,7 +30,7 @@ describe('InsuranceVersementModal', () => {
     expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
   });
 
-  it('affiche le sélecteur "Depuis le compte" avec les comptes standards', async () => {
+  it(`affiche le sélecteur "Depuis le compte" avec les comptes standards`, async () => {
     renderModal();
     await screen.findByText('Compte test');
     expect(screen.getByText('Livret A')).toBeInTheDocument();

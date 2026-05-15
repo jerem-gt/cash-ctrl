@@ -143,7 +143,7 @@ describe('parseQif', () => {
       expect(parseQif(qif).detectedDateFormat).toBe('MM/DD');
     });
 
-    it('retourne "ambiguous" quand les deux valeurs sont ≤12', () => {
+    it(`retourne "ambiguous" quand les deux valeurs sont ≤12`, () => {
       const qif = `!Type:Bank\nD01/05/2024\nT-10.00\nP Test\n^`;
       expect(parseQif(qif).detectedDateFormat).toBe('ambiguous');
     });
@@ -175,7 +175,7 @@ describe('parseQif', () => {
       expect(result.transactions).toHaveLength(1);
     });
 
-    it('retourne null pour un mémo "(NULL)" (export HomeBank)', () => {
+    it(`retourne null pour un mémo "(NULL)" (export HomeBank)`, () => {
       const qif = `!Type:Bank\nD01/01/2024\nT-10.00\nPTest\nM(NULL)\n^`;
       const result = parseQif(qif);
       expect(result.transactions[0].memo).toBeNull();

@@ -33,7 +33,7 @@ describe('BankSelect', () => {
     expect(onChange).toHaveBeenCalledWith('1');
   });
 
-  it('appelle onChange("") au clic sur le placeholder de la liste', async () => {
+  it(`appelle onChange("") au clic sur le placeholder de la liste`, async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<BankSelect value="1" onChange={onChange} banks={BANKS} />);

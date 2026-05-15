@@ -14,12 +14,12 @@ const baseProps = {
 };
 
 describe('AccountModal — mode création', () => {
-  it('affiche le titre "Ajouter un compte"', () => {
+  it(`affiche le titre "Ajouter un compte"`, () => {
     renderWithProviders(<AccountModal mode="create" {...baseProps} />);
     expect(screen.getByText('Ajouter un compte')).toBeInTheDocument();
   });
 
-  it('affiche le bouton "Créer"', () => {
+  it(`affiche le bouton "Créer"`, () => {
     renderWithProviders(<AccountModal mode="create" {...baseProps} />);
     expect(screen.getByRole('button', { name: 'Créer' })).toBeInTheDocument();
   });
@@ -73,7 +73,7 @@ describe('AccountModal — mode création', () => {
 });
 
 describe('AccountModal — mode édition', () => {
-  it('affiche le titre "Modifier le compte"', () => {
+  it(`affiche le titre "Modifier le compte"`, () => {
     const onSave = vi.fn();
     renderWithProviders(
       <AccountModal
@@ -105,7 +105,7 @@ describe('AccountModal — mode édition', () => {
     expect(screen.getByDisplayValue('Compte test')).toBeInTheDocument();
   });
 
-  it('affiche le bouton "Enregistrer"', () => {
+  it(`affiche le bouton "Enregistrer"`, () => {
     const onSave = vi.fn();
     renderWithProviders(
       <AccountModal

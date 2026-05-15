@@ -142,7 +142,7 @@ describe('AccountSelect', () => {
     expect(screen.queryByRole('option', { name: /PEA/i })).not.toBeInTheDocument();
   });
 
-  it('affiche "Aucun résultat" si la recherche ne correspond à rien', async () => {
+  it(`affiche "Aucun résultat" si la recherche ne correspond à rien`, async () => {
     const manyAccounts = Array.from({ length: 6 }, (_, i) => ({
       ...ACCOUNTS[0],
       id: i + 1,

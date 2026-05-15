@@ -16,7 +16,7 @@ const makeRow = (overrides?: Partial<SplitInput>): SplitInput => ({
 });
 
 describe('TxSplitEditor', () => {
-  it('affiche le titre "Ventilation"', () => {
+  it(`affiche le titre "Ventilation"`, () => {
     render(
       <TxSplitEditor splits={[]} onChange={vi.fn()} categories={CATEGORIES} totalAmount={0} />,
     );
