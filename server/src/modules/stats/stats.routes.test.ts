@@ -72,8 +72,8 @@ describe('/api/stats', () => {
   });
 
   describe('getBalanceHistory avec Stocks', () => {
-    it('devrait répartir cash non investi en Liquidités et book value en Actions & UC', async () => {
-      // Dépôt 1000€ puis achat 500€ => cash restant 500€, book value 500€
+    it('devrait répartir cash non investi en Liquidités et valeur de marché en Actions & UC', async () => {
+      // Dépôt 1000€ puis achat 500€ => cash restant 500€, 10 AAPL à PRU 50
       await ctx.agent.post('/api/transactions').send({
         account_id: bourseAccountId,
         type: 'income',
@@ -93,13 +93,21 @@ describe('/api/stats', () => {
         date: TODAY,
       });
 
+      // Cours de marché actuel : 60€/action => valeur de marché = 600€
+      ctx.db
+        .prepare(
+          `INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at)
+           VALUES ('AAPL', 60, 'EUR', 'Apple Inc.', ?)`,
+        )
+        .run(TODAY);
+
       const res = await ctx.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
       // Liquidités = Courant initial (10) + Bourse cash non investi (500) = 510
       expect(yearData['Liquidités']).toBe(510);
-      // Actions & UC = book value de l'achat (10 x 50)
-      expect(yearData['Actions & UC']).toBe(500);
+      // Actions & UC = valeur de marché (10 x 60) pour l'année courante
+      expect(yearData['Actions & UC']).toBe(600);
     });
 
     it('devrait refléter une vente avec plus-value dans Liquidités', async () => {

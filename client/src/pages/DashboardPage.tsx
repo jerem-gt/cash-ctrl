@@ -278,7 +278,7 @@ export default function DashboardPage() {
           const hasLoans = balanceHistory.data.some((d) => Number(d['Prêts'] ?? 0) < 0);
           const dataWithTotal = balanceHistory.data.map((d) => ({
             ...d,
-            _total: types.reduce((s, t) => s + Math.max(0, Number(d[t] ?? 0)), 0),
+            _total: types.reduce((s, t) => s + Number(d[t] ?? 0), 0),
           }));
           return (
             <Card>
