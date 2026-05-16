@@ -11,6 +11,7 @@ interface Props {
   accounts?: Account[];
   logoMap?: Record<string, string | null>;
   runningBalance?: number;
+  readOnly?: boolean;
   onEdit?: (tx: Transaction) => void;
   onDuplicate?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
@@ -21,6 +22,7 @@ export function TxItem({
   accounts,
   logoMap,
   runningBalance,
+  readOnly = false,
   onEdit,
   onDuplicate,
   onDelete,
@@ -149,13 +151,15 @@ export function TxItem({
 
         {/* ACTIONS : Boutons toujours visibles */}
         <div className="flex items-center gap-0 border-l border-stone-100 pl-2">
-          <button
-            onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
-            className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'}`}
-            title={validated ? 'Marquer comme non validée' : 'Valider'}
-          >
-            <span className="block scale-110">✓</span>
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
+              className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'}`}
+              title={validated ? 'Marquer comme non validée' : 'Valider'}
+            >
+              <span className="block scale-110">✓</span>
+            </button>
+          )}
 
           {onEdit && (
             <button

@@ -26,6 +26,8 @@ export default function AccountDetailPage() {
     account?.envelope_type === 'life_insurance' || account?.envelope_type === 'per';
   const isLoan = account?.envelope_type === 'loan';
   const isClosed = !!account?.closed_at;
+  const [temporarilyUnlocked, setTemporarilyUnlocked] = useState(false);
+  const readOnly = isClosed && !temporarilyUnlocked;
   const [loanCloseOpen, setLoanCloseOpen] = useState(false);
 
   const { data: loanData } = useLoan(isLoan ? accountId : 0);
@@ -67,7 +69,7 @@ export default function AccountDetailPage() {
       {/* Portefeuille bourse */}
       {isInvestment && (
         <div className="px-1">
-          <PortfolioSection accountId={accountId} readOnly={isClosed} />
+          <PortfolioSection accountId={accountId} readOnly={readOnly} />
         </div>
       )}
 
@@ -77,7 +79,7 @@ export default function AccountDetailPage() {
           <InsuranceSection
             accountId={accountId}
             isPer={account?.envelope_type === 'per'}
-            readOnly={isClosed}
+            readOnly={readOnly}
           />
         </div>
       )}
@@ -96,13 +98,31 @@ export default function AccountDetailPage() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
               Transactions
             </p>
+            {isClosed && (
+              <button
+                onClick={() => setTemporarilyUnlocked((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                title={
+                  temporarilyUnlocked ? 'Repasser en lecture seule' : 'Modifier temporairement'
+                }
+              >
+                <span
+                  className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors ${temporarilyUnlocked ? 'bg-amber-400 border-amber-400' : 'bg-stone-200 border-stone-200'}`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${temporarilyUnlocked ? 'translate-x-3' : 'translate-x-0.5'}`}
+                  />
+                </span>
+                {temporarilyUnlocked ? 'Modification temporaire' : 'Lecture seule'}
+              </button>
+            )}
           </div>
           <TransactionsList
             key={account?.id}
             account={account}
             logoMap={logoMap}
             emptyMessage="Aucune transaction sur ce compte"
-            readOnly={isClosed}
+            readOnly={readOnly}
           />
         </>
       )}
