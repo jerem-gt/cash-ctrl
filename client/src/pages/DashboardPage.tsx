@@ -315,6 +315,10 @@ export default function DashboardPage() {
         (() => {
           const types = balanceHistory.account_types;
           const hasLoans = balanceHistory.data.some((d) => Number(d['Prêts'] ?? 0) < 0);
+          const negativeTypes = new Set(
+            types.filter((t) => balanceHistory.data.some((d) => Number(d[t] ?? 0) < 0)),
+          );
+          const lastPositiveType = types.findLast((t) => !negativeTypes.has(t));
           const dataWithTotal = balanceHistory.data.map((d) => ({
             ...d,
             _total: types.reduce((s, t) => s + Number(d[t] ?? 0), 0),
@@ -336,6 +340,7 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart
                   data={dataWithTotal}
+                  stackOffset="sign"
                   barGap={2}
                   margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
                 >
@@ -355,16 +360,18 @@ export default function DashboardPage() {
                   />
                   {hasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
                   {types.map((type, i) => {
-                    const isLast = i === types.length - 1;
+                    const isNeg = negativeTypes.has(type);
+                    const isTopPositive = type === lastPositiveType;
+                    const radius = isNeg || isTopPositive ? [3, 3, 0, 0] : [0, 0, 0, 0];
                     return (
                       <Bar
                         key={type}
                         dataKey={type}
                         stackId="a"
                         fill={generateColor(i)}
-                        radius={isLast ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                        radius={radius as [number, number, number, number]}
                       >
-                        {isLast && (
+                        {isTopPositive && (
                           <LabelList
                             dataKey="_total"
                             position="top"
