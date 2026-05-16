@@ -6,7 +6,7 @@ import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
 import { CloseAccountModal } from '@/components/CloseAccountModal';
 import { LoanFormModal } from '@/components/LoanFormModal';
-import { Button, ConfirmModal, Empty, showToast } from '@/components/ui';
+import { Button, Card, ConfirmModal, Empty, showToast, Skeleton } from '@/components/ui';
 import {
   useAccounts,
   useDeleteAccount,
@@ -21,8 +21,33 @@ import { accountDisplayBalance, accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { Account } from '@/types.ts';
 
+function AccountsPageSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-9 w-36" />
+      </div>
+      <div className="space-y-3">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Card key={i} size="sm">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+              <Skeleton className="h-5 w-20 shrink-0" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AccountsPage() {
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
@@ -65,6 +90,8 @@ export default function AccountsPage() {
       })
       .map(([key, accs]) => ({ label: key === '' ? 'Sans banque' : key, accounts: accs }));
   }, [activeAccounts, accountTypes, groupBy]);
+
+  if (accountsLoading) return <AccountsPageSkeleton />;
 
   const handleReopenAccount = (accountId: number) => {
     reopenAccount.mutate(accountId, {

@@ -7,9 +7,16 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
 describe('DashboardPage', () => {
-  it('affiche le titre et le sous-titre', () => {
+  it('affiche le squelette pendant le chargement des stats', () => {
+    server.use(http.get('/api/stats', () => new Promise<never>(() => {})));
     renderWithProviders(<DashboardPage />);
-    expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
+    expect(screen.queryByText('Tableau de bord')).not.toBeInTheDocument();
+    expect(screen.queryByText('Solde total')).not.toBeInTheDocument();
+  });
+
+  it('affiche le titre et le sous-titre', async () => {
+    renderWithProviders(<DashboardPage />);
+    expect(await screen.findByText('Tableau de bord')).toBeInTheDocument();
     expect(screen.getByText("Vue d'ensemble de vos finances")).toBeInTheDocument();
   });
 

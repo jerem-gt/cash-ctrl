@@ -19,6 +19,21 @@ function renderDetail(id = '1') {
 }
 
 describe('AccountDetailPage', () => {
+  it('affiche le squelette pendant le chargement des comptes', () => {
+    server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
+    renderDetail();
+    expect(
+      screen.queryByRole('button', { name: /\+ nouvelle transaction/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
+  });
+
+  it('ne montre pas "Compte introuvable" pendant le chargement, même pour un id absent', () => {
+    server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
+    renderDetail('999');
+    expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
+  });
+
   it(`affiche "Compte introuvable" pour un id inexistant`, async () => {
     renderDetail('999');
     await waitFor(() => expect(screen.getByText('Compte introuvable.')).toBeInTheDocument());

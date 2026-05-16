@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 
 import { TxItem } from '@/components/TxItem';
-import { Card, CardTitle, Empty, Metric } from '@/components/ui';
+import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
@@ -24,9 +24,46 @@ import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
 import { usePendingReimbursements, useSetReimbursementStatus } from '../hooks/useReimbursements';
 
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="space-y-1.5">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map((i) => (
+          <Card key={i} size="sm">
+            <Skeleton className="h-3 w-20 mb-3" />
+            <Skeleton className="h-7 w-28" />
+          </Card>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <Card className="lg:col-span-2">
+          <Skeleton className="h-3 w-32 mb-4" />
+          <Skeleton className="h-44" />
+        </Card>
+        <Card className="lg:col-span-3">
+          <Skeleton className="h-3 w-40 mb-4" />
+          <Skeleton className="h-44" />
+        </Card>
+      </div>
+      <Card>
+        <Skeleton className="h-3 w-48 mb-4" />
+        <div className="space-y-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-11" />
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
-  const { data: stats } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: balanceHistory } = useBalanceHistory();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
@@ -70,6 +107,8 @@ export default function DashboardPage() {
   const setReimbursementStatus = useSetReimbursementStatus();
 
   const txItemProps = { accounts, logoMap };
+
+  if (statsLoading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-5">
