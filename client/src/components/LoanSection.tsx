@@ -10,6 +10,7 @@ import type { Account, LoanInstallment } from '@/types';
 type Props = {
   account: Account;
   onClose: () => void;
+  readOnly?: boolean;
 };
 
 function LoanStat({ label, value }: Readonly<{ label: string; value: string }>) {
@@ -156,7 +157,7 @@ function InstallmentRow({
   );
 }
 
-export function LoanSection({ account, onClose }: Readonly<Props>) {
+export function LoanSection({ account, onClose, readOnly = false }: Readonly<Props>) {
   const { data: loan, isLoading } = useLoan(account.id);
   const { data: installments = [] } = useLoanInstallments(loan?.id);
   const [editOpen, setEditOpen] = useState(false);
@@ -194,14 +195,16 @@ export function LoanSection({ account, onClose }: Readonly<Props>) {
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
             Détails du prêt
           </p>
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 transition-colors"
-          >
-            <Settings size={13} />
-            Modifier
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 transition-colors"
+            >
+              <Settings size={13} />
+              Modifier
+            </button>
+          )}
         </div>
 
         {/* Ligne 1 — paramètres fixes */}
