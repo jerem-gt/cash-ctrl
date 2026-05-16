@@ -1,11 +1,19 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import TransactionsPage from '@/pages/TransactionsPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 
 describe('TransactionsPage', () => {
+  it('affiche le squelette pendant le chargement des transactions', () => {
+    server.use(http.get('/api/transactions', () => new Promise<never>(() => {})));
+    renderWithProviders(<TransactionsPage />);
+    expect(screen.queryByText('Courses')).not.toBeInTheDocument();
+  });
+
   it('affiche les transactions après le chargement', async () => {
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
