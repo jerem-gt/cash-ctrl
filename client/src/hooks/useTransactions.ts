@@ -118,6 +118,8 @@ export function useValidateTransaction() {
       qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
         old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
       );
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
 }
