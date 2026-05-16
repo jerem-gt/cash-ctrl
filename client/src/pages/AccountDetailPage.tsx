@@ -87,7 +87,11 @@ export default function AccountDetailPage() {
       {/* Section prêt */}
       {isLoan && account && (
         <div className="px-1">
-          <LoanSection account={account} onClose={() => setLoanCloseOpen(true)} />
+          <LoanSection
+            account={account}
+            onClose={() => setLoanCloseOpen(true)}
+            readOnly={readOnly}
+          />
         </div>
       )}
 
