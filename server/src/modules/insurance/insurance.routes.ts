@@ -116,9 +116,8 @@ export function createInsuranceRouter(db: Database): Router {
       return;
     }
 
-    const balance = repo.getBalanceCents(accountId, supportId);
-    if (balance !== 0) {
-      res.status(400).json({ error: 'Impossible de supprimer un support avec un solde non nul' });
+    if (repo.hasOperations(supportId)) {
+      res.status(400).json({ error: 'Ce support a des opérations enregistrées' });
       return;
     }
 

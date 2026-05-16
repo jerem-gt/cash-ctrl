@@ -567,6 +567,23 @@ describe('/api/insurance', () => {
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBeGreaterThan(0);
     });
+
+    it('expose from_scheduled=false pour les versements manuels', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro from_scheduled',
+        type: 'euro',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 100,
+        fees: 0,
+        date: TODAY,
+        source_account_id: standardAccountId,
+      });
+      const res = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
+      const op = res.body.find((o: { support_id: number }) => o.support_id === sup.body.id);
+      expect(op.from_scheduled).toBe(false);
+    });
   });
 
   // ─── Suppression support ──────────────────────────────────────────────────
@@ -618,6 +635,28 @@ describe('/api/insurance', () => {
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
       expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si des opérations existent même avec un solde nul', async () => {
+      const sup = await ctx.agent.post(`/api/insurance/${avAccountId}/supports`).send({
+        name: 'Euro Soldé Ops',
+        type: 'euro',
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
+        support_id: sup.body.id,
+        amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      await ctx.agent.post(`/api/insurance/${avAccountId}/rachat`).send({
+        support_id: sup.body.id,
+        amount: 100,
+        fees: 0,
+        date: TODAY,
+      });
+      const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Ce support a des opérations enregistrées');
     });
 
     it('retourne 403 pour un compte inconnu', async () => {
