@@ -118,7 +118,7 @@ describe('/api/insurance', () => {
       expect(tx.amount).toBe(1000);
     });
 
-    it('crée une transaction de frais séparée si frais > 0', async () => {
+    it("stocke les frais dans l'opération sans créer de transaction source séparée", async () => {
       const res = await ctx.agent.post(`/api/insurance/${avAccountId}/versement`).send({
         support_id: euroSupportId,
         amount: 500,
@@ -128,7 +128,7 @@ describe('/api/insurance', () => {
       });
       expect(res.status).toBe(201);
       expect(res.body.operation.fees).toBe(2.5);
-      expect(res.body.operation.fees_transaction_id).toBeGreaterThan(0);
+      expect(res.body.operation.fees_transaction_id).toBeNull();
     });
 
     it('met à jour la valeur fonds euro', async () => {

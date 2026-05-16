@@ -6,10 +6,6 @@ import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
 import { createSettingsRepo } from '../modules/settings/settings.repo';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
-import {
-  getBankFeesSubcategoryId,
-  getPrelevementPaymentMethodId,
-} from './administrationDataConstants.js';
 import { toCents } from './money.js';
 import {
   applyWeekend,
@@ -38,26 +34,8 @@ function generateInsuranceVersement(
     .run(userId, sched.to_account_id!, amountCents, sched.description, actualStr, sched.id);
   const transactionId = Number(txResult.lastInsertRowid);
 
-  let feesTransactionId: number | null = null;
-  if (feesCents > 0) {
-    const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-    const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-    const feesResult = db
-      .prepare(
-        `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
-         VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
-      )
-      .run(
-        userId,
-        sched.to_account_id!,
-        feesCents,
-        `Frais — ${sched.description}`,
-        subcategoryId,
-        actualStr,
-        paymentMethodId,
-      );
-    feesTransactionId = Number(feesResult.lastInsertRowid);
-  }
+  // Fees are embedded in the versement amount — no separate source debit.
+  const feesTransactionId: number | null = null;
 
   db.prepare(
     `INSERT INTO insurance_operations

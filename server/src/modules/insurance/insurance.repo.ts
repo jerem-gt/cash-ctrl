@@ -111,10 +111,12 @@ function insertInsuranceTxAndOp(
     transactionId = Number(txResult.lastInsertRowid);
   }
 
+  // For versements, fees are embedded in the versement amount — no separate source debit.
+  const feesAccountId = opType === 'rachat' ? txAccountId : null;
   const feesTransactionId = insertInsuranceFeesTransaction(
     db,
     userId,
-    txAccountId,
+    feesAccountId,
     feesCents,
     `Frais — ${description}`,
     date,
