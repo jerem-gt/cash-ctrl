@@ -134,7 +134,7 @@ export function TxItem({
 
       {/* DROITE : Finances (Toujours visibles) */}
       <div className="flex items-center gap-4 shrink-0">
-        <div className="text-right min-w-[75px]">
+        <div className="text-right min-w-18.75">
           <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
             {tx.type === 'income' ? '+' : '−'}
             {fmtDec(tx.amount)}
