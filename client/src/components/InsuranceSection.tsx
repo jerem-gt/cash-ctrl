@@ -218,6 +218,11 @@ function OperationRow({
         {cfg.label}
       </span>
       <span className="text-sm text-stone-600 flex-1 truncate">{op.support_name}</span>
+      {op.from_scheduled && (
+        <span className="text-[12px] text-indigo-400 shrink-0" title="Transaction planifiée">
+          ↻
+        </span>
+      )}
       {op.fees > 0 && (
         <span className="text-[10px] text-stone-400 shrink-0">frais {fmtEur(op.fees)}</span>
       )}
@@ -271,6 +276,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
   const [editingOp, setEditingOp] = useState<InsuranceOperation | null>(null);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
+  const [showZero, setShowZero] = useState(false);
 
   return (
     <>
@@ -304,9 +310,14 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
               </div>
             );
           } else {
+            const activePositions = positions.filter((p) => p.value !== 0);
+            const zeroPositions = positions.filter((p) => p.value === 0);
+            const visiblePositions = activePositions.length === 0 ? positions : activePositions;
+            const hasZeroSection = activePositions.length > 0 && zeroPositions.length > 0;
+
             content = (
               <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-                {positions.map((pos) => (
+                {visiblePositions.map((pos) => (
                   <SupportRow
                     key={pos.id}
                     support={pos}
@@ -315,6 +326,29 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
                     readOnly={readOnly}
                   />
                 ))}
+
+                {hasZeroSection && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowZero((v) => !v)}
+                      className="w-full flex items-center justify-between px-4 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                    >
+                      <span>Supports soldés ({zeroPositions.length})</span>
+                      <span>{showZero ? '▲' : '▼'}</span>
+                    </button>
+                    {showZero &&
+                      zeroPositions.map((pos) => (
+                        <SupportRow
+                          key={pos.id}
+                          support={pos}
+                          allSupports={positions}
+                          accountId={accountId}
+                          readOnly={readOnly}
+                        />
+                      ))}
+                  </>
+                )}
 
                 {positions.length > 1 && (
                   <div className="flex items-center justify-between py-3 px-4 bg-stone-50 border-t border-stone-100">

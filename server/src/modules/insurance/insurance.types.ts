@@ -25,6 +25,7 @@ export interface InsuranceOperation {
   date: string;
   arbitrage_peer_id: number | null;
   created_at: string;
+  from_scheduled: boolean;
 }
 
 export interface InsuranceSupportView {

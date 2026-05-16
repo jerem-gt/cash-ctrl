@@ -33,6 +33,7 @@ function mapOperation(row: InsuranceOperation): InsuranceOperation {
     amount: toEuros(row.amount),
     fees: toEuros(row.fees),
     social_fees: toEuros(row.social_fees),
+    from_scheduled: !!row.from_scheduled,
   };
 }
 
@@ -60,9 +61,11 @@ function insertInsuranceFeesTransaction(
 const OPERATION_SELECT = `
   SELECT io.id, io.account_id, io.support_id, ins.name AS support_name, ins.type AS support_type,
          io.transaction_id, io.fees_transaction_id, io.social_fees_transaction_id, io.type,
-         io.amount, io.fees, io.social_fees, io.date, io.arbitrage_peer_id, io.created_at
+         io.amount, io.fees, io.social_fees, io.date, io.arbitrage_peer_id, io.created_at,
+         (t.scheduled_id IS NOT NULL) AS from_scheduled
   FROM insurance_operations io
-  JOIN insurance_supports ins ON io.support_id = ins.id`;
+  JOIN insurance_supports ins ON io.support_id = ins.id
+  LEFT JOIN transactions t ON io.transaction_id = t.id`;
 
 type InsuranceTxAndOpOpts = {
   accountId: number;
@@ -196,6 +199,16 @@ export function createInsuranceRepo(db: Database) {
           .prepare<[number], InsuranceSupport>('SELECT * FROM insurance_supports WHERE id = ?')
           .get(supportId) ?? undefined
       );
+    },
+
+    hasOperations(supportId: number): boolean {
+      const row = db
+        .prepare<
+          [number],
+          { n: number }
+        >('SELECT COUNT(*) AS n FROM insurance_operations WHERE support_id = ?')
+        .get(supportId);
+      return (row?.n ?? 0) > 0;
     },
 
     deleteSupport(supportId: number): void {

@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { InsuranceSection } from '@/components/InsuranceSection';
-import { INSURANCE_POSITIONS } from '@/tests/fixtures';
+import { INSURANCE_OPERATIONS, INSURANCE_POSITIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -228,6 +228,23 @@ describe('InsuranceSection', () => {
     expect(screen.queryByRole('button', { name: /intérêts/i })).not.toBeInTheDocument();
   });
 
+  it("affiche l'indicateur planifié pour les opérations issues d'une planification", async () => {
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.getByTitle('Transaction planifiée')).toBeInTheDocument();
+  });
+
+  it("n'affiche pas l'indicateur planifié pour les opérations saisies manuellement", async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/operations', () =>
+        HttpResponse.json([{ ...INSURANCE_OPERATIONS[0], from_scheduled: false }]),
+      ),
+    );
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.queryByTitle('Transaction planifiée')).not.toBeInTheDocument();
+  });
+
   it("affiche un bouton Modifier pour chaque opération de l'historique", async () => {
     renderSection();
     await screen.findAllByText('Fonds Euro Sécurité');
@@ -256,5 +273,72 @@ describe('InsuranceSection', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Opération modifiée'),
     );
+  });
+
+  // ─── Supports soldés (section repliée) ────────────────────────────────────
+
+  it("n'affiche pas le bouton Supports soldés quand tous les supports ont une valeur non nulle", async () => {
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.queryByText(/supports soldés/i)).not.toBeInTheDocument();
+  });
+
+  it('affiche le bouton Supports soldés quand un support est à 0€', async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/positions', () =>
+        HttpResponse.json([
+          ...INSURANCE_POSITIONS,
+          { id: 3, account_id: 10, name: 'UC Soldée', type: 'uc', ticker: null, value: 0 },
+        ]),
+      ),
+    );
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.getByText(/supports soldés \(1\)/i)).toBeInTheDocument();
+  });
+
+  it('cache les supports à 0€ par défaut quand des supports actifs existent', async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/positions', () =>
+        HttpResponse.json([
+          ...INSURANCE_POSITIONS,
+          { id: 3, account_id: 10, name: 'UC Soldée', type: 'uc', ticker: null, value: 0 },
+        ]),
+      ),
+    );
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.queryByText('UC Soldée')).not.toBeInTheDocument();
+  });
+
+  it('affiche les supports à 0€ après clic sur le bouton Supports soldés', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/insurance/:accountId/positions', () =>
+        HttpResponse.json([
+          ...INSURANCE_POSITIONS,
+          { id: 3, account_id: 10, name: 'UC Soldée', type: 'uc', ticker: null, value: 0 },
+        ]),
+      ),
+    );
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    await user.click(screen.getByText(/supports soldés \(1\)/i));
+    expect(screen.getByText('UC Soldée')).toBeInTheDocument();
+  });
+
+  it('affiche tous les supports sans toggle quand tous sont à 0€', async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/positions', () =>
+        HttpResponse.json([
+          { id: 1, account_id: 10, name: 'Euro Soldé', type: 'euro', ticker: null, value: 0 },
+          { id: 2, account_id: 10, name: 'UC Soldée', type: 'uc', ticker: null, value: 0 },
+        ]),
+      ),
+    );
+    renderSection();
+    await screen.findByText('Euro Soldé');
+    expect(screen.getByText('UC Soldée')).toBeInTheDocument();
+    expect(screen.queryByText(/supports soldés/i)).not.toBeInTheDocument();
   });
 });
