@@ -103,7 +103,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-end">
             <FormGroup label="Frais (€)" htmlFor="rachat-fees">
               <Input
                 id="rachat-fees"
@@ -124,7 +124,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
                 onChange={(e) => setSocialFees(e.target.value)}
               />
             </FormGroup>
-            <FormGroup label="Date" htmlFor="rachat-date">
+            <FormGroup label="Date" htmlFor="rachat-date" className="min-w-36">
               <Input
                 id="rachat-date"
                 type="date"

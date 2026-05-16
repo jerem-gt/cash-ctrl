@@ -85,7 +85,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
               />
             </FormGroup>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-end">
               {hasFees && (
                 <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
                   <Input
@@ -110,7 +110,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                   />
                 </FormGroup>
               )}
-              <FormGroup label="Date" htmlFor="edit-op-date">
+              <FormGroup label="Date" htmlFor="edit-op-date" className="min-w-36">
                 <Input
                   id="edit-op-date"
                   type="date"
