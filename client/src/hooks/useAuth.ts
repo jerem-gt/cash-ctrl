@@ -27,6 +27,7 @@ export function useLogout() {
     onSuccess: () => {
       showToast('Déconnexion réussie');
       qc.setQueryData(['me'], null);
+      qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
     },
   });
 }
