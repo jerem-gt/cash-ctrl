@@ -9,6 +9,13 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
 describe('ScheduledPage', () => {
+  it('affiche le squelette pendant le chargement des planifications', () => {
+    server.use(http.get('/api/scheduled', () => new Promise<never>(() => {})));
+    renderWithProviders(<ScheduledPage />);
+    expect(screen.queryByText('Loyer')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement…')).not.toBeInTheDocument();
+  });
+
   it('affiche le titre', () => {
     renderWithProviders(<ScheduledPage />);
     expect(screen.getByText('Planifications')).toBeInTheDocument();

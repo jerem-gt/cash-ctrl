@@ -12,6 +12,7 @@ import {
   Input,
   Select,
   showToast,
+  Skeleton,
 } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
@@ -840,7 +841,20 @@ export default function ScheduledPage() {
       {/* Liste des planifications */}
       <Card>
         {isLoading ? (
-          <p className="text-sm text-stone-400 py-2">Chargement…</p>
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0"
+              >
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+                <Skeleton className="h-4 w-16 shrink-0" />
+              </div>
+            ))}
+          </div>
         ) : (
           scheduledListOrEmpty
         )}
