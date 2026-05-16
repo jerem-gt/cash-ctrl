@@ -8,6 +8,13 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
 describe('BanksManager', () => {
+  it('affiche le squelette pendant le chargement des banques', () => {
+    server.use(http.get('/api/banks', () => new Promise<never>(() => {})));
+    renderWithProviders(<BanksManager />);
+    expect(screen.queryByText('BNP')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
+  });
+
   it('affiche la section', async () => {
     renderWithProviders(<BanksManager />);
     expect(await screen.findByText('Banques')).toBeInTheDocument();

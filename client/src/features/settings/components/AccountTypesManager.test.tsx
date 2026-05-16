@@ -7,6 +7,13 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
 describe('AccountTypesManager', () => {
+  it('affiche le squelette pendant le chargement des types de compte', () => {
+    server.use(http.get('/api/account-types', () => new Promise<never>(() => {})));
+    renderWithProviders(<AccountTypesManager />);
+    expect(screen.queryByText('Courant')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
+  });
+
   it('affiche la section', async () => {
     renderWithProviders(<AccountTypesManager />);
     expect(await screen.findByText('Types de compte')).toBeInTheDocument();
