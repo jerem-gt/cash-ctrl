@@ -84,6 +84,7 @@ export function TransactionsList({
                 accounts={account ? undefined : state.accounts}
                 logoMap={logoMap}
                 runningBalance={account == null ? undefined : runningBalances[i]}
+                readOnly={readOnly}
                 onEdit={readOnly ? undefined : actions.openEdit}
                 onDuplicate={readOnly ? undefined : actions.openDuplicate}
                 onDelete={readOnly ? undefined : actions.openDelete}
