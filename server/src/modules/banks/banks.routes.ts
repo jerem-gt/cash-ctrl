@@ -32,6 +32,17 @@ export function createBanksRouter(db: Database): Router {
     res.json(banksRepo.getAll());
   });
 
+  router.put('/reorder', (req, res) => {
+    const schema = z.array(z.object({ id: z.number().int(), sort_order: z.number().int() }));
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      return;
+    }
+    banksRepo.reorder(parsed.data);
+    res.json({ ok: true });
+  });
+
   router.post('/', (req, res) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {

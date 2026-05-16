@@ -208,4 +208,27 @@ describe('BanksManager', () => {
       expect(document.getElementById('toast')?.textContent).toContain('Erreur ajout banque'),
     );
   });
+
+  // ─── Drag-and-drop ─────────────────────────────────────────────────────────
+
+  it('affiche une poignée de déplacement pour chaque banque', async () => {
+    renderWithProviders(<BanksManager />);
+    await screen.findByText('BNP');
+    expect(document.querySelectorAll('[aria-roledescription="sortable"]')).toHaveLength(1);
+  });
+
+  it('affiche deux poignées de déplacement pour deux banques', async () => {
+    server.use(
+      http.get('/api/banks', () =>
+        HttpResponse.json([
+          { ...BANKS[0], id: 1, sort_order: 0 },
+          { id: 2, name: 'Société Générale', logo: null, domain: null, sort_order: 1 },
+        ]),
+      ),
+    );
+    renderWithProviders(<BanksManager />);
+    await screen.findByText('BNP');
+    await screen.findByText('Société Générale');
+    expect(document.querySelectorAll('[aria-roledescription="sortable"]')).toHaveLength(2);
+  });
 });

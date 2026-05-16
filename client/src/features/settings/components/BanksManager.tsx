@@ -1,6 +1,24 @@
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useQueryClient } from '@tanstack/react-query';
+import { GripVertical } from 'lucide-react';
 import { ChangeEvent, SyntheticEvent, useState } from 'react';
 
-import { ListContent } from '@/components/ListContent.tsx';
 import { showToast } from '@/components/ui.tsx';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
@@ -8,6 +26,7 @@ import {
   useBanks,
   useCreateBank,
   useDeleteBank,
+  useReorderBanks,
   useUpdateBank,
   useUploadBankLogo,
 } from '@/hooks/useBanks.ts';
@@ -22,30 +41,50 @@ function BankRow({
   selectedId: number | null;
   onSelect: (id: number) => void;
 }>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: bank.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <button
-      onClick={() => onSelect(bank.id)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-        selectedId === bank.id
-          ? 'bg-white shadow-sm ring-1 ring-black/5 text-black'
-          : 'text-stone-500 hover:bg-black/5'
-      }`}
-    >
-      {bank.logo ? (
-        <img
-          src={bank.logo}
-          alt=""
-          className="w-5 h-5 object-contain rounded shrink-0"
-          onError={(e) => (e.currentTarget.style.display = 'none')}
-        />
-      ) : (
-        <div className="w-5 h-5 rounded bg-stone-200 shrink-0" />
-      )}
-      <span className="flex-1 text-sm font-semibold tracking-tight text-left">{bank.name}</span>
-      {(bank.acc_count ?? 0) > 0 && (
-        <span className="text-[10px] font-bold opacity-30 tabular-nums">{bank.acc_count}</span>
-      )}
-    </button>
+    <div ref={setNodeRef} style={style} className="flex items-center gap-1">
+      <button
+        {...attributes}
+        {...listeners}
+        className="p-1 text-stone-300 hover:text-stone-500 cursor-grab active:cursor-grabbing shrink-0 touch-none"
+        tabIndex={-1}
+      >
+        <GripVertical size={14} />
+      </button>
+      <button
+        onClick={() => onSelect(bank.id)}
+        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+          selectedId === bank.id
+            ? 'bg-white shadow-sm ring-1 ring-black/5 text-black'
+            : 'text-stone-500 hover:bg-black/5'
+        }`}
+      >
+        {bank.logo ? (
+          <img
+            src={bank.logo}
+            alt=""
+            className="w-5 h-5 object-contain rounded shrink-0"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+        ) : (
+          <div className="w-5 h-5 rounded bg-stone-200 shrink-0" />
+        )}
+        <span className="flex-1 text-sm font-semibold tracking-tight text-left">{bank.name}</span>
+        {(bank.acc_count ?? 0) > 0 && (
+          <span className="text-[10px] font-bold opacity-30 tabular-nums">{bank.acc_count}</span>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -225,9 +264,16 @@ function BankDetails({ bank }: Readonly<{ bank: Bank }>) {
 export function BanksManager() {
   const { data: banks = [], isLoading: banksLoading } = useBanks();
   const createBank = useCreateBank();
+  const reorderBanks = useReorderBanks();
+  const qc = useQueryClient();
   const [newBank, setNewBank] = useState({ name: '', domain: '' });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selectedBank = banks.find((b) => b.id === selectedId);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   if (banksLoading) return <SettingsManagerSkeleton />;
 
@@ -246,6 +292,21 @@ export function BanksManager() {
         },
         onError: (err) => showToast(err.message),
       },
+    );
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = banks.findIndex((b) => b.id === active.id);
+    const newIndex = banks.findIndex((b) => b.id === over.id);
+    const reordered = arrayMove(banks, oldIndex, newIndex);
+    qc.setQueryData(['banks'], reordered);
+
+    reorderBanks.mutate(
+      reordered.map((b, i) => ({ id: b.id, sort_order: i })),
+      { onError: () => qc.invalidateQueries({ queryKey: ['banks'] }) },
     );
   };
 
@@ -286,14 +347,20 @@ export function BanksManager() {
             </div>
           </form>
         </div>
-        <ListContent
-          isLoading={banksLoading}
-          items={banks}
-          empty=""
-          render={(bank) => (
-            <BankRow key={bank.id} bank={bank} selectedId={selectedId} onSelect={setSelectedId} />
-          )}
-        />
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={banks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-0.5">
+              {banks.map((bank) => (
+                <BankRow
+                  key={bank.id}
+                  bank={bank}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* COLONNE DROITE */}

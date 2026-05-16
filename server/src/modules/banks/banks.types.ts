@@ -3,6 +3,7 @@ export interface Bank {
   name: string;
   logo: string | null;
   domain: string | null;
+  sort_order: number;
   created_at: string;
 }
 

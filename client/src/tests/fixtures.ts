@@ -258,7 +258,7 @@ export const STOCK_OPERATIONS: StockOperation[] = [
 ];
 
 export const BANKS: Bank[] = [
-  { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr' },
+  { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr', sort_order: 0 },
 ];
 
 export const CATEGORIES: Category[] = [

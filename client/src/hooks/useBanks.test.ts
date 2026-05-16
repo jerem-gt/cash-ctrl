@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 
-import { useBanks, useCreateBank, useDeleteBank, useUpdateBank } from './useBanks';
+import { useBanks, useCreateBank, useDeleteBank, useReorderBanks, useUpdateBank } from './useBanks';
 
 describe('useBanks', () => {
   it('charge les banques', async () => {
@@ -38,6 +38,18 @@ describe('useDeleteBank', () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useDeleteBank(), { wrapper: Wrapper });
     result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useReorderBanks', () => {
+  it('réordonne les banques avec succès', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useReorderBanks(), { wrapper: Wrapper });
+    result.current.mutate([
+      { id: 1, sort_order: 0 },
+      { id: 2, sort_order: 1 },
+    ]);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

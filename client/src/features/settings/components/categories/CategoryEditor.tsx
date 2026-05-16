@@ -1,7 +1,8 @@
-import { Categories } from 'emoji-picker-react';
 import React, { Suspense, useEffect, useState } from 'react';
 
-const EmojiPicker = React.lazy(() => import('emoji-picker-react'));
+const EmojiPickerWidget = React.lazy(() =>
+  import('./EmojiPickerWidget').then((m) => ({ default: m.EmojiPickerWidget })),
+);
 
 export type CategoryForm = { name: string; icon: string };
 
@@ -59,23 +60,11 @@ export function CategoryEditor({
               <Suspense
                 fallback={<div className="p-8 text-xs text-stone-400 bg-white">Chargement...</div>}
               >
-                <EmojiPicker
-                  onEmojiClick={(data) => {
-                    setForm((f) => ({ ...f, icon: data.emoji }));
+                <EmojiPickerWidget
+                  onSelect={(emoji) => {
+                    setForm((f) => ({ ...f, icon: emoji }));
                     setShowPicker(false);
                   }}
-                  width={300}
-                  height={350}
-                  previewConfig={{ showPreview: false }}
-                  skinTonesDisabled
-                  searchPlaceholder="Rechercher..."
-                  categories={[
-                    { category: Categories.SYMBOLS, name: 'Symboles' },
-                    { category: Categories.OBJECTS, name: 'Objets' },
-                    { category: Categories.TRAVEL_PLACES, name: 'Lieux' },
-                    { category: Categories.FOOD_DRINK, name: 'Alimentation' },
-                    { category: Categories.ACTIVITIES, name: 'Loisirs' },
-                  ]}
                 />
               </Suspense>
             </div>

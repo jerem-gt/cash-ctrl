@@ -51,6 +51,10 @@ export default function AccountsPage() {
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const bankSortOrder = useMemo(
+    () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
+    [banks],
+  );
   const [addOpen, setAddOpen] = useState(false);
   const [addLoanOpen, setAddLoanOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
@@ -86,10 +90,10 @@ export default function AccountsPage() {
       .sort(([a], [b]) => {
         if (a === '') return 1;
         if (b === '') return -1;
-        return a.localeCompare(b);
+        return (bankSortOrder[a] ?? Infinity) - (bankSortOrder[b] ?? Infinity);
       })
       .map(([key, accs]) => ({ label: key === '' ? 'Sans banque' : key, accounts: accs }));
-  }, [activeAccounts, accountTypes, groupBy]);
+  }, [activeAccounts, accountTypes, groupBy, bankSortOrder]);
 
   if (accountsLoading) return <AccountsPageSkeleton />;
 
