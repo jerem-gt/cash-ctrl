@@ -24,6 +24,7 @@ const VERSEMENT_OP: InsuranceOperation = {
   date: '2024-01-15',
   arbitrage_peer_id: null,
   created_at: '2024-01-15T10:00:00',
+  from_scheduled: false,
 };
 
 const RACHAT_OP: InsuranceOperation = {
