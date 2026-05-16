@@ -8,6 +8,13 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
 describe('CategoriesManager', () => {
+  it('affiche le squelette pendant le chargement des catégories', () => {
+    server.use(http.get('/api/categories', () => new Promise<never>(() => {})));
+    renderWithProviders(<CategoriesManager />);
+    expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
+  });
+
   it('affiche la section', async () => {
     renderWithProviders(<CategoriesManager />);
     expect(await screen.findByText('Catégories')).toBeInTheDocument();

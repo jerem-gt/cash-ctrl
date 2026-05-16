@@ -8,6 +8,13 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
 describe('PaymentMethodsManager', () => {
+  it('affiche le squelette pendant le chargement des moyens de paiement', () => {
+    server.use(http.get('/api/payment-methods', () => new Promise<never>(() => {})));
+    renderWithProviders(<PaymentMethodsManager />);
+    expect(screen.queryByText('CB')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement...')).not.toBeInTheDocument();
+  });
+
   it('affiche la section', async () => {
     renderWithProviders(<PaymentMethodsManager />);
     expect(await screen.findByText('Moyens de paiement')).toBeInTheDocument();
