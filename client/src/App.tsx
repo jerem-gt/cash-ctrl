@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { Sidebar } from '@/components/Sidebar';
-import { Toast } from '@/components/ui';
+import { Card, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
@@ -39,7 +39,32 @@ function AppShell() {
     <div className="flex min-h-screen bg-stone-100">
       <Sidebar username={me.username} />
       <main className="ml-72 flex-1 p-9 max-w-[calc(100vw-18rem)]">
-        <Suspense fallback={<div className="text-sm text-stone-400">Chargement…</div>}>
+        <Suspense
+          fallback={
+            <div className="space-y-5 animate-pulse">
+              <div className="space-y-1.5">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <Card key={i} size="sm">
+                    <Skeleton className="h-3 w-20 mb-3" />
+                    <Skeleton className="h-7 w-28" />
+                  </Card>
+                ))}
+              </div>
+              <Card>
+                <Skeleton className="h-3 w-40 mb-4" />
+                <div className="space-y-3">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-11" />
+                  ))}
+                </div>
+              </Card>
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />

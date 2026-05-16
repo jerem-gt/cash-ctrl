@@ -24,6 +24,13 @@ beforeEach(() => {
 });
 
 describe('AccountsPage', () => {
+  it('affiche le squelette pendant le chargement des comptes', () => {
+    server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
+    renderAccountsPage();
+    expect(screen.queryByText('BNP')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+ nouveau compte/i })).not.toBeInTheDocument();
+  });
+
   it('affiche la liste des comptes groupés par banque par défaut', async () => {
     renderAccountsPage();
 
@@ -36,7 +43,8 @@ describe('AccountsPage', () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
-    await user.click(screen.getByRole('button', { name: /^type$/i }));
+    const typeBtn = await screen.findByRole('button', { name: /^type$/i });
+    await user.click(typeBtn);
 
     await screen.findByText('Courant');
     expect(screen.getByText('Compte test')).toBeInTheDocument();
@@ -73,7 +81,7 @@ describe('AccountsPage', () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
-    const addBtn = screen.getByRole('button', { name: /\+ nouveau compte/i });
+    const addBtn = await screen.findByRole('button', { name: /\+ nouveau compte/i });
     await user.click(addBtn);
 
     expect(screen.getByText('Ajouter un compte')).toBeInTheDocument();

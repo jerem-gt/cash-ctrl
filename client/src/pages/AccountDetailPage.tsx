@@ -7,16 +7,52 @@ import { InsuranceSection } from '@/components/InsuranceSection';
 import { LoanSection } from '@/components/LoanSection';
 import { PortfolioSection } from '@/components/PortfolioSection';
 import { TransactionsList } from '@/components/TransactionsList';
+import { Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useLoan, useLoanInstallments } from '@/hooks/useLoans';
+
+function AccountDetailSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex gap-5 items-start">
+            <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
+            <div className="space-y-2.5">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-9 w-52" />
+              <Skeleton className="h-4 w-44" />
+            </div>
+          </div>
+          <Skeleton className="h-16 w-48 rounded-2xl shrink-0" />
+        </div>
+      </div>
+      <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+        Transactions
+      </p>
+      <div className="flex flex-col gap-2">
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-4 py-3 border rounded-xl border-black/[0.07] bg-white"
+          >
+            <Skeleton className="w-4 h-4 shrink-0" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-20 shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const accountId = Number.parseInt(id ?? '0');
   const navigate = useNavigate();
 
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
 
@@ -39,6 +75,8 @@ export default function AccountDetailPage() {
       .reduce((sum, i) => sum + i.principal_amount, 0);
     return Math.max(0, loanData.principal_amount - paid);
   }, [loanData, loanInstallments]);
+
+  if (accountsLoading) return <AccountDetailSkeleton />;
 
   if (!account) {
     return (
