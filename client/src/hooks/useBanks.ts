@@ -17,7 +17,8 @@ export function useCreateBank() {
 export function useUpdateBank() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: number; name: string; domain?: string | null }) => banksApi.update(id, payload),
+    mutationFn: ({ id, ...payload }: { id: number; name: string; domain?: string | null }) =>
+      banksApi.update(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['banks'] }),
   });
 }
@@ -27,6 +28,14 @@ export function useUploadBankLogo() {
   return useMutation({
     mutationFn: ({ id, file }: { id: number; file: File }) => banksApi.uploadLogo(id, file),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['banks'] }),
+  });
+}
+
+export function useReorderBanks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: banksApi.reorder,
+    onError: () => qc.invalidateQueries({ queryKey: ['banks'] }),
   });
 }
 

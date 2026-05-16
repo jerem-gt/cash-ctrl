@@ -77,6 +77,8 @@ export const banksApi = {
     request<Bank>('POST', '/api/banks', payload),
   update: (id: number, payload: { name: string; domain?: string | null }) =>
     request<Bank>('PUT', `/api/banks/${id}`, payload),
+  reorder: (items: { id: number; sort_order: number }[]) =>
+    request<{ ok: boolean }>('PUT', '/api/banks/reorder', items),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/banks/${id}`),
   uploadLogo: async (id: number, file: File): Promise<Bank> => {
     const fd = new FormData();

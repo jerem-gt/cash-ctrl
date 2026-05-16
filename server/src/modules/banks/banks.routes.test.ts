@@ -57,4 +57,38 @@ describe('/api/banks', () => {
   it('DELETE /:id retourne 404 pour une banque inconnue', async () => {
     expect((await ctx.agent.delete('/api/banks/99999')).status).toBe(404);
   });
+
+  describe('PUT /reorder', () => {
+    it("réordonne les banques et persiste l'ordre", async () => {
+      const b1 = (await ctx.agent.post('/api/banks').send({ name: 'Banque A' })).body;
+      const b2 = (await ctx.agent.post('/api/banks').send({ name: 'Banque B' })).body;
+
+      const res = await ctx.agent.put('/api/banks/reorder').send([
+        { id: b2.id, sort_order: 0 },
+        { id: b1.id, sort_order: 1 },
+      ]);
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      const list = (await ctx.agent.get('/api/banks')).body as { id: number }[];
+      const ids = list.map((b) => b.id);
+      expect(ids.indexOf(b2.id)).toBeLessThan(ids.indexOf(b1.id));
+    });
+
+    it("retourne 400 si le body n'est pas un tableau valide", async () => {
+      const res = await ctx.agent.put('/api/banks/reorder').send({ id: 1 });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si un élément est malformé', async () => {
+      const res = await ctx.agent.put('/api/banks/reorder').send([{ id: 'abc', sort_order: 0 }]);
+      expect(res.status).toBe(400);
+    });
+  });
+
+  it('POST / crée une banque avec un sort_order défini', async () => {
+    const res = await ctx.agent.post('/api/banks').send({ name: 'NewOrderBank' });
+    expect(res.status).toBe(201);
+    expect(typeof res.body.sort_order).toBe('number');
+  });
 });

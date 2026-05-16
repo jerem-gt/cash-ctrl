@@ -46,6 +46,15 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 - **Mocks**: Utiliser **MSW** (Mock Service Worker) pour intercepter les appels API et `vi.fn()` pour les mocks unitaires.
 - **Intitulés de tests** : toujours utiliser des guillemets doubles `"` pour les chaînes passées à `it()`, `describe()` et `test()`. Les apostrophes françaises (`d'`, `l'`, `n'`...) dans une single-quoted string cassent le parser oxc/esbuild sans warning. Exception : utiliser des backticks `` ` `` quand l'intitulé contient lui-même des guillemets doubles (ex. texte UI cité, valeur d'enum).
 
+### Écrire les TUs avec chaque évolution
+Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
+
+1. **Test de route serveur** (`modules/<module>/<module>.routes.test.ts`) — comportement nominal, validation 400, cas 404/409.
+2. **Test de hook client** (`hooks/use<Feature>.test.ts`) — happy path pour chaque mutation/query ajoutée.
+3. **Test de composant** (`components/` ou `features/**/components/`) — interactions utilisateur, toasts, états loading/error.
+4. **Handler MSW** (`tests/msw/handlers.ts`) — ajouter l'intercepteur du nouvel endpoint. Placer les handlers littéraux (ex. `/api/banks/reorder`) **avant** les handlers paramétriques (`/api/banks/:id`) pour éviter le masquage.
+5. **Fixtures** (`tests/fixtures.ts`) — mettre à jour les objets typés si un type gagne un nouveau champ requis.
+
 ## Project Structure
 - `client/src/` : Code source React.
 - `server/src/` : Code source de l'API.

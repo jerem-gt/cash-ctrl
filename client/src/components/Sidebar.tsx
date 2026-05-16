@@ -55,6 +55,10 @@ export function Sidebar({ username }: Readonly<Props>) {
 
   const accountsActive = useMatch({ path: '/accounts/:id', end: true }) !== null;
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const bankSortOrder = useMemo(
+    () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
+    [banks],
+  );
 
   const groups = useMemo(() => {
     const map = new Map<string, Account[]>();
@@ -68,6 +72,7 @@ export function Sidebar({ username }: Readonly<Props>) {
         if (groupBy === 'bank') {
           if (a === '') return 1;
           if (b === '') return -1;
+          return (bankSortOrder[a] ?? Infinity) - (bankSortOrder[b] ?? Infinity);
         }
         return a.localeCompare(b);
       })
@@ -75,7 +80,7 @@ export function Sidebar({ username }: Readonly<Props>) {
         label: groupBy === 'bank' && key === '' ? 'Sans banque' : key,
         accounts: accs,
       }));
-  }, [accounts, groupBy]);
+  }, [accounts, groupBy, bankSortOrder]);
   const soldeTotal = useMemo(
     () =>
       groups.reduce((t, g) => t + g.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0), 0),

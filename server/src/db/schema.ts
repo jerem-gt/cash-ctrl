@@ -317,6 +317,14 @@ export function initSchema(db: Database) {
     `);
 
   // Migrations: add new columns if they don't exist yet
+  const bankCols = (db.pragma('table_info(banks)') as { name: string }[]).map((r) => r.name);
+  if (!bankCols.includes('sort_order')) {
+    db.exec('ALTER TABLE banks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
+    db.exec(
+      'UPDATE banks SET sort_order = (SELECT COUNT(*) FROM banks b2 WHERE b2.name < banks.name)',
+    );
+  }
+
   const schedCols = (db.pragma('table_info(scheduled_transactions)') as { name: string }[]).map(
     (r) => r.name,
   );
