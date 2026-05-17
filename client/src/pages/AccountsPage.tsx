@@ -318,8 +318,13 @@ function AccountCard({
   const navigate = useNavigate();
   return (
     <div
+      role="button"
+      tabIndex={0}
       className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group"
       onClick={() => navigate(`/accounts/${acc.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') navigate(`/accounts/${acc.id}`);
+      }}
     >
       <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
@@ -389,8 +394,13 @@ function ClosedAccountCard({
   const navigate = useNavigate();
   return (
     <div
+      role="button"
+      tabIndex={0}
       className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60 cursor-pointer hover:opacity-80 hover:shadow-sm transition-all"
       onClick={() => navigate(`/accounts/${acc.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') navigate(`/accounts/${acc.id}`);
+      }}
     >
       <div className="flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
