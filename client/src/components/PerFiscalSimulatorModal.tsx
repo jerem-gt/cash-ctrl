@@ -8,7 +8,7 @@ import {
   type TaxResult,
 } from '@/lib/taxCalculator';
 
-import { Button, FormGroup, Input, Select } from './ui';
+import { Button, DecimalInput, FormGroup, Select } from './ui';
 
 const fmtEur = (n: number) =>
   n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -127,11 +127,8 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
           <div className="space-y-4">
             <div className="flex gap-3 flex-wrap">
               <FormGroup label="Revenu brut annuel (€)" htmlFor="sim-revenu">
-                <Input
+                <DecimalInput
                   id="sim-revenu"
-                  type="number"
-                  step="100"
-                  min="0"
                   placeholder="ex : 45 000"
                   value={revenuBrut}
                   onChange={(e) => setRevenuBrut(e.target.value)}
@@ -139,11 +136,8 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                 />
               </FormGroup>
               <FormGroup label="Versement PER prévu (€)" htmlFor="sim-versement">
-                <Input
+                <DecimalInput
                   id="sim-versement"
-                  type="number"
-                  step="100"
-                  min="0"
                   placeholder="ex : 3 000"
                   value={versementPER}
                   onChange={(e) => setVersementPER(e.target.value)}
@@ -220,11 +214,8 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
               </div>
               {deductionMode === 'frais_reels' && (
                 <div className="mt-2 max-w-xs">
-                  <Input
+                  <DecimalInput
                     id="sim-frais"
-                    type="number"
-                    step="100"
-                    min="0"
                     placeholder="Montant frais réels (€)"
                     value={fraisReels}
                     onChange={(e) => setFraisReels(e.target.value)}

@@ -1,7 +1,7 @@
 import { type SubmitEvent, useState } from 'react';
 
 import { BankSelect } from '@/components/BankSelect';
-import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { useCreateAccount } from '@/hooks/useAccounts';
 import type { Account, AccountType, Bank } from '@/types';
 
@@ -125,12 +125,10 @@ export function AccountModal(props: Readonly<Props>) {
             </Select>
           </FormGroup>
           <FormGroup label="Solde initial (€)">
-            <Input
-              type="number"
+            <DecimalInput
               value={form.initial_balance}
               onChange={(e) => setForm((f) => ({ ...f, initial_balance: e.target.value }))}
               placeholder="0,00"
-              step="0.01"
             />
           </FormGroup>
           <FormGroup label="Date d'ouverture">

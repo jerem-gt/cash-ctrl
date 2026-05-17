@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { importApi, JsonFullImportResult } from '@/api/client.ts';
-import { Button, Card, Select } from '@/components/ui.tsx';
+import { Button, Card, DecimalInput, Select } from '@/components/ui.tsx';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
 import { useBanks } from '@/hooks/useBanks.ts';
@@ -263,11 +263,14 @@ function AccountMappingRow({
                 <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
                   Solde initial
                 </span>
-                <input
-                  type="number"
+                <DecimalInput
+                  aria-label="Solde initial"
+                  allowNegative
                   className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
-                  value={choice.initial_balance}
-                  onChange={(e) => onChange({ ...choice, initial_balance: Number(e.target.value) })}
+                  value={String(choice.initial_balance)}
+                  onChange={(e) =>
+                    onChange({ ...choice, initial_balance: Number.parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="flex items-center gap-2 w-full">

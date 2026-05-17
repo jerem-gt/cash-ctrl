@@ -1,6 +1,6 @@
 import { type SyntheticEvent, useState } from 'react';
 
-import { Button, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
 import { useUpdateStockOperation } from '@/hooks/useStocks';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 import type { Transaction } from '@/types';
@@ -72,11 +72,8 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               />
             </FormGroup>
             <FormGroup label="Prix unitaire (€)" htmlFor="edit-op-price">
-              <Input
+              <DecimalInput
                 id="edit-op-price"
-                type="number"
-                min="0.0001"
-                step="any"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
@@ -85,11 +82,8 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
 
           <div className="flex gap-3">
             <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
-              <Input
+              <DecimalInput
                 id="edit-op-fees"
-                type="number"
-                min="0"
-                step="any"
                 value={fees}
                 onChange={(e) => setFees(e.target.value)}
               />

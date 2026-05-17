@@ -538,10 +538,10 @@ describe('ImportManager — AccountMappingRow', () => {
     fireEvent.change(allSelects[1], { target: { value: '' } });
     fireEvent.change(allSelects[2], { target: { value: '' } });
 
-    // Solde initial (type=number → role spinbutton)
-    const balanceInput = container.querySelector('input[type="number"]') as HTMLInputElement;
-    fireEvent.change(balanceInput, { target: { value: '500', valueAsNumber: 500 } });
-    expect(balanceInput).toHaveValue(500);
+    // Solde initial (type=text → role textbox)
+    const balanceInput = screen.getByRole('textbox', { name: /solde initial/i });
+    fireEvent.change(balanceInput, { target: { value: '500' } });
+    expect(balanceInput).toHaveValue('500');
 
     // Date d'ouverture
     const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;

@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui';
+import { DecimalInput, Select } from '@/components/ui';
 import type { Category, Subcategory } from '@/types';
 
 export interface SplitInput {
@@ -63,14 +63,11 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
                 </option>
               ))}
             </Select>
-            <input
-              type="number"
+            <DecimalInput
               value={s.amount}
               onChange={(e) => update(s._key, { amount: e.target.value })}
               placeholder="0,00"
-              min="0.01"
-              step="0.01"
-              className="w-20 px-2 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
+              className="w-20"
             />
             <button
               type="button"
