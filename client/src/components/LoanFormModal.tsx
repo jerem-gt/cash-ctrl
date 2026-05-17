@@ -65,7 +65,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         bank_id: String(account.bank_id ?? ''),
         opening_date: account.opening_date ?? '',
         start_date: l.start_date,
-        principal_amount: String(l.principal_amount),
+        principal_amount: l.principal_amount.toFixed(2),
         interest_rate: (l.interest_rate * 100).toLocaleString('en-US', {
           maximumFractionDigits: 4,
         }),
