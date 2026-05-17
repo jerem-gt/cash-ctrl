@@ -3,7 +3,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useUpdateInsuranceOperation } from '@/hooks/useInsurance';
 import type { InsuranceOperation } from '@/types';
 
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from './ui';
 
 const OP_LABELS: Record<InsuranceOperation['type'], string> = {
   versement: 'Versement',
@@ -30,6 +30,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
   const isArbitrage = op.type === 'arbitrage_in' || op.type === 'arbitrage_out';
   const hasFees = op.type === 'versement' || op.type === 'rachat';
   const hasSocialFees = op.type === 'rachat';
+  const allowNegative = op.type === 'revalorisation';
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -72,10 +73,9 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <FormGroup label="Montant (€)" htmlFor="edit-op-amount">
-              <Input
+              <DecimalInput
                 id="edit-op-amount"
-                type="text"
-                inputMode="decimal"
+                allowNegative={allowNegative}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
@@ -86,10 +86,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
             <div className="flex gap-3 items-end">
               {hasFees && (
                 <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
-                  <Input
+                  <DecimalInput
                     id="edit-op-fees"
-                    type="text"
-                    inputMode="decimal"
                     value={fees}
                     onChange={(e) => setFees(e.target.value)}
                   />
@@ -97,10 +95,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
               )}
               {hasSocialFees && (
                 <FormGroup label="Prélèvements sociaux (€)" htmlFor="edit-op-social-fees">
-                  <Input
+                  <DecimalInput
                     id="edit-op-social-fees"
-                    type="text"
-                    inputMode="decimal"
                     value={socialFees}
                     onChange={(e) => setSocialFees(e.target.value)}
                   />

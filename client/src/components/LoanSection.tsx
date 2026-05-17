@@ -2,7 +2,7 @@ import { Check, Pencil, Settings, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { LoanFormModal } from '@/components/LoanFormModal';
-import { Button, showToast } from '@/components/ui';
+import { Button, DecimalInput, showToast } from '@/components/ui';
 import { useLoan, useLoanInstallments, useUpdateInstallment } from '@/hooks/useLoans';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { Account, LoanInstallment } from '@/types';
@@ -89,9 +89,7 @@ function InstallmentRow({
           />
         </td>
         <td className="px-3 py-2">
-          <input
-            type="text"
-            inputMode="decimal"
+          <DecimalInput
             aria-label="Montant"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}

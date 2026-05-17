@@ -5,7 +5,7 @@ import { ReimbursementsPanel } from '@/components/ReimbursementsPanel.tsx';
 import { ReimbursementStatusPicker } from '@/components/ReimbursementStatusPicker.tsx';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import { type SplitInput, TxSplitEditor } from '@/components/TxSplitEditor';
-import { Button, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
@@ -472,9 +472,7 @@ export function TxModal(props: Readonly<Props>) {
             <div className="space-y-3">
               <div className="flex gap-3 flex-wrap">
                 <FormGroup label="Montant (€)">
-                  <Input
-                    type="text"
-                    inputMode="decimal"
+                  <DecimalInput
                     value={core.amount}
                     onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
                     placeholder="0,00"
