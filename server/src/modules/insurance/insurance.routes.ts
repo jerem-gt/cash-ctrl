@@ -161,7 +161,7 @@ export function createInsuranceRouter(db: Database): Router {
 
     const parsed = updateOperationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.format() });
+      res.status(400).json({ error: z.treeifyError(parsed.error) });
       return;
     }
 
