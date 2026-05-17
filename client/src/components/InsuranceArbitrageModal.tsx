@@ -4,7 +4,7 @@ import { useArbitrage } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
-import { Button, FormGroup, Input, Select, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, Select, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -94,11 +94,8 @@ export function InsuranceArbitrageModal({
                 {fromSupport.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
               </span>
             </div>
-            <Input
+            <DecimalInput
               id="arb-from-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
               value={fromAmount}
               onChange={(e) => setFromAmount(e.target.value)}
               required
@@ -108,14 +105,7 @@ export function InsuranceArbitrageModal({
 
           <div className="flex gap-3">
             <FormGroup label="Frais (€)" htmlFor="arb-fees">
-              <Input
-                id="arb-fees"
-                type="number"
-                step="0.01"
-                min="0"
-                value={fees}
-                onChange={(e) => setFees(e.target.value)}
-              />
+              <DecimalInput id="arb-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
             </FormGroup>
             <FormGroup label="Date" htmlFor="arb-date">
               <Input

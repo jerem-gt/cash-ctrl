@@ -121,7 +121,7 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /verser/i })[0]);
     await screen.findByText(/Versement — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('spinbutton', { name: /montant versé/i });
+    const amountInput = screen.getByRole('textbox', { name: /montant versé/i });
     await user.clear(amountInput);
     await user.type(amountInput, '1000');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
@@ -136,7 +136,7 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getByRole('button', { name: /intérêts/i }));
     await screen.findByText(/Intérêts — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('spinbutton', { name: /montant des intérêts/i });
+    const amountInput = screen.getByRole('textbox', { name: /montant des intérêts/i });
     await user.clear(amountInput);
     await user.type(amountInput, '150');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
@@ -151,7 +151,7 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /racheter/i })[0]);
     await screen.findByText(/Rachat — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('spinbutton', { name: /montant racheté/i });
+    const amountInput = screen.getByRole('textbox', { name: /montant racheté/i });
     await user.clear(amountInput);
     await user.type(amountInput, '500');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
@@ -166,7 +166,7 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByRole('button', { name: /arbitrer/i })[0]);
     await screen.findByText(/Arbitrage depuis Fonds Euro Sécurité/i);
-    await user.type(screen.getByRole('spinbutton', { name: /montant arbitré/i }), '1000');
+    await user.type(screen.getByRole('textbox', { name: /montant arbitré/i }), '1000');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Arbitrage enregistré'),
@@ -179,7 +179,7 @@ describe('InsuranceSection', () => {
     await screen.findByText('Amundi MSCI World');
     await user.click(screen.getByRole('button', { name: /revaloriser/i }));
     await screen.findByText(/Revalorisation — Amundi MSCI World/i);
-    await user.type(screen.getByRole('spinbutton', { name: /plus\/moins-value/i }), '150');
+    await user.type(screen.getByRole('textbox', { name: /plus\/moins-value/i }), '150');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Revalorisation enregistrée'),

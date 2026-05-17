@@ -7,7 +7,7 @@ import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 import { AccountSelect } from './AccountSelect';
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -69,11 +69,8 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
                 {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
               </span>
             </div>
-            <Input
+            <DecimalInput
               id="rachat-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
@@ -105,21 +102,15 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
 
           <div className="flex gap-3 items-end">
             <FormGroup label="Frais (€)" htmlFor="rachat-fees">
-              <Input
+              <DecimalInput
                 id="rachat-fees"
-                type="number"
-                step="0.01"
-                min="0"
                 value={fees}
                 onChange={(e) => setFees(e.target.value)}
               />
             </FormGroup>
             <FormGroup label="Prélèvements sociaux (€)" htmlFor="rachat-social-fees">
-              <Input
+              <DecimalInput
                 id="rachat-social-fees"
-                type="number"
-                step="0.01"
-                min="0"
                 value={socialFees}
                 onChange={(e) => setSocialFees(e.target.value)}
               />
