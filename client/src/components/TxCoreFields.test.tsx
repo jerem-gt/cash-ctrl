@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS } from '@/tests/fixtures';
+import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 import type { TxCoreState } from './TxCoreFields';
 import { TxCoreFields } from './TxCoreFields';
@@ -32,51 +33,51 @@ const defaultProps = {
 
 describe('TxCoreFields', () => {
   it('affiche les champs montant et description', () => {
-    render(<TxCoreFields {...defaultProps} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} />);
     expect(screen.getByPlaceholderText('0,00')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Ex : Courses Leclerc')).toBeInTheDocument();
   });
 
   it('affiche le sélecteur type (Dépense/Revenu) en mode transaction', () => {
-    render(<TxCoreFields {...defaultProps} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} />);
     expect(screen.getByText('Dépense')).toBeInTheDocument();
     expect(screen.getByText('Revenu')).toBeInTheDocument();
   });
 
   it('affiche les catégories et moyens de paiement en mode transaction', () => {
-    render(<TxCoreFields {...defaultProps} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} />);
     expect(screen.getByText('Alimentation')).toBeInTheDocument();
     expect(screen.getByText(/CB/)).toBeInTheDocument();
   });
 
   it('masque type, catégorie et moyen de paiement en mode transfert', () => {
-    render(<TxCoreFields {...defaultProps} isTransfer />);
+    renderWithProviders(<TxCoreFields {...defaultProps} isTransfer />);
     expect(screen.queryByText('Dépense')).not.toBeInTheDocument();
     expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
     expect(screen.queryByText(/CB/)).not.toBeInTheDocument();
   });
 
   it('masque les catégories quand hideCategories est true', () => {
-    render(<TxCoreFields {...defaultProps} hideCategories />);
+    renderWithProviders(<TxCoreFields {...defaultProps} hideCategories />);
     expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
     expect(screen.queryByText('Logement')).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText('0,00')).toBeInTheDocument();
   });
 
   it('affiche le sélecteur de compte destination en mode transfert', () => {
-    render(<TxCoreFields {...defaultProps} isTransfer />);
+    renderWithProviders(<TxCoreFields {...defaultProps} isTransfer />);
     expect(screen.getByText('Compte destination')).toBeInTheDocument();
   });
 
   it('masque le sélecteur de compte source si fixedAccountId est fourni', () => {
-    render(<TxCoreFields {...defaultProps} fixedAccountId={1} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} fixedAccountId={1} />);
     expect(screen.queryByText('Compte')).not.toBeInTheDocument();
   });
 
   it('appelle onChange lors de la saisie du montant', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<TxCoreFields {...defaultProps} onChange={onChange} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} onChange={onChange} />);
     await user.type(screen.getByPlaceholderText('0,00'), '50');
     expect(onChange).toHaveBeenCalled();
   });
@@ -84,7 +85,7 @@ describe('TxCoreFields', () => {
   it('appelle onChange lors de la saisie de la description', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<TxCoreFields {...defaultProps} onChange={onChange} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} onChange={onChange} />);
     await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Marché');
     expect(onChange).toHaveBeenCalled();
   });
@@ -92,7 +93,7 @@ describe('TxCoreFields', () => {
   it('handleSourceChange en mode simple appelle onChange avec account_id', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<TxCoreFields {...defaultProps} onChange={onChange} />);
+    renderWithProviders(<TxCoreFields {...defaultProps} onChange={onChange} />);
     const trigger = screen.getByRole('button', { name: /choisir/i });
     await user.click(trigger);
     await user.click(await screen.findByRole('option', { name: /Compte test/i }));
@@ -102,7 +103,7 @@ describe('TxCoreFields', () => {
   it('handleDestChange en mode transfert appelle onChange avec to_account_id et description', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}
@@ -120,7 +121,7 @@ describe('TxCoreFields', () => {
   it('description utilise les noms de banques différentes (BNP → LCL)', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}
@@ -140,7 +141,7 @@ describe('TxCoreFields', () => {
   it('handleSourceChange en mode transfert met à jour account_id', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderWithProviders(
       <TxCoreFields
         {...defaultProps}
         onChange={onChange}

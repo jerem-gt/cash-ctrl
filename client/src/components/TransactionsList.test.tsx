@@ -62,7 +62,7 @@ describe('TransactionsList', () => {
 
   it('affiche les skeletons pendant le chargement', () => {
     mockManager({ state: { isLoading: true } });
-    render(<TransactionsList logoMap={mockLogoMap} />);
+    renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
 
     // On vérifie qu'il y a des éléments de skeleton (on en génère 6 dans le code)
     const skeletons = document.querySelectorAll('.animate-pulse');
@@ -71,7 +71,7 @@ describe('TransactionsList', () => {
 
   it('affiche un message vide quand il n’y a pas de transactions', () => {
     mockManager({ state: { transactions: [], total: 0 } });
-    render(<TransactionsList logoMap={mockLogoMap} emptyMessage="Rien ici !" />);
+    renderWithProviders(<TransactionsList logoMap={mockLogoMap} emptyMessage="Rien ici !" />);
 
     expect(screen.getByText('Rien ici !')).toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe('TransactionsList', () => {
     const openAdd = vi.fn();
     mockManager({ actions: { openAdd } });
 
-    render(<TransactionsList logoMap={mockLogoMap} />);
+    renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
     fireEvent.click(screen.getByText('+ Nouvelle transaction'));
 
     expect(openAdd).toHaveBeenCalled();
@@ -126,7 +126,7 @@ describe('TransactionsList', () => {
       state: { modal: { type: 'delete', tx } },
     });
 
-    render(<TransactionsList logoMap={mockLogoMap} />);
+    renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
 
     // On vérifie que DeleteTxModal est là (généralement via un texte spécifique)
     expect(screen.getByText(/supprimer/i)).toBeInTheDocument();
