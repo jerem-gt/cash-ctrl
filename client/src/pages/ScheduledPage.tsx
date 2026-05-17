@@ -705,6 +705,7 @@ export default function ScheduledPage() {
   const [editTarget, setEditTarget] = useState<ScheduledTransaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ScheduledTransaction | null>(null);
   const [leadDays, setLeadDays] = useState<string>('');
+  const [showSuspended, setShowSuspended] = useState(false);
 
   const settingsLeadDays = settings?.lead_days;
   const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
@@ -770,19 +771,48 @@ export default function ScheduledPage() {
     });
   };
 
+  const activeScheduled = scheduled.filter((s) => s.active);
+  const suspendedScheduled = scheduled.filter((s) => !s.active);
+  const visibleScheduled = activeScheduled.length === 0 ? scheduled : activeScheduled;
+  const hasSuspendedSection = activeScheduled.length > 0 && suspendedScheduled.length > 0;
+
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
       <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
     ) : (
-      scheduled.map((s) => (
-        <ScheduledRow
-          key={s.id}
-          sched={s}
-          accounts={accounts}
-          onEdit={(s) => setEditTarget(s)}
-          onDelete={(s) => setPendingDelete(s)}
-        />
-      ))
+      <>
+        {visibleScheduled.map((s) => (
+          <ScheduledRow
+            key={s.id}
+            sched={s}
+            accounts={accounts}
+            onEdit={(s) => setEditTarget(s)}
+            onDelete={(s) => setPendingDelete(s)}
+          />
+        ))}
+        {hasSuspendedSection && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowSuspended((v) => !v)}
+              className="w-full flex items-center justify-between px-1 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              <span>Suspendus ({suspendedScheduled.length})</span>
+              <span>{showSuspended ? '▲' : '▼'}</span>
+            </button>
+            {showSuspended &&
+              suspendedScheduled.map((s) => (
+                <ScheduledRow
+                  key={s.id}
+                  sched={s}
+                  accounts={accounts}
+                  onEdit={(s) => setEditTarget(s)}
+                  onDelete={(s) => setPendingDelete(s)}
+                />
+              ))}
+          </>
+        )}
+      </>
     );
 
   return (

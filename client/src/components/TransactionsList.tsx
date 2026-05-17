@@ -149,6 +149,7 @@ export function TransactionsList({
           tx={state.modal.tx}
           onConfirm={actions.handleDelete}
           onCancel={actions.closeAll}
+          isPending={state.isPending}
         />
       )}
     </>
