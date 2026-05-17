@@ -1,6 +1,6 @@
 import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { AccountBadge } from '@/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/components/AccountModal';
@@ -315,20 +315,16 @@ function AccountCard({
     acc.envelope_type === 'loan'
       ? Math.max(0, acc.capital_restant_du ?? 0)
       : accountDisplayBalance(acc);
-  const navigate = useNavigate();
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group"
-      onClick={() => navigate(`/accounts/${acc.id}`)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') navigate(`/accounts/${acc.id}`);
-      }}
-    >
-      <div className="relative z-10 pointer-events-none flex justify-between items-start mb-3">
+    <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
+      <Link
+        to={`/accounts/${acc.id}`}
+        className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        aria-label={`Voir les transactions du compte ${acc.name}`}
+      />
+      <div className="relative z-10 flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
-        <div className="flex gap-1 pointer-events-auto">
+        <div className="flex gap-1">
           <button
             type="button"
             onClick={(e) => {
@@ -391,18 +387,14 @@ function ClosedAccountCard({
   onReopen: () => void;
   onDelete: () => void;
 }>) {
-  const navigate = useNavigate();
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60 cursor-pointer hover:opacity-80 hover:shadow-sm transition-all"
-      onClick={() => navigate(`/accounts/${acc.id}`)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') navigate(`/accounts/${acc.id}`);
-      }}
-    >
-      <div className="flex justify-between items-start mb-3">
+    <div className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60 hover:opacity-80 hover:shadow-sm transition-all">
+      <Link
+        to={`/accounts/${acc.id}`}
+        className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        aria-label={`Voir les transactions du compte ${acc.name}`}
+      />
+      <div className="relative z-10 flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
         <div className="flex items-center gap-1">
           <button
