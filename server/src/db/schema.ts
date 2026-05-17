@@ -325,27 +325,27 @@ export function initSchema(db: Database) {
     );
   }
 
-  const schedCols = (db.pragma('table_info(scheduled_transactions)') as { name: string }[]).map(
-    (r) => r.name,
+  const schedCols = new Set(
+    (db.pragma('table_info(scheduled_transactions)') as { name: string }[]).map((r) => r.name),
   );
-  if (!schedCols.includes('insurance_support_id')) {
+  if (!schedCols.has('insurance_support_id')) {
     db.exec(
       'ALTER TABLE scheduled_transactions ADD COLUMN insurance_support_id INTEGER REFERENCES insurance_supports(id) ON DELETE SET NULL',
     );
   }
-  if (!schedCols.includes('insurance_fees')) {
+  if (!schedCols.has('insurance_fees')) {
     db.exec(
       'ALTER TABLE scheduled_transactions ADD COLUMN insurance_fees INTEGER NOT NULL DEFAULT 0',
     );
   }
 
-  const ioCols = (db.pragma('table_info(insurance_operations)') as { name: string }[]).map(
-    (r) => r.name,
+  const ioCols = new Set(
+    (db.pragma('table_info(insurance_operations)') as { name: string }[]).map((r) => r.name),
   );
-  if (!ioCols.includes('social_fees')) {
+  if (!ioCols.has('social_fees')) {
     db.exec('ALTER TABLE insurance_operations ADD COLUMN social_fees INTEGER NOT NULL DEFAULT 0');
   }
-  if (!ioCols.includes('social_fees_transaction_id')) {
+  if (!ioCols.has('social_fees_transaction_id')) {
     db.exec(
       'ALTER TABLE insurance_operations ADD COLUMN social_fees_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL',
     );
