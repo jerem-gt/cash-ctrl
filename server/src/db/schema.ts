@@ -34,9 +34,11 @@ export function initSchema(db: Database) {
             weekend_handling     TEXT    NOT NULL DEFAULT 'allow' CHECK (weekend_handling IN (${sqlIn(WEEKEND_HANDLING)})),
             start_date           TEXT    NOT NULL,
             end_date             TEXT,
-            active               INTEGER NOT NULL DEFAULT 1,
-            last_generated_until TEXT,
-            created_at           TEXT             DEFAULT (datetime('now'))
+            active                INTEGER NOT NULL DEFAULT 1,
+            last_generated_until  TEXT,
+            insurance_support_id  INTEGER REFERENCES insurance_supports (id) ON DELETE SET NULL,
+            insurance_fees        INTEGER NOT NULL DEFAULT 0,
+            created_at            TEXT             DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS user_settings
@@ -204,6 +206,7 @@ export function initSchema(db: Database) {
             name       TEXT UNIQUE NOT NULL,
             logo       TEXT,
             domain     TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now'))
         );
 
@@ -315,47 +318,4 @@ export function initSchema(db: Database) {
             created_at           TEXT    DEFAULT (datetime('now'))
         );
     `);
-
-  // Migrations: add new columns if they don't exist yet
-  const bankCols = (db.pragma('table_info(banks)') as { name: string }[]).map((r) => r.name);
-  if (!bankCols.includes('sort_order')) {
-    db.exec('ALTER TABLE banks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
-    db.exec(
-      'UPDATE banks SET sort_order = (SELECT COUNT(*) FROM banks b2 WHERE b2.name < banks.name)',
-    );
-  }
-
-  const schedCols = new Set(
-    (db.pragma('table_info(scheduled_transactions)') as { name: string }[]).map((r) => r.name),
-  );
-  if (!schedCols.has('insurance_support_id')) {
-    db.exec(
-      'ALTER TABLE scheduled_transactions ADD COLUMN insurance_support_id INTEGER REFERENCES insurance_supports(id) ON DELETE SET NULL',
-    );
-  }
-  if (!schedCols.has('insurance_fees')) {
-    db.exec(
-      'ALTER TABLE scheduled_transactions ADD COLUMN insurance_fees INTEGER NOT NULL DEFAULT 0',
-    );
-  }
-
-  const ioCols = new Set(
-    (db.pragma('table_info(insurance_operations)') as { name: string }[]).map((r) => r.name),
-  );
-  if (!ioCols.has('social_fees')) {
-    db.exec('ALTER TABLE insurance_operations ADD COLUMN social_fees INTEGER NOT NULL DEFAULT 0');
-  }
-  if (!ioCols.has('social_fees_transaction_id')) {
-    db.exec(
-      'ALTER TABLE insurance_operations ADD COLUMN social_fees_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL',
-    );
-  }
-  db.exec(`
-    CREATE TRIGGER IF NOT EXISTS insurance_op_social_fees_cleanup
-    AFTER DELETE ON insurance_operations
-    WHEN OLD.social_fees_transaction_id IS NOT NULL
-    BEGIN
-      DELETE FROM transactions WHERE id = OLD.social_fees_transaction_id;
-    END;
-  `);
 }
