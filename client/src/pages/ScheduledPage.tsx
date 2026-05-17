@@ -8,6 +8,7 @@ import {
   Card,
   CardTitle,
   ConfirmModal,
+  DecimalInput,
   FormGroup,
   Input,
   Select,
@@ -596,18 +597,14 @@ function VersementFields({
         </FormGroup>
         <div className="flex gap-3">
           <FormGroup label="Montant (€)" className="flex-1">
-            <Input
-              type="text"
-              inputMode="decimal"
+            <DecimalInput
               value={form.amount}
               onChange={(e) => patch({ amount: e.target.value })}
               placeholder="0,00"
             />
           </FormGroup>
           <FormGroup label="Frais (€)" className="w-28">
-            <Input
-              type="text"
-              inputMode="decimal"
+            <DecimalInput
               value={form.insurance_fees}
               onChange={(e) => patch({ insurance_fees: e.target.value })}
               placeholder="0,00"

@@ -1,7 +1,7 @@
 import { type SubmitEvent, useMemo, useState } from 'react';
 
 import { BankSelect } from '@/components/BankSelect';
-import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCreateLoan, useUpdateLoan } from '@/hooks/useLoans';
@@ -224,9 +224,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             </FormGroup>
           </div>
           <FormGroup label="Montant emprunté (€)">
-            <Input
-              type="text"
-              inputMode="decimal"
+            <DecimalInput
               value={form.principal_amount}
               onChange={set('principal_amount')}
               placeholder="Ex : 200000"

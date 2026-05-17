@@ -1,5 +1,6 @@
 import type {
   ButtonHTMLAttributes,
+  ChangeEvent,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -110,6 +111,31 @@ export function Input({
       {...props}
     />
   );
+}
+
+// ─── DecimalInput ─────────────────────────────────────────────────────────────
+function isDecimalInProgress(value: string, allowNegative: boolean): boolean {
+  if (value === '') return true;
+  if (!allowNegative && value.includes('-')) return false;
+  // États intermédiaires valides : ".", "-", "-."
+  if (value === '.' || value === '-' || value === '-.') return true;
+  const n = Number(value);
+  return !Number.isNaN(n) && !value.includes(' ') && !value.toLowerCase().includes('e');
+}
+
+interface DecimalInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  allowNegative?: boolean;
+}
+
+export function DecimalInput({
+  allowNegative = false,
+  onChange,
+  ...props
+}: Readonly<DecimalInputProps>) {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (isDecimalInProgress(e.target.value, allowNegative)) onChange?.(e);
+  };
+  return <Input type="text" inputMode="decimal" onChange={handleChange} {...props} />;
 }
 
 // ─── Select ───────────────────────────────────────────────────────────────────

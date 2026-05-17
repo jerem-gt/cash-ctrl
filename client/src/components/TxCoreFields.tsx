@@ -1,5 +1,5 @@
 import { AccountSelect } from '@/components/AccountSelect';
-import { FormGroup, Input, Select } from '@/components/ui';
+import { DecimalInput, FormGroup, Input, Select } from '@/components/ui';
 import { transferLabel } from '@/lib/transfer-label';
 import type { Account, Subcategory } from '@/types';
 
@@ -87,9 +87,7 @@ export function TxCoreFields({
           </FormGroup>
         )}
         <FormGroup label="Montant (€)">
-          <Input
-            type="text"
-            inputMode="decimal"
+          <DecimalInput
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"
