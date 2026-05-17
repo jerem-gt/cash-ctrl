@@ -196,6 +196,18 @@ describe('ImportManager — étape Comptes', () => {
     await user.selectOptions(actionSelect, 'map');
     expect(screen.getByText('Compte test')).toBeInTheDocument();
   });
+
+  it("met à jour le solde initial via DecimalInput lors de la création d'un compte", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadQif(user);
+    const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
+    await user.selectOptions(actionSelect, 'create');
+    const soldeInput = screen.getByLabelText(/solde initial/i);
+    await user.clear(soldeInput);
+    await user.type(soldeInput, '500');
+    expect(soldeInput).toHaveValue('500');
+  });
 });
 
 // ─── Categories step ──────────────────────────────────────────────────────────
