@@ -473,12 +473,11 @@ export function TxModal(props: Readonly<Props>) {
               <div className="flex gap-3 flex-wrap">
                 <FormGroup label="Montant (€)">
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={core.amount}
                     onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
                     placeholder="0,00"
-                    min="0"
-                    step="0.01"
                   />
                 </FormGroup>
                 <FormGroup label="Description">

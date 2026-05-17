@@ -30,7 +30,6 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
   const isArbitrage = op.type === 'arbitrage_in' || op.type === 'arbitrage_out';
   const hasFees = op.type === 'versement' || op.type === 'rachat';
   const hasSocialFees = op.type === 'rachat';
-  const allowNegative = op.type === 'revalorisation';
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -75,9 +74,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
             <FormGroup label="Montant (€)" htmlFor="edit-op-amount">
               <Input
                 id="edit-op-amount"
-                type="number"
-                step="0.01"
-                min={allowNegative ? undefined : '0.01'}
+                type="text"
+                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
@@ -90,9 +88,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                 <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
                   <Input
                     id="edit-op-fees"
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={fees}
                     onChange={(e) => setFees(e.target.value)}
                   />
@@ -102,9 +99,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                 <FormGroup label="Prélèvements sociaux (€)" htmlFor="edit-op-social-fees">
                   <Input
                     id="edit-op-social-fees"
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={socialFees}
                     onChange={(e) => setSocialFees(e.target.value)}
                   />

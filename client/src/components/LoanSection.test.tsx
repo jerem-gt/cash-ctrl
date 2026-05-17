@@ -78,7 +78,7 @@ describe('LoanSection', () => {
     renderLoanSection();
     await screen.findByText('Planifié');
     await user.click(screen.getAllByRole('button')[1]); // Crayon(101)
-    expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /montant/i })).toBeInTheDocument();
   });
 
   it("annule l'édition au clic sur le bouton X", async () => {
@@ -86,7 +86,7 @@ describe('LoanSection', () => {
     renderLoanSection();
     await screen.findByText('Planifié');
     await user.click(screen.getAllByRole('button')[1]); // Crayon(101) → édition ouverte
-    expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /montant/i })).toBeInTheDocument();
     await user.click(screen.getAllByRole('button')[2]); // X
     await waitFor(() => expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument());
   });
@@ -96,8 +96,8 @@ describe('LoanSection', () => {
     renderLoanSection();
     await screen.findByText('Planifié');
     await user.click(screen.getAllByRole('button')[1]); // Crayon(101)
-    await user.clear(screen.getByRole('spinbutton'));
-    await user.type(screen.getByRole('spinbutton'), '400');
+    await user.clear(screen.getByRole('textbox', { name: /montant/i }));
+    await user.type(screen.getByRole('textbox', { name: /montant/i }), '400');
     await user.click(screen.getAllByRole('button')[1]); // Check
     await waitFor(() => expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument());
   });
@@ -107,8 +107,8 @@ describe('LoanSection', () => {
     renderLoanSection();
     await screen.findByText('Planifié');
     await user.click(screen.getAllByRole('button')[1]); // Crayon(101)
-    await user.clear(screen.getByRole('spinbutton'));
-    await user.type(screen.getByRole('spinbutton'), '0');
+    await user.clear(screen.getByRole('textbox', { name: /montant/i }));
+    await user.type(screen.getByRole('textbox', { name: /montant/i }), '0');
     await user.click(screen.getAllByRole('button')[1]); // Check
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('invalides'),

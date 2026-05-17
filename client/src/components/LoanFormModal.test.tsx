@@ -117,7 +117,9 @@ describe('LoanFormModal — mode edition', () => {
     );
 
     expect(screen.getByPlaceholderText('Ex : Prêt immobilier')).toHaveValue(LOAN_ACCOUNT.name);
-    expect(screen.getByPlaceholderText('Ex : 200000')).toHaveValue(LOAN.principal_amount);
+    expect(screen.getByPlaceholderText('Ex : 200000')).toHaveValue(
+      LOAN.principal_amount.toFixed(2),
+    );
     expect(screen.getByPlaceholderText('Ex : 240')).toHaveValue(LOAN.duration_months);
   });
 
