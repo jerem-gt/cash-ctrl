@@ -37,6 +37,36 @@ function mapOperation(row: InsuranceOperation): InsuranceOperation {
   };
 }
 
+function updateOrDeleteFeesTransaction(
+  db: Database,
+  existingTxId: number | null,
+  newAmountCents: number,
+  date: string,
+  createFn: () => number | null,
+  opField: string,
+  operationId: number,
+): void {
+  if (existingTxId != null) {
+    if (newAmountCents > 0) {
+      db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
+        newAmountCents,
+        date,
+        existingTxId,
+      );
+    } else {
+      db.prepare('DELETE FROM transactions WHERE id = ?').run(existingTxId);
+    }
+  } else if (newAmountCents > 0) {
+    const newId = createFn();
+    if (newId != null) {
+      db.prepare(`UPDATE insurance_operations SET ${opField} = ? WHERE id = ?`).run(
+        newId,
+        operationId,
+      );
+    }
+  }
+}
+
 function insertInsuranceFeesTransaction(
   db: Database,
   userId: number,
@@ -330,69 +360,56 @@ export function createInsuranceRepo(db: Database) {
           );
         }
 
-        if (op.fees_transaction_id != null) {
-          if (feesCents > 0) {
-            db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
-              feesCents,
-              input.date,
-              op.fees_transaction_id,
-            );
-          } else {
-            // FK ON DELETE SET NULL will clear fees_transaction_id automatically
-            db.prepare('DELETE FROM transactions WHERE id = ?').run(op.fees_transaction_id);
-          }
-        } else if (feesCents > 0 && op.transaction_id != null) {
-          const mainTx = db
-            .prepare<
-              [number],
-              { account_id: number; description: string }
-            >('SELECT account_id, description FROM transactions WHERE id = ?')
-            .get(op.transaction_id);
-          if (mainTx) {
-            const feesId = insertInsuranceFeesTransaction(
+        const mainTx =
+          op.fees_transaction_id == null && feesCents > 0 && op.transaction_id != null
+            ? db
+                .prepare<
+                  [number],
+                  { account_id: number; description: string }
+                >('SELECT account_id, description FROM transactions WHERE id = ?')
+                .get(op.transaction_id)
+            : null;
+
+        updateOrDeleteFeesTransaction(
+          db,
+          op.fees_transaction_id,
+          feesCents,
+          input.date,
+          () =>
+            mainTx
+              ? insertInsuranceFeesTransaction(
+                  db,
+                  userId,
+                  mainTx.account_id,
+                  feesCents,
+                  `Frais — ${mainTx.description}`,
+                  input.date,
+                )
+              : null,
+          'fees_transaction_id',
+          operationId,
+        );
+
+        updateOrDeleteFeesTransaction(
+          db,
+          op.social_fees_transaction_id,
+          socialFeesCents,
+          input.date,
+          () => {
+            const socialSubcatId = getSocialFeesSubcategoryId(db, userId) ?? null;
+            return insertInsuranceFeesTransaction(
               db,
               userId,
-              mainTx.account_id,
-              feesCents,
-              `Frais — ${mainTx.description}`,
-              input.date,
-            );
-            if (feesId != null) {
-              db.prepare(
-                'UPDATE insurance_operations SET fees_transaction_id = ? WHERE id = ?',
-              ).run(feesId, operationId);
-            }
-          }
-        }
-
-        if (op.social_fees_transaction_id != null) {
-          if (socialFeesCents > 0) {
-            db.prepare('UPDATE transactions SET amount = ?, date = ? WHERE id = ?').run(
+              op.account_id,
               socialFeesCents,
+              `Prélèvements sociaux — ${op.support_name}`,
               input.date,
-              op.social_fees_transaction_id,
+              socialSubcatId,
             );
-          } else {
-            // FK ON DELETE SET NULL will clear social_fees_transaction_id automatically
-            db.prepare('DELETE FROM transactions WHERE id = ?').run(op.social_fees_transaction_id);
-          }
-        } else if (socialFeesCents > 0) {
-          const socialSubcatId = getSocialFeesSubcategoryId(db, userId) ?? null;
-          const socialFeesId = insertInsuranceFeesTransaction(
-            db,
-            userId,
-            op.account_id,
-            socialFeesCents,
-            `Prélèvements sociaux — ${op.support_name}`,
-            input.date,
-            socialSubcatId,
-          );
-          if (socialFeesId != null) {
-            db.prepare(
-              'UPDATE insurance_operations SET social_fees_transaction_id = ? WHERE id = ?',
-            ).run(socialFeesId, operationId);
-          }
-        }
+          },
+          'social_fees_transaction_id',
+          operationId,
+        );
 
         const updated = db
           .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
