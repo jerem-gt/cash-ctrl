@@ -57,4 +57,62 @@ describe('DashboardPage', () => {
     renderWithProviders(<DashboardPage />);
     expect(await screen.findByText('Aucune transaction')).toBeInTheDocument();
   });
+
+  it(`affiche la section "À venir" quand des transactions upcoming existent`, async () => {
+    server.use(
+      http.get('/api/stats', () =>
+        HttpResponse.json({
+          month_income: 0,
+          month_expense: 0,
+          monthly: [],
+          expenses_by_category: [],
+          recent: [],
+          to_validate: [],
+          upcoming: [
+            {
+              id: 99,
+              account_id: 1,
+              type: 'expense',
+              amount: 800,
+              description: 'Loyer à venir',
+              category_id: 1,
+              subcategory_id: 1,
+              category: 'Logement',
+              subcategory: 'Loyer',
+              date: '2030-01-01',
+              transfer_peer_id: null,
+              scheduled_id: 1,
+              validated: 0,
+              payment_method_id: 1,
+              payment_method: 'Virement',
+              notes: null,
+              reimbursement_status: null,
+              loan_principal: null,
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithProviders(<DashboardPage />);
+    expect(await screen.findByText('À venir')).toBeInTheDocument();
+    expect(screen.getByText('Loyer à venir')).toBeInTheDocument();
+  });
+
+  it(`affiche le graphique "Répartition du patrimoine" quand balanceHistory a des données`, async () => {
+    server.use(
+      http.get('/api/stats/balance-history', () =>
+        HttpResponse.json({
+          account_types: ['Courant', 'Livret'],
+          data: [
+            { year: '2025', Courant: 1500, Livret: 500 },
+            { year: '2026', Courant: 2000, Livret: 600 },
+          ],
+        }),
+      ),
+    );
+    renderWithProviders(<DashboardPage />);
+    expect(await screen.findByText('Répartition du patrimoine')).toBeInTheDocument();
+    expect(screen.getByText('Courant')).toBeInTheDocument();
+    expect(screen.getByText('Livret')).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, CATEGORIES } from '@/tests/fixtures';
@@ -123,6 +124,25 @@ describe('TransactionsFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ type: undefined });
   });
 
+  // --- Bouton effacer ---
+
+  it('le bouton × efface la recherche et appelle onFilterChange', async () => {
+    const onFilterChange = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <TransactionsFilters
+        {...defaultProps}
+        filters={{ description_contains: 'test' }}
+        onFilterChange={onFilterChange}
+      />,
+    );
+
+    const clearBtn = screen.getByRole('button', { name: /effacer/i });
+    await user.click(clearBtn);
+
+    expect(onFilterChange).toHaveBeenCalledWith({ description_contains: undefined });
+  });
+
   // --- Sélecteur de compte ---
 
   it('affiche le sélecteur de compte uniquement si showAccountSelect est true', () => {
@@ -133,5 +153,23 @@ describe('TransactionsFilters', () => {
 
     rerender(<TransactionsFilters {...defaultProps} showAccountSelect={false} />);
     expect(document.getElementById('filtered-account-select')).not.toBeInTheDocument();
+  });
+
+  it('appelle onFilterChange lors du changement de compte via AccountSelect', async () => {
+    const onFilterChange = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <TransactionsFilters
+        {...defaultProps}
+        showAccountSelect={true}
+        onFilterChange={onFilterChange}
+      />,
+    );
+
+    const trigger = document.getElementById('filtered-account-select')!;
+    await user.click(trigger);
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+
+    expect(onFilterChange).toHaveBeenCalledWith({ account_id: 1 });
   });
 });

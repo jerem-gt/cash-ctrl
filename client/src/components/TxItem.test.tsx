@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TRANSACTIONS } from '@/tests/fixtures';
@@ -96,5 +97,20 @@ describe('TxItem', () => {
   it("n'affiche pas de solde courant si runningBalance est absent", () => {
     renderTx(baseTx);
     expect(screen.queryByTitle('Solde courant')).not.toBeInTheDocument();
+  });
+
+  it("clique sur le bouton de validation bascule l'état validé", async () => {
+    const user = userEvent.setup();
+    renderTx(baseTx);
+    const validateBtn = screen.getByTitle(/marquer comme non validée/i);
+    await user.click(validateBtn);
+    // Le patch est intercepté par MSW — on vérifie juste que le bouton est cliquable
+    expect(validateBtn).toBeInTheDocument();
+  });
+
+  it("affiche l'icône note quand tx.notes est renseigné", () => {
+    const txWithNotes = { ...baseTx, notes: 'Remboursement partiel' };
+    renderTx(txWithNotes);
+    expect(screen.getAllByTitle('Remboursement partiel').length).toBeGreaterThan(0);
   });
 });

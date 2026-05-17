@@ -235,4 +235,54 @@ describe('AccountSelect', () => {
     await user.keyboard(' ');
     expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
+
+  it('ArrowDown sur le trigger fermé ouvre le menu', async () => {
+    const user = userEvent.setup();
+    render(
+      <AccountSelect
+        id="arrow-test"
+        value=""
+        onChange={vi.fn()}
+        accounts={ACCOUNTS}
+        logoMap={logoMap}
+      />,
+    );
+    const trigger = document.getElementById('arrow-test')!;
+    trigger.focus();
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('ArrowUp depuis la première option ramène au champ de recherche', async () => {
+    const manyAccounts = Array.from({ length: 6 }, (_, i) => ({
+      ...ACCOUNTS[0],
+      id: i + 1,
+      name: `Compte ${i + 1}`,
+    }));
+    const user = userEvent.setup();
+    render(
+      <AccountSelect
+        id="arrowup-test"
+        value=""
+        onChange={vi.fn()}
+        accounts={manyAccounts}
+        logoMap={logoMap}
+      />,
+    );
+
+    await user.click(document.getElementById('arrowup-test')!);
+    const searchInput = screen.getByPlaceholderText('Rechercher…');
+    await waitFor(() => expect(searchInput).toHaveFocus());
+
+    // ArrowDown → première option (index 0 = "— Choisir —")
+    await user.keyboard('{ArrowDown}');
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveFocus();
+
+    // ArrowUp depuis la première option → retour au champ de recherche
+    await user.keyboard('{ArrowUp}');
+    expect(searchInput).toHaveFocus();
+  });
 });
