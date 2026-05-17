@@ -133,7 +133,7 @@ describe('TxSplitEditor', () => {
         totalAmount={100}
       />,
     );
-    await user.type(screen.getByRole('spinbutton'), '8');
+    await user.type(screen.getByRole('textbox'), '8');
     expect(onChange).toHaveBeenLastCalledWith([expect.objectContaining({ amount: '8' })]);
   });
 

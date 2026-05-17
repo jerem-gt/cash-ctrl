@@ -1,7 +1,7 @@
 import { type SyntheticEvent, useState } from 'react';
 
 import { isIsin, TickerInput } from '@/components/TickerInput';
-import { Button, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
 import { useBuyStock, useSellStock } from '@/hooks/useStocks';
 import { today } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
@@ -102,11 +102,8 @@ export function StockOperationModal(props: Readonly<Props>) {
               />
             </FormGroup>
             <FormGroup label="Prix unitaire (€)" htmlFor="op-price">
-              <Input
+              <DecimalInput
                 id="op-price"
-                type="number"
-                min="0.0001"
-                step="any"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder={isBuy ? '12,50' : '13,00'}
@@ -116,11 +113,8 @@ export function StockOperationModal(props: Readonly<Props>) {
 
           <div className="flex gap-3">
             <FormGroup label="Frais (€)" htmlFor="op-fees">
-              <Input
+              <DecimalInput
                 id="op-fees"
-                type="number"
-                min="0"
-                step="any"
                 value={fees}
                 onChange={(e) => setFees(e.target.value)}
                 placeholder="1,50"
