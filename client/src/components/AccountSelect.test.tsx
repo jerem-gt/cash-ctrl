@@ -2,9 +2,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ACCOUNTS } from '@/tests/fixtures';
+import { ACCOUNTS, BANKS } from '@/tests/fixtures';
 
 import { AccountSelect } from './AccountSelect';
+
+vi.mock('@/hooks/useBanks', () => ({
+  useBanks: () => ({ data: BANKS }),
+}));
 
 const logoMap: Record<string, string | null> = { BNP: null };
 

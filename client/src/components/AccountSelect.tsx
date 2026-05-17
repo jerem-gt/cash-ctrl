@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type FocusEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useBanks } from '@/hooks/useBanks';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import type { Account } from '@/types';
 
@@ -43,6 +44,12 @@ export function AccountSelect({
   const [search, setSearch] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
+  const { data: banks = [] } = useBanks();
+  const bankOrderMap = useMemo(
+    () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
+    [banks],
+  );
+
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
     setSearch('');
@@ -74,10 +81,13 @@ export function AccountSelect({
       .sort(([a], [b]) => {
         if (a === '') return 1;
         if (b === '') return -1;
+        const orderA = bankOrderMap[a] ?? 999;
+        const orderB = bankOrderMap[b] ?? 999;
+        if (orderA !== orderB) return orderA - orderB;
         return a.localeCompare(b);
       })
       .map(([bank, accs]) => ({ bank: bank || null, accounts: accs }));
-  }, [filtered]);
+  }, [filtered, bankOrderMap]);
 
   const flatAccounts = useMemo(() => groups.flatMap((g) => g.accounts), [groups]);
   const totalOptions = 1 + flatAccounts.length;
@@ -97,7 +107,7 @@ export function AccountSelect({
     triggerRef.current?.focus();
   };
 
-  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
+  const handleTriggerKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (open) close();
@@ -110,7 +120,7 @@ export function AccountSelect({
     }
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') close();
     else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -118,7 +128,7 @@ export function AccountSelect({
     }
   };
 
-  const handleItemKeyDown = (e: React.KeyboardEvent, index: number) => {
+  const handleItemKeyDown = (e: KeyboardEvent, index: number) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (index < totalOptions - 1) setFocusedIndex(index + 1);
@@ -137,7 +147,7 @@ export function AccountSelect({
     setFocusedIndex(-1);
   };
 
-  const handleBlur = (e: React.FocusEvent) => {
+  const handleBlur = (e: FocusEvent) => {
     if (!ref.current?.contains(e.relatedTarget as Node | null)) close();
   };
 
@@ -172,10 +182,10 @@ export function AccountSelect({
         <div
           role="listbox"
           onBlur={handleBlur}
-          className="absolute z-20 mt-1 w-full bg-white border border-black/[0.09] rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto"
+          className="absolute z-20 mt-1 w-full bg-white border border-black/9 rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto"
         >
           {showSearch && (
-            <div className="px-2 pb-1 border-b border-black/[0.06]">
+            <div className="px-2 pb-1 border-b border-black/6">
               <input
                 ref={searchRef}
                 type="text"
