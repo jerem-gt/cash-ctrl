@@ -71,6 +71,125 @@ describe('/api/stats', () => {
     });
   });
 
+  it("getBalanceHistory : retourne vide quand l'utilisateur n'a aucun compte", async () => {
+    const freshCtx = await createTestContext();
+    const res = await freshCtx.agent.get('/api/stats/balance-history');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ account_types: [], data: [] });
+  });
+
+  describe('getBalanceHistory catégories Épargne, AV/PER, Prêt', () => {
+    let ctx2: TestContext;
+
+    beforeEach(async () => {
+      ctx2 = await createTestContext();
+    });
+
+    it('devrait répartir un compte Épargne dans la catégorie Épargne', async () => {
+      const epargne = await ctx2.agent.post('/api/accounts').send({
+        name: 'Livret A',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_EPARGNE,
+        opening_date: '2022-01-01',
+        initial_balance: 500,
+      });
+      await ctx2.agent.post('/api/transactions').send({
+        account_id: epargne.body.id,
+        type: 'income',
+        amount: 200,
+        description: 'Intérêts',
+        subcategory_id: SEED.SUBCAT_AUTRE,
+        date: TODAY,
+        payment_method_id: SEED.PM_VIREMENT,
+        validated: true,
+      });
+      const res = await ctx2.agent.get('/api/stats/balance-history');
+      const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
+      expect(yearData['Épargne']).toBe(700);
+    });
+
+    it('devrait comptabiliser les versements AV euro et UC dans Fonds euros et Actions & UC', async () => {
+      const av = await ctx2.agent.post('/api/accounts').send({
+        name: 'AV Test',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_AV,
+        opening_date: '2022-01-01',
+        initial_balance: 0,
+      });
+      const avId = av.body.id;
+
+      const euroSup = await ctx2.agent.post(`/api/insurance/${avId}/supports`).send({
+        account_id: avId,
+        name: 'Fonds Euro',
+        type: 'euro',
+      });
+      await ctx2.agent.post(`/api/insurance/${avId}/versement`).send({
+        account_id: avId,
+        support_id: euroSup.body.id,
+        amount: 1000,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const ucSup = await ctx2.agent.post(`/api/insurance/${avId}/supports`).send({
+        account_id: avId,
+        name: 'UC World',
+        type: 'uc',
+      });
+      await ctx2.agent.post(`/api/insurance/${avId}/versement`).send({
+        account_id: avId,
+        support_id: ucSup.body.id,
+        amount: 500,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const res = await ctx2.agent.get('/api/stats/balance-history');
+      const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
+      expect(yearData['Fonds euros']).toBe(1000);
+      expect(yearData['Actions & UC']).toBe(500);
+    });
+
+    it("devrait refléter la dette d'un prêt dans la catégorie Prêts", async () => {
+      ctx2.db
+        .prepare(
+          "INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, 'Prêt', 'loan')",
+        )
+        .run(ctx2.userId);
+
+      const src = await ctx2.agent.post('/api/accounts').send({
+        name: 'Source',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_COURANT,
+        initial_balance: 100000,
+        opening_date: '2024-01-01',
+      });
+      const dep = await ctx2.agent.post('/api/accounts').send({
+        name: 'Dépôt',
+        bank_id: SEED.BANK_ID,
+        account_type_id: SEED.AT_COURANT,
+        initial_balance: 0,
+        opening_date: '2024-01-01',
+      });
+      const loanRes = await ctx2.agent.post('/api/loans').send({
+        name: 'Prêt immo test',
+        bank_id: SEED.BANK_ID,
+        opening_date: '2024-01-01',
+        principal_amount: 12000,
+        interest_rate: 0,
+        duration_months: 12,
+        start_date: '2024-02-01',
+        source_account_id: src.body.id,
+        deposit_account_id: dep.body.id,
+      });
+      expect(loanRes.status).toBe(201);
+
+      const res = await ctx2.agent.get('/api/stats/balance-history');
+      const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
+      expect(yearData['Prêts']).toBe(-12000);
+    });
+  });
+
   describe('getBalanceHistory avec Stocks', () => {
     it('devrait répartir cash non investi en Liquidités et valeur de marché en Actions & UC', async () => {
       // Dépôt 1000€ puis achat 500€ => cash restant 500€, 10 AAPL à PRU 50
