@@ -4,7 +4,7 @@ import { useInterets } from '@/hooks/useInsurance';
 import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -37,11 +37,8 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
         <h3 className="font-sans text-xl mb-5">Intérêts — {support.name}</h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormGroup label="Montant des intérêts (€)" htmlFor="interets-amount">
-            <Input
+            <DecimalInput
               id="interets-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required

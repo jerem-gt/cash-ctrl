@@ -7,7 +7,7 @@ import { today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 import { AccountSelect } from './AccountSelect';
-import { Button, FormGroup, Input, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, showToast } from './ui';
 
 interface Props {
   accountId: number;
@@ -55,11 +55,8 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
         <h3 className="font-sans text-xl mb-5">Versement — {support.name}</h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormGroup label="Montant versé (€)" htmlFor="vers-amount">
-            <Input
+            <DecimalInput
               id="vers-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
@@ -91,14 +88,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
 
           <div className="flex gap-3">
             <FormGroup label="Frais (€)" htmlFor="vers-fees">
-              <Input
-                id="vers-fees"
-                type="number"
-                step="0.01"
-                min="0"
-                value={fees}
-                onChange={(e) => setFees(e.target.value)}
-              />
+              <DecimalInput id="vers-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
             </FormGroup>
             <FormGroup label="Date" htmlFor="vers-date">
               <Input

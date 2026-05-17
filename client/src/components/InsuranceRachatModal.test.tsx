@@ -39,7 +39,7 @@ describe('InsuranceRachatModal', () => {
     renderModal();
     const input = screen.getByLabelText(/prélèvements sociaux/i);
     expect(input).toBeInTheDocument();
-    expect(input).toHaveValue(0);
+    expect(input).toHaveValue('0');
   });
 
   it(`affiche le sélecteur "Vers le compte" avec les comptes standards`, async () => {
