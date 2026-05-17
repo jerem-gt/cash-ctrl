@@ -21,9 +21,9 @@ interface Props {
 }
 
 export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly<Props>) {
-  const [amount, setAmount] = useState(String(op.amount));
-  const [fees, setFees] = useState(String(op.fees));
-  const [socialFees, setSocialFees] = useState(String(op.social_fees));
+  const [amount, setAmount] = useState(op.amount.toFixed(2));
+  const [fees, setFees] = useState(op.fees.toFixed(2));
+  const [socialFees, setSocialFees] = useState(op.social_fees.toFixed(2));
   const [date, setDate] = useState(op.date);
   const update = useUpdateInsuranceOperation(accountId);
 

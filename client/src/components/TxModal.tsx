@@ -89,7 +89,7 @@ function initCore(
 
   return {
     type: isDuplicate && isTransfer ? 'expense' : source.type,
-    amount: String(source.amount),
+    amount: source.amount.toFixed(2),
     description: source.description,
     category_id: source.category_id == null ? '' : String(source.category_id),
     subcategory_id: source.subcategory_id == null ? '' : String(source.subcategory_id),
@@ -186,7 +186,7 @@ function initSplits(
     _key: String(s.subcategory_id),
     category_id: findCategoryId(categories, s.subcategory_id),
     subcategory_id: String(s.subcategory_id),
-    amount: String(s.amount),
+    amount: s.amount.toFixed(2),
   }));
 }
 

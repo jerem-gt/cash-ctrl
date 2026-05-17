@@ -41,7 +41,7 @@ function InstallmentRow({
 }>) {
   const [editing, setEditing] = useState(false);
   const [dueDate, setDueDate] = useState(inst.due_date);
-  const [amount, setAmount] = useState(String(inst.total_amount));
+  const [amount, setAmount] = useState(inst.total_amount.toFixed(2));
   const updateInstallment = useUpdateInstallment(loanId);
 
   const isPaid = inst.transaction_validated === 1;
@@ -66,7 +66,7 @@ function InstallmentRow({
 
   const handleCancel = () => {
     setDueDate(inst.due_date);
-    setAmount(String(inst.total_amount));
+    setAmount(inst.total_amount.toFixed(2));
     setEditing(false);
   };
 
