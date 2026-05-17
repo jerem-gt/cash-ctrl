@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type Fixtures, setupFixtures } from '../tests/helpers/testDb';
-import { listBackups, rotateBackups, runBackup } from './backup';
+import { createTestDb, type Fixtures, setupFixtures } from '../tests/helpers/testDb';
+import { BACKUP_DIR, listBackups, rotateBackups, runBackup, startBackupInterval } from './backup';
 
 let tmpDir: string;
 let fixtures: Fixtures;
@@ -136,5 +136,81 @@ describe('runBackup', () => {
     const nested = path.join(tmpDir, 'sub', 'backups');
     runBackup(fixtures.db, fixtures.userId, nested);
     expect(fs.existsSync(nested)).toBe(true);
+  });
+});
+
+describe('startBackupInterval', () => {
+  beforeEach(() => {
+    if (fs.existsSync(BACKUP_DIR)) {
+      fs.rmSync(BACKUP_DIR, { recursive: true, force: true });
+    }
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    if (fs.existsSync(BACKUP_DIR)) {
+      fs.rmSync(BACKUP_DIR, { recursive: true, force: true });
+    }
+  });
+
+  it("ne fait rien s'il n'y a aucun utilisateur dans la base", () => {
+    vi.useFakeTimers();
+    const db = createTestDb();
+    const handle = startBackupInterval(db, 1000);
+    vi.advanceTimersByTime(1000);
+    clearInterval(handle);
+    db.close();
+    expect(fs.existsSync(BACKUP_DIR)).toBe(false);
+  });
+
+  it('ne crée pas de backup si backup_enabled = false (défaut)', () => {
+    vi.useFakeTimers();
+    const handle = startBackupInterval(fixtures.db, 1000);
+    vi.advanceTimersByTime(1000);
+    clearInterval(handle);
+    expect(!fs.existsSync(BACKUP_DIR) || listBackups(BACKUP_DIR).length === 0).toBe(true);
+  });
+
+  it("ne crée pas de backup si la fréquence n'est pas encore atteinte", () => {
+    vi.useFakeTimers();
+    fixtures.db
+      .prepare(
+        `INSERT INTO user_settings (user_id, lead_days, backup_enabled, backup_frequency_h, backup_max_files, backup_last_at)
+         VALUES (?, 30, 1, 24, 7, ?)`,
+      )
+      .run(fixtures.userId, new Date().toISOString());
+    const handle = startBackupInterval(fixtures.db, 1000);
+    vi.advanceTimersByTime(1000);
+    clearInterval(handle);
+    expect(!fs.existsSync(BACKUP_DIR) || listBackups(BACKUP_DIR).length === 0).toBe(true);
+  });
+
+  it('crée un backup quand backup_enabled et la fréquence est atteinte', () => {
+    vi.useFakeTimers();
+    fixtures.db
+      .prepare(
+        `INSERT INTO user_settings (user_id, lead_days, backup_enabled, backup_frequency_h, backup_max_files)
+         VALUES (?, 30, 1, 1, 7)`,
+      )
+      .run(fixtures.userId);
+    const handle = startBackupInterval(fixtures.db, 1000);
+    vi.advanceTimersByTime(1000);
+    clearInterval(handle);
+    const row = fixtures.db
+      .prepare<
+        [number],
+        { backup_last_hash: string | null }
+      >('SELECT backup_last_hash FROM user_settings WHERE user_id = ?')
+      .get(fixtures.userId);
+    expect(row?.backup_last_hash).not.toBeNull();
+  });
+
+  it('capture les erreurs du backup sans propager', () => {
+    vi.useFakeTimers();
+    const db = createTestDb();
+    db.close();
+    const handle = startBackupInterval(db, 1000);
+    expect(() => vi.advanceTimersByTime(1000)).not.toThrow();
+    clearInterval(handle);
   });
 });
