@@ -374,4 +374,215 @@ describe('ScheduledPage', () => {
     renderWithProviders(<ScheduledPage />);
     expect(await screen.findByText(/→ Livret A/)).toBeInTheDocument();
   });
+
+  // ─── Section "Suspendus" ───────────────────────────────────────────────────
+
+  it("affiche le bouton 'Suspendus (N)' quand il y a des planifications actives ET suspendues", async () => {
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([
+          { ...SCHEDULED[0], id: 1, active: 1, description: 'Loyer actif' },
+          { ...SCHEDULED[0], id: 2, active: 0, description: 'Abonnement suspendu' },
+        ]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    expect(await screen.findByText('Loyer actif')).toBeInTheDocument();
+    expect(screen.getByText('Suspendus (1)')).toBeInTheDocument();
+    expect(screen.queryByText('Abonnement suspendu')).not.toBeInTheDocument();
+  });
+
+  it("clique sur 'Suspendus' affiche puis masque les planifications suspendues", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([
+          { ...SCHEDULED[0], id: 1, active: 1, description: 'Loyer actif' },
+          { ...SCHEDULED[0], id: 2, active: 0, description: 'Abonnement suspendu' },
+        ]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer actif');
+
+    // Ouvrir la section suspendus
+    await user.click(screen.getByText('Suspendus (1)'));
+    expect(screen.getByText('Abonnement suspendu')).toBeInTheDocument();
+
+    // Refermer
+    await user.click(screen.getByText('Suspendus (1)'));
+    expect(screen.queryByText('Abonnement suspendu')).not.toBeInTheDocument();
+  });
+
+  it('supprime depuis une ligne suspendue', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([
+          { ...SCHEDULED[0], id: 1, active: 1, description: 'Loyer actif' },
+          { ...SCHEDULED[0], id: 2, active: 0, description: 'Abonnement suspendu' },
+        ]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer actif');
+    await user.click(screen.getByText('Suspendus (1)'));
+    await screen.findByText('Abonnement suspendu');
+    const supprimerBtns = screen.getAllByRole('button', { name: '×' });
+    await user.click(supprimerBtns.at(-1)!);
+    expect(screen.getByText('Supprimer la planification')).toBeInTheDocument();
+  });
+
+  it("ouvre l'édition depuis une ligne suspendue", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([
+          { ...SCHEDULED[0], id: 1, active: 1, description: 'Loyer actif' },
+          { ...SCHEDULED[0], id: 2, active: 0, description: 'Abonnement suspendu' },
+        ]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer actif');
+    await user.click(screen.getByText('Suspendus (1)'));
+    await screen.findByText('Abonnement suspendu');
+    const modifierBtns = screen.getAllByRole('button', { name: 'Modifier' });
+    await user.click(modifierBtns.at(-1)!);
+    expect(await screen.findByText('Modifier la planification')).toBeInTheDocument();
+  });
+
+  // ─── handleCreate error ────────────────────────────────────────────────────
+
+  it('crée une planification avec succès et ferme le modal', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Abonnement Netflix');
+    await user.type(screen.getByPlaceholderText('0,00'), '15');
+    const accountTrigger = screen.getByRole('button', { name: /choisir/i });
+    await user.click(accountTrigger);
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
+    await user.click(btns.at(-1)!);
+    await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('créée'));
+    expect(screen.queryByText('Nouvelle planification')).not.toBeInTheDocument();
+  });
+
+  it("toast si la création d'une planification échoue", async () => {
+    server.use(
+      http.post('/api/scheduled', () =>
+        HttpResponse.json({ error: 'Erreur création' }, { status: 500 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    // Remplir les champs obligatoires : description + montant + compte
+    await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Test');
+    await user.type(screen.getByPlaceholderText('0,00'), '100');
+    // Sélectionner le compte source via AccountSelect
+    const accountTrigger = screen.getByRole('button', { name: /choisir/i });
+    await user.click(accountTrigger);
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
+    await user.click(btns.at(-1)!);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Erreur création'),
+    );
+  });
+
+  // ─── Validation modes Transfert / Versement ───────────────────────────────
+
+  it('ScheduledModal : passe en mode Transfert au clic', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    expect(screen.getByText('Compte destination')).toBeInTheDocument();
+  });
+
+  it('ScheduledModal : passe en mode Versement AV/PER au clic', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Versement AV/PER' }));
+    expect(screen.getByText('Compte AV / PER')).toBeInTheDocument();
+  });
+
+  it('ScheduledModal : toast si pas de compte sélectionné en mode transaction', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    // Remplir montant + description mais PAS le compte
+    await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Test');
+    await user.type(screen.getByPlaceholderText('0,00'), '50');
+    fireEvent.submit(screen.getByPlaceholderText('0,00').closest('form')!);
+    await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('compte'));
+  });
+
+  it('ScheduledModal : toast si les comptes transfert sont manquants', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    // En mode Transfert, la description a un placeholder dynamique "→ …"
+    await user.type(screen.getByPlaceholderText(/→/), 'Virement test');
+    await user.type(screen.getByPlaceholderText('0,00'), '50');
+    fireEvent.submit(screen.getByPlaceholderText('0,00').closest('form')!);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toMatch(/source|destination|compte/i),
+    );
+  });
+
+  it('ScheduledModal : sélectionne un compte AV et un compte source en mode Versement', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Versement AV/PER' }));
+
+    // Sélectionner un compte AV/PER (couvre handleAvAccountChange)
+    await user.click(document.getElementById('versement-av-account')!);
+    await user.click(await screen.findByRole('option', { name: /Suravenir/i }));
+
+    // Sélectionner un compte source (couvre onChange to_account_id)
+    await user.click(document.getElementById('versement-source-account')!);
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+
+    // Modifier les frais (couvre onChange insurance_fees)
+    const allAmounts = screen.getAllByPlaceholderText('0,00');
+    await user.type(allAmounts[1], '5'); // frais = index 1
+    expect(allAmounts[1]).toBeInTheDocument();
+  });
+
+  it('ScheduledModal : toast si les champs versement sont manquants', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    await user.click(screen.getByRole('button', { name: /nouvelle/i }));
+    await screen.findByText('Nouvelle planification');
+    await user.click(screen.getByRole('button', { name: 'Versement AV/PER' }));
+    // En mode versement il y a 2 champs "0,00" (montant + frais) — prendre le premier
+    const amountInputs = screen.getAllByPlaceholderText('0,00');
+    await user.type(amountInputs[0], '50');
+    await user.type(screen.getByPlaceholderText('Auto-généré à la sélection du support'), 'Test');
+    fireEvent.submit(amountInputs[0].closest('form')!);
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toMatch(/AV\/PER|support|source/i),
+    );
+  });
 });
