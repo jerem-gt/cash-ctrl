@@ -1,3 +1,5 @@
+import { StickyNote } from 'lucide-react';
+
 import { AccountBadge } from '@/components/AccountBadge';
 import { Badge } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories.ts';
@@ -90,6 +92,10 @@ export function TxItem({
             <span className="text-[12px] text-indigo-400 shrink-0" title="Transaction planifiée">
               ↻
             </span>
+          )}
+
+          {tx.notes && (
+            <StickyNote size={11} className="text-amber-400 shrink-0" title={tx.notes} />
           )}
 
           <p

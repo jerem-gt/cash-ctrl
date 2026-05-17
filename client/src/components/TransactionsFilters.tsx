@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AccountSelect } from '@/components/AccountSelect.tsx';
@@ -51,14 +52,27 @@ export const TransactionsFilters = ({
         </div>
       )}
 
-      <div className="flex-1 min-w-40 max-w-64">
+      <div className="relative flex-1 min-w-40 max-w-64">
         <Input
-          type="search"
+          type="text"
           placeholder="Rechercher une description…"
           value={descriptionInput}
           onChange={(e) => setDescriptionInput(e.target.value)}
-          className="h-9"
+          className={`h-9${descriptionInput ? ' pr-8' : ''}`}
         />
+        {descriptionInput && (
+          <button
+            type="button"
+            onClick={() => {
+              setDescriptionInput('');
+              onFilterChange({ description_contains: undefined });
+            }}
+            aria-label="Effacer la recherche"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       <Select
@@ -102,7 +116,9 @@ export const TransactionsFilters = ({
         className="flex-1 min-w-32.5 max-w-50"
         value={filters.type ?? ''}
         onChange={(e) =>
-          onFilterChange({ type: (e.target.value || undefined) as 'income' | 'expense' | undefined })
+          onFilterChange({
+            type: (e.target.value || undefined) as 'income' | 'expense' | undefined,
+          })
         }
       >
         <option value="">Tous types</option>
