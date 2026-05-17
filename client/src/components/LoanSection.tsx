@@ -90,11 +90,11 @@ function InstallmentRow({
         </td>
         <td className="px-3 py-2">
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
+            aria-label="Montant"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            step="0.01"
-            min="0"
             className="text-xs border border-stone-300 rounded px-2 py-1 w-28 text-right"
           />
         </td>

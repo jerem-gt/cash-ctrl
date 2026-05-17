@@ -88,12 +88,11 @@ export function TxCoreFields({
         )}
         <FormGroup label="Montant (€)">
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"
-            min="0.01"
-            step="0.01"
           />
         </FormGroup>
         <FormGroup label="Description" className="min-w-48">

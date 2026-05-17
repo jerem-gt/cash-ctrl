@@ -63,7 +63,7 @@ describe('InsuranceEditOperationModal', () => {
 
   it("pré-remplit le montant et la date avec les valeurs de l'opération", () => {
     renderModal();
-    expect(screen.getByLabelText(/montant/i)).toHaveValue(5000);
+    expect(screen.getByLabelText(/montant/i)).toHaveValue('5000.00');
     expect(screen.getByLabelText(/date/i)).toHaveValue('2024-01-15');
   });
 
@@ -81,7 +81,7 @@ describe('InsuranceEditOperationModal', () => {
     renderModal(RACHAT_OP);
     const input = screen.getByLabelText(/prélèvements sociaux/i);
     expect(input).toBeInTheDocument();
-    expect(input).toHaveValue(15);
+    expect(input).toHaveValue('15.00');
   });
 
   it("n'affiche pas le champ prélèvements sociaux pour un versement", () => {
@@ -170,9 +170,8 @@ describe('InsuranceEditOperationModal', () => {
     expect(input).not.toHaveAttribute('min');
   });
 
-  it('impose un montant positif pour un versement (min=0.01)', () => {
+  it('le champ montant est requis pour un versement', () => {
     renderModal(VERSEMENT_OP);
-    const input = screen.getByLabelText(/montant/i);
-    expect(input).toHaveAttribute('min', '0.01');
+    expect(screen.getByLabelText(/montant/i)).toHaveAttribute('required');
   });
 });

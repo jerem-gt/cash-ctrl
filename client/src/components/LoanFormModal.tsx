@@ -225,12 +225,11 @@ export function LoanFormModal(props: Readonly<Props>) {
           </div>
           <FormGroup label="Montant emprunté (€)">
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={form.principal_amount}
               onChange={set('principal_amount')}
               placeholder="Ex : 200000"
-              min="0"
-              step="0.01"
               disabled={isEdit}
               title={isEdit ? 'Non modifiable après création' : undefined}
             />

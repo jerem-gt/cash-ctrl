@@ -597,22 +597,20 @@ function VersementFields({
         <div className="flex gap-3">
           <FormGroup label="Montant (€)" className="flex-1">
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={form.amount}
               onChange={(e) => patch({ amount: e.target.value })}
               placeholder="0,00"
-              min="0.01"
-              step="0.01"
             />
           </FormGroup>
           <FormGroup label="Frais (€)" className="w-28">
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={form.insurance_fees}
               onChange={(e) => patch({ insurance_fees: e.target.value })}
               placeholder="0,00"
-              min="0"
-              step="0.01"
             />
           </FormGroup>
         </div>
