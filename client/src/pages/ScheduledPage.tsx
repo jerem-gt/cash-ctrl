@@ -107,10 +107,10 @@ type FormState = {
   active: boolean;
 };
 
-function emptyForm(firstAccountId?: number): FormState {
+function emptyForm(defaultAccountId?: number): FormState {
   return {
     mode: 'transaction',
-    account_id: firstAccountId ? String(firstAccountId) : '',
+    account_id: defaultAccountId ? String(defaultAccountId) : '',
     to_account_id: '',
     type: 'expense',
     amount: '',
@@ -133,12 +133,10 @@ function emptyForm(firstAccountId?: number): FormState {
 }
 
 function schedToForm(s: ScheduledTransaction): FormState {
-  const mode: ScheduledMode =
-    s.insurance_support_id != null
-      ? 'versement'
-      : s.to_account_id != null
-        ? 'transfer'
-        : 'transaction';
+  let mode: ScheduledMode = 'versement';
+  if (s.insurance_support_id === null) {
+    mode = s.to_account_id === null ? 'transaction' : 'transfer';
+  }
   return {
     mode,
     account_id: String(s.account_id),
@@ -272,16 +270,7 @@ function ScheduledModal({
     setForm((f) => ({
       ...f,
       mode,
-      account_id:
-        mode === 'versement'
-          ? insuranceAccounts[0]
-            ? String(insuranceAccounts[0].id)
-            : ''
-          : mode === 'transfer' || f.mode === 'versement'
-            ? regularAccounts[0]
-              ? String(regularAccounts[0].id)
-              : ''
-            : f.account_id,
+      account_id: f.mode === 'versement' && mode !== 'versement' ? '' : f.account_id,
       to_account_id: '',
       insurance_support_id: '',
     }));
@@ -781,8 +770,6 @@ export default function ScheduledPage() {
     });
   };
 
-  const firstAccountId = accounts.find((a) => !isInsuranceAccount(a))?.id;
-
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
       <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
@@ -858,7 +845,7 @@ export default function ScheduledPage() {
       {/* Modal création */}
       {showModal && (
         <ScheduledModal
-          initial={emptyForm(firstAccountId)}
+          initial={emptyForm()}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}
