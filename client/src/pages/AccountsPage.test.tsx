@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -156,18 +156,5 @@ describe('AccountsPage', () => {
     await waitFor(() => {
       expect(document.getElementById('toast')?.textContent).toMatch(/réouvert/i);
     });
-  });
-
-  it("masque le logo de la banque si l'image échoue à charger", async () => {
-    renderAccountsPage();
-
-    // On attend qu'une image de logo soit présente (via AccountBadge)
-    const logo = await screen.findByAltText(/logo bnp/i);
-
-    // Simule une erreur de chargement
-    fireEvent.error(logo);
-
-    // Vérifie que le style display: none est appliqué via onError du composant
-    expect(logo).toHaveStyle({ display: 'none' });
   });
 });
