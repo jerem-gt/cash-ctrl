@@ -36,7 +36,7 @@ export default function SettingsPage() {
           <SettingsManager activeTab={activeTab} onChange={handleTabChange} />
         </div>
 
-        <div className={`flex-1 min-w-0 ${!mobileShowContent ? 'hidden md:block' : ''}`}>
+        <div className={`flex-1 min-w-0 ${mobileShowContent ? '' : 'hidden md:block'}`}>
           <button
             onClick={() => setMobileShowContent(false)}
             className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 mb-4 transition-colors md:hidden"

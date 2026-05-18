@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 
 import { StockOperationModal } from '@/components/StockOperationModal';
 import { TransferStockModal } from '@/components/TransferStockModal';
@@ -216,6 +216,122 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
   );
 }
 
+interface PositionsListProps extends PositionRowProps {
+  positions: StockPosition[];
+  isLoading: boolean;
+}
+
+function PortfolioPositionsList({
+  positions,
+  isLoading,
+  onBuy,
+  onSell,
+  onTransfer,
+}: Readonly<Omit<PositionsListProps, 'pos'>>) {
+  if (isLoading) {
+    return <div className="text-sm text-stone-400 py-4">Chargement…</div>;
+  }
+  if (positions.length === 0) {
+    return (
+      <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
+        Aucune position ouverte
+      </div>
+    );
+  }
+
+  const totalMarketValue = positions.reduce(
+    (sum, p) => sum + (p.current_price == null ? 0 : p.current_price * p.quantity),
+    0,
+  );
+  const totalCostBasis = positions.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
+  const totalPnl = totalMarketValue - totalCostBasis;
+  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
+  const totalPnlColor = getPnlColor(totalPnl);
+
+  return (
+    <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
+      {/* Mobile : cards empilées */}
+      <div className="sm:hidden">
+        {positions.map((pos) => (
+          <PositionRowMobile
+            key={pos.ticker}
+            pos={pos}
+            onBuy={onBuy}
+            onSell={onSell}
+            onTransfer={onTransfer}
+          />
+        ))}
+        {positions.length > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-t border-stone-100">
+            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+              Total
+            </span>
+            <div className="text-right">
+              <p className="text-sm font-bold text-stone-800 tabular-nums">
+                {totalMarketValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              </p>
+              <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
+                {totalPnl >= 0 ? '+' : ''}
+                {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} (
+                {totalPnlPct >= 0 ? '+' : ''}
+                {totalPnlPct.toFixed(2)} %)
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop : tableau horizontal */}
+      <div className="hidden sm:block overflow-x-auto">
+        <div className="min-w-[560px]">
+          {positions.map((pos) => (
+            <PositionRow
+              key={pos.ticker}
+              pos={pos}
+              onBuy={onBuy}
+              onSell={onSell}
+              onTransfer={onTransfer}
+            />
+          ))}
+          {positions.length > 1 && (
+            <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
+              <div className="w-24 shrink-0">
+                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                  Total
+                </span>
+              </div>
+              <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+                <div />
+                <div />
+                <div />
+                <div>
+                  <p className="font-bold text-stone-800 tabular-nums">
+                    {totalMarketValue.toLocaleString('fr-FR', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    })}
+                  </p>
+                </div>
+              </div>
+              <div className="w-28 text-right shrink-0">
+                <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
+                  {totalPnl >= 0 ? '+' : ''}
+                  {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                </p>
+                <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
+                  {totalPnlPct >= 0 ? '+' : ''}
+                  {totalPnlPct.toFixed(2)} %
+                </p>
+              </div>
+              <div className="w-[5.5rem]" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   accountId: number;
   readOnly?: boolean;
@@ -229,121 +345,12 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
   const [sellPosition, setSellPosition] = useState<StockPosition | null>(null);
   const [transferPosition, setTransferPosition] = useState<StockPosition | null>(null);
 
-  const totalMarketValue = positions.reduce(
-    (sum, p) => sum + (p.current_price == null ? 0 : p.current_price * p.quantity),
-    0,
-  );
-  const totalCostBasis = positions.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
-  const totalPnl = totalMarketValue - totalCostBasis;
-  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
-
   const handleRefresh = () => {
     refresh.mutate(undefined, {
       onSuccess: () => showToast('Cours mis à jour ✓'),
       onError: (err) => showToast(err.message),
     });
   };
-
-  const totalPnlColor = getPnlColor(totalPnl);
-
-  const buyHandler = readOnly ? undefined : setBuyPosition;
-  const sellHandler = readOnly ? undefined : setSellPosition;
-  const transferHandler = readOnly ? undefined : setTransferPosition;
-
-  let portfolioContent: ReactNode;
-  if (isLoading) {
-    portfolioContent = <div className="text-sm text-stone-400 py-4">Chargement…</div>;
-  } else if (positions.length === 0) {
-    portfolioContent = (
-      <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
-        Aucune position ouverte
-      </div>
-    );
-  } else {
-    portfolioContent = (
-      <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-        {/* Mobile : cards empilées */}
-        <div className="sm:hidden">
-          {positions.map((pos) => (
-            <PositionRowMobile
-              key={pos.ticker}
-              pos={pos}
-              onBuy={buyHandler}
-              onSell={sellHandler}
-              onTransfer={transferHandler}
-            />
-          ))}
-          {positions.length > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-t border-stone-100">
-              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                Total
-              </span>
-              <div className="text-right">
-                <p className="text-sm font-bold text-stone-800 tabular-nums">
-                  {totalMarketValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                </p>
-                <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
-                  {totalPnl >= 0 ? '+' : ''}
-                  {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} (
-                  {totalPnlPct >= 0 ? '+' : ''}
-                  {totalPnlPct.toFixed(2)} %)
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop : tableau horizontal */}
-        <div className="hidden sm:block overflow-x-auto">
-          <div className="min-w-[560px]">
-            {positions.map((pos) => (
-              <PositionRow
-                key={pos.ticker}
-                pos={pos}
-                onBuy={buyHandler}
-                onSell={sellHandler}
-                onTransfer={transferHandler}
-              />
-            ))}
-
-            {positions.length > 1 && (
-              <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
-                <div className="w-24 shrink-0">
-                  <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                    Total
-                  </span>
-                </div>
-                <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-                  <div />
-                  <div />
-                  <div />
-                  <div>
-                    <p className="font-bold text-stone-800 tabular-nums">
-                      {totalMarketValue.toLocaleString('fr-FR', {
-                        style: 'currency',
-                        currency: 'EUR',
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="w-28 text-right shrink-0">
-                  <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
-                    {totalPnl >= 0 ? '+' : ''}
-                    {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                  </p>
-                  <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
-                    {totalPnlPct >= 0 ? '+' : ''}
-                    {totalPnlPct.toFixed(2)} %
-                  </p>
-                </div>
-                <div className="w-[5.5rem]" />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -364,7 +371,13 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
           </div>
         </div>
 
-        {portfolioContent}
+        <PortfolioPositionsList
+          positions={positions}
+          isLoading={isLoading}
+          onBuy={readOnly ? undefined : setBuyPosition}
+          onSell={readOnly ? undefined : setSellPosition}
+          onTransfer={readOnly ? undefined : setTransferPosition}
+        />
       </div>
 
       {showBuy && (

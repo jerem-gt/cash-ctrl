@@ -247,7 +247,7 @@ export const TransactionsFilters = ({
               checked={filters.validated === false}
               onChange={(e) => onFilterChange({ validated: e.target.checked ? false : undefined })}
             />
-            Non validées seulement
+            <span>Non validées seulement</span>
           </label>
         </div>
       )}

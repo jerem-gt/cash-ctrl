@@ -24,7 +24,7 @@ function clickTimes(el: HTMLElement, n: number) {
 }
 
 function getVersionEl() {
-  return screen.getByText(/version/).closest('div')!;
+  return screen.getByText(/version/).closest('button')!;
 }
 
 function countConfettiSpans(before: number) {
