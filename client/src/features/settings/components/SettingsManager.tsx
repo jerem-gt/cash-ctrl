@@ -60,11 +60,11 @@ type Props = {
 
 export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
   return (
-    <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 pb-4 border-b border-black/5 md:pb-0 md:border-b-0 md:pr-8 md:border-r">
+    <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 md:pr-8 md:border-r border-black/5">
       {tabs.map((group) => (
-        <div key={group.section} className="mb-2 md:mb-4">
+        <div key={group.section} className="mb-4">
           <h3 className="text-[10px] uppercase tracking-widest opacity-30 mb-2">{group.label}</h3>
-          <div className="flex flex-wrap gap-1 md:flex-col md:gap-0">
+          <div className="flex flex-col">
             {group.items.map((item) => (
               <button
                 key={item.key}
