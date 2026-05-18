@@ -46,7 +46,7 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 - **Runner**: **Vitest** est le test runner global du projet.
 - **Client Testing**: Utiliser `@testing-library/react` et `jsdom`.
 - **Mocks**: Utiliser **MSW** (Mock Service Worker) pour intercepter les appels API et `vi.fn()` pour les mocks unitaires.
-- **Intitulés de tests** : toujours utiliser des guillemets doubles `"` pour les chaînes passées à `it()`, `describe()` et `test()`. Les apostrophes françaises (`d'`, `l'`, `n'`...) dans une single-quoted string cassent le parser oxc/esbuild sans warning. Exception : utiliser des backticks `` ` `` quand l'intitulé contient lui-même des guillemets doubles (ex. texte UI cité, valeur d'enum).
+- **Intitulés de tests** : laisser Prettier gérer les quotes (`singleQuote: true` dans la config). Prettier bascule automatiquement en double guillemets quand l'intitulé contient une apostrophe française (`d'`, `l'`, `n'`…), ce qui protège déjà contre les bugs de parsing silencieux. Utiliser des backticks `` ` `` uniquement si l'intitulé contient lui-même des guillemets doubles (ex. texte UI cité, valeur d'enum).
 
 ### Écrire les TUs avec chaque évolution
 Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
