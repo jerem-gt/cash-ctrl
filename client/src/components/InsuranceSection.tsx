@@ -16,7 +16,7 @@ import { InsuranceRachatModal } from './InsuranceRachatModal';
 import { InsuranceRevalorisationModal } from './InsuranceRevalorisationModal';
 import { InsuranceVersementModal } from './InsuranceVersementModal';
 import { PerFiscalSimulatorModal } from './PerFiscalSimulatorModal';
-import { Button, showToast } from './ui';
+import { Button, ConfirmModal, showToast } from './ui';
 
 interface SupportRowProps {
   support: InsuranceSupportView;
@@ -301,6 +301,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
   const [showAdd, setShowAdd] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
   const [editingOp, setEditingOp] = useState<InsuranceOperation | null>(null);
+  const [deletingOp, setDeletingOp] = useState<InsuranceOperation | null>(null);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
   const [showZero, setShowZero] = useState(false);
@@ -407,11 +408,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
                 key={op.id}
                 op={op}
                 onEdit={readOnly ? undefined : () => setEditingOp(op)}
-                onDelete={
-                  readOnly
-                    ? undefined
-                    : () => deleteOp.mutate(op.id, { onError: (e) => showToast(e.message) })
-                }
+                onDelete={readOnly ? undefined : () => setDeletingOp(op)}
               />
             ))}
           </div>
@@ -427,6 +424,20 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
           accountId={accountId}
           op={editingOp}
           onClose={() => setEditingOp(null)}
+        />
+      )}
+      {deletingOp && (
+        <ConfirmModal
+          title="Supprimer l'opération"
+          body="Cette action est irréversible. Confirmer la suppression ?"
+          onConfirm={() => {
+            deleteOp.mutate(deletingOp.id, {
+              onSuccess: () => setDeletingOp(null),
+              onError: (e) => showToast(e.message),
+            });
+          }}
+          onCancel={() => setDeletingOp(null)}
+          isPending={deleteOp.isPending}
         />
       )}
     </>
