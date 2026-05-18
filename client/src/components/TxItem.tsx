@@ -1,4 +1,4 @@
-import { StickyNote } from 'lucide-react';
+import { Loader2, StickyNote } from 'lucide-react';
 
 import { AccountBadge } from '@/components/AccountBadge';
 import { ItemActions } from '@/components/ItemActions';
@@ -161,10 +161,15 @@ export function TxItem({
           {!readOnly && (
             <button
               onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
-              className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'}`}
+              disabled={validate.isPending}
+              className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'} disabled:opacity-50 disabled:cursor-not-allowed`}
               title={validated ? 'Marquer comme non validée' : 'Valider'}
             >
-              <span className="block scale-110">✓</span>
+              {validate.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <span className="block scale-110">✓</span>
+              )}
             </button>
           )}
           <ItemActions
