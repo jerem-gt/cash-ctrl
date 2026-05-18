@@ -228,9 +228,9 @@ export function AccountTypesManager() {
   };
 
   return (
-    <div className="flex items-start gap-8 mx-auto px-4">
+    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8 md:px-4">
       {/* COLONNE GAUCHE */}
-      <div className="w-[320px] shrink-0">
+      <div className="w-full md:w-[320px] md:shrink-0">
         <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-4 ml-1">
           Types de compte
         </p>

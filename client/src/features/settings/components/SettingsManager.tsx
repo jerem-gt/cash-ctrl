@@ -2,8 +2,8 @@ import { Skeleton } from '@/components/ui.tsx';
 
 export function SettingsManagerSkeleton() {
   return (
-    <div className="flex items-start gap-8 mx-auto px-4">
-      <div className="w-[320px] shrink-0 space-y-4">
+    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8 md:px-4">
+      <div className="w-full md:w-[320px] md:shrink-0 space-y-4">
         <Skeleton className="h-3 w-24" />
         <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-2">
           <Skeleton className="h-3 w-28" />
