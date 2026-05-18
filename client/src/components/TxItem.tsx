@@ -51,6 +51,77 @@ function TxDateBlock({ date }: Readonly<{ date: string }>) {
   );
 }
 
+function TxMobileMenu({
+  tx,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Readonly<Pick<Props, 'tx' | 'onEdit' | 'onDuplicate' | 'onDelete'>>) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div className="relative sm:hidden">
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+        aria-label="Actions"
+      >
+        <MoreHorizontal size={15} />
+      </button>
+      {menuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            aria-hidden="true"
+            onClick={() => setMenuOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setMenuOpen(false);
+            }}
+          />
+          <div className="absolute right-0 top-8 z-20 bg-white border border-stone-200 rounded-xl shadow-lg py-1 min-w-32 text-sm">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  onEdit(tx);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+              >
+                Modifier
+              </button>
+            )}
+            {onDuplicate && (
+              <button
+                type="button"
+                onClick={() => {
+                  onDuplicate(tx);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+              >
+                Dupliquer
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(tx);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 transition-colors"
+              >
+                Supprimer
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function TxItem({
   tx,
   accounts,
@@ -61,7 +132,6 @@ export function TxItem({
   onDuplicate,
   onDelete,
 }: Readonly<Props>) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
@@ -88,7 +158,6 @@ export function TxItem({
     >
       <TxDateBlock date={tx.date} />
 
-      {/* ICONE */}
       <span className="text-base leading-none shrink-0 w-5 text-center">{catIcon}</span>
 
       <div className="flex-1 min-w-0">
@@ -98,17 +167,14 @@ export function TxItem({
               ↻
             </span>
           )}
-
           {tx.notes && (
             <StickyNote size={11} className="text-amber-400 shrink-0" title={tx.notes} />
           )}
-
           <p
             className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
           >
             {tx.description}
           </p>
-
           <div className="flex gap-1 shrink-0">
             {isFuture && !validated && (
               <Badge variant="indigo">{isScheduled ? '↻ À venir' : 'À venir'}</Badge>
@@ -122,14 +188,12 @@ export function TxItem({
           <span className="truncate text-stone-500 font-medium">
             {tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.subcategory}
           </span>
-
           {accounts && logoMap && (
             <>
               <span className="opacity-30">·</span>
               <AccountBadge name={tx.account_name ?? ''} logo={logo} />
             </>
           )}
-
           {tx.payment_method && (
             <>
               <span className="opacity-30">·</span>
@@ -141,7 +205,6 @@ export function TxItem({
         </p>
       </div>
 
-      {/* DROITE : Finances (Toujours visibles) */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <div className="text-right min-w-18.75">
           <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
@@ -158,7 +221,6 @@ export function TxItem({
           )}
         </div>
 
-        {/* ACTIONS : Boutons toujours visibles */}
         <div className="flex items-center gap-0 border-l border-stone-100 pl-2">
           {!readOnly && (
             <button
@@ -174,70 +236,9 @@ export function TxItem({
               )}
             </button>
           )}
-          {/* Mobile : bouton ⋯ avec menu déroulant */}
           {!readOnly && (onEdit ?? onDuplicate ?? onDelete) && (
-            <div className="relative sm:hidden">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
-                aria-label="Actions"
-              >
-                <MoreHorizontal size={15} />
-              </button>
-              {menuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    role="presentation"
-                    onClick={() => setMenuOpen(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') setMenuOpen(false);
-                    }}
-                  />
-                  <div className="absolute right-0 top-8 z-20 bg-white border border-stone-200 rounded-xl shadow-lg py-1 min-w-32 text-sm">
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onEdit(tx);
-                          setMenuOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
-                      >
-                        Modifier
-                      </button>
-                    )}
-                    {onDuplicate && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onDuplicate(tx);
-                          setMenuOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
-                      >
-                        Dupliquer
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onDelete(tx);
-                          setMenuOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 transition-colors"
-                      >
-                        Supprimer
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+            <TxMobileMenu tx={tx} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
           )}
-          {/* Desktop : boutons inline */}
           <div className="hidden sm:flex">
             <ItemActions
               onEdit={onEdit ? () => onEdit(tx) : undefined}
