@@ -8,7 +8,7 @@ import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { fmtDec, today } from '@/lib/format';
-import type { Account, Transaction } from '@/types';
+import type { Account, Category, PaymentMethod, Transaction } from '@/types';
 
 interface Props {
   tx: Transaction;
@@ -19,6 +19,17 @@ interface Props {
   onEdit?: (tx: Transaction) => void;
   onDuplicate?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
+}
+
+function getTxIcons(
+  tx: Transaction,
+  categories: Category[],
+  paymentMethods: PaymentMethod[],
+): { catIcon: string; pmIcon: string } {
+  if (!tx.payment_method) return { catIcon: '', pmIcon: '' };
+  const catIcon = categories.find((m) => m.id === tx.category_id)?.icon ?? '';
+  const pmIcon = paymentMethods.find((m) => m.name === tx.payment_method)?.icon ?? '';
+  return { catIcon, pmIcon };
 }
 
 function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['type']) {
@@ -58,6 +69,7 @@ function TxMobileMenu({
   onDelete,
 }: Readonly<Pick<Props, 'tx' | 'onEdit' | 'onDuplicate' | 'onDelete'>>) {
   const [menuOpen, setMenuOpen] = useState(false);
+  if (onEdit == null && onDuplicate == null && onDelete == null) return null;
   return (
     <div className="relative sm:hidden">
       <button
@@ -142,13 +154,7 @@ export function TxItem({
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: categories = [] } = useCategories();
 
-  const catIcon = tx.payment_method
-    ? (categories.find((m) => m.id === tx.category_id)?.icon ?? '')
-    : '';
-  const pmIcon = tx.payment_method
-    ? (paymentMethods.find((m) => m.name === tx.payment_method)?.icon ?? '')
-    : '';
-
+  const { catIcon, pmIcon } = getTxIcons(tx, categories, paymentMethods);
   const { rowClass, amountColor } = getTxClasses(isFuture, validated, tx.type);
 
   return (
@@ -236,7 +242,7 @@ export function TxItem({
               )}
             </button>
           )}
-          {!readOnly && (onEdit ?? onDuplicate ?? onDelete) && (
+          {!readOnly && (
             <TxMobileMenu tx={tx} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
           )}
           <div className="hidden sm:flex">
