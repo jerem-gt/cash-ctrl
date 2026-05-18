@@ -60,7 +60,7 @@ export function TxItem({
   return (
     <div
       title={tx.notes || undefined}
-      className={`flex items-center gap-3 px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
+      className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
     >
       {/* GAUCHE : Bloc Date Style "Calendrier" */}
       {(() => {
@@ -140,7 +140,7 @@ export function TxItem({
       </div>
 
       {/* DROITE : Finances (Toujours visibles) */}
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <div className="text-right min-w-18.75">
           <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
             {tx.type === 'income' ? '+' : '−'}
@@ -172,11 +172,13 @@ export function TxItem({
               )}
             </button>
           )}
-          <ItemActions
-            onEdit={onEdit ? () => onEdit(tx) : undefined}
-            onDuplicate={onDuplicate ? () => onDuplicate(tx) : undefined}
-            onDelete={onDelete ? () => onDelete(tx) : undefined}
-          />
+          <div className="hidden sm:flex">
+            <ItemActions
+              onEdit={onEdit ? () => onEdit(tx) : undefined}
+              onDuplicate={onDuplicate ? () => onDuplicate(tx) : undefined}
+              onDelete={onDelete ? () => onDelete(tx) : undefined}
+            />
+          </div>
         </div>
       </div>
     </div>
