@@ -71,8 +71,9 @@ export function VersionStatus() {
   }, []);
 
   return (
-    <div
-      className="flex items-center gap-2 px-5 py-2 transition-opacity duration-300 cursor-default opacity-40 hover:opacity-100"
+    <button
+      type="button"
+      className="flex items-center gap-2 px-5 py-2 transition-opacity duration-300 cursor-default opacity-40 hover:opacity-100 focus:outline-none"
       onClick={handleClick}
     >
       <div
@@ -83,6 +84,6 @@ export function VersionStatus() {
       <span className="text-[10px] font-mono tracking-wider text-zinc-400 uppercase">
         version {version}
       </span>
-    </div>
+    </button>
   );
 }
