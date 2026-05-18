@@ -22,9 +22,7 @@ describe('AccountDetailPage', () => {
   it('affiche le squelette pendant le chargement des comptes', () => {
     server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
     renderDetail();
-    expect(
-      screen.queryByRole('button', { name: /\+ nouvelle transaction/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+ transaction/i })).not.toBeInTheDocument();
     expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
   });
 
@@ -54,7 +52,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: /\+ nouvelle transaction/i }));
+    await user.click(screen.getByRole('button', { name: /\+ transaction/i }));
     expect(screen.getByText('Transaction validée')).toBeInTheDocument();
   });
 

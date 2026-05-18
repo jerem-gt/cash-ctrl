@@ -81,7 +81,7 @@ describe('TransactionsList', () => {
     mockManager({ actions: { openAdd } });
 
     renderWithProviders(<TransactionsList logoMap={mockLogoMap} />);
-    fireEvent.click(screen.getByText('+ Nouvelle transaction'));
+    fireEvent.click(screen.getByText('+ Transaction'));
 
     expect(openAdd).toHaveBeenCalled();
   });
