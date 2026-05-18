@@ -38,7 +38,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: /nouvelle transaction/i }));
+    await user.click(screen.getByRole('button', { name: /\+ transaction/i }));
     expect(screen.getByText('Nouvelle transaction')).toBeInTheDocument();
   });
 
