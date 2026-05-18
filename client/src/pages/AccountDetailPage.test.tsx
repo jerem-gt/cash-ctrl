@@ -74,7 +74,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(screen.getByText('Supprimer la transaction')).toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '✎' }));
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
     expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
   });
 
@@ -90,7 +90,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '⧉' }));
+    await user.click(screen.getByRole('button', { name: 'Dupliquer' }));
     expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
   });
 
@@ -98,7 +98,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('supprimée'),
@@ -109,7 +109,7 @@ describe('AccountDetailPage', () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '✎' }));
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
     await screen.findByText('Modifier la transaction');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
@@ -133,7 +133,7 @@ describe('AccountDetailPage', () => {
 
     renderDetail();
     await screen.findByText('Courses');
-    const deleteBtn = await screen.findByRole('button', { name: '×' });
+    const deleteBtn = await screen.findByRole('button', { name: 'Supprimer' });
     await user.click(deleteBtn);
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
 
@@ -158,7 +158,7 @@ describe('AccountDetailPage', () => {
 
     renderDetail();
     await screen.findByText('Courses');
-    const editBtn = await screen.findByRole('button', { name: '✎' });
+    const editBtn = await screen.findByRole('button', { name: 'Modifier' });
     await user.click(editBtn);
 
     // On vérifie que les champs spécifiques au transfert (AccountSelect) sont là
