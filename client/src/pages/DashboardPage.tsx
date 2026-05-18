@@ -39,12 +39,12 @@ function DashboardSkeleton() {
           </Card>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+        <Card className="md:col-span-2">
           <Skeleton className="h-3 w-32 mb-4" />
           <Skeleton className="h-44" />
         </Card>
-        <Card className="lg:col-span-3">
+        <Card className="md:col-span-3">
           <Skeleton className="h-3 w-40 mb-4" />
           <Skeleton className="h-44" />
         </Card>
@@ -134,8 +134,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+        <Card className="md:col-span-2">
           <CardTitle>Dépenses par catégorie</CardTitle>
           {catData.length === 0 ? (
             <Empty>Aucune dépense ce mois</Empty>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="md:col-span-3">
           <CardTitle>Revenus vs dépenses — 6 mois</CardTitle>
           <div className="flex gap-4 mb-3">
             {[
@@ -206,7 +206,7 @@ export default function DashboardPage() {
 
       {/* Transactions — À valider + À venir */}
       {(toValidate.length > 0 || upcoming.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {toValidate.length > 0 && (
             <Card>
               <CardTitle>À valider</CardTitle>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
         <Card>
           <CardTitle>Remboursements en attente</CardTitle>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full min-w-[480px] text-xs">
               <thead>
                 <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
                   <th className="text-left pb-2 font-medium">Description</th>
