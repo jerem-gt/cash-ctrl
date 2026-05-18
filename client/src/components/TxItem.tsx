@@ -1,4 +1,5 @@
-import { Loader2, StickyNote } from 'lucide-react';
+import { Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
+import { useState } from 'react';
 
 import { AccountBadge } from '@/components/AccountBadge';
 import { ItemActions } from '@/components/ItemActions';
@@ -30,6 +31,7 @@ export function TxItem({
   onDuplicate,
   onDelete,
 }: Readonly<Props>) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
@@ -172,6 +174,63 @@ export function TxItem({
               )}
             </button>
           )}
+          {/* Mobile : bouton ⋯ avec menu déroulant */}
+          {!readOnly && (onEdit ?? onDuplicate ?? onDelete) && (
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+                aria-label="Actions"
+              >
+                <MoreHorizontal size={15} />
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-8 z-20 bg-white border border-stone-200 rounded-xl shadow-lg py-1 min-w-32 text-sm">
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onEdit(tx);
+                          setMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+                      >
+                        Modifier
+                      </button>
+                    )}
+                    {onDuplicate && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDuplicate(tx);
+                          setMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+                      >
+                        Dupliquer
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDelete(tx);
+                          setMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 transition-colors"
+                      >
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {/* Desktop : boutons inline */}
           <div className="hidden sm:flex">
             <ItemActions
               onEdit={onEdit ? () => onEdit(tx) : undefined}
