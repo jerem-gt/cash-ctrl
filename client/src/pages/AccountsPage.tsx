@@ -24,9 +24,13 @@ import type { Account } from '@/types.ts';
 function AccountsPageSkeleton() {
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-9 w-36" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-8 w-20" />
+        </div>
       </div>
       <div className="space-y-3">
         {[0, 1, 2, 3, 4].map((i) => (
@@ -134,14 +138,14 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-sans text-2xl tracking-tight">Comptes</h2>
           <p className="text-sm text-stone-400 mt-0.5">
             Cliquez sur un compte pour voir ses transactions
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-stone-100 rounded-lg p-0.5 text-xs">
             <button
               type="button"
@@ -167,10 +171,10 @@ export default function AccountsPage() {
             </button>
           </div>
           <Button size="sm" onClick={() => setAddLoanOpen(true)}>
-            + Nouveau prêt
+            + Prêt
           </Button>
           <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
-            + Nouveau compte
+            + Compte
           </Button>
         </div>
       </div>
