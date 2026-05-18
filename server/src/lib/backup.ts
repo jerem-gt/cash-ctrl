@@ -93,7 +93,11 @@ export function runBackup(db: Database, userId: number, backupDir = BACKUP_DIR):
   return { skipped: false, filename };
 }
 
-export function startBackupInterval(db: Database, intervalMs = 60 * 60 * 1000): NodeJS.Timeout {
+export function startBackupInterval(
+  db: Database,
+  intervalMs = 60 * 60 * 1000,
+  backupDir = BACKUP_DIR,
+): NodeJS.Timeout {
   const check = () => {
     try {
       const row = db.prepare<[], { id: number }>('SELECT id FROM users LIMIT 1').get();
@@ -109,9 +113,9 @@ export function startBackupInterval(db: Database, intervalMs = 60 * 60 * 1000): 
       const lastMs = settings.backup_last_at ? new Date(settings.backup_last_at).getTime() : 0;
 
       if (Date.now() - lastMs >= freqMs) {
-        const result = runBackup(db, userId);
+        const result = runBackup(db, userId, backupDir);
         if (!result.skipped) {
-          rotateBackups(settings.backup_max_files);
+          rotateBackups(settings.backup_max_files, backupDir);
           logger.info(`Auto backup created: ${result.filename}`);
         }
       }
