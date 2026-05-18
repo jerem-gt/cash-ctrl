@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { AccountBadge } from './AccountBadge';
@@ -29,5 +29,12 @@ describe('AccountBadge', () => {
     const { container } = render(<AccountBadge name="Compte" />);
     expect(container.querySelector('.bg-stone-100')).not.toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it("masque l'image si une erreur de chargement survient", () => {
+    const { container } = render(<AccountBadge name="Compte" bank="BNP" logo="/logos/bnp.png" />);
+    const img = container.querySelector('img')!;
+    fireEvent.error(img);
+    expect(img).toHaveStyle({ display: 'none' });
   });
 });

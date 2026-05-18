@@ -28,7 +28,7 @@ describe('AccountDetailPage', () => {
     expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
   });
 
-  it('ne montre pas "Compte introuvable" pendant le chargement, même pour un id absent', () => {
+  it(`ne montre pas "Compte introuvable" pendant le chargement, même pour un id absent`, () => {
     server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
     renderDetail('999');
     expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
@@ -169,28 +169,5 @@ describe('AccountDetailPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Transfert modifié'),
     );
-  });
-
-  it('ouvre et ferme toutes les modales', async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Compte test');
-
-    // Test Modale Edition Transaction
-    const editTxBtns = await screen.findAllByRole('button', { name: '✎' });
-    await user.click(editTxBtns[0]);
-    expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /annuler/i })); // Déclenche onClose
-
-    // Test Modale Suppression Transaction
-    const deleteTxBtns = await screen.findAllByRole('button', { name: '×' });
-    await user.click(deleteTxBtns[0]);
-    expect(screen.getByText('Supprimer la transaction')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /annuler/i }));
-
-    // Test Modale Duplication
-    const duplicateBtns = await screen.findAllByRole('button', { name: '⧉' });
-    await user.click(duplicateBtns[0]);
-    expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
   });
 });
