@@ -191,6 +191,74 @@ export function createTransactionsRepo(db: Database) {
     return stmt;
   };
 
+  function buildFilterConditions(
+    userId: number,
+    filters: TransactionFilters,
+  ): { conditions: string[]; params: QueryParams } {
+    const conditions: string[] = ['t.user_id = :userId'];
+    const params: QueryParams = { userId };
+
+    if (filters.account_id) {
+      conditions.push('t.account_id = :account_id');
+      params.account_id = filters.account_id;
+    }
+    if (filters.type) {
+      conditions.push('t.type = :type');
+      params.type = filters.type;
+    }
+    if (filters.category_id) {
+      conditions.push('sc.category_id = :category_id');
+      params.category_id = filters.category_id;
+    }
+    if (filters.subcategory_id) {
+      conditions.push('t.subcategory_id = :subcategory_id');
+      params.subcategory_id = filters.subcategory_id;
+    }
+    if (filters.description_contains) {
+      conditions.push('t.description LIKE :description_contains');
+      params.description_contains = `%${filters.description_contains}%`;
+    }
+    if (filters.date_from) {
+      conditions.push('t.date >= :date_from');
+      params.date_from = filters.date_from;
+    }
+    if (filters.date_to) {
+      conditions.push('t.date <= :date_to');
+      params.date_to = filters.date_to;
+    }
+    if (filters.amount_min != null) {
+      conditions.push('t.amount >= :amount_min');
+      params.amount_min = toCents(filters.amount_min);
+    }
+    if (filters.amount_max != null) {
+      conditions.push('t.amount <= :amount_max');
+      params.amount_max = toCents(filters.amount_max);
+    }
+    if (filters.payment_method_id) {
+      conditions.push('t.payment_method_id = :payment_method_id');
+      params.payment_method_id = filters.payment_method_id;
+    }
+    if (filters.validated != null) {
+      conditions.push('t.validated = :validated');
+      params.validated = filters.validated ? 1 : 0;
+    }
+
+    return { conditions, params };
+  }
+
+  function computeBalanceBefore(
+    userId: number,
+    accountId: number,
+    offset: number,
+    data: Transaction[],
+  ): number {
+    if (offset === 0 || data.length === 0) return 0;
+
+    const firstTx = data[0];
+    const row = getBalanceStmt.get({ userId, accountId, date: firstTx.date, id: firstTx.id });
+    return toEuros(row?.sum ?? 0);
+  }
+
   return {
     getCountByCategoryId: (categoryId: number): number =>
       getCountByCategoryIdStmt.get({ categoryId }) ?? 0,
@@ -201,64 +269,14 @@ export function createTransactionsRepo(db: Database) {
     getByUserId(userId: number, filters: TransactionFilters): PaginatedResult<Transaction> {
       const page = Math.max(1, filters.page ?? 1);
       const limit = Math.min(100, Math.max(1, filters.limit ?? 25));
-
-      // Construction des conditions pour Named Parameters
-      const conditions: string[] = ['t.user_id = :userId'];
-      const params: QueryParams = { userId };
-
-      if (filters.account_id) {
-        conditions.push('t.account_id = :account_id');
-        params.account_id = filters.account_id;
-      }
-      if (filters.type) {
-        conditions.push('t.type = :type');
-        params.type = filters.type;
-      }
-      if (filters.category_id) {
-        conditions.push('sc.category_id = :category_id');
-        params.category_id = filters.category_id;
-      }
-      if (filters.subcategory_id) {
-        conditions.push('t.subcategory_id = :subcategory_id');
-        params.subcategory_id = filters.subcategory_id;
-      }
-      if (filters.description_contains) {
-        conditions.push('t.description LIKE :description_contains');
-        params.description_contains = `%${filters.description_contains}%`;
-      }
-      if (filters.date_from) {
-        conditions.push('t.date >= :date_from');
-        params.date_from = filters.date_from;
-      }
-      if (filters.date_to) {
-        conditions.push('t.date <= :date_to');
-        params.date_to = filters.date_to;
-      }
-      if (filters.amount_min != null) {
-        conditions.push('t.amount >= :amount_min');
-        params.amount_min = toCents(filters.amount_min);
-      }
-      if (filters.amount_max != null) {
-        conditions.push('t.amount <= :amount_max');
-        params.amount_max = toCents(filters.amount_max);
-      }
-      if (filters.payment_method_id) {
-        conditions.push('t.payment_method_id = :payment_method_id');
-        params.payment_method_id = filters.payment_method_id;
-      }
-      if (filters.validated != null) {
-        conditions.push('t.validated = :validated');
-        params.validated = filters.validated ? 1 : 0;
-      }
-
+      const { conditions, params } = buildFilterConditions(userId, filters);
       const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
       const countSql = `SELECT COUNT(*) AS count FROM transactions t
                         LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
                         ${whereClause}`;
-
-      const countStmt = getDynamicStmt(countSql, Object.keys(params));
-      const total = (countStmt.get(params) as { count: number }).count;
+      const total = (getDynamicStmt(countSql, Object.keys(params)).get(params) as { count: number })
+        .count;
 
       if (total === 0) {
         return {
@@ -267,46 +285,27 @@ export function createTransactionsRepo(db: Database) {
         };
       }
 
-      const dataSql = `
-        ${TX_WITH_DETAILS}
-        ${whereClause}
-        GROUP BY t.id
-        ORDER BY t.date DESC, t.id DESC
-        LIMIT :limit OFFSET :offset`;
-
-      const dataStmt = getDynamicStmt(dataSql, [...Object.keys(params), 'limit', 'offset']);
-
-      const queryArgs: QueryParams = {
-        ...params,
-        limit,
-        offset: (page - 1) * limit,
-      };
-      const rawRows = dataStmt.all(queryArgs) as TransactionRow[];
-      const data = rawRows.map(parseSplits);
-
-      const totalPages = Math.max(1, Math.ceil(total / limit));
       const offset = (page - 1) * limit;
+      const dataSql = `${TX_WITH_DETAILS} ${whereClause} GROUP BY t.id ORDER BY t.date DESC, t.id DESC LIMIT :limit OFFSET :offset`;
+      const data = (
+        getDynamicStmt(dataSql, [...Object.keys(params), 'limit', 'offset']).all({
+          ...params,
+          limit,
+          offset,
+        }) as TransactionRow[]
+      ).map(parseSplits);
 
-      let balance_before_page: number | undefined;
-      if (filters.account_id) {
-        if (offset === 0 || data.length === 0) {
-          // Page 1 ou aucune donnée : le solde précédent est par définition 0
-          balance_before_page = 0;
-        } else {
-          // On prend la première transaction de la page actuelle pour définir la frontière
-          const firstTx = data[0];
+      const balance_before_page = filters.account_id
+        ? computeBalanceBefore(userId, filters.account_id, offset, data)
+        : undefined;
 
-          const row = getBalanceStmt.get({
-            userId,
-            accountId: filters.account_id,
-            date: firstTx.date,
-            id: firstTx.id,
-          });
-          balance_before_page = toEuros(row?.sum ?? 0);
-        }
-      }
-
-      return { data, total, page, totalPages, balance_before_page };
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+        balance_before_page,
+      };
     },
 
     getById: (id: number, userId: number) => {
