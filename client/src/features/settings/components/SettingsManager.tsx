@@ -60,23 +60,25 @@ type Props = {
 
 export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
   return (
-    <nav className="w-64 flex flex-col gap-1 pr-8 border-r border-black/5">
+    <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 pb-4 border-b border-black/5 md:pb-0 md:border-b-0 md:pr-8 md:border-r">
       {tabs.map((group) => (
-        <div key={group.section} className="mb-4">
+        <div key={group.section} className="mb-2 md:mb-4">
           <h3 className="text-[10px] uppercase tracking-widest opacity-30 mb-2">{group.label}</h3>
-          {group.items.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => onChange(item.key)}
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all ${
-                activeTab === item.key
-                  ? 'bg-black text-white shadow-md'
-                  : 'text-black/60 hover:bg-black/5 hover:text-black'
-              }`}
-            >
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-1 md:flex-col md:gap-0">
+            {group.items.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => onChange(item.key)}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all ${
+                  activeTab === item.key
+                    ? 'bg-black text-white shadow-md'
+                    : 'text-black/60 hover:bg-black/5 hover:text-black'
+                }`}
+              >
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       ))}
     </nav>

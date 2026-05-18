@@ -26,7 +26,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Layout Main */}
-      <div className="flex items-start gap-12">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-12">
         {/* Menu Gauche */}
         <SettingsManager activeTab={activeTab} onChange={setActiveTab} />
 
