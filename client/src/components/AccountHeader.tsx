@@ -12,11 +12,8 @@ interface AccountHeaderProps {
 }
 
 const LoanHeader = ({ value }: { value: number }) => (
-  <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-50">
-    <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
-      Capital restant dû
-    </span>
-    <p className="font-sans text-4xl leading-none text-red-700">{fmtDec(value)}</p>
+  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+    <StatItem label="Capital restant dû" value={value} isMain forceRed />
   </div>
 );
 
@@ -35,18 +32,20 @@ const StatItem = ({
   value,
   valueAll,
   isMain = false,
+  forceRed = false,
 }: {
   label: string;
   value: number;
   valueAll?: number;
   isMain?: boolean;
+  forceRed?: boolean;
 }) => (
   <div className="flex-1 flex flex-col justify-between">
     <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
       {label}
     </span>
     <p
-      className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${value < 0 ? 'text-red-700' : ''}`}
+      className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
     >
       {fmtDec(value)}
     </p>
@@ -64,35 +63,14 @@ const StatItem = ({
 );
 
 const InsuranceHeader = ({ account }: { account: Account }) => (
-  <div className="flex flex-col md:flex-row items-stretch bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-5">
-    <StatItem label="Fonds euros & UC" value={account.balance_insurance} />
-    {account.balance_stocks > 0 && (
-      <>
-        <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
-        <StatItem label="Portefeuille" value={account.balance_stocks} />
-      </>
-    )}
-    <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
-    <StatItem label="Total" value={account.balance_insurance + account.balance_stocks} isMain />
+  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+    <StatItem label="Fonds euros & UC" value={account.balance_insurance} isMain />
   </div>
 );
 
 const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => (
-  <div className="flex flex-col items-start md:items-end bg-stone-100/40 p-4 rounded-2xl border border-stone-200/60 min-w-50">
-    <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-1">
-      Solde disponible
-    </span>
-    <p
-      className={`font-sans text-4xl leading-none ${value < 0 ? 'text-red-700' : 'text-stone-900'}`}
-    >
-      {fmtDec(value ?? 0)}
-    </p>
-    {valueAll !== undefined && valueAll !== value && (
-      <p className="text-[11px] text-stone-400 mt-1.5">
-        <span>Prévisionnel&nbsp;</span>
-        <span className={valueAll < 0 ? 'text-red-400' : 'text-stone-500'}>{fmtDec(valueAll)}</span>
-      </p>
-    )}
+  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+    <StatItem label="Solde disponible" value={value} valueAll={valueAll} isMain />
   </div>
 );
 
