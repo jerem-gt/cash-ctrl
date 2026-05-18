@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -28,6 +28,7 @@ describe('TransactionsPage', () => {
   it('affiche les filtres de catégorie, de sous-catégorie et de type', async () => {
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
+    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
     expect(screen.getByText('Toutes catégories')).toBeInTheDocument();
     expect(screen.getByText('Toutes sous-catégories')).toBeInTheDocument();
     expect(screen.getByText('Tous types')).toBeInTheDocument();
@@ -78,6 +79,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
+    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
     const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
     await user.selectOptions(selectCategorie, '1');
     expect(selectCategorie).toHaveValue('1');
@@ -87,6 +89,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
+    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
     const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
     await user.selectOptions(selectCategorie, '');
     const selectSousCategorie = screen.getByRole('combobox', {
@@ -99,6 +102,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
+    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
     // On sélectionne déjà un item dans les catégories
     const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
     await user.selectOptions(selectCategorie, '1');
