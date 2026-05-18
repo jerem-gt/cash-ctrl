@@ -12,13 +12,13 @@ interface AccountHeaderProps {
 }
 
 const LoanHeader = ({ value }: { value: number }) => (
-  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
     <StatItem label="Capital restant dû" value={value} isMain forceRed />
   </div>
 );
 
 const InvestmentHeader = ({ account }: { account: Account }) => (
-  <div className="flex flex-col md:flex-row items-stretch bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-5">
+  <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-4 md:gap-5">
     <StatItem label="Cash disponible" value={account.balance} valueAll={account.balance_all} />
     <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
     <StatItem label="Portefeuille" value={account.balance_stocks} />
@@ -63,13 +63,13 @@ const StatItem = ({
 );
 
 const InsuranceHeader = ({ account }: { account: Account }) => (
-  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
     <StatItem label="Fonds euros & UC" value={account.balance_insurance} isMain />
   </div>
 );
 
 const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => (
-  <div className="flex bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 min-w-50">
+  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
     <StatItem label="Solde disponible" value={value} valueAll={valueAll} isMain />
   </div>
 );
@@ -84,8 +84,8 @@ export function AccountHeader({
 }: Readonly<AccountHeaderProps>) {
   return (
     <div>
-      <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+      <div className="p-4 md:p-8 bg-[#fafaf9] border-b border-stone-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
           <div className="flex gap-5 items-start">
             {/* Conteneur Logo */}
             {account.bank && logoMap[account.bank] && (
