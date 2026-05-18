@@ -28,7 +28,7 @@ describe('AccountsPage', () => {
     server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
     renderAccountsPage();
     expect(screen.queryByText('BNP')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /\+ nouveau compte/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+ compte/i })).not.toBeInTheDocument();
   });
 
   it('affiche la liste des comptes groupés par banque par défaut', async () => {
@@ -77,11 +77,11 @@ describe('AccountsPage', () => {
     expect(await screen.findByText(/aucun compte pour l'instant/i)).toBeInTheDocument();
   });
 
-  it(`ouvre le modal de création lors du clic sur "Nouveau compte"`, async () => {
+  it(`ouvre le modal de création lors du clic sur "Compte"`, async () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
-    const addBtn = await screen.findByRole('button', { name: /\+ nouveau compte/i });
+    const addBtn = await screen.findByRole('button', { name: /\+ compte/i });
     await user.click(addBtn);
 
     expect(screen.getByText('Ajouter un compte')).toBeInTheDocument();

@@ -6,7 +6,7 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 describe('SettingsPage', () => {
   it('affiche le titre et les sections', async () => {
     renderWithProviders(<SettingsPage />);
-    expect(screen.getByText('Paramètres')).toBeInTheDocument();
+    expect(screen.getAllByText('Paramètres').length).toBeGreaterThan(0);
     await screen.findByText('Banques');
     expect(screen.getByText('Types de compte')).toBeInTheDocument();
     expect(screen.getByText('Moyens de paiement')).toBeInTheDocument();
