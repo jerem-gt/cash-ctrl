@@ -353,9 +353,12 @@ export default function DashboardPage() {
                     width={70}
                   />
                   <Tooltip
-                    formatter={(v, name) =>
-                      name === '_total' ? null : [fmtDec(Number(v)), String(name)]
-                    }
+                    formatter={(v, name, entry) => {
+                      if (name === '_total') return null;
+                      const total = (entry.payload as Record<string, number>)._total;
+                      const pct = total === 0 ? 0 : (Number(v) / total) * 100;
+                      return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, String(name)];
+                    }}
                     cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                   />
                   {hasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
