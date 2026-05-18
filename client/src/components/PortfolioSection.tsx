@@ -18,8 +18,104 @@ const getPnlColor = (pnl: number | null) => {
   if (pnl == null) return 'text-stone-400';
   if (pnl > 0) return 'text-green-700';
   if (pnl < 0) return 'text-red-700';
-  return 'text-stone-500'; // Cas pnl === 0
+  return 'text-stone-500';
 };
+
+function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowProps>) {
+  const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
+  const costBasis = pos.avg_price * pos.quantity;
+  const pnl = marketValue == null ? null : marketValue - costBasis;
+  const pnlPct = pnl != null && costBasis > 0 ? (pnl / costBasis) * 100 : null;
+  const pnlColor = getPnlColor(pnl);
+  const hasActions = onBuy != null || onSell != null || onTransfer != null;
+
+  return (
+    <div className="px-4 py-3 border-b border-stone-100 last:border-0">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <span className="text-sm font-bold text-stone-800 font-mono">{pos.ticker}</span>
+          {pos.name && (
+            <p className="text-[10px] text-stone-400 truncate mt-0.5" title={pos.name}>
+              {pos.name}
+            </p>
+          )}
+        </div>
+        {pnl == null ? (
+          <p className="text-sm text-stone-300">—</p>
+        ) : (
+          <div className="text-right">
+            <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
+              {pnl >= 0 ? '+' : ''}
+              {pnl.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+            </p>
+            {pnlPct != null && (
+              <p className={`text-[11px] tabular-nums ${pnlColor}`}>
+                {pnlPct >= 0 ? '+' : ''}
+                {pnlPct.toFixed(2)} %
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <div>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Quantité</p>
+          <p className="text-xs font-medium text-stone-700 tabular-nums">{pos.quantity}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
+          <p className="text-xs font-medium text-stone-700 tabular-nums">
+            {fmtStockPrice(pos.avg_price, pos.currency)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Cours</p>
+          <p className="text-xs font-medium text-stone-700 tabular-nums">
+            {pos.current_price == null ? '—' : fmtStockPrice(pos.current_price, pos.currency)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valorisation</p>
+          <p className="text-xs font-medium text-stone-700 tabular-nums">
+            {marketValue == null
+              ? '—'
+              : marketValue.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+          </p>
+        </div>
+      </div>
+
+      {hasActions && (
+        <div className="flex gap-1 mt-2.5">
+          {onBuy && (
+            <button
+              onClick={() => onBuy(pos)}
+              className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+            >
+              Acheter
+            </button>
+          )}
+          {onSell && (
+            <button
+              onClick={() => onSell(pos)}
+              className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+            >
+              Vendre
+            </button>
+          )}
+          {onTransfer && (
+            <button
+              onClick={() => onTransfer(pos)}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+            >
+              Transférer
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowProps>) {
   const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
@@ -150,6 +246,10 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
 
   const totalPnlColor = getPnlColor(totalPnl);
 
+  const buyHandler = readOnly ? undefined : setBuyPosition;
+  const sellHandler = readOnly ? undefined : setSellPosition;
+  const transferHandler = readOnly ? undefined : setTransferPosition;
+
   let portfolioContent: ReactNode;
   if (isLoading) {
     portfolioContent = <div className="text-sm text-stone-400 py-4">Chargement…</div>;
@@ -162,15 +262,47 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
   } else {
     portfolioContent = (
       <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile : cards empilées */}
+        <div className="sm:hidden">
+          {positions.map((pos) => (
+            <PositionRowMobile
+              key={pos.ticker}
+              pos={pos}
+              onBuy={buyHandler}
+              onSell={sellHandler}
+              onTransfer={transferHandler}
+            />
+          ))}
+          {positions.length > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-t border-stone-100">
+              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                Total
+              </span>
+              <div className="text-right">
+                <p className="text-sm font-bold text-stone-800 tabular-nums">
+                  {totalMarketValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                </p>
+                <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
+                  {totalPnl >= 0 ? '+' : ''}
+                  {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} (
+                  {totalPnlPct >= 0 ? '+' : ''}
+                  {totalPnlPct.toFixed(2)} %)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop : tableau horizontal */}
+        <div className="hidden sm:block overflow-x-auto">
           <div className="min-w-[560px]">
             {positions.map((pos) => (
               <PositionRow
                 key={pos.ticker}
                 pos={pos}
-                onBuy={readOnly ? undefined : setBuyPosition}
-                onSell={readOnly ? undefined : setSellPosition}
-                onTransfer={readOnly ? undefined : setTransferPosition}
+                onBuy={buyHandler}
+                onSell={sellHandler}
+                onTransfer={transferHandler}
               />
             ))}
 
