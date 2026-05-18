@@ -36,14 +36,8 @@ function SupportRow({
   const [showArbitrage, setShowArbitrage] = useState(false);
   const [showInterets, setShowInterets] = useState(false);
   const [showRevalorisation, setShowRevalorisation] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteSupport = useDeleteInsuranceSupport(accountId);
-
-  const handleDelete = () => {
-    deleteSupport.mutate(support.id, {
-      onSuccess: () => showToast('Support supprimé ✓'),
-      onError: (err) => showToast(err.message),
-    });
-  };
 
   const fmtEur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 
@@ -87,7 +81,7 @@ function SupportRow({
         </button>
       )}
       <button
-        onClick={handleDelete}
+        onClick={() => setShowDeleteConfirm(true)}
         className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
         title="Supprimer le support"
       >
@@ -183,6 +177,20 @@ function SupportRow({
           accountId={accountId}
           support={support}
           onClose={() => setShowRevalorisation(false)}
+        />
+      )}
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title="Supprimer le support"
+          body={`Supprimer « ${support.name} » ? Cette action est irréversible.`}
+          onConfirm={() => {
+            deleteSupport.mutate(support.id, {
+              onSuccess: () => showToast('Support supprimé ✓'),
+              onError: (err) => showToast(err.message),
+            });
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+          isPending={deleteSupport.isPending}
         />
       )}
     </>
