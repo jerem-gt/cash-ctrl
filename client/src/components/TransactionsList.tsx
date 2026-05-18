@@ -57,7 +57,7 @@ export function TransactionsList({
           <span className="text-xs text-stone-400">{state.total} transaction(s)</span>
           {!readOnly && (
             <Button variant="primary" onClick={actions.openAdd}>
-              + Nouvelle transaction
+              + Transaction
             </Button>
           )}
         </div>
