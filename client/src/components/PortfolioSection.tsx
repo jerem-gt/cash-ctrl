@@ -162,49 +162,53 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
   } else {
     portfolioContent = (
       <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
-        {positions.map((pos) => (
-          <PositionRow
-            key={pos.ticker}
-            pos={pos}
-            onBuy={readOnly ? undefined : setBuyPosition}
-            onSell={readOnly ? undefined : setSellPosition}
-            onTransfer={readOnly ? undefined : setTransferPosition}
-          />
-        ))}
+        <div className="overflow-x-auto">
+          <div className="min-w-[560px]">
+            {positions.map((pos) => (
+              <PositionRow
+                key={pos.ticker}
+                pos={pos}
+                onBuy={readOnly ? undefined : setBuyPosition}
+                onSell={readOnly ? undefined : setSellPosition}
+                onTransfer={readOnly ? undefined : setTransferPosition}
+              />
+            ))}
 
-        {positions.length > 1 && (
-          <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
-            <div className="w-24 shrink-0">
-              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                Total
-              </span>
-            </div>
-            <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
-              <div />
-              <div />
-              <div />
-              <div>
-                <p className="font-bold text-stone-800 tabular-nums">
-                  {totalMarketValue.toLocaleString('fr-FR', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  })}
-                </p>
+            {positions.length > 1 && (
+              <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
+                <div className="w-24 shrink-0">
+                  <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                    Total
+                  </span>
+                </div>
+                <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
+                  <div />
+                  <div />
+                  <div />
+                  <div>
+                    <p className="font-bold text-stone-800 tabular-nums">
+                      {totalMarketValue.toLocaleString('fr-FR', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-28 text-right shrink-0">
+                  <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
+                    {totalPnl >= 0 ? '+' : ''}
+                    {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                  </p>
+                  <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
+                    {totalPnlPct >= 0 ? '+' : ''}
+                    {totalPnlPct.toFixed(2)} %
+                  </p>
+                </div>
+                <div className="w-[5.5rem]" />
               </div>
-            </div>
-            <div className="w-28 text-right shrink-0">
-              <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
-                {totalPnl >= 0 ? '+' : ''}
-                {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-              </p>
-              <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
-                {totalPnlPct >= 0 ? '+' : ''}
-                {totalPnlPct.toFixed(2)} %
-              </p>
-            </div>
-            <div className="w-[5.5rem]" />
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }

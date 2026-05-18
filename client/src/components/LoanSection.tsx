@@ -277,7 +277,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
         </p>
         <div className="border border-stone-200 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto max-h-120 overflow-y-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[480px] text-sm">
               <thead className="bg-stone-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
