@@ -236,10 +236,13 @@ export default function AccountsPage() {
               {showClosed && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {closedAccounts.map((acc) => (
-                    <ClosedAccountCard
+                    <AccountCard
                       key={acc.id}
                       acc={acc}
                       logoMap={logoMap}
+                      onEdit={() =>
+                        acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
+                      }
                       onDelete={() => setAccountToDelete(acc)}
                       onReopen={() => handleReopenAccount(acc.id)}
                     />
@@ -304,19 +307,41 @@ function AccountCard({
   onEdit,
   onDelete,
   onClose,
+  onReopen,
 }: Readonly<{
   acc: Account;
   logoMap: Record<string, string | null>;
   onEdit: () => void;
   onDelete: () => void;
-  onClose: () => void;
+  onClose?: () => void;
+  onReopen?: () => void;
 }>) {
-  const displayBal =
-    acc.envelope_type === 'loan'
-      ? Math.max(0, acc.capital_restant_du ?? 0)
-      : accountDisplayBalance(acc);
+  const isClosed = acc.closed_at !== null;
+
+  let displayBal: number;
+  if (isClosed) {
+    displayBal = accountDisplayBalance(acc);
+  } else if (acc.envelope_type === 'loan') {
+    displayBal = Math.max(0, acc.capital_restant_du ?? 0);
+  } else {
+    displayBal = accountDisplayBalance(acc);
+  }
+
+  const cardClass = isClosed
+    ? 'bg-stone-50 border-stone-200 opacity-60 hover:opacity-80 hover:shadow-sm'
+    : 'bg-white border-black/[0.07] shadow-sm hover:shadow-md';
+
+  let balanceClass: string;
+  if (isClosed) {
+    balanceClass = 'text-stone-400';
+  } else if (acc.envelope_type === 'loan' || displayBal < 0) {
+    balanceClass = 'text-red-700';
+  } else {
+    balanceClass = 'text-stone-900';
+  }
+
   return (
-    <div className="relative bg-white border border-black/[0.07] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
+    <div className={`relative border rounded-2xl p-5 transition-all group ${cardClass}`}>
       <Link
         to={`/accounts/${acc.id}`}
         className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -336,17 +361,32 @@ function AccountCard({
           >
             <Pencil size={18} strokeWidth={1.5} />
           </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-            title="Clôturer le compte"
-          >
-            <Archive size={18} strokeWidth={1.5} />
-          </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+              title="Clôturer le compte"
+            >
+              <Archive size={18} strokeWidth={1.5} />
+            </button>
+          )}
+          {onReopen && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReopen();
+              }}
+              className="p-2 text-stone-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+              title="Rouvrir le compte"
+            >
+              <ArchiveRestore size={18} strokeWidth={1.5} />
+            </button>
+          )}
           <button
             type="button"
             onClick={(e) => {
@@ -360,73 +400,20 @@ function AccountCard({
           </button>
         </div>
       </div>
-      <p
-        className={`font-sans text-3xl ${acc.envelope_type === 'loan' || displayBal < 0 ? 'text-red-700' : 'text-stone-900'}`}
-      >
-        {fmtDec(displayBal)}
-      </p>
-      <div className="flex justify-between items-center mt-4">
-        {acc.opening_date && (
-          <p className="text-[11px] text-stone-300 uppercase tracking-wider font-medium">
-            {accountSeniority(acc.opening_date)}
+      <p className={`font-sans text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
+      <div className="mt-4">
+        {isClosed && acc.closed_at ? (
+          <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium">
+            Clôturé le {fmtDate(acc.closed_at)}
           </p>
+        ) : (
+          acc.opening_date && (
+            <p className="text-[11px] text-stone-300 uppercase tracking-wider font-medium">
+              {accountSeniority(acc.opening_date)}
+            </p>
+          )
         )}
       </div>
-    </div>
-  );
-}
-
-function ClosedAccountCard({
-  acc,
-  logoMap,
-  onReopen,
-  onDelete,
-}: Readonly<{
-  acc: Account;
-  logoMap: Record<string, string | null>;
-  onReopen: () => void;
-  onDelete: () => void;
-}>) {
-  return (
-    <div className="relative bg-stone-50 border border-stone-200 rounded-2xl p-5 opacity-60 hover:opacity-80 hover:shadow-sm transition-all">
-      <Link
-        to={`/accounts/${acc.id}`}
-        className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        aria-label={`Voir les transactions du compte ${acc.name}`}
-      />
-      <div className="relative z-10 flex justify-between items-start mb-3">
-        <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReopen();
-            }}
-            className="p-2 text-stone-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
-            title="Rouvrir le compte"
-          >
-            <ArchiveRestore size={18} strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-            title="Supprimer le compte"
-          >
-            <Trash2 size={18} strokeWidth={1.5} />
-          </button>
-        </div>
-      </div>
-      <p className="font-sans text-3xl text-stone-400">{fmtDec(accountDisplayBalance(acc))}</p>
-      {acc.closed_at && (
-        <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium mt-4">
-          Clôturé le {fmtDate(acc.closed_at)}
-        </p>
-      )}
     </div>
   );
 }
