@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { Sidebar } from '@/components/Sidebar';
 import { Card, Skeleton, Toast } from '@/components/ui';
@@ -15,6 +15,14 @@ const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function AppShell() {
   // Ajoute (dev) au titre si on est hors production
@@ -37,6 +45,7 @@ function AppShell() {
 
   return (
     <div className="flex min-h-screen bg-stone-100">
+      <ScrollToTop />
       <Sidebar username={me.username} />
       <main className="ml-72 flex-1 p-9 max-w-[calc(100vw-18rem)]">
         <Suspense
