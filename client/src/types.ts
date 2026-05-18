@@ -293,6 +293,12 @@ export interface TransactionFilters {
   category_id?: number;
   subcategory_id?: number;
   description_contains?: string;
+  date_from?: string;
+  date_to?: string;
+  amount_min?: number;
+  amount_max?: number;
+  payment_method_id?: number;
+  validated?: boolean;
   page?: number;
   limit?: number;
 }

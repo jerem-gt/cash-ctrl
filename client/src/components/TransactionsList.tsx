@@ -40,23 +40,27 @@ export function TransactionsList({
 
   return (
     <>
-      <div className="flex gap-3 flex-wrap items-center">
-        {/* Filters */}
-        <TransactionsFilters
-          filters={state.filters}
-          onFilterChange={actions.handleFilterChange}
-          categories={state.categories}
-          subcategories={state.activeSubcategories}
-          accounts={state.accounts}
-          logoMap={logoMap}
-          showAccountSelect={!account}
-        />
-        <span className="text-xs text-stone-400 ml-auto">{state.total} transaction(s)</span>
-        {!readOnly && (
-          <Button variant="primary" onClick={actions.openAdd}>
-            + Nouvelle transaction
-          </Button>
-        )}
+      <div className="flex gap-3 items-start">
+        <div className="flex-1 min-w-0">
+          <TransactionsFilters
+            filters={state.filters}
+            onFilterChange={actions.handleFilterChange}
+            categories={state.categories}
+            subcategories={state.activeSubcategories}
+            accounts={state.accounts}
+            paymentMethods={state.paymentMethods}
+            logoMap={logoMap}
+            showAccountSelect={!account}
+          />
+        </div>
+        <div className="flex items-center gap-3 shrink-0 h-9">
+          <span className="text-xs text-stone-400">{state.total} transaction(s)</span>
+          {!readOnly && (
+            <Button variant="primary" onClick={actions.openAdd}>
+              + Nouvelle transaction
+            </Button>
+          )}
+        </div>
       </div>
       <div className="flex flex-col gap-2">
         {state.isLoading ? (

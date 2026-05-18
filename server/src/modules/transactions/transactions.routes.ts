@@ -45,6 +45,21 @@ const querySchema = z.object({
   category_id: z.coerce.number().int().optional(),
   subcategory_id: z.coerce.number().int().optional(),
   description_contains: z.string().trim().optional(),
+  date_from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  date_to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  amount_min: z.coerce.number().nonnegative().optional(),
+  amount_max: z.coerce.number().positive().optional(),
+  payment_method_id: z.coerce.number().int().positive().optional(),
+  validated: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });

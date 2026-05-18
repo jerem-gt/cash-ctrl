@@ -386,6 +386,137 @@ describe('/api/transactions', () => {
   });
 });
 
+// ─── Nouveaux filtres ─────────────────────────────────────────────────────────
+
+describe('/api/transactions — Filtres avancés', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+
+    // tx1 : income 100 €, 2024-01-10, PM_VIREMENT, non validée
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 100,
+      description: 'Salaire jan',
+      subcategory_id: SEED.SUBCAT_SALAIRE,
+      date: '2024-01-10',
+      payment_method_id: SEED.PM_VIREMENT,
+      validated: false,
+    });
+    // tx2 : expense 30 €, 2024-02-15, PM_CARTE, validée
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 30,
+      description: 'Courses fév',
+      subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+      date: '2024-02-15',
+      payment_method_id: SEED.PM_CARTE,
+      validated: true,
+    });
+    // tx3 : expense 200 €, 2024-03-20, PM_VIREMENT, non validée
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      description: 'Loyer mars',
+      subcategory_id: SEED.SUBCAT_LOYER,
+      date: '2024-03-20',
+      payment_method_id: SEED.PM_VIREMENT,
+      validated: false,
+    });
+  });
+
+  it('filtre par date_from', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&date_from=2024-02-01`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data.every((t: { date: string }) => t.date >= '2024-02-01')).toBe(true);
+  });
+
+  it('filtre par date_to', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&date_to=2024-01-31`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].description).toBe('Salaire jan');
+  });
+
+  it('filtre par plage date_from + date_to', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&date_from=2024-02-01&date_to=2024-02-28`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].description).toBe('Courses fév');
+  });
+
+  it('filtre par amount_min', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&amount_min=100`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { amount: number }) => t.amount >= 100)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  it('filtre par amount_max', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&amount_max=50`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { amount: number }) => t.amount <= 50)).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+  });
+
+  it('filtre par plage amount_min + amount_max', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&amount_min=25&amount_max=150`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  it('filtre par payment_method_id (PM_CARTE)', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&payment_method_id=${SEED.PM_CARTE}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].description).toBe('Courses fév');
+  });
+
+  it('filtre validated=false retourne uniquement les non validées', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&validated=false`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { validated: number }) => t.validated === 0)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  it('filtre validated=true retourne uniquement les validées', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&validated=true`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { validated: number }) => t.validated === 1)).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+  });
+
+  it('retourne 400 pour validated invalide', async () => {
+    const res = await ctx.agent.get('/api/transactions?validated=oui');
+    expect(res.status).toBe(400);
+  });
+
+  it('retourne 400 pour date_from au mauvais format', async () => {
+    const res = await ctx.agent.get('/api/transactions?date_from=15-01-2024');
+    expect(res.status).toBe(400);
+  });
+
+  it('retourne 400 pour amount_min négatif', async () => {
+    const res = await ctx.agent.get('/api/transactions?amount_min=-10');
+    expect(res.status).toBe(400);
+  });
+});
+
 // ─── Pagination & Solde ────────────────────────────────────────────────────────
 
 describe('/api/transactions — Pagination & Solde', () => {
