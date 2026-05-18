@@ -512,6 +512,13 @@ export const transactionsApi = {
       params.set('subcategory_id', String(filters.subcategory_id));
     if (filters?.description_contains)
       params.set('description_contains', filters.description_contains);
+    if (filters?.date_from) params.set('date_from', filters.date_from);
+    if (filters?.date_to) params.set('date_to', filters.date_to);
+    if (filters?.amount_min != null) params.set('amount_min', String(filters.amount_min));
+    if (filters?.amount_max != null) params.set('amount_max', String(filters.amount_max));
+    if (filters?.payment_method_id != null)
+      params.set('payment_method_id', String(filters.payment_method_id));
+    if (filters?.validated != null) params.set('validated', String(filters.validated));
     if (filters?.page != null) params.set('page', String(filters.page));
     if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();

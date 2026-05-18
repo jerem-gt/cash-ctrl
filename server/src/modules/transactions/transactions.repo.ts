@@ -226,6 +226,30 @@ export function createTransactionsRepo(db: Database) {
         conditions.push('t.description LIKE :description_contains');
         params.description_contains = `%${filters.description_contains}%`;
       }
+      if (filters.date_from) {
+        conditions.push('t.date >= :date_from');
+        params.date_from = filters.date_from;
+      }
+      if (filters.date_to) {
+        conditions.push('t.date <= :date_to');
+        params.date_to = filters.date_to;
+      }
+      if (filters.amount_min != null) {
+        conditions.push('t.amount >= :amount_min');
+        params.amount_min = toCents(filters.amount_min);
+      }
+      if (filters.amount_max != null) {
+        conditions.push('t.amount <= :amount_max');
+        params.amount_max = toCents(filters.amount_max);
+      }
+      if (filters.payment_method_id) {
+        conditions.push('t.payment_method_id = :payment_method_id');
+        params.payment_method_id = filters.payment_method_id;
+      }
+      if (filters.validated != null) {
+        conditions.push('t.validated = :validated');
+        params.validated = filters.validated ? 1 : 0;
+      }
 
       const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
