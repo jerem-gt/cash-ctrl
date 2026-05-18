@@ -47,10 +47,10 @@ function AppShell() {
   if (!me) return <LoginPage />;
 
   return (
-    <div className="flex min-h-screen bg-stone-100">
+    <div className="flex min-h-screen bg-stone-100 overflow-x-hidden">
       <ScrollToTop />
       <Sidebar username={me.username} mobileOpen={sidebarOpen} onMobileClose={closeSidebar} />
-      <main className="md:ml-72 flex-1 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">
+      <main className="md:ml-72 flex-1 min-w-0 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">
         <div className="flex items-center gap-3 mb-4 md:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
