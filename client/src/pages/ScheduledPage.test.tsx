@@ -196,7 +196,7 @@ describe('ScheduledPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(screen.getByText('Supprimer la planification')).toBeInTheDocument();
   });
 
@@ -204,7 +204,7 @@ describe('ScheduledPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('supprimée'),
@@ -253,7 +253,7 @@ describe('ScheduledPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur suppression'),
@@ -319,7 +319,7 @@ describe('ScheduledPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<ScheduledPage />);
     await screen.findByText('Loyer');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(screen.getByText('Supprimer la planification')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /annuler/i }));
     expect(screen.queryByText('Supprimer la planification')).not.toBeInTheDocument();
@@ -428,7 +428,7 @@ describe('ScheduledPage', () => {
     await screen.findByText('Loyer actif');
     await user.click(screen.getByText('Suspendus (1)'));
     await screen.findByText('Abonnement suspendu');
-    const supprimerBtns = screen.getAllByRole('button', { name: '×' });
+    const supprimerBtns = screen.getAllByRole('button', { name: 'Supprimer' });
     await user.click(supprimerBtns.at(-1)!);
     expect(screen.getByText('Supprimer la planification')).toBeInTheDocument();
   });

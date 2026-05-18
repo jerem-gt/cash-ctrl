@@ -46,7 +46,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '✎' }));
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
     expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '⧉' }));
+    await user.click(screen.getByRole('button', { name: 'Dupliquer' }));
     expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
   });
 
@@ -62,7 +62,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(screen.getByText(/supprimer/i)).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '×' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('supprimée'),
@@ -129,7 +129,7 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: '✎' }));
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
     await screen.findByText('Modifier la transaction');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>

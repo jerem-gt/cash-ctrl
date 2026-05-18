@@ -2,6 +2,7 @@ import { type SyntheticEvent, useMemo, useState } from 'react';
 
 import type { ScheduledPayload } from '@/api/client';
 import { AccountSelect } from '@/components/AccountSelect';
+import { ItemActions } from '@/components/ItemActions';
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import {
   Button,
@@ -634,7 +635,7 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
   const amountSign = isTransfer || isVersement ? '' : typeSign;
 
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0 group">
+    <div className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium truncate">{sched.description}</p>
@@ -666,20 +667,7 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
         {amountSign}
         {fmtDec(sched.amount)}
       </span>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button
-          onClick={() => onEdit(sched)}
-          className="text-xs text-stone-400 hover:text-stone-700 transition-colors px-1"
-        >
-          Modifier
-        </button>
-        <button
-          onClick={() => onDelete(sched)}
-          className="text-xs text-stone-300 hover:text-red-400 transition-colors px-1"
-        >
-          ×
-        </button>
-      </div>
+      <ItemActions onEdit={() => onEdit(sched)} onDelete={() => onDelete(sched)} />
     </div>
   );
 }

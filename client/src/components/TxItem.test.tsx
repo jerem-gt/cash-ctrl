@@ -51,8 +51,8 @@ describe('TxItem', () => {
 
   it('affiche les boutons modifier, dupliquer et supprimer', () => {
     renderTx(baseTx);
-    expect(screen.getByTitle('Modifier')).toBeInTheDocument();
-    expect(screen.getByTitle('Dupliquer')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Modifier' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dupliquer' })).toBeInTheDocument();
   });
 
   it("n'affiche pas les boutons optionnels si callbacks absents", () => {

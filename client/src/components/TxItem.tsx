@@ -1,6 +1,7 @@
 import { StickyNote } from 'lucide-react';
 
 import { AccountBadge } from '@/components/AccountBadge';
+import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
@@ -166,36 +167,11 @@ export function TxItem({
               <span className="block scale-110">✓</span>
             </button>
           )}
-
-          {onEdit && (
-            <button
-              onClick={() => onEdit(tx)}
-              className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
-              title="Modifier"
-            >
-              <span className="text-[12px]">✎</span>
-            </button>
-          )}
-
-          {onDuplicate && (
-            <button
-              onClick={() => onDuplicate(tx)}
-              className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
-              title="Dupliquer"
-            >
-              <span className="text-[14px]">⧉</span>
-            </button>
-          )}
-
-          {onDelete && (
-            <button
-              onClick={() => onDelete(tx)}
-              className="p-1.5 text-stone-300 hover:text-red-400 hover:bg-red-50 rounded-md transition-colors"
-              title="Supprimer"
-            >
-              <span className="text-lg leading-none">×</span>
-            </button>
-          )}
+          <ItemActions
+            onEdit={onEdit ? () => onEdit(tx) : undefined}
+            onDuplicate={onDuplicate ? () => onDuplicate(tx) : undefined}
+            onDelete={onDelete ? () => onDelete(tx) : undefined}
+          />
         </div>
       </div>
     </div>
