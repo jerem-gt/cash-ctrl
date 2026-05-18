@@ -40,7 +40,7 @@ export function TransactionsList({
 
   return (
     <>
-      <div className="flex gap-3 items-start">
+      <div className="flex flex-col sm:flex-row gap-3 items-start">
         <div className="flex-1 min-w-0">
           <TransactionsFilters
             filters={state.filters}
@@ -53,7 +53,7 @@ export function TransactionsList({
             showAccountSelect={!account}
           />
         </div>
-        <div className="flex items-center gap-3 shrink-0 h-9">
+        <div className="flex items-center justify-between sm:justify-start gap-3 sm:shrink-0 sm:h-9">
           <span className="text-xs text-stone-400">{state.total} transaction(s)</span>
           {!readOnly && (
             <Button variant="primary" onClick={actions.openAdd}>
