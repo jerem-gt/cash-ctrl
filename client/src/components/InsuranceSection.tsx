@@ -47,19 +47,88 @@ function SupportRow({
 
   const fmtEur = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 
+  const badgeClass =
+    support.type === 'euro' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700';
+  const badgeLabel = support.type === 'euro' ? 'Euro' : 'UC';
+  const actionButtons = !readOnly && (
+    <div className="flex gap-1 flex-wrap">
+      <button
+        onClick={() => setShowVersement(true)}
+        className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+      >
+        Verser
+      </button>
+      <button
+        onClick={() => setShowRachat(true)}
+        className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+      >
+        Racheter
+      </button>
+      <button
+        onClick={() => setShowArbitrage(true)}
+        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+      >
+        Arbitrer
+      </button>
+      {support.type === 'euro' && (
+        <button
+          onClick={() => setShowInterets(true)}
+          className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
+        >
+          Intérêts
+        </button>
+      )}
+      {support.type === 'uc' && (
+        <button
+          onClick={() => setShowRevalorisation(true)}
+          className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
+        >
+          Revaloriser
+        </button>
+      )}
+      <button
+        onClick={handleDelete}
+        className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
+        title="Supprimer le support"
+      >
+        ×
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
+      {/* Mobile card */}
+      <div className="sm:hidden px-4 py-3 border-b border-stone-100">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <span
+              className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${badgeClass}`}
+            >
+              {badgeLabel}
+            </span>
+            <p className="text-sm font-medium text-stone-800 mt-0.5 leading-tight truncate">
+              {support.name}
+            </p>
+            {support.ticker && (
+              <p className="text-[10px] text-stone-400 font-mono">{support.ticker}</p>
+            )}
+          </div>
+          <p className="text-sm font-bold text-stone-800 tabular-nums shrink-0">
+            {fmtEur(support.value)}
+          </p>
+        </div>
+        {actionButtons}
+      </div>
+
+      {/* Desktop row */}
+      <div className="hidden sm:flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
         <div className="w-40 shrink-0">
           <div className="flex items-center gap-1.5">
             <span
-              className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                support.type === 'euro'
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-blue-100 text-blue-700'
-              }`}
+              className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${badgeClass}`}
             >
-              {support.type === 'euro' ? 'Euro' : 'UC'}
+              {badgeLabel}
             </span>
           </div>
           <p className="text-sm font-medium text-stone-800 mt-0.5 leading-tight">{support.name}</p>
@@ -77,51 +146,7 @@ function SupportRow({
           <p className="text-sm font-bold text-stone-800 tabular-nums">{fmtEur(support.value)}</p>
         </div>
 
-        {!readOnly && (
-          <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-            <button
-              onClick={() => setShowVersement(true)}
-              className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
-            >
-              Verser
-            </button>
-            <button
-              onClick={() => setShowRachat(true)}
-              className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
-            >
-              Racheter
-            </button>
-            <button
-              onClick={() => setShowArbitrage(true)}
-              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
-            >
-              Arbitrer
-            </button>
-            {support.type === 'euro' && (
-              <button
-                onClick={() => setShowInterets(true)}
-                className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
-              >
-                Intérêts
-              </button>
-            )}
-            {support.type === 'uc' && (
-              <button
-                onClick={() => setShowRevalorisation(true)}
-                className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
-              >
-                Revaloriser
-              </button>
-            )}
-            <button
-              onClick={handleDelete}
-              className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
-              title="Supprimer le support"
-            >
-              ×
-            </button>
-          </div>
-        )}
+        {actionButtons && <div className="shrink-0 justify-end">{actionButtons}</div>}
       </div>
 
       {showVersement && (
@@ -224,10 +249,12 @@ function OperationRow({
         </span>
       )}
       {op.fees > 0 && (
-        <span className="text-[10px] text-stone-400 shrink-0">frais {fmtEur(op.fees)}</span>
+        <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
+          frais {fmtEur(op.fees)}
+        </span>
       )}
       {op.social_fees > 0 && (
-        <span className="text-[10px] text-stone-400 shrink-0">
+        <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
           prél. soc. {fmtEur(op.social_fees)}
         </span>
       )}
