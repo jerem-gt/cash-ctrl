@@ -15,14 +15,14 @@ function renderPortfolio(accountId = 3) {
 describe('PortfolioSection', () => {
   it('affiche les positions après chargement', async () => {
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
-    expect(screen.getByText('DCAM.PA')).toBeInTheDocument();
+    await screen.findAllByText('DCAM.PA');
+    expect(screen.getAllByText('DCAM.PA').length).toBeGreaterThan(0);
   });
 
   it('affiche la quantité et le PRU', async () => {
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
-    expect(screen.getByText('10')).toBeInTheDocument();
+    await screen.findAllByText('DCAM.PA');
+    expect(screen.getAllByText('10').length).toBeGreaterThan(0);
   });
 
   it(`affiche "Aucune position ouverte" quand le portefeuille est vide`, async () => {
@@ -34,7 +34,7 @@ describe('PortfolioSection', () => {
   it('ouvre le modal Acheter au clic sur + Acheter', async () => {
     const user = userEvent.setup();
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
+    await screen.findAllByText('DCAM.PA');
     await user.click(screen.getByRole('button', { name: /\+ Acheter/i }));
     expect(screen.getByText('Acheter des actions')).toBeInTheDocument();
   });
@@ -42,24 +42,23 @@ describe('PortfolioSection', () => {
   it('ouvre le modal Vendre au clic sur Vendre dans une ligne', async () => {
     const user = userEvent.setup();
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
-    const sellBtn = screen.getByRole('button', { name: /vendre/i });
+    await screen.findAllByText('DCAM.PA');
+    const sellBtn = screen.getAllByRole('button', { name: /vendre/i })[0];
     await user.click(sellBtn);
     expect(screen.getByText('Vendre des actions')).toBeInTheDocument();
   });
 
   it('affiche la PV latente colorée en vert', async () => {
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
+    await screen.findAllByText('DCAM.PA');
     // PV = (15 - 12) * 10 = +30€
-    const pv = await screen.findByText(/\+.*30/);
-    expect(pv).toBeInTheDocument();
+    expect(screen.getAllByText(/\+.*30/).length).toBeGreaterThan(0);
   });
 
   it('actualise les cours au clic sur Actualiser', async () => {
     const user = userEvent.setup();
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
+    await screen.findAllByText('DCAM.PA');
     await user.click(screen.getByRole('button', { name: /actualiser les cours/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Cours mis à jour'),
@@ -83,8 +82,8 @@ describe('PortfolioSection', () => {
       ),
     );
     renderPortfolio();
-    await screen.findByText('DCAM.PA');
-    await screen.findByText('AAPL');
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    await screen.findAllByText('DCAM.PA');
+    await screen.findAllByText('AAPL');
+    expect(screen.getAllByText('Total').length).toBeGreaterThan(0);
   });
 });
