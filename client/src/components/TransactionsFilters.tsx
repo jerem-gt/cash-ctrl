@@ -83,7 +83,7 @@ export const TransactionsFilters = ({
     <div className="flex flex-col gap-2 w-full">
       {/* Barre principale */}
       <div className="flex gap-3 flex-wrap items-center w-full">
-        <div className="relative flex-1 min-w-40 max-w-72">
+        <div className="relative basis-full sm:basis-auto flex-1 sm:max-w-72">
           <Input
             type="text"
             placeholder="Rechercher une description…"
@@ -140,7 +140,7 @@ export const TransactionsFilters = ({
       {open && (
         <div className="flex gap-3 flex-wrap items-center pt-1 border-t border-stone-100">
           {showAccountSelect && (
-            <div className="flex-1 min-w-44 max-w-64">
+            <div className="basis-full sm:basis-auto flex-1 sm:max-w-64">
               <AccountSelect
                 id="filtered-account-select"
                 value={String(filters.account_id ?? '')}
@@ -154,7 +154,7 @@ export const TransactionsFilters = ({
 
           <Select
             aria-label="Choisir une catégorie"
-            className="flex-1 min-w-32 max-w-50"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-50"
             value={String(filters.category_id ?? '')}
             onChange={(e) =>
               onFilterChange({
@@ -174,7 +174,7 @@ export const TransactionsFilters = ({
           <Select
             aria-label="Choisir une sous-catégorie"
             disabled={!filters.category_id}
-            className="flex-1 min-w-32 max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
             value={String(filters.subcategory_id ?? '')}
             onChange={(e) =>
               onFilterChange({
@@ -193,7 +193,7 @@ export const TransactionsFilters = ({
           <Input
             type="date"
             aria-label="Date de début"
-            className="flex-1 min-w-32 max-w-40 h-9"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-40 h-9"
             value={filters.date_from ?? ''}
             onChange={(e) => onFilterChange({ date_from: e.target.value || undefined })}
           />
@@ -201,7 +201,7 @@ export const TransactionsFilters = ({
           <Input
             type="date"
             aria-label="Date de fin"
-            className="flex-1 min-w-32 max-w-40 h-9"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-40 h-9"
             value={filters.date_to ?? ''}
             onChange={(e) => onFilterChange({ date_to: e.target.value || undefined })}
           />
@@ -209,7 +209,7 @@ export const TransactionsFilters = ({
           <DecimalInput
             placeholder="Montant min €"
             aria-label="Montant minimum"
-            className="flex-1 min-w-28 max-w-36 h-9"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-36 h-9"
             value={amountMinInput}
             onChange={(e) => setAmountMinInput(e.target.value)}
           />
@@ -217,14 +217,14 @@ export const TransactionsFilters = ({
           <DecimalInput
             placeholder="Montant max €"
             aria-label="Montant maximum"
-            className="flex-1 min-w-28 max-w-36 h-9"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-36 h-9"
             value={amountMaxInput}
             onChange={(e) => setAmountMaxInput(e.target.value)}
           />
 
           <Select
             aria-label="Choisir un moyen de paiement"
-            className="flex-1 min-w-36 max-w-52"
+            className="basis-full sm:basis-auto flex-1 sm:max-w-52"
             value={String(filters.payment_method_id ?? '')}
             onChange={(e) =>
               onFilterChange({
