@@ -40,7 +40,7 @@ export function TransactionsList({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-3 items-start">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
         <div className="flex-1 min-w-0">
           <TransactionsFilters
             filters={state.filters}
