@@ -95,6 +95,61 @@ export const TX_WITH_DETAILS = `
 
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
+function buildFilterConditions(
+  userId: number,
+  filters: TransactionFilters,
+): { conditions: string[]; params: QueryParams } {
+  const conditions: string[] = ['t.user_id = :userId'];
+  const params: QueryParams = { userId };
+
+  if (filters.account_id) {
+    conditions.push('t.account_id = :account_id');
+    params.account_id = filters.account_id;
+  }
+  if (filters.type) {
+    conditions.push('t.type = :type');
+    params.type = filters.type;
+  }
+  if (filters.category_id) {
+    conditions.push('sc.category_id = :category_id');
+    params.category_id = filters.category_id;
+  }
+  if (filters.subcategory_id) {
+    conditions.push('t.subcategory_id = :subcategory_id');
+    params.subcategory_id = filters.subcategory_id;
+  }
+  if (filters.description_contains) {
+    conditions.push('t.description LIKE :description_contains');
+    params.description_contains = `%${filters.description_contains}%`;
+  }
+  if (filters.date_from) {
+    conditions.push('t.date >= :date_from');
+    params.date_from = filters.date_from;
+  }
+  if (filters.date_to) {
+    conditions.push('t.date <= :date_to');
+    params.date_to = filters.date_to;
+  }
+  if (filters.amount_min != null) {
+    conditions.push('t.amount >= :amount_min');
+    params.amount_min = toCents(filters.amount_min);
+  }
+  if (filters.amount_max != null) {
+    conditions.push('t.amount <= :amount_max');
+    params.amount_max = toCents(filters.amount_max);
+  }
+  if (filters.payment_method_id) {
+    conditions.push('t.payment_method_id = :payment_method_id');
+    params.payment_method_id = filters.payment_method_id;
+  }
+  if (filters.validated != null) {
+    conditions.push('t.validated = :validated');
+    params.validated = filters.validated ? 1 : 0;
+  }
+
+  return { conditions, params };
+}
+
 export function createTransactionsRepo(db: Database) {
   const getCountByCategoryIdStmt = db
     .prepare<
@@ -190,61 +245,6 @@ export function createTransactionsRepo(db: Database) {
     }
     return stmt;
   };
-
-  function buildFilterConditions(
-    userId: number,
-    filters: TransactionFilters,
-  ): { conditions: string[]; params: QueryParams } {
-    const conditions: string[] = ['t.user_id = :userId'];
-    const params: QueryParams = { userId };
-
-    if (filters.account_id) {
-      conditions.push('t.account_id = :account_id');
-      params.account_id = filters.account_id;
-    }
-    if (filters.type) {
-      conditions.push('t.type = :type');
-      params.type = filters.type;
-    }
-    if (filters.category_id) {
-      conditions.push('sc.category_id = :category_id');
-      params.category_id = filters.category_id;
-    }
-    if (filters.subcategory_id) {
-      conditions.push('t.subcategory_id = :subcategory_id');
-      params.subcategory_id = filters.subcategory_id;
-    }
-    if (filters.description_contains) {
-      conditions.push('t.description LIKE :description_contains');
-      params.description_contains = `%${filters.description_contains}%`;
-    }
-    if (filters.date_from) {
-      conditions.push('t.date >= :date_from');
-      params.date_from = filters.date_from;
-    }
-    if (filters.date_to) {
-      conditions.push('t.date <= :date_to');
-      params.date_to = filters.date_to;
-    }
-    if (filters.amount_min != null) {
-      conditions.push('t.amount >= :amount_min');
-      params.amount_min = toCents(filters.amount_min);
-    }
-    if (filters.amount_max != null) {
-      conditions.push('t.amount <= :amount_max');
-      params.amount_max = toCents(filters.amount_max);
-    }
-    if (filters.payment_method_id) {
-      conditions.push('t.payment_method_id = :payment_method_id');
-      params.payment_method_id = filters.payment_method_id;
-    }
-    if (filters.validated != null) {
-      conditions.push('t.validated = :validated');
-      params.validated = filters.validated ? 1 : 0;
-    }
-
-    return { conditions, params };
-  }
 
   function computeBalanceBefore(
     userId: number,
