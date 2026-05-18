@@ -51,7 +51,7 @@ function launchMoneyConfetti() {
 export function VersionStatus() {
   const { version, isOnline } = useAppVersion();
   const clickCount = useRef(0);
-  const resetTimer = useRef<ReturnType<typeof setTimeout>>();
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleClick = useCallback(() => {
     clickCount.current += 1;
