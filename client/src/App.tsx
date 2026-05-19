@@ -8,6 +8,7 @@ import { Card, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
+import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage } from '@/pages/LoginPage';
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
@@ -45,6 +46,8 @@ function AppShell() {
   }
 
   if (!me) return <LoginPage />;
+
+  if (me.isAdmin) return <AdminPage username={me.username} />;
 
   return (
     <div className="flex min-h-screen bg-stone-100 overflow-x-hidden">

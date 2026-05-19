@@ -23,6 +23,7 @@ import { createSubcategoriesRouter } from './modules/subcategories/subcategories
 import { createTaxRouter } from './modules/tax/tax.routes';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes';
 import { createTransfersRouter } from './modules/transfers/transfers.routes';
+import { createUsersRouter } from './modules/users/users.routes';
 import { SQLiteSessionStore } from './session-store.js';
 
 export interface AppOptions {
@@ -69,6 +70,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   });
 
   app.use('/api/auth', createAuthRouter(db));
+  app.use('/api/users', createUsersRouter(db));
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));

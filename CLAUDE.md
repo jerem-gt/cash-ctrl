@@ -38,6 +38,7 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 - **Components**: Préférer les composants fonctionnels. Utiliser les icônes de `lucide-react`.
 - **Styling**: Tailwind CSS 4 avec PostCSS.
 - **Charts**: Utiliser `recharts` pour la visualisation financière.
+- **Mobile-first**: Toute interface doit être affichable sur mobile. Utiliser les breakpoints Tailwind (`md:`, `lg:`) pour adapter la mise en page. Éviter les largeurs fixes qui dépassent la largeur d'écran mobile.
 
 ### Backend (Node.js)
 - **Logic**: Séparer les responsabilités entre les routes, les services et la validation des données.

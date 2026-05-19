@@ -19,10 +19,19 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: /se connecter/i })).toBeInTheDocument();
   });
 
-  it('affiche la sidebar après authentification', async () => {
+  it('affiche la sidebar après authentification (user normal)', async () => {
     render(<App />);
     await screen.findByTitle(/Déconnexion/i);
     expect(screen.getByText('Suivi Personnel')).toBeInTheDocument();
+  });
+
+  it("affiche l'interface admin si l'utilisateur est admin", async () => {
+    server.use(
+      http.get('/api/auth/me', () => HttpResponse.json({ username: 'admin', isAdmin: true })),
+    );
+    render(<App />);
+    expect(await screen.findByText(/Administration/)).toBeInTheDocument();
+    expect(screen.queryByText('Suivi Personnel')).toBeNull();
   });
 
   it('définit le titre du document après authentification', async () => {

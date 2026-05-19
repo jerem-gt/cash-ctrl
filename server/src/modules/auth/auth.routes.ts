@@ -37,7 +37,8 @@ export function createAuthRouter(db: Database): Router {
 
     req.session.userId = user.id;
     req.session.username = user.username;
-    req.session.save(() => res.json({ username: user.username }));
+    req.session.isAdmin = user.is_admin === 1;
+    req.session.save(() => res.json({ username: user.username, isAdmin: user.is_admin === 1 }));
   });
 
   router.post('/logout', (req, res) => {
@@ -46,7 +47,7 @@ export function createAuthRouter(db: Database): Router {
 
   router.get('/me', (req, res) => {
     if (req.session?.userId) {
-      res.json({ username: req.session.username });
+      res.json({ username: req.session.username, isAdmin: req.session.isAdmin ?? false });
       return;
     }
     res.status(401).json({ error: 'Unauthorized' });

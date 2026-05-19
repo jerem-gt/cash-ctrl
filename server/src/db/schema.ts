@@ -56,9 +56,10 @@ export function initSchema(db: Database) {
         CREATE TABLE IF NOT EXISTS users
         (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            username      TEXT UNIQUE NOT NULL,
-            password_hash TEXT        NOT NULL,
-            created_at    TEXT DEFAULT (datetime('now'))
+            username      TEXT    UNIQUE NOT NULL,
+            password_hash TEXT           NOT NULL,
+            is_admin      INTEGER NOT NULL DEFAULT 0,
+            created_at    TEXT           DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS accounts

@@ -14,13 +14,14 @@ function setup() {
 }
 
 describe('POST /api/auth/login', () => {
-  it('retourne 200 et le nom utilisateur si les identifiants sont valides', async () => {
+  it('retourne 200, le nom utilisateur et isAdmin si les identifiants sont valides', async () => {
     const { app } = setup();
     const res = await supertest(app)
       .post('/api/auth/login')
       .send({ username: 'alice', password: 'password123' });
     expect(res.status).toBe(200);
     expect(res.body.username).toBe('alice');
+    expect(res.body.isAdmin).toBe(false);
   });
 
   it('retourne 401 si le mot de passe est incorrect', async () => {
@@ -53,13 +54,14 @@ describe('GET /api/auth/me', () => {
     expect(res.status).toBe(401);
   });
 
-  it('retourne le nom utilisateur si authentifié', async () => {
+  it('retourne le nom utilisateur et isAdmin si authentifié', async () => {
     const { app } = setup();
     const agent = supertest.agent(app);
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
     const res = await agent.get('/api/auth/me');
     expect(res.status).toBe(200);
     expect(res.body.username).toBe('alice');
+    expect(res.body.isAdmin).toBe(false);
   });
 });
 

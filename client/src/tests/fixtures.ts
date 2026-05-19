@@ -18,7 +18,29 @@ import type {
   Subcategory,
   TaxYearData,
   Transaction,
+  UserPublic,
 } from '@/types';
+
+export const USERS: UserPublic[] = [
+  {
+    id: 1,
+    username: 'admin',
+    is_admin: 1,
+    created_at: '2025-01-01T00:00:00',
+    account_count: 0,
+    tx_count: 0,
+    last_tx_date: null,
+  },
+  {
+    id: 2,
+    username: 'alice',
+    is_admin: 0,
+    created_at: '2025-06-01T00:00:00',
+    account_count: 3,
+    tx_count: 47,
+    last_tx_date: '2026-05-15',
+  },
+];
 
 export const TAX_YEARS: number[] = [2026, 2025, 2024];
 
