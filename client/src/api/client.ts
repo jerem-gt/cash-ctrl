@@ -533,6 +533,7 @@ export const transactionsApi = {
     if (filters?.payment_method_id != null)
       params.set('payment_method_id', String(filters.payment_method_id));
     if (filters?.validated != null) params.set('validated', String(filters.validated));
+    if (filters?.scheduled_id != null) params.set('scheduled_id', String(filters.scheduled_id));
     if (filters?.page != null) params.set('page', String(filters.page));
     if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();

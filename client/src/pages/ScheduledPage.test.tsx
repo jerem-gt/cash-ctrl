@@ -585,4 +585,76 @@ describe('ScheduledPage', () => {
       expect(document.getElementById('toast')?.textContent).toMatch(/AV\/PER|support|source/i),
     );
   });
+
+  // ─── Badge transaction_count & modale transactions ─────────────────────────
+
+  it('affiche le badge "N tx" quand transaction_count > 0', async () => {
+    renderWithProviders(<ScheduledPage />);
+    // SCHEDULED[0].transaction_count === 3
+    expect(await screen.findByRole('button', { name: '3 tx' })).toBeInTheDocument();
+  });
+
+  it("n'affiche pas le badge tx quand transaction_count === 0", async () => {
+    server.use(
+      http.get('/api/scheduled', () =>
+        HttpResponse.json([{ ...SCHEDULED[0], transaction_count: 0 }]),
+      ),
+    );
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    expect(screen.queryByRole('button', { name: /tx$/ })).not.toBeInTheDocument();
+  });
+
+  it('ouvre la modale des transactions au clic sur le badge', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await user.click(await screen.findByRole('button', { name: '3 tx' }));
+    expect(await screen.findByText('Transactions liées à cette planification')).toBeInTheDocument();
+  });
+
+  it('affiche les transactions de la planification dans la modale', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await user.click(await screen.findByRole('button', { name: '3 tx' }));
+    // Le handler MSW retourne TRANSACTIONS qui contient "Courses"
+    expect(await screen.findByText('Courses')).toBeInTheDocument();
+  });
+
+  it('affiche "Aucune transaction liée" quand le filtre ne retourne rien', async () => {
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({ data: [], total: 0, page: 1, totalPages: 1 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await user.click(await screen.findByRole('button', { name: '3 tx' }));
+    expect(await screen.findByText('Aucune transaction liée.')).toBeInTheDocument();
+  });
+
+  it('ferme la modale des transactions au clic sur Fermer', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await user.click(await screen.findByRole('button', { name: '3 tx' }));
+    await screen.findByText('Transactions liées à cette planification');
+    await user.click(screen.getByRole('button', { name: 'Fermer' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Transactions liées à cette planification'),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('ferme la modale des transactions au clic sur ✕', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ScheduledPage />);
+    await user.click(await screen.findByRole('button', { name: '3 tx' }));
+    await screen.findByText('Transactions liées à cette planification');
+    await user.click(screen.getByRole('button', { name: '✕' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Transactions liées à cette planification'),
+      ).not.toBeInTheDocument(),
+    );
+  });
 });

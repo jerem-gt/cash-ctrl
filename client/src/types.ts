@@ -268,6 +268,7 @@ export interface ScheduledTransaction {
   end_date: string | null;
   active: 0 | 1;
   account_name?: string;
+  transaction_count: number;
 }
 
 export interface UserSettings {
@@ -309,6 +310,7 @@ export interface TransactionFilters {
   amount_max?: number;
   payment_method_id?: number;
   validated?: boolean;
+  scheduled_id?: number;
   page?: number;
   limit?: number;
 }

@@ -20,7 +20,8 @@ const GET_SQL = `
          COALESCE(c.name, '') as category,
          COALESCE(sc.name, '') as subcategory,
          COALESCE(pm.name, '') as payment_method,
-         COALESCE(isup.name, '') as insurance_support_name
+         COALESCE(isup.name, '') as insurance_support_name,
+         (SELECT COUNT(*) FROM transactions WHERE scheduled_id = s.id) AS transaction_count
   FROM scheduled_transactions s
   JOIN accounts a ON s.account_id = a.id
   LEFT JOIN subcategories sc ON s.subcategory_id = sc.id

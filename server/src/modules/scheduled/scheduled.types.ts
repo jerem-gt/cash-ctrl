@@ -29,6 +29,7 @@ export interface ScheduledTransaction {
   last_generated_until: string | null;
   created_at: string;
   account_name?: string;
+  transaction_count: number;
 }
 
 export interface CreateScheduledInput {

@@ -66,17 +66,21 @@ describe('/api/scheduled', () => {
     supportId = sup.body.id;
   });
 
-  it('GET / returns array', async () => {
+  it('GET / returns array with transaction_count', async () => {
     const res = await ctx.agent.get('/api/scheduled');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+    if (res.body.length > 0) {
+      expect(typeof res.body[0].transaction_count).toBe('number');
+    }
   });
 
-  it('POST / creates a scheduled transaction', async () => {
+  it('POST / creates a scheduled transaction with transaction_count', async () => {
     const res = await ctx.agent.post('/api/scheduled').send({ ...base, account_id: accountId });
     expect(res.status).toBe(201);
     expect(res.body.description).toBe('Loyer');
     expect(res.body.recurrence_unit).toBe('month');
+    expect(typeof res.body.transaction_count).toBe('number');
   });
 
   it('POST / returns 400 when payment_method is Transfert but no to_account_id', async () => {

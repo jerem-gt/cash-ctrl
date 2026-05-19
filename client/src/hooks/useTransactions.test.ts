@@ -66,6 +66,21 @@ describe('useTransactions', () => {
     expect(capturedUrl).toContain('account_id=5');
     expect(capturedUrl).toContain('page=2');
   });
+
+  it("inclut scheduled_id dans l'URL quand fourni", async () => {
+    let capturedUrl: string | undefined;
+    server.use(
+      http.get('/api/transactions', ({ request }) => {
+        capturedUrl = request.url;
+        return HttpResponse.json({ data: [], total: 0, page: 1, totalPages: 1 });
+      }),
+    );
+    const { result } = renderHook(() => useTransactions({ scheduled_id: 3 }), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(capturedUrl).toContain('scheduled_id=3');
+  });
 });
 
 describe('useCreateTransaction', () => {
