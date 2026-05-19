@@ -174,7 +174,9 @@ export function TxItem({
             </span>
           )}
           {tx.notes && (
-            <StickyNote size={11} className="text-amber-400 shrink-0" title={tx.notes} />
+            <span title={tx.notes}>
+              <StickyNote size={11} className="text-amber-400 shrink-0" />
+            </span>
           )}
           <p
             className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
