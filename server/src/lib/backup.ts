@@ -37,6 +37,10 @@ function hashExport(data: FullExport): string {
   return createHash('sha256').update(JSON.stringify(stable)).digest('hex');
 }
 
+export function userBackupDir(baseDir: string, userId: number): string {
+  return path.join(baseDir, String(userId));
+}
+
 export function listBackups(backupDir = BACKUP_DIR): BackupFile[] {
   if (!fs.existsSync(backupDir)) return [];
 
@@ -65,8 +69,9 @@ export function rotateBackups(maxFiles: number, backupDir = BACKUP_DIR): void {
 }
 
 export function runBackup(db: Database, userId: number, backupDir = BACKUP_DIR): BackupResult {
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
+  const dir = userBackupDir(backupDir, userId);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 
   const exportRepo = createExportRepo(db);
@@ -86,7 +91,7 @@ export function runBackup(db: Database, userId: number, backupDir = BACKUP_DIR):
   // Include milliseconds to guarantee uniqueness within the same second
   const timestamp = now.toISOString().replaceAll(':', '-').replaceAll('.', '-').replace('Z', '');
   const filename = `cashctrl-backup-${timestamp}.json`;
-  fs.writeFileSync(path.join(backupDir, filename), JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(path.join(dir, filename), JSON.stringify(data, null, 2), 'utf-8');
 
   settingsRepo.updateAfterBackup(userId, now.toISOString(), newHash);
 
@@ -100,23 +105,24 @@ export function startBackupInterval(
 ): NodeJS.Timeout {
   const check = () => {
     try {
-      const row = db.prepare<[], { id: number }>('SELECT id FROM users LIMIT 1').get();
-      if (!row) return;
-
-      const userId = row.id;
+      const rows = db.prepare<[], { id: number }>('SELECT id FROM users').all();
       const settingsRepo = createSettingsRepo(db);
-      const settings = settingsRepo.get(userId);
 
-      if (!settings.backup_enabled) return;
+      for (const row of rows) {
+        const userId = row.id;
+        const settings = settingsRepo.get(userId);
 
-      const freqMs = settings.backup_frequency_h * 60 * 60 * 1000;
-      const lastMs = settings.backup_last_at ? new Date(settings.backup_last_at).getTime() : 0;
+        if (!settings.backup_enabled) continue;
 
-      if (Date.now() - lastMs >= freqMs) {
-        const result = runBackup(db, userId, backupDir);
-        if (!result.skipped) {
-          rotateBackups(settings.backup_max_files, backupDir);
-          logger.info(`Auto backup created: ${result.filename}`);
+        const freqMs = settings.backup_frequency_h * 60 * 60 * 1000;
+        const lastMs = settings.backup_last_at ? new Date(settings.backup_last_at).getTime() : 0;
+
+        if (Date.now() - lastMs >= freqMs) {
+          const result = runBackup(db, userId, backupDir);
+          if (!result.skipped) {
+            rotateBackups(settings.backup_max_files, userBackupDir(backupDir, userId));
+            logger.info(`Auto backup created: ${result.filename}`);
+          }
         }
       }
     } catch (err: unknown) {

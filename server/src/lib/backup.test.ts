@@ -5,7 +5,13 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestDb, type Fixtures, setupFixtures } from '../tests/helpers/testDb';
-import { listBackups, rotateBackups, runBackup, startBackupInterval } from './backup';
+import {
+  listBackups,
+  rotateBackups,
+  runBackup,
+  startBackupInterval,
+  userBackupDir,
+} from './backup';
 
 let tmpDir: string;
 let fixtures: Fixtures;
@@ -72,14 +78,16 @@ describe('runBackup', () => {
     const result = runBackup(fixtures.db, fixtures.userId, tmpDir);
     expect(result.skipped).toBe(false);
     expect(result.filename).toMatch(/^cashctrl-backup-\d{4}-\d{2}-\d{2}T[\d-]+\.json$/);
-    expect(fs.existsSync(path.join(tmpDir, result.filename!))).toBe(true);
+    expect(fs.existsSync(path.join(userBackupDir(tmpDir, fixtures.userId), result.filename!))).toBe(
+      true,
+    );
   });
 
   it('le fichier contient une structure FullExport valide', () => {
     const result = runBackup(fixtures.db, fixtures.userId, tmpDir);
     expect(result.skipped).toBe(false);
     const content = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, result.filename!), 'utf-8'),
+      fs.readFileSync(path.join(userBackupDir(tmpDir, fixtures.userId), result.filename!), 'utf-8'),
     ) as Record<string, unknown>;
     expect(content.version).toBe('1.0');
     expect(content.amounts_in_cents).toBe(true);
@@ -105,7 +113,7 @@ describe('runBackup', () => {
     const result = runBackup(fixtures.db, fixtures.userId, tmpDir); // même données
     expect(result.skipped).toBe(true);
     expect(result.filename).toBeNull();
-    expect(listBackups(tmpDir)).toHaveLength(1); // toujours 1 seul fichier
+    expect(listBackups(userBackupDir(tmpDir, fixtures.userId))).toHaveLength(1); // toujours 1 seul fichier
   });
 
   it('met à jour backup_last_at même quand skipped', () => {
@@ -129,7 +137,7 @@ describe('runBackup', () => {
       .run(fixtures.userId, 'Nouveau compte');
     const result = runBackup(fixtures.db, fixtures.userId, tmpDir);
     expect(result.skipped).toBe(false);
-    expect(listBackups(tmpDir)).toHaveLength(2);
+    expect(listBackups(userBackupDir(tmpDir, fixtures.userId))).toHaveLength(2);
   });
 
   it("crée le dossier cible s'il n'existe pas", () => {

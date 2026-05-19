@@ -45,7 +45,9 @@ describe('/api/backup', () => {
     });
 
     it('retourne la liste des backups présents', async () => {
-      fs.writeFileSync(path.join(tmpDir, 'cashctrl-backup-2026-01-01T00-00-00.json'), '{}');
+      const userDir = path.join(tmpDir, String(ctx.userId));
+      fs.mkdirSync(userDir, { recursive: true });
+      fs.writeFileSync(path.join(userDir, 'cashctrl-backup-2026-01-01T00-00-00.json'), '{}');
       const res = await ctx.agent.get('/api/backup/list');
       expect(res.status).toBe(200);
       expect(res.body.length).toBeGreaterThanOrEqual(1);
@@ -63,7 +65,9 @@ describe('/api/backup', () => {
       expect(res.status).toBe(201);
       expect(res.body.skipped).toBe(false);
       expect(res.body.filename).toMatch(/^cashctrl-backup-/);
-      expect(fs.existsSync(path.join(tmpDir, res.body.filename as string))).toBe(true);
+      expect(
+        fs.existsSync(path.join(tmpDir, String(ctx.userId), res.body.filename as string)),
+      ).toBe(true);
     });
 
     it('retourne 200 avec skipped=true si les données sont inchangées', async () => {
@@ -89,7 +93,9 @@ describe('/api/backup', () => {
         )
         .run(ctx.userId, 'Compte rotation test');
       await ctx.agent.post('/api/backup/run');
-      const files = fs.readdirSync(tmpDir).filter((f) => f.startsWith('cashctrl-backup-'));
+      const files = fs
+        .readdirSync(path.join(tmpDir, String(ctx.userId)))
+        .filter((f) => f.startsWith('cashctrl-backup-'));
       expect(files).toHaveLength(1);
     });
   });
@@ -114,7 +120,9 @@ describe('/api/backup', () => {
 
     it("télécharge le fichier s'il existe", async () => {
       const filename = 'cashctrl-backup-2026-05-14T10-30-00.json';
-      fs.writeFileSync(path.join(tmpDir, filename), JSON.stringify({ version: '1.0' }));
+      const userDir = path.join(tmpDir, String(ctx.userId));
+      fs.mkdirSync(userDir, { recursive: true });
+      fs.writeFileSync(path.join(userDir, filename), JSON.stringify({ version: '1.0' }));
       const res = await ctx.agent.get(`/api/backup/${filename}`);
       expect(res.status).toBe(200);
       expect(res.headers['content-disposition']).toContain(filename);
