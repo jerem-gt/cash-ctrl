@@ -596,6 +596,8 @@ describe('POST /api/import/json-full', () => {
       scheduled: 0,
       stockOperations: 0,
       loans: 0,
+      insuranceSupports: 0,
+      insuranceOperations: 0,
     });
   });
 
@@ -894,6 +896,61 @@ describe('POST /api/import/json-full', () => {
       .all() as Array<{ to_account_id: number | null }>;
     expect(scheds[0].to_account_id).toBeNull();
     expect(scheds[1].to_account_id).not.toBeNull();
+  });
+
+  it('préserve scheduled_id sur les transactions importées', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Compte Sched')],
+      scheduled_transactions: [
+        {
+          id: 10,
+          account_id: EX_ACC1,
+          type: 'expense' as const,
+          amount: 50000,
+          description: 'Loyer',
+          subcategory_id: null,
+          payment_method_id: null,
+          notes: null,
+          recurrence_unit: 'month',
+          recurrence_interval: 1,
+          recurrence_day: 1,
+          recurrence_month: null,
+          to_account_id: null,
+          weekend_handling: 'allow',
+          start_date: '2024-01-01',
+          end_date: null,
+          active: 1,
+          last_generated_until: null,
+        },
+      ],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, {
+          amount: 50000,
+          description: 'Loyer jan',
+          scheduled_id: 10,
+        }),
+        makeExportTx(EX_TX2, EX_ACC1, {
+          amount: 50000,
+          description: 'Loyer fév (sans planif)',
+          scheduled_id: null,
+        }),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const txs = ctx.db
+      .prepare('SELECT description, scheduled_id FROM transactions ORDER BY description')
+      .all() as Array<{ description: string; scheduled_id: number | null }>;
+    const sched = ctx.db.prepare('SELECT id FROM scheduled_transactions LIMIT 1').get() as {
+      id: number;
+    };
+    const txWithSched = txs.find((t) => t.description === 'Loyer jan');
+    const txWithoutSched = txs.find((t) => t.description === 'Loyer fév (sans planif)');
+    expect(txWithSched?.scheduled_id).toBe(sched.id);
+    expect(txWithoutSched?.scheduled_id).toBeNull();
   });
 
   // ─── importStockPositions + importStockOperations ─────────────────────────

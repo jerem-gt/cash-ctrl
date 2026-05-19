@@ -128,7 +128,7 @@ export function createExportRepo(db: Database) {
                   st.subcategory_id, st.payment_method_id, st.notes,
                   st.recurrence_unit, st.recurrence_interval, st.recurrence_day,
                   st.recurrence_month, st.to_account_id, st.weekend_handling,
-                  st.start_date, st.end_date, st.active
+                  st.start_date, st.end_date, st.active, st.last_generated_until
            FROM scheduled_transactions st
            WHERE st.user_id = ? ${schedIn}`,
         )
@@ -204,7 +204,8 @@ export function createExportRepo(db: Database) {
       const insuranceOperations = db
         .prepare<[number], FullExportInsuranceOperation>(
           `SELECT io.id, io.account_id, io.support_id, io.transaction_id, io.fees_transaction_id,
-                  io.type, io.amount, io.fees, io.date, io.arbitrage_peer_id
+                  io.social_fees_transaction_id, io.type, io.amount, io.fees, io.social_fees,
+                  io.date, io.arbitrage_peer_id
            FROM insurance_operations io
            WHERE io.user_id = ? ${insOpIn}
            ORDER BY io.date, io.id`,

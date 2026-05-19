@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import type { FullExport } from '../export/export.types.js';
 import { createImportRepo } from './import.repo.js';
@@ -166,6 +167,7 @@ const jsonFullSchema = z.object({
       start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       end_date: z.string().nullable(),
       active: z.number().int(),
+      last_generated_until: z.string().nullable().default(null),
     }),
   ),
   stock_positions: z.array(
@@ -180,10 +182,10 @@ const jsonFullSchema = z.object({
     z.object({
       id: z.number().int().positive(),
       account_id: z.number().int().positive(),
-      transaction_id: z.number().int().positive(),
+      transaction_id: z.number().int().positive().nullable(),
       fees_transaction_id: z.number().int().positive().nullable(),
       ticker: z.string().min(1).max(20),
-      type: z.enum(['buy', 'sell']),
+      type: z.enum(['buy', 'sell', 'transfer_in', 'transfer_out']),
       quantity: z.number(),
       price_per_share: z.number(),
       fees: z.number().int(),
@@ -214,6 +216,35 @@ const jsonFullSchema = z.object({
       ),
     }),
   ),
+  insurance_supports: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        account_id: z.number().int().positive(),
+        name: z.string().min(1),
+        type: z.enum(INSURANCE_SUPPORT_TYPES),
+        ticker: z.string().nullable(),
+      }),
+    )
+    .default([]),
+  insurance_operations: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        account_id: z.number().int().positive(),
+        support_id: z.number().int().positive(),
+        transaction_id: z.number().int().positive().nullable(),
+        fees_transaction_id: z.number().int().positive().nullable(),
+        social_fees_transaction_id: z.number().int().positive().nullable().default(null),
+        type: z.enum(INSURANCE_OPERATION_TYPES),
+        amount: z.number().int(),
+        fees: z.number().int(),
+        social_fees: z.number().int().default(0),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        arbitrage_peer_id: z.number().int().positive().nullable(),
+      }),
+    )
+    .default([]),
 });
 
 export function createImportRouter(db: Database): Router {
