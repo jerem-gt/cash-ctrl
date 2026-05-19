@@ -525,6 +525,10 @@ const EX_PM1 = 10,
 const EX_TX1 = 100,
   EX_TX2 = 101,
   EX_TX3 = 102;
+const EX_INS_SUPPORT1 = 50,
+  EX_INS_SUPPORT2 = 51;
+const EX_INS_OP1 = 60,
+  EX_INS_OP2 = 61;
 
 const defaultBankExport = { id: EX_BANK1, name: 'DefaultBank', logo: null, domain: null };
 const courantAtExport = { id: EX_AT1, name: 'Courant', is_investment: 0, is_loan: 0 };
@@ -1106,5 +1110,238 @@ describe('POST /api/import/json-full', () => {
     expect(res.status).toBe(201);
     expect(res.body.loans).toBe(1);
     expect(ctx.db.prepare('SELECT * FROM loans').all()).toHaveLength(1);
+  });
+
+  // ─── importInsuranceSupports ──────────────────────────────────────────────
+
+  it("importe des supports d'assurance (uc et euro)", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Assurance Import')],
+      insurance_supports: [
+        {
+          id: EX_INS_SUPPORT1,
+          account_id: EX_ACC1,
+          name: 'MSCI World',
+          type: 'uc',
+          ticker: 'MSCIW',
+        },
+        {
+          id: EX_INS_SUPPORT2,
+          account_id: EX_ACC1,
+          name: 'Fonds Euro',
+          type: 'euro',
+          ticker: null,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceSupports).toBe(2);
+    const supports = ctx.db.prepare('SELECT * FROM insurance_supports').all();
+    expect(supports).toHaveLength(2);
+  });
+
+  it("réutilise un support existant par nom lors d'une seconde importation", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Assurance Reuse')],
+      insurance_supports: [
+        {
+          id: EX_INS_SUPPORT1,
+          account_id: EX_ACC1,
+          name: 'Fonds Euro Reuse',
+          type: 'euro',
+          ticker: null,
+        },
+      ],
+    };
+    await ctx.agent.post('/api/import/json-full').send(body);
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceSupports).toBe(1);
+    const supports = ctx.db.prepare('SELECT * FROM insurance_supports').all();
+    expect(supports).toHaveLength(1);
+  });
+
+  it("ignore un support d'assurance si le compte est inconnu", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      insurance_supports: [
+        { id: EX_INS_SUPPORT1, account_id: 99, name: 'Support Fantôme', type: 'uc', ticker: null },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceSupports).toBe(0);
+  });
+
+  // ─── importInsuranceOperations ────────────────────────────────────────────
+
+  it("importe des opérations d'assurance avec transactions et frais mappés", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Assurance Ops')],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, { amount: 100000, description: 'Versement assurance' }),
+        makeExportTx(EX_TX2, EX_ACC1, { amount: 500, description: 'Frais assurance' }),
+        makeExportTx(EX_TX3, EX_ACC1, { amount: 200, description: 'Prélèvements sociaux' }),
+      ],
+      insurance_supports: [
+        { id: EX_INS_SUPPORT1, account_id: EX_ACC1, name: 'UC Ops', type: 'uc', ticker: 'UCOPS' },
+      ],
+      insurance_operations: [
+        {
+          id: EX_INS_OP1,
+          account_id: EX_ACC1,
+          support_id: EX_INS_SUPPORT1,
+          transaction_id: EX_TX1,
+          fees_transaction_id: EX_TX2,
+          social_fees_transaction_id: EX_TX3,
+          type: 'versement',
+          amount: 100000,
+          fees: 500,
+          social_fees: 200,
+          date: '2024-01-15',
+          arbitrage_peer_id: null,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceOperations).toBe(1);
+    const op = ctx.db
+      .prepare('SELECT fees_transaction_id, social_fees_transaction_id FROM insurance_operations')
+      .get() as { fees_transaction_id: number | null; social_fees_transaction_id: number | null };
+    expect(op.fees_transaction_id).not.toBeNull();
+    expect(op.social_fees_transaction_id).not.toBeNull();
+  });
+
+  it("ignore une opération d'assurance si le compte est inconnu", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Assurance Compte Inconnu')],
+      insurance_supports: [
+        {
+          id: EX_INS_SUPPORT1,
+          account_id: EX_ACC1,
+          name: 'Support Valide',
+          type: 'euro',
+          ticker: null,
+        },
+      ],
+      insurance_operations: [
+        {
+          id: EX_INS_OP1,
+          account_id: 99,
+          support_id: EX_INS_SUPPORT1,
+          transaction_id: null,
+          fees_transaction_id: null,
+          social_fees_transaction_id: null,
+          type: 'versement',
+          amount: 10000,
+          fees: 0,
+          social_fees: 0,
+          date: '2024-01-15',
+          arbitrage_peer_id: null,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceOperations).toBe(0);
+  });
+
+  it("ignore une opération d'assurance si le support est inconnu", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Assurance Support Inconnu')],
+      insurance_operations: [
+        {
+          id: EX_INS_OP1,
+          account_id: EX_ACC1,
+          support_id: 99,
+          transaction_id: null,
+          fees_transaction_id: null,
+          social_fees_transaction_id: null,
+          type: 'versement',
+          amount: 10000,
+          fees: 0,
+          social_fees: 0,
+          date: '2024-01-15',
+          arbitrage_peer_id: null,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceOperations).toBe(0);
+  });
+
+  // ─── linkArbitragePeers ───────────────────────────────────────────────────
+
+  it("lie les opérations d'arbitrage par arbitrage_peer_id", async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        makeExportAccount(EX_ACC1, 'Source Arbitrage'),
+        makeExportAccount(EX_ACC2, 'Dest Arbitrage'),
+      ],
+      insurance_supports: [
+        { id: EX_INS_SUPPORT1, account_id: EX_ACC1, name: 'UC Source', type: 'uc', ticker: null },
+        { id: EX_INS_SUPPORT2, account_id: EX_ACC2, name: 'UC Dest', type: 'uc', ticker: null },
+      ],
+      insurance_operations: [
+        {
+          id: EX_INS_OP1,
+          account_id: EX_ACC1,
+          support_id: EX_INS_SUPPORT1,
+          transaction_id: null,
+          fees_transaction_id: null,
+          social_fees_transaction_id: null,
+          type: 'arbitrage_out',
+          amount: 50000,
+          fees: 0,
+          social_fees: 0,
+          date: '2024-06-01',
+          arbitrage_peer_id: EX_INS_OP2,
+        },
+        {
+          id: EX_INS_OP2,
+          account_id: EX_ACC2,
+          support_id: EX_INS_SUPPORT2,
+          transaction_id: null,
+          fees_transaction_id: null,
+          social_fees_transaction_id: null,
+          type: 'arbitrage_in',
+          amount: 50000,
+          fees: 0,
+          social_fees: 0,
+          date: '2024-06-01',
+          arbitrage_peer_id: EX_INS_OP1,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    expect(res.body.insuranceOperations).toBe(2);
+    const ops = ctx.db
+      .prepare('SELECT id, arbitrage_peer_id FROM insurance_operations ORDER BY id')
+      .all() as Array<{ id: number; arbitrage_peer_id: number | null }>;
+    expect(ops).toHaveLength(2);
+    expect(ops[0].arbitrage_peer_id).toBe(ops[1].id);
+    expect(ops[1].arbitrage_peer_id).toBe(ops[0].id);
   });
 });
