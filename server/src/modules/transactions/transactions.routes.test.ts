@@ -607,3 +607,67 @@ describe('/api/transactions — Pagination & Solde', () => {
     expect(res.body.balance_before_page).toBe(-200);
   });
 });
+
+// ─── Filtre scheduled_id ──────────────────────────────────────────────────────
+
+describe('/api/transactions — filtre scheduled_id', () => {
+  let ctx: TestContext;
+  let accountId: number;
+  let scheduledId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Loyer planifié',
+      subcategory_id: SEED.SUBCAT_LOYER,
+      payment_method_id: SEED.PM_VIREMENT,
+      recurrence_unit: 'month',
+      recurrence_interval: 1,
+      start_date: TODAY,
+      active: true,
+    });
+    scheduledId = sched.body.id;
+  });
+
+  it('retourne uniquement les transactions liées à la planification', async () => {
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Dépense hors planif',
+      subcategory_id: SEED.SUBCAT_LOYER,
+      payment_method_id: SEED.PM_VIREMENT,
+      date: TODAY,
+      validated: false,
+    });
+
+    const res = await ctx.agent.get(`/api/transactions?scheduled_id=${scheduledId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+    for (const tx of res.body.data as { scheduled_id: number }[]) {
+      expect(tx.scheduled_id).toBe(scheduledId);
+    }
+  });
+
+  it('retourne 0 transaction pour un scheduled_id sans correspondance', async () => {
+    const res = await ctx.agent.get('/api/transactions?scheduled_id=99999');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(0);
+    expect(res.body.total).toBe(0);
+  });
+
+  it('retourne 400 si scheduled_id est invalide', async () => {
+    const res = await ctx.agent.get('/api/transactions?scheduled_id=abc');
+    expect(res.status).toBe(400);
+  });
+
+  it('retourne 400 si scheduled_id est négatif', async () => {
+    const res = await ctx.agent.get('/api/transactions?scheduled_id=-1');
+    expect(res.status).toBe(400);
+  });
+});

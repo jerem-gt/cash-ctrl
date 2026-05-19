@@ -91,6 +91,7 @@ export interface TransactionFilters {
   amount_max?: number;
   payment_method_id?: number;
   validated?: boolean;
+  scheduled_id?: number;
   page?: number;
   limit?: number;
 }

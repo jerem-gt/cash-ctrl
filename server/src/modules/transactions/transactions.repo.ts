@@ -146,6 +146,10 @@ function buildFilterConditions(
     conditions.push('t.validated = :validated');
     params.validated = filters.validated ? 1 : 0;
   }
+  if (filters.scheduled_id) {
+    conditions.push('t.scheduled_id = :scheduled_id');
+    params.scheduled_id = filters.scheduled_id;
+  }
 
   return { conditions, params };
 }

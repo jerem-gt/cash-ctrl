@@ -384,6 +384,7 @@ export const SCHEDULED: ScheduledTransaction[] = [
     end_date: null,
     active: 1,
     account_name: 'Compte courant',
+    transaction_count: 3,
   },
 ];
 

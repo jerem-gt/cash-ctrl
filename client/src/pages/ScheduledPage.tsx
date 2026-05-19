@@ -28,7 +28,8 @@ import {
   useUpdateScheduled,
 } from '@/hooks/useScheduled';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
-import { fmtDec, today } from '@/lib/format';
+import { useTransactions } from '@/hooks/useTransactions';
+import { fmtDate, fmtDec, today } from '@/lib/format';
 import type {
   Account,
   RecurrenceUnit,
@@ -614,6 +615,84 @@ function VersementFields({
   );
 }
 
+// ─── Modale transactions liées ────────────────────────────────────────────────
+
+interface ScheduledTxModalProps {
+  sched: ScheduledTransaction;
+  onClose: () => void;
+}
+
+function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
+  const { data, isLoading } = useTransactions({ scheduled_id: sched.id, limit: 200 });
+  const transactions = data?.data ?? [];
+
+  return (
+    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] flex flex-col">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="font-sans text-lg leading-tight">{sched.description}</h3>
+            <p className="text-xs text-stone-400 mt-0.5">
+              Transactions liées à cette planification
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 text-lg leading-none ml-4 shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
+          <p className="text-sm text-stone-400 py-2">Aucune transaction liée.</p>
+        ) : (
+          <div className="overflow-y-auto flex-1 divide-y divide-black/6">
+            {transactions.map((tx) => (
+              <div key={tx.id} className="flex items-center gap-3 py-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-stone-400">{fmtDate(tx.date)}</p>
+                  <p className="text-sm text-stone-700 truncate">{tx.description}</p>
+                </div>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                    tx.validated
+                      ? 'bg-green-50 text-green-600 border border-green-200'
+                      : 'bg-amber-50 text-amber-600 border border-amber-200'
+                  }`}
+                >
+                  {tx.validated ? 'Validée' : 'En attente'}
+                </span>
+                <span
+                  className={`text-sm font-medium tabular-nums shrink-0 ${
+                    tx.type === 'income' ? 'text-green-700' : 'text-red-700'
+                  }`}
+                >
+                  {tx.type === 'income' ? '+' : '−'}
+                  {fmtDec(tx.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-end mt-4 pt-3 border-t border-black/6">
+          <Button type="button" onClick={onClose}>
+            Fermer
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Ligne planification ──────────────────────────────────────────────────────
 
 interface RowProps {
@@ -621,9 +700,16 @@ interface RowProps {
   accounts: { id: number; name: string }[];
   onEdit: (s: ScheduledTransaction) => void;
   onDelete: (s: ScheduledTransaction) => void;
+  onViewTransactions: (s: ScheduledTransaction) => void;
 }
 
-function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>) {
+function ScheduledRow({
+  sched,
+  accounts,
+  onEdit,
+  onDelete,
+  onViewTransactions,
+}: Readonly<RowProps>) {
   const isVersement = sched.insurance_support_id != null;
   const isTransfer = !isVersement && sched.to_account_id != null;
   const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
@@ -653,6 +739,15 @@ function ScheduledRow({ sched, accounts, onEdit, onDelete }: Readonly<RowProps>)
             <span className="text-[10px] bg-stone-100 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0">
               Suspendu
             </span>
+          )}
+          {sched.transaction_count > 0 && (
+            <button
+              type="button"
+              onClick={() => onViewTransactions(sched)}
+              className="text-[10px] bg-stone-50 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+            >
+              {sched.transaction_count} tx
+            </button>
           )}
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5">
@@ -692,6 +787,7 @@ export default function ScheduledPage() {
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<ScheduledTransaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ScheduledTransaction | null>(null);
+  const [txModalTarget, setTxModalTarget] = useState<ScheduledTransaction | null>(null);
   const [leadDays, setLeadDays] = useState<string>('');
   const [showSuspended, setShowSuspended] = useState(false);
 
@@ -776,6 +872,7 @@ export default function ScheduledPage() {
             accounts={accounts}
             onEdit={(s) => setEditTarget(s)}
             onDelete={(s) => setPendingDelete(s)}
+            onViewTransactions={(s) => setTxModalTarget(s)}
           />
         ))}
         {hasSuspendedSection && (
@@ -796,6 +893,7 @@ export default function ScheduledPage() {
                   accounts={accounts}
                   onEdit={(s) => setEditTarget(s)}
                   onDelete={(s) => setPendingDelete(s)}
+                  onViewTransactions={(s) => setTxModalTarget(s)}
                 />
               ))}
           </>
@@ -888,6 +986,11 @@ export default function ScheduledPage() {
           onSave={handleUpdate}
           onCancel={() => setEditTarget(null)}
         />
+      )}
+
+      {/* Modale transactions liées */}
+      {txModalTarget && (
+        <ScheduledTxModal sched={txModalTarget} onClose={() => setTxModalTarget(null)} />
       )}
 
       {/* Confirmation suppression */}
