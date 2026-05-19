@@ -626,6 +626,49 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
   const { data, isLoading } = useTransactions({ scheduled_id: sched.id, limit: 200 });
   const transactions = data?.data ?? [];
 
+  let content: React.ReactNode;
+  if (isLoading) {
+    content = (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    );
+  } else if (transactions.length === 0) {
+    content = <p className="text-sm text-stone-400 py-2">Aucune transaction liée.</p>;
+  } else {
+    content = (
+      <div className="overflow-y-auto flex-1 divide-y divide-black/6">
+        {transactions.map((tx) => (
+          <div key={tx.id} className="flex items-center gap-3 py-2.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-stone-400">{fmtDate(tx.date)}</p>
+              <p className="text-sm text-stone-700 truncate">{tx.description}</p>
+            </div>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                tx.validated
+                  ? 'bg-green-50 text-green-600 border border-green-200'
+                  : 'bg-amber-50 text-amber-600 border border-amber-200'
+              }`}
+            >
+              {tx.validated ? 'Validée' : 'En attente'}
+            </span>
+            <span
+              className={`text-sm font-medium tabular-nums shrink-0 ${
+                tx.type === 'income' ? 'text-green-700' : 'text-red-700'
+              }`}
+            >
+              {tx.type === 'income' ? '+' : '−'}
+              {fmtDec(tx.amount)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] flex flex-col">
@@ -645,43 +688,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-2">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        ) : transactions.length === 0 ? (
-          <p className="text-sm text-stone-400 py-2">Aucune transaction liée.</p>
-        ) : (
-          <div className="overflow-y-auto flex-1 divide-y divide-black/6">
-            {transactions.map((tx) => (
-              <div key={tx.id} className="flex items-center gap-3 py-2.5">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-stone-400">{fmtDate(tx.date)}</p>
-                  <p className="text-sm text-stone-700 truncate">{tx.description}</p>
-                </div>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                    tx.validated
-                      ? 'bg-green-50 text-green-600 border border-green-200'
-                      : 'bg-amber-50 text-amber-600 border border-amber-200'
-                  }`}
-                >
-                  {tx.validated ? 'Validée' : 'En attente'}
-                </span>
-                <span
-                  className={`text-sm font-medium tabular-nums shrink-0 ${
-                    tx.type === 'income' ? 'text-green-700' : 'text-red-700'
-                  }`}
-                >
-                  {tx.type === 'income' ? '+' : '−'}
-                  {fmtDec(tx.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {content}
 
         <div className="flex justify-end mt-4 pt-3 border-t border-black/6">
           <Button type="button" onClick={onClose}>

@@ -309,7 +309,7 @@ export function createImportRepo(db: Database) {
     for (const op of operations) {
       const newAccountId = accountMap.get(op.account_id);
       if (newAccountId === undefined) continue;
-      const newTxId = op.transaction_id !== null ? (txMap.get(op.transaction_id) ?? null) : null;
+      const newTxId = op.transaction_id === null ? null : (txMap.get(op.transaction_id) ?? null);
       if (op.transaction_id !== null && newTxId === null) continue;
       insertStockOp.run(
         userId,
@@ -362,16 +362,16 @@ export function createImportRepo(db: Database) {
       const newAccountId = accountMap.get(op.account_id);
       const newSupportId = supportMap.get(op.support_id);
       if (newAccountId === undefined || newSupportId === undefined) continue;
-      const newTxId = op.transaction_id !== null ? (txMap.get(op.transaction_id) ?? null) : null;
+      const newTxId = op.transaction_id === null ? null : (txMap.get(op.transaction_id) ?? null);
       const res = insertInsuranceOp.run(
         userId,
         newAccountId,
         newSupportId,
         newTxId,
-        op.fees_transaction_id !== null ? (txMap.get(op.fees_transaction_id) ?? null) : null,
-        op.social_fees_transaction_id !== null
-          ? (txMap.get(op.social_fees_transaction_id) ?? null)
-          : null,
+        op.fees_transaction_id === null ? null : (txMap.get(op.fees_transaction_id) ?? null),
+        op.social_fees_transaction_id === null
+          ? null
+          : (txMap.get(op.social_fees_transaction_id) ?? null),
         op.type,
         op.amount,
         op.fees,
