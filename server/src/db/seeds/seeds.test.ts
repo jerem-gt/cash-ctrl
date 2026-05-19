@@ -158,21 +158,22 @@ describe('seedAdminUser', () => {
 });
 
 describe('seedDatabase', () => {
-  it('seeds all reference tables', () => {
+  it("seeds global reference data and admin user, sans données financières pour l'admin", () => {
     const db = createFreshDb();
     seedDatabase(db);
     const q = (table: string) =>
       (db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get() as { c: number }).c;
     expect(q('banks')).toBeGreaterThan(0);
-    expect(q('account_types')).toBeGreaterThan(0);
-    expect(q('categories')).toBeGreaterThan(0);
-    expect(q('payment_methods')).toBeGreaterThan(0);
     expect(
       (
-        db.prepare("SELECT COUNT(*) as c FROM users WHERE username = 'admin'").get() as {
-          c: number;
-        }
+        db
+          .prepare("SELECT COUNT(*) as c FROM users WHERE username = 'admin' AND is_admin = 1")
+          .get() as { c: number }
       ).c,
     ).toBe(1);
+    // L'admin est un compte de gestion : pas de données financières seedées
+    expect(q('account_types')).toBe(0);
+    expect(q('categories')).toBe(0);
+    expect(q('payment_methods')).toBe(0);
   });
 });

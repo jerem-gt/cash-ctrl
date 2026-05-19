@@ -19,6 +19,4 @@ export function seedDatabase(db: Database) {
   seedBanks(db);
   seedAdminUser(db);
   seedTaxData(db);
-  const admin = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number } | undefined;
-  if (admin) seedUserData(db, admin.id);
 }

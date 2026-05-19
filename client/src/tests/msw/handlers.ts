@@ -22,14 +22,26 @@ import {
   TAX_YEAR_DATA_2026,
   TAX_YEARS,
   TRANSACTIONS,
+  USERS,
 } from '../fixtures';
 
 export const handlers = [
   // Auth
-  http.get('/api/auth/me', () => HttpResponse.json({ username: 'test' })),
-  http.post('/api/auth/login', () => HttpResponse.json({ username: 'test' })),
+  http.get('/api/auth/me', () => HttpResponse.json({ username: 'test', isAdmin: false })),
+  http.post('/api/auth/login', () => HttpResponse.json({ username: 'test', isAdmin: false })),
   http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
+
+  // Users (admin)
+  http.get('/api/users', () => HttpResponse.json(USERS)),
+  http.post('/api/users', () =>
+    HttpResponse.json(
+      { id: 99, username: 'newuser', is_admin: 0, created_at: '2026-01-01' },
+      { status: 201 },
+    ),
+  ),
+  http.patch('/api/users/:id', () => HttpResponse.json({ ...USERS[1], username: 'updated' })),
+  http.delete('/api/users/:id', () => HttpResponse.json({ ok: true })),
 
   // Version
   http.get('/api/version', () => HttpResponse.json({ version: 'development' })),

@@ -24,6 +24,7 @@ import type {
   Transaction,
   TransactionFilters,
   TransactionSplit,
+  UserPublic,
   UserSettings,
 } from '@/types';
 
@@ -62,12 +63,25 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 
 // Auth
 export const authApi = {
-  me: () => request<{ username: string }>('GET', '/api/auth/me'),
+  me: () => request<{ username: string; isAdmin: boolean }>('GET', '/api/auth/me'),
   login: (username: string, password: string) =>
-    request<{ username: string }>('POST', '/api/auth/login', { username, password }),
+    request<{ username: string; isAdmin: boolean }>('POST', '/api/auth/login', {
+      username,
+      password,
+    }),
   logout: () => request<{ ok: boolean }>('POST', '/api/auth/logout'),
   changePassword: (current: string, next: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/change-password', { current, next }),
+};
+
+// Users (admin only)
+export const usersApi = {
+  list: () => request<UserPublic[]>('GET', '/api/users'),
+  create: (payload: { username: string; password: string }) =>
+    request<UserPublic>('POST', '/api/users', payload),
+  update: (id: number, payload: { username?: string; password?: string }) =>
+    request<UserPublic>('PATCH', `/api/users/${id}`, payload),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/users/${id}`),
 };
 
 // Banks
