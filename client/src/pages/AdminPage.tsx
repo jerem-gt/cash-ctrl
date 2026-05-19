@@ -1,4 +1,4 @@
-import { LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
+import { Loader2, LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
 
 import { Button, Card, CardTitle, Input, showToast } from '@/components/ui';
@@ -217,6 +217,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                               setEditingId(user.id);
                               setShowAdd(false);
                             }}
+                            disabled={deleteUser.isPending}
                             title="Modifier"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -228,7 +229,11 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                             disabled={deleteUser.isPending}
                             title="Supprimer"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {deleteUser.isPending && deleteUser.variables === user.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
                           </Button>
                         </div>
                       )}

@@ -17,8 +17,8 @@ export function createImportRepo(db: Database) {
     `SELECT id FROM banks WHERE name = ?`,
   );
   const insertBank = db.prepare(`INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)`);
-  const findAccountByName = db.prepare<[number, string], { id: number }>(
-    `SELECT id FROM accounts WHERE user_id = ? AND name = ?`,
+  const findAccountByName = db.prepare<[number, string, number | null], { id: number }>(
+    `SELECT id FROM accounts WHERE user_id = ? AND name = ? AND bank_id IS ?`,
   );
   const insertAccount = db.prepare(
     `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date, closed_at)
@@ -46,7 +46,7 @@ export function createImportRepo(db: Database) {
     INSERT INTO transactions
     (user_id, account_id, type, amount, description, subcategory_id, payment_method_id,
      date, validated, notes, reimbursement_status, scheduled_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const setFullPeerStmt = db.prepare(`UPDATE transactions SET transfer_peer_id = ? WHERE id = ?`);
   const insertSplitStmt = db.prepare(
@@ -56,8 +56,8 @@ export function createImportRepo(db: Database) {
     INSERT INTO scheduled_transactions
     (user_id, account_id, type, amount, description, subcategory_id, payment_method_id,
      notes, recurrence_unit, recurrence_interval, recurrence_day, recurrence_month,
-     to_account_id, weekend_handling, start_date, end_date, active)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     to_account_id, weekend_handling, start_date, end_date, active, last_generated_until)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const upsertStockPosition = db.prepare(`
     INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price)
@@ -83,6 +83,21 @@ export function createImportRepo(db: Database) {
     (user_id, loan_id, installment_number, due_date, total_amount, principal_amount, interest_amount, transaction_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  const findInsuranceSupportByName = db.prepare<[number, string], { id: number }>(
+    `SELECT id FROM insurance_supports WHERE account_id = ? AND name = ?`,
+  );
+  const insertInsuranceSupport = db.prepare(
+    `INSERT INTO insurance_supports (user_id, account_id, name, type, ticker) VALUES (?, ?, ?, ?, ?)`,
+  );
+  const insertInsuranceOp = db.prepare(`
+    INSERT INTO insurance_operations
+    (user_id, account_id, support_id, transaction_id, fees_transaction_id,
+     social_fees_transaction_id, type, amount, fees, social_fees, date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const setArbitragePeerStmt = db.prepare(
+    `UPDATE insurance_operations SET arbitrage_peer_id = ? WHERE id = ?`,
+  );
 
   // ── JSON full import helpers (closures over prepared statements) ─────────
 
@@ -122,14 +137,15 @@ export function createImportRepo(db: Database) {
     const map = new Map<number, number>();
     let created = 0;
     for (const a of accounts) {
-      const existing = findAccountByName.get(userId, a.name);
+      const resolvedBankId = resolveFromMap(a.bank_id, bankMap) ?? a.bank_id;
+      const existing = findAccountByName.get(userId, a.name, resolvedBankId);
       if (existing) {
         map.set(a.id, existing.id);
       } else {
         const res = insertAccount.run(
           userId,
           a.name,
-          resolveFromMap(a.bank_id, bankMap) ?? a.bank_id,
+          resolvedBankId,
           accountTypeMap.get(a.account_type_id) ?? a.account_type_id,
           a.initial_balance,
           a.opening_date,
@@ -178,6 +194,7 @@ export function createImportRepo(db: Database) {
     accountMap: Map<number, number>,
     subcategoryMap: Map<number, number>,
     paymentMethodMap: Map<number, number>,
+    scheduledMap: Map<number, number>,
   ) => {
     const txMap = new Map<number, number>();
     let txCount = 0;
@@ -197,6 +214,7 @@ export function createImportRepo(db: Database) {
         tx.validated,
         tx.notes,
         tx.reimbursement_status,
+        resolveFromMap(tx.scheduled_id, scheduledMap),
       );
       txMap.set(tx.id, Number(res.lastInsertRowid));
       if (tx.transfer_peer_id === null) txCount++;
@@ -240,11 +258,11 @@ export function createImportRepo(db: Database) {
     subcategoryMap: Map<number, number>,
     paymentMethodMap: Map<number, number>,
   ) => {
-    let count = 0;
+    const scheduledMap = new Map<number, number>();
     for (const sched of scheduled) {
       const newAccountId = accountMap.get(sched.account_id);
       if (newAccountId === undefined) continue;
-      insertScheduledStmt.run(
+      const res = insertScheduledStmt.run(
         userId,
         newAccountId,
         sched.type,
@@ -262,10 +280,11 @@ export function createImportRepo(db: Database) {
         sched.start_date,
         sched.end_date,
         sched.active,
+        sched.last_generated_until,
       );
-      count++;
+      scheduledMap.set(sched.id, Number(res.lastInsertRowid));
     }
-    return count;
+    return scheduledMap;
   };
 
   const importStockPositions = (
@@ -289,8 +308,9 @@ export function createImportRepo(db: Database) {
     let count = 0;
     for (const op of operations) {
       const newAccountId = accountMap.get(op.account_id);
-      const newTxId = txMap.get(op.transaction_id);
-      if (newAccountId === undefined || newTxId === undefined) continue;
+      if (newAccountId === undefined) continue;
+      const newTxId = op.transaction_id !== null ? (txMap.get(op.transaction_id) ?? null) : null;
+      if (op.transaction_id !== null && newTxId === null) continue;
       insertStockOp.run(
         userId,
         newAccountId,
@@ -306,6 +326,75 @@ export function createImportRepo(db: Database) {
       count++;
     }
     return count;
+  };
+
+  const importInsuranceSupports = (
+    userId: number,
+    supports: FullExport['insurance_supports'],
+    accountMap: Map<number, number>,
+  ) => {
+    const supportMap = new Map<number, number>();
+    for (const s of supports) {
+      const newAccountId = accountMap.get(s.account_id);
+      if (newAccountId === undefined) continue;
+      const existing = findInsuranceSupportByName.get(newAccountId, s.name);
+      const id = existing
+        ? existing.id
+        : Number(
+            insertInsuranceSupport.run(userId, newAccountId, s.name, s.type, s.ticker)
+              .lastInsertRowid,
+          );
+      supportMap.set(s.id, id);
+    }
+    return supportMap;
+  };
+
+  const importInsuranceOperations = (
+    userId: number,
+    operations: FullExport['insurance_operations'],
+    accountMap: Map<number, number>,
+    supportMap: Map<number, number>,
+    txMap: Map<number, number>,
+  ) => {
+    const opMap = new Map<number, number>();
+    let count = 0;
+    for (const op of operations) {
+      const newAccountId = accountMap.get(op.account_id);
+      const newSupportId = supportMap.get(op.support_id);
+      if (newAccountId === undefined || newSupportId === undefined) continue;
+      const newTxId = op.transaction_id !== null ? (txMap.get(op.transaction_id) ?? null) : null;
+      const res = insertInsuranceOp.run(
+        userId,
+        newAccountId,
+        newSupportId,
+        newTxId,
+        op.fees_transaction_id !== null ? (txMap.get(op.fees_transaction_id) ?? null) : null,
+        op.social_fees_transaction_id !== null
+          ? (txMap.get(op.social_fees_transaction_id) ?? null)
+          : null,
+        op.type,
+        op.amount,
+        op.fees,
+        op.social_fees,
+        op.date,
+      );
+      opMap.set(op.id, Number(res.lastInsertRowid));
+      count++;
+    }
+    return { opMap, count };
+  };
+
+  const linkArbitragePeers = (
+    operations: FullExport['insurance_operations'],
+    opMap: Map<number, number>,
+  ) => {
+    for (const op of operations) {
+      if (op.arbitrage_peer_id === null) continue;
+      const newId = opMap.get(op.id);
+      const newPeerId = opMap.get(op.arbitrage_peer_id);
+      if (newId !== undefined && newPeerId !== undefined)
+        setArbitragePeerStmt.run(newPeerId, newId);
+    }
   };
 
   const importLoans = (
@@ -490,6 +579,13 @@ export function createImportRepo(db: Database) {
         );
         const subcategoryMap = buildSubcategoryMap(userId, data.categories);
         const paymentMethodMap = buildPaymentMethodMap(userId, data.payment_methods);
+        const scheduledMap = importScheduled(
+          userId,
+          data.scheduled_transactions,
+          accountMap,
+          subcategoryMap,
+          paymentMethodMap,
+        );
         const {
           txCount: transactions,
           transferCount: transfers,
@@ -500,16 +596,11 @@ export function createImportRepo(db: Database) {
           accountMap,
           subcategoryMap,
           paymentMethodMap,
+          scheduledMap,
         );
         linkTransferPeers(data.transactions, txMap);
         insertSplits(userId, data.transactions, txMap, subcategoryMap);
-        const scheduled = importScheduled(
-          userId,
-          data.scheduled_transactions,
-          accountMap,
-          subcategoryMap,
-          paymentMethodMap,
-        );
+        const scheduled = scheduledMap.size;
         importStockPositions(userId, data.stock_positions, accountMap);
         const stockOperations = importStockOperations(
           userId,
@@ -518,7 +609,26 @@ export function createImportRepo(db: Database) {
           txMap,
         );
         const loans = importLoans(userId, data.loans, accountMap, txMap);
-        return { accounts, transactions, transfers, scheduled, stockOperations, loans };
+        const supportMap = importInsuranceSupports(userId, data.insurance_supports, accountMap);
+        const { opMap, count: insuranceOperations } = importInsuranceOperations(
+          userId,
+          data.insurance_operations,
+          accountMap,
+          supportMap,
+          txMap,
+        );
+        linkArbitragePeers(data.insurance_operations, opMap);
+        const insuranceSupports = supportMap.size;
+        return {
+          accounts,
+          transactions,
+          transfers,
+          scheduled,
+          stockOperations,
+          loans,
+          insuranceSupports,
+          insuranceOperations,
+        };
       })();
     },
   };

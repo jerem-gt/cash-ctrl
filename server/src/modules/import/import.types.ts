@@ -60,4 +60,6 @@ export interface JsonFullImportResult {
   scheduled: number;
   stockOperations: number;
   loans: number;
+  insuranceSupports: number;
+  insuranceOperations: number;
 }

@@ -79,6 +79,7 @@ export interface FullExportScheduled {
   start_date: string;
   end_date: string | null;
   active: number;
+  last_generated_until: string | null;
 }
 
 export interface FullExportStockPosition {
@@ -91,10 +92,10 @@ export interface FullExportStockPosition {
 export interface FullExportStockOperation {
   id: number;
   account_id: number;
-  transaction_id: number;
+  transaction_id: number | null;
   fees_transaction_id: number | null;
   ticker: string;
-  type: 'buy' | 'sell';
+  type: 'buy' | 'sell' | 'transfer_in' | 'transfer_out';
   quantity: number;
   price_per_share: number;
   fees: number;
@@ -138,9 +139,11 @@ export interface FullExportInsuranceOperation {
   support_id: number;
   transaction_id: number | null;
   fees_transaction_id: number | null;
+  social_fees_transaction_id: number | null;
   type: string;
   amount: number;
   fees: number;
+  social_fees: number;
   date: string;
   arbitrage_peer_id: number | null;
 }

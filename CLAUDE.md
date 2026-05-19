@@ -42,6 +42,10 @@ The project uses Husky and lint-staged to automatically fix linting issues befor
 
 ### Backend (Node.js)
 - **Logic**: Séparer les responsabilités entre les routes, les services et la validation des données.
+- **Export/Import** : Tout ajout ou modification de champ sur une entité exportée (`insurance_operations`, `stock_operations`, `loans`, `transactions`, etc.) doit être répercuté dans les trois endroits suivants :
+  1. `export.types.ts` — interface `FullExport*`
+  2. `export.repo.ts` — requête SQL `SELECT`
+  3. `import.routes.ts` + `import.repo.ts` — schéma Zod et `INSERT`
 
 ## Testing Strategy
 - **Runner**: **Vitest** est le test runner global du projet.
