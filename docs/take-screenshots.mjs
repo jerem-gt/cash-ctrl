@@ -11,9 +11,9 @@
  * Les captures sont enregistrées dans docs/screenshots/.
  */
 
-import { chromium } from 'playwright';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import {chromium} from 'playwright';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const BASE = 'http://localhost:5173';
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'screenshots');
