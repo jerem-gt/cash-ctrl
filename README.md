@@ -1,32 +1,40 @@
 # 💸 CashCtrl
 
-Application moderne de gestion de finances personnelles  
-→ transferts intelligents, transactions planifiées et dashboard visuel.
+Application de gestion de finances personnelles — multi-comptes, transactions planifiées, portefeuille boursier, assurances-vie et prêts.
 
 ---
 
-## 📸 Aperçu
+## Aperçu
 
-### Dashboard
-![Dashboard](./docs/screenshots/dashboard.png)
+| Dashboard | Transactions |
+|---|---|
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Transactions](./docs/screenshots/transactions.png) |
 
-### Transactions
-![Transactions](./docs/screenshots/transactions.png)
+| Portefeuille boursier (PEA) | Assurance-vie |
+|---|---|
+| ![PEA](./docs/screenshots/account-pea.png) | ![Assurance-vie](./docs/screenshots/account-av.png) |
 
-### Transfert
-![Transfer](./docs/screenshots/transfer.png)
+| Planifications | Paramètres |
+|---|---|
+| ![Planifications](./docs/screenshots/scheduled.png) | ![Paramètres](./docs/screenshots/settings.png) |
 
 ---
 
 ## ✨ Fonctionnalités
 
-- 💰 Gestion multi-comptes
-- 🔁 Transferts automatiques entre comptes (double écriture sécurisée)
-- 📅 Transactions planifiées (jours, semaines, mois…)
-- 📊 Dashboard avec graphiques (Recharts)
-- 🏦 Gestion des banques avec logos auto
-- 🏷️ Catégories et moyens de paiement configurables
-- 📤 Export CSV / JSON
+| Domaine | Détail |
+|---|---|
+| **Comptes** | Multi-comptes, multi-banques avec logos auto |
+| **Transactions** | Revenus / dépenses, catégories, sous-catégories, notes, fractionnement |
+| **Transferts** | Double écriture atomique entre comptes |
+| **Planifiées** | Récurrence flexible (jour / semaine / mois / an), gestion jours fériés |
+| **Portefeuille** | Achats / ventes / transferts de titres, suivi PRU, prix historiques |
+| **Assurance-vie** | Supports euro/UC, versements, rachats, arbitrages, intérêts, réévaluations |
+| **Prêts** | Tableau d'amortissement, remboursements anticipés |
+| **Remboursements** | Suivi des dépenses à se faire rembourser |
+| **Simulateur PER** | Calcul de la déductibilité fiscale (barèmes IR en base) |
+| **Import / Export** | Import QIF / XHB (Homebank) ; export JSON toutes entités |
+| **Sauvegarde** | Sauvegardes incrémentales automatiques |
 
 ---
 
@@ -39,72 +47,61 @@ npm install
 npm run dev
 ```
 
-- Frontend : http://localhost:5173
-- Backend : http://localhost:3000
+- Frontend : <http://localhost:5173>
+- Backend : <http://localhost:3000>
 
-**Login :** `admin / changeme`
+**Login par défaut :** `admin / changeme`
 
 ---
 
 ## 🧱 Stack
 
-- **Frontend** : React 19 + Vite + Tailwind CSS 4
-- **State** : TanStack Query v5
-- **Backend** : Node.js 24 + Express 5 + TypeScript
-- **DB** : SQLite (better-sqlite3)
-- **Validation** : Zod
-- **Charts** : Recharts
-- **CI/CD** : GitHub Actions + Docker + Watchtower
+| Couche | Technologie | Version |
+|---|---|---|
+| Frontend | React + Vite | 19 / 8 |
+| Style | Tailwind CSS | 4 |
+| État async | TanStack Query | 5 |
+| Routing | React Router | 7 |
+| Backend | Node.js + Express | 24 / 5 |
+| Base de données | SQLite (better-sqlite3) | — |
+| Validation | Zod | 4 |
+| Charts | Recharts | 3 |
+| Tests | Vitest + Testing Library + MSW | 4 |
+| CI/CD | GitHub Actions + Docker + Watchtower | — |
 
 ---
 
-## 🧠 Points clés techniques
-
-- Architecture modulaire (repo + routes + types)
-- Injection de dépendances (DB)
-- Transferts atomiques (2 transactions liées)
-- Génération idempotente des transactions planifiées
-- Tests complets (backend + frontend)
-
----
-
-## 📁 Structure (résumé)
+## 📁 Structure
 
 ```
-client/   → React app (UI + hooks + API)
-server/   → Express API (modules + DB + logique métier)
-```
+client/src/
+  pages/          → 8 pages (Dashboard, Transactions, Accounts, Scheduled, Settings…)
+  components/     → Composants UI réutilisables
+  features/       → Modules autonomes (settings…)
+  hooks/          → Logique métier + data fetching (TanStack Query)
+  lib/            → Utilitaires (format, money, parseurs, calcul fiscal)
+  api/            → Client fetch
 
-👉 Voir la doc complète : `AGENTS.md`
+server/src/
+  modules/        → 21 modules (accounts, transactions, stocks, insurance, loans…)
+  db/             → Schéma, seeds, 24 tables SQLite
+  lib/            → Helpers métier (money, scheduled, backup…)
+```
 
 ---
 
 ## 🧪 Tests
 
 ```bash
-npm test --workspace=server
-npm test --workspace=client
+npm test --workspace=server   # Vitest + supertest + SQLite in-memory
+npm test --workspace=client   # Vitest + Testing Library + MSW
 ```
-
-**Backend** : Vitest + supertest + better-sqlite3 in-memory
-
-**Frontend** : Vitest + @testing-library/react + MSW v2
 
 ---
 
 ## 🚀 Déploiement
 
-- Image Docker via GitHub Actions
-- Hébergement NAS (Synology compatible)
-
----
-
-## 💡 Pourquoi ce projet ?
-
-CashCtrl est conçu pour :
-- maîtriser ses finances simplement
-- gérer les transferts sans erreur
-- automatiser les opérations récurrentes
+Image Docker multi-stage via GitHub Actions. Compatible NAS Synology (docker-compose fourni).
 
 ---
 
