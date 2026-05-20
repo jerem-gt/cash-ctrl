@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { makeCheckAccount } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
@@ -44,24 +45,14 @@ export function createStocksRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/:accountId/positions', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    res.json(repo.getPositions(accountId));
+  const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
+
+  router.get('/:accountId/positions', checkAccount, (_req, res) => {
+    res.json(repo.getPositions(res.locals.accountId as number));
   });
 
-  router.get('/:accountId/operations', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    res.json(repo.getOperations(accountId));
+  router.get('/:accountId/operations', checkAccount, (_req, res) => {
+    res.json(repo.getOperations(res.locals.accountId as number));
   });
 
   router.post('/:accountId/buy', (req, res) => {
@@ -123,15 +114,10 @@ export function createStocksRouter(db: Database): Router {
     }
   });
 
-  router.put('/:accountId/operations/:operationId', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const operationId = Number.parseInt(req.params.operationId);
-    const userId = sessionUserId(req);
-
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
+  router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
+    const accountId = res.locals.accountId as number;
+    const userId = res.locals.userId as number;
+    const operationId = Number.parseInt(req.params.operationId as string, 10);
 
     const op = repo.getOperationById(operationId);
     if (op?.account_id !== accountId) {
