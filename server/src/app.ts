@@ -47,7 +47,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: options?.secureCookies ?? false,
+        secure: options?.secureCookies ? 'auto' : false,
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
