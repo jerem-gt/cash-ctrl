@@ -70,4 +70,4 @@ Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 - Use the **Bash tool** (not PowerShell) to run shell commands.
 - Windows paths must use forward slashes and be quoted: `cd "C:/Users/jerem/WebstormProjects/cash-ctrl"`
 - PowerShell is blocked by execution policy — do not use it for `npm` commands.
-- **GitHub CLI**: `gh` is installed at `/c/Program Files/GitHub CLI/gh.exe` but not in the Bash PATH. Always invoke it with its full path: `"/c/Program Files/GitHub CLI/gh.exe" pr create ...`
+- **GitHub CLI**: `gh` est disponible dans le Bash PATH (ajouté via `~/.bashrc`). Utiliser directement `gh pr create ...`
