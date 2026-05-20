@@ -6,6 +6,7 @@ import { ReimbursementStatusPicker } from '@/components/ReimbursementStatusPicke
 import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import { type SplitInput, TxSplitEditor } from '@/components/TxSplitEditor';
 import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
+import { useScheduled } from '@/hooks/useScheduled';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
@@ -23,6 +24,7 @@ export type TxFormState = {
   validated: boolean;
   isVentilated: boolean;
   splits: { subcategory_id: number; amount: number }[];
+  scheduled_id: number | null;
 };
 
 type BaseProps = {
@@ -239,6 +241,7 @@ interface EditCtx {
   date: string;
   notes: string;
   validated: boolean;
+  scheduledId: number | null;
   onSave: EditProps['onSave'];
 }
 
@@ -267,6 +270,7 @@ function runSubmitEdit(ctx: EditCtx): void {
     validated: ctx.validated,
     isVentilated: ctx.isVentilated,
     splits: buildSplitPayload(ctx.splits),
+    scheduled_id: ctx.scheduledId,
   });
 }
 
@@ -340,6 +344,7 @@ export function TxModal(props: Readonly<Props>) {
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
   const [reimbursementStatus, setReimbursementStatus] = useState<ReimbursementStatus>(null);
   const [isTransfer, setIsTransfer] = useState(!!duplicateFrom?.transfer_peer_id);
+  const [scheduledId, setScheduledId] = useState<number | null>(tx?.scheduled_id ?? null);
   const [isVentilated, setIsVentilated] = useState(() => !!(tx ?? duplicateFrom)?.splits?.length);
   const [splits, setSplits] = useState<SplitInput[]>(() =>
     initSplits(tx ?? duplicateFrom, categories),
@@ -347,6 +352,7 @@ export function TxModal(props: Readonly<Props>) {
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
+  const { data: scheduledList } = useScheduled();
   const isTransferCreate = !isEdit && isTransfer;
   const noOtherAccounts = fixedAccountId != null && accounts.every((a) => a.id === fixedAccountId);
 
@@ -378,6 +384,7 @@ export function TxModal(props: Readonly<Props>) {
       date,
       notes,
       validated,
+      scheduledId,
       onSave: (props as EditProps).onSave,
     });
 
@@ -579,6 +586,35 @@ export function TxModal(props: Readonly<Props>) {
             />
             <span className="text-sm text-stone-700">Transaction validée</span>
           </label>
+
+          {isEdit &&
+            !isTransferEdit &&
+            (() => {
+              const options = (scheduledList ?? []).filter(
+                (s) => s.active && s.type === tx!.type && s.to_account_id === null,
+              );
+              if (options.length === 0) return null;
+              return (
+                <FormGroup label="Planification" htmlFor="scheduled-select">
+                  <select
+                    id="scheduled-select"
+                    value={scheduledId ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setScheduledId(val === '' ? null : Number.parseInt(val));
+                    }}
+                    className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
+                  >
+                    <option value="">— Aucune —</option>
+                    {options.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.description}
+                      </option>
+                    ))}
+                  </select>
+                </FormGroup>
+              );
+            })()}
 
           {isEdit && tx!.type === 'expense' && !isTransferEdit && <ReimbursementsPanel tx={tx!} />}
 

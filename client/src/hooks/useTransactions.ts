@@ -15,6 +15,7 @@ type UpdatePayload = {
   payment_method_id: number;
   notes: string | null;
   validated: boolean;
+  scheduled_id?: number | null;
 };
 
 type UpdateTransferPayload = {
