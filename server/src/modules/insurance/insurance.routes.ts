@@ -2,7 +2,8 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { makeCheckAccount } from '../../lib/routeHelpers';
+import { requireAuth } from '../../middleware.js';
 import { handleInsuranceAction } from './insurance.handlers.js';
 import { createInsuranceRepo } from './insurance.repo.js';
 
@@ -81,16 +82,12 @@ export function createInsuranceRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
+  const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
+
   // ─── Supports ──────────────────────────────────────────────────────────────
 
-  router.get('/:accountId/supports', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    res.json(repo.getSupports(accountId));
+  router.get('/:accountId/supports', checkAccount, (_req, res) => {
+    res.json(repo.getSupports(res.locals.accountId as number));
   });
 
   router.post('/:accountId/supports', (req, res) => {
@@ -100,15 +97,9 @@ export function createInsuranceRouter(db: Database): Router {
     });
   });
 
-  router.delete('/:accountId/supports/:supportId', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const supportId = Number.parseInt(req.params.supportId);
-    const userId = sessionUserId(req);
-
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
+  router.delete('/:accountId/supports/:supportId', checkAccount, (req, res) => {
+    const accountId = res.locals.accountId as number;
+    const supportId = Number.parseInt(req.params.supportId as string, 10);
 
     const support = repo.getSupportById(supportId);
     if (support?.account_id !== accountId) {
@@ -127,37 +118,19 @@ export function createInsuranceRouter(db: Database): Router {
 
   // ─── Positions ─────────────────────────────────────────────────────────────
 
-  router.get('/:accountId/positions', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    res.json(repo.getPositions(accountId));
+  router.get('/:accountId/positions', checkAccount, (_req, res) => {
+    res.json(repo.getPositions(res.locals.accountId as number));
   });
 
   // ─── Opérations ────────────────────────────────────────────────────────────
 
-  router.get('/:accountId/operations', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
-    res.json(repo.getOperations(accountId));
+  router.get('/:accountId/operations', checkAccount, (_req, res) => {
+    res.json(repo.getOperations(res.locals.accountId as number));
   });
 
-  router.put('/:accountId/operations/:operationId', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const operationId = Number.parseInt(req.params.operationId);
-    const userId = sessionUserId(req);
-
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
+  router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
+    const operationId = Number.parseInt(req.params.operationId as string, 10);
+    const userId = res.locals.userId as number;
 
     const parsed = updateOperationSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -175,14 +148,9 @@ export function createInsuranceRouter(db: Database): Router {
     }
   });
 
-  router.delete('/:accountId/operations/:operationId', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
-    const operationId = Number.parseInt(req.params.operationId);
-    const userId = sessionUserId(req);
-    if (!repo.accountBelongsToUser(accountId, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
-      return;
-    }
+  router.delete('/:accountId/operations/:operationId', checkAccount, (req, res) => {
+    const operationId = Number.parseInt(req.params.operationId as string, 10);
+    const userId = res.locals.userId as number;
     try {
       repo.deleteOperation(operationId, userId);
       res.json({ ok: true });

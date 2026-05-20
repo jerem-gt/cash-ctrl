@@ -148,7 +148,7 @@ export function AccountSelect({
   };
 
   const handleBlur = (e: FocusEvent) => {
-    if (!ref.current?.contains(e.relatedTarget as Node | null)) close();
+    if (!ref.current?.contains(e.relatedTarget)) close();
   };
 
   return (
