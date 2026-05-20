@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Annule le run précédent du même groupe quand un nouveau démarre.
+# Pour un push sur develop avec une PR ouverte, les deux événements partagent
+# la même clé (head_ref=develop ou ref_name=develop) → un seul run actif à la fois.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
