@@ -226,26 +226,26 @@ describe('TxModal — champ Planification', () => {
   });
 
   it('inclut scheduled_id dans onSave lors de la soumission', async () => {
-    const onSave = vi.fn<[TxFormState], void>();
+    const onSave = vi.fn<(data: TxFormState) => void>();
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...editProps} onSave={onSave} />);
     await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
     await user.selectOptions(document.getElementById('scheduled-select')!, String(SCHEDULED[0].id));
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     expect(onSave).toHaveBeenCalledOnce();
-    expect(onSave.mock.calls[0][0].scheduled_id).toBe(SCHEDULED[0].id);
+    expect((onSave.mock.calls[0][0] as TxFormState).scheduled_id).toBe(SCHEDULED[0].id);
   });
 
   it('inclut scheduled_id null dans onSave quand on détache', async () => {
     const linkedTx = { ...TRANSACTIONS.data[0], scheduled_id: SCHEDULED[0].id };
-    const onSave = vi.fn<[TxFormState], void>();
+    const onSave = vi.fn<(data: TxFormState) => void>();
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...editProps} tx={linkedTx} onSave={onSave} />);
     await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
     await user.selectOptions(document.getElementById('scheduled-select')!, '');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     expect(onSave).toHaveBeenCalledOnce();
-    expect(onSave.mock.calls[0][0].scheduled_id).toBeNull();
+    expect((onSave.mock.calls[0][0] as TxFormState).scheduled_id).toBeNull();
   });
 });
 
