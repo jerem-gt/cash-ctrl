@@ -6,6 +6,7 @@ import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
+import { createScheduledRepo } from '../scheduled/scheduled.repo';
 import { recalcPosition } from '../stocks/stocks.service';
 import { createTransactionsRepo } from './transactions.repo';
 
@@ -29,6 +30,7 @@ const transactionSchema = z
     notes: z.string().max(1000).nullable().default(null),
     validated: z.boolean().default(false),
     reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable().default(null),
+    scheduled_id: z.number().int().positive().nullable().optional().default(null),
   })
   .refine(
     (d) => {
@@ -68,6 +70,7 @@ const querySchema = z.object({
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
   const accountsRepo = createAccountsRepo(db);
+  const scheduledRepo = createScheduledRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -140,6 +143,13 @@ export function createTransactionsRouter(db: Database): Router {
         .status(400)
         .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
       return;
+    }
+
+    if (parsed.data.scheduled_id !== null) {
+      if (!scheduledRepo.getById(parsed.data.scheduled_id, userId)) {
+        res.status(404).json({ error: 'Scheduled transaction not found' });
+        return;
+      }
     }
 
     transactionsRepo.update(userId, id, {

@@ -566,6 +566,7 @@ export const transactionsApi = {
       payment_method_id: number;
       notes: string | null;
       validated: boolean;
+      scheduled_id?: number | null;
     },
   ) => request<Transaction>('PUT', `/api/transactions/${id}`, payload),
   validate: (id: number, validated: boolean) =>

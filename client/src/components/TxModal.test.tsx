@@ -1,11 +1,14 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, TRANSACTIONS } from '@/tests/fixtures';
+import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, SCHEDULED, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 import type { Transaction } from '@/types';
 
+import type { TxFormState } from './TxModal';
 import { TxModal } from './TxModal';
 
 const logoMap: Record<string, string | null> = { BNP: null };
@@ -196,6 +199,53 @@ describe('TxModal — mode duplication', () => {
   it(`affiche le titre "Dupliquer le transfert" pour un transfert dupliqué`, () => {
     renderWithProviders(<TxModal {...createProps} duplicateFrom={transferTx} />);
     expect(screen.getByText('Dupliquer le transfert')).toBeInTheDocument();
+  });
+});
+
+describe('TxModal — champ Planification', () => {
+  it('affiche le select Planification en mode édition quand des planifications du même type existent', async () => {
+    renderWithProviders(<TxModal {...editProps} />);
+    await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
+    expect(screen.getByRole('option', { name: SCHEDULED[0].description })).toBeInTheDocument();
+  });
+
+  it("n'affiche pas le select pour un transfert en édition", () => {
+    renderWithProviders(<TxModal {...editProps} tx={transferTx} />);
+    expect(document.getElementById('scheduled-select')).not.toBeInTheDocument();
+  });
+
+  it("n'affiche pas le select si aucune planification du même type n'est active", async () => {
+    server.use(
+      http.get('/api/scheduled', () => HttpResponse.json([{ ...SCHEDULED[0], type: 'income' }])),
+    );
+    renderWithProviders(<TxModal {...editProps} />);
+    // On attend que la query se résolve, puis vérifie l'absence du select
+    await waitFor(() =>
+      expect(document.getElementById('scheduled-select')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('inclut scheduled_id dans onSave lors de la soumission', async () => {
+    const onSave = vi.fn<[TxFormState], void>();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...editProps} onSave={onSave} />);
+    await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
+    await user.selectOptions(document.getElementById('scheduled-select')!, String(SCHEDULED[0].id));
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onSave.mock.calls[0][0].scheduled_id).toBe(SCHEDULED[0].id);
+  });
+
+  it('inclut scheduled_id null dans onSave quand on détache', async () => {
+    const linkedTx = { ...TRANSACTIONS.data[0], scheduled_id: SCHEDULED[0].id };
+    const onSave = vi.fn<[TxFormState], void>();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...editProps} tx={linkedTx} onSave={onSave} />);
+    await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
+    await user.selectOptions(document.getElementById('scheduled-select')!, '');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onSave.mock.calls[0][0].scheduled_id).toBeNull();
   });
 });
 

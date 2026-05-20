@@ -104,6 +104,7 @@ export function useTransactionsManager(initialAccountId?: number) {
           payment_method_id: Number.parseInt(data.payment_method_id),
           notes: data.notes || null,
           validated: data.validated,
+          scheduled_id: data.scheduled_id,
         },
         {
           onSuccess: () => {

@@ -218,7 +218,8 @@ export function createTransactionsRepo(db: Database) {
           date              = :date,
           payment_method_id = :paymentMethodId,
           notes             = :notes,
-          validated         = :validated
+          validated         = :validated,
+          scheduled_id      = :scheduledId
       WHERE id = :id
         AND user_id = :userId
   `);
@@ -383,6 +384,7 @@ export function createTransactionsRepo(db: Database) {
           paymentMethodId: data.payment_method_id,
           notes: data.notes,
           validated: data.validated ? 1 : 0,
+          scheduledId: data.scheduled_id ?? null,
           id,
           userId,
         });

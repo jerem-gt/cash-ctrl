@@ -68,6 +68,7 @@ export interface CreateTransactionInput {
   notes: string | null;
   validated: boolean;
   reimbursement_status?: ReimbursementStatus | null;
+  scheduled_id?: number | null;
 }
 
 export interface UpdateSharedTransactionInput {
