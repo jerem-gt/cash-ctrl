@@ -6,6 +6,7 @@ import {
   getPrelevementPaymentMethodId,
   getTransferIds,
 } from '../../lib/administrationDataConstants';
+import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
 import {
   BuyInput,
@@ -50,7 +51,7 @@ function insertStockTxAndOp(
     .run(userId, input.account_id, txType, mainCents, description, input.date);
   const transactionId = Number(txResult.lastInsertRowid);
 
-  const feesTransactionId = insertStockFeesTransaction(
+  const feesTransactionId = insertFeesTransaction(
     db,
     userId,
     input.account_id,
@@ -81,34 +82,6 @@ function insertStockTxAndOp(
     .get(Number(opResult.lastInsertRowid))!;
 
   return { operation: mapOperation(operation), transaction_id: transactionId };
-}
-
-function insertStockFeesTransaction(
-  db: Database,
-  userId: number,
-  accountId: number,
-  feesCents: number,
-  feesDescription: string,
-  date: string,
-): number | null {
-  if (feesCents <= 0) return null;
-  const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-  const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-  const result = db
-    .prepare(
-      'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes, validated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)',
-    )
-    .run(
-      userId,
-      accountId,
-      'expense',
-      feesCents,
-      feesDescription,
-      subcategoryId,
-      date,
-      paymentMethodId,
-    );
-  return Number(result.lastInsertRowid);
 }
 
 export function createStocksRepo(db: Database) {

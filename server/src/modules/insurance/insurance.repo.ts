@@ -1,11 +1,8 @@
 import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
-import {
-  getBankFeesSubcategoryId,
-  getPrelevementPaymentMethodId,
-  getSocialFeesSubcategoryId,
-} from '../../lib/administrationDataConstants';
+import { getSocialFeesSubcategoryId } from '../../lib/administrationDataConstants';
+import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
 import {
   ArbitrageInput,
@@ -27,13 +24,17 @@ function getAccountName(db: Database, accountId: number): string {
   return row?.name ?? '';
 }
 
-function mapOperation(row: InsuranceOperation): InsuranceOperation {
+type RawInsuranceOperation = Omit<InsuranceOperation, 'from_scheduled'> & {
+  from_scheduled: number;
+};
+
+function mapOperation(row: RawInsuranceOperation): InsuranceOperation {
   return {
     ...row,
     amount: toEuros(row.amount),
     fees: toEuros(row.fees),
     social_fees: toEuros(row.social_fees),
-    from_scheduled: !!row.from_scheduled,
+    from_scheduled: row.from_scheduled !== 0,
   };
 }
 
@@ -65,27 +66,6 @@ function updateOrDeleteFeesTransaction(
       );
     }
   }
-}
-
-function insertInsuranceFeesTransaction(
-  db: Database,
-  userId: number,
-  accountId: number | null,
-  feesCents: number,
-  feesDescription: string,
-  date: string,
-  subcategoryIdOverride?: number | null,
-): number | null {
-  if (feesCents <= 0 || accountId == null) return null;
-  const subcategoryId = subcategoryIdOverride ?? getBankFeesSubcategoryId(db, userId) ?? null;
-  const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
-  const result = db
-    .prepare(
-      `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
-       VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 1)`,
-    )
-    .run(userId, accountId, feesCents, feesDescription, subcategoryId, date, paymentMethodId);
-  return Number(result.lastInsertRowid);
 }
 
 const OPERATION_SELECT = `
@@ -143,7 +123,7 @@ function insertInsuranceTxAndOp(
 
   // For versements, fees are embedded in the versement amount — no separate source debit.
   const feesAccountId = opType === 'rachat' ? txAccountId : null;
-  const feesTransactionId = insertInsuranceFeesTransaction(
+  const feesTransactionId = insertFeesTransaction(
     db,
     userId,
     feesAccountId,
@@ -154,7 +134,7 @@ function insertInsuranceTxAndOp(
 
   const socialSubcatId =
     socialFeesCents > 0 ? (getSocialFeesSubcategoryId(db, userId) ?? null) : null;
-  const socialFeesTransactionId = insertInsuranceFeesTransaction(
+  const socialFeesTransactionId = insertFeesTransaction(
     db,
     userId,
     socialFeesTxAccountId,
@@ -186,7 +166,7 @@ function insertInsuranceTxAndOp(
     );
 
   const op = db
-    .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+    .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
     .get(Number(opResult.lastInsertRowid))!;
 
   return { operation: mapOperation(op), transaction_id: transactionId };
@@ -300,7 +280,7 @@ export function createInsuranceRepo(db: Database) {
 
     getOperations(accountId: number): InsuranceOperation[] {
       return db
-        .prepare<[number], InsuranceOperation>(
+        .prepare<[number], RawInsuranceOperation>(
           `${OPERATION_SELECT}
            WHERE io.account_id = ?
            ORDER BY io.date DESC, io.created_at DESC`,
@@ -377,7 +357,7 @@ export function createInsuranceRepo(db: Database) {
           input.date,
           () =>
             mainTx
-              ? insertInsuranceFeesTransaction(
+              ? insertFeesTransaction(
                   db,
                   userId,
                   mainTx.account_id,
@@ -397,7 +377,7 @@ export function createInsuranceRepo(db: Database) {
           input.date,
           () => {
             const socialSubcatId = getSocialFeesSubcategoryId(db, userId) ?? null;
-            return insertInsuranceFeesTransaction(
+            return insertFeesTransaction(
               db,
               userId,
               op.account_id,
@@ -412,7 +392,7 @@ export function createInsuranceRepo(db: Database) {
         );
 
         const updated = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
           .get(operationId)!;
         return mapOperation(updated);
       })();
@@ -516,7 +496,7 @@ export function createInsuranceRepo(db: Database) {
       }
 
       return db.transaction(() => {
-        const feesTransactionId = insertInsuranceFeesTransaction(
+        const feesTransactionId = insertFeesTransaction(
           db,
           userId,
           input.account_id,
@@ -559,10 +539,10 @@ export function createInsuranceRepo(db: Database) {
         );
 
         const outOp = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
           .get(outId)!;
         const inOp = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
           .get(inId)!;
 
         return { outOperation: mapOperation(outOp), inOperation: mapOperation(inOp) };
@@ -598,7 +578,7 @@ export function createInsuranceRepo(db: Database) {
           .run(userId, input.account_id, input.support_id, transactionId, amountCents, input.date);
 
         const op = db
-          .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
           .get(Number(opResult.lastInsertRowid))!;
 
         return { operation: mapOperation(op), transaction_id: transactionId };
@@ -620,7 +600,7 @@ export function createInsuranceRepo(db: Database) {
         .run(userId, input.account_id, input.support_id, amountCents, input.date);
 
       const op = db
-        .prepare<[number], InsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
+        .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
         .get(Number(opResult.lastInsertRowid))!;
 
       return mapOperation(op);
