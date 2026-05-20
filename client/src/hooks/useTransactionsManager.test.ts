@@ -215,6 +215,7 @@ describe('useTransactionsManager', () => {
             { subcategory_id: 1, amount: 300 },
             { subcategory_id: 2, amount: 200 },
           ],
+          scheduled_id: null,
         });
       });
 
