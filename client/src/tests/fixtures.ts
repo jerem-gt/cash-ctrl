@@ -414,6 +414,19 @@ export const PENDING_REIMBURSEMENTS: PendingReimbursement[] = [
   },
 ];
 
+export const RECENT_REIMBURSEMENTS: PendingReimbursement[] = [
+  {
+    id: 11,
+    amount: 80,
+    description: 'Pharmacie',
+    date: '2026-02-10',
+    subcategory: 'Pharmacie',
+    category: 'Santé',
+    account_name: 'Compte test',
+    total_reimbursed: 80,
+  },
+];
+
 export const LOAN_ACCOUNT: Account = {
   id: 10,
   name: 'Prêt immobilier',

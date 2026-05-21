@@ -19,6 +19,12 @@ export function createReimbursementsRouter(db: Database): Router {
     res.json(repo.getPendingWithSummary(userId));
   });
 
+  router.get('/recent', (req, res) => {
+    const userId = sessionUserId(req);
+    const since = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    res.json(repo.getRecentCompleted(userId, since));
+  });
+
   router.get('/:transactionId', (req, res) => {
     const transactionId = Number.parseInt(req.params.transactionId);
     const userId = sessionUserId(req);

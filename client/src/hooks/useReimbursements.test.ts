@@ -5,12 +5,18 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { PENDING_REIMBURSEMENTS, REIMBURSEMENTS, TRANSACTIONS } from '@/tests/fixtures';
+import {
+  PENDING_REIMBURSEMENTS,
+  RECENT_REIMBURSEMENTS,
+  REIMBURSEMENTS,
+  TRANSACTIONS,
+} from '@/tests/fixtures';
 import { server } from '@/tests/msw/server';
 
 import {
   useLinkReimbursement,
   usePendingReimbursements,
+  useRecentReimbursements,
   useReimbursements,
   useSetReimbursementStatus,
   useUnlinkReimbursement,
@@ -42,6 +48,30 @@ describe('usePendingReimbursements', () => {
       ),
     );
     const { result } = renderHook(() => usePendingReimbursements(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('useRecentReimbursements', () => {
+  it("charge les remboursements terminés récents depuis l'API", async () => {
+    const { result } = renderHook(() => useRecentReimbursements(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data![0].id).toBe(RECENT_REIMBURSEMENTS[0].id);
+    expect(result.current.data![0].total_reimbursed).toBe(80);
+  });
+
+  it("passe en erreur si l'API échoue", async () => {
+    server.use(
+      http.get('/api/reimbursements/recent', () =>
+        HttpResponse.json({ error: 'Erreur serveur' }, { status: 500 }),
+      ),
+    );
+    const { result } = renderHook(() => useRecentReimbursements(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => expect(result.current.isError).toBe(true));

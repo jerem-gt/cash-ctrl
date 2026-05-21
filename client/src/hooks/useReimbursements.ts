@@ -9,6 +9,13 @@ export function usePendingReimbursements() {
   });
 }
 
+export function useRecentReimbursements() {
+  return useQuery({
+    queryKey: ['reimbursements', 'recent'],
+    queryFn: reimbursementsApi.recent,
+  });
+}
+
 export function useReimbursements(transactionId: number) {
   return useQuery({
     queryKey: ['reimbursements', transactionId],
@@ -67,6 +74,7 @@ export function useSetReimbursementStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      qc.invalidateQueries({ queryKey: ['reimbursements', 'recent'] });
     },
   });
 }

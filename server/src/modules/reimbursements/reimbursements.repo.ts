@@ -4,6 +4,26 @@ import { toEuros } from '../../lib/money';
 import type { PendingReimbursement, Reimbursement } from './reimbursements.types';
 
 export function createReimbursementsRepo(db: Database) {
+  const getRecentCompletedStmt = db.prepare<
+    { userId: number; since: string },
+    PendingReimbursement
+  >(`
+      SELECT t.id, t.amount, t.description, t.date,
+             COALESCE(sc.name, '') AS subcategory,
+             COALESCE(c.name, '')  AS category,
+             a.name               AS account_name,
+             COALESCE(SUM(COALESCE(r.attributed_amount, lt.amount)), 0) AS total_reimbursed
+      FROM transactions t
+      JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+      LEFT JOIN categories c ON sc.category_id = c.id
+      LEFT JOIN reimbursements r ON r.transaction_id = t.id
+      LEFT JOIN transactions lt ON lt.id = r.linked_transaction_id
+      WHERE t.user_id = :userId AND t.reimbursement_status = 'rembourse' AND t.date >= :since
+      GROUP BY t.id
+      ORDER BY t.date DESC
+    `);
+
   const getPendingWithSummaryStmt = db.prepare<{ userId: number }, PendingReimbursement>(`
       SELECT t.id, t.amount, t.description, t.date,
              COALESCE(sc.name, '') AS subcategory,
@@ -49,6 +69,13 @@ export function createReimbursementsRepo(db: Database) {
   );
 
   return {
+    getRecentCompleted: (userId: number, since: string) =>
+      getRecentCompletedStmt.all({ userId, since }).map((r) => ({
+        ...r,
+        amount: toEuros(r.amount),
+        total_reimbursed: toEuros(r.total_reimbursed),
+      })),
+
     getByTransactionId: (txId: number, userId: number) =>
       getReimbursementsByTxStmt.all({ txId, userId }).map((r) => ({
         ...r,
