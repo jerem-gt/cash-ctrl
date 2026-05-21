@@ -12,6 +12,7 @@ import {
   LOAN_INSTALLMENTS,
   PAYMENT_METHODS,
   PENDING_REIMBURSEMENTS,
+  RECENT_REIMBURSEMENTS,
   REIMBURSEMENTS,
   SCHEDULED,
   STOCK_OPERATIONS,
@@ -155,6 +156,7 @@ export const handlers = [
 
   // Reimbursements
   http.get('/api/reimbursements/pending', () => HttpResponse.json(PENDING_REIMBURSEMENTS)),
+  http.get('/api/reimbursements/recent', () => HttpResponse.json(RECENT_REIMBURSEMENTS)),
   http.get('/api/reimbursements/:transactionId', () => HttpResponse.json(REIMBURSEMENTS)),
   http.post('/api/reimbursements/:transactionId', () =>
     HttpResponse.json(REIMBURSEMENTS, { status: 201 }),

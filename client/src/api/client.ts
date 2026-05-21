@@ -438,6 +438,7 @@ export const loansApi = {
 // Reimbursements
 export const reimbursementsApi = {
   pending: () => request<PendingReimbursement[]>('GET', '/api/reimbursements/pending'),
+  recent: () => request<PendingReimbursement[]>('GET', '/api/reimbursements/recent'),
   list: (transactionId: number) =>
     request<Reimbursement[]>('GET', `/api/reimbursements/${transactionId}`),
   link: (transactionId: number, linked_transaction_id: number, attributed_amount?: number) =>

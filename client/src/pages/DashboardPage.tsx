@@ -22,7 +22,11 @@ import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
-import { usePendingReimbursements, useSetReimbursementStatus } from '../hooks/useReimbursements';
+import {
+  usePendingReimbursements,
+  useRecentReimbursements,
+  useSetReimbursementStatus,
+} from '../hooks/useReimbursements';
 
 function DashboardSkeleton() {
   return (
@@ -104,6 +108,7 @@ export default function DashboardPage() {
   const upcoming = stats?.upcoming ?? [];
 
   const { data: pendingReimbursements = [] } = usePendingReimbursements();
+  const { data: recentReimbursements = [] } = useRecentReimbursements();
   const setReimbursementStatus = useSetReimbursementStatus();
 
   const txItemProps = { accounts, logoMap };
@@ -230,10 +235,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Dépenses en attente de remboursement */}
-      {pendingReimbursements.length > 0 && (
+      {/* Remboursements */}
+      {(pendingReimbursements.length > 0 || recentReimbursements.length > 0) && (
         <Card>
-          <CardTitle>Remboursements en attente</CardTitle>
+          <CardTitle>Remboursements</CardTitle>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-xs">
               <thead>
@@ -247,6 +252,16 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/4">
+                {pendingReimbursements.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-amber-500"
+                    >
+                      En attente
+                    </td>
+                  </tr>
+                )}
                 {pendingReimbursements.map((item) => {
                   const remaining = item.amount - item.total_reimbursed;
                   return (
@@ -286,6 +301,46 @@ export default function DashboardPage() {
                           ✓
                         </button>
                       </td>
+                    </tr>
+                  );
+                })}
+                {recentReimbursements.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-green-600"
+                    >
+                      Terminés — 6 derniers mois
+                    </td>
+                  </tr>
+                )}
+                {recentReimbursements.map((item) => {
+                  const remaining = item.amount - item.total_reimbursed;
+                  return (
+                    <tr key={item.id} className="opacity-60">
+                      <td className="py-2 pr-3">
+                        <p className="font-medium text-stone-700 truncate max-w-40">
+                          {item.description}
+                        </p>
+                        <p className="text-stone-400 text-[10px]">
+                          {item.subcategory || item.category} · {item.account_name}
+                        </p>
+                      </td>
+                      <td className="py-2 pr-3 text-stone-500 hidden sm:table-cell whitespace-nowrap">
+                        {fmtDate(item.date)}
+                      </td>
+                      <td className="py-2 pr-3 text-right text-stone-500 tabular-nums whitespace-nowrap">
+                        −{fmtDec(item.amount)}
+                      </td>
+                      <td className="py-2 pr-3 text-right text-green-700 tabular-nums hidden sm:table-cell whitespace-nowrap">
+                        {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
+                        <span className={remaining > 0 ? 'text-red-700' : 'text-green-700'}>
+                          {fmtDec(Math.max(0, remaining))}
+                        </span>
+                      </td>
+                      <td />
                     </tr>
                   );
                 })}

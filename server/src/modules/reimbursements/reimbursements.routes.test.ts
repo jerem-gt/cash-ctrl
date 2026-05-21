@@ -355,3 +355,82 @@ describe('reimbursement_status dans /api/transactions', () => {
     expect(ids).toContain(incomeId);
   });
 });
+
+describe('GET /api/reimbursements/recent', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+  });
+
+  it('retourne 401 sans auth', async () => {
+    const res = await supertest(ctx.app).get('/api/reimbursements/recent');
+    expect(res.status).toBe(401);
+  });
+
+  it('retourne un tableau vide initialement', async () => {
+    const res = await ctx.agent.get('/api/reimbursements/recent');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('retourne les dépenses rembourse des 6 derniers mois', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/status`)
+      .send({ reimbursement_status: 'rembourse' });
+
+    const res = await ctx.agent.get('/api/reimbursements/recent');
+    expect(res.status).toBe(200);
+    const item = res.body.find((i: { id: number }) => i.id === expenseId);
+    expect(item).toBeDefined();
+    expect(item.amount).toBe(150);
+  });
+
+  it("n'inclut pas les dépenses en_attente", async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/status`)
+      .send({ reimbursement_status: 'en_attente' });
+
+    const res = await ctx.agent.get('/api/reimbursements/recent');
+    expect(res.body.find((i: { id: number }) => i.id === expenseId)).toBeUndefined();
+  });
+
+  it("n'inclut pas les dépenses rembourse de plus de 6 mois", async () => {
+    const res = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Vieille dépense',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: '2020-01-01',
+      payment_method_id: SEED.PM_CARTE,
+    });
+    const oldExpenseId = res.body.id as number;
+    await ctx.agent
+      .patch(`/api/reimbursements/${oldExpenseId}/status`)
+      .send({ reimbursement_status: 'rembourse' });
+
+    const recent = await ctx.agent.get('/api/reimbursements/recent');
+    expect(recent.body.find((i: { id: number }) => i.id === oldExpenseId)).toBeUndefined();
+  });
+
+  it('inclut le total_reimbursed des remboursements liés', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId });
+    await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/status`)
+      .send({ reimbursement_status: 'rembourse' });
+
+    const res = await ctx.agent.get('/api/reimbursements/recent');
+    const item = res.body.find((i: { id: number }) => i.id === expenseId);
+    expect(item).toBeDefined();
+    expect(item.total_reimbursed).toBe(90);
+  });
+});
