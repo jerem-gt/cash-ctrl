@@ -14,6 +14,13 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
     db.exec(
       'ALTER TABLE reimbursements ADD COLUMN attributed_amount INTEGER CHECK (attributed_amount > 0)',
     ),
+  (db) =>
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tx_user_account_date ON transactions(user_id, account_id, date DESC);
+      CREATE INDEX IF NOT EXISTS idx_tx_user_reimbursement_date ON transactions(user_id, reimbursement_status, date DESC);
+      CREATE INDEX IF NOT EXISTS idx_reimbursements_linked ON reimbursements(linked_transaction_id);
+      CREATE INDEX IF NOT EXISTS idx_loan_installments_txid ON loan_installments(transaction_id);
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {
