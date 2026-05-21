@@ -24,7 +24,7 @@ export function parseSplits(row: TransactionRow): Transaction {
     amount: toEuros(rest.amount),
     loan_principal: rest.loan_principal == null ? null : toEuros(rest.loan_principal),
     remaining_reimbursable:
-      rest.remaining_reimbursable != null ? toEuros(rest.remaining_reimbursable) : undefined,
+      rest.remaining_reimbursable == null ? undefined : toEuros(rest.remaining_reimbursable),
   };
   if (splits_json) {
     const splits = JSON.parse(splits_json) as TransactionSplit[];

@@ -67,7 +67,7 @@ export function createReimbursementsRouter(db: Database): Router {
     }
 
     const attributedAmount =
-      parsed.data.attributed_amount != null ? toCents(parsed.data.attributed_amount) : null;
+      parsed.data.attributed_amount == null ? null : toCents(parsed.data.attributed_amount);
     repo.link(userId, transactionId, parsed.data.linked_transaction_id, attributedAmount);
     res.status(201).json(repo.getByTransactionId(transactionId, userId));
   });
@@ -112,7 +112,7 @@ export function createReimbursementsRouter(db: Database): Router {
     }
 
     const attributedAmount =
-      parsed.data.attributed_amount != null ? toCents(parsed.data.attributed_amount) : null;
+      parsed.data.attributed_amount == null ? null : toCents(parsed.data.attributed_amount);
     repo.updateAttributedAmount(transactionId, linkedId, attributedAmount);
     res.json(repo.getByTransactionId(transactionId, userId));
   });
