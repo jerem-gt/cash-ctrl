@@ -212,6 +212,7 @@ export interface Transaction {
   reimbursement_status: 'en_attente' | 'rembourse' | null;
   loan_principal: number | null;
   account_name?: string;
+  remaining_reimbursable?: number;
   splits?: TransactionSplit[];
   stock_operation?: StockOperation | null;
 }
@@ -219,6 +220,7 @@ export interface Transaction {
 export interface Reimbursement {
   id: number;
   amount: number;
+  transaction_amount: number;
   description: string;
   date: string;
   subcategory: string;
@@ -311,6 +313,7 @@ export interface TransactionFilters {
   payment_method_id?: number;
   validated?: boolean;
   scheduled_id?: number;
+  exclude_linked_reimbursements?: boolean;
   page?: number;
   limit?: number;
 }

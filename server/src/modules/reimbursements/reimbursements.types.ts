@@ -1,6 +1,7 @@
 export interface Reimbursement {
   id: number;
   amount: number;
+  transaction_amount: number;
   description: string;
   date: string;
   subcategory: string;

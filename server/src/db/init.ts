@@ -9,7 +9,12 @@ import { seedDatabase } from './seed';
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 
 // Each entry converts the DB from version N to N+1.
-const MIGRATIONS: Array<(db: DatabaseType) => void> = [];
+const MIGRATIONS: Array<(db: DatabaseType) => void> = [
+  (db) =>
+    db.exec(
+      'ALTER TABLE reimbursements ADD COLUMN attributed_amount INTEGER CHECK (attributed_amount > 0)',
+    ),
+];
 
 function runMigrations(db: DatabaseType) {
   const version = db.pragma('user_version', { simple: true }) as number;

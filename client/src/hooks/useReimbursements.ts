@@ -20,7 +20,26 @@ export function useReimbursements(transactionId: number) {
 export function useLinkReimbursement(transactionId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (linkedTxId: number) => reimbursementsApi.link(transactionId, linkedTxId),
+    mutationFn: ({
+      linkedTxId,
+      attributedAmount,
+    }: {
+      linkedTxId: number;
+      attributedAmount?: number;
+    }) => reimbursementsApi.link(transactionId, linkedTxId, attributedAmount),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
+      qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+}
+
+export function useUpdateReimbursementAmount(transactionId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ linkedId, amount }: { linkedId: number; amount: number | null }) =>
+      reimbursementsApi.updateAmount(transactionId, linkedId, amount),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
       qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
@@ -35,6 +54,7 @@ export function useUnlinkReimbursement(transactionId: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
       qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

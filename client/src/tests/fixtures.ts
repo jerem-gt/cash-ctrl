@@ -392,6 +392,7 @@ export const REIMBURSEMENTS: Reimbursement[] = [
   {
     id: 20,
     amount: 45,
+    transaction_amount: 90,
     description: 'Remboursement CPAM',
     date: '2026-04-22',
     subcategory: 'CPAM',

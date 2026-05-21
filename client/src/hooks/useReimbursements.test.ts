@@ -14,6 +14,7 @@ import {
   useReimbursements,
   useSetReimbursementStatus,
   useUnlinkReimbursement,
+  useUpdateReimbursementAmount,
 } from './useReimbursements';
 
 function createWrapper() {
@@ -72,7 +73,18 @@ describe('useLinkReimbursement', () => {
       wrapper: createWrapper(),
     });
     act(() => {
-      result.current.mutate(20);
+      result.current.mutate({ linkedTxId: 20 });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(1);
+  });
+
+  it('lie un remboursement avec un montant attribué', async () => {
+    const { result } = renderHook(() => useLinkReimbursement(10), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({ linkedTxId: 20, attributedAmount: 45 });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toHaveLength(1);
@@ -88,10 +100,34 @@ describe('useLinkReimbursement', () => {
       wrapper: createWrapper(),
     });
     act(() => {
-      result.current.mutate(99);
+      result.current.mutate({ linkedTxId: 99 });
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toContain('Transaction introuvable');
+  });
+});
+
+describe('useUpdateReimbursementAmount', () => {
+  it('met à jour le montant attribué et retourne la liste mise à jour', async () => {
+    const { result } = renderHook(() => useUpdateReimbursementAmount(10), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({ linkedId: 20, amount: 45 });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data![0].amount).toBe(45);
+  });
+
+  it('accepte null pour réinitialiser au montant total', async () => {
+    const { result } = renderHook(() => useUpdateReimbursementAmount(10), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.mutate({ linkedId: 20, amount: null });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });
 

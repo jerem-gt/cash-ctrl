@@ -253,6 +253,7 @@ export function initSchema(db: Database) {
             user_id               INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             transaction_id        INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
             linked_transaction_id INTEGER NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+            attributed_amount     INTEGER CHECK (attributed_amount > 0),
             PRIMARY KEY (transaction_id, linked_transaction_id)
         );
 

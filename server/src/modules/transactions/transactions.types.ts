@@ -29,6 +29,7 @@ export interface Transaction {
   loan_principal: number | null;
   created_at: string;
   account_name?: string;
+  remaining_reimbursable?: number;
   splits?: TransactionSplit[];
   stock_operation?: {
     id: number;
@@ -93,6 +94,7 @@ export interface TransactionFilters {
   payment_method_id?: number;
   validated?: boolean;
   scheduled_id?: number;
+  exclude_linked_reimbursements?: boolean;
   page?: number;
   limit?: number;
 }

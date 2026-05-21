@@ -159,11 +159,14 @@ export const handlers = [
   http.post('/api/reimbursements/:transactionId', () =>
     HttpResponse.json(REIMBURSEMENTS, { status: 201 }),
   ),
-  http.delete('/api/reimbursements/:transactionId/:linkedId', () =>
-    HttpResponse.json({ ok: true }),
-  ),
   http.patch('/api/reimbursements/:transactionId/status', () =>
     HttpResponse.json({ ...TRANSACTIONS.data[0], reimbursement_status: 'en_attente' }),
+  ),
+  http.patch('/api/reimbursements/:transactionId/:linkedId', () =>
+    HttpResponse.json(REIMBURSEMENTS),
+  ),
+  http.delete('/api/reimbursements/:transactionId/:linkedId', () =>
+    HttpResponse.json({ ok: true }),
   ),
 
   // Import

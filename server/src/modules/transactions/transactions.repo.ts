@@ -23,6 +23,8 @@ export function parseSplits(row: TransactionRow): Transaction {
     ...rest,
     amount: toEuros(rest.amount),
     loan_principal: rest.loan_principal == null ? null : toEuros(rest.loan_principal),
+    remaining_reimbursable:
+      rest.remaining_reimbursable != null ? toEuros(rest.remaining_reimbursable) : undefined,
   };
   if (splits_json) {
     const splits = JSON.parse(splits_json) as TransactionSplit[];
@@ -81,7 +83,12 @@ export const TX_WITH_DETAILS = `
          peer.account_id AS transfer_peer_account_id,
          li.principal_amount AS loan_principal,
          ${SPLITS_SUBQUERY},
-         ${STOCK_OPERATION_SUBQUERY}
+         ${STOCK_OPERATION_SUBQUERY},
+         t.amount - COALESCE((
+           SELECT SUM(COALESCE(r.attributed_amount, t.amount))
+           FROM reimbursements r
+           WHERE r.linked_transaction_id = t.id
+         ), 0) AS remaining_reimbursable
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -149,6 +156,15 @@ function buildFilterConditions(
   if (filters.scheduled_id) {
     conditions.push('t.scheduled_id = :scheduled_id');
     params.scheduled_id = filters.scheduled_id;
+  }
+  if (filters.exclude_linked_reimbursements) {
+    conditions.push(`t.id NOT IN (
+      SELECT r2.linked_transaction_id
+      FROM reimbursements r2
+      JOIN transactions t2 ON r2.linked_transaction_id = t2.id AND t2.user_id = :userId
+      GROUP BY r2.linked_transaction_id
+      HAVING SUM(COALESCE(r2.attributed_amount, t2.amount)) >= t2.amount
+    )`);
   }
 
   return { conditions, params };
