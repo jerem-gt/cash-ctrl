@@ -241,6 +241,8 @@ export function initSchema(db: Database) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, date DESC, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_tx_user_account_date ON transactions(user_id, account_id, date DESC);
+        CREATE INDEX IF NOT EXISTS idx_tx_user_reimbursement_date ON transactions(user_id, reimbursement_status, date DESC);
 
         CREATE TRIGGER IF NOT EXISTS tx_insurance_op_cleanup
         BEFORE DELETE ON transactions
@@ -267,6 +269,8 @@ export function initSchema(db: Database) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_splits_txid ON transaction_splits(transaction_id);
+
+        CREATE INDEX IF NOT EXISTS idx_reimbursements_linked ON reimbursements(linked_transaction_id);
 
         CREATE TABLE IF NOT EXISTS loans
         (
@@ -297,6 +301,8 @@ export function initSchema(db: Database) {
             transaction_id      INTEGER REFERENCES transactions (id) ON DELETE SET NULL,
             UNIQUE (loan_id, installment_number)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_loan_installments_txid ON loan_installments(transaction_id);
 
         CREATE TABLE IF NOT EXISTS tax_brackets
         (
