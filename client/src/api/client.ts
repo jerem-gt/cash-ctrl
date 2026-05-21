@@ -522,31 +522,31 @@ export const importApi = {
 };
 
 // Transactions
+function buildTransactionUrl(filters?: TransactionFilters): string {
+  const params = new URLSearchParams();
+  if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
+  if (filters?.type != null) params.set('type', filters.type);
+  if (filters?.category_id != null) params.set('category_id', String(filters.category_id));
+  if (filters?.subcategory_id != null) params.set('subcategory_id', String(filters.subcategory_id));
+  if (filters?.description_contains)
+    params.set('description_contains', filters.description_contains);
+  if (filters?.date_from) params.set('date_from', filters.date_from);
+  if (filters?.date_to) params.set('date_to', filters.date_to);
+  if (filters?.amount_min != null) params.set('amount_min', String(filters.amount_min));
+  if (filters?.amount_max != null) params.set('amount_max', String(filters.amount_max));
+  if (filters?.payment_method_id != null)
+    params.set('payment_method_id', String(filters.payment_method_id));
+  if (filters?.validated != null) params.set('validated', String(filters.validated));
+  if (filters?.scheduled_id != null) params.set('scheduled_id', String(filters.scheduled_id));
+  if (filters?.exclude_linked_reimbursements) params.set('exclude_linked_reimbursements', 'true');
+  if (filters?.page != null) params.set('page', String(filters.page));
+  if (filters?.limit != null) params.set('limit', String(filters.limit));
+  return ['/api/transactions', params.toString()].filter(Boolean).join('?');
+}
+
 export const transactionsApi = {
-  list: (filters?: TransactionFilters) => {
-    const params = new URLSearchParams();
-    if (filters?.account_id != null) params.set('account_id', String(filters.account_id));
-    if (filters?.type != null) params.set('type', filters.type);
-    if (filters?.category_id != null) params.set('category_id', String(filters.category_id));
-    if (filters?.subcategory_id != null)
-      params.set('subcategory_id', String(filters.subcategory_id));
-    if (filters?.description_contains)
-      params.set('description_contains', filters.description_contains);
-    if (filters?.date_from) params.set('date_from', filters.date_from);
-    if (filters?.date_to) params.set('date_to', filters.date_to);
-    if (filters?.amount_min != null) params.set('amount_min', String(filters.amount_min));
-    if (filters?.amount_max != null) params.set('amount_max', String(filters.amount_max));
-    if (filters?.payment_method_id != null)
-      params.set('payment_method_id', String(filters.payment_method_id));
-    if (filters?.validated != null) params.set('validated', String(filters.validated));
-    if (filters?.scheduled_id != null) params.set('scheduled_id', String(filters.scheduled_id));
-    if (filters?.exclude_linked_reimbursements) params.set('exclude_linked_reimbursements', 'true');
-    if (filters?.page != null) params.set('page', String(filters.page));
-    if (filters?.limit != null) params.set('limit', String(filters.limit));
-    const qs = params.toString();
-    const url = qs ? `/api/transactions?${qs}` : '/api/transactions';
-    return request<PaginatedTransactions>('GET', url);
-  },
+  list: (filters?: TransactionFilters) =>
+    request<PaginatedTransactions>('GET', buildTransactionUrl(filters)),
   create: (payload: {
     account_id: number;
     type: 'income' | 'expense';
