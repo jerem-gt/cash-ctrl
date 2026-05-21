@@ -1,9 +1,11 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { REIMBURSEMENTS, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 import type { Transaction } from '@/types';
 
 import { ReimbursementsPanel } from './ReimbursementsPanel';
@@ -125,6 +127,103 @@ describe('ReimbursementsPanel — actif (rembourse)', () => {
   });
 });
 
+describe('ReimbursementsPanel — montant partiel (AmountCell)', () => {
+  it('affiche le montant attribué et le montant total quand partiel', async () => {
+    // REIMBURSEMENTS fixture : amount=45, transaction_amount=90 → partiel
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    // montant attribué
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === 'SPAN' && (el?.textContent?.replace(/\s/g, '') ?? '') === '+45,00€',
+      ),
+    ).toBeInTheDocument();
+    // total de la transaction
+    expect(
+      screen.getByText(
+        (_, el) => el?.tagName === 'SPAN' && /\/.*90,00.*€/.test(el?.textContent ?? ''),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("n'affiche pas le total quand le montant attribué est identique au montant total", async () => {
+    server.use(
+      http.get('/api/reimbursements/:transactionId', () =>
+        HttpResponse.json([{ ...REIMBURSEMENTS[0], amount: 90, transaction_amount: 90 }]),
+      ),
+    );
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(/\/\s*90/)).not.toBeInTheDocument();
+  });
+
+  it('clique sur le montant affiche un input pré-rempli avec 2 décimales', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    const amountBtn = screen.getByTitle('Modifier le montant attribué');
+    await user.click(amountBtn);
+    const input = screen.getByRole('textbox');
+    expect((input as HTMLInputElement).value).toBe('45.00');
+  });
+
+  it("✕ annule l'édition inline", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTitle('Modifier le montant attribué'));
+    await user.click(screen.getByRole('button', { name: '✕' }));
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it("✓ confirme l'édition inline et appelle l'API", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTitle('Modifier le montant attribué'));
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, '30.00');
+    await user.click(screen.getByRole('button', { name: '✓' }));
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument());
+  });
+
+  it("Entrée confirme l'édition inline", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTitle('Modifier le montant attribué'));
+    const input = screen.getByRole('textbox');
+    await user.clear(input);
+    await user.type(input, '30.00{Enter}');
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument());
+  });
+
+  it("Échap annule l'édition inline", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
+    );
+    await user.click(screen.getByTitle('Modifier le montant attribué'));
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+});
+
 describe('ReimbursementsPanel — formulaire de liaison', () => {
   it(`affiche le select et les boutons Lier/Annuler après clic sur "+ Lier"`, async () => {
     const user = userEvent.setup();
@@ -158,6 +257,41 @@ describe('ReimbursementsPanel — formulaire de liaison', () => {
     );
     await user.click(screen.getByRole('button', { name: /lier un remboursement/i }));
     expect(screen.getByRole('button', { name: 'Lier' })).toBeDisabled();
+  });
+
+  it('affiche le champ "Montant attribué" après sélection d\'une transaction', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /lier un remboursement/i })).toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole('button', { name: /lier un remboursement/i }));
+    const select = screen.getByRole('combobox');
+    const options = Array.from(select.querySelectorAll('option'));
+    const firstRealOption = options.find((o) => o.value !== '');
+    if (firstRealOption) {
+      await user.selectOptions(select, firstRealOption.value);
+      await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+    }
+  });
+
+  it('le montant attribué est initialisé avec 2 décimales', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /lier un remboursement/i })).toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole('button', { name: /lier un remboursement/i }));
+    const select = screen.getByRole('combobox');
+    const options = Array.from(select.querySelectorAll('option'));
+    const firstRealOption = options.find((o) => o.value !== '');
+    if (firstRealOption) {
+      await user.selectOptions(select, firstRealOption.value);
+      await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      // Valeur formatée avec 2 décimales (ex: "24.50" pas "24.5")
+      expect(input.value).toMatch(/^\d+\.\d{2}$/);
+    }
   });
 
   it('lie un remboursement et ferme le formulaire après succès', async () => {

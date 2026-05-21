@@ -110,7 +110,66 @@ describe('/api/reimbursements', () => {
     expect(res.body).toHaveLength(1);
     expect(res.body[0].id).toBe(incomeId);
     expect(res.body[0].amount).toBe(90);
+    expect(res.body[0].transaction_amount).toBe(90);
     expect(res.body[0].description).toBe('Remboursement CPAM');
+  });
+
+  it('POST /:transactionId lie avec un montant attribué partiel', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+
+    const res = await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId, attributed_amount: 45 });
+
+    expect(res.status).toBe(201);
+    expect(res.body[0].amount).toBe(45);
+    expect(res.body[0].transaction_amount).toBe(90);
+  });
+
+  it('PATCH /:transactionId/:linkedId met à jour le montant attribué', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId });
+
+    const res = await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/${incomeId}`)
+      .send({ attributed_amount: 30 });
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].amount).toBe(30);
+    expect(res.body[0].transaction_amount).toBe(90);
+  });
+
+  it('PATCH /:transactionId/:linkedId accepte null pour revenir au montant total', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId, attributed_amount: 45 });
+
+    const res = await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/${incomeId}`)
+      .send({ attributed_amount: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].amount).toBe(90);
+  });
+
+  it('PATCH /:transactionId/:linkedId retourne 400 pour un montant invalide', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId });
+
+    const res = await ctx.agent
+      .patch(`/api/reimbursements/${expenseId}/${incomeId}`)
+      .send({ attributed_amount: -10 });
+
+    expect(res.status).toBe(400);
   });
 
   it('POST /:transactionId retourne 400 si la dépense cible est un revenu', async () => {
@@ -264,5 +323,35 @@ describe('reimbursement_status dans /api/transactions', () => {
     for (const tx of res.body.data) {
       expect('reimbursement_status' in tx).toBe(true);
     }
+  });
+
+  it('GET /?exclude_linked_reimbursements=true exclut les transactions entièrement attribuées', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId });
+
+    const res = await ctx.agent.get(
+      '/api/transactions?type=income&exclude_linked_reimbursements=true&limit=500',
+    );
+    expect(res.status).toBe(200);
+    const ids = (res.body.data as Array<{ id: number }>).map((t) => t.id);
+    expect(ids).not.toContain(incomeId);
+  });
+
+  it('GET /?exclude_linked_reimbursements=true conserve les transactions partiellement attribuées', async () => {
+    const expenseId = await createExpense(ctx, accountId);
+    const incomeId = await createIncome(ctx, accountId);
+    await ctx.agent
+      .post(`/api/reimbursements/${expenseId}`)
+      .send({ linked_transaction_id: incomeId, attributed_amount: 45 });
+
+    const res = await ctx.agent.get(
+      '/api/transactions?type=income&exclude_linked_reimbursements=true&limit=500',
+    );
+    expect(res.status).toBe(200);
+    const ids = (res.body.data as Array<{ id: number }>).map((t) => t.id);
+    expect(ids).toContain(incomeId);
   });
 });

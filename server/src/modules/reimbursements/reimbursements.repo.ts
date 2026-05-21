@@ -9,7 +9,7 @@ export function createReimbursementsRepo(db: Database) {
              COALESCE(sc.name, '') AS subcategory,
              COALESCE(c.name, '')  AS category,
              a.name               AS account_name,
-             COALESCE(SUM(lt.amount), 0) AS total_reimbursed
+             COALESCE(SUM(COALESCE(r.attributed_amount, lt.amount)), 0) AS total_reimbursed
       FROM transactions t
       JOIN accounts a ON t.account_id = a.id
       LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -21,13 +21,16 @@ export function createReimbursementsRepo(db: Database) {
       ORDER BY t.date DESC
     `);
   const getReimbursementsByTxStmt = db.prepare<{ txId: number; userId: number }, Reimbursement>(`
-      SELECT lt.id, lt.amount, lt.description, lt.date,
+      SELECT lt.id,
+             COALESCE(r.attributed_amount, lt.amount) AS amount,
+             lt.amount                                AS transaction_amount,
+             lt.description, lt.date,
              COALESCE(sc.name, '') AS subcategory,
              COALESCE(c.name, '')  AS category,
              COALESCE(pm.name, '') AS payment_method
       FROM reimbursements r
-      JOIN transactions t ON r.transaction_id = t.id          -- La transaction source
-      JOIN transactions lt ON r.linked_transaction_id = lt.id -- Les transactions liées
+      JOIN transactions t ON r.transaction_id = t.id
+      JOIN transactions lt ON r.linked_transaction_id = lt.id
       LEFT JOIN subcategories sc ON lt.subcategory_id = sc.id
       LEFT JOIN categories c ON sc.category_id = c.id
       LEFT JOIN payment_methods pm ON lt.payment_method_id = pm.id
@@ -36,7 +39,10 @@ export function createReimbursementsRepo(db: Database) {
       ORDER BY lt.date DESC
     `);
   const linkStmt = db.prepare(
-    'INSERT OR IGNORE INTO reimbursements (user_id, transaction_id, linked_transaction_id) VALUES (:userId, :txId, :linkedTxId)',
+    'INSERT OR IGNORE INTO reimbursements (user_id, transaction_id, linked_transaction_id, attributed_amount) VALUES (:userId, :txId, :linkedTxId, :attributedAmount)',
+  );
+  const updateAttributedAmountStmt = db.prepare(
+    'UPDATE reimbursements SET attributed_amount = :attributedAmount WHERE transaction_id = :txId AND linked_transaction_id = :linkedTxId',
   );
   const unlinkStmt = db.prepare(
     'DELETE FROM reimbursements WHERE transaction_id = :txId AND linked_transaction_id = :linkedTxId',
@@ -47,6 +53,7 @@ export function createReimbursementsRepo(db: Database) {
       getReimbursementsByTxStmt.all({ txId, userId }).map((r) => ({
         ...r,
         amount: toEuros(r.amount),
+        transaction_amount: toEuros(r.transaction_amount),
       })),
     getPendingWithSummary: (userId: number) =>
       getPendingWithSummaryStmt.all({ userId }).map((r) => ({
@@ -54,9 +61,10 @@ export function createReimbursementsRepo(db: Database) {
         amount: toEuros(r.amount),
         total_reimbursed: toEuros(r.total_reimbursed),
       })),
-
-    link: (userId: number, txId: number, linkedTxId: number) =>
-      linkStmt.run({ userId, txId, linkedTxId }),
+    link: (userId: number, txId: number, linkedTxId: number, attributedAmount: number | null) =>
+      linkStmt.run({ userId, txId, linkedTxId, attributedAmount }),
+    updateAttributedAmount: (txId: number, linkedTxId: number, attributedAmount: number | null) =>
+      updateAttributedAmountStmt.run({ txId, linkedTxId, attributedAmount }),
     unlink: (txId: number, linkedTxId: number) => unlinkStmt.run({ txId, linkedTxId }),
   };
 }

@@ -63,6 +63,10 @@ const querySchema = z.object({
     .transform((v) => v === 'true')
     .optional(),
   scheduled_id: z.coerce.number().int().positive().optional(),
+  exclude_linked_reimbursements: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });

@@ -440,9 +440,14 @@ export const reimbursementsApi = {
   pending: () => request<PendingReimbursement[]>('GET', '/api/reimbursements/pending'),
   list: (transactionId: number) =>
     request<Reimbursement[]>('GET', `/api/reimbursements/${transactionId}`),
-  link: (transactionId: number, linked_transaction_id: number) =>
+  link: (transactionId: number, linked_transaction_id: number, attributed_amount?: number) =>
     request<Reimbursement[]>('POST', `/api/reimbursements/${transactionId}`, {
       linked_transaction_id,
+      ...(attributed_amount != null && { attributed_amount }),
+    }),
+  updateAmount: (transactionId: number, linkedId: number, attributed_amount: number | null) =>
+    request<Reimbursement[]>('PATCH', `/api/reimbursements/${transactionId}/${linkedId}`, {
+      attributed_amount,
     }),
   unlink: (transactionId: number, linkedId: number) =>
     request<{ ok: boolean }>('DELETE', `/api/reimbursements/${transactionId}/${linkedId}`),
@@ -534,6 +539,7 @@ export const transactionsApi = {
       params.set('payment_method_id', String(filters.payment_method_id));
     if (filters?.validated != null) params.set('validated', String(filters.validated));
     if (filters?.scheduled_id != null) params.set('scheduled_id', String(filters.scheduled_id));
+    if (filters?.exclude_linked_reimbursements) params.set('exclude_linked_reimbursements', 'true');
     if (filters?.page != null) params.set('page', String(filters.page));
     if (filters?.limit != null) params.set('limit', String(filters.limit));
     const qs = params.toString();

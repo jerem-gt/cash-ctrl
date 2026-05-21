@@ -19,8 +19,8 @@
 - **Test**: `npm run test` (Vitest)
 - *Note : Utilise les scripts npm définis dans `/server/package.json` pour le développement.*
 
-### Pre-commit Hook
-The project uses Husky and lint-staged to automatically fix linting issues before commits. The pre-commit hook runs `lint-staged` which applies ESLint and Stylelint fixes to staged files.
+### Hook pre-commit
+Le projet utilise Husky et lint-staged pour corriger automatiquement les problèmes de lint avant chaque commit. Le hook exécute `lint-staged` qui applique ESLint et Stylelint sur les fichiers stagés.
 
 ## TypeScript & Code Quality
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.
@@ -66,8 +66,8 @@ Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 - `client/src/` : Code source React.
 - `server/src/` : Code source de l'API.
 
-## Environment
-- Use the **Bash tool** (not PowerShell) to run shell commands.
-- Windows paths must use forward slashes and be quoted: `cd "C:/Users/jerem/WebstormProjects/cash-ctrl"`
-- PowerShell is blocked by execution policy — do not use it for `npm` commands.
-- **GitHub CLI**: `gh` est disponible dans le Bash PATH (ajouté via `~/.bashrc`). Utiliser directement `gh pr create ...`
+## Environnement
+- Utiliser l'outil **Bash** (pas PowerShell) pour les commandes shell.
+- Les chemins Windows doivent utiliser des slashes et être entre guillemets : `cd "C:/Users/jerem/WebstormProjects/cash-ctrl"`
+- PowerShell est bloqué par la politique d'exécution — ne pas l'utiliser pour les commandes `npm`.
+- **GitHub CLI** : `gh` est disponible dans le Bash PATH (ajouté via `~/.bashrc`). Utiliser directement `gh pr create ...`

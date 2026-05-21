@@ -189,6 +189,7 @@ export function TxItem({
             )}
             {isTransfer && <Badge variant="blue">↔</Badge>}
             {tx.reimbursement_status === 'en_attente' && <Badge variant="amber">En attente</Badge>}
+            {tx.reimbursement_status === 'rembourse' && <Badge variant="green">Remboursé</Badge>}
           </div>
         </div>
 
