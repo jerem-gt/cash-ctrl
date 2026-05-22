@@ -66,7 +66,7 @@ function twrAnnualized(
   if (returns.length === 0) return null;
   let endMs: number;
   if (excludeYtd) {
-    const lastYear = returns[returns.length - 1].year;
+    const lastYear = returns.at(-1)!.year;
     endMs = new Date(`${lastYear}-12-31`).getTime();
   } else {
     endMs = Date.now();
@@ -395,7 +395,7 @@ function computeInvestmentProfitability(
         valeur_actuelle: valeurActuelle,
         plus_value_absolue: plusValue,
         rendement_total_pct: rendementTotalPct,
-        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date!),
+        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date),
         yearly_returns,
       };
     });
@@ -542,7 +542,7 @@ function computeInsuranceProfitability(
         valeur_actuelle: valeurActuelle,
         plus_value_absolue: plusValue,
         rendement_total_pct: rendementTotalPct,
-        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date!, true),
+        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date, true),
         yearly_returns,
       };
     });
@@ -706,7 +706,7 @@ function computeSavingsProfitability(
         valeur_actuelle: valeurActuelle,
         plus_value_absolue: plusValue,
         rendement_total_pct: rendementTotalPct,
-        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date!, true),
+        rendement_annualise_pct: twrAnnualized(yearly_returns, acc.opening_date, true),
         yearly_returns,
       };
     });
