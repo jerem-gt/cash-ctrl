@@ -241,7 +241,7 @@ export default function DashboardPage() {
         <Card>
           <CardTitle>Remboursements</CardTitle>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[480px] text-xs">
+            <table className="w-full min-w-120 text-xs">
               <thead>
                 <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
                   <th className="text-left pb-2 font-medium">Description</th>
@@ -466,6 +466,13 @@ export default function DashboardPage() {
                 {profitabilityList.map((p) => {
                   const gainPos = p.plus_value_absolue >= 0;
                   const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
+                  let annualizedLabel: string;
+                  if (p.rendement_annualise_pct === null) {
+                    annualizedLabel = '—';
+                  } else {
+                    const sign = p.rendement_annualise_pct >= 0 ? '+' : '';
+                    annualizedLabel = `${sign}${p.rendement_annualise_pct.toFixed(1)} %`;
+                  }
                   return (
                     <tr key={p.account_id} className="border-b border-stone-50 last:border-0">
                       <td className="py-1.5 pr-4 font-medium">{p.account_name}</td>
@@ -480,9 +487,7 @@ export default function DashboardPage() {
                         {fmt(p.plus_value_absolue)}
                       </td>
                       <td className={`text-right py-1.5 tabular-nums ${gainColor}`}>
-                        {p.rendement_annualise_pct !== null
-                          ? `${p.rendement_annualise_pct >= 0 ? '+' : ''}${p.rendement_annualise_pct.toFixed(1)} %`
-                          : '—'}
+                        {annualizedLabel}
                       </td>
                     </tr>
                   );
