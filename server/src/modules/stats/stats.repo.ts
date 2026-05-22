@@ -105,6 +105,37 @@ function modifiedDietzDenominator(
   return startValue + weightedFlows;
 }
 
+type StockOp = {
+  account_id: number;
+  ticker: string;
+  type: string;
+  quantity: number;
+  price_per_share: number;
+  date: string;
+};
+
+function buildPositionsAt(
+  ops: StockOp[],
+  yearEnd: string,
+): Map<string, { qty: number; avgPrice: number }> {
+  const pos = new Map<string, { qty: number; avgPrice: number }>();
+  for (const op of ops) {
+    if (op.date > yearEnd) break;
+    const key = `${op.account_id}:${op.ticker}`;
+    const p = pos.get(key) ?? { qty: 0, avgPrice: 0 };
+    if (op.type === 'buy' || op.type === 'transfer_in') {
+      const newQty = p.qty + op.quantity;
+      p.avgPrice =
+        newQty > 0 ? (p.qty * p.avgPrice + op.quantity * op.price_per_share) / newQty : 0;
+      p.qty = newQty;
+    } else {
+      p.qty = Math.max(0, p.qty - op.quantity);
+    }
+    pos.set(key, p);
+  }
+  return pos;
+}
+
 function firstDayOfMonth(monthsBack: number): string {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthsBack, 1))
@@ -291,23 +322,8 @@ export function createStatsRepo(db: Database) {
         .all(userId);
 
       // Compute book value (qty × avg_price) per account up to a given year-end.
-      // Single pass through stockOps with early exit via sorted date ordering.
       const bookValuesAt = (yearEnd: string): Map<number, number> => {
-        const pos = new Map<string, { qty: number; avgPrice: number }>();
-        for (const op of stockOps) {
-          if (op.date > yearEnd) break;
-          const key = `${op.account_id}:${op.ticker}`;
-          const p = pos.get(key) ?? { qty: 0, avgPrice: 0 };
-          if (op.type === 'buy' || op.type === 'transfer_in') {
-            const newQty = p.qty + op.quantity;
-            p.avgPrice =
-              newQty > 0 ? (p.qty * p.avgPrice + op.quantity * op.price_per_share) / newQty : 0;
-            p.qty = newQty;
-          } else {
-            p.qty = Math.max(0, p.qty - op.quantity);
-          }
-          pos.set(key, p);
-        }
+        const pos = buildPositionsAt(stockOps, yearEnd);
         const result = new Map<number, number>();
         for (const [key, p] of pos) {
           if (p.qty <= 0) continue;
@@ -486,16 +502,8 @@ export function createStatsRepo(db: Database) {
           .map((r) => [r.account_id, r.market_value]),
       );
 
-      type StockOpRow = {
-        account_id: number;
-        ticker: string;
-        type: string;
-        quantity: number;
-        price_per_share: number;
-        date: string;
-      };
       const allStockOps = db
-        .prepare<[number], StockOpRow>(
+        .prepare<[number], StockOp>(
           `SELECT so.account_id, so.ticker, so.type, so.quantity, so.price_per_share, so.date
            FROM stock_operations so
            JOIN accounts a ON a.id = so.account_id
@@ -516,25 +524,7 @@ export function createStatsRepo(db: Database) {
         priceHistoryMap.get(row.ticker)!.set(row.date, row.price);
       }
 
-      // Qty per (accountId:ticker) at a given year-end
-      const positionsAt = (yearEnd: string): Map<string, { qty: number; avgPrice: number }> => {
-        const pos = new Map<string, { qty: number; avgPrice: number }>();
-        for (const op of allStockOps) {
-          if (op.date > yearEnd) break;
-          const key = `${op.account_id}:${op.ticker}`;
-          const p = pos.get(key) ?? { qty: 0, avgPrice: 0 };
-          if (op.type === 'buy' || op.type === 'transfer_in') {
-            const newQty = p.qty + op.quantity;
-            p.avgPrice =
-              newQty > 0 ? (p.qty * p.avgPrice + op.quantity * op.price_per_share) / newQty : 0;
-            p.qty = newQty;
-          } else {
-            p.qty = Math.max(0, p.qty - op.quantity);
-          }
-          pos.set(key, p);
-        }
-        return pos;
-      };
+      const positionsAt = (yearEnd: string) => buildPositionsAt(allStockOps, yearEnd);
 
       const stockValueAt = (
         accountId: number,
