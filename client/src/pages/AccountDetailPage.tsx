@@ -6,11 +6,13 @@ import { CloseAccountModal } from '@/components/CloseAccountModal';
 import { InsuranceSection } from '@/components/InsuranceSection';
 import { LoanSection } from '@/components/LoanSection';
 import { PortfolioSection } from '@/components/PortfolioSection';
+import { ProfitabilityCard } from '@/components/ProfitabilityCard';
 import { TransactionsList } from '@/components/TransactionsList';
 import { Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useLoan, useLoanInstallments } from '@/hooks/useLoans';
+import { useProfitability } from '@/hooks/useStats';
 
 function AccountDetailSkeleton() {
   return (
@@ -66,6 +68,10 @@ export default function AccountDetailPage() {
   const readOnly = isClosed && !temporarilyUnlocked;
   const [loanCloseOpen, setLoanCloseOpen] = useState(false);
 
+  const { data: profitabilityList = [] } = useProfitability();
+  const profitability = profitabilityList.find((p) => p.account_id === accountId);
+  const showProfitability = isInvestment || isInsurance || account?.type === 'Épargne';
+
   const { data: loanData } = useLoan(isLoan ? accountId : 0);
   const { data: loanInstallments = [] } = useLoanInstallments(isLoan ? loanData?.id : undefined);
   const capitalRestantDu = useMemo(() => {
@@ -103,6 +109,13 @@ export default function AccountDetailPage() {
         isLoan={isLoan}
         capitalRestantDu={capitalRestantDu}
       />
+
+      {/* Rendement */}
+      {showProfitability && profitability && (
+        <div className="px-1">
+          <ProfitabilityCard data={profitability} />
+        </div>
+      )}
 
       {/* Portefeuille bourse */}
       {isInvestment && (

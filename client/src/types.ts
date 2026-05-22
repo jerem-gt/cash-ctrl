@@ -346,3 +346,28 @@ export interface BalanceHistoryData {
   account_types: string[];
   data: Array<Record<string, string | number>>;
 }
+
+export interface YearlyReturn {
+  year: string;
+  start_value: number;
+  end_value: number;
+  net_flows: number;
+  gain: number;
+  return_pct: number | null;
+  is_ytd: boolean;
+}
+
+export interface AccountProfitability {
+  account_id: number;
+  account_name: string;
+  envelope_type: string | null;
+  account_type: string;
+  opening_date: string;
+  capital_investi: number;
+  capital_retire: number;
+  valeur_actuelle: number;
+  plus_value_absolue: number;
+  rendement_total_pct: number;
+  rendement_annualise_pct: number | null;
+  yearly_returns: YearlyReturn[];
+}

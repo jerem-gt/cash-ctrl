@@ -201,6 +201,15 @@ export function initSchema(db: Database) {
             name       TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS stock_price_history
+        (
+            ticker   TEXT NOT NULL,
+            date     TEXT NOT NULL,
+            price    REAL NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'EUR',
+            PRIMARY KEY (ticker, date)
+        );
+
         CREATE TABLE IF NOT EXISTS banks
         (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,

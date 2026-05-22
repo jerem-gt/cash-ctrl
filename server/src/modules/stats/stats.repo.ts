@@ -4,6 +4,31 @@ import { toEuros } from '../../lib/money';
 import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
 import type { Transaction } from '../transactions/transactions.types';
 
+export interface YearlyReturn {
+  year: string;
+  start_value: number;
+  end_value: number;
+  net_flows: number;
+  gain: number;
+  return_pct: number | null;
+  is_ytd: boolean;
+}
+
+export interface AccountProfitability {
+  account_id: number;
+  account_name: string;
+  envelope_type: string | null;
+  account_type: string;
+  opening_date: string;
+  capital_investi: number;
+  capital_retire: number;
+  valeur_actuelle: number;
+  plus_value_absolue: number;
+  rendement_total_pct: number;
+  rendement_annualise_pct: number | null;
+  yearly_returns: YearlyReturn[];
+}
+
 export interface MonthlyStat {
   month: string; // YYYY-MM
   income: number;
@@ -23,6 +48,61 @@ export interface DashboardStats {
   recent: Transaction[];
   to_validate: Transaction[];
   upcoming: Transaction[];
+}
+
+function getAllYears(openingDate: string, currentYear: number): string[] {
+  const startYear = Number.parseInt(openingDate.slice(0, 4), 10);
+  const years: string[] = [];
+  for (let y = startYear; y <= currentYear; y++) years.push(y.toString());
+  return years;
+}
+
+function twrAnnualized(
+  yearlyReturns: YearlyReturn[],
+  openingDate: string,
+  excludeYtd = false,
+): number | null {
+  const returns = excludeYtd ? yearlyReturns.filter((yr) => !yr.is_ytd) : yearlyReturns;
+  if (returns.length === 0) return null;
+  let endMs: number;
+  if (excludeYtd) {
+    const lastYear = returns[returns.length - 1].year;
+    endMs = new Date(`${lastYear}-12-31`).getTime();
+  } else {
+    endMs = Date.now();
+  }
+  const years = (endMs - new Date(openingDate).getTime()) / (365.25 * 24 * 3600 * 1000);
+  if (years < 0.5) return null;
+  const twr =
+    returns.reduce((prod, yr) => {
+      return yr.return_pct !== null ? prod * (1 + yr.return_pct / 100) : prod;
+    }, 1) - 1;
+  if (twr <= -1) return null;
+  return (Math.pow(1 + twr, 1 / years) - 1) * 100;
+}
+
+type DatedFlow = { date: string; signed_cents: number };
+
+function modifiedDietzDenominator(
+  startValue: number,
+  flows: DatedFlow[],
+  yearStart: string,
+  yearEnd: string,
+): number {
+  const startMs = new Date(yearStart).getTime();
+  const endMs = new Date(yearEnd).getTime();
+  const periodDays = (endMs - startMs) / 86_400_000;
+  if (periodDays <= 0) return startValue;
+  let weightedFlows = 0;
+  for (const flow of flows) {
+    const daysFromStart = Math.max(
+      0,
+      Math.min(periodDays, (new Date(flow.date).getTime() - startMs) / 86_400_000),
+    );
+    const weight = (periodDays - daysFromStart) / periodDays;
+    weightedFlows += weight * toEuros(flow.signed_cents);
+  }
+  return startValue + weightedFlows;
 }
 
 function firstDayOfMonth(monthsBack: number): string {
@@ -356,6 +436,611 @@ export function createStatsRepo(db: Database) {
       });
 
       return { account_types: CATEGORIES, data };
+    },
+
+    getProfitability(userId: number): AccountProfitability[] {
+      const currentYear = new Date().getUTCFullYear();
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      // ── INVESTMENT accounts ────────────────────────────────────────────────
+      type InvRow = {
+        account_id: number;
+        account_name: string;
+        envelope_type: string;
+        account_type: string;
+        opening_date: string;
+        initial_balance: number;
+        deposits_cents: number;
+        withdrawals_cents: number;
+        cash_balance_cents: number;
+      };
+      const invAccounts = db
+        .prepare<[number], InvRow>(
+          `SELECT
+             a.id AS account_id, a.name AS account_name,
+             at.envelope_type, at.name AS account_type,
+             COALESCE(a.opening_date, MIN(t.date), (SELECT MIN(so.date) FROM stock_operations so WHERE so.account_id = a.id)) AS opening_date, a.initial_balance,
+             COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+             COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
+             a.initial_balance + COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS cash_balance_cents
+           FROM accounts a
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN transactions t ON t.account_id = a.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+           GROUP BY a.id, a.name, at.envelope_type, at.name, a.initial_balance`,
+        )
+        .all(userId);
+
+      const currentStockValues = new Map(
+        db
+          .prepare<[number], { account_id: number; market_value: number }>(
+            `SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS market_value
+             FROM stock_positions sp
+             LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+             WHERE sp.user_id = ?
+             GROUP BY sp.account_id`,
+          )
+          .all(userId)
+          .map((r) => [r.account_id, r.market_value]),
+      );
+
+      type StockOpRow = {
+        account_id: number;
+        ticker: string;
+        type: string;
+        quantity: number;
+        price_per_share: number;
+        date: string;
+      };
+      const allStockOps = db
+        .prepare<[number], StockOpRow>(
+          `SELECT so.account_id, so.ticker, so.type, so.quantity, so.price_per_share, so.date
+           FROM stock_operations so
+           JOIN accounts a ON a.id = so.account_id
+           WHERE a.user_id = ?
+           ORDER BY so.date, so.id`,
+        )
+        .all(userId);
+
+      // Map<ticker, Map<'YYYY-12-31', price>>
+      const priceHistoryMap = new Map<string, Map<string, number>>();
+      for (const row of db
+        .prepare<
+          [],
+          { ticker: string; date: string; price: number }
+        >(`SELECT ticker, date, price FROM stock_price_history`)
+        .all()) {
+        if (!priceHistoryMap.has(row.ticker)) priceHistoryMap.set(row.ticker, new Map());
+        priceHistoryMap.get(row.ticker)!.set(row.date, row.price);
+      }
+
+      // Qty per (accountId:ticker) at a given year-end
+      const positionsAt = (yearEnd: string): Map<string, { qty: number; avgPrice: number }> => {
+        const pos = new Map<string, { qty: number; avgPrice: number }>();
+        for (const op of allStockOps) {
+          if (op.date > yearEnd) break;
+          const key = `${op.account_id}:${op.ticker}`;
+          const p = pos.get(key) ?? { qty: 0, avgPrice: 0 };
+          if (op.type === 'buy' || op.type === 'transfer_in') {
+            const newQty = p.qty + op.quantity;
+            p.avgPrice =
+              newQty > 0 ? (p.qty * p.avgPrice + op.quantity * op.price_per_share) / newQty : 0;
+            p.qty = newQty;
+          } else {
+            p.qty = Math.max(0, p.qty - op.quantity);
+          }
+          pos.set(key, p);
+        }
+        return pos;
+      };
+
+      const stockValueAt = (
+        accountId: number,
+        yearEnd: string,
+        positions: Map<string, { qty: number; avgPrice: number }>,
+      ): number => {
+        let total = 0;
+        for (const [key, p] of positions) {
+          if (!key.startsWith(`${accountId}:`)) continue;
+          if (p.qty <= 0) continue;
+          const ticker = key.split(':')[1];
+          const price = priceHistoryMap.get(ticker)?.get(yearEnd) ?? p.avgPrice;
+          total += p.qty * price;
+        }
+        return total;
+      };
+
+      type TxYearRow = {
+        account_id: number;
+        year: string;
+        deposits_cents: number;
+        withdrawals_cents: number;
+        delta_cents: number;
+      };
+      const invYearlyByAccount = new Map<number, TxYearRow[]>();
+      for (const row of db
+        .prepare<[number], TxYearRow>(
+          `SELECT
+             t.account_id,
+             strftime('%Y', t.date) AS year,
+             COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+             COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
+             COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS delta_cents
+           FROM transactions t
+           JOIN accounts a ON a.id = t.account_id
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+           GROUP BY t.account_id, year
+           ORDER BY t.account_id, year`,
+        )
+        .all(userId)) {
+        if (!invYearlyByAccount.has(row.account_id)) invYearlyByAccount.set(row.account_id, []);
+        invYearlyByAccount.get(row.account_id)!.push(row);
+      }
+
+      const invFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
+      for (const row of db
+        .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+          `SELECT t.account_id, t.date,
+             CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
+           FROM transactions t
+           JOIN accounts a ON a.id = t.account_id
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+             AND t.validated = 1
+             AND (
+               (t.type = 'income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id))
+               OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
+             )
+           ORDER BY t.account_id, t.date`,
+        )
+        .all(userId)) {
+        const year = row.date.slice(0, 4);
+        if (!invFlowsByAccountYear.has(row.account_id))
+          invFlowsByAccountYear.set(row.account_id, new Map());
+        const byYear = invFlowsByAccountYear.get(row.account_id)!;
+        if (!byYear.has(year)) byYear.set(year, []);
+        byYear.get(year)!.push({ date: row.date, signed_cents: row.signed_cents });
+      }
+
+      // Add stock transfer_in / transfer_out as dated flows (price_per_share in EUR → ×100 for cents)
+      const stockTransferTotals = new Map<number, { in: number; out: number }>();
+      for (const row of db
+        .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+          `SELECT so.account_id, so.date,
+             ROUND(CASE WHEN so.type='transfer_in'
+               THEN so.quantity * so.price_per_share * 100
+               ELSE -(so.quantity * so.price_per_share * 100) END) AS signed_cents
+           FROM stock_operations so
+           JOIN accounts a ON a.id = so.account_id
+           JOIN account_types at ON a.account_type_id = at.id
+           WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+             AND so.type IN ('transfer_in','transfer_out')
+           ORDER BY so.account_id, so.date`,
+        )
+        .all(userId)) {
+        const year = row.date.slice(0, 4);
+        if (!invFlowsByAccountYear.has(row.account_id))
+          invFlowsByAccountYear.set(row.account_id, new Map());
+        const byYear = invFlowsByAccountYear.get(row.account_id)!;
+        if (!byYear.has(year)) byYear.set(year, []);
+        byYear.get(year)!.push({ date: row.date, signed_cents: row.signed_cents });
+        // Accumulate totals for capital_investi
+        const t = stockTransferTotals.get(row.account_id) ?? { in: 0, out: 0 };
+        if (row.signed_cents >= 0) {
+          t.in += row.signed_cents;
+        } else {
+          t.out += -row.signed_cents;
+        }
+        stockTransferTotals.set(row.account_id, t);
+      }
+
+      const investmentResults: AccountProfitability[] = invAccounts
+        .filter((acc) => acc.opening_date !== null)
+        .map((acc) => {
+          const transfers = stockTransferTotals.get(acc.account_id) ?? { in: 0, out: 0 };
+          const capitalInvesti = toEuros(
+            acc.initial_balance +
+              acc.deposits_cents -
+              acc.withdrawals_cents +
+              transfers.in -
+              transfers.out,
+          );
+          const currentStocks = currentStockValues.get(acc.account_id) ?? 0;
+          const currentCash = toEuros(acc.cash_balance_cents);
+          const valeurActuelle = currentCash + currentStocks;
+          const plusValue = valeurActuelle - capitalInvesti;
+          const rendementTotalPct = capitalInvesti > 0 ? (plusValue / capitalInvesti) * 100 : 0;
+
+          const years = getAllYears(acc.opening_date, currentYear);
+          const yearlyRows = invYearlyByAccount.get(acc.account_id) ?? [];
+          const yearlyRowMap = new Map(yearlyRows.map((r) => [r.year, r]));
+
+          const yearly_returns: YearlyReturn[] = [];
+          let runningCash = 0;
+          let prevStockValue = 0;
+
+          for (const year of years) {
+            const yearEnd = `${year}-12-31`;
+            const isCurrentYear = Number.parseInt(year, 10) === currentYear;
+            const isFirstYear = year === years[0];
+            const row = yearlyRowMap.get(year);
+
+            const start_value = runningCash + prevStockValue;
+            const yearCashFlows = invFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
+            const yearFlows: DatedFlow[] =
+              isFirstYear && acc.initial_balance !== 0
+                ? [{ date: acc.opening_date!, signed_cents: acc.initial_balance }, ...yearCashFlows]
+                : yearCashFlows;
+            const netFlows = yearFlows.reduce((s, f) => s + toEuros(f.signed_cents), 0);
+            runningCash +=
+              (isFirstYear ? toEuros(acc.initial_balance) : 0) +
+              (row ? toEuros(row.delta_cents) : 0);
+
+            const stockValue = isCurrentYear
+              ? (currentStockValues.get(acc.account_id) ?? 0)
+              : stockValueAt(acc.account_id, yearEnd, positionsAt(yearEnd));
+
+            const end_value = runningCash + stockValue;
+            const gain = end_value - start_value - netFlows;
+            const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
+            const dietzDenominator = modifiedDietzDenominator(
+              start_value,
+              yearFlows,
+              `${year}-01-01`,
+              periodEnd,
+            );
+            const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
+
+            yearly_returns.push({
+              year,
+              start_value,
+              end_value,
+              net_flows: netFlows,
+              gain,
+              return_pct,
+              is_ytd: isCurrentYear,
+            });
+
+            prevStockValue = stockValue;
+          }
+
+          const rendement_annualise_pct = twrAnnualized(yearly_returns, acc.opening_date!);
+
+          return {
+            account_id: acc.account_id,
+            account_name: acc.account_name,
+            envelope_type: acc.envelope_type,
+            account_type: acc.account_type,
+            opening_date: acc.opening_date,
+            capital_investi: capitalInvesti,
+            capital_retire: toEuros(acc.withdrawals_cents + transfers.out),
+            valeur_actuelle: valeurActuelle,
+            plus_value_absolue: plusValue,
+            rendement_total_pct: rendementTotalPct,
+            rendement_annualise_pct,
+            yearly_returns,
+          };
+        });
+
+      // ── INSURANCE accounts (AV / PER) ─────────────────────────────────────
+      type InsRow = {
+        account_id: number;
+        account_name: string;
+        envelope_type: string;
+        account_type: string;
+        opening_date: string;
+        versements_cents: number;
+        rachats_cents: number;
+        balance_eur: number;
+      };
+      const insAccounts = db
+        .prepare<[number], InsRow>(
+          `SELECT
+             a.id AS account_id, a.name AS account_name,
+             at.envelope_type, at.name AS account_type,
+             COALESCE(a.opening_date, MIN(io.date)) AS opening_date,
+             COALESCE(SUM(CASE WHEN io.type='versement' THEN io.amount ELSE 0 END),0) AS versements_cents,
+             COALESCE(SUM(CASE WHEN io.type='rachat' THEN io.amount ELSE 0 END),0) AS rachats_cents,
+             COALESCE(SUM(
+               (CASE WHEN io.type IN ('versement','arbitrage_in','interets','revalorisation')
+                     THEN io.amount ELSE -io.amount END) - io.fees - io.social_fees
+             ),0) * 1.0 / 100 AS balance_eur
+           FROM accounts a
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN insurance_operations io ON io.account_id = a.id
+           WHERE a.user_id = ? AND at.envelope_type IN ('life_insurance','per') AND a.closed_at IS NULL
+           GROUP BY a.id, a.name, at.envelope_type, at.name`,
+        )
+        .all(userId);
+
+      type InsYearRow = {
+        account_id: number;
+        year: string;
+        versements_cents: number;
+        rachats_cents: number;
+        delta_cents: number;
+      };
+      const insYearlyByAccount = new Map<number, InsYearRow[]>();
+      for (const row of db
+        .prepare<[number], InsYearRow>(
+          `SELECT
+             io.account_id,
+             strftime('%Y', io.date) AS year,
+             COALESCE(SUM(CASE WHEN io.type='versement' THEN io.amount ELSE 0 END),0) AS versements_cents,
+             COALESCE(SUM(CASE WHEN io.type='rachat' THEN io.amount ELSE 0 END),0) AS rachats_cents,
+             COALESCE(SUM(
+               (CASE WHEN io.type IN ('versement','arbitrage_in','interets','revalorisation')
+                     THEN io.amount ELSE -io.amount END) - io.fees - io.social_fees
+             ),0) AS delta_cents
+           FROM insurance_operations io
+           JOIN accounts a ON a.id = io.account_id
+           WHERE a.user_id = ? AND a.closed_at IS NULL
+           GROUP BY io.account_id, year
+           ORDER BY io.account_id, year`,
+        )
+        .all(userId)) {
+        if (!insYearlyByAccount.has(row.account_id)) insYearlyByAccount.set(row.account_id, []);
+        insYearlyByAccount.get(row.account_id)!.push(row);
+      }
+
+      const insFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
+      for (const row of db
+        .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+          `SELECT io.account_id, io.date,
+             CASE WHEN io.type='versement' THEN io.amount ELSE -io.amount END AS signed_cents
+           FROM insurance_operations io
+           JOIN accounts a ON a.id = io.account_id
+           WHERE a.user_id = ? AND a.closed_at IS NULL
+             AND io.type IN ('versement','rachat')
+           ORDER BY io.account_id, io.date`,
+        )
+        .all(userId)) {
+        const year = row.date.slice(0, 4);
+        if (!insFlowsByAccountYear.has(row.account_id))
+          insFlowsByAccountYear.set(row.account_id, new Map());
+        const byYear = insFlowsByAccountYear.get(row.account_id)!;
+        if (!byYear.has(year)) byYear.set(year, []);
+        byYear.get(year)!.push({ date: row.date, signed_cents: row.signed_cents });
+      }
+
+      const insuranceResults: AccountProfitability[] = insAccounts
+        .filter((acc) => acc.opening_date !== null)
+        .map((acc) => {
+          const capitalInvesti = toEuros(acc.versements_cents);
+          const capitalRetire = toEuros(acc.rachats_cents);
+          const valeurActuelle = acc.balance_eur;
+          const plusValue = valeurActuelle + capitalRetire - capitalInvesti;
+          const rendementTotalPct = capitalInvesti > 0 ? (plusValue / capitalInvesti) * 100 : 0;
+
+          const years = getAllYears(acc.opening_date, currentYear);
+          const yearlyRows = insYearlyByAccount.get(acc.account_id) ?? [];
+          const yearlyRowMap = new Map(yearlyRows.map((r) => [r.year, r]));
+
+          const yearly_returns: YearlyReturn[] = [];
+          let runningBalance = 0;
+
+          for (const year of years) {
+            const isCurrentYear = Number.parseInt(year, 10) === currentYear;
+            const row = yearlyRowMap.get(year);
+
+            const start_value = runningBalance;
+            const netFlows = row ? toEuros(row.versements_cents - row.rachats_cents) : 0;
+            const delta = row ? toEuros(row.delta_cents) : 0;
+            const end_value = isCurrentYear ? valeurActuelle : runningBalance + delta;
+            const gain = end_value - start_value - netFlows;
+            const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
+            const yearFlows = insFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
+            const dietzDenominator = modifiedDietzDenominator(
+              start_value,
+              yearFlows,
+              `${year}-01-01`,
+              periodEnd,
+            );
+            const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
+
+            yearly_returns.push({
+              year,
+              start_value,
+              end_value,
+              net_flows: netFlows,
+              gain,
+              return_pct,
+              is_ytd: isCurrentYear,
+            });
+
+            runningBalance = end_value;
+          }
+
+          const rendement_annualise_pct = twrAnnualized(yearly_returns, acc.opening_date!, true);
+
+          return {
+            account_id: acc.account_id,
+            account_name: acc.account_name,
+            envelope_type: acc.envelope_type,
+            account_type: acc.account_type,
+            opening_date: acc.opening_date,
+            capital_investi: capitalInvesti,
+            capital_retire: capitalRetire,
+            valeur_actuelle: valeurActuelle,
+            plus_value_absolue: plusValue,
+            rendement_total_pct: rendementTotalPct,
+            rendement_annualise_pct,
+            yearly_returns,
+          };
+        });
+
+      // ── SAVINGS (Épargne) accounts ─────────────────────────────────────────
+      type SavRow = {
+        account_id: number;
+        account_name: string;
+        envelope_type: string | null;
+        account_type: string;
+        opening_date: string;
+        initial_balance: number;
+        deposits_cents: number;
+        withdrawals_cents: number;
+        balance_cents: number;
+      };
+      const savAccounts = db
+        .prepare<[number], SavRow>(
+          `SELECT
+             a.id AS account_id, a.name AS account_name,
+             at.envelope_type, at.name AS account_type,
+             COALESCE(a.opening_date, MIN(t.date)) AS opening_date, a.initial_balance,
+             COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+             COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
+             a.initial_balance + COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS balance_cents
+           FROM accounts a
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN transactions t ON t.account_id = a.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne' AND a.closed_at IS NULL
+           GROUP BY a.id, a.name, at.envelope_type, at.name, a.initial_balance`,
+        )
+        .all(userId);
+
+      type SavYearRow = {
+        account_id: number;
+        year: string;
+        deposits_cents: number;
+        withdrawals_cents: number;
+        delta_cents: number;
+      };
+      const savYearlyByAccount = new Map<number, SavYearRow[]>();
+      for (const row of db
+        .prepare<[number], SavYearRow>(
+          `SELECT
+             t.account_id,
+             strftime('%Y', t.date) AS year,
+             COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+             COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
+             COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS delta_cents
+           FROM transactions t
+           JOIN accounts a ON a.id = t.account_id
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne' AND a.closed_at IS NULL
+           GROUP BY t.account_id, year
+           ORDER BY t.account_id, year`,
+        )
+        .all(userId)) {
+        if (!savYearlyByAccount.has(row.account_id)) savYearlyByAccount.set(row.account_id, []);
+        savYearlyByAccount.get(row.account_id)!.push(row);
+      }
+
+      const savFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
+      for (const row of db
+        .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+          `SELECT t.account_id, t.date,
+             CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
+           FROM transactions t
+           JOIN accounts a ON a.id = t.account_id
+           JOIN account_types at ON a.account_type_id = at.id
+           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne'
+             AND a.closed_at IS NULL
+             AND t.validated = 1
+             AND (
+               (t.type = 'income' AND (c.name IS NULL OR c.name != 'Revenus financiers'))
+               OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
+             )
+           ORDER BY t.account_id, t.date`,
+        )
+        .all(userId)) {
+        const year = row.date.slice(0, 4);
+        if (!savFlowsByAccountYear.has(row.account_id))
+          savFlowsByAccountYear.set(row.account_id, new Map());
+        const byYear = savFlowsByAccountYear.get(row.account_id)!;
+        if (!byYear.has(year)) byYear.set(year, []);
+        byYear.get(year)!.push({ date: row.date, signed_cents: row.signed_cents });
+      }
+
+      const savingsResults: AccountProfitability[] = savAccounts
+        .filter((acc) => acc.opening_date !== null)
+        .map((acc) => {
+          const capitalInvesti = toEuros(
+            acc.initial_balance + acc.deposits_cents - acc.withdrawals_cents,
+          );
+          const valeurActuelle = toEuros(acc.balance_cents);
+          const plusValue = valeurActuelle - capitalInvesti;
+          const rendementTotalPct = capitalInvesti > 0 ? (plusValue / capitalInvesti) * 100 : 0;
+
+          const years = getAllYears(acc.opening_date, currentYear);
+          const yearlyRows = savYearlyByAccount.get(acc.account_id) ?? [];
+          const yearlyRowMap = new Map(yearlyRows.map((r) => [r.year, r]));
+
+          const yearly_returns: YearlyReturn[] = [];
+          let runningBalance = 0;
+
+          for (const year of years) {
+            const isCurrentYear = Number.parseInt(year, 10) === currentYear;
+            const isFirstYear = year === years[0];
+            const row = yearlyRowMap.get(year);
+
+            const start_value = runningBalance;
+            const yearCashFlows = savFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
+            const yearFlows: DatedFlow[] =
+              isFirstYear && acc.initial_balance !== 0
+                ? [{ date: acc.opening_date!, signed_cents: acc.initial_balance }, ...yearCashFlows]
+                : yearCashFlows;
+            const netFlows = yearFlows.reduce((s, f) => s + toEuros(f.signed_cents), 0);
+            const economicEnd =
+              runningBalance +
+              (isFirstYear ? toEuros(acc.initial_balance) : 0) +
+              (row ? toEuros(row.delta_cents) : 0);
+            const end_value = isCurrentYear ? valeurActuelle : economicEnd;
+            const gain = end_value - start_value - netFlows;
+            const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
+            const dietzDenominator = modifiedDietzDenominator(
+              start_value,
+              yearFlows,
+              `${year}-01-01`,
+              periodEnd,
+            );
+            const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
+
+            yearly_returns.push({
+              year,
+              start_value,
+              end_value,
+              net_flows: netFlows,
+              gain,
+              return_pct,
+              is_ytd: isCurrentYear,
+            });
+
+            runningBalance = economicEnd;
+          }
+
+          const rendement_annualise_pct = twrAnnualized(yearly_returns, acc.opening_date!, true);
+
+          return {
+            account_id: acc.account_id,
+            account_name: acc.account_name,
+            envelope_type: acc.envelope_type,
+            account_type: acc.account_type,
+            opening_date: acc.opening_date,
+            capital_investi: capitalInvesti,
+            capital_retire: toEuros(acc.withdrawals_cents),
+            valeur_actuelle: valeurActuelle,
+            plus_value_absolue: plusValue,
+            rendement_total_pct: rendementTotalPct,
+            rendement_annualise_pct,
+            yearly_returns,
+          };
+        });
+
+      return [...investmentResults, ...insuranceResults, ...savingsResults];
     },
   };
 }
