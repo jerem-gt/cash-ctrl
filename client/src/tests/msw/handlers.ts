@@ -12,6 +12,7 @@ import {
   LOAN_INSTALLMENTS,
   PAYMENT_METHODS,
   PENDING_REIMBURSEMENTS,
+  PROFITABILITY_DATA,
   RECENT_REIMBURSEMENTS,
   REIMBURSEMENTS,
   SCHEDULED,
@@ -273,6 +274,7 @@ export const handlers = [
     }),
   ),
   http.get('/api/stats/balance-history', () => HttpResponse.json({ account_types: [], data: [] })),
+  http.get('/api/stats/profitability', () => HttpResponse.json(PROFITABILITY_DATA)),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

@@ -101,6 +101,29 @@ export function createStocksRepo(db: Database) {
     VALUES (:ticker, :price, :currency, :name, datetime('now'))
   `);
 
+  const upsertPriceHistoryStmt = db.prepare(`
+    INSERT OR REPLACE INTO stock_price_history (ticker, date, price, currency)
+    VALUES (:ticker, :date, :price, :currency)
+  `);
+
+  const getPriceHistoryStmt = db.prepare<
+    { ticker: string },
+    { date: string; price: number; currency: string }
+  >(`SELECT date, price, currency FROM stock_price_history WHERE ticker = :ticker ORDER BY date`);
+
+  const hasPriceHistoryStmt = db.prepare<{ ticker: string }, { cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM stock_price_history WHERE ticker = :ticker`,
+  );
+
+  const getTickersForUserStmt = db
+    .prepare<[number], string>(
+      `SELECT DISTINCT so.ticker
+       FROM stock_operations so
+       JOIN accounts a ON a.id = so.account_id
+       WHERE a.user_id = ? AND a.closed_at IS NULL`,
+    )
+    .pluck();
+
   return {
     accountBelongsToUser: (accountId: number, userId: number): boolean =>
       checkAccountOwnership(db, accountId, userId),
@@ -287,6 +310,29 @@ export function createStocksRepo(db: Database) {
     getAllTickers: () => getAllTickersStmt.all(),
     upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
       upsertPriceStmt.run({ ticker, price, currency, name }),
+
+    upsertPriceHistory(
+      ticker: string,
+      entries: Array<{ date: string; price: number; currency: string }>,
+    ): void {
+      db.transaction(() => {
+        for (const e of entries) {
+          upsertPriceHistoryStmt.run({
+            ticker,
+            date: e.date,
+            price: e.price,
+            currency: e.currency,
+          });
+        }
+      })();
+    },
+
+    getPriceHistory: (ticker: string) => getPriceHistoryStmt.all({ ticker }),
+
+    hasPriceHistory: (ticker: string): boolean =>
+      (hasPriceHistoryStmt.get({ ticker })?.cnt ?? 0) > 0,
+
+    getTickersForUser: (userId: number): string[] => getTickersForUserStmt.all(userId) as string[],
 
     getOperationById(operationId: number): StockOperation | undefined {
       const row =

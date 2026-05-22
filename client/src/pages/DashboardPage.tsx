@@ -17,7 +17,7 @@ import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
-import { useBalanceHistory, useDashboardStats } from '@/hooks/useStats';
+import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/useStats';
 import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: balanceHistory } = useBalanceHistory();
+  const { data: profitabilityList = [] } = useProfitability();
   const { data: categories = [] } = useCategories();
   const { data: banks = [] } = useBanks();
   const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
@@ -445,6 +446,52 @@ export default function DashboardPage() {
             </Card>
           );
         })()}
+
+      {/* Rendement de mes placements */}
+      {profitabilityList.length > 0 && (
+        <Card>
+          <CardTitle>Rendement de mes placements</CardTitle>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-stone-400 border-b border-stone-100">
+                  <th className="text-left py-1.5 pr-4 font-normal">Compte</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">Capital investi</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">Valeur actuelle</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">+/- value</th>
+                  <th className="text-right py-1.5 font-normal">% / an</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profitabilityList.map((p) => {
+                  const gainPos = p.plus_value_absolue >= 0;
+                  const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
+                  return (
+                    <tr key={p.account_id} className="border-b border-stone-50 last:border-0">
+                      <td className="py-1.5 pr-4 font-medium">{p.account_name}</td>
+                      <td className="text-right py-1.5 pr-4 tabular-nums text-stone-500">
+                        {fmt(p.capital_investi)}
+                      </td>
+                      <td className="text-right py-1.5 pr-4 tabular-nums">
+                        {fmt(p.valeur_actuelle)}
+                      </td>
+                      <td className={`text-right py-1.5 pr-4 tabular-nums ${gainColor}`}>
+                        {gainPos ? '+' : ''}
+                        {fmt(p.plus_value_absolue)}
+                      </td>
+                      <td className={`text-right py-1.5 tabular-nums ${gainColor}`}>
+                        {p.rendement_annualise_pct !== null
+                          ? `${p.rendement_annualise_pct >= 0 ? '+' : ''}${p.rendement_annualise_pct.toFixed(1)} %`
+                          : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

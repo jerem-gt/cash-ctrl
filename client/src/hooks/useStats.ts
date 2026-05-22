@@ -17,3 +17,11 @@ export function useBalanceHistory() {
     staleTime: 5 * 60_000,
   });
 }
+
+export function useProfitability() {
+  return useQuery({
+    queryKey: ['profitability'],
+    queryFn: statsApi.profitability,
+    staleTime: 60_000,
+  });
+}

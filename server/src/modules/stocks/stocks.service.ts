@@ -50,6 +50,66 @@ export interface PriceRepository {
   upsertPrice(ticker: string, price: number, currency: string, name: string | null): unknown;
 }
 
+export interface PriceHistoryRepository {
+  upsertPriceHistory(
+    ticker: string,
+    entries: Array<{ date: string; price: number; currency: string }>,
+  ): void;
+  hasPriceHistory(ticker: string): boolean;
+}
+
+export async function fetchAndStorePriceHistory(
+  repo: PriceHistoryRepository,
+  ticker: string,
+): Promise<void> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1mo&range=10y`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'cashctrl/1.0' },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return;
+
+    const data = (await res.json()) as {
+      chart?: {
+        result?: Array<{
+          meta?: { currency?: string };
+          timestamp?: number[];
+          indicators?: { quote?: Array<{ close?: (number | null)[] }> };
+        }>;
+      };
+    };
+
+    const result = data.chart?.result?.[0];
+    if (!result?.timestamp || !result.indicators?.quote?.[0]?.close) return;
+
+    const currency = result.meta?.currency ?? 'EUR';
+    const timestamps = result.timestamp;
+    const closes = result.indicators.quote[0].close;
+    const currentYear = new Date().getUTCFullYear();
+
+    // Keep last available monthly close per calendar year (skip current year — use live prices)
+    const yearData = new Map<number, number>();
+    for (let i = 0; i < timestamps.length; i++) {
+      const close = closes[i];
+      if (close === null || close === undefined || !Number.isFinite(close)) continue;
+      const year = new Date(timestamps[i] * 1000).getUTCFullYear();
+      if (year >= currentYear) continue;
+      yearData.set(year, close); // later iterations overwrite → last close of the year
+    }
+
+    const entries = Array.from(yearData.entries()).map(([year, price]) => ({
+      date: `${year}-12-31`,
+      price,
+      currency,
+    }));
+
+    if (entries.length > 0) repo.upsertPriceHistory(ticker, entries);
+  } catch {
+    // Historical data is optional — fail silently
+  }
+}
+
 async function fetchYahooPrice(ticker: string): Promise<StockPrice | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;

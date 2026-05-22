@@ -1,5 +1,6 @@
 import type {
   Account,
+  AccountProfitability,
   AccountType,
   AppVersion,
   BackupFile,
@@ -418,6 +419,7 @@ export type UpdateLoanPayload = {
 export const statsApi = {
   dashboard: () => request<DashboardStats>('GET', '/api/stats'),
   balanceHistory: () => request<BalanceHistoryData>('GET', '/api/stats/balance-history'),
+  profitability: () => request<AccountProfitability[]>('GET', '/api/stats/profitability'),
 };
 
 export const loansApi = {

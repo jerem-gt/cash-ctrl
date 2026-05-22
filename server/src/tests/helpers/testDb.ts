@@ -18,6 +18,7 @@ export const SEED = {
   SUBCAT_CINEMA: 4,
   SUBCAT_LOYER: 5,
   SUBCAT_TRANSFERT: 6,
+  SUBCAT_INTERETS: 7,
   PM_VIREMENT: 1,
   PM_CARTE: 2,
   PM_TRANSFERT: 3,
@@ -74,6 +75,11 @@ export function seedTestReferenceData(db: Database, userId: number) {
     'Transfert',
     '🔄',
   );
+  db.prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)').run(
+    userId,
+    'Revenus financiers',
+    '📈',
+  );
 
   db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
     userId,
@@ -104,6 +110,11 @@ export function seedTestReferenceData(db: Database, userId: number) {
     userId,
     'Transfert',
     6,
+  );
+  db.prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)').run(
+    userId,
+    'Intérêts',
+    7,
   );
 
   db.prepare('INSERT INTO payment_methods (user_id, name) VALUES (?, ?)').run(userId, 'Virement');
