@@ -22,7 +22,7 @@ interface Props {
   data: AccountProfitability;
 }
 
-export function ProfitabilityCard({ data }: Props) {
+export function ProfitabilityCard({ data }: Readonly<Props>) {
   const isSavings = data.envelope_type === null;
   const gainPos = data.plus_value_absolue >= 0;
   const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
@@ -55,9 +55,9 @@ export function ProfitabilityCard({ data }: Props) {
         <div>
           <div className="text-xs text-stone-500 mb-0.5">Rendement annuel</div>
           <div className="font-semibold">
-            {data.rendement_annualise_pct !== null
-              ? `${sign(data.rendement_annualise_pct)}${data.rendement_annualise_pct.toFixed(2)} % / an`
-              : '—'}
+            {data.rendement_annualise_pct === null
+              ? '—'
+              : `${sign(data.rendement_annualise_pct)}${data.rendement_annualise_pct.toFixed(2)} % / an`}
           </div>
           <div className="text-xs text-stone-400">{formatDuration(data.opening_date)}</div>
         </div>
@@ -106,16 +106,16 @@ export function ProfitabilityCard({ data }: Props) {
                           {fmt(yr.start_value)}
                         </td>
                         <td className="text-right py-1.5 pr-4 tabular-nums text-stone-500">
-                          {yr.net_flows !== 0 ? `${sign(yr.net_flows)}${fmt(yr.net_flows)}` : '—'}
+                          {yr.net_flows === 0 ? '—' : `${sign(yr.net_flows)}${fmt(yr.net_flows)}`}
                         </td>
                         <td className={`text-right py-1.5 pr-4 tabular-nums ${yrColor}`}>
                           {sign(yr.gain)}
                           {fmt(yr.gain)}
                         </td>
                         <td className={`text-right py-1.5 tabular-nums ${yrColor}`}>
-                          {yr.return_pct !== null
-                            ? `${sign(yr.return_pct)}${yr.return_pct.toFixed(1)} %`
-                            : '—'}
+                          {yr.return_pct === null
+                            ? '—'
+                            : `${sign(yr.return_pct)}${yr.return_pct.toFixed(1)} %`}
                         </td>
                       </tr>
                     );
