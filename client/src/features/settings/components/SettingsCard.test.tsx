@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SettingsCard } from './SettingsCard';
@@ -7,13 +8,32 @@ import { SettingsCard } from './SettingsCard';
 const baseProps = {
   title: 'Ma carte',
   icon: '🧪',
-  editContent: (close: () => void) => (
+  isEditing: false,
+  onEditStart: vi.fn(),
+  editContent: (
     <>
       <input aria-label="Nom édition" defaultValue="test" />
-      <button onClick={close}>Fermer</button>
     </>
   ),
 };
+
+function ToggleableCard(props: Partial<typeof baseProps> = {}) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <SettingsCard
+      {...baseProps}
+      {...props}
+      isEditing={editing}
+      onEditStart={() => setEditing(true)}
+      editContent={
+        <>
+          <input aria-label="Nom édition" defaultValue="test" />
+          <button onClick={() => setEditing(false)}>Fermer</button>
+        </>
+      }
+    />
+  );
+}
 
 describe('SettingsCard', () => {
   describe('mode lecture', () => {
@@ -71,24 +91,35 @@ describe('SettingsCard', () => {
   });
 
   describe('mode édition', () => {
-    it('bascule en mode édition au clic sur Modifier', async () => {
+    it('appelle onEditStart au clic sur Modifier', async () => {
       const user = userEvent.setup();
-      render(<SettingsCard {...baseProps} />);
+      const onEditStart = vi.fn();
+      render(<SettingsCard {...baseProps} onEditStart={onEditStart} />);
       await user.click(screen.getByRole('button', { name: /Modifier/i }));
+      expect(onEditStart).toHaveBeenCalledOnce();
+    });
+
+    it('affiche le editContent quand isEditing=true', () => {
+      render(<SettingsCard {...baseProps} isEditing={true} />);
       expect(screen.getByLabelText('Nom édition')).toBeInTheDocument();
     });
 
-    it('masque les boutons Modifier et Supprimer en mode édition', async () => {
-      const user = userEvent.setup();
-      render(<SettingsCard {...baseProps} onDelete={vi.fn()} />);
-      await user.click(screen.getByRole('button', { name: /Modifier/i }));
+    it('masque les boutons Modifier et Supprimer en mode édition', () => {
+      render(<SettingsCard {...baseProps} isEditing={true} onDelete={vi.fn()} />);
       expect(screen.queryByRole('button', { name: /Modifier/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Supprimer/i })).not.toBeInTheDocument();
     });
 
-    it('close() retourne en mode lecture', async () => {
+    it('bascule en mode édition au clic sur Modifier', async () => {
       const user = userEvent.setup();
-      render(<SettingsCard {...baseProps} />);
+      render(<ToggleableCard />);
+      await user.click(screen.getByRole('button', { name: /Modifier/i }));
+      expect(screen.getByLabelText('Nom édition')).toBeInTheDocument();
+    });
+
+    it('retourne en mode lecture via le close du formulaire', async () => {
+      const user = userEvent.setup();
+      render(<ToggleableCard />);
       await user.click(screen.getByRole('button', { name: /Modifier/i }));
       await user.click(screen.getByRole('button', { name: /Fermer/i }));
       expect(screen.getByRole('button', { name: /Modifier/i })).toBeInTheDocument();

@@ -34,12 +34,84 @@ const ENVELOPE_OPTIONS = [
   { value: 'per', label: 'PER' },
 ];
 
-function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
+function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClose: () => void }>) {
   const updateAt = useUpdateAccountType();
-  const deleteAt = useDeleteAccountType();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const [name, setName] = useState(at.name);
   const [envelopeType, setEnvelopeType] = useState(at.envelope_type ?? '');
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        updateAt.mutate(
+          { id: at.id, name: name.trim(), envelope_type: envelopeType || null },
+          {
+            onSuccess: () => {
+              onClose();
+              showToast('Type mis à jour ✓');
+            },
+            onError: (err) => showToast(err.message),
+          },
+        );
+      }}
+      className="flex flex-col gap-3"
+    >
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        Modifier le type
+      </p>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+        placeholder="Nom"
+        autoFocus
+      />
+      <div>
+        <label
+          htmlFor={`edit-at-envelope-${at.id}`}
+          className="text-[11px] text-stone-500 block mb-1"
+        >
+          Enveloppe
+        </label>
+        <select
+          id={`edit-at-envelope-${at.id}`}
+          value={envelopeType}
+          onChange={(e) => setEnvelopeType(e.target.value)}
+          className="text-sm border border-black/10 rounded-lg px-2 py-1.5 bg-white w-full focus:outline-none"
+        >
+          {ENVELOPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={updateAt.isPending}
+          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
+        >
+          {updateAt.isPending ? '…' : 'Enregistrer'}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
+        >
+          Annuler
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
+  const [editing, setEditing] = useState(false);
+  const deleteAt = useDeleteAccountType();
+  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const accCount = at.acc_count ?? 0;
 
   return (
@@ -75,77 +147,9 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
             'Type supprimé',
           )
         }
-        editContent={(close) => (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!name.trim()) return;
-              updateAt.mutate(
-                { id: at.id, name: name.trim(), envelope_type: envelopeType || null },
-                {
-                  onSuccess: () => {
-                    close();
-                    showToast('Type mis à jour ✓');
-                  },
-                  onError: (err) => showToast(err.message),
-                },
-              );
-            }}
-            className="flex flex-col gap-3"
-          >
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-              Modifier le type
-            </p>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-              placeholder="Nom"
-              autoFocus
-            />
-            <div>
-              <label
-                htmlFor={`edit-at-envelope-${at.id}`}
-                className="text-[11px] text-stone-500 block mb-1"
-              >
-                Enveloppe
-              </label>
-              <select
-                id={`edit-at-envelope-${at.id}`}
-                value={envelopeType}
-                onChange={(e) => setEnvelopeType(e.target.value)}
-                className="text-sm border border-black/10 rounded-lg px-2 py-1.5 bg-white w-full focus:outline-none"
-              >
-                {ENVELOPE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={updateAt.isPending}
-                className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-              >
-                {updateAt.isPending ? '…' : 'Enregistrer'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setName(at.name);
-                  setEnvelopeType(at.envelope_type ?? '');
-                  close();
-                }}
-                className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
-              >
-                Annuler
-              </button>
-            </div>
-          </form>
-        )}
+        isEditing={editing}
+        onEditStart={() => setEditing(true)}
+        editContent={<AccountTypeEditForm at={at} onClose={() => setEditing(false)} />}
       />
       <DeleteConfirmModal />
     </>

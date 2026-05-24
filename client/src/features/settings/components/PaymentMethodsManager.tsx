@@ -12,11 +12,75 @@ import {
 } from '@/hooks/usePaymentMethods.ts';
 import { PaymentMethod } from '@/types.ts';
 
-function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
+function PaymentMethodEditForm({
+  pm,
+  onClose,
+}: Readonly<{ pm: PaymentMethod; onClose: () => void }>) {
   const updatePm = useUpdatePaymentMethod();
+  const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!form.name.trim()) return;
+        updatePm.mutate(
+          { id: pm.id, name: form.name.trim(), icon: form.icon },
+          {
+            onSuccess: () => {
+              onClose();
+              showToast('Moyen de paiement mis à jour ✓');
+            },
+            onError: (err) => showToast(err.message),
+          },
+        );
+      }}
+      className="flex flex-col gap-3"
+    >
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        Modifier le moyen de paiement
+      </p>
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={form.icon}
+          onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+          className="w-10 text-center text-base bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors font-medium"
+          placeholder="💶"
+        />
+        <input
+          type="text"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          className="flex-1 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+          placeholder="Nom"
+          autoFocus
+        />
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={updatePm.isPending}
+          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
+        >
+          {updatePm.isPending ? '…' : 'Enregistrer'}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
+        >
+          Annuler
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
+  const [editing, setEditing] = useState(false);
   const deletePm = useDeletePaymentMethod();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
-  const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
   const txCount = pm.tx_count ?? 0;
 
   return (
@@ -37,65 +101,9 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
             'Moyen de paiement supprimé',
           )
         }
-        editContent={(close) => (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!form.name.trim()) return;
-              updatePm.mutate(
-                { id: pm.id, name: form.name.trim(), icon: form.icon },
-                {
-                  onSuccess: () => {
-                    close();
-                    showToast('Moyen de paiement mis à jour ✓');
-                  },
-                  onError: (err) => showToast(err.message),
-                },
-              );
-            }}
-            className="flex flex-col gap-3"
-          >
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-              Modifier le moyen de paiement
-            </p>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={form.icon}
-                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                className="w-10 text-center text-base bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors font-medium"
-                placeholder="💶"
-              />
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="flex-1 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-                placeholder="Nom"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={updatePm.isPending}
-                className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-              >
-                {updatePm.isPending ? '…' : 'Enregistrer'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setForm({ name: pm.name, icon: pm.icon });
-                  close();
-                }}
-                className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
-              >
-                Annuler
-              </button>
-            </div>
-          </form>
-        )}
+        isEditing={editing}
+        onEditStart={() => setEditing(true)}
+        editContent={<PaymentMethodEditForm pm={pm} onClose={() => setEditing(false)} />}
       />
       <DeleteConfirmModal />
     </>
