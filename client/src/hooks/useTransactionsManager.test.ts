@@ -26,7 +26,7 @@ vi.mock('@/hooks/useTransactions', () => ({
 vi.mock('@/hooks/useCategories');
 vi.mock('@/hooks/useAccounts');
 vi.mock('@/hooks/usePaymentMethods');
-vi.mock('@/components/ui.tsx', () => ({
+vi.mock('@/components/ui', () => ({
   showToast: vi.fn(),
 }));
 

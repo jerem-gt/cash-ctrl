@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { ListContent } from '@/components/ListContent.tsx';
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
 import { SubcategoryRow } from '@/features/settings/components/categories/SubcategoryRow.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';

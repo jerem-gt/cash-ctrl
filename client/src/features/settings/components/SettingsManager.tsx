@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui.tsx';
+import { Skeleton } from '@/components/ui';
 
 export function SettingsManagerSkeleton() {
   return (

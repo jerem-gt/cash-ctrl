@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { ListContent } from '@/components/ListContent.tsx';
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { CategoryDetails } from '@/features/settings/components/categories/CategoryDetails.tsx';
 import {
   CategoryEditor,

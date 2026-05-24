@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ConfirmModal } from '@/components/ui.tsx';
+import { ConfirmModal } from '@/components/ui';
 
 type PendingDelete = { title: string; body: string; onConfirm: () => void };
 type DeleteMutateFn = (

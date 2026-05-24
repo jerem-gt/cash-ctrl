@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 
 import { useAppVersion } from '../hooks/useAppVersion.ts';
-import { showToast } from './ui.tsx';
+import { showToast } from './ui';
 
 const TRIGGER_CLICKS = 7;
 

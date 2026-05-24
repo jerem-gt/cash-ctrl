@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { importApi, JsonFullImportResult } from '@/api/client.ts';
-import { Button, Card, DecimalInput, Select } from '@/components/ui.tsx';
+import { Button, Card, DecimalInput, Select } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
 import { useBanks } from '@/hooks/useBanks.ts';

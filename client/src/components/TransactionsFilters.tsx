@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AccountSelect } from '@/components/AccountSelect.tsx';
-import { DecimalInput, Input, Select } from '@/components/ui.tsx';
+import { DecimalInput, Input, Select } from '@/components/ui';
 import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
 
 interface FilterProps {
