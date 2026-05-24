@@ -1,18 +1,15 @@
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 
-import {
-  AccountTypesManager,
-  BackupManager,
-  BanksManager,
-  CategoriesManager,
-  PaymentMethodsManager,
-  SettingsManager,
-  SettingsTab,
-} from '@/features/settings';
+import { AccountTypesManager } from '@/features/settings/components/AccountTypesManager';
+import { BackupManager } from '@/features/settings/components/BackupManager';
+import { BanksManager } from '@/features/settings/components/BanksManager';
+import { CategoriesManager } from '@/features/settings/components/categories/CategoriesManager';
+import ExportManager from '@/features/settings/components/ExportManager';
 import { PasswordChangeCard } from '@/features/settings/components/PasswordChangeCard';
+import { PaymentMethodsManager } from '@/features/settings/components/PaymentMethodsManager';
+import { SettingsManager, type SettingsTab } from '@/features/settings/components/SettingsManager';
 
-import ExportManager from '../features/settings/components/ExportManager.tsx';
 import ImportManager from '../features/settings/components/ImportManager.tsx';
 
 export default function SettingsPage() {
