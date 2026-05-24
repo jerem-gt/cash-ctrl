@@ -292,7 +292,7 @@ describe('TransactionsFilters', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('switch'));
 
     expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: false });
   });
@@ -301,7 +301,7 @@ describe('TransactionsFilters', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} filters={{ validated: false }} />);
     openAdvanced();
 
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('switch'));
 
     expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: undefined });
   });

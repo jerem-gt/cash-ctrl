@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AccountSelect } from '@/components/AccountSelect.tsx';
-import { DecimalInput, Input, Select } from '@/components/ui';
+import { DecimalInput, Input, Select, Switch } from '@/components/ui';
 import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
 
 interface FilterProps {
@@ -240,15 +240,11 @@ export const TransactionsFilters = ({
             ))}
           </Select>
 
-          <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none shrink-0">
-            <input
-              type="checkbox"
-              className="w-4 h-4 accent-stone-700 cursor-pointer"
-              checked={filters.validated === false}
-              onChange={(e) => onFilterChange({ validated: e.target.checked ? false : undefined })}
-            />
-            <span>Non validées seulement</span>
-          </label>
+          <Switch
+            checked={filters.validated === false}
+            onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
+            label="Non validées seulement"
+          />
         </div>
       )}
     </div>
