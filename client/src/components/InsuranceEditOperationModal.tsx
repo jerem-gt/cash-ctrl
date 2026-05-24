@@ -3,7 +3,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useUpdateInsuranceOperation } from '@/hooks/useInsurance';
 import type { InsuranceOperation } from '@/types';
 
-import { Button, DecimalInput, FormGroup, Input, showToast } from './ui';
+import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from './ui';
 
 const OP_LABELS: Record<InsuranceOperation['type'], string> = {
   versement: 'Versement',
@@ -53,77 +53,73 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
   };
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-1">Modifier l'opération</h3>
-        <p className="text-sm text-stone-400 mb-5">
-          {OP_LABELS[op.type]} — {op.support_name}
-        </p>
+    <ModalFrame
+      title="Modifier l'opération"
+      subtitle={`${OP_LABELS[op.type]} — ${op.support_name}`}
+    >
+      {isArbitrage ? (
+        <>
+          <p className="text-sm text-stone-500 mb-6">
+            Les arbitrages ne peuvent pas être modifiés. Supprimez l'opération et recréez-la si
+            nécessaire.
+          </p>
+          <div className="flex justify-end">
+            <Button onClick={onClose}>Fermer</Button>
+          </div>
+        </>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormGroup label="Montant (€)" htmlFor="edit-op-amount">
+            <DecimalInput
+              id="edit-op-amount"
+              allowNegative={allowNegative}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              autoFocus
+            />
+          </FormGroup>
 
-        {isArbitrage ? (
-          <>
-            <p className="text-sm text-stone-500 mb-6">
-              Les arbitrages ne peuvent pas être modifiés. Supprimez l'opération et recréez-la si
-              nécessaire.
-            </p>
-            <div className="flex justify-end">
-              <Button onClick={onClose}>Fermer</Button>
-            </div>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <FormGroup label="Montant (€)" htmlFor="edit-op-amount">
-              <DecimalInput
-                id="edit-op-amount"
-                allowNegative={allowNegative}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-                autoFocus
-              />
-            </FormGroup>
-
-            <div className="flex gap-3 items-end">
-              {hasFees && (
-                <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
-                  <DecimalInput
-                    id="edit-op-fees"
-                    value={fees}
-                    onChange={(e) => setFees(e.target.value)}
-                  />
-                </FormGroup>
-              )}
-              {hasSocialFees && (
-                <FormGroup label="Prélèvements sociaux (€)" htmlFor="edit-op-social-fees">
-                  <DecimalInput
-                    id="edit-op-social-fees"
-                    value={socialFees}
-                    onChange={(e) => setSocialFees(e.target.value)}
-                  />
-                </FormGroup>
-              )}
-              <FormGroup label="Date" htmlFor="edit-op-date" className="min-w-36">
-                <Input
-                  id="edit-op-date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
+          <div className="flex gap-3 items-end">
+            {hasFees && (
+              <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
+                <DecimalInput
+                  id="edit-op-fees"
+                  value={fees}
+                  onChange={(e) => setFees(e.target.value)}
                 />
               </FormGroup>
-            </div>
+            )}
+            {hasSocialFees && (
+              <FormGroup label="Prélèvements sociaux (€)" htmlFor="edit-op-social-fees">
+                <DecimalInput
+                  id="edit-op-social-fees"
+                  value={socialFees}
+                  onChange={(e) => setSocialFees(e.target.value)}
+                />
+              </FormGroup>
+            )}
+            <FormGroup label="Date" htmlFor="edit-op-date" className="min-w-36">
+              <Input
+                id="edit-op-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </FormGroup>
+          </div>
 
-            <div className="flex gap-2 justify-end mt-1">
-              <Button type="button" onClick={onClose} disabled={update.isPending}>
-                Annuler
-              </Button>
-              <Button variant="primary" type="submit" disabled={!amount || update.isPending}>
-                {update.isPending ? '…' : 'Enregistrer'}
-              </Button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          <div className="flex gap-2 justify-end mt-1">
+            <Button type="button" onClick={onClose} disabled={update.isPending}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" disabled={!amount || update.isPending}>
+              {update.isPending ? '…' : 'Enregistrer'}
+            </Button>
+          </div>
+        </form>
+      )}
+    </ModalFrame>
   );
 }

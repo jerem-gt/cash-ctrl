@@ -10,8 +10,8 @@ import { ProfitabilityCard } from '@/components/ProfitabilityCard';
 import { TransactionsList } from '@/components/TransactionsList';
 import { Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useBanks } from '@/hooks/useBanks';
 import { useLoan, useLoanInstallments } from '@/hooks/useLoans';
+import { useLogoMap } from '@/hooks/useLogoMap';
 import { useProfitability } from '@/hooks/useStats';
 
 function AccountDetailSkeleton() {
@@ -55,8 +55,7 @@ export default function AccountDetailPage() {
   const navigate = useNavigate();
 
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
-  const { data: banks = [] } = useBanks();
-  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const logoMap = useLogoMap();
 
   const account = accounts.find((a) => a.id === accountId);
   const isInvestment = account?.envelope_type === 'investment';

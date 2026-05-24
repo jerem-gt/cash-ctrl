@@ -301,6 +301,24 @@ export function Toast() {
   );
 }
 
+// ─── ModalFrame ───────────────────────────────────────────────────────────────
+interface ModalFrameProps {
+  title: string;
+  subtitle?: ReactNode;
+  children: ReactNode;
+}
+export function ModalFrame({ title, subtitle, children }: Readonly<ModalFrameProps>) {
+  return (
+    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
+        <h3 className={`font-sans text-xl ${subtitle ? 'mb-1' : 'mb-5'}`}>{title}</h3>
+        {subtitle !== undefined && <p className="text-sm text-stone-400 mb-5">{subtitle}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 interface ModalProps {
   title: string;

@@ -4,6 +4,9 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { server } from './msw/server';
 
+// jsdom doesn't implement scrollTo
+window.scrollTo = () => undefined;
+
 // recharts ResponsiveContainer uses ResizeObserver — stub for jsdom
 globalThis.ResizeObserver = class {
   observe() {

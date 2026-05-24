@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useMemo, useState } from 'react';
+import { type SyntheticEvent, useState } from 'react';
 
 import type { ScheduledPayload } from '@/api/client';
 import { AccountSelect } from '@/components/AccountSelect';
@@ -17,9 +17,9 @@ import {
   Skeleton,
 } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
 import { useInsuranceSupports } from '@/hooks/useInsurance';
+import { useLogoMap } from '@/hooks/useLogoMap';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import {
   useCreateScheduled,
@@ -787,9 +787,7 @@ export default function ScheduledPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: paymentMethods = [] } = usePaymentMethods();
-  const { data: banks = [] } = useBanks();
-
-  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const logoMap = useLogoMap();
 
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<ScheduledTransaction | null>(null);

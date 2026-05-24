@@ -1,7 +1,7 @@
 import { type SyntheticEvent, useState } from 'react';
 
 import { isIsin, TickerInput } from '@/components/TickerInput';
-import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useBuyStock, useSellStock } from '@/hooks/useStocks';
 import { today } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
@@ -67,98 +67,89 @@ export function StockOperationModal(props: Readonly<Props>) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-5">
-          {isBuy ? 'Acheter des actions' : 'Vendre des actions'}
-        </h3>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Ticker ou ISIN" htmlFor="op-ticker">
-            <TickerInput
-              id="op-ticker"
-              value={ticker}
-              onChange={setTicker}
-              placeholder="ex : DCAM.PA, AAPL ou FR0014000MR3"
-              disabled={!!position}
-              autoFocus={!position}
+    <ModalFrame title={isBuy ? 'Acheter des actions' : 'Vendre des actions'}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <FormGroup label="Ticker ou ISIN" htmlFor="op-ticker">
+          <TickerInput
+            id="op-ticker"
+            value={ticker}
+            onChange={setTicker}
+            placeholder="ex : DCAM.PA, AAPL ou FR0014000MR3"
+            disabled={!!position}
+            autoFocus={!position}
+          />
+        </FormGroup>
+
+        <div className="flex gap-3">
+          <FormGroup
+            label={maxQty == null ? "Nombre d'actions" : `Nombre d'actions (max ${maxQty})`}
+            htmlFor="op-quantity"
+          >
+            <Input
+              id="op-quantity"
+              type="number"
+              min="0.001"
+              max={maxQty}
+              step="any"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder={isBuy ? '10' : '5'}
+              autoFocus={!!position}
             />
           </FormGroup>
+          <FormGroup label="Prix unitaire (€)" htmlFor="op-price">
+            <DecimalInput
+              id="op-price"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder={isBuy ? '12,50' : '13,00'}
+            />
+          </FormGroup>
+        </div>
 
-          <div className="flex gap-3">
-            <FormGroup
-              label={maxQty == null ? "Nombre d'actions" : `Nombre d'actions (max ${maxQty})`}
-              htmlFor="op-quantity"
-            >
-              <Input
-                id="op-quantity"
-                type="number"
-                min="0.001"
-                max={maxQty}
-                step="any"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder={isBuy ? '10' : '5'}
-                autoFocus={!!position}
-              />
-            </FormGroup>
-            <FormGroup label="Prix unitaire (€)" htmlFor="op-price">
-              <DecimalInput
-                id="op-price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder={isBuy ? '12,50' : '13,00'}
-              />
-            </FormGroup>
-          </div>
+        <div className="flex gap-3">
+          <FormGroup label="Frais (€)" htmlFor="op-fees">
+            <DecimalInput
+              id="op-fees"
+              value={fees}
+              onChange={(e) => setFees(e.target.value)}
+              placeholder="1,50"
+            />
+          </FormGroup>
+          <FormGroup label="Date" htmlFor="op-date">
+            <Input
+              id="op-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormGroup>
+        </div>
 
-          <div className="flex gap-3">
-            <FormGroup label="Frais (€)" htmlFor="op-fees">
-              <DecimalInput
-                id="op-fees"
-                value={fees}
-                onChange={(e) => setFees(e.target.value)}
-                placeholder="1,50"
-              />
-            </FormGroup>
-            <FormGroup label="Date" htmlFor="op-date">
-              <Input
-                id="op-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </FormGroup>
-          </div>
+        <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
+          <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
+            {isBuy ? 'Total dépense' : 'Montant net reçu'}
+          </p>
+          <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
+            {amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+          </p>
+        </div>
 
-          <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
-            <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
-              {isBuy ? 'Total dépense' : 'Montant net reçu'}
-            </p>
-            <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
-              {amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-            </p>
-          </div>
-
-          <div className="flex gap-2 justify-end mt-1">
-            <Button type="button" onClick={onClose} disabled={mutation.isPending}>
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={
-                mutation.isPending ||
-                !ticker.trim() ||
-                isIsin(ticker.trim()) ||
-                qty <= 0 ||
-                pps <= 0
-              }
-            >
-              {mutation.isPending ? '…' : actionLabel}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex gap-2 justify-end mt-1">
+          <Button type="button" onClick={onClose} disabled={mutation.isPending}>
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={
+              mutation.isPending || !ticker.trim() || isIsin(ticker.trim()) || qty <= 0 || pps <= 0
+            }
+          >
+            {mutation.isPending ? '…' : actionLabel}
+          </Button>
+        </div>
+      </form>
+    </ModalFrame>
   );
 }
