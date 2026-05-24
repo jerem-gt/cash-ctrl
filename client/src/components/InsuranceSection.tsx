@@ -17,7 +17,7 @@ import { InsuranceRachatModal } from './InsuranceRachatModal';
 import { InsuranceRevalorisationModal } from './InsuranceRevalorisationModal';
 import { InsuranceVersementModal } from './InsuranceVersementModal';
 import { PerFiscalSimulatorModal } from './PerFiscalSimulatorModal';
-import { Button, ConfirmModal, showToast } from './ui';
+import { Button, ConfirmModal, IconButton, showToast, Spinner } from './ui';
 
 interface SupportRowProps {
   support: InsuranceSupportView;
@@ -269,22 +269,18 @@ function OperationRow({
         {fmtDec(signed)}
       </span>
       {onEdit && (
-        <button
-          onClick={onEdit}
-          className="text-stone-300 hover:text-stone-500 text-xs leading-none shrink-0 transition-colors px-1"
-          title="Modifier"
-        >
-          ✎
-        </button>
+        <IconButton label="Modifier" size="sm" onClick={onEdit}>
+          <span aria-hidden="true" className="text-xs">
+            ✎
+          </span>
+        </IconButton>
       )}
       {onDelete && (
-        <button
-          onClick={onDelete}
-          className="text-stone-300 hover:text-red-400 text-base leading-none shrink-0 transition-colors"
-          title="Supprimer"
-        >
-          ×
-        </button>
+        <IconButton label="Supprimer" size="sm" variant="danger" onClick={onDelete}>
+          <span aria-hidden="true" className="text-base leading-none">
+            ×
+          </span>
+        </IconButton>
       )}
     </div>
   );
@@ -310,7 +306,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
 
   function renderPositions() {
     if (isLoading) {
-      return <div className="text-sm text-stone-400 py-4">Chargement…</div>;
+      return <Spinner className="h-4 w-4 text-stone-400 my-4 mx-auto" />;
     }
     if (positions.length === 0) {
       return (

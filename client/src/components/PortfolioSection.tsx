@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { StockOperationModal } from '@/components/StockOperationModal';
 import { TransferStockModal } from '@/components/TransferStockModal';
-import { Button, showToast } from '@/components/ui';
+import { Button, showToast, Spinner } from '@/components/ui';
 import { useRefreshPrices, useStockPositions } from '@/hooks/useStocks';
 import { fmtStockPrice } from '@/lib/format';
 import type { StockPosition } from '@/types';
@@ -229,7 +229,7 @@ function PortfolioPositionsList({
   onTransfer,
 }: Readonly<Omit<PositionsListProps, 'pos'>>) {
   if (isLoading) {
-    return <div className="text-sm text-stone-400 py-4">Chargement…</div>;
+    return <Spinner className="h-4 w-4 text-stone-400 my-4 mx-auto" />;
   }
   if (positions.length === 0) {
     return (
