@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 
+import { Tabs } from '@/components/ui';
 import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -152,28 +153,16 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                   accountsActive ? 'bg-white/6' : ''
                 }`}
               >
-                <div className="flex flex-1 items-center bg-white/6 rounded-md p-0.5 text-xs">
-                  <button
-                    onClick={() => setGroupBy('bank')}
-                    className={`flex-1 px-1.5 py-1 rounded transition-all ${
-                      groupBy === 'bank'
-                        ? 'bg-white/15 text-white/80 shadow-sm'
-                        : 'text-white/30 hover:text-white/55'
-                    }`}
-                  >
-                    Banque
-                  </button>
-                  <button
-                    onClick={() => setGroupBy('type')}
-                    className={`flex-1 px-1.5 py-1 rounded transition-all ${
-                      groupBy === 'type'
-                        ? 'bg-white/15 text-white/80 shadow-sm'
-                        : 'text-white/30 hover:text-white/55'
-                    }`}
-                  >
-                    Type
-                  </button>
-                </div>
+                <Tabs
+                  variant="dark"
+                  tabs={[
+                    { key: 'bank', label: 'Banque' },
+                    { key: 'type', label: 'Type' },
+                  ]}
+                  active={groupBy}
+                  onChange={(key) => setGroupBy(key as 'bank' | 'type')}
+                  className="flex-1"
+                />
               </div>
 
               {accounts.length > 0 && (

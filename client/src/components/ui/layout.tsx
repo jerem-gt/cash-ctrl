@@ -57,18 +57,40 @@ interface TabsProps {
   active: string;
   onChange: (key: string) => void;
   className?: string;
+  variant?: 'default' | 'dark';
 }
-export function Tabs({ tabs, active, onChange, className = '' }: Readonly<TabsProps>) {
+
+const TAB_STYLES = {
+  default: {
+    container: 'bg-stone-100 rounded-lg p-1',
+    button: 'px-3 py-1.5 text-sm rounded-md',
+    active: 'bg-white text-stone-900 shadow-sm',
+    inactive: 'text-stone-500 hover:text-stone-700',
+  },
+  dark: {
+    container: 'bg-white/6 rounded-md p-0.5',
+    button: 'px-1.5 py-1 text-xs rounded',
+    active: 'bg-white/15 text-white/80 shadow-sm',
+    inactive: 'text-white/30 hover:text-white/55',
+  },
+};
+
+export function Tabs({
+  tabs,
+  active,
+  onChange,
+  className = '',
+  variant = 'default',
+}: Readonly<TabsProps>) {
+  const s = TAB_STYLES[variant];
   return (
-    <div className={`flex gap-1 p-1 bg-stone-100 rounded-lg ${className}`}>
+    <div className={`flex gap-1 ${s.container} ${className}`}>
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-all duration-150 font-medium ${
-            active === tab.key
-              ? 'bg-white text-stone-900 shadow-sm'
-              : 'text-stone-500 hover:text-stone-700'
+          className={`flex-1 ${s.button} transition-all duration-150 font-medium ${
+            active === tab.key ? s.active : s.inactive
           }`}
         >
           {tab.label}
