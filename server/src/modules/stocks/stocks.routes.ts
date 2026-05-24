@@ -2,7 +2,8 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { makeCheckAccount } from '../../lib/routeHelpers';
+import { makeCheckAccount, parseBody } from '../../lib/routeHelpers';
+import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
@@ -19,7 +20,7 @@ const buySchema = z.object({
   quantity: z.number().positive(),
   price_per_share: z.number().positive(),
   fees: z.number().min(0).default(0),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateSchema,
   description: z.string().min(1).max(200).optional(),
 });
 
@@ -29,14 +30,14 @@ const transferSchema = z.object({
   to_account_id: z.number().int().positive(),
   ticker: z.string().min(1).max(20),
   quantity: z.number().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateSchema,
 });
 
 const editOperationSchema = z.object({
   quantity: z.number().positive(),
   price_per_share: z.number().positive(),
   fees: z.number().min(0).default(0),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateSchema,
   description: z.string().min(1).max(200).optional(),
 });
 
@@ -84,13 +85,10 @@ export function createStocksRouter(db: Database): Router {
       return;
     }
 
-    const parsed = transferSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, transferSchema, req.body);
+    if (!data) return;
 
-    const { to_account_id } = parsed.data;
+    const { to_account_id } = data;
     if (!repo.accountBelongsToUser(to_account_id, userId)) {
       res.status(403).json({ error: 'Compte destination introuvable' });
       return;
@@ -105,9 +103,9 @@ export function createStocksRouter(db: Database): Router {
     }
 
     try {
-      const result = repo.transfer(userId, { from_account_id: fromAccountId, ...parsed.data });
-      recalcPosition(db, fromAccountId, parsed.data.ticker, userId);
-      recalcPosition(db, parsed.data.to_account_id, parsed.data.ticker, userId);
+      const result = repo.transfer(userId, { from_account_id: fromAccountId, ...data });
+      recalcPosition(db, fromAccountId, data.ticker, userId);
+      recalcPosition(db, data.to_account_id, data.ticker, userId);
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -125,16 +123,13 @@ export function createStocksRouter(db: Database): Router {
       return;
     }
 
-    const parsed = editOperationSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, editOperationSchema, req.body);
+    if (!data) return;
 
     try {
       const operation = repo.updateOperation(operationId, userId, {
         account_id: accountId,
-        ...parsed.data,
+        ...data,
       });
       recalcPosition(db, accountId, op.ticker, userId);
       res.json(operation);

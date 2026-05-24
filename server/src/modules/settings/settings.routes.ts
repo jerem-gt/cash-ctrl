@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { parseBody } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
 
@@ -29,13 +30,10 @@ export function createSettingsRouter(db: Database): Router {
   });
 
   router.put('/', (req, res) => {
-    const parsed = settingsSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, settingsSchema, req.body);
+    if (!data) return;
     const userId = sessionUserId(req);
-    const { lead_days, backup_enabled, backup_frequency_h, backup_max_files } = parsed.data;
+    const { lead_days, backup_enabled, backup_frequency_h, backup_max_files } = data;
     settingsRepo.upsert(userId, {
       leadDays: lead_days,
       backupEnabled: backup_enabled,

@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
+import { parseBody } from '../../lib/routeHelpers';
+import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createScheduledRepo } from '../scheduled/scheduled.repo';
@@ -25,7 +27,7 @@ const transactionSchema = z
         }),
       )
       .optional(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    date: dateSchema,
     payment_method_id: z.number().int().positive(),
     notes: z.string().max(1000).nullable().default(null),
     validated: z.boolean().default(false),
@@ -47,14 +49,8 @@ const querySchema = z.object({
   category_id: z.coerce.number().int().optional(),
   subcategory_id: z.coerce.number().int().optional(),
   description_contains: z.string().trim().optional(),
-  date_from: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  date_to: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+  date_from: dateSchema.optional(),
+  date_to: dateSchema.optional(),
   amount_min: z.coerce.number().nonnegative().optional(),
   amount_max: z.coerce.number().positive().optional(),
   payment_method_id: z.coerce.number().int().positive().optional(),
@@ -70,6 +66,8 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
+
+const validateSchema = z.object({ validated: z.boolean() });
 
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
@@ -92,14 +90,11 @@ export function createTransactionsRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = transactionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, transactionSchema, req.body);
+    if (!data) return;
     const userId = sessionUserId(req);
 
-    const targetAccount = accountsRepo.getById(parsed.data.account_id, userId);
+    const targetAccount = accountsRepo.getById(data.account_id, userId);
     if (!targetAccount) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
       return;
@@ -112,8 +107,8 @@ export function createTransactionsRouter(db: Database): Router {
     }
 
     const result = transactionsRepo.create(userId, {
-      ...parsed.data,
-      description: parsed.data.description.trim(),
+      ...data,
+      description: data.description.trim(),
     });
     res.status(201).json(transactionsRepo.getWithDetails(Number(result.lastInsertRowid)));
   });
@@ -132,12 +127,9 @@ export function createTransactionsRouter(db: Database): Router {
       return;
     }
 
-    const parsed = transactionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    const targetAccount = accountsRepo.getById(parsed.data.account_id, userId);
+    const data = parseBody(res, transactionSchema, req.body);
+    if (!data) return;
+    const targetAccount = accountsRepo.getById(data.account_id, userId);
     if (!targetAccount) {
       res.status(403).json({ error: 'Account not found or does not belong to user' });
       return;
@@ -149,16 +141,16 @@ export function createTransactionsRouter(db: Database): Router {
       return;
     }
 
-    if (parsed.data.scheduled_id !== null) {
-      if (!scheduledRepo.getById(parsed.data.scheduled_id, userId)) {
+    if (data.scheduled_id !== null) {
+      if (!scheduledRepo.getById(data.scheduled_id, userId)) {
         res.status(404).json({ error: 'Scheduled transaction not found' });
         return;
       }
     }
 
     transactionsRepo.update(userId, id, {
-      ...parsed.data,
-      description: parsed.data.description.trim(),
+      ...data,
+      description: data.description.trim(),
     });
 
     res.json(transactionsRepo.getWithDetails(id));
@@ -167,18 +159,15 @@ export function createTransactionsRouter(db: Database): Router {
   router.patch('/:id/validate', (req, res) => {
     const id = Number.parseInt(req.params.id);
     const userId = sessionUserId(req);
-    const parsed = z.object({ validated: z.boolean() }).safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, validateSchema, req.body);
+    if (!data) return;
 
     if (!transactionsRepo.getById(id, userId)) {
       res.status(404).json({ error: 'Transaction not found' });
       return;
     }
 
-    transactionsRepo.setValidated(userId, id, parsed.data.validated);
+    transactionsRepo.setValidated(userId, id, data.validated);
     res.json(transactionsRepo.getWithDetails(id));
   });
 

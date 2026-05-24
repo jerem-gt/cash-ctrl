@@ -1,10 +1,8 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { handleAccountAction } from '../../lib/handleAccountAction';
+import { handleAccountAction, type Handler } from '../../lib/handleAccountAction';
 import { createInsuranceRepo } from './insurance.repo';
-
-type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 type InsuranceRepo = ReturnType<typeof createInsuranceRepo>;
 
 export function handleInsuranceAction<T>(
