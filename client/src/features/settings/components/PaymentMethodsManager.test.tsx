@@ -2,10 +2,11 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { PaymentMethodsManager } from '@/features/settings';
 import { PAYMENT_METHODS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
+
+import { PaymentMethodsManager } from './PaymentMethodsManager';
 
 describe('PaymentMethodsManager', () => {
   it('affiche le squelette pendant le chargement des moyens de paiement', () => {

@@ -2,9 +2,10 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { AccountTypesManager } from '@/features/settings';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
+
+import { AccountTypesManager } from './AccountTypesManager';
 
 describe('AccountTypesManager', () => {
   it('affiche le squelette pendant le chargement des types de compte', () => {

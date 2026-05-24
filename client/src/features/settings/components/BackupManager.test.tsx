@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { BackupManager } from '@/features/settings';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
+
+import { BackupManager } from './BackupManager';
 
 describe('BackupManager', () => {
   it('affiche la section de configuration', async () => {

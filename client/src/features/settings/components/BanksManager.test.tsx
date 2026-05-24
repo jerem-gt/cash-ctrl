@@ -2,10 +2,11 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { BanksManager } from '@/features/settings';
 import { BANKS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
+
+import { BanksManager } from './BanksManager';
 
 describe('BanksManager', () => {
   it('affiche le squelette pendant le chargement des banques', () => {

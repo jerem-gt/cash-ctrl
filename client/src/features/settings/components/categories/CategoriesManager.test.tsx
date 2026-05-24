@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { expect } from 'vitest';
 
-import { CategoriesManager } from '@/features/settings';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
+
+import { CategoriesManager } from './CategoriesManager';
 
 describe('CategoriesManager', () => {
   it('affiche le squelette pendant le chargement des catégories', () => {
