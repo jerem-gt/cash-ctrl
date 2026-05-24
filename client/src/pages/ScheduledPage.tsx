@@ -1,9 +1,7 @@
 import { type SyntheticEvent, useState } from 'react';
 
 import type { ScheduledPayload } from '@/api/client';
-import { AccountSelect } from '@/components/AccountSelect';
 import { ItemActions } from '@/components/ItemActions';
-import { TxCoreFields, type TxCoreState } from '@/components/TxCoreFields';
 import {
   Button,
   Card,
@@ -16,17 +14,19 @@ import {
   showToast,
   Skeleton,
 } from '@/components/ui';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useCategories } from '@/hooks/useCategories';
-import { useInsuranceSupports } from '@/hooks/useInsurance';
-import { useLogoMap } from '@/hooks/useLogoMap';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { useInsuranceSupports } from '@/features/insurance/hooks/useInsurance';
+import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
 import {
   useCreateScheduled,
   useDeleteScheduled,
   useScheduled,
   useUpdateScheduled,
-} from '@/hooks/useScheduled';
+} from '@/features/transactions/hooks/useScheduled';
+import { useAccounts } from '@/hooks/useAccounts';
+import { useCategories } from '@/hooks/useCategories';
+import { useLogoMap } from '@/hooks/useLogoMap';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { useTransactions } from '@/hooks/useTransactions';
 import { fmtDate, fmtDec, today } from '@/lib/format';

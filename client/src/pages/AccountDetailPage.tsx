@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { AccountHeader } from '@/components/AccountHeader.tsx';
-import { CloseAccountModal } from '@/components/CloseAccountModal';
-import { InsuranceSection } from '@/components/InsuranceSection';
-import { LoanSection } from '@/components/LoanSection';
-import { PortfolioSection } from '@/components/PortfolioSection';
 import { ProfitabilityCard } from '@/components/ProfitabilityCard';
-import { TransactionsList } from '@/components/TransactionsList';
 import { Skeleton } from '@/components/ui';
+import { AccountHeader } from '@/features/accounts/components/AccountHeader';
+import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
+import { InsuranceSection } from '@/features/insurance/components/InsuranceSection';
+import { LoanSection } from '@/features/loans/components/LoanSection';
+import { useLoan, useLoanInstallments } from '@/features/loans/hooks/useLoans';
+import { PortfolioSection } from '@/features/portfolio/components/PortfolioSection';
+import { TransactionsList } from '@/features/transactions/components/TransactionsList';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useLoan, useLoanInstallments } from '@/hooks/useLoans';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useProfitability } from '@/hooks/useStats';
 

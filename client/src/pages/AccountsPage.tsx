@@ -2,11 +2,12 @@ import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { AccountBadge } from '@/components/AccountBadge';
-import { type AccountFormState, AccountModal } from '@/components/AccountModal';
-import { CloseAccountModal } from '@/components/CloseAccountModal';
-import { LoanFormModal } from '@/components/LoanFormModal';
 import { Button, Card, ConfirmModal, Empty, showToast, Skeleton } from '@/components/ui';
+import { AccountBadge } from '@/features/accounts/components/AccountBadge';
+import { type AccountFormState, AccountModal } from '@/features/accounts/components/AccountModal';
+import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
+import { LoanFormModal } from '@/features/loans/components/LoanFormModal';
+import { useLoan } from '@/features/loans/hooks/useLoans';
 import {
   useAccounts,
   useDeleteAccount,
@@ -16,7 +17,6 @@ import {
 import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
-import { useLoan } from '@/hooks/useLoans';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance, accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
