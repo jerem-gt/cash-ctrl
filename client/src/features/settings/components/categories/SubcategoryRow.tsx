@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { showToast } from '@/components/ui';
+import { IconButton, showToast } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
 import { useUpdateSubcategory } from '@/hooks/useSubcategories.ts';
 import { Subcategory } from '@/types.ts';
@@ -22,6 +22,7 @@ export function SubcategoryRow({
       <SubcategoryEditor
         name={sub.name}
         isPending={updateSubcategory.isPending}
+        autoFocus
         onCancel={() => setEditing(false)}
         onSave={(value) => {
           updateSubcategory.mutate(
@@ -41,6 +42,9 @@ export function SubcategoryRow({
 
   // Mode lecture
   const txCount = sub.tx_count ?? 0;
+  const plural = txCount > 1 ? 's' : '';
+  const deleteTitle =
+    txCount > 0 ? `Impossible : ${txCount} transaction${plural} liée${plural}` : 'Supprimer';
   return (
     <div className="flex items-center gap-4 py-2 px-3 border-b border-black/3 group hover:bg-stone-50/80 transition-colors">
       {/* 1. Zone Nom : prend tout l'espace et gère le débordement */}
@@ -59,29 +63,25 @@ export function SubcategoryRow({
           </span>
         )}
 
-        {/* 3. Groupe d'actions : boutons plus grands mais icônes fines */}
+        {/* 3. Groupe d'actions */}
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => setEditing(true)}
-            className="p-2 text-stone-400 hover:text-stone-900 hover:bg-stone-200/50 rounded-lg transition-all"
-            title="Modifier"
-          >
-            <span className="text-xs block leading-none">✎</span>
-          </button>
-
-          {/* On utilise opacity-0 pour garder l'alignement même si le bouton est masqué */}
-          <button
+          <IconButton label="Modifier" size="sm" onClick={() => setEditing(true)}>
+            <span aria-hidden="true" className="text-[12px]">
+              ✎
+            </span>
+          </IconButton>
+          <IconButton
+            label="Supprimer"
+            size="sm"
+            variant="danger"
             onClick={() => onDelete(sub.id)}
             disabled={txCount > 0}
-            className={`p-2 rounded-lg transition-all ${
-              txCount > 0
-                ? 'opacity-0 pointer-events-none'
-                : 'text-stone-300 hover:text-red-500 hover:bg-red-50'
-            }`}
-            title="Supprimer"
+            title={deleteTitle}
           >
-            <span className="text-base block leading-none">×</span>
-          </button>
+            <span aria-hidden="true" className="text-lg leading-none">
+              ×
+            </span>
+          </IconButton>
         </div>
       </div>
     </div>

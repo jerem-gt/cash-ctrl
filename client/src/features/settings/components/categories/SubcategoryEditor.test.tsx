@@ -78,8 +78,8 @@ describe('SubcategoryEditor', () => {
     expect(submitBtn).toBeDisabled();
   });
 
-  it('donne le focus automatiquement au champ de texte au montage', () => {
-    render(<SubcategoryEditor {...defaultProps} />);
+  it('donne le focus automatiquement au champ de texte quand autoFocus est activé', () => {
+    render(<SubcategoryEditor {...defaultProps} autoFocus />);
     const input = screen.getByRole('textbox');
     expect(input).toHaveFocus();
   });

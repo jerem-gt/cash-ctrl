@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { expect } from 'vitest';
@@ -27,20 +27,42 @@ describe('CategoriesManager', () => {
   });
 });
 
+describe('CategoriesManager — Filtre', () => {
+  it('filtre les catégories par nom', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CategoriesManager />);
+    await screen.findByText('Alimentation');
+    await user.type(screen.getByPlaceholderText(/Rechercher/i), 'ali');
+    expect(screen.getByText('Alimentation')).toBeInTheDocument();
+    expect(screen.queryByText('Logement')).not.toBeInTheDocument();
+  });
+
+  it('affiche un message quand aucune catégorie ne correspond', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CategoriesManager />);
+    await screen.findByText('Alimentation');
+    await user.type(screen.getByPlaceholderText(/Rechercher/i), 'xyz');
+    expect(screen.queryByText('Alimentation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Logement')).not.toBeInTheDocument();
+    expect(screen.getByText(/Aucune catégorie/i)).toBeInTheDocument();
+  });
+});
+
 describe('CategoriesManager — Ajout', () => {
   it('bouton désactivé si nom vide', async () => {
     renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
-    expect(screen.getByRole('button', { name: /ajouter/i })).toBeDisabled();
+    const newForm = screen.getByTestId('new-category-form');
+    expect(within(newForm).getByRole('button', { name: /ajouter/i })).toBeDisabled();
   });
 
   it('ajoute une catégorie avec succès', async () => {
     const user = userEvent.setup();
     renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
+    const newForm = screen.getByTestId('new-category-form');
     await user.type(screen.getByLabelText('Nom de la nouvelle catégorie'), 'Loisirs');
-    const addBtn = screen.getByRole('button', { name: /ajouter/i });
-    await user.click(addBtn);
+    await user.click(within(newForm).getByRole('button', { name: /ajouter/i }));
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('ajoutée'));
   });
 
@@ -53,8 +75,9 @@ describe('CategoriesManager — Ajout', () => {
     const user = userEvent.setup();
     renderWithProviders(<CategoriesManager />);
     await screen.findByText('Alimentation');
+    const newForm = screen.getByTestId('new-category-form');
     await user.type(screen.getByLabelText('Nom de la nouvelle catégorie'), 'Loisirs');
-    await user.click(screen.getByRole('button', { name: /ajouter/i }));
+    await user.click(within(newForm).getByRole('button', { name: /ajouter/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur ajout cat'),
     );

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
@@ -41,12 +41,12 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
-    await user.click(screen.getByRole('button', { name: /Courant/ }));
-    await user.click(screen.getByRole('button', { name: /modifier/i }));
-    const nameInput = screen.getByDisplayValue('Courant');
+    const courantCard = screen.getByRole('article', { name: 'Courant' });
+    await user.click(within(courantCard).getByRole('button', { name: /modifier/i }));
+    const nameInput = within(courantCard).getByDisplayValue('Courant');
     await user.clear(nameInput);
     await user.type(nameInput, 'Courant modifié');
-    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
+    await user.click(within(courantCard).getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mis à jour'),
     );
@@ -56,11 +56,13 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
-    await user.click(screen.getByRole('button', { name: /Courant/ }));
-    await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: /annuler/i }));
-    expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
+    const courantCard = screen.getByRole('article', { name: 'Courant' });
+    await user.click(within(courantCard).getByRole('button', { name: /modifier/i }));
+    await user.click(within(courantCard).getByRole('button', { name: /annuler/i }));
+    expect(
+      within(courantCard).queryByRole('button', { name: /enregistrer/i }),
+    ).not.toBeInTheDocument();
+    expect(within(courantCard).getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
 
   it('toast si la sauvegarde échoue', async () => {
@@ -72,9 +74,9 @@ describe('AccountTypesManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<AccountTypesManager />);
     await screen.findByText('Courant');
-    await user.click(screen.getByRole('button', { name: /Courant/ }));
-    await user.click(screen.getByRole('button', { name: /modifier/i }));
-    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
+    const courantCard = screen.getByRole('article', { name: 'Courant' });
+    await user.click(within(courantCard).getByRole('button', { name: /modifier/i }));
+    await user.click(within(courantCard).getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Erreur type'),
     );

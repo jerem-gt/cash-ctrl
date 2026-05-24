@@ -46,7 +46,7 @@ describe('SubCategoriesManager', () => {
     renderWithProviders(<SubCategoriesManager parentCategory={parentCategory} />);
 
     // On récupère le bouton de suppression de la première ligne
-    const deleteButtons = screen.getAllByRole('button', { name: /×/i });
+    const deleteButtons = screen.getAllByRole('button', { name: /Supprimer/i });
     await user.click(deleteButtons[0]);
 
     // Vérifie que le hook useDeleteConfirmation a ouvert le modal

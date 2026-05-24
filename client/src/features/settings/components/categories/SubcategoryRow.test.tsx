@@ -53,12 +53,12 @@ describe('SubcategoryRow', () => {
     expect(onDelete).toHaveBeenCalledWith(subWithNoTx.id);
   });
 
-  it('désactive et masque le bouton supprimer si tx_count > 0', () => {
+  it('désactive le bouton supprimer et affiche un tooltip si tx_count > 0', () => {
     renderWithProviders(<SubcategoryRow {...defaultProps} />);
 
-    const deleteBtn = screen.getByTitle('Supprimer');
+    const deleteBtn = screen.getByRole('button', { name: /Supprimer/i });
     expect(deleteBtn).toBeDisabled();
-    expect(deleteBtn).toHaveClass('opacity-0');
+    expect(deleteBtn).toHaveAttribute('title', expect.stringContaining('transaction'));
   });
 
   it('sort du mode édition et appelle onEdit après une sauvegarde réussie', async () => {
