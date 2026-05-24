@@ -33,24 +33,13 @@ import {
 } from '@/hooks/useBanks.ts';
 import { Bank } from '@/types.ts';
 
-function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
+function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => void }>) {
   const updateBank = useUpdateBank();
   const uploadLogo = useUploadBankLogo();
-  const deleteBank = useDeleteBank();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: bank.id,
-  });
   const [name, setName] = useState(bank.name);
   const [domain, setDomain] = useState(bank.domain ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
@@ -62,6 +51,105 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
   };
 
   const logoSrc = preview ?? bank.logo ?? null;
+
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        try {
+          if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
+          await updateBank.mutateAsync({
+            id: bank.id,
+            name: name.trim(),
+            domain: domain.trim() || null,
+          });
+          onClose();
+          setFile(null);
+          setPreview((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
+          showToast('Banque mise à jour ✓');
+        } catch (err) {
+          showToast((err as Error).message);
+        }
+      }}
+      className="flex flex-col gap-3"
+    >
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        Modifier la banque
+      </p>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
+        placeholder="Nom"
+        autoFocus
+      />
+      <input
+        type="text"
+        value={domain}
+        onChange={(e) => setDomain(e.target.value)}
+        className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
+        placeholder="Domaine (ex : boursobank.com)"
+      />
+      <div className="flex items-center gap-2">
+        {logoSrc && (
+          <img
+            src={logoSrc}
+            alt=""
+            className="w-6 h-6 object-contain rounded shrink-0"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+        )}
+        <label className="cursor-pointer">
+          <span className="text-xs text-stone-400">{file ? file.name : 'Choisir un logo…'}</span>
+          <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+        </label>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={updateBank.isPending || uploadLogo.isPending}
+          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
+        >
+          {updateBank.isPending || uploadLogo.isPending ? '…' : 'Enregistrer'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setFile(null);
+            setPreview((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return null;
+            });
+            onClose();
+          }}
+          className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
+        >
+          Annuler
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
+  const [editing, setEditing] = useState(false);
+  const deleteBank = useDeleteBank();
+  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: bank.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   const accCount = bank.acc_count ?? 0;
 
   return (
@@ -86,9 +174,9 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
           </div>
         }
         icon={
-          logoSrc ? (
+          bank.logo ? (
             <img
-              src={logoSrc}
+              src={bank.logo}
               alt=""
               className="w-7 h-7 object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -115,92 +203,9 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
             'Banque supprimée',
           )
         }
-        editContent={(close) => (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!name.trim()) return;
-              try {
-                if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
-                await updateBank.mutateAsync({
-                  id: bank.id,
-                  name: name.trim(),
-                  domain: domain.trim() || null,
-                });
-                close();
-                setFile(null);
-                setPreview((prev) => {
-                  if (prev) URL.revokeObjectURL(prev);
-                  return null;
-                });
-                showToast('Banque mise à jour ✓');
-              } catch (err) {
-                showToast((err as Error).message);
-              }
-            }}
-            className="flex flex-col gap-3"
-          >
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-              Modifier la banque
-            </p>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
-              placeholder="Nom"
-              autoFocus
-            />
-            <input
-              type="text"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
-              placeholder="Domaine (ex : boursobank.com)"
-            />
-            <div className="flex items-center gap-2">
-              {logoSrc && (
-                <img
-                  src={logoSrc}
-                  alt=""
-                  className="w-6 h-6 object-contain rounded shrink-0"
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              )}
-              <label className="cursor-pointer">
-                <span className="text-xs text-stone-400">
-                  {file ? file.name : 'Choisir un logo…'}
-                </span>
-                <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
-              </label>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={updateBank.isPending || uploadLogo.isPending}
-                className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-              >
-                {updateBank.isPending || uploadLogo.isPending ? '…' : 'Enregistrer'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setName(bank.name);
-                  setDomain(bank.domain ?? '');
-                  setFile(null);
-                  setPreview((prev) => {
-                    if (prev) URL.revokeObjectURL(prev);
-                    return null;
-                  });
-                  close();
-                }}
-                className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
-              >
-                Annuler
-              </button>
-            </div>
-          </form>
-        )}
+        isEditing={editing}
+        onEditStart={() => setEditing(true)}
+        editContent={<BankEditForm bank={bank} onClose={() => setEditing(false)} />}
       />
       <DeleteConfirmModal />
     </>

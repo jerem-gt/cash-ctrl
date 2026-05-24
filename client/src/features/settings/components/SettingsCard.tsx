@@ -11,7 +11,9 @@ interface SettingsCardProps {
   leading?: ReactNode;
   canDelete?: boolean;
   onDelete?: () => void;
-  editContent: (close: () => void) => ReactNode;
+  isEditing: boolean;
+  onEditStart: () => void;
+  editContent: ReactNode;
   collapsibleContent?: ReactNode;
   dragRef?: (el: HTMLElement | null) => void;
   dragStyle?: CSSProperties;
@@ -25,26 +27,25 @@ export function SettingsCard({
   leading,
   canDelete = true,
   onDelete,
+  isEditing,
+  onEditStart,
   editContent,
   collapsibleContent,
   dragRef,
   dragStyle,
 }: Readonly<SettingsCardProps>) {
-  const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const close = () => setEditing(false);
 
   return (
-    <div
+    <article
       ref={dragRef}
       style={dragStyle}
-      role="article"
       aria-label={title}
       className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden"
     >
       <div className="p-4 flex flex-col gap-3">
-        {editing ? (
-          <div className="animate-in fade-in zoom-in-95">{editContent(close)}</div>
+        {isEditing ? (
+          <div className="animate-in fade-in zoom-in-95">{editContent}</div>
         ) : (
           <div className="flex items-center gap-2">
             {collapsibleContent ? (
@@ -82,7 +83,7 @@ export function SettingsCard({
             )}
             {badge}
             <div className="flex items-center gap-0.5 shrink-0">
-              <IconButton label="Modifier" size="sm" onClick={() => setEditing(true)}>
+              <IconButton label="Modifier" size="sm" onClick={onEditStart}>
                 <span aria-hidden="true" className="text-[12px]">
                   ✎
                 </span>
@@ -103,6 +104,6 @@ export function SettingsCard({
           {collapsibleContent}
         </div>
       )}
-    </div>
+    </article>
   );
 }

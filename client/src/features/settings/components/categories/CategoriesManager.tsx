@@ -18,8 +18,34 @@ import {
 } from '@/hooks/useCategories.ts';
 import { Category } from '@/types.ts';
 
-export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
+function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: () => void }>) {
   const updateCat = useUpdateCategory();
+
+  return (
+    <CategoryEditor
+      initialValues={{ name: cat.name, icon: cat.icon }}
+      isPending={updateCat.isPending}
+      submitLabel="Modifier"
+      autoFocus
+      onCancel={onClose}
+      onSave={(values) => {
+        updateCat.mutate(
+          { id: cat.id, ...values },
+          {
+            onSuccess: () => {
+              onClose();
+              showToast('Catégorie mise à jour ✓');
+            },
+            onError: (err) => showToast(err.message),
+          },
+        );
+      }}
+    />
+  );
+}
+
+export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
+  const [editing, setEditing] = useState(false);
   const deleteCat = useDeleteCategory();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
 
@@ -31,7 +57,7 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
         subtitle={
           <p className="text-[10px] text-stone-400">
             {cat.subcategories.length} sous-catégorie
-            {cat.subcategories.length !== 1 ? 's' : ''}
+            {cat.subcategories.length === 1 ? '' : 's'}
           </p>
         }
         canDelete={cat.subcategories.length === 0}
@@ -44,27 +70,9 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
             'Catégorie supprimée',
           )
         }
-        editContent={(close) => (
-          <CategoryEditor
-            initialValues={{ name: cat.name, icon: cat.icon }}
-            isPending={updateCat.isPending}
-            submitLabel="Modifier"
-            autoFocus
-            onCancel={close}
-            onSave={(values) => {
-              updateCat.mutate(
-                { id: cat.id, ...values },
-                {
-                  onSuccess: () => {
-                    close();
-                    showToast('Catégorie mise à jour ✓');
-                  },
-                  onError: (err) => showToast(err.message),
-                },
-              );
-            }}
-          />
-        )}
+        isEditing={editing}
+        onEditStart={() => setEditing(true)}
+        editContent={<CategoryEditForm cat={cat} onClose={() => setEditing(false)} />}
         collapsibleContent={<SubCategoriesManager parentCategory={cat} />}
       />
       <DeleteConfirmModal />
