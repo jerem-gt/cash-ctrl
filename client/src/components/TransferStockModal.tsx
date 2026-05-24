@@ -1,6 +1,6 @@
 import { type SyntheticEvent, useState } from 'react';
 
-import { Button, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useTransferStock } from '@/hooks/useStocks';
 import { today } from '@/lib/format';
@@ -43,77 +43,78 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-1">Transférer des titres</h3>
-        <p className="text-sm text-stone-400 mb-5">
+    <ModalFrame
+      title="Transférer des titres"
+      subtitle={
+        <>
           <span className="font-mono font-bold text-stone-700">{position.ticker}</span> — PRU&nbsp;
           {position.avg_price.toLocaleString('fr-FR', {
             style: 'currency',
             currency: position.currency ?? 'EUR',
           })}{' '}
           conservé
-        </p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Compte destination" htmlFor="tf-to-account">
-            {investmentTargets.length === 0 ? (
-              <p className="text-sm text-red-600 py-2">
-                Aucun autre compte d'investissement disponible.
-              </p>
-            ) : (
-              <select
-                id="tf-to-account"
-                value={toAccountId}
-                onChange={(e) => setToAccountId(Number.parseInt(e.target.value, 10))}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
-              >
-                {investmentTargets.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </FormGroup>
-
-          <div className="flex gap-3">
-            <FormGroup label={`Nombre d'actions (max ${position.quantity})`} htmlFor="tf-quantity">
-              <Input
-                id="tf-quantity"
-                type="number"
-                min="0.001"
-                max={position.quantity}
-                step="any"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder={String(position.quantity)}
-                autoFocus
-              />
-            </FormGroup>
-            <FormGroup label="Date" htmlFor="tf-date">
-              <Input
-                id="tf-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </FormGroup>
-          </div>
-
-          <div className="flex gap-2 justify-end mt-1">
-            <Button type="button" onClick={onClose} disabled={transfer.isPending}>
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={transfer.isPending || !isValid || investmentTargets.length === 0}
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <FormGroup label="Compte destination" htmlFor="tf-to-account">
+          {investmentTargets.length === 0 ? (
+            <p className="text-sm text-red-600 py-2">
+              Aucun autre compte d'investissement disponible.
+            </p>
+          ) : (
+            <select
+              id="tf-to-account"
+              value={toAccountId}
+              onChange={(e) => setToAccountId(Number.parseInt(e.target.value, 10))}
+              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
             >
-              {transfer.isPending ? '…' : 'Transférer'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+              {investmentTargets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormGroup>
+
+        <div className="flex gap-3">
+          <FormGroup label={`Nombre d'actions (max ${position.quantity})`} htmlFor="tf-quantity">
+            <Input
+              id="tf-quantity"
+              type="number"
+              min="0.001"
+              max={position.quantity}
+              step="any"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder={String(position.quantity)}
+              autoFocus
+            />
+          </FormGroup>
+          <FormGroup label="Date" htmlFor="tf-date">
+            <Input
+              id="tf-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormGroup>
+        </div>
+
+        <div className="flex gap-2 justify-end mt-1">
+          <Button type="button" onClick={onClose} disabled={transfer.isPending}>
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={transfer.isPending || !isValid || investmentTargets.length === 0}
+          >
+            {transfer.isPending ? '…' : 'Transférer'}
+          </Button>
+        </div>
+      </form>
+    </ModalFrame>
   );
 }

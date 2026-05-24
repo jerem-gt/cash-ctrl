@@ -15,8 +15,8 @@ import {
 import { TxItem } from '@/components/TxItem';
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useBanks } from '@/hooks/useBanks';
 import { useCategories } from '@/hooks/useCategories';
+import { useLogoMap } from '@/hooks/useLogoMap';
 import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/useStats';
 import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
@@ -71,8 +71,7 @@ export default function DashboardPage() {
   const { data: balanceHistory } = useBalanceHistory();
   const { data: profitabilityList = [] } = useProfitability();
   const { data: categories = [] } = useCategories();
-  const { data: banks = [] } = useBanks();
-  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const logoMap = useLogoMap();
 
   const colorMap = useMemo(
     () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),

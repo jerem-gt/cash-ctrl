@@ -10,6 +10,7 @@ import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
+import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance } from '@/lib/account';
 import { fmt } from '@/lib/format';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
@@ -62,7 +63,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const accountsActive = useMatch({ path: '/accounts/:id', end: true }) !== null;
-  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const logoMap = useLogoMap();
   const bankSortOrder = useMemo(
     () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
     [banks],

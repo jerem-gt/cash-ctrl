@@ -17,6 +17,7 @@ import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { useLoan } from '@/hooks/useLoans';
+import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance, accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { Account } from '@/types.ts';
@@ -54,7 +55,7 @@ export default function AccountsPage() {
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
-  const logoMap = useMemo(() => Object.fromEntries(banks.map((b) => [b.name, b.logo])), [banks]);
+  const logoMap = useLogoMap();
   const bankSortOrder = useMemo(
     () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
     [banks],
