@@ -4,9 +4,23 @@ import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES } from '../../constants';
 import { toCents } from '../../lib/money';
+import { parseBody } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo';
+
+const linkSchema = z.object({
+  linked_transaction_id: z.number().int().positive(),
+  attributed_amount: z.number().positive().optional(),
+});
+
+const statusSchema = z.object({
+  reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable(),
+});
+
+const attributedAmountSchema = z.object({
+  attributed_amount: z.number().positive().nullable(),
+});
 
 export function createReimbursementsRouter(db: Database): Router {
   const repo = createReimbursementsRepo(db);
@@ -35,16 +49,8 @@ export function createReimbursementsRouter(db: Database): Router {
     const transactionId = Number.parseInt(req.params.transactionId);
     const userId = sessionUserId(req);
 
-    const parsed = z
-      .object({
-        linked_transaction_id: z.number().int().positive(),
-        attributed_amount: z.number().positive().optional(),
-      })
-      .safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, linkSchema, req.body);
+    if (!data) return;
 
     const tx = txRepo.getById(transactionId, userId);
     if (!tx) {
@@ -56,7 +62,7 @@ export function createReimbursementsRouter(db: Database): Router {
       return;
     }
 
-    const linkedTx = txRepo.getById(parsed.data.linked_transaction_id, userId);
+    const linkedTx = txRepo.getById(data.linked_transaction_id, userId);
     if (!linkedTx) {
       res.status(404).json({ error: 'Linked transaction not found' });
       return;
@@ -67,8 +73,8 @@ export function createReimbursementsRouter(db: Database): Router {
     }
 
     const attributedAmount =
-      parsed.data.attributed_amount == null ? null : toCents(parsed.data.attributed_amount);
-    repo.link(userId, transactionId, parsed.data.linked_transaction_id, attributedAmount);
+      data.attributed_amount == null ? null : toCents(data.attributed_amount);
+    repo.link(userId, transactionId, data.linked_transaction_id, attributedAmount);
     res.status(201).json(repo.getByTransactionId(transactionId, userId));
   });
 
@@ -76,20 +82,15 @@ export function createReimbursementsRouter(db: Database): Router {
     const transactionId = Number.parseInt(req.params.transactionId);
     const userId = sessionUserId(req);
 
-    const parsed = z
-      .object({ reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable() })
-      .safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, statusSchema, req.body);
+    if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
       res.status(404).json({ error: 'Transaction not found' });
       return;
     }
 
-    txRepo.setReimbursementStatus(userId, transactionId, parsed.data.reimbursement_status);
+    txRepo.setReimbursementStatus(userId, transactionId, data.reimbursement_status);
     res.json(txRepo.getWithDetails(transactionId));
   });
 
@@ -98,13 +99,8 @@ export function createReimbursementsRouter(db: Database): Router {
     const linkedId = Number.parseInt(req.params.linkedId);
     const userId = sessionUserId(req);
 
-    const parsed = z
-      .object({ attributed_amount: z.number().positive().nullable() })
-      .safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, attributedAmountSchema, req.body);
+    if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
       res.status(404).json({ error: 'Transaction not found' });
@@ -112,7 +108,7 @@ export function createReimbursementsRouter(db: Database): Router {
     }
 
     const attributedAmount =
-      parsed.data.attributed_amount == null ? null : toCents(parsed.data.attributed_amount);
+      data.attributed_amount == null ? null : toCents(data.attributed_amount);
     repo.updateAttributedAmount(transactionId, linkedId, attributedAmount);
     res.json(repo.getByTransactionId(transactionId, userId));
   });

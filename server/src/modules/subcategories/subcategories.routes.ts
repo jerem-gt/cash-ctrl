@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
+import { parseBody, requireById } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
@@ -29,19 +30,16 @@ export function createSubcategoriesRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = createSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    if (!getCatsRepo(req).getById(parsed.data.category_id)) {
+    const data = parseBody(res, createSchema, req.body);
+    if (!data) return;
+    if (!getCatsRepo(req).getById(data.category_id)) {
       res.status(404).json({ error: 'Catégorie introuvable' });
       return;
     }
     const repo = getRepo(req);
     const result = repo.create({
-      category_id: parsed.data.category_id,
-      name: parsed.data.name.trim(),
+      category_id: data.category_id,
+      name: data.name.trim(),
     });
     res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
@@ -49,26 +47,17 @@ export function createSubcategoriesRouter(db: Database): Router {
   router.put('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
     const repo = getRepo(req);
-    if (!repo.getById(id)) {
-      res.status(404).json({ error: 'Sous-catégorie introuvable' });
-      return;
-    }
-    const parsed = updateSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    repo.update(id, parsed.data.name.trim());
+    if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
+    const data = parseBody(res, updateSchema, req.body);
+    if (!data) return;
+    repo.update(id, data.name.trim());
     res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
     const repo = getRepo(req);
-    if (!repo.getById(id)) {
-      res.status(404).json({ error: 'Sous-catégorie introuvable' });
-      return;
-    }
+    if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
     const n = txRepo.getCountBySubcategoryId(id);
     if (n > 0) {
       res.status(409).json({

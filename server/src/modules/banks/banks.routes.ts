@@ -3,15 +3,18 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
+import { parseBody, requireById } from '../../lib/routeHelpers';
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createBanksRepo } from './banks.repo';
 
-const schema = z.object({
+const bankSchema = z.object({
   name: z.string().min(1).max(100),
   domain: z.string().max(253).nullable().optional(),
 });
+
+const reorderSchema = z.array(z.object({ id: z.number().int(), sort_order: z.number().int() }));
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -33,24 +36,17 @@ export function createBanksRouter(db: Database): Router {
   });
 
   router.put('/reorder', (req, res) => {
-    const schema = z.array(z.object({ id: z.number().int(), sort_order: z.number().int() }));
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    banksRepo.reorder(parsed.data);
+    const data = parseBody(res, reorderSchema, req.body);
+    if (!data) return;
+    banksRepo.reorder(data);
     res.json({ ok: true });
   });
 
   router.post('/', (req, res) => {
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    const domain = parsed.data.domain?.trim() || null;
-    const result = banksRepo.create(parsed.data.name.trim(), domain);
+    const data = parseBody(res, bankSchema, req.body);
+    if (!data) return;
+    const domain = data.domain?.trim() || null;
+    const result = banksRepo.create(data.name.trim(), domain);
     res.status(201).json(banksRepo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -61,14 +57,10 @@ export function createBanksRouter(db: Database): Router {
       res.status(404).json({ error: 'Bank not found' });
       return;
     }
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
-    const domain =
-      parsed.data.domain === undefined ? bank.domain : parsed.data.domain?.trim() || null;
-    banksRepo.update(id, parsed.data.name.trim(), bank.logo, domain);
+    const data = parseBody(res, bankSchema, req.body);
+    if (!data) return;
+    const domain = data.domain === undefined ? bank.domain : data.domain?.trim() || null;
+    banksRepo.update(id, data.name.trim(), bank.logo, domain);
     res.json(banksRepo.getById(id));
   });
 
@@ -89,10 +81,7 @@ export function createBanksRouter(db: Database): Router {
 
   router.delete('/:id', (req, res) => {
     const id = Number.parseInt(req.params.id);
-    if (!banksRepo.getById(id)) {
-      res.status(404).json({ error: 'Bank not found' });
-      return;
-    }
+    if (!requireById(res, banksRepo, id, 'Bank not found')) return;
     const cnt = accountsRepo.countByBankId(id);
     if (cnt > 0) {
       res.status(409).json({ error: `Cette banque est utilisée par ${cnt} compte(s).` });
