@@ -1,7 +1,7 @@
 import { Download, HardDrive, Play } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { useBackupList, useRunBackup } from '@/hooks/useBackup';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import type { BackupFile } from '@/types';

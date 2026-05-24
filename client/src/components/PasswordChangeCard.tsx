@@ -1,6 +1,6 @@
 import { SyntheticEvent, useState } from 'react';
 
-import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui.tsx';
+import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui';
 import { useChangePassword } from '@/hooks/useAuth.ts';
 
 export function PasswordChangeCard() {

@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 
-import { Skeleton } from '@/components/ui.tsx';
+import { Skeleton } from '@/components/ui';
 
 type Props<T> = {
   isLoading: boolean;

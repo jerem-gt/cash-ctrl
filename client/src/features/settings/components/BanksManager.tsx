@@ -19,7 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { GripVertical } from 'lucide-react';
 import { ChangeEvent, SyntheticEvent, useState } from 'react';
 
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
 import {

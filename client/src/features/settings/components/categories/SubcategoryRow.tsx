@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
 import { useUpdateSubcategory } from '@/hooks/useSubcategories.ts';
 import { Subcategory } from '@/types.ts';

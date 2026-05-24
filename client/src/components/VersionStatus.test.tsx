@@ -12,12 +12,12 @@ vi.mock('../hooks/useAppVersion.ts', () => ({
   })),
 }));
 
-vi.mock('./ui.tsx', () => ({
+vi.mock('./ui', () => ({
   showToast: vi.fn(),
 }));
 
 import { useAppVersion } from '../hooks/useAppVersion.ts';
-import { showToast } from './ui.tsx';
+import { showToast } from './ui';
 
 function clickTimes(el: HTMLElement, n: number) {
   for (let i = 0; i < n; i++) fireEvent.click(el);

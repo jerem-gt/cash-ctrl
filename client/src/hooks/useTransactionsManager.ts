@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { TxFormState } from '@/components/TxModal.tsx';
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';

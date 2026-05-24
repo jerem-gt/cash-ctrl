@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 import {
   CategoryEditor,
   CategoryForm,

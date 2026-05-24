@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authApi } from '@/api/client';
-import { showToast } from '@/components/ui.tsx';
+import { showToast } from '@/components/ui';
 
 export function useMe() {
   return useQuery({

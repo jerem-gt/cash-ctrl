@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Button, showToast } from '@/components/ui.tsx';
+import { Button, showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
 
 async function downloadExport(path: string, filename: string, setLoading: (v: boolean) => void) {
