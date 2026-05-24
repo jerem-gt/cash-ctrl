@@ -13,6 +13,7 @@ interface CategoryEditorProps {
   isPending: boolean;
   submitLabel?: string;
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export function CategoryEditor({
@@ -22,6 +23,7 @@ export function CategoryEditor({
   isPending,
   submitLabel = 'Ajouter',
   placeholder = 'Nom...',
+  autoFocus = false,
 }: Readonly<CategoryEditorProps>) {
   const [form, setForm] = useState(initialValues);
   const [showPicker, setShowPicker] = useState(false);
@@ -80,7 +82,7 @@ export function CategoryEditor({
         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
         placeholder={placeholder}
-        autoFocus
+        autoFocus={autoFocus}
         onKeyDown={(e) => {
           if (e.key === 'Enter') onSave(form);
         }}

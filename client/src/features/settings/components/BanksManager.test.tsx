@@ -43,11 +43,10 @@ describe('BanksManager', () => {
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('ajoutée'));
   });
 
-  it('sélectionne une banque et passe en mode édition', async () => {
+  it('passe en mode édition', async () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument();
   });
@@ -56,7 +55,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: /annuler/i }));
     expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
@@ -67,7 +65,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /supprimer/i }));
     expect(screen.getByText('Supprimer la banque')).toBeInTheDocument();
   });
@@ -76,7 +73,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /supprimer/i }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>
@@ -88,7 +84,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /supprimer/i }));
     await user.click(screen.getByRole('button', { name: /annuler/i }));
     expect(screen.queryByText('Supprimer la banque')).not.toBeInTheDocument();
@@ -98,7 +93,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByPlaceholderText('Nom');
     await user.clear(nameInput);
@@ -111,17 +105,15 @@ describe('BanksManager', () => {
 
   it('pas de bouton Supprimer dans le panneau quand acc_count > 0', async () => {
     server.use(http.get('/api/banks', () => HttpResponse.json([{ ...BANKS[0], acc_count: 2 }])));
-    const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: /BNP/ }));
     expect(screen.queryByRole('button', { name: /supprimer/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
 
-  // ─── BankDetails — gestion de fichier logo ─────────────────────────────────
+  // ─── BankCard — gestion de fichier logo ────────────────────────────────────
 
-  describe('BankDetails — gestion de fichier logo', () => {
+  describe('BankCard — gestion de fichier logo', () => {
     beforeEach(() => {
       vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
       vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
@@ -131,7 +123,6 @@ describe('BanksManager', () => {
       const user = userEvent.setup();
       renderWithProviders(<BanksManager />);
       await screen.findByText('BNP');
-      await user.click(screen.getByRole('button', { name: 'BNP' }));
       await user.click(screen.getByRole('button', { name: /modifier/i }));
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(['logo'], 'logo.png', { type: 'image/png' });
@@ -145,7 +136,6 @@ describe('BanksManager', () => {
       const user = userEvent.setup();
       renderWithProviders(<BanksManager />);
       await screen.findByText('BNP');
-      await user.click(screen.getByRole('button', { name: 'BNP' }));
       await user.click(screen.getByRole('button', { name: /modifier/i }));
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       Object.defineProperty(fileInput, 'files', {
@@ -169,7 +159,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
@@ -186,7 +175,6 @@ describe('BanksManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
-    await user.click(screen.getByRole('button', { name: 'BNP' }));
     await user.click(screen.getByRole('button', { name: /supprimer/i }));
     await user.click(screen.getByRole('button', { name: /confirmer/i }));
     await waitFor(() =>

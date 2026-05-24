@@ -2,27 +2,16 @@ import { Skeleton } from '@/components/ui';
 
 export function SettingsManagerSkeleton() {
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8 md:px-4">
-      <div className="w-full md:w-[320px] md:shrink-0 space-y-4">
-        <Skeleton className="h-3 w-24" />
-        <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-2">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-8" />
-        </div>
-        <div>
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0"
-            >
-              <Skeleton className="w-5 h-5 shrink-0" />
-              <Skeleton className="h-3.5 flex-1" />
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col gap-6">
+      <Skeleton className="h-3 w-24" />
+      <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-2">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-8" />
       </div>
-      <div className="flex-1">
-        <Skeleton className="h-40 rounded-2xl" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-2xl" />
+        ))}
       </div>
     </div>
   );

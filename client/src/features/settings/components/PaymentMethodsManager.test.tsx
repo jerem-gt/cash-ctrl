@@ -47,7 +47,6 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     const nameInput = screen.getByDisplayValue('CB');
     await user.clear(nameInput);
@@ -62,7 +61,6 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: /annuler/i }));
     expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
@@ -75,10 +73,8 @@ describe('PaymentMethodsManager', () => {
         HttpResponse.json([{ ...PAYMENT_METHODS[0], tx_count: 2 }]),
       ),
     );
-    const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    await user.click(screen.getByRole('button', { name: /CB/ }));
     expect(screen.queryByRole('button', { name: /supprimer/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /modifier/i })).toBeInTheDocument();
   });
@@ -92,7 +88,6 @@ describe('PaymentMethodsManager', () => {
     const user = userEvent.setup();
     renderWithProviders(<PaymentMethodsManager />);
     await screen.findByText('CB');
-    await user.click(screen.getByRole('button', { name: /CB/ }));
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('button', { name: /enregistrer/i }));
     await waitFor(() =>
