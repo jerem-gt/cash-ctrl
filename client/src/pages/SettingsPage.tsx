@@ -1,7 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 
-import { PasswordChangeCard } from '@/components/PasswordChangeCard.tsx';
 import {
   AccountTypesManager,
   BackupManager,
@@ -11,6 +10,7 @@ import {
   SettingsManager,
   SettingsTab,
 } from '@/features/settings';
+import { PasswordChangeCard } from '@/features/settings/components/PasswordChangeCard';
 
 import ExportManager from '../features/settings/components/ExportManager.tsx';
 import ImportManager from '../features/settings/components/ImportManager.tsx';

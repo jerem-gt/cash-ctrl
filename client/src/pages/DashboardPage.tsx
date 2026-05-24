@@ -12,8 +12,13 @@ import {
   YAxis,
 } from 'recharts';
 
-import { TxItem } from '@/components/TxItem';
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
+import { TxItem } from '@/features/transactions/components/TxItem';
+import {
+  usePendingReimbursements,
+  useRecentReimbursements,
+  useSetReimbursementStatus,
+} from '@/features/transactions/hooks/useReimbursements';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
@@ -21,12 +26,6 @@ import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/
 import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
-
-import {
-  usePendingReimbursements,
-  useRecentReimbursements,
-  useSetReimbursementStatus,
-} from '../hooks/useReimbursements';
 
 function DashboardSkeleton() {
   return (

@@ -1,4 +1,4 @@
-import { TransactionsList } from '@/components/TransactionsList';
+import { TransactionsList } from '@/features/transactions/components/TransactionsList';
 import { useLogoMap } from '@/hooks/useLogoMap';
 
 export default function TransactionsPage() {
