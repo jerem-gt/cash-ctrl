@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { sessionUserId } from '../middleware';
 
-type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
+export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
 export function handleAccountAction<T>(
   req: Request<{ accountId: string }>,

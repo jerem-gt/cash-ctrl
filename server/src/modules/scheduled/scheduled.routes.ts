@@ -6,6 +6,8 @@ import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../con
 import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import { getTransferIds } from '../../lib/administrationDataConstants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
+import { parseBody } from '../../lib/routeHelpers';
+import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
 
@@ -25,12 +27,8 @@ const scheduledSchema = z.object({
   recurrence_day: z.number().int().min(1).max(31).nullable().default(null),
   recurrence_month: z.number().int().min(1).max(12).nullable().default(null),
   weekend_handling: z.enum(WEEKEND_HANDLING).default('allow'),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  end_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable()
-    .default(null),
+  start_date: dateSchema,
+  end_date: optionalDateSchema,
   active: z.boolean().default(true),
 });
 
@@ -84,19 +82,15 @@ export function createScheduledRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = scheduledSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, scheduledSchema, req.body);
+    if (!data) return;
 
     const userId = sessionUserId(req);
     const transferIds = getTransferIds(db, userId);
-    const d = parsed.data;
-    if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
-    if (!checkVersementConstraints(db, d, res)) return;
+    if (!checkTransferConstraints(data, transferIds.paymentMethodId, res)) return;
+    if (!checkVersementConstraints(db, data, res)) return;
 
-    const result = scheduledRepo.create(userId, { ...d, description: d.description.trim() });
+    const result = scheduledRepo.create(userId, { ...data, description: data.description.trim() });
     generateScheduledTransactions(userId, db);
     res.status(201).json(scheduledRepo.getById(Number(result.lastInsertRowid), userId));
   });
@@ -110,18 +104,14 @@ export function createScheduledRouter(db: Database): Router {
       return;
     }
 
-    const parsed = scheduledSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
-      return;
-    }
+    const data = parseBody(res, scheduledSchema, req.body);
+    if (!data) return;
 
     const transferIds = getTransferIds(db, userId);
-    const d = parsed.data;
-    if (!checkTransferConstraints(d, transferIds.paymentMethodId, res)) return;
-    if (!checkVersementConstraints(db, d, res)) return;
+    if (!checkTransferConstraints(data, transferIds.paymentMethodId, res)) return;
+    if (!checkVersementConstraints(db, data, res)) return;
 
-    scheduledRepo.update(id, userId, { ...d, description: d.description.trim() });
+    scheduledRepo.update(id, userId, { ...data, description: data.description.trim() });
     generateScheduledTransactions(userId, db);
     res.json(scheduledRepo.getById(id, userId));
   });

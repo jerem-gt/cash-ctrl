@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
+import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import type { FullExport } from '../export/export.types.js';
 import { createImportRepo } from './import.repo.js';
@@ -13,11 +14,7 @@ const newAccountSchema = z.object({
   bank_id: z.number().int().positive().nullable(),
   account_type_id: z.number().int().positive().nullable(),
   initial_balance: z.number().default(0),
-  opening_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable()
-    .default(null),
+  opening_date: optionalDateSchema,
 });
 
 const newSubcategorySchema = z
@@ -41,7 +38,7 @@ const transactionSchema = z
     description: z.string().min(1).max(200),
     subcategory_id: z.number().int().positive().nullable(),
     new_subcategory_key: z.string().nullable(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    date: dateSchema,
     notes: z.string().max(1000).nullable(),
     validated: z.boolean(),
     payment_method_id: z.number().int().positive().nullable().default(null),
@@ -58,7 +55,7 @@ const transferSchema = z
     to_account_qif_name: z.string().nullable(),
     amount: z.number().positive(),
     description: z.string().min(1).max(200),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    date: dateSchema,
     notes: z.string().max(1000).nullable(),
     validated: z.boolean(),
   })
@@ -164,7 +161,7 @@ const jsonFullSchema = z.object({
       recurrence_month: z.number().int().nullable(),
       to_account_id: z.number().int().positive().nullable(),
       weekend_handling: z.string().min(1),
-      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      start_date: dateSchema,
       end_date: z.string().nullable(),
       active: z.number().int(),
       last_generated_until: z.string().nullable().default(null),
@@ -189,7 +186,7 @@ const jsonFullSchema = z.object({
       quantity: z.number(),
       price_per_share: z.number(),
       fees: z.number().int(),
-      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      date: dateSchema,
     }),
   ),
   loans: z.array(
@@ -199,7 +196,7 @@ const jsonFullSchema = z.object({
       principal_amount: z.number().int().positive(),
       interest_rate: z.number(),
       duration_months: z.number().int().positive(),
-      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      start_date: dateSchema,
       monthly_payment: z.number().int().positive(),
       source_account_id: z.number().int().positive(),
       deposit_account_id: z.number().int().positive(),
@@ -207,7 +204,7 @@ const jsonFullSchema = z.object({
       installments: z.array(
         z.object({
           installment_number: z.number().int().positive(),
-          due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          due_date: dateSchema,
           total_amount: z.number().int(),
           principal_amount: z.number().int(),
           interest_amount: z.number().int(),
@@ -240,7 +237,7 @@ const jsonFullSchema = z.object({
         amount: z.number().int(),
         fees: z.number().int(),
         social_fees: z.number().int().default(0),
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        date: dateSchema,
         arbitrage_peer_id: z.number().int().positive().nullable(),
       }),
     )
