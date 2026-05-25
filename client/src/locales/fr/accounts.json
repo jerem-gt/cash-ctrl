@@ -1,0 +1,14 @@
+{
+  "close_modal": {
+    "title": "Clôturer le compte",
+    "balance_warning": "Ce compte a un solde de <bold>{{balance}}</bold>. Un virement de clôture sera créé automatiquement.",
+    "balance_zero": "Le solde est nul, la clôture peut être effectuée directement.",
+    "transfer_to": "Virer le solde vers",
+    "choose_account": "— Choisir un compte —",
+    "closing_date": "Date de clôture",
+    "close_btn": "Clôturer",
+    "success": "Compte clôturé ✓",
+    "err_no_destination": "Choisissez un compte de destination.",
+    "err_no_date": "Renseignez la date de clôture."
+  }
+}
