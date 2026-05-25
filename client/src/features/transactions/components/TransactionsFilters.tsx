@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, Input, Select, Switch } from '@/components/ui';
@@ -45,6 +45,11 @@ export const TransactionsFilters = ({
   const [amountMaxInput, setAmountMaxInput] = useState(filters.amount_max?.toString() ?? '');
   const [open, setOpen] = useState(false);
 
+  const onFilterChangeRef = useRef(onFilterChange);
+  useLayoutEffect(() => {
+    onFilterChangeRef.current = onFilterChange;
+  });
+
   const activeAdvancedCount = ADVANCED_KEYS.filter((k) => {
     if (!showAccountSelect && k === 'account_id') return false;
     return filters[k] != null;
@@ -55,31 +60,31 @@ export const TransactionsFilters = ({
       const trimmed = descriptionInput.trim();
       const current = filters.description_contains ?? '';
       if (trimmed !== current) {
-        onFilterChange({ description_contains: trimmed || undefined });
+        onFilterChangeRef.current({ description_contains: trimmed || undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [descriptionInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [descriptionInput, filters.description_contains]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       const val = Number.parseFloat(amountMinInput);
       const current = filters.amount_min;
       const next = amountMinInput.trim() && !Number.isNaN(val) ? val : undefined;
-      if (next !== current) onFilterChange({ amount_min: next });
+      if (next !== current) onFilterChangeRef.current({ amount_min: next });
     }, 400);
     return () => clearTimeout(timer);
-  }, [amountMinInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [amountMinInput, filters.amount_min]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       const val = Number.parseFloat(amountMaxInput);
       const current = filters.amount_max;
       const next = amountMaxInput.trim() && !Number.isNaN(val) ? val : undefined;
-      if (next !== current) onFilterChange({ amount_max: next });
+      if (next !== current) onFilterChangeRef.current({ amount_max: next });
     }, 400);
     return () => clearTimeout(timer);
-  }, [amountMaxInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [amountMaxInput, filters.amount_max]);
 
   return (
     <div className="flex flex-col gap-2 w-full">
