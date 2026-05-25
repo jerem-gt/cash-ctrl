@@ -466,7 +466,8 @@ export function TxModal(props: Readonly<Props>) {
   const modalTitle = getModalTitle(isEdit, isDuplicate, isTransfer, t);
   const submitLabel = getSubmitLabel(isPending, isEdit, isTransferCreate, t, tc);
 
-  if (!isEdit && isTransfer && noOtherAccounts) {
+  const showNoOtherAccounts = !isEdit && isTransfer && noOtherAccounts;
+  if (showNoOtherAccounts) {
     return (
       <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
