@@ -54,6 +54,10 @@ export function createScheduledRepo(db: Database) {
   const deleteFutureTransactionsStmt = db.prepare(
     'DELETE FROM transactions WHERE scheduled_id = :id AND user_id = :userId AND date > :today AND validated = 0',
   );
+  const getLastPreservedDateStmt = db.prepare<
+    { id: number; today: string },
+    { last_date: string | null }
+  >('SELECT MAX(date) as last_date FROM transactions WHERE scheduled_id = :id AND date <= :today');
   const deleteScheduledStmt = db.prepare(
     'DELETE FROM scheduled_transactions WHERE id = :id AND user_id = :userId',
   );
@@ -88,7 +92,7 @@ export function createScheduledRepo(db: Database) {
         active               = :active,
         insurance_support_id = :insurance_support_id,
         insurance_fees       = :insurance_fees,
-        last_generated_until = NULL
+        last_generated_until = :last_generated_until
     WHERE id = :id
     AND user_id = :user_id
   `);
@@ -119,15 +123,18 @@ export function createScheduledRepo(db: Database) {
 
     update(id: number, userId: number, data: CreateScheduledInput) {
       const today = new Date().toISOString().split('T')[0];
+      const lastPreserved = getLastPreservedDateStmt.get({ id, today });
+      const last_generated_until = lastPreserved?.last_date ?? null;
       const runUpdate = db.transaction(() => {
         deleteFutureTransactionsStmt.run({ id, userId, today });
         updateStmt.run({
           ...data,
           amount: toCents(data.amount),
           insurance_fees: toCents(data.insurance_fees),
-          id: id,
+          id,
           user_id: userId,
           active: data.active ? 1 : 0,
+          last_generated_until,
         });
       });
       return runUpdate();
