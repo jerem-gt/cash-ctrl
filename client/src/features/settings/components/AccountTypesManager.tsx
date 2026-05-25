@@ -29,6 +29,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
 
   const envelopeOptions = [
     { value: '', label: t('account_types.none_envelope') },
+    { value: 'savings', label: t('account_types.savings') },
     { value: 'investment', label: t('account_types.investment') },
     { value: 'loan', label: t('account_types.loan') },
     { value: 'life_insurance', label: t('account_types.life_insurance') },
@@ -172,6 +173,7 @@ export function AccountTypesManager() {
 
   const envelopeOptions = [
     { value: '', label: t('account_types.none_envelope') },
+    { value: 'savings', label: t('account_types.savings') },
     { value: 'investment', label: t('account_types.investment') },
     { value: 'loan', label: t('account_types.loan') },
     { value: 'life_insurance', label: t('account_types.life_insurance') },

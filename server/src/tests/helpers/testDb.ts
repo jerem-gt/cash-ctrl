@@ -28,7 +28,11 @@ export function seedTestReferenceData(db: Database, userId: number) {
   db.prepare('INSERT OR IGNORE INTO banks (name) VALUES (?)').run('DefaultBank');
 
   db.prepare('INSERT INTO account_types (user_id, name) VALUES (?, ?)').run(userId, 'Courant');
-  db.prepare('INSERT INTO account_types (user_id, name) VALUES (?, ?)').run(userId, 'Épargne');
+  db.prepare('INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)').run(
+    userId,
+    'Épargne',
+    'savings',
+  );
   db.prepare('INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, ?, ?)').run(
     userId,
     'Bourse',

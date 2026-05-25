@@ -27,7 +27,7 @@ interface Props {
 
 export function ProfitabilityCard({ data }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
-  const isSavings = data.envelope_type === null;
+  const isSavings = data.envelope_type === 'savings';
   const gainPos = data.plus_value_absolue >= 0;
   const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
   const [showYearly, setShowYearly] = useState(false);

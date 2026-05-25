@@ -72,7 +72,7 @@ export default function AccountDetailPage() {
 
   const { data: profitabilityList = [] } = useProfitability();
   const profitability = profitabilityList.find((p) => p.account_id === accountId);
-  const showProfitability = isInvestment || isInsurance || account?.type === 'Épargne';
+  const showProfitability = isInvestment || isInsurance || account?.envelope_type === 'savings';
 
   const { data: loanData } = useLoan(isLoan ? accountId : 0);
   const { data: loanInstallments = [] } = useLoanInstallments(isLoan ? loanData?.id : undefined);

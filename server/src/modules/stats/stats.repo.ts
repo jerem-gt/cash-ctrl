@@ -587,7 +587,7 @@ function computeSavingsProfitability(
        LEFT JOIN transactions t ON t.account_id = a.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne' AND a.closed_at IS NULL
+       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
        GROUP BY a.id, a.name, at.envelope_type, at.name, a.initial_balance`,
     )
     .all(userId);
@@ -606,7 +606,7 @@ function computeSavingsProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne' AND a.closed_at IS NULL
+       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
        GROUP BY t.account_id, year
        ORDER BY t.account_id, year`,
     )
@@ -847,12 +847,11 @@ export function createStatsRepo(db: Database) {
       // Cash balance per account at year-end (amounts in cents)
       const cashStmt = db.prepare<
         { userId: number; yearEnd: string },
-        { account_id: number; envelope_type: string | null; type_name: string; cash_cents: number }
+        { account_id: number; envelope_type: string | null; cash_cents: number }
       >(
         `SELECT
            a.id AS account_id,
            at.envelope_type,
-           COALESCE(at.name, 'Autre') AS type_name,
            a.initial_balance + COALESCE((
              SELECT SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END)
              FROM transactions
@@ -1017,7 +1016,7 @@ export function createStatsRepo(db: Database) {
               Number(point['Fonds euros']) + toEuros(euroValues.get(row.account_id) ?? 0);
             point['Actions & UC'] =
               Number(point['Actions & UC']) + toEuros(ucValues.get(row.account_id) ?? 0);
-          } else if (row.type_name === 'Épargne') {
+          } else if (row.envelope_type === 'savings') {
             point['Épargne'] = Number(point['Épargne']) + toEuros(row.cash_cents);
           } else {
             point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
