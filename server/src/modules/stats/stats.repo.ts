@@ -149,6 +149,35 @@ function addToFlowMap(
   byYear.get(year)!.push({ date, signed_cents });
 }
 
+function buildYearlyReturn(
+  year: string,
+  start_value: number,
+  end_value: number,
+  netFlows: number,
+  yearFlows: DatedFlow[],
+  isCurrentYear: boolean,
+  todayStr: string,
+): YearlyReturn {
+  const gain = end_value - start_value - netFlows;
+  const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
+  const dietzDenominator = modifiedDietzDenominator(
+    start_value,
+    yearFlows,
+    `${year}-01-01`,
+    periodEnd,
+  );
+  const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
+  return {
+    year,
+    start_value,
+    end_value,
+    net_flows: netFlows,
+    gain,
+    return_pct,
+    is_ytd: isCurrentYear,
+  };
+}
+
 function computeInvestmentProfitability(
   db: Database,
   userId: number,
@@ -361,25 +390,17 @@ function computeInvestmentProfitability(
           : stockValueAt(acc.account_id, yearEnd, positionsAt(yearEnd));
 
         const end_value = runningCash + stockValue;
-        const gain = end_value - start_value - netFlows;
-        const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
-        const dietzDenominator = modifiedDietzDenominator(
-          start_value,
-          yearFlows,
-          `${year}-01-01`,
-          periodEnd,
+        yearly_returns.push(
+          buildYearlyReturn(
+            year,
+            start_value,
+            end_value,
+            netFlows,
+            yearFlows,
+            isCurrentYear,
+            todayStr,
+          ),
         );
-        const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
-
-        yearly_returns.push({
-          year,
-          start_value,
-          end_value,
-          net_flows: netFlows,
-          gain,
-          return_pct,
-          is_ytd: isCurrentYear,
-        });
 
         prevStockValue = stockValue;
       }
@@ -507,26 +528,18 @@ function computeInsuranceProfitability(
         const netFlows = row ? toEuros(row.versements_cents - row.rachats_cents) : 0;
         const delta = row ? toEuros(row.delta_cents) : 0;
         const end_value = isCurrentYear ? valeurActuelle : runningBalance + delta;
-        const gain = end_value - start_value - netFlows;
-        const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
         const yearFlows = insFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
-        const dietzDenominator = modifiedDietzDenominator(
-          start_value,
-          yearFlows,
-          `${year}-01-01`,
-          periodEnd,
+        yearly_returns.push(
+          buildYearlyReturn(
+            year,
+            start_value,
+            end_value,
+            netFlows,
+            yearFlows,
+            isCurrentYear,
+            todayStr,
+          ),
         );
-        const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
-
-        yearly_returns.push({
-          year,
-          start_value,
-          end_value,
-          net_flows: netFlows,
-          gain,
-          return_pct,
-          is_ytd: isCurrentYear,
-        });
 
         runningBalance = end_value;
       }
@@ -625,8 +638,7 @@ function computeSavingsProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type IS NULL AND at.name = 'Épargne'
-         AND a.closed_at IS NULL
+       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
          AND t.validated = 1
          AND (
            (t.type = 'income' AND (c.name IS NULL OR c.name != 'Revenus financiers'))
@@ -672,25 +684,17 @@ function computeSavingsProfitability(
           (isFirstYear ? toEuros(acc.initial_balance) : 0) +
           (row ? toEuros(row.delta_cents) : 0);
         const end_value = isCurrentYear ? valeurActuelle : economicEnd;
-        const gain = end_value - start_value - netFlows;
-        const periodEnd = isCurrentYear ? todayStr : `${year}-12-31`;
-        const dietzDenominator = modifiedDietzDenominator(
-          start_value,
-          yearFlows,
-          `${year}-01-01`,
-          periodEnd,
+        yearly_returns.push(
+          buildYearlyReturn(
+            year,
+            start_value,
+            end_value,
+            netFlows,
+            yearFlows,
+            isCurrentYear,
+            todayStr,
+          ),
         );
-        const return_pct = dietzDenominator > 0 ? (gain / dietzDenominator) * 100 : null;
-
-        yearly_returns.push({
-          year,
-          start_value,
-          end_value,
-          net_flows: netFlows,
-          gain,
-          return_pct,
-          is_ytd: isCurrentYear,
-        });
 
         runningBalance = economicEnd;
       }
@@ -842,7 +846,14 @@ export function createStatsRepo(db: Database) {
 
       if (!hasAccounts) return { account_types: [], data: [] };
 
-      const CATEGORIES = ['Prêts', 'Liquidités', 'Épargne', 'Fonds euros', 'Actions & UC'];
+      const CATEGORY_LABELS = {
+        prets: 'Prêts',
+        liquidites: 'Liquidités',
+        epargne: 'Épargne',
+        fonds_euros: 'Fonds euros',
+        actions_uc: 'Actions & UC',
+      } as const;
+      type CategoryKey = keyof typeof CATEGORY_LABELS;
 
       // Cash balance per account at year-end (amounts in cents)
       const cashStmt = db.prepare<
@@ -1000,33 +1011,41 @@ export function createStatsRepo(db: Database) {
         const { euro: euroValues, uc: ucValues } = insuranceValuesAt(yearEnd);
         const capitalRestant = capitalRestantAt(yearEnd);
 
-        const point: Record<string, string | number> = { year };
-        for (const cat of CATEGORIES) point[cat] = 0;
+        const point: Record<CategoryKey, number> = {
+          prets: 0,
+          liquidites: 0,
+          epargne: 0,
+          fonds_euros: 0,
+          actions_uc: 0,
+        };
 
         for (const row of cashRows) {
           if (row.envelope_type === 'loan') {
-            const debt = capitalRestant.get(row.account_id) ?? 0;
-            point['Prêts'] = Number(point['Prêts']) - debt;
+            point.prets -= capitalRestant.get(row.account_id) ?? 0;
           } else if (row.envelope_type === 'investment') {
-            point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
-            point['Actions & UC'] =
-              Number(point['Actions & UC']) + (stockValues.get(row.account_id) ?? 0);
+            point.liquidites += toEuros(row.cash_cents);
+            point.actions_uc += stockValues.get(row.account_id) ?? 0;
           } else if (row.envelope_type === 'life_insurance' || row.envelope_type === 'per') {
-            point['Fonds euros'] =
-              Number(point['Fonds euros']) + toEuros(euroValues.get(row.account_id) ?? 0);
-            point['Actions & UC'] =
-              Number(point['Actions & UC']) + toEuros(ucValues.get(row.account_id) ?? 0);
+            point.fonds_euros += toEuros(euroValues.get(row.account_id) ?? 0);
+            point.actions_uc += toEuros(ucValues.get(row.account_id) ?? 0);
           } else if (row.envelope_type === 'savings') {
-            point['Épargne'] = Number(point['Épargne']) + toEuros(row.cash_cents);
+            point.epargne += toEuros(row.cash_cents);
           } else {
-            point['Liquidités'] = Number(point['Liquidités']) + toEuros(row.cash_cents);
+            point.liquidites += toEuros(row.cash_cents);
           }
         }
 
         return point;
       });
 
-      return { account_types: CATEGORIES, data };
+      const labels = Object.values(CATEGORY_LABELS);
+      const labeledData = years.map((year, i) => ({
+        year,
+        ...(Object.fromEntries(
+          (Object.keys(data[i]) as CategoryKey[]).map((k) => [CATEGORY_LABELS[k], data[i][k]]),
+        ) as Record<string, number>),
+      }));
+      return { account_types: labels, data: labeledData };
     },
 
     getProfitability(userId: number): AccountProfitability[] {
