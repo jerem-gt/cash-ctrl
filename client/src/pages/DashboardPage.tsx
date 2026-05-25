@@ -27,6 +27,8 @@ import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
+const NOW = Date.now();
+
 function DashboardSkeleton() {
   return (
     <div className="space-y-5">
@@ -457,7 +459,8 @@ export default function DashboardPage() {
                   <th className="text-right py-1.5 pr-4 font-normal">Capital investi</th>
                   <th className="text-right py-1.5 pr-4 font-normal">Valeur actuelle</th>
                   <th className="text-right py-1.5 pr-4 font-normal">+/- value</th>
-                  <th className="text-right py-1.5 font-normal">% / an</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">% / an</th>
+                  <th className="text-right py-1.5 font-normal">Ancienneté</th>
                 </tr>
               </thead>
               <tbody>
@@ -470,6 +473,20 @@ export default function DashboardPage() {
                   } else {
                     const sign = p.rendement_annualise_pct >= 0 ? '+' : '';
                     annualizedLabel = `${sign}${p.rendement_annualise_pct.toFixed(1)} %`;
+                  }
+                  const msPerMonth = 30.44 * 24 * 3600 * 1000;
+                  const totalMonths = Math.floor(
+                    (NOW - new Date(p.opening_date).getTime()) / msPerMonth,
+                  );
+                  const years = Math.floor(totalMonths / 12);
+                  const months = totalMonths % 12;
+                  let durationLabel: string;
+                  if (years === 0) {
+                    durationLabel = `${months} mois`;
+                  } else if (months === 0) {
+                    durationLabel = `${years} an${years > 1 ? 's' : ''}`;
+                  } else {
+                    durationLabel = `${years} an${years > 1 ? 's' : ''} ${months} mois`;
                   }
                   return (
                     <tr key={p.account_id} className="border-b border-stone-50 last:border-0">
@@ -484,8 +501,11 @@ export default function DashboardPage() {
                         {gainPos ? '+' : ''}
                         {fmt(p.plus_value_absolue)}
                       </td>
-                      <td className={`text-right py-1.5 tabular-nums ${gainColor}`}>
+                      <td className={`text-right py-1.5 pr-4 tabular-nums ${gainColor}`}>
                         {annualizedLabel}
+                      </td>
+                      <td className="text-right py-1.5 tabular-nums text-stone-400">
+                        {durationLabel}
                       </td>
                     </tr>
                   );

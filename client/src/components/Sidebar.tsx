@@ -18,7 +18,7 @@ import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
 
 const NAV_BOTTOM = [
-  { to: '/accounts', label: 'Gestion des comptes', icon: '▣', end: true },
+  { to: '/transactions', label: 'Toutes les transactions', icon: '▣', end: true },
   { to: '/scheduled', label: 'Planifications', icon: '🗓' },
   { to: '/settings', label: 'Configuration', icon: '⚙' },
 ];
@@ -139,7 +139,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         <nav className="flex-1 py-4 flex flex-col overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
             <NavLink
-              to="/transactions"
+              to="/accounts"
               className="flex items-center justify-between px-6 py-2 text-xs uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors font-semibold"
             >
               <span>Comptes</span>
