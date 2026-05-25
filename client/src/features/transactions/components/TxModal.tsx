@@ -349,12 +349,9 @@ function getSchedulingOptions(
   isEdit: boolean,
   isTransferEdit: boolean,
   scheduledList: ScheduledTransaction[] | undefined,
-  tx: Transaction,
 ): ScheduledTransaction[] {
   if (!isEdit || isTransferEdit) return [];
-  return (scheduledList ?? []).filter(
-    (s) => s.active && s.type === tx.type && s.to_account_id === null,
-  );
+  return (scheduledList ?? []).filter((s) => s.active && s.to_account_id === null);
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -505,7 +502,7 @@ export function TxModal(props: Readonly<Props>) {
     );
   }
 
-  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList, tx!);
+  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList);
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
