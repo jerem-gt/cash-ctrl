@@ -332,7 +332,7 @@ export function createStocksRepo(db: Database) {
     hasPriceHistory: (ticker: string): boolean =>
       (hasPriceHistoryStmt.get({ ticker })?.cnt ?? 0) > 0,
 
-    getTickersForUser: (userId: number): string[] => getTickersForUserStmt.all(userId) as string[],
+    getTickersForUser: (userId: number): string[] => getTickersForUserStmt.all(userId),
 
     getOperationById(operationId: number): StockOperation | undefined {
       const row =

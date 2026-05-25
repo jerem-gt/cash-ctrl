@@ -73,6 +73,15 @@ export function StockOperationModal(props: Readonly<Props>) {
       ? t('stock_operation_modal.quantity_label')
       : t('stock_operation_modal.quantity_label_max', { max: maxQty });
 
+  let submitLabel: string;
+  if (mutation.isPending) {
+    submitLabel = tc('loading');
+  } else if (isBuy) {
+    submitLabel = t('stock_operation_modal.submit_buy');
+  } else {
+    submitLabel = t('stock_operation_modal.submit_sell');
+  }
+
   return (
     <ModalFrame
       title={isBuy ? t('stock_operation_modal.title_buy') : t('stock_operation_modal.title_sell')}
@@ -162,11 +171,7 @@ export function StockOperationModal(props: Readonly<Props>) {
               mutation.isPending || !ticker.trim() || isIsin(ticker.trim()) || qty <= 0 || pps <= 0
             }
           >
-            {mutation.isPending
-              ? tc('loading')
-              : isBuy
-                ? t('stock_operation_modal.submit_buy')
-                : t('stock_operation_modal.submit_sell')}
+            {submitLabel}
           </Button>
         </div>
       </form>

@@ -312,6 +312,32 @@ function runSubmitTx(ctx: TxCtx): void {
   );
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+type TTx = ReturnType<typeof useTranslation<'transactions'>>['t'];
+type TCommon = ReturnType<typeof useTranslation<'common'>>['t'];
+
+function getModalTitle(isEdit: boolean, isDuplicate: boolean, isTransfer: boolean, t: TTx): string {
+  if (isEdit) return t('modal.title_edit');
+  if (isDuplicate && isTransfer) return t('modal.title_duplicate_transfer');
+  if (isDuplicate) return t('modal.title_duplicate');
+  if (isTransfer) return t('modal.title_transfer');
+  return t('modal.title_new');
+}
+
+function getSubmitLabel(
+  isPending: boolean,
+  isEdit: boolean,
+  isTransferCreate: boolean,
+  t: TTx,
+  tc: TCommon,
+): string {
+  if (isPending) return tc('loading');
+  if (isEdit) return t('modal.submit_edit');
+  if (isTransferCreate) return t('modal.submit_transfer');
+  return t('modal.submit_add');
+}
+
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function TxModal(props: Readonly<Props>) {
@@ -437,29 +463,8 @@ export function TxModal(props: Readonly<Props>) {
   const createPending = createTx.isPending || createTransfer.isPending;
   const isPending = isEdit ? (props as EditProps).isPending : createPending;
 
-  let modalTitle: string;
-  if (isEdit) {
-    modalTitle = t('modal.title_edit');
-  } else if (isDuplicate && isTransfer) {
-    modalTitle = t('modal.title_duplicate_transfer');
-  } else if (isDuplicate) {
-    modalTitle = t('modal.title_duplicate');
-  } else if (isTransfer) {
-    modalTitle = t('modal.title_transfer');
-  } else {
-    modalTitle = t('modal.title_new');
-  }
-
-  let submitLabel: string;
-  if (isPending) {
-    submitLabel = tc('loading');
-  } else if (isEdit) {
-    submitLabel = t('modal.submit_edit');
-  } else if (isTransferCreate) {
-    submitLabel = t('modal.submit_transfer');
-  } else {
-    submitLabel = t('modal.submit_add');
-  }
+  const modalTitle = getModalTitle(isEdit, isDuplicate, isTransfer, t);
+  const submitLabel = getSubmitLabel(isPending, isEdit, isTransferCreate, t, tc);
 
   if (!isEdit && isTransfer && noOtherAccounts) {
     return (
