@@ -498,10 +498,12 @@ export default function ImportManager() {
   const [isDragging, setIsDragging] = useState(false);
 
   const [dateFormat, setDateFormat] = useState<'MM/DD' | 'DD/MM'>('DD/MM');
-  const [accountChoices, setAccountChoices] = useState<Map<string, AccountChoice>>(new Map());
-  const [categoryChoices, setCategoryChoices] = useState<Map<string, CategoryChoice>>(new Map());
-  const [paymodeChoices, setPaymodeChoices] = useState<Map<number, number | null>>(new Map());
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [accountChoices, setAccountChoices] = useState<Map<string, AccountChoice>>(() => new Map());
+  const [categoryChoices, setCategoryChoices] = useState<Map<string, CategoryChoice>>(
+    () => new Map(),
+  );
+  const [paymodeChoices, setPaymodeChoices] = useState<Map<number, number | null>>(() => new Map());
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importMutation = useMutation({ mutationFn: importApi.executeQif });

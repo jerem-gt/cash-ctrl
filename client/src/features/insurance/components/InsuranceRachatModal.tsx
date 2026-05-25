@@ -21,7 +21,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
   const [amount, setAmount] = useState('');
   const [fees, setFees] = useState('0');
   const [socialFees, setSocialFees] = useState('0');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
   const [destAccountId, setDestAccountId] = useState('');
   const rachat = useRachat(accountId);
   const { data: allAccounts = [] } = useAccounts();

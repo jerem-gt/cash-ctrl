@@ -60,7 +60,7 @@ export function AccountSelect({
   });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   const selected = accounts.find((a) => String(a.id) === value) ?? null;
   const showSearch = accounts.length > 5;
@@ -100,7 +100,7 @@ export function AccountSelect({
   }, [open, showSearch]);
 
   useEffect(() => {
-    if (focusedIndex >= 0) itemRefs.current[focusedIndex]?.focus();
+    if (focusedIndex >= 0) itemsRef.current[focusedIndex]?.focus();
   }, [focusedIndex]);
 
   const close = () => {
@@ -206,7 +206,7 @@ export function AccountSelect({
 
           <button
             ref={(el) => {
-              itemRefs.current[0] = el;
+              itemsRef.current[0] = el;
             }}
             type="button"
             role="option"
@@ -231,7 +231,7 @@ export function AccountSelect({
                   <button
                     key={a.id}
                     ref={(el) => {
-                      itemRefs.current[index] = el;
+                      itemsRef.current[index] = el;
                     }}
                     type="button"
                     role="option"

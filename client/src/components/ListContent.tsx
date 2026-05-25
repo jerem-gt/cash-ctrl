@@ -16,6 +16,7 @@ function SkeletonRows({ count = 3 }: Readonly<{ count?: number }>) {
     <div className="mb-4">
       {Array.from({ length: count }).map((_, i) => (
         <div
+          // eslint-disable-next-line @eslint-react/no-array-index-key -- skeleton statique sans données
           key={`skeleton-item-${id}-${i}`}
           className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0"
         >

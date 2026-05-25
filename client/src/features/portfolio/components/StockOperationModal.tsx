@@ -38,7 +38,7 @@ export function StockOperationModal(props: Readonly<Props>) {
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(position?.current_price ? String(position.current_price) : '');
   const [fees, setFees] = useState('0');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
 
   const qty = Number.parseFloat(quantity) || 0;
   const pps = Number.parseFloat(price) || 0;

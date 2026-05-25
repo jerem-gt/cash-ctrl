@@ -13,6 +13,8 @@ import {
 const fmtEur = (n: number) =>
   n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 function BracketRow({ detail }: Readonly<{ detail: BracketDetail }>) {
   const { t } = useTranslation('insurance');
   const label =
@@ -78,8 +80,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
     ],
     [t],
   );
-  const currentYear = new Date().getFullYear();
-  const defaultYear = years.includes(currentYear) ? currentYear : (years[0] ?? currentYear);
+  const defaultYear = years.includes(CURRENT_YEAR) ? CURRENT_YEAR : (years[0] ?? CURRENT_YEAR);
 
   const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
   const [revenuBrut, setRevenuBrut] = useState('');

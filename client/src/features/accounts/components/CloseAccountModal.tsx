@@ -20,7 +20,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
   const balance = Math.round(accountDisplayBalance(account) * 100) / 100;
   const needsTransfer = balance !== 0;
 
-  const [closedAt, setClosedAt] = useState(today());
+  const [closedAt, setClosedAt] = useState(today);
   const [transferToId, setTransferToId] = useState('');
 
   const closeAccount = useCloseAccount();

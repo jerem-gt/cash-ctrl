@@ -16,7 +16,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
   const { t } = useTranslation('insurance');
   const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
   const revalorisation = useRevalorisation(accountId);
 
   const handleSubmit = (e: SubmitEvent) => {
