@@ -7,7 +7,7 @@ type AccountTypeDef = {
 
 const DEFAULT_ACCOUNT_TYPES: AccountTypeDef[] = [
   { name: 'Courant' },
-  { name: 'Épargne' },
+  { name: 'Épargne', envelope_type: 'savings' },
   { name: 'Bourse', envelope_type: 'investment' },
   { name: 'Prêt', envelope_type: 'loan' },
   { name: 'Autre' },

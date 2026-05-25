@@ -553,7 +553,7 @@ export const PROFITABILITY_DATA: AccountProfitability[] = [
   {
     account_id: 5,
     account_name: 'Livret A',
-    envelope_type: null,
+    envelope_type: 'savings',
     account_type: 'Épargne',
     opening_date: '2020-01-01',
     capital_investi: 3000,
