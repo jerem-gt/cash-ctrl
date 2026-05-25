@@ -23,9 +23,9 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
     (a) => a.envelope_type === 'investment' && a.id !== accountId && !a.closed_at,
   );
 
-  const [toAccountId, setToAccountId] = useState<number>(investmentTargets[0]?.id ?? 0);
+  const [toAccountId, setToAccountId] = useState<number>(() => investmentTargets[0]?.id ?? 0);
   const [quantity, setQuantity] = useState('');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
 
   const qty = Number.parseFloat(quantity) || 0;
   const isValid = toAccountId > 0 && qty > 0 && qty <= position.quantity;

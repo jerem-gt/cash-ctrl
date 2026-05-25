@@ -20,7 +20,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
   const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
   const [fees, setFees] = useState('0');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
   const [sourceAccountId, setSourceAccountId] = useState('');
   const versement = useVersement(accountId);
   const { data: allAccounts = [] } = useAccounts();

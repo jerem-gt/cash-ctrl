@@ -33,7 +33,7 @@ export function InsuranceArbitrageModal({
   const [toSupportId, setToSupportId] = useState(destinations[0]?.id ?? 0);
   const [fromAmount, setFromAmount] = useState('');
   const [fees, setFees] = useState('0');
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(today);
   const arbitrage = useArbitrage(accountId);
 
   const handleSubmit = (e: SubmitEvent) => {

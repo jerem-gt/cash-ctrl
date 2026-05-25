@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
+import { today } from '@/lib/format';
 
 async function downloadExport(
   path: string,
@@ -36,10 +37,10 @@ export default function ExportManager() {
   const { t: tc } = useTranslation('common');
   const { data: accounts = [] } = useAccounts();
   const [pending, setPending] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
   const [panelOpen, setPanelOpen] = useState(false);
 
-  const date = new Date().toISOString().split('T')[0];
+  const date = today();
   const allSelected = accounts.length > 0 && selectedIds.size === accounts.length;
 
   const toggleAccount = (id: number) =>

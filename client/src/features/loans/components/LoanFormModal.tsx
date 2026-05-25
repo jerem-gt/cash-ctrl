@@ -6,6 +6,7 @@ import { BankSelect } from '@/features/accounts/components/BankSelect';
 import { useCreateLoan, useUpdateLoan } from '@/features/loans/hooks/useLoans';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
+import { today } from '@/lib/format';
 import type { Account, Loan } from '@/types';
 
 type Props =
@@ -53,7 +54,6 @@ const EMPTY_FORM = (today: string): FormState => ({
 export function LoanFormModal(props: Readonly<Props>) {
   const { t } = useTranslation('loans');
   const { t: tc } = useTranslation('common');
-  const today = new Date().toISOString().slice(0, 10);
   const { data: banks = [] } = useBanks();
   const { data: accounts = [] } = useAccounts();
 
@@ -77,7 +77,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         deposit_account_id: String(l.deposit_account_id),
       };
     }
-    return EMPTY_FORM(today);
+    return EMPTY_FORM(today());
   });
 
   const createLoan = useCreateLoan();

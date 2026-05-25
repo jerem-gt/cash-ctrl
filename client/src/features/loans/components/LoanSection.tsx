@@ -9,7 +9,7 @@ import {
   useLoanInstallments,
   useUpdateInstallment,
 } from '@/features/loans/hooks/useLoans';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtDate, fmtDec, today } from '@/lib/format';
 import type { Account, LoanInstallment } from '@/types';
 
 type Props = {
@@ -194,7 +194,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
   if (isLoading) return null;
   if (!loan) return null;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const todayDate = today();
   const capitalPct = Math.min(100, Math.round((paidPrincipal / loan.principal_amount) * 100));
   const totalInterest = paidInterest + remainingInterest;
   const interestPct =
@@ -331,7 +331,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
                     key={inst.id}
                     inst={inst}
                     loanId={loan.id}
-                    isPast={inst.due_date < today}
+                    isPast={inst.due_date < todayDate}
                   />
                 ))}
               </tbody>

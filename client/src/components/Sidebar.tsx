@@ -45,7 +45,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
   const { data: banks = [] } = useBanks();
   const { isDev } = useAppVersion();
 
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleGroup = (label: string) => {
     setCollapsedGroups((prev) => {

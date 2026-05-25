@@ -11,6 +11,8 @@ import { useValidateTransaction } from '@/hooks/useTransactions';
 import { fmtDec, today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, Transaction } from '@/types';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 interface Props {
   tx: Transaction;
   accounts?: Account[];
@@ -47,7 +49,7 @@ function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['
 
 function TxDateBlock({ date }: Readonly<{ date: string }>) {
   const d = new Date(date);
-  const isCurrentYear = d.getFullYear() === new Date().getFullYear();
+  const isCurrentYear = d.getFullYear() === CURRENT_YEAR;
   return (
     <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
       <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
