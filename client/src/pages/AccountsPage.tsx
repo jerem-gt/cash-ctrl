@@ -2,7 +2,15 @@ import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, Card, ConfirmModal, Empty, showToast, Skeleton } from '@/components/ui';
+import {
+  Button,
+  Card,
+  ConfirmModal,
+  Empty,
+  IconButton,
+  showToast,
+  Skeleton,
+} from '@/components/ui';
 import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/features/accounts/components/AccountModal';
 import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
@@ -355,54 +363,47 @@ function AccountCard({
       <div className="relative z-10 flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
         <div className="flex gap-1">
-          <button
-            type="button"
+          <IconButton
+            label="Modifier le compte"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
-            className="p-2 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition-all"
-            title="Modifier le compte"
           >
             <Pencil size={18} strokeWidth={1.5} />
-          </button>
+          </IconButton>
           {onClose && (
-            <button
-              type="button"
+            <IconButton
+              label="Clôturer le compte"
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
-              className="p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-              title="Clôturer le compte"
             >
               <Archive size={18} strokeWidth={1.5} />
-            </button>
+            </IconButton>
           )}
           {onReopen && (
-            <button
-              type="button"
+            <IconButton
+              label="Rouvrir le compte"
               onClick={(e) => {
                 e.stopPropagation();
                 onReopen();
               }}
-              className="p-2 text-stone-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
-              title="Rouvrir le compte"
             >
               <ArchiveRestore size={18} strokeWidth={1.5} />
-            </button>
+            </IconButton>
           )}
-          <button
-            type="button"
+          <IconButton
+            label="Supprimer le compte"
+            variant="danger"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-            title="Supprimer le compte"
           >
             <Trash2 size={18} strokeWidth={1.5} />
-          </button>
+          </IconButton>
         </div>
       </div>
       <p className={`font-sans text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
