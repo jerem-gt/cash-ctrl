@@ -11,7 +11,14 @@ import { type SplitInput, TxSplitEditor } from '@/features/transactions/componen
 import { useScheduled } from '@/features/transactions/hooks/useScheduled';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
-import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
+import type {
+  Account,
+  Category,
+  PaymentMethod,
+  ReimbursementStatus,
+  ScheduledTransaction,
+  Transaction,
+} from '@/types';
 
 export type TxFormState = {
   type: 'income' | 'expense';
@@ -338,6 +345,18 @@ function getSubmitLabel(
   return t('modal.submit_add');
 }
 
+function getSchedulingOptions(
+  isEdit: boolean,
+  isTransferEdit: boolean,
+  scheduledList: ScheduledTransaction[] | undefined,
+  tx: Transaction,
+): ScheduledTransaction[] {
+  if (!isEdit || isTransferEdit) return [];
+  return (scheduledList ?? []).filter(
+    (s) => s.active && s.type === tx.type && s.to_account_id === null,
+  );
+}
+
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function TxModal(props: Readonly<Props>) {
@@ -358,7 +377,7 @@ export function TxModal(props: Readonly<Props>) {
 
   const [core, setCore] = useState<TxCoreState>(() => initCore(tx, duplicateFrom, fixedAccountId));
   const [date, setDate] = useState(isEdit ? tx!.date : today);
-  const [notes, setNotes] = useState(isEdit ? (tx!.notes ?? '') : (duplicateFrom?.notes ?? ''));
+  const [notes, setNotes] = useState(tx?.notes ?? duplicateFrom?.notes ?? '');
   const [validated, setValidated] = useState(isEdit ? !!tx!.validated : false);
   const [reimbursementStatus, setReimbursementStatus] = useState<ReimbursementStatus>(null);
   const [isTransfer, setIsTransfer] = useState(!!duplicateFrom?.transfer_peer_id);
@@ -455,9 +474,9 @@ export function TxModal(props: Readonly<Props>) {
     }
     if (isTransferCreate) {
       submitTransfer();
-    } else {
-      submitTx();
+      return;
     }
+    submitTx();
   };
 
   const createPending = createTx.isPending || createTransfer.isPending;
@@ -486,12 +505,7 @@ export function TxModal(props: Readonly<Props>) {
     );
   }
 
-  const schedulingOptions =
-    isEdit && !isTransferEdit
-      ? (scheduledList ?? []).filter(
-          (s) => s.active && s.type === tx!.type && s.to_account_id === null,
-        )
-      : [];
+  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList, tx!);
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
