@@ -145,7 +145,7 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteBank = useDeleteBank();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: bank.id,
   });
@@ -215,7 +215,7 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
         onEditStart={() => setEditing(true)}
         editContent={<BankEditForm bank={bank} onClose={() => setEditing(false)} />}
       />
-      <DeleteConfirmModal />
+      {deleteConfirmModal}
     </>
   );
 }

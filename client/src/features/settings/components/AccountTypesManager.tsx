@@ -109,7 +109,7 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteAt = useDeleteAccountType();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
   const accCount = at.acc_count ?? 0;
 
   const envelopeLabels: Record<string, string> = {
@@ -156,7 +156,7 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
         onEditStart={() => setEditing(true)}
         editContent={<AccountTypeEditForm at={at} onClose={() => setEditing(false)} />}
       />
-      <DeleteConfirmModal />
+      {deleteConfirmModal}
     </>
   );
 }

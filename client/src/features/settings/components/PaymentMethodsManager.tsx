@@ -84,7 +84,7 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deletePm = useDeletePaymentMethod();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
   const txCount = pm.tx_count ?? 0;
 
   return (
@@ -109,7 +109,7 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
         onEditStart={() => setEditing(true)}
         editContent={<PaymentMethodEditForm pm={pm} onClose={() => setEditing(false)} />}
       />
-      <DeleteConfirmModal />
+      {deleteConfirmModal}
     </>
   );
 }
