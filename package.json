@@ -19,8 +19,8 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
     "concurrently": "^9.2.1",
     "eslint": "9.39.4",
     "eslint-plugin-import": "^2.32.0",
@@ -32,7 +32,7 @@
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "typescript-eslint": "^8.59.4"
+    "typescript-eslint": "^8.60.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
