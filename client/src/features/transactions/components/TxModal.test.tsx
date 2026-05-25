@@ -214,12 +214,19 @@ describe('TxModal — champ Planification', () => {
     expect(document.getElementById('scheduled-select')).not.toBeInTheDocument();
   });
 
-  it("n'affiche pas le select si aucune planification du même type n'est active", async () => {
+  it('affiche le select même si la planification est de type différent (income vs expense)', async () => {
     server.use(
       http.get('/api/scheduled', () => HttpResponse.json([{ ...SCHEDULED[0], type: 'income' }])),
     );
     renderWithProviders(<TxModal {...editProps} />);
-    // On attend que la query se résolve, puis vérifie l'absence du select
+    await waitFor(() => expect(document.getElementById('scheduled-select')).toBeInTheDocument());
+  });
+
+  it("n'affiche pas le select si toutes les planifications actives sont des transferts", async () => {
+    server.use(
+      http.get('/api/scheduled', () => HttpResponse.json([{ ...SCHEDULED[0], to_account_id: 2 }])),
+    );
+    renderWithProviders(<TxModal {...editProps} />);
     await waitFor(() =>
       expect(document.getElementById('scheduled-select')).not.toBeInTheDocument(),
     );
