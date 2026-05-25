@@ -1,5 +1,5 @@
-import reactPlugin from '@eslint-react/eslint-plugin';
 import js from '@eslint/js';
+import reactPlugin from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
