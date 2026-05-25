@@ -126,6 +126,12 @@
     "bracket_label": "Tranche {{rate}}%",
     "ceiling_exceeded": "Versement saisi ({{amount}}) dépasse le plafond déductible ({{ceiling}}). Seuls <bold>{{deductible}}</bold> ont été pris en compte dans le calcul.",
     "tax_saving_label": "Économie d'impôt",
-    "tax_saving_note": "Cet avantage fiscal correspond à un impôt <bold>différé</bold>, non supprimé. À la sortie du PER (rente ou capital), les sommes versées seront imposées à l'IR selon votre tranche de l'époque."
+    "tax_saving_note": "Cet avantage fiscal correspond à un impôt <bold>différé</bold>, non supprimé. À la sortie du PER (rente ou capital), les sommes versées seront imposées à l'IR selon votre tranche de l'époque.",
+    "parts_1": "1 part (célibataire / divorcé)",
+    "parts_1_5": "1,5 parts",
+    "parts_2": "2 parts (couple)",
+    "parts_2_5": "2,5 parts (couple + 1 enfant)",
+    "parts_3": "3 parts (couple + 2 enfants)",
+    "parts_4": "4 parts (couple + 3 enfants)"
   }
 }

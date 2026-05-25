@@ -1,6 +1,7 @@
 import 'i18next';
 
 import type accountsFr from './locales/fr/accounts.json';
+import type adminFr from './locales/fr/admin.json';
 import type commonFr from './locales/fr/common.json';
 import type dashboardFr from './locales/fr/dashboard.json';
 import type insuranceFr from './locales/fr/insurance.json';
@@ -17,6 +18,7 @@ declare module 'i18next' {
     resources: {
       common: typeof commonFr;
       accounts: typeof accountsFr;
+      admin: typeof adminFr;
       transactions: typeof transactionsFr;
       settings: typeof settingsFr;
       loans: typeof loansFr;

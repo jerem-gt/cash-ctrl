@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import accountsFr from './locales/fr/accounts.json';
+import adminFr from './locales/fr/admin.json';
 import commonFr from './locales/fr/common.json';
 import dashboardFr from './locales/fr/dashboard.json';
 import insuranceFr from './locales/fr/insurance.json';
@@ -20,6 +21,7 @@ void i18n.use(initReactI18next).init({
     fr: {
       common: commonFr,
       accounts: accountsFr,
+      admin: adminFr,
       transactions: transactionsFr,
       settings: settingsFr,
       loans: loansFr,

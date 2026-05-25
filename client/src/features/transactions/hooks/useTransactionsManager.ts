@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import { TxFormState } from '@/features/transactions/components/TxModal';
@@ -24,6 +25,8 @@ type ModalState =
 const initialModalsState: ModalState = { type: 'none' };
 
 export function useTransactionsManager(initialAccountId?: number) {
+  const { t } = useTranslation('transactions');
+
   // --- ÉTATS DE NAVIGATION / DONNÉES ---
   const [filters, setFilters] = useState<Filters>({ account_id: initialAccountId });
   const [page, setPage] = useState(1);
@@ -81,7 +84,7 @@ export function useTransactionsManager(initialAccountId?: number) {
     mutation.mutate(modal.tx.id, {
       onSuccess: () => {
         closeAll();
-        showToast(isTransfer ? 'Transfert supprimé' : 'Transaction supprimée');
+        showToast(isTransfer ? t('manage.deleted_transfer') : t('manage.deleted_tx'));
       },
       onError: (e) => showToast(e.message),
     });
@@ -109,7 +112,7 @@ export function useTransactionsManager(initialAccountId?: number) {
         {
           onSuccess: () => {
             closeAll();
-            showToast('Transaction modifiée ✓');
+            showToast(t('manage.updated_tx'));
           },
           onError: (e) => showToast(e.message),
         },
@@ -128,7 +131,7 @@ export function useTransactionsManager(initialAccountId?: number) {
         {
           onSuccess: () => {
             closeAll();
-            showToast('Transfert modifié ✓');
+            showToast(t('manage.updated_transfer'));
           },
           onError: (e) => showToast(e.message),
         },

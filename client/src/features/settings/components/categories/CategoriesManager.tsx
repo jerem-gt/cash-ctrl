@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import {
@@ -19,13 +20,14 @@ import {
 import { Category } from '@/types.ts';
 
 function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: () => void }>) {
+  const { t } = useTranslation('settings');
   const updateCat = useUpdateCategory();
 
   return (
     <CategoryEditor
       initialValues={{ name: cat.name, icon: cat.icon }}
       isPending={updateCat.isPending}
-      submitLabel="Modifier"
+      submitLabel={t('categories.editor_edit_label')}
       autoFocus
       onCancel={onClose}
       onSave={(values) => {
@@ -34,7 +36,7 @@ function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: (
           {
             onSuccess: () => {
               onClose();
-              showToast('Catégorie mise à jour ✓');
+              showToast(t('categories.update_success'));
             },
             onError: (err) => showToast(err.message),
           },
@@ -45,6 +47,7 @@ function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: (
 }
 
 export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
+  const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteCat = useDeleteCategory();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
@@ -56,18 +59,17 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
         icon={cat.icon}
         subtitle={
           <p className="text-[10px] text-stone-400">
-            {cat.subcategories.length} sous-catégorie
-            {cat.subcategories.length === 1 ? '' : 's'}
+            {t('categories.count_sub', { count: cat.subcategories.length })}
           </p>
         }
         canDelete={cat.subcategories.length === 0}
         onDelete={() =>
           requestDelete(
-            'Supprimer la catégorie',
-            'Confirmer la suppression ?',
+            t('categories.delete_title'),
+            t('categories.delete_body'),
             cat.id,
             deleteCat.mutate,
-            'Catégorie supprimée',
+            t('categories.delete_success'),
           )
         }
         isEditing={editing}
@@ -81,6 +83,7 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
 }
 
 export function CategoriesManager() {
+  const { t } = useTranslation('settings');
   const { data: categories = [], isLoading: catsLoading } = useCategories();
   const [resetCreationFormKey, setResetCreationFormKey] = useState(0);
   const [search, setSearch] = useState('');
@@ -93,10 +96,10 @@ export function CategoriesManager() {
     : categories;
 
   function handleSaveCategory(values: CategoryForm) {
-    if (!values.name.trim()) return showToast('Donnez un nom à la catégorie.');
+    if (!values.name.trim()) return showToast(t('categories.err_no_name'));
     createCategory.mutate(values, {
       onSuccess: () => {
-        showToast('Catégorie ajoutée ✓');
+        showToast(t('categories.create_success'));
         setResetCreationFormKey((prev) => prev + 1);
       },
       onError: (err) => showToast(err.message),
@@ -105,13 +108,15 @@ export function CategoriesManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Catégories</p>
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        {t('categories.title')}
+      </p>
       <div
         data-testid="new-category-form"
         className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200"
       >
         <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
-          Nouvelle catégorie
+          {t('categories.new_title')}
         </p>
         <CategoryEditor
           key={resetCreationFormKey}
@@ -129,13 +134,13 @@ export function CategoriesManager() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher une catégorie…"
+          placeholder={t('categories.search_placeholder')}
           className="w-full text-sm bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2 outline-none focus:border-black/30 transition-colors placeholder:text-stone-300"
         />
       </div>
       {filtered.length === 0 ? (
         <p className="text-sm text-stone-300 italic text-center py-6">
-          Aucune catégorie ne correspond à &laquo;&nbsp;{search}&nbsp;&raquo;
+          {t('categories.no_match', { search })}
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { IconButton, showToast } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
@@ -14,6 +15,7 @@ export function SubcategoryRow({
   onEdit: () => void;
   onDelete: (id: number) => void;
 }>) {
+  const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const updateSubcategory = useUpdateSubcategory();
 
@@ -42,9 +44,10 @@ export function SubcategoryRow({
 
   // Mode lecture
   const txCount = sub.tx_count ?? 0;
-  const plural = txCount > 1 ? 's' : '';
   const deleteTitle =
-    txCount > 0 ? `Impossible : ${txCount} transaction${plural} liée${plural}` : 'Supprimer';
+    txCount > 0
+      ? t('categories.subcategory_delete_disabled', { count: txCount })
+      : t('card.delete_label');
   return (
     <div className="flex items-center gap-4 py-2 px-3 border-b border-black/3 group hover:bg-stone-50/80 transition-colors">
       {/* 1. Zone Nom : prend tout l'espace et gère le débordement */}
@@ -65,13 +68,13 @@ export function SubcategoryRow({
 
         {/* 3. Groupe d'actions */}
         <div className="flex items-center gap-0.5">
-          <IconButton label="Modifier" size="sm" onClick={() => setEditing(true)}>
+          <IconButton label={t('card.edit_label')} size="sm" onClick={() => setEditing(true)}>
             <span aria-hidden="true" className="text-[12px]">
               ✎
             </span>
           </IconButton>
           <IconButton
-            label="Supprimer"
+            label={t('card.delete_label')}
             size="sm"
             variant="danger"
             onClick={() => onDelete(sub.id)}

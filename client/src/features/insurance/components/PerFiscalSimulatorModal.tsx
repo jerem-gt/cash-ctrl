@@ -13,15 +13,6 @@ import {
 const fmtEur = (n: number) =>
   n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
-const PARTS_OPTIONS = [
-  { value: 1, label: '1 part (célibataire / divorcé)' },
-  { value: 1.5, label: '1,5 parts' },
-  { value: 2, label: '2 parts (couple)' },
-  { value: 2.5, label: '2,5 parts (couple + 1 enfant)' },
-  { value: 3, label: '3 parts (couple + 2 enfants)' },
-  { value: 4, label: '4 parts (couple + 3 enfants)' },
-];
-
 function BracketRow({ detail }: Readonly<{ detail: BracketDetail }>) {
   const { t } = useTranslation('insurance');
   const label =
@@ -75,6 +66,18 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
   const { t } = useTranslation('insurance');
   const { t: tc } = useTranslation('common');
   const { data: years = [], isLoading: yearsLoading } = useTaxYears();
+
+  const partsOptions = useMemo(
+    () => [
+      { value: 1, label: t('per_simulator.parts_1') },
+      { value: 1.5, label: t('per_simulator.parts_1_5') },
+      { value: 2, label: t('per_simulator.parts_2') },
+      { value: 2.5, label: t('per_simulator.parts_2_5') },
+      { value: 3, label: t('per_simulator.parts_3') },
+      { value: 4, label: t('per_simulator.parts_4') },
+    ],
+    [t],
+  );
   const currentYear = new Date().getFullYear();
   const defaultYear = years.includes(currentYear) ? currentYear : (years[0] ?? currentYear);
 
@@ -156,7 +159,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                   value={nbParts}
                   onChange={(e) => setNbParts(Number(e.target.value))}
                 >
-                  {PARTS_OPTIONS.map((o) => (
+                  {partsOptions.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>

@@ -8,6 +8,7 @@
   "error_generic": "Une erreur est survenue.",
   "add": "Ajouter",
   "edit": "Modifier",
+  "duplicate": "Dupliquer",
   "no_result": "Aucun résultat",
   "search": "Rechercher…",
   "back": "← Retour",
@@ -21,5 +22,21 @@
   "validate": "Valider",
   "mark_done": "Marquer comme terminé",
   "error_import": "Erreur lors de l'importation :",
-  "all_select": "Tout sélectionner"
+  "all_select": "Tout sélectionner",
+  "loading_text": "Chargement…",
+  "login": {
+    "subtitle": "Connectez-vous pour accéder à vos comptes",
+    "username": "Identifiant",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…"
+  },
+  "pagination": {
+    "first": "Première page",
+    "prev": "Page précédente",
+    "next": "Page suivante",
+    "last": "Dernière page",
+    "per_page": "{{n}} / page",
+    "info": "{{from}}–{{to}} sur {{total}}"
+  }
 }

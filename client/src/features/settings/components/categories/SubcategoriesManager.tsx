@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ListContent } from '@/components/ListContent.tsx';
 import { showToast } from '@/components/ui';
@@ -9,6 +10,7 @@ import { useCreateSubcategory, useDeleteSubcategory } from '@/hooks/useSubcatego
 import { Category } from '@/types.ts';
 
 export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCategory: Category }>) {
+  const { t } = useTranslation('settings');
   const [resetCreationFormKey, setResetCreationFormKey] = useState(0);
   const createSub = useCreateSubcategory();
   const deleteSub = useDeleteSubcategory();
@@ -19,7 +21,7 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
       { category_id: parentCategory.id, name: value },
       {
         onSuccess: () => {
-          showToast('Sous-catégorie ajoutée ✓');
+          showToast(t('categories.subcategory_create_success'));
           setResetCreationFormKey((prev) => prev + 1);
         },
         onError: (err) => showToast(err.message),
@@ -34,7 +36,7 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
           key={resetCreationFormKey}
           name=""
           isPending={createSub.isPending}
-          submitLabel="Ajouter"
+          submitLabel={t('categories.subcategory_add_label')}
           onSave={(value) => handleSaveSubcategory(value)}
         />
       </div>
@@ -42,19 +44,19 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
         <ListContent
           items={parentCategory.subcategories}
           isLoading={false}
-          empty="Aucune sous-catégorie dans cette catégorie."
+          empty={t('categories.subcategory_no_items')}
           render={(sub) => (
             <SubcategoryRow
               key={sub.id}
               sub={sub}
-              onEdit={() => showToast('Sous-catégorie mise à jour ✓')}
+              onEdit={() => showToast(t('categories.subcategory_update_success'))}
               onDelete={(id) =>
                 requestDelete(
-                  'Supprimer la sous-catégorie',
-                  'Confirmer la suppression ?',
+                  t('categories.subcategory_delete_title'),
+                  t('categories.delete_body'),
                   id,
                   deleteSub.mutate,
-                  'Catégorie supprimée',
+                  t('categories.subcategory_delete_success'),
                 )
               }
             />

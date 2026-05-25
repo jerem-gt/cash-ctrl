@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
@@ -21,11 +22,12 @@ export function useLogin() {
 }
 
 export function useLogout() {
+  const { t } = useTranslation('sidebar');
   const qc = useQueryClient();
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      showToast('Déconnexion réussie');
+      showToast(t('logout_success'));
       qc.setQueryData(['me'], null);
       qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
     },

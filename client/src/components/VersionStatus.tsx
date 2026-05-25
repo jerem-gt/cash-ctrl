@@ -1,16 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useAppVersion } from '../hooks/useAppVersion.ts';
 import { showToast } from './ui';
 
 const TRIGGER_CLICKS = 7;
-
-const EASTER_EGG_MESSAGES = [
-  'Tu as trouvé le mode développeur. Malheureusement il ne sert à rien.',
-  'Félicitations ! Tu viens de perdre 30 secondes que tu aurais pu investir.',
-  'À force de cliquer, tu aurais pu faire un budget… mais tu as préféré ça.',
-  "Psst — le vrai secret, c'est que l'argent que tu surveilles ici ne te rend pas plus riche.",
-];
 
 let confettiStyleInjected = false;
 
@@ -49,16 +43,22 @@ function launchMoneyConfetti() {
 }
 
 export function VersionStatus() {
+  const { t } = useTranslation('sidebar');
   const { version, isOnline } = useAppVersion();
   const clickCount = useRef(0);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const easterEggMessages = useMemo(
+    () => [t('easter_egg_0'), t('easter_egg_1'), t('easter_egg_2'), t('easter_egg_3')],
+    [t],
+  );
 
   const handleClick = useCallback(() => {
     clickCount.current += 1;
     clearTimeout(resetTimer.current);
 
     if (clickCount.current >= TRIGGER_CLICKS) {
-      const msg = EASTER_EGG_MESSAGES[Math.floor(Math.random() * EASTER_EGG_MESSAGES.length)];
+      const msg = easterEggMessages[Math.floor(Math.random() * easterEggMessages.length)];
       showToast(msg);
       launchMoneyConfetti();
       clickCount.current = 0;
@@ -68,7 +68,7 @@ export function VersionStatus() {
     resetTimer.current = setTimeout(() => {
       clickCount.current = 0;
     }, 2000);
-  }, []);
+  }, [easterEggMessages]);
 
   return (
     <button
