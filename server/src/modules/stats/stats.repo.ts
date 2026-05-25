@@ -379,7 +379,7 @@ function computeInvestmentProfitability(
         const yearCashFlows = invFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
         const yearFlows: DatedFlow[] =
           isFirstYear && acc.initial_balance !== 0
-            ? [{ date: acc.opening_date!, signed_cents: acc.initial_balance }, ...yearCashFlows]
+            ? [{ date: acc.opening_date, signed_cents: acc.initial_balance }, ...yearCashFlows]
             : yearCashFlows;
         const netFlows = yearFlows.reduce((s, f) => s + toEuros(f.signed_cents), 0);
         runningCash +=
@@ -676,7 +676,7 @@ function computeSavingsProfitability(
         const yearCashFlows = savFlowsByAccountYear.get(acc.account_id)?.get(year) ?? [];
         const yearFlows: DatedFlow[] =
           isFirstYear && acc.initial_balance !== 0
-            ? [{ date: acc.opening_date!, signed_cents: acc.initial_balance }, ...yearCashFlows]
+            ? [{ date: acc.opening_date, signed_cents: acc.initial_balance }, ...yearCashFlows]
             : yearCashFlows;
         const netFlows = yearFlows.reduce((s, f) => s + toEuros(f.signed_cents), 0);
         const economicEnd =
