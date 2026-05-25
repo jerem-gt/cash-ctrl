@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { accountSeniority } from '@/lib/account.ts';
 import { fmtDec } from '@/lib/format.ts';
 import { Account } from '@/types.ts';
@@ -11,21 +13,27 @@ interface AccountHeaderProps {
   capitalRestantDu: number;
 }
 
-const LoanHeader = ({ value }: { value: number }) => (
-  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
-    <StatItem label="Capital restant dû" value={value} isMain forceRed />
-  </div>
-);
+const LoanHeader = ({ value }: { value: number }) => {
+  const { t } = useTranslation('accounts');
+  return (
+    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+      <StatItem label={t('header.loan_due')} value={value} isMain forceRed />
+    </div>
+  );
+};
 
-const InvestmentHeader = ({ account }: { account: Account }) => (
-  <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-4 md:gap-5">
-    <StatItem label="Cash disponible" value={account.balance} valueAll={account.balance_all} />
-    <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
-    <StatItem label="Portefeuille" value={account.balance_stocks} />
-    <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
-    <StatItem label="Total" value={account.balance + account.balance_stocks} isMain />
-  </div>
-);
+const InvestmentHeader = ({ account }: { account: Account }) => {
+  const { t } = useTranslation('accounts');
+  return (
+    <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-4 md:gap-5">
+      <StatItem label={t('header.cash')} value={account.balance} valueAll={account.balance_all} />
+      <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+      <StatItem label={t('header.portfolio')} value={account.balance_stocks} />
+      <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+      <StatItem label={t('header.total')} value={account.balance + account.balance_stocks} isMain />
+    </div>
+  );
+};
 
 const StatItem = ({
   label,
@@ -39,40 +47,51 @@ const StatItem = ({
   valueAll?: number;
   isMain?: boolean;
   forceRed?: boolean;
-}) => (
-  <div className="flex-1 flex flex-col justify-between">
-    <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
-      {label}
-    </span>
-    <p
-      className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
-    >
-      {fmtDec(value)}
-    </p>
-    {valueAll !== undefined && valueAll !== value ? (
-      <p className="text-[11px] text-stone-400 mt-1.5">
-        <span>Prévisionnel&nbsp;</span>
-        <span className={valueAll < 0 ? 'text-red-400' : 'text-stone-500'}>{fmtDec(valueAll)}</span>
+}) => {
+  const { t } = useTranslation('accounts');
+  return (
+    <div className="flex-1 flex flex-col justify-between">
+      <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
+        {label}
+      </span>
+      <p
+        className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
+      >
+        {fmtDec(value)}
       </p>
-    ) : (
-      <p className="text-[11px] mt-1.5 opacity-0 select-none" aria-hidden="true">
-        <span>Alignement</span>
-      </p>
-    )}
-  </div>
-);
+      {valueAll !== undefined && valueAll !== value ? (
+        <p className="text-[11px] text-stone-400 mt-1.5">
+          <span>{t('header.forecasted')}&nbsp;</span>
+          <span className={valueAll < 0 ? 'text-red-400' : 'text-stone-500'}>
+            {fmtDec(valueAll)}
+          </span>
+        </p>
+      ) : (
+        <p className="text-[11px] mt-1.5 opacity-0 select-none" aria-hidden="true">
+          <span>Alignement</span>
+        </p>
+      )}
+    </div>
+  );
+};
 
-const InsuranceHeader = ({ account }: { account: Account }) => (
-  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
-    <StatItem label="Fonds euros & UC" value={account.balance_insurance} isMain />
-  </div>
-);
+const InsuranceHeader = ({ account }: { account: Account }) => {
+  const { t } = useTranslation('accounts');
+  return (
+    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+      <StatItem label={t('header.insurance')} value={account.balance_insurance} isMain />
+    </div>
+  );
+};
 
-const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => (
-  <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
-    <StatItem label="Solde disponible" value={value} valueAll={valueAll} isMain />
-  </div>
-);
+const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => {
+  const { t } = useTranslation('accounts');
+  return (
+    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+      <StatItem label={t('header.balance')} value={value} valueAll={valueAll} isMain />
+    </div>
+  );
+};
 
 export function AccountHeader({
   account,
@@ -82,6 +101,7 @@ export function AccountHeader({
   isLoan,
   capitalRestantDu,
 }: Readonly<AccountHeaderProps>) {
+  const { t } = useTranslation('accounts');
   return (
     <div>
       <div className="p-4 md:p-8 bg-[#fafaf9] border-b border-stone-200">
@@ -108,7 +128,7 @@ export function AccountHeader({
                   <>
                     <span className="text-stone-300">•</span>
                     <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
-                      Investissement
+                      {t('header.investment_badge')}
                     </span>
                   </>
                 )}
@@ -116,7 +136,7 @@ export function AccountHeader({
                   <>
                     <span className="text-stone-300">•</span>
                     <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
-                      Prêt
+                      {t('header.loan_badge')}
                     </span>
                   </>
                 )}
@@ -124,7 +144,7 @@ export function AccountHeader({
                   <>
                     <span className="text-stone-300">•</span>
                     <span className="bg-stone-100 text-stone-500 border border-stone-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
-                      Clôturé
+                      {t('header.closed_badge')}
                     </span>
                   </>
                 )}
@@ -136,7 +156,7 @@ export function AccountHeader({
 
               {account.opening_date && (
                 <p className="text-sm text-stone-500 font-medium">
-                  <span className="text-stone-400">Ouvert le</span>{' '}
+                  <span className="text-stone-400">{t('header.opened_on')}</span>{' '}
                   {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', {
                     day: 'numeric',
                     month: 'short',

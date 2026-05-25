@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, FormGroup, Input, showToast } from '@/components/ui';
 import { useCreateInsuranceSupport } from '@/features/insurance/hooks/useInsurance';
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [name, setName] = useState('');
   const [type, setType] = useState<InsuranceSupportType>('euro');
   const [ticker, setTicker] = useState('');
@@ -22,7 +25,7 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
       { name, type, ticker: type === 'uc' && ticker ? ticker : null },
       {
         onSuccess: () => {
-          showToast('Support créé ✓');
+          showToast(t('add_support_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -33,14 +36,14 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-5">Ajouter un support</h3>
+        <h3 className="font-sans text-xl mb-5">{t('add_support_modal.title')}</h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Nom du support" htmlFor="add-support-name">
+          <FormGroup label={t('add_support_modal.name_label')} htmlFor="add-support-name">
             <Input
               id="add-support-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Fonds Euro Sécurité, Amundi MSCI World"
+              placeholder={t('add_support_modal.name_placeholder')}
               required
               autoFocus
             />
@@ -48,31 +51,33 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
 
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
-              Type
+              {t('add_support_modal.type_label')}
             </span>
             <div className="flex gap-4">
-              {(['euro', 'uc'] as const).map((t) => (
-                <label key={t} className="flex items-center gap-2 cursor-pointer text-sm">
+              {(['euro', 'uc'] as const).map((supportType) => (
+                <label key={supportType} className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                     type="radio"
                     name="support-type"
-                    value={t}
-                    checked={type === t}
-                    onChange={() => setType(t)}
+                    value={supportType}
+                    checked={type === supportType}
+                    onChange={() => setType(supportType)}
                   />
-                  {t === 'euro' ? 'Fonds euro' : 'UC (unité de compte)'}
+                  {supportType === 'euro'
+                    ? t('add_support_modal.euro_type')
+                    : t('add_support_modal.uc_type')}
                 </label>
               ))}
             </div>
           </div>
 
           {type === 'uc' && (
-            <FormGroup label="Ticker ou ISIN" htmlFor="add-support-ticker">
+            <FormGroup label={t('add_support_modal.ticker_label')} htmlFor="add-support-ticker">
               <TickerInput
                 id="add-support-ticker"
                 value={ticker}
                 onChange={(v) => setTicker(v.toUpperCase())}
-                placeholder="ex: LU1681043599.SW ou LU1681043599"
+                placeholder={t('add_support_modal.ticker_placeholder')}
                 className="font-mono"
               />
             </FormGroup>
@@ -80,14 +85,14 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
 
           <div className="flex gap-2 justify-end mt-1">
             <Button type="button" onClick={onClose} disabled={create.isPending}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button
               variant="primary"
               type="submit"
               disabled={!name || create.isPending || isIsin(ticker)}
             >
-              Ajouter
+              {t('add_support_modal.submit')}
             </Button>
           </div>
         </form>

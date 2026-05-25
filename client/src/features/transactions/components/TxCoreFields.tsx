@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { DecimalInput, FormGroup, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { transferLabel } from '@/lib/transfer-label';
@@ -39,6 +41,7 @@ export function TxCoreFields({
   fixedAccountId,
   hideCategories,
 }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
   const sourceAccount =
     fixedAccountId == null
       ? accounts.find((a) => String(a.id) === value.account_id)
@@ -76,24 +79,24 @@ export function TxCoreFields({
       {/* Ligne 1 : type (masqué transfert) + montant + description */}
       <div className="flex gap-3 flex-wrap">
         {!isTransfer && (
-          <FormGroup label="Type">
+          <FormGroup label={t('tx_core.type_label')}>
             <Select
               value={value.type}
               onChange={(e) => onChange({ type: e.target.value as 'income' | 'expense' })}
             >
-              <option value="expense">Dépense</option>
-              <option value="income">Revenu</option>
+              <option value="expense">{t('tx_core.expense')}</option>
+              <option value="income">{t('tx_core.income')}</option>
             </Select>
           </FormGroup>
         )}
-        <FormGroup label="Montant (€)">
+        <FormGroup label={t('tx_core.amount')}>
           <DecimalInput
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"
           />
         </FormGroup>
-        <FormGroup label="Description" className="min-w-48">
+        <FormGroup label={t('tx_core.description')} className="min-w-48">
           <Input
             type="text"
             value={value.description}
@@ -107,13 +110,13 @@ export function TxCoreFields({
       <div className="grid grid-cols-2 gap-3">
         {!isTransfer && !hideCategories && (
           <>
-            <FormGroup label="Catégorie">
+            <FormGroup label={t('tx_core.category')}>
               <Select
                 id="category-select"
                 value={value.category_id}
                 onChange={(e) => onChange({ category_id: e.target.value, subcategory_id: '' })}
               >
-                <option value="">— Choisir —</option>
+                <option value="">{t('tx_core.choose')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.name}
@@ -121,7 +124,7 @@ export function TxCoreFields({
                 ))}
               </Select>
             </FormGroup>
-            <FormGroup label="Sous-catégorie">
+            <FormGroup label={t('tx_core.subcategory')}>
               <Select
                 disabled={!value.category_id} // Désactivé si aucune catégorie n'est choisie
                 id="subcategory-select"
@@ -129,7 +132,7 @@ export function TxCoreFields({
                 value={value.subcategory_id}
                 onChange={(e) => onChange({ subcategory_id: e.target.value })}
               >
-                <option value="">— Choisir —</option>
+                <option value="">{t('tx_core.choose')}</option>
                 {categories
                   .find((c) => String(c.id) === String(value.category_id))
                   ?.subcategories?.map((sub) => (
@@ -142,7 +145,7 @@ export function TxCoreFields({
           </>
         )}
         {fixedAccountId == null && (
-          <FormGroup label={isTransfer ? 'Compte source' : 'Compte'}>
+          <FormGroup label={isTransfer ? t('tx_core.account_source') : t('tx_core.account')}>
             <AccountSelect
               id="source-account-select"
               value={value.account_id}
@@ -153,7 +156,7 @@ export function TxCoreFields({
           </FormGroup>
         )}
         {isTransfer && (
-          <FormGroup label="Compte destination">
+          <FormGroup label={t('tx_core.account_dest')}>
             <AccountSelect
               id="dest-account-select"
               value={value.to_account_id}
@@ -165,13 +168,13 @@ export function TxCoreFields({
           </FormGroup>
         )}
         {!isTransfer && (
-          <FormGroup label="Moyen de paiement">
+          <FormGroup label={t('tx_core.payment_method')}>
             <Select
               id="payment-method-select"
               value={value.payment_method_id}
               onChange={(e) => onChange({ payment_method_id: e.target.value })}
             >
-              <option value="">— Choisir —</option>
+              <option value="">{t('tx_core.choose')}</option>
               {paymentMethods
                 .filter((m) => m.name !== 'Transfert')
                 .map((m) => (

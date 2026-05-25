@@ -10,5 +10,74 @@
     "success": "Compte clôturé ✓",
     "err_no_destination": "Choisissez un compte de destination.",
     "err_no_date": "Renseignez la date de clôture."
+  },
+  "modal": {
+    "title_create": "Ajouter un compte",
+    "title_edit": "Modifier le compte",
+    "name": "Nom du compte",
+    "name_placeholder": "Ex : Compte courant",
+    "bank": "Banque",
+    "type": "Type",
+    "initial_balance": "Solde initial (€)",
+    "opening_date": "Date d'ouverture",
+    "err_no_name": "Donnez un nom au compte.",
+    "err_no_bank": "Choisissez une banque.",
+    "success_create": "Compte créé ✓",
+    "submit_create": "Créer",
+    "submit_edit": "Enregistrer"
+  },
+  "header": {
+    "cash": "Cash disponible",
+    "portfolio": "Portefeuille",
+    "total": "Total",
+    "insurance": "Fonds euros & UC",
+    "balance": "Solde disponible",
+    "loan_due": "Capital restant dû",
+    "forecasted": "Prévisionnel",
+    "opened_on": "Ouvert le",
+    "investment_badge": "Investissement",
+    "loan_badge": "Prêt",
+    "closed_badge": "Clôturé"
+  },
+  "select": {
+    "search_placeholder": "Rechercher…",
+    "no_result": "Aucun résultat",
+    "no_bank": "Sans banque"
+  },
+  "bank_select": {
+    "choose": "— Choisir —",
+    "aria_label": "Sélectionner une banque"
+  },
+  "detail": {
+    "not_found_back": "← Comptes",
+    "not_found": "Compte introuvable.",
+    "transactions_label": "Transactions",
+    "readonly_title": "Modifier temporairement",
+    "readonly_off_title": "Repasser en lecture seule",
+    "editing_mode": "Modification temporaire",
+    "read_only": "Lecture seule",
+    "empty_message": "Aucune transaction sur ce compte"
+  },
+  "page": {
+    "title": "Comptes",
+    "subtitle": "Cliquez sur un compte pour voir ses transactions",
+    "group_bank": "Banque",
+    "group_type": "Type",
+    "add_loan": "+ Prêt",
+    "add_account": "+ Compte",
+    "no_accounts": "Aucun compte pour l'instant.",
+    "closed_section": "Comptes clôturés ({{count}})",
+    "no_bank": "Sans banque",
+    "closed_on": "Clôturé le {{date}}",
+    "delete_title": "Supprimer le compte {{name}}",
+    "delete_body": "Toutes les transactions associées seront supprimées. Cette action est irréversible.",
+    "reopen_success": "Compte réouvert ✓",
+    "delete_success": "Compte supprimé",
+    "edit_success": "Compte mis à jour ✓",
+    "view_transactions": "Voir les transactions du compte {{name}}",
+    "edit_account": "Modifier le compte",
+    "close_account": "Clôturer le compte",
+    "reopen_account": "Rouvrir le compte",
+    "delete_account": "Supprimer le compte"
   }
 }

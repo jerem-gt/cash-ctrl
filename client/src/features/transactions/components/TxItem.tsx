@@ -1,5 +1,6 @@
 import { Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
@@ -68,6 +69,7 @@ function TxMobileMenu({
   onDuplicate,
   onDelete,
 }: Readonly<Pick<Props, 'tx' | 'onEdit' | 'onDuplicate' | 'onDelete'>>) {
+  const { t } = useTranslation('transactions');
   const [menuOpen, setMenuOpen] = useState(false);
   if (onEdit == null && onDuplicate == null && onDelete == null) return null;
   return (
@@ -76,7 +78,7 @@ function TxMobileMenu({
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
         className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
-        aria-label="Actions"
+        aria-label={t('tx_item.actions')}
       >
         <MoreHorizontal size={15} />
       </button>
@@ -100,7 +102,7 @@ function TxMobileMenu({
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
               >
-                Modifier
+                {t('tx_item.edit')}
               </button>
             )}
             {onDuplicate && (
@@ -112,7 +114,7 @@ function TxMobileMenu({
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
               >
-                Dupliquer
+                {t('tx_item.duplicate')}
               </button>
             )}
             {onDelete && (
@@ -124,7 +126,7 @@ function TxMobileMenu({
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 transition-colors"
               >
-                Supprimer
+                {t('tx_item.delete')}
               </button>
             )}
           </div>
@@ -144,6 +146,7 @@ export function TxItem({
   onDuplicate,
   onDelete,
 }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
@@ -169,7 +172,10 @@ export function TxItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           {isScheduled && (
-            <span className="text-[12px] text-indigo-400 shrink-0" title="Transaction planifiée">
+            <span
+              className="text-[12px] text-indigo-400 shrink-0"
+              title={t('tx_item.scheduled_title')}
+            >
               ↻
             </span>
           )}
@@ -185,17 +191,25 @@ export function TxItem({
           </p>
           <div className="flex gap-1 shrink-0">
             {isFuture && !validated && (
-              <Badge variant="indigo">{isScheduled ? '↻ À venir' : 'À venir'}</Badge>
+              <Badge variant="indigo">
+                {isScheduled ? t('tx_item.upcoming_scheduled') : t('tx_item.upcoming')}
+              </Badge>
             )}
             {isTransfer && <Badge variant="blue">↔</Badge>}
-            {tx.reimbursement_status === 'en_attente' && <Badge variant="amber">En attente</Badge>}
-            {tx.reimbursement_status === 'rembourse' && <Badge variant="green">Remboursé</Badge>}
+            {tx.reimbursement_status === 'en_attente' && (
+              <Badge variant="amber">{t('tx_item.pending')}</Badge>
+            )}
+            {tx.reimbursement_status === 'rembourse' && (
+              <Badge variant="green">{t('tx_item.reimbursed')}</Badge>
+            )}
           </div>
         </div>
 
         <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
           <span className="truncate text-stone-500 font-medium">
-            {tx.splits?.length ? `Ventilée (${tx.splits.length})` : tx.subcategory}
+            {tx.splits?.length
+              ? t('tx_item.ventilated', { count: tx.splits.length })
+              : tx.subcategory}
           </span>
           {accounts && logoMap && (
             <>
@@ -223,7 +237,7 @@ export function TxItem({
           {runningBalance != null && (
             <div
               className="text-[10px] text-stone-400 tabular-nums leading-tight"
-              title="Solde courant"
+              title={t('tx_item.running_balance_title')}
             >
               {fmtDec(runningBalance)}
             </div>
@@ -236,7 +250,7 @@ export function TxItem({
               onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
               disabled={validate.isPending}
               className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'} disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={validated ? 'Marquer comme non validée' : 'Valider'}
+              title={validated ? t('tx_item.unvalidate_title') : t('tx_item.validate_title')}
             >
               {validate.isPending ? (
                 <Loader2 size={14} className="animate-spin" />

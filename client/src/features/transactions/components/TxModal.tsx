@@ -1,4 +1,6 @@
+import { type TFunction } from 'i18next';
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
@@ -102,21 +104,6 @@ function initCore(
   };
 }
 
-function getTitle(isEdit: boolean, isTransfer: boolean, isDuplicate: boolean): string {
-  if (isEdit) return 'Modifier la transaction';
-  if (isDuplicate && isTransfer) return 'Dupliquer le transfert';
-  if (isDuplicate) return 'Dupliquer la transaction';
-  if (isTransfer) return 'Nouveau transfert';
-  return 'Nouvelle transaction';
-}
-
-function getSubmitLabel(isPending: boolean, isEdit: boolean, isTransferCreate: boolean): string {
-  if (isPending) return '…';
-  if (isEdit) return 'Enregistrer';
-  if (isTransferCreate) return 'Transférer';
-  return 'Ajouter';
-}
-
 function getTransferTabClass(isTransfer: boolean, noOtherAccounts: boolean): string {
   if (isTransfer) return 'bg-stone-900 text-white';
   if (noOtherAccounts) return 'bg-stone-50 text-stone-300 cursor-not-allowed';
@@ -129,6 +116,7 @@ interface HeaderProps {
   isTransfer: boolean;
   noOtherAccounts: boolean;
   onToggle: (toTransfer: boolean) => void;
+  t: TFunction<'transactions'>;
 }
 
 function TxModalHeader({
@@ -137,14 +125,11 @@ function TxModalHeader({
   isTransfer,
   noOtherAccounts,
   onToggle,
+  t,
 }: Readonly<HeaderProps>) {
   if (isEdit) {
     if (isTransferEdit) {
-      return (
-        <p className="text-[11px] text-stone-400 mb-4">
-          Transfert — montant, date et description appliqués aux deux legs.
-        </p>
-      );
+      return <p className="text-[11px] text-stone-400 mb-4">{t('modal.transfer_edit_note')}</p>;
     }
     return <div className="mb-4" />;
   }
@@ -155,7 +140,7 @@ function TxModalHeader({
         onClick={() => onToggle(false)}
         className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-50 text-stone-400 hover:bg-stone-100' : 'bg-stone-900 text-white'}`}
       >
-        Transaction
+        {t('modal.tab_transaction')}
       </button>
       <button
         type="button"
@@ -163,7 +148,7 @@ function TxModalHeader({
         disabled={noOtherAccounts}
         className={`flex-1 py-2 font-medium transition-colors ${getTransferTabClass(isTransfer, noOtherAccounts)}`}
       >
-        Transfert
+        {t('modal.tab_transfer')}
       </button>
     </div>
   );
@@ -192,16 +177,19 @@ function initSplits(
   }));
 }
 
-function validateSplits(rows: SplitInput[], total: number): string | null {
-  if (rows.length === 0) return 'Ajoutez au moins une ligne de ventilation.';
+function validateSplits(
+  rows: SplitInput[],
+  total: number,
+  t: TFunction<'transactions'>,
+): string | null {
+  if (rows.length === 0) return t('split_validation.err_no_rows');
   for (const s of rows) {
-    if (!s.subcategory_id) return 'Chaque ligne doit avoir une sous-catégorie.';
-    if ((Number.parseFloat(s.amount) || 0) <= 0)
-      return 'Chaque ligne doit avoir un montant positif.';
+    if (!s.subcategory_id) return t('split_validation.err_no_subcat');
+    if ((Number.parseFloat(s.amount) || 0) <= 0) return t('split_validation.err_no_amount');
   }
   const sum = rows.reduce((acc, s) => acc + Number.parseFloat(s.amount), 0);
   if (Math.abs(sum - total) > 0.01)
-    return `Total ventilation (${sum.toFixed(2)} €) ≠ montant (${total.toFixed(2)} €).`;
+    return t('split_validation.err_total', { sum: sum.toFixed(2), total: total.toFixed(2) });
   return null;
 }
 
@@ -243,18 +231,19 @@ interface EditCtx {
   validated: boolean;
   scheduledId: number | null;
   onSave: EditProps['onSave'];
+  t: TFunction<'transactions'>;
 }
 
 function runSubmitEdit(ctx: EditCtx): void {
   if (ctx.isVentilated) {
-    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount));
+    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount), ctx.t);
     if (err) {
       showToast(err);
       return;
     }
   }
   if (isEditFormIncomplete(ctx.core, ctx.isTransferEdit, ctx.isVentilated)) {
-    showToast('Veuillez remplir tous les champs obligatoires.');
+    showToast(ctx.t('modal.err_required'));
     return;
   }
   ctx.onSave({
@@ -285,18 +274,19 @@ interface TxCtx {
   reimbursementStatus: ReimbursementStatus;
   createTx: ReturnType<typeof useCreateTransaction>;
   onClose: () => void;
+  t: TFunction<'transactions'>;
 }
 
 function runSubmitTx(ctx: TxCtx): void {
   if (ctx.isVentilated) {
-    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount));
+    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount), ctx.t);
     if (err) {
       showToast(err);
       return;
     }
   }
   if (isTxFormIncomplete(ctx.core, ctx.fixedAccountId, ctx.isVentilated)) {
-    showToast('Veuillez remplir tous les champs obligatoires.');
+    showToast(ctx.t('modal.err_required'));
     return;
   }
   ctx.createTx.mutate(
@@ -314,7 +304,7 @@ function runSubmitTx(ctx: TxCtx): void {
     },
     {
       onSuccess: () => {
-        showToast('Transaction ajoutée ✓');
+        showToast(ctx.t('modal.success_add'));
         ctx.onClose();
       },
       onError: (err) => showToast(err.message),
@@ -325,6 +315,8 @@ function runSubmitTx(ctx: TxCtx): void {
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function TxModal(props: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
+  const { t: tc } = useTranslation('common');
   const { logoMap, categories, paymentMethods, onClose } = props;
   const accounts = props.accounts.filter(
     (a) => a.envelope_type !== 'life_insurance' && a.envelope_type !== 'per',
@@ -386,11 +378,12 @@ export function TxModal(props: Readonly<Props>) {
       validated,
       scheduledId,
       onSave: (props as EditProps).onSave,
+      t,
     });
 
   const submitTransfer = () => {
     if (!core.amount || !core.to_account_id) {
-      showToast('Veuillez remplir tous les champs.');
+      showToast(t('modal.err_transfer_required'));
       return;
     }
     createTransfer.mutate(
@@ -398,14 +391,14 @@ export function TxModal(props: Readonly<Props>) {
         from_account_id: fixedAccountId ?? Number.parseInt(core.account_id),
         to_account_id: Number.parseInt(core.to_account_id),
         amount: Number.parseFloat(core.amount),
-        description: core.description || 'Transfert',
+        description: core.description || tc('transfer'),
         date,
         notes: notes || null,
         validated,
       },
       {
         onSuccess: () => {
-          showToast('Transfert effectué ✓');
+          showToast(t('modal.success_transfer'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -425,6 +418,7 @@ export function TxModal(props: Readonly<Props>) {
       reimbursementStatus,
       createTx,
       onClose,
+      t,
     });
 
   const handleSubmit = (e: SubmitEvent) => {
@@ -443,19 +437,44 @@ export function TxModal(props: Readonly<Props>) {
   const createPending = createTx.isPending || createTransfer.isPending;
   const isPending = isEdit ? (props as EditProps).isPending : createPending;
 
+  let modalTitle: string;
+  if (isEdit) {
+    modalTitle = t('modal.title_edit');
+  } else if (isDuplicate && isTransfer) {
+    modalTitle = t('modal.title_duplicate_transfer');
+  } else if (isDuplicate) {
+    modalTitle = t('modal.title_duplicate');
+  } else if (isTransfer) {
+    modalTitle = t('modal.title_transfer');
+  } else {
+    modalTitle = t('modal.title_new');
+  }
+
+  let submitLabel: string;
+  if (isPending) {
+    submitLabel = tc('loading');
+  } else if (isEdit) {
+    submitLabel = t('modal.submit_edit');
+  } else if (isTransferCreate) {
+    submitLabel = t('modal.submit_transfer');
+  } else {
+    submitLabel = t('modal.submit_add');
+  }
+
   if (!isEdit && isTransfer && noOtherAccounts) {
     return (
       <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-          <h3 className="font-sans text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
+          <h3 className="font-sans text-xl mb-1">{modalTitle}</h3>
           <TxModalHeader
             isEdit={isEdit}
             isTransferEdit={isTransferEdit}
             isTransfer={isTransfer}
             noOtherAccounts={noOtherAccounts}
             onToggle={handleModeToggle}
+            t={t}
           />
-          <p className="text-sm text-stone-400">Vous n&apos;avez pas d&apos;autre compte.</p>
+          <p className="text-sm text-stone-400">{t('modal.no_other_account')}</p>
         </div>
       </div>
     );
@@ -464,7 +483,7 @@ export function TxModal(props: Readonly<Props>) {
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-        <h3 className="font-sans text-xl mb-1">{getTitle(isEdit, isTransfer, isDuplicate)}</h3>
+        <h3 className="font-sans text-xl mb-1">{modalTitle}</h3>
 
         <TxModalHeader
           isEdit={isEdit}
@@ -472,30 +491,31 @@ export function TxModal(props: Readonly<Props>) {
           isTransfer={isTransfer}
           noOtherAccounts={noOtherAccounts}
           onToggle={handleModeToggle}
+          t={t}
         />
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {isTransferEdit ? (
             <div className="space-y-3">
               <div className="flex gap-3 flex-wrap">
-                <FormGroup label="Montant (€)">
+                <FormGroup label={t('modal.amount')}>
                   <DecimalInput
                     value={core.amount}
                     onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
                     placeholder="0,00"
                   />
                 </FormGroup>
-                <FormGroup label="Description">
+                <FormGroup label={t('modal.description')}>
                   <Input
                     type="text"
                     value={core.description}
                     onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
-                    placeholder="Ex : Virement"
+                    placeholder={t('modal.description_placeholder_transfer')}
                   />
                 </FormGroup>
               </div>
               <div className="flex gap-3 flex-wrap">
-                <FormGroup label="Compte source">
+                <FormGroup label={t('modal.source_account')}>
                   <AccountSelect
                     id="source-account-select"
                     value={core.account_id}
@@ -504,14 +524,14 @@ export function TxModal(props: Readonly<Props>) {
                     logoMap={logoMap}
                   />
                 </FormGroup>
-                <FormGroup label="Compte destination">
+                <FormGroup label={t('modal.dest_account')}>
                   <AccountSelect
                     id="dest-account-select"
                     value={core.to_account_id}
                     onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
                     accounts={accounts.filter((a) => String(a.id) !== core.account_id)}
                     logoMap={logoMap}
-                    placeholder="— Choisir —"
+                    placeholder={tc('choose')}
                   />
                 </FormGroup>
               </div>
@@ -545,7 +565,7 @@ export function TxModal(props: Readonly<Props>) {
                           : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
                       }`}
                     >
-                      {isVentilated ? '⊕ Ventilée' : 'Ventiler'}
+                      {isVentilated ? t('modal.ventilated') : t('modal.ventilate')}
                     </button>
                   </div>
                   {isVentilated && (
@@ -562,16 +582,16 @@ export function TxModal(props: Readonly<Props>) {
           )}
 
           <div className="flex gap-3 flex-wrap items-end">
-            <FormGroup label="Date">
+            <FormGroup label={tc('date')}>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </FormGroup>
           </div>
 
-          <FormGroup label="Notes">
+          <FormGroup label={t('modal.notes_label')}>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Informations complémentaires…"
+              placeholder={t('modal.notes_placeholder')}
               rows={2}
               className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
             />
@@ -584,7 +604,7 @@ export function TxModal(props: Readonly<Props>) {
               onChange={(e) => setValidated(e.target.checked)}
               className="w-4 h-4 accent-green-500"
             />
-            <span className="text-sm text-stone-700">Transaction validée</span>
+            <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
           </label>
 
           {isEdit &&
@@ -595,7 +615,7 @@ export function TxModal(props: Readonly<Props>) {
               );
               if (options.length === 0) return null;
               return (
-                <FormGroup label="Planification" htmlFor="scheduled-select">
+                <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
                   <select
                     id="scheduled-select"
                     value={scheduledId ?? ''}
@@ -605,7 +625,7 @@ export function TxModal(props: Readonly<Props>) {
                     }}
                     className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
                   >
-                    <option value="">— Aucune —</option>
+                    <option value="">{t('modal.no_scheduling')}</option>
                     {options.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.description}
@@ -627,10 +647,10 @@ export function TxModal(props: Readonly<Props>) {
 
           <div className="flex gap-2 justify-end pt-2">
             <Button type="button" onClick={onClose}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
-              {getSubmitLabel(isPending, isEdit, isTransferCreate)}
+              {submitLabel}
             </Button>
           </div>
         </form>

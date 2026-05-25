@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { CSSProperties, ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { IconButton } from '@/components/ui';
 
@@ -34,6 +35,7 @@ export function SettingsCard({
   dragRef,
   dragStyle,
 }: Readonly<SettingsCardProps>) {
+  const { t } = useTranslation('settings');
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -83,13 +85,18 @@ export function SettingsCard({
             )}
             {badge}
             <div className="flex items-center gap-0.5 shrink-0">
-              <IconButton label="Modifier" size="sm" onClick={onEditStart}>
+              <IconButton label={t('card.edit_label')} size="sm" onClick={onEditStart}>
                 <span aria-hidden="true" className="text-[12px]">
                   ✎
                 </span>
               </IconButton>
               {canDelete && onDelete && (
-                <IconButton label="Supprimer" size="sm" variant="danger" onClick={onDelete}>
+                <IconButton
+                  label={t('card.delete_label')}
+                  size="sm"
+                  variant="danger"
+                  onClick={onDelete}
+                >
                   <span aria-hidden="true" className="text-lg leading-none">
                     ×
                   </span>

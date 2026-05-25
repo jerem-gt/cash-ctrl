@@ -1,5 +1,6 @@
 import { Download, HardDrive, Play } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import { useBackupList, useRunBackup } from '@/features/settings/hooks/useBackup';
@@ -13,6 +14,7 @@ function formatBytes(bytes: number): string {
 }
 
 function BackupRow({ file }: Readonly<{ file: BackupFile }>) {
+  const { t } = useTranslation('settings');
   const date = new Date(file.created_at).toLocaleString('fr-FR', {
     dateStyle: 'short',
     timeStyle: 'short',
@@ -35,13 +37,15 @@ function BackupRow({ file }: Readonly<{ file: BackupFile }>) {
         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-stone-500 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all shrink-0 ml-4"
       >
         <Download className="w-3.5 h-3.5" />
-        Télécharger
+        {t('backup.download')}
       </a>
     </div>
   );
 }
 
 export function BackupManager() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const { data: backups = [], isLoading: backupsLoading } = useBackupList();
   const updateSettings = useUpdateSettings();
@@ -59,7 +63,7 @@ export function BackupManager() {
     backup_max_files: settings?.backup_max_files ?? 7,
   };
 
-  if (settingsLoading) return <div>Chargement…</div>;
+  if (settingsLoading) return <div>{tc('loading')}</div>;
 
   const handleSave = async () => {
     if (!settings) return;
@@ -69,7 +73,7 @@ export function BackupManager() {
         ...current,
       });
       setForm(null);
-      showToast('Paramètres de backup sauvegardés ✓');
+      showToast(t('backup.success_settings'));
     } catch (err) {
       showToast((err as Error).message);
     }
@@ -79,8 +83,8 @@ export function BackupManager() {
     runBackup.mutate(undefined, {
       onSuccess: (result) =>
         result.skipped
-          ? showToast('Aucune modification depuis le dernier backup')
-          : showToast(`Backup créé : ${result.filename}`),
+          ? showToast(t('backup.no_changes'))
+          : showToast(t('backup.created', { filename: result.filename })),
       onError: (err) => showToast(err.message),
     });
   };
@@ -92,14 +96,14 @@ export function BackupManager() {
       {/* Configuration */}
       <div className="bg-white rounded-4xl p-8 shadow-sm border border-black/5">
         <h2 className="text-lg font-extrabold tracking-tight text-stone-900 mb-6">
-          Backup automatique
+          {t('backup.config_title')}
         </h2>
 
         <div className="flex flex-col gap-5">
           {/* Activation */}
           <div className="flex items-center justify-between gap-4 cursor-pointer">
             <span id="backup-enabled-label" className="text-sm font-medium text-stone-700">
-              Activer le backup automatique
+              {t('backup.enable_label')}
             </span>
             <button
               type="button"
@@ -124,7 +128,7 @@ export function BackupManager() {
           {/* Fréquence */}
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm font-medium text-stone-700" htmlFor="backup-freq">
-              Fréquence (en heures)
+              {t('backup.freq_label')}
             </label>
             <input
               id="backup-freq"
@@ -146,7 +150,7 @@ export function BackupManager() {
           {/* Fichiers max */}
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm font-medium text-stone-700" htmlFor="backup-max">
-              Nombre de fichiers à conserver
+              {t('backup.max_files_label')}
             </label>
             <input
               id="backup-max"
@@ -168,7 +172,7 @@ export function BackupManager() {
           {/* Dernier backup */}
           {settings?.backup_last_at && (
             <p className="text-[11px] text-stone-400">
-              Dernier backup :{' '}
+              {t('backup.last_backup')}{' '}
               {new Date(settings.backup_last_at).toLocaleString('fr-FR', {
                 dateStyle: 'short',
                 timeStyle: 'short',
@@ -185,7 +189,7 @@ export function BackupManager() {
               className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-stone-600 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all disabled:opacity-30"
             >
               <Play className="w-3.5 h-3.5" />
-              {runBackup.isPending ? 'En cours…' : 'Lancer un backup maintenant'}
+              {runBackup.isPending ? t('backup.running') : t('backup.run_now')}
             </button>
 
             {isDirty && (
@@ -195,7 +199,7 @@ export function BackupManager() {
                 disabled={updateSettings.isPending}
                 className="px-4 py-2 text-[11px] font-black text-green-600 hover:bg-green-50 rounded-xl uppercase tracking-wider transition-all disabled:opacity-30"
               >
-                {updateSettings.isPending ? '…' : 'Enregistrer'}
+                {updateSettings.isPending ? tc('loading') : tc('save')}
               </button>
             )}
 
@@ -205,7 +209,7 @@ export function BackupManager() {
                 onClick={() => setForm(null)}
                 className="px-4 py-2 text-[11px] font-black text-stone-300 hover:bg-stone-100 rounded-xl uppercase tracking-wider transition-all"
               >
-                Annuler
+                {tc('cancel')}
               </button>
             )}
           </div>
@@ -215,15 +219,15 @@ export function BackupManager() {
       {/* Liste des backups */}
       <div className="bg-white rounded-4xl p-8 shadow-sm border border-black/5">
         <h2 className="text-lg font-extrabold tracking-tight text-stone-900 mb-4">
-          Fichiers de backup
+          {t('backup.files_title')}
         </h2>
 
         {(() => {
           let content: ReactNode;
           if (backupsLoading) {
-            content = <p className="text-sm text-stone-400">Chargement…</p>;
+            content = <p className="text-sm text-stone-400">{tc('loading')}</p>;
           } else if (backups.length === 0) {
-            content = <p className="text-sm text-stone-400 italic">Aucun backup disponible.</p>;
+            content = <p className="text-sm text-stone-400 italic">{t('backup.no_backups')}</p>;
           } else {
             content = (
               <div className="flex flex-col">

@@ -1,0 +1,64 @@
+{
+  "section": {
+    "title": "Portefeuille",
+    "refresh_btn": "↻ Actualiser les cours",
+    "refreshing": "…",
+    "buy_btn": "+ Acheter",
+    "no_positions": "Aucune position ouverte",
+    "col_quantity": "Quantité",
+    "col_pru": "PRU",
+    "col_price": "Cours",
+    "col_valuation": "Valorisation",
+    "total_label": "Total",
+    "refresh_success": "Cours mis à jour ✓",
+    "action_buy": "Acheter",
+    "action_sell": "Vendre",
+    "action_transfer": "Transférer",
+    "transfer_title": "Transférer vers un autre compte"
+  },
+  "stock_operation_modal": {
+    "title_buy": "Acheter des actions",
+    "title_sell": "Vendre des actions",
+    "ticker_label": "Ticker ou ISIN",
+    "ticker_placeholder": "ex : DCAM.PA, AAPL ou FR0014000MR3",
+    "quantity_label": "Nombre d'actions",
+    "quantity_label_max": "Nombre d'actions (max {{max}})",
+    "quantity_placeholder_buy": "10",
+    "quantity_placeholder_sell": "5",
+    "price_label": "Prix unitaire (€)",
+    "price_placeholder_buy": "12,50",
+    "price_placeholder_sell": "13,00",
+    "fees_label": "Frais (€)",
+    "fees_placeholder": "1,50",
+    "total_expense": "Total dépense",
+    "total_received": "Montant net reçu",
+    "success_buy": "Achat de {{qty}} × {{ticker}} enregistré ✓",
+    "success_sell": "Vente de {{qty}} × {{ticker}} enregistrée ✓",
+    "submit_buy": "Acheter",
+    "submit_sell": "Vendre"
+  },
+  "edit_operation_modal": {
+    "title": "Modifier l'opération",
+    "subtitle_buy": "Achat",
+    "subtitle_sell": "Vente",
+    "quantity_label": "Nombre d'actions",
+    "price_label": "Prix unitaire (€)",
+    "fees_label": "Frais (€)",
+    "total_label": "Montant total",
+    "total_received": "Montant net reçu",
+    "success": "Opération modifiée ✓"
+  },
+  "transfer_modal": {
+    "title": "Transférer des titres",
+    "subtitle": "<ticker>{{ticker}}</ticker> — PRU {{pru}} conservé",
+    "no_targets": "Aucun autre compte d'investissement disponible.",
+    "dest_account": "Compte destination",
+    "quantity_label": "Nombre d'actions (max {{max}})",
+    "success": "Transfert de {{qty}} × {{ticker}} enregistré ✓",
+    "submit": "Transférer"
+  },
+  "ticker_input": {
+    "searching": "Recherche en cours…",
+    "no_result": "Aucun résultat"
+  }
+}

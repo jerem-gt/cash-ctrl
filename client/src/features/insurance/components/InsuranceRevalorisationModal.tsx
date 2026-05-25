@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useRevalorisation } from '@/features/insurance/hooks/useInsurance';
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function InsuranceRevalorisationModal({ accountId, support, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const revalorisation = useRevalorisation(accountId);
@@ -26,7 +29,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
       },
       {
         onSuccess: () => {
-          showToast('Revalorisation enregistrée ✓');
+          showToast(t('revalorisation_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -36,8 +39,8 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
 
   return (
     <ModalFrame
-      title={`Revalorisation — ${support.name}`}
-      subtitle={`Valeur actuelle : ${fmtDec(support.value)}`}
+      title={t('revalorisation_modal.title', { support: support.name })}
+      subtitle={t('revalorisation_modal.subtitle', { value: fmtDec(support.value) })}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
@@ -45,7 +48,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
             htmlFor="reval-amount"
             className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
           >
-            Plus/moins-value (€)
+            {t('revalorisation_modal.amount_label')}
           </label>
           <DecimalInput
             id="reval-amount"
@@ -55,12 +58,10 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
             required
             autoFocus
           />
-          <p className="text-[10px] text-stone-400">
-            Positif = gain, négatif = perte (frais inclus)
-          </p>
+          <p className="text-[10px] text-stone-400">{t('revalorisation_modal.amount_hint')}</p>
         </div>
 
-        <FormGroup label="Date" htmlFor="reval-date">
+        <FormGroup label={tc('date')} htmlFor="reval-date">
           <Input
             id="reval-date"
             type="date"
@@ -72,10 +73,10 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={revalorisation.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button variant="primary" type="submit" disabled={!amount || revalorisation.isPending}>
-            {revalorisation.isPending ? '…' : 'Enregistrer'}
+            {revalorisation.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

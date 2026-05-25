@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Empty, Pagination, Skeleton } from '@/components/ui';
 import { EditStockOperationModal } from '@/features/portfolio/components/EditStockOperationModal';
@@ -14,17 +15,19 @@ import { TransactionsFilters } from './TransactionsFilters';
 interface Props {
   account?: Account;
   logoMap: Record<string, string | null>;
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   readOnly?: boolean;
 }
 
 export function TransactionsList({
   account,
   logoMap,
-  emptyMessage = 'Aucune transaction trouvée',
+  emptyMessage,
   readOnly = false,
 }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
   const { state, actions } = useTransactionsManager(account?.id);
+  const resolvedEmptyMessage = emptyMessage ?? t('list.empty');
 
   const runningBalances = useMemo(() => {
     if (account == null) return [];
@@ -54,10 +57,10 @@ export function TransactionsList({
           />
         </div>
         <div className="flex items-center justify-between sm:justify-start gap-3 sm:shrink-0 sm:h-9">
-          <span className="text-xs text-stone-400">{state.total} transaction(s)</span>
+          <span className="text-xs text-stone-400">{t('list.count', { count: state.total })}</span>
           {!readOnly && (
             <Button variant="primary" onClick={actions.openAdd}>
-              + Transaction
+              {t('list.add_btn')}
             </Button>
           )}
         </div>
@@ -80,7 +83,7 @@ export function TransactionsList({
           ))
         ) : (
           <>
-            {state.transactions.length === 0 && <Empty>{emptyMessage}</Empty>}
+            {state.transactions.length === 0 && <Empty>{resolvedEmptyMessage}</Empty>}
             {state.transactions.map((t, i) => (
               <TxItem
                 key={t.id}

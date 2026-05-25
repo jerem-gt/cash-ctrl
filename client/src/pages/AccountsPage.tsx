@@ -1,5 +1,6 @@
 import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import {
@@ -60,6 +61,7 @@ function AccountsPageSkeleton() {
 }
 
 export default function AccountsPage() {
+  const { t } = useTranslation('accounts');
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
@@ -87,9 +89,9 @@ export default function AccountsPage() {
   const groups = useMemo(() => {
     if (groupBy === 'type') {
       return accountTypes
-        .map((t) => ({
-          label: t.name,
-          accounts: activeAccounts.filter((a) => a.account_type_id === t.id),
+        .map((accountType) => ({
+          label: accountType.name,
+          accounts: activeAccounts.filter((a) => a.account_type_id === accountType.id),
         }))
         .filter((g) => g.accounts.length > 0);
     }
@@ -105,14 +107,14 @@ export default function AccountsPage() {
         if (b === '') return -1;
         return (bankSortOrder[a] ?? Infinity) - (bankSortOrder[b] ?? Infinity);
       })
-      .map(([key, accs]) => ({ label: key === '' ? 'Sans banque' : key, accounts: accs }));
-  }, [activeAccounts, accountTypes, groupBy, bankSortOrder]);
+      .map(([key, accs]) => ({ label: key === '' ? t('page.no_bank') : key, accounts: accs }));
+  }, [activeAccounts, accountTypes, groupBy, bankSortOrder, t]);
 
   if (accountsLoading) return <AccountsPageSkeleton />;
 
   const handleReopenAccount = (accountId: number) => {
     reopenAccount.mutate(accountId, {
-      onSuccess: () => showToast('Compte réouvert ✓'),
+      onSuccess: () => showToast(t('page.reopen_success')),
       onError: (err) => showToast(err.message),
     });
   };
@@ -121,7 +123,7 @@ export default function AccountsPage() {
     deleteAccount.mutate(accountId, {
       onSuccess: () => {
         setAccountToDelete(null);
-        showToast('Compte supprimé');
+        showToast(t('page.delete_success'));
       },
     });
   };
@@ -138,7 +140,7 @@ export default function AccountsPage() {
       {
         onSuccess: () => {
           setAccountToEdit(null);
-          showToast('Compte mis à jour ✓');
+          showToast(t('page.edit_success'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -149,10 +151,8 @@ export default function AccountsPage() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-sans text-2xl tracking-tight">Comptes</h2>
-          <p className="text-sm text-stone-400 mt-0.5">
-            Cliquez sur un compte pour voir ses transactions
-          </p>
+          <h2 className="font-sans text-2xl tracking-tight">{t('page.title')}</h2>
+          <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-stone-100 rounded-lg p-0.5 text-xs">
@@ -165,7 +165,7 @@ export default function AccountsPage() {
                   : 'text-stone-400 hover:text-stone-600'
               }`}
             >
-              Banque
+              {t('page.group_bank')}
             </button>
             <button
               type="button"
@@ -176,20 +176,20 @@ export default function AccountsPage() {
                   : 'text-stone-400 hover:text-stone-600'
               }`}
             >
-              Type
+              {t('page.group_type')}
             </button>
           </div>
           <Button size="sm" onClick={() => setAddLoanOpen(true)}>
-            + Prêt
+            {t('page.add_loan')}
           </Button>
           <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
-            + Compte
+            {t('page.add_account')}
           </Button>
         </div>
       </div>
 
       {accounts.length === 0 ? (
-        <Empty>Aucun compte pour l'instant.</Empty>
+        <Empty>{t('page.no_accounts')}</Empty>
       ) : (
         <div className="space-y-6">
           {/* Comptes actifs */}
@@ -241,7 +241,7 @@ export default function AccountsPage() {
                 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-stone-300 hover:text-stone-500 transition-colors mb-3"
               >
                 <Archive size={13} strokeWidth={2} />
-                Comptes clôturés ({closedAccounts.length})
+                {t('page.closed_section', { count: closedAccounts.length })}
                 <span className="font-normal normal-case tracking-normal">
                   {showClosed ? '▴' : '▾'}
                 </span>
@@ -296,8 +296,8 @@ export default function AccountsPage() {
       )}
       {accountToDelete && (
         <ConfirmModal
-          title={`Supprimer le compte ${accountToDelete.name}`}
-          body="Toutes les transactions associées seront supprimées. Cette action est irréversible."
+          title={t('page.delete_title', { name: accountToDelete.name })}
+          body={t('page.delete_body')}
           onConfirm={() => handleDeleteAccount(accountToDelete.id)}
           onCancel={() => setAccountToDelete(null)}
         />
@@ -329,6 +329,7 @@ function AccountCard({
   onClose?: () => void;
   onReopen?: () => void;
 }>) {
+  const { t } = useTranslation('accounts');
   const isClosed = acc.closed_at !== null;
 
   let displayBal: number;
@@ -358,13 +359,13 @@ function AccountCard({
       <Link
         to={`/accounts/${acc.id}`}
         className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        aria-label={`Voir les transactions du compte ${acc.name}`}
+        aria-label={t('page.view_transactions', { name: acc.name })}
       />
       <div className="relative z-10 flex justify-between items-start mb-3">
         <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
         <div className="flex gap-1">
           <IconButton
-            label="Modifier le compte"
+            label={t('page.edit_account')}
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
@@ -374,7 +375,7 @@ function AccountCard({
           </IconButton>
           {onClose && (
             <IconButton
-              label="Clôturer le compte"
+              label={t('page.close_account')}
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
@@ -385,7 +386,7 @@ function AccountCard({
           )}
           {onReopen && (
             <IconButton
-              label="Rouvrir le compte"
+              label={t('page.reopen_account')}
               onClick={(e) => {
                 e.stopPropagation();
                 onReopen();
@@ -395,7 +396,7 @@ function AccountCard({
             </IconButton>
           )}
           <IconButton
-            label="Supprimer le compte"
+            label={t('page.delete_account')}
             variant="danger"
             onClick={(e) => {
               e.stopPropagation();
@@ -410,7 +411,7 @@ function AccountCard({
       <div className="mt-4">
         {isClosed && acc.closed_at ? (
           <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium">
-            Clôturé le {fmtDate(acc.closed_at)}
+            {t('page.closed_on', { date: fmtDate(acc.closed_at) })}
           </p>
         ) : (
           acc.opening_date && (

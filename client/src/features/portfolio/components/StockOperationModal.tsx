@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput';
@@ -24,6 +25,8 @@ interface SellProps {
 type Props = BuyProps | SellProps;
 
 export function StockOperationModal(props: Readonly<Props>) {
+  const { t } = useTranslation('portfolio');
+  const { t: tc } = useTranslation('common');
   const { mode, accountId, onClose } = props;
   const position = mode === 'sell' ? (props as SellProps).position : (props as BuyProps).position;
 
@@ -44,7 +47,6 @@ export function StockOperationModal(props: Readonly<Props>) {
 
   const isBuy = mode === 'buy';
   const maxQty = isBuy ? undefined : position?.quantity;
-  const actionLabel = isBuy ? 'Acheter' : 'Vendre';
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,11 +56,11 @@ export function StockOperationModal(props: Readonly<Props>) {
       { ticker: cleanTicker, quantity: qty, price_per_share: pps, fees: f, date },
       {
         onSuccess: () => {
-          showToast(
-            isBuy
-              ? `Achat de ${qty} × ${cleanTicker} enregistré ✓`
-              : `Vente de ${qty} × ${cleanTicker} enregistrée ✓`,
-          );
+          if (isBuy) {
+            showToast(t('stock_operation_modal.success_buy', { qty, ticker: cleanTicker }));
+          } else {
+            showToast(t('stock_operation_modal.success_sell', { qty, ticker: cleanTicker }));
+          }
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -66,25 +68,29 @@ export function StockOperationModal(props: Readonly<Props>) {
     );
   };
 
+  const quantityLabel =
+    maxQty == null
+      ? t('stock_operation_modal.quantity_label')
+      : t('stock_operation_modal.quantity_label_max', { max: maxQty });
+
   return (
-    <ModalFrame title={isBuy ? 'Acheter des actions' : 'Vendre des actions'}>
+    <ModalFrame
+      title={isBuy ? t('stock_operation_modal.title_buy') : t('stock_operation_modal.title_sell')}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormGroup label="Ticker ou ISIN" htmlFor="op-ticker">
+        <FormGroup label={t('stock_operation_modal.ticker_label')} htmlFor="op-ticker">
           <TickerInput
             id="op-ticker"
             value={ticker}
             onChange={setTicker}
-            placeholder="ex : DCAM.PA, AAPL ou FR0014000MR3"
+            placeholder={t('stock_operation_modal.ticker_placeholder')}
             disabled={!!position}
             autoFocus={!position}
           />
         </FormGroup>
 
         <div className="flex gap-3">
-          <FormGroup
-            label={maxQty == null ? "Nombre d'actions" : `Nombre d'actions (max ${maxQty})`}
-            htmlFor="op-quantity"
-          >
+          <FormGroup label={quantityLabel} htmlFor="op-quantity">
             <Input
               id="op-quantity"
               type="number"
@@ -93,30 +99,38 @@ export function StockOperationModal(props: Readonly<Props>) {
               step="any"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder={isBuy ? '10' : '5'}
+              placeholder={
+                isBuy
+                  ? t('stock_operation_modal.quantity_placeholder_buy')
+                  : t('stock_operation_modal.quantity_placeholder_sell')
+              }
               autoFocus={!!position}
             />
           </FormGroup>
-          <FormGroup label="Prix unitaire (€)" htmlFor="op-price">
+          <FormGroup label={t('stock_operation_modal.price_label')} htmlFor="op-price">
             <DecimalInput
               id="op-price"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder={isBuy ? '12,50' : '13,00'}
+              placeholder={
+                isBuy
+                  ? t('stock_operation_modal.price_placeholder_buy')
+                  : t('stock_operation_modal.price_placeholder_sell')
+              }
             />
           </FormGroup>
         </div>
 
         <div className="flex gap-3">
-          <FormGroup label="Frais (€)" htmlFor="op-fees">
+          <FormGroup label={t('stock_operation_modal.fees_label')} htmlFor="op-fees">
             <DecimalInput
               id="op-fees"
               value={fees}
               onChange={(e) => setFees(e.target.value)}
-              placeholder="1,50"
+              placeholder={t('stock_operation_modal.fees_placeholder')}
             />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="op-date">
+          <FormGroup label={tc('date')} htmlFor="op-date">
             <Input
               id="op-date"
               type="date"
@@ -128,7 +142,9 @@ export function StockOperationModal(props: Readonly<Props>) {
 
         <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
           <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
-            {isBuy ? 'Total dépense' : 'Montant net reçu'}
+            {isBuy
+              ? t('stock_operation_modal.total_expense')
+              : t('stock_operation_modal.total_received')}
           </p>
           <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
             {amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
@@ -137,7 +153,7 @@ export function StockOperationModal(props: Readonly<Props>) {
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={mutation.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             type="submit"
@@ -146,7 +162,11 @@ export function StockOperationModal(props: Readonly<Props>) {
               mutation.isPending || !ticker.trim() || isIsin(ticker.trim()) || qty <= 0 || pps <= 0
             }
           >
-            {mutation.isPending ? '…' : actionLabel}
+            {mutation.isPending
+              ? tc('loading')
+              : isBuy
+                ? t('stock_operation_modal.submit_buy')
+                : t('stock_operation_modal.submit_sell')}
           </Button>
         </div>
       </form>

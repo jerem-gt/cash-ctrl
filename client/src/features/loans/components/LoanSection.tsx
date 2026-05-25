@@ -1,5 +1,6 @@
 import { Check, Pencil, Settings, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, showToast } from '@/components/ui';
 import { LoanFormModal } from '@/features/loans/components/LoanFormModal';
@@ -28,10 +29,10 @@ function LoanStat({ label, value }: Readonly<{ label: string; value: string }>) 
   );
 }
 
-const STATUS_CONFIG = {
-  paid: { label: 'Payé', colors: 'bg-green-50 text-green-700 border-green-200' },
-  pending: { label: 'En attente', colors: 'bg-amber-50 text-amber-700 border-amber-200' },
-  planned: { label: 'Planifié', colors: 'bg-stone-50 text-stone-400 border-stone-200' },
+const STATUS_COLORS = {
+  paid: 'bg-green-50 text-green-700 border-green-200',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  planned: 'bg-stone-50 text-stone-400 border-stone-200',
 };
 
 function InstallmentRow({
@@ -43,6 +44,8 @@ function InstallmentRow({
   loanId: number;
   isPast: boolean;
 }>) {
+  const { t } = useTranslation('loans');
+  const { t: tc } = useTranslation('common');
   const [editing, setEditing] = useState(false);
   const [dueDate, setDueDate] = useState(inst.due_date);
   const [amount, setAmount] = useState(inst.total_amount.toFixed(2));
@@ -51,12 +54,17 @@ function InstallmentRow({
   const isPaid = inst.transaction_validated === 1;
   const isGenerated = inst.transaction_id != null;
   const status = (isPaid && 'paid') || (isGenerated && 'pending') || 'planned';
-  const config = STATUS_CONFIG[status];
+
+  const statusLabels = {
+    paid: t('section.status_paid'),
+    pending: t('section.status_pending'),
+    planned: t('section.status_planned'),
+  };
 
   const handleSave = () => {
     const total = Number.parseFloat(amount);
     if (!dueDate || Number.isNaN(total) || total <= 0) {
-      showToast('Valeurs invalides.');
+      showToast(t('section.invalid_values'));
       return;
     }
     updateInstallment.mutate(
@@ -75,8 +83,10 @@ function InstallmentRow({
   };
 
   const statusBadge = (
-    <span className={`text-[10px] rounded px-1.5 py-0.5 font-medium border ${config.colors}`}>
-      {config.label}
+    <span
+      className={`text-[10px] rounded px-1.5 py-0.5 font-medium border ${STATUS_COLORS[status]}`}
+    >
+      {statusLabels[status]}
     </span>
   );
 
@@ -94,7 +104,7 @@ function InstallmentRow({
         </td>
         <td className="px-3 py-2">
           <DecimalInput
-            aria-label="Montant"
+            aria-label={tc('amount')}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-xs border border-stone-300 rounded px-2 py-1 w-28 text-right"
@@ -160,6 +170,7 @@ function InstallmentRow({
 }
 
 export function LoanSection({ account, onClose, readOnly = false }: Readonly<Props>) {
+  const { t } = useTranslation('loans');
   const { data: loan, isLoading } = useLoan(account.id);
   const { data: installments = [] } = useLoanInstallments(loan?.id);
   const [editOpen, setEditOpen] = useState(false);
@@ -195,7 +206,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
       <div className="bg-[#fafaf9] border border-stone-200 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Détails du prêt
+            {t('section.details_title')}
           </p>
           {!readOnly && (
             <button
@@ -204,20 +215,23 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
               className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 transition-colors"
             >
               <Settings size={13} />
-              Modifier
+              {t('section.edit_btn')}
             </button>
           )}
         </div>
 
         {/* Ligne 1 — paramètres fixes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-5">
-          <LoanStat label="Capital emprunté" value={fmtDec(loan.principal_amount)} />
+          <LoanStat label={t('section.capital_borrowed')} value={fmtDec(loan.principal_amount)} />
           <LoanStat
-            label="Taux annuel"
+            label={t('section.annual_rate')}
             value={`${(loan.interest_rate * 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} %`}
           />
-          <LoanStat label="Durée" value={`${loan.duration_months} mois`} />
-          <LoanStat label="Mensualité" value={fmtDec(loan.monthly_payment)} />
+          <LoanStat
+            label={t('section.duration')}
+            value={t('section.duration_value', { months: loan.duration_months })}
+          />
+          <LoanStat label={t('section.monthly_payment')} value={fmtDec(loan.monthly_payment)} />
         </div>
 
         {/* Ligne 2 — suivi dynamique */}
@@ -225,15 +239,19 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
           {/* Capital */}
           <div>
             <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 block mb-3">
-              Capital
+              {t('section.capital_section')}
             </span>
             <div className="flex justify-between items-end mb-2">
               <div>
-                <span className="text-[10px] text-stone-400 block mb-0.5">Remboursé</span>
+                <span className="text-[10px] text-stone-400 block mb-0.5">
+                  {t('section.repaid')}
+                </span>
                 <span className="font-sans text-lg text-stone-900">{fmtDec(paidPrincipal)}</span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-stone-400 block mb-0.5">Restant dû</span>
+                <span className="text-[10px] text-stone-400 block mb-0.5">
+                  {t('section.remaining_due')}
+                </span>
                 <span className="font-sans text-lg text-red-700">{fmtDec(capitalRestantDu)}</span>
               </div>
             </div>
@@ -249,15 +267,17 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
           {/* Intérêts */}
           <div>
             <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 block mb-3">
-              Intérêts
+              {t('section.interest_section')}
             </span>
             <div className="flex justify-between items-end mb-2">
               <div>
-                <span className="text-[10px] text-stone-400 block mb-0.5">Payés</span>
+                <span className="text-[10px] text-stone-400 block mb-0.5">{t('section.paid')}</span>
                 <span className="font-sans text-lg text-stone-900">{fmtDec(paidInterest)}</span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-stone-400 block mb-0.5">Restants</span>
+                <span className="text-[10px] text-stone-400 block mb-0.5">
+                  {t('section.remaining')}
+                </span>
                 <span className="font-sans text-lg text-stone-900">
                   {fmtDec(remainingInterest)}
                 </span>
@@ -277,7 +297,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
       {/* Échéancier */}
       <div>
         <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
-          Échéancier ({installments.length} mensualités)
+          {t('section.schedule_title', { count: installments.length })}
         </p>
         <div className="border border-stone-200 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto max-h-120 overflow-y-auto">
@@ -285,22 +305,22 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
               <thead className="bg-stone-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    #
+                    {t('section.col_number')}
                   </th>
                   <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    Échéance
+                    {t('section.col_due_date')}
                   </th>
                   <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    Mensualité
+                    {t('section.col_installment')}
                   </th>
                   <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    Capital
+                    {t('section.col_capital')}
                   </th>
                   <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    Intérêts
+                    {t('section.col_interest')}
                   </th>
                   <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
-                    Statut
+                    {t('section.col_status')}
                   </th>
                   <th className="px-3 py-2.5 w-10" />
                 </tr>
@@ -323,7 +343,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
       {!account.closed_at && (
         <div className="flex justify-end pt-2">
           <Button variant="danger" size="sm" onClick={onClose}>
-            Clôturer le prêt
+            {t('section.close_loan_btn')}
           </Button>
         </div>
       )}

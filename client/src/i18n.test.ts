@@ -32,10 +32,12 @@ describe('i18n — namespace accounts', () => {
 
 describe('i18n — comportement sur clé manquante', () => {
   it("retourne la clé si elle n'existe pas", () => {
-    expect(i18n.t('cle_inexistante')).toBe('cle_inexistante');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(i18n.t('cle_inexistante' as any)).toBe('cle_inexistante');
   });
 
   it('retourne la clé (sans namespace) si la clé imbriquée est absente', () => {
-    expect(i18n.t('section_inconnue.cle', { ns: 'accounts' })).toBe('section_inconnue.cle');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(i18n.t('section_inconnue.cle' as any, { ns: 'accounts' })).toBe('section_inconnue.cle');
   });
 });

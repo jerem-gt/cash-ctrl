@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, ConfirmModal, IconButton, showToast, Spinner } from '@/components/ui';
 import {
@@ -32,6 +33,7 @@ function SupportRow({
   accountId,
   readOnly = false,
 }: Readonly<SupportRowProps>) {
+  const { t } = useTranslation('insurance');
   const [activeModal, setActiveModal] = useState<
     'versement' | 'rachat' | 'arbitrage' | 'interets' | 'revalorisation' | 'delete' | null
   >(null);
@@ -39,33 +41,33 @@ function SupportRow({
 
   const badgeClass =
     support.type === 'euro' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700';
-  const badgeLabel = support.type === 'euro' ? 'Euro' : 'UC';
+  const badgeLabel = support.type === 'euro' ? t('section.badge_euro') : t('section.badge_uc');
   const actionButtons = !readOnly && (
     <div className="flex gap-1 flex-wrap">
       <button
         onClick={() => setActiveModal('versement')}
         className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
       >
-        Verser
+        {t('section.action_versement')}
       </button>
       <button
         onClick={() => setActiveModal('rachat')}
         className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
       >
-        Racheter
+        {t('section.action_rachat')}
       </button>
       <button
         onClick={() => setActiveModal('arbitrage')}
         className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
       >
-        Arbitrer
+        {t('section.action_arbitrage')}
       </button>
       {support.type === 'euro' && (
         <button
           onClick={() => setActiveModal('interets')}
           className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
         >
-          Intérêts
+          {t('section.action_interets')}
         </button>
       )}
       {support.type === 'uc' && (
@@ -73,13 +75,13 @@ function SupportRow({
           onClick={() => setActiveModal('revalorisation')}
           className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
         >
-          Revaloriser
+          {t('section.action_revalorisation')}
         </button>
       )}
       <button
         onClick={() => setActiveModal('delete')}
         className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
-        title="Supprimer le support"
+        title={t('section.delete_support_btn_title')}
       >
         ×
       </button>
@@ -128,7 +130,9 @@ function SupportRow({
         </div>
 
         <div className="flex-1">
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valeur</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.support_value_label')}
+          </p>
           <p className="font-medium text-stone-700 tabular-nums">{fmtDec(support.value)}</p>
         </div>
 
@@ -177,11 +181,11 @@ function SupportRow({
       )}
       {activeModal === 'delete' && (
         <ConfirmModal
-          title="Supprimer le support"
-          body={`Supprimer « ${support.name} » ? Cette action est irréversible.`}
+          title={t('section.delete_support_title')}
+          body={t('section.delete_support_body', { name: support.name })}
           onConfirm={() => {
             deleteSupport.mutate(support.id, {
-              onSuccess: () => showToast('Support supprimé ✓'),
+              onSuccess: () => showToast(t('section.support_deleted')),
               onError: (err) => showToast(err.message),
             });
           }}
@@ -193,36 +197,22 @@ function SupportRow({
   );
 }
 
-const OP_CONFIG: Record<
-  InsuranceOperation['type'],
-  { label: string; badgeClass: string; sign: (op: InsuranceOperation) => number }
-> = {
-  versement: {
-    label: 'Versement',
-    badgeClass: 'bg-green-100 text-green-700',
-    sign: (op) => op.amount,
-  },
-  rachat: { label: 'Rachat', badgeClass: 'bg-red-100 text-red-700', sign: (op) => -op.amount },
-  arbitrage_in: {
-    label: 'Arbitrage ←',
-    badgeClass: 'bg-blue-100 text-blue-700',
-    sign: (op) => op.amount,
-  },
-  arbitrage_out: {
-    label: 'Arbitrage →',
-    badgeClass: 'bg-blue-100 text-blue-700',
-    sign: (op) => -op.amount,
-  },
-  interets: {
-    label: 'Intérêts',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    sign: (op) => op.amount,
-  },
-  revalorisation: {
-    label: 'Revalorisation',
-    badgeClass: 'bg-violet-100 text-violet-700',
-    sign: (op) => op.amount,
-  },
+const OP_BADGE_CLASSES: Record<InsuranceOperation['type'], string> = {
+  versement: 'bg-green-100 text-green-700',
+  rachat: 'bg-red-100 text-red-700',
+  arbitrage_in: 'bg-blue-100 text-blue-700',
+  arbitrage_out: 'bg-blue-100 text-blue-700',
+  interets: 'bg-amber-100 text-amber-700',
+  revalorisation: 'bg-violet-100 text-violet-700',
+};
+
+const OP_SIGN: Record<InsuranceOperation['type'], (op: InsuranceOperation) => number> = {
+  versement: (op) => op.amount,
+  rachat: (op) => -op.amount,
+  arbitrage_in: (op) => op.amount,
+  arbitrage_out: (op) => -op.amount,
+  interets: (op) => op.amount,
+  revalorisation: (op) => op.amount,
 };
 
 function OperationRow({
@@ -230,8 +220,16 @@ function OperationRow({
   onEdit,
   onDelete,
 }: Readonly<{ op: InsuranceOperation; onEdit?: () => void; onDelete?: () => void }>) {
-  const cfg = OP_CONFIG[op.type];
-  const signed = cfg.sign(op);
+  const { t } = useTranslation('insurance');
+  const opLabels: Record<InsuranceOperation['type'], string> = {
+    versement: t('section.op_versement'),
+    rachat: t('section.op_rachat'),
+    arbitrage_in: t('section.op_arbitrage_in'),
+    arbitrage_out: t('section.op_arbitrage_out'),
+    interets: t('section.op_interets'),
+    revalorisation: t('section.op_revalorisation'),
+  };
+  const signed = OP_SIGN[op.type](op);
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors">
@@ -240,24 +238,24 @@ function OperationRow({
       </span>
 
       <span
-        className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ${cfg.badgeClass}`}
+        className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ${OP_BADGE_CLASSES[op.type]}`}
       >
-        {cfg.label}
+        {opLabels[op.type]}
       </span>
       <span className="text-sm text-stone-600 flex-1 truncate">{op.support_name}</span>
       {op.from_scheduled && (
-        <span className="text-[12px] text-indigo-400 shrink-0" title="Transaction planifiée">
+        <span className="text-[12px] text-indigo-400 shrink-0" title={t('section.scheduled_title')}>
           ↻
         </span>
       )}
       {op.fees > 0 && (
         <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
-          frais {fmtDec(op.fees)}
+          {t('section.op_fees', { amount: fmtDec(op.fees) })}
         </span>
       )}
       {op.social_fees > 0 && (
         <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
-          prél. soc. {fmtDec(op.social_fees)}
+          {t('section.op_social_fees', { amount: fmtDec(op.social_fees) })}
         </span>
       )}
       <span
@@ -269,14 +267,14 @@ function OperationRow({
         {fmtDec(signed)}
       </span>
       {onEdit && (
-        <IconButton label="Modifier" size="sm" onClick={onEdit}>
+        <IconButton label={t('section.edit_label')} size="sm" onClick={onEdit}>
           <span aria-hidden="true" className="text-xs">
             ✎
           </span>
         </IconButton>
       )}
       {onDelete && (
-        <IconButton label="Supprimer" size="sm" variant="danger" onClick={onDelete}>
+        <IconButton label={t('section.delete_label')} size="sm" variant="danger" onClick={onDelete}>
           <span aria-hidden="true" className="text-base leading-none">
             ×
           </span>
@@ -293,6 +291,7 @@ interface Props {
 }
 
 export function InsuranceSection({ accountId, isPer = false, readOnly = false }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
   const { data: positions = [], isLoading } = useInsurancePositions(accountId);
   const { data: operations = [] } = useInsuranceOperations(accountId);
   const deleteOp = useDeleteInsuranceOperation(accountId);
@@ -311,7 +310,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
     if (positions.length === 0) {
       return (
         <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
-          Aucun support — ajoutez un fonds euro ou une UC
+          {t('section.no_support')}
         </div>
       );
     }
@@ -339,7 +338,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
               onClick={() => setShowZero((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
             >
-              <span>Supports soldés ({zeroPositions.length})</span>
+              <span>{t('section.zero_supports', { count: zeroPositions.length })}</span>
               <span>{showZero ? '▲' : '▼'}</span>
             </button>
             {showZero &&
@@ -358,7 +357,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
         {positions.length > 1 && (
           <div className="flex items-center justify-between py-3 px-4 bg-stone-50 border-t border-stone-100">
             <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-              Total enveloppe
+              {t('section.total_envelope')}
             </span>
             <span className="text-sm font-bold text-stone-800 tabular-nums">
               {fmtDec(totalValue)}
@@ -374,17 +373,17 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
       <div className="mb-4">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Enveloppe
+            {t('section.envelope_title')}
           </p>
           <div className="flex items-center gap-2">
             {isPer && (
               <Button size="sm" onClick={() => setShowSimulator(true)}>
-                Simulateur fiscal
+                {t('section.simulator_btn')}
               </Button>
             )}
             {!readOnly && (
               <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>
-                + Support
+                {t('section.add_support_btn')}
               </Button>
             )}
           </div>
@@ -395,10 +394,12 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
 
       <div>
         <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
-          Historique
+          {t('section.history_title')}
         </p>
         {operations.length === 0 ? (
-          <div className="text-sm text-stone-300 text-center py-6">Aucune opération</div>
+          <div className="text-sm text-stone-300 text-center py-6">
+            {t('section.no_operations')}
+          </div>
         ) : (
           <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden divide-y divide-stone-50">
             {operations.map((op) => (
@@ -426,8 +427,8 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
       )}
       {deletingOp && (
         <ConfirmModal
-          title="Supprimer l'opération"
-          body="Cette action est irréversible. Confirmer la suppression ?"
+          title={t('section.delete_op_title')}
+          body={t('section.delete_op_body')}
           onConfirm={() => {
             deleteOp.mutate(deletingOp.id, {
               onSuccess: () => setDeletingOp(null),

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { DecimalInput, Select } from '@/components/ui';
 import type { Category, Subcategory } from '@/types';
 
@@ -16,6 +18,8 @@ interface Props {
 }
 
 export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
+
   const sum = splits.reduce((acc, s) => acc + (Number.parseFloat(s.amount) || 0), 0);
   const remaining = Math.round((totalAmount - sum) * 100) / 100;
 
@@ -32,7 +36,9 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Ventilation</p>
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        {t('split_editor.title')}
+      </p>
       {splits.map((s) => {
         const subcats: Subcategory[] =
           categories.find((c) => String(c.id) === s.category_id)?.subcategories ?? [];
@@ -43,7 +49,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
               onChange={(e) => update(s._key, { category_id: e.target.value, subcategory_id: '' })}
               className="flex-1"
             >
-              <option value="">Catégorie</option>
+              <option value="">{t('split_editor.category_placeholder')}</option>
               {categories.map((c) => (
                 <option key={c.id} value={String(c.id)}>
                   {c.name}
@@ -56,7 +62,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
               disabled={!s.category_id}
               className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Sous-cat.</option>
+              <option value="">{t('split_editor.subcategory_placeholder')}</option>
               {subcats.map((sub) => (
                 <option key={sub.id} value={String(sub.id)}>
                   {sub.name}
@@ -85,12 +91,12 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
           onClick={add}
           className="text-[11px] font-bold text-stone-400 hover:text-stone-700 uppercase tracking-wider"
         >
-          + Ajouter
+          {t('split_editor.add')}
         </button>
         <span
           className={`text-[11px] font-mono tabular-nums ${Math.abs(remaining) < 0.005 ? 'text-green-600' : 'text-red-500'}`}
         >
-          Reste : {remaining.toFixed(2)} €
+          {t('split_editor.remaining', { amount: remaining.toFixed(2) })}
         </span>
       </div>
     </div>

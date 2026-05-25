@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useClickOutside } from '@/features/accounts/hooks/useClickOutside';
 import type { Bank } from '@/types';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
+  const { t } = useTranslation('accounts');
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
 
@@ -19,7 +21,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        aria-label="Sélectionner une banque"
+        aria-label={t('bank_select.aria_label')}
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
       >
@@ -38,7 +40,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
             <span className="flex-1 truncate">{selected.name}</span>
           </>
         ) : (
-          <span className="flex-1 text-stone-400">— Choisir —</span>
+          <span className="flex-1 text-stone-400">{t('bank_select.choose')}</span>
         )}
         <span className="text-stone-300 text-xs">▾</span>
       </button>
@@ -53,7 +55,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
             }}
             className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors text-left"
           >
-            — Choisir —
+            {t('bank_select.choose')}
           </button>
           {banks.map((b) => (
             <button

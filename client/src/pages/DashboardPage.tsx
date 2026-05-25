@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   BarChart,
@@ -67,6 +68,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation('dashboard');
   const { data: accounts = [] } = useAccounts();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: balanceHistory } = useBalanceHistory();
@@ -119,21 +121,21 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-sans text-2xl tracking-tight">Tableau de bord</h2>
-        <p className="text-sm text-stone-400 mt-0.5">Vue d'ensemble de vos finances</p>
+        <h2 className="font-sans text-2xl tracking-tight">{t('title')}</h2>
+        <p className="text-sm text-stone-400 mt-0.5">{t('subtitle')}</p>
       </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Metric
-          label="Solde total"
+          label={t('metric_total_balance')}
           value={fmt(totalBalance)}
-          sub={`${accounts.length} compte(s)`}
+          sub={t('metric_accounts', { count: accounts.length })}
         />
-        <Metric label="Revenus ce mois" value={fmt(monthIncome)} variant="positive" />
-        <Metric label="Dépenses ce mois" value={fmt(monthExpense)} variant="negative" />
+        <Metric label={t('metric_income')} value={fmt(monthIncome)} variant="positive" />
+        <Metric label={t('metric_expense')} value={fmt(monthExpense)} variant="negative" />
         <Metric
-          label="Bilan mensuel"
+          label={t('metric_monthly')}
           value={fmt(bilan)}
           variant={bilan >= 0 ? 'positive' : 'negative'}
         />
@@ -142,9 +144,9 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
         <Card className="md:col-span-2">
-          <CardTitle>Dépenses par catégorie</CardTitle>
+          <CardTitle>{t('chart_expenses_by_cat')}</CardTitle>
           {catData.length === 0 ? (
-            <Empty>Aucune dépense ce mois</Empty>
+            <Empty>{t('chart_no_expenses')}</Empty>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={180}>
@@ -180,11 +182,11 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="md:col-span-3">
-          <CardTitle>Revenus vs dépenses — 6 mois</CardTitle>
+          <CardTitle>{t('chart_income_vs_expenses')}</CardTitle>
           <div className="flex gap-4 mb-3">
             {[
-              ['#7DBB4A', 'Revenus'],
-              ['#D46060', 'Dépenses'],
+              ['#7DBB4A', t('chart_income')],
+              ['#D46060', t('chart_expenses')],
             ].map(([color, label]) => (
               <div key={label} className="flex items-center gap-1.5 text-[11px] text-stone-400">
                 <div className="w-2 h-2 rounded-sm" style={{ background: color }} />
@@ -203,8 +205,18 @@ export default function DashboardPage() {
                 width={70}
               />
               <Tooltip formatter={(v) => (v == null ? '' : fmtDec(Number(v)))} />
-              <Bar dataKey="Revenus" name="Revenus" fill="#7DBB4A" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="Depenses" name="Dépenses" fill="#D46060" radius={[3, 3, 0, 0]} />
+              <Bar
+                dataKey="Revenus"
+                name={t('chart_income')}
+                fill="#7DBB4A"
+                radius={[3, 3, 0, 0]}
+              />
+              <Bar
+                dataKey="Depenses"
+                name={t('chart_expenses')}
+                fill="#D46060"
+                radius={[3, 3, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -215,20 +227,20 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {toValidate.length > 0 && (
             <Card>
-              <CardTitle>À valider</CardTitle>
+              <CardTitle>{t('to_validate')}</CardTitle>
               <div className="flex flex-col gap-2 mt-1">
-                {toValidate.map((t) => (
-                  <TxItem key={t.id} tx={t} {...txItemProps} />
+                {toValidate.map((tx) => (
+                  <TxItem key={tx.id} tx={tx} {...txItemProps} />
                 ))}
               </div>
             </Card>
           )}
           {upcoming.length > 0 && (
             <Card>
-              <CardTitle>À venir</CardTitle>
+              <CardTitle>{t('upcoming')}</CardTitle>
               <div className="flex flex-col gap-2 mt-1">
-                {upcoming.map((t) => (
-                  <TxItem key={t.id} tx={t} {...txItemProps} />
+                {upcoming.map((tx) => (
+                  <TxItem key={tx.id} tx={tx} {...txItemProps} />
                 ))}
               </div>
             </Card>
@@ -239,16 +251,20 @@ export default function DashboardPage() {
       {/* Remboursements */}
       {(pendingReimbursements.length > 0 || recentReimbursements.length > 0) && (
         <Card>
-          <CardTitle>Remboursements</CardTitle>
+          <CardTitle>{t('reimbursements_title')}</CardTitle>
           <div className="overflow-x-auto">
             <table className="w-full min-w-120 text-xs">
               <thead>
                 <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
-                  <th className="text-left pb-2 font-medium">Description</th>
-                  <th className="text-left pb-2 font-medium hidden sm:table-cell">Date</th>
-                  <th className="text-right pb-2 font-medium">Dépense</th>
-                  <th className="text-right pb-2 font-medium hidden sm:table-cell">Remboursé</th>
-                  <th className="text-right pb-2 font-medium">Reste à charge</th>
+                  <th className="text-left pb-2 font-medium">{t('reimb_col_description')}</th>
+                  <th className="text-left pb-2 font-medium hidden sm:table-cell">
+                    {t('reimb_col_date')}
+                  </th>
+                  <th className="text-right pb-2 font-medium">{t('reimb_col_expense')}</th>
+                  <th className="text-right pb-2 font-medium hidden sm:table-cell">
+                    {t('reimb_col_reimbursed')}
+                  </th>
+                  <th className="text-right pb-2 font-medium">{t('reimb_col_remaining')}</th>
                   <th className="pb-2" />
                 </tr>
               </thead>
@@ -259,7 +275,7 @@ export default function DashboardPage() {
                       colSpan={6}
                       className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-amber-500"
                     >
-                      En attente
+                      {t('reimb_pending_section')}
                     </td>
                   </tr>
                 )}
@@ -296,7 +312,7 @@ export default function DashboardPage() {
                             setReimbursementStatus.mutate({ id: item.id, status: 'rembourse' })
                           }
                           disabled={setReimbursementStatus.isPending}
-                          title="Marquer remboursement terminé"
+                          title={t('reimb_mark_done_title')}
                           className="text-stone-300 hover:text-green-500 transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
                         >
                           ✓
@@ -311,7 +327,7 @@ export default function DashboardPage() {
                       colSpan={6}
                       className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-green-600"
                     >
-                      Terminés — 6 derniers mois
+                      {t('reimb_done_section')}
                     </td>
                   </tr>
                 )}
@@ -353,13 +369,13 @@ export default function DashboardPage() {
 
       {/* Dernières transactions */}
       <Card>
-        <CardTitle>Dernières transactions validées</CardTitle>
+        <CardTitle>{t('recent_transactions')}</CardTitle>
         {recent.length === 0 ? (
-          <Empty>Aucune transaction</Empty>
+          <Empty>{t('no_transactions')}</Empty>
         ) : (
           <div className="flex flex-col gap-2 mt-1">
-            {recent.map((t) => (
-              <TxItem key={t.id} tx={t} {...txItemProps} />
+            {recent.map((tx) => (
+              <TxItem key={tx.id} tx={tx} {...txItemProps} />
             ))}
           </div>
         )}
@@ -381,7 +397,7 @@ export default function DashboardPage() {
           }));
           return (
             <Card>
-              <CardTitle>Répartition du patrimoine</CardTitle>
+              <CardTitle>{t('patrimony_title')}</CardTitle>
               <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
                 {types.map((type, i) => (
                   <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
@@ -450,17 +466,17 @@ export default function DashboardPage() {
       {/* Rendement de mes placements */}
       {profitabilityList.length > 0 && (
         <Card>
-          <CardTitle>Rendement de mes placements</CardTitle>
+          <CardTitle>{t('profitability_title')}</CardTitle>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-stone-400 border-b border-stone-100">
-                  <th className="text-left py-1.5 pr-4 font-normal">Compte</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">Capital investi</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">Valeur actuelle</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">+/- value</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">% / an</th>
-                  <th className="text-right py-1.5 font-normal">Ancienneté</th>
+                  <th className="text-left py-1.5 pr-4 font-normal">{t('prof_col_account')}</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_capital')}</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_value')}</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_gain')}</th>
+                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_annual')}</th>
+                  <th className="text-right py-1.5 font-normal">{t('prof_col_seniority')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -482,11 +498,17 @@ export default function DashboardPage() {
                   const months = totalMonths % 12;
                   let durationLabel: string;
                   if (years === 0) {
-                    durationLabel = `${months} mois`;
+                    durationLabel = t('duration_months', { months });
                   } else if (months === 0) {
-                    durationLabel = `${years} an${years > 1 ? 's' : ''}`;
+                    durationLabel =
+                      years > 1
+                        ? t('duration_years_plural', { years })
+                        : t('duration_years', { years });
                   } else {
-                    durationLabel = `${years} an${years > 1 ? 's' : ''} ${months} mois`;
+                    durationLabel =
+                      years > 1
+                        ? t('duration_years_months_plural', { years, months })
+                        : t('duration_years_months', { years, months });
                   }
                   return (
                     <tr key={p.account_id} className="border-b border-stone-50 last:border-0">

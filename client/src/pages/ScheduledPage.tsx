@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { ScheduledPayload } from '@/api/client';
 import { ItemActions } from '@/components/ItemActions';
@@ -40,43 +41,52 @@ import type {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const MONTH_NAMES = [
-  'Janvier',
-  'Février',
-  'Mars',
-  'Avril',
-  'Mai',
-  'Juin',
-  'Juillet',
-  'Août',
-  'Septembre',
-  'Octobre',
-  'Novembre',
-  'Décembre',
-];
+type TScheduled = ReturnType<typeof useTranslation<'scheduled'>>['t'];
 
-function recurrenceLabel(s: ScheduledTransaction): string {
+function recurrenceLabel(s: ScheduledTransaction, t: TScheduled): string {
   const n = s.recurrence_interval;
   const unit = s.recurrence_unit;
 
-  if (unit === 'day') return n === 1 ? 'Chaque jour' : `Tous les ${n} jours`;
-  if (unit === 'week') return n === 1 ? 'Chaque semaine' : `Toutes les ${n} semaines`;
+  if (unit === 'day') {
+    return n === 1 ? t('recurrence.each_day') : t('recurrence.every_n_days', { n });
+  }
+  if (unit === 'week') {
+    return n === 1 ? t('recurrence.each_week') : t('recurrence.every_n_weeks', { n });
+  }
   if (unit === 'month') {
-    const day = s.recurrence_day ? ` le ${s.recurrence_day}` : '';
-    return n === 1 ? `Chaque mois${day}` : `Tous les ${n} mois${day}`;
+    if (n === 1) {
+      return s.recurrence_day
+        ? t('recurrence.each_month_day', { day: s.recurrence_day })
+        : t('recurrence.each_month');
+    }
+    return s.recurrence_day
+      ? t('recurrence.every_n_months_day', { n, day: s.recurrence_day })
+      : t('recurrence.every_n_months', { n });
   }
   // year
   const day = s.recurrence_day ?? '';
-  const month = s.recurrence_month ? ` ${MONTH_NAMES[s.recurrence_month - 1]}` : '';
-  const when = day || month ? ` le ${day}${month}` : '';
-  return n === 1 ? `Chaque année${when}` : `Tous les ${n} ans${when}`;
+  const monthKeys = [
+    t('months.1'),
+    t('months.2'),
+    t('months.3'),
+    t('months.4'),
+    t('months.5'),
+    t('months.6'),
+    t('months.7'),
+    t('months.8'),
+    t('months.9'),
+    t('months.10'),
+    t('months.11'),
+    t('months.12'),
+  ];
+  const monthName = s.recurrence_month ? (monthKeys[s.recurrence_month - 1] ?? '') : '';
+  if (day || monthName) {
+    return n === 1
+      ? t('recurrence.each_year_on', { day, month: monthName })
+      : t('recurrence.every_n_years_on', { n, day, month: monthName });
+  }
+  return n === 1 ? t('recurrence.each_year') : t('recurrence.every_n_years', { n });
 }
-
-const WEEKEND_LABELS: Record<WeekendHandling, string> = {
-  allow: 'Week-ends autorisés',
-  before: 'Décaler au vendredi',
-  after: 'Décaler au lundi',
-};
 
 function isInsuranceAccount(a: Account) {
   return a.envelope_type === 'life_insurance' || a.envelope_type === 'per';
@@ -240,12 +250,6 @@ interface ModalProps {
   onCancel: () => void;
 }
 
-const MODE_LABELS: Record<ScheduledMode, string> = {
-  transaction: 'Transaction',
-  transfer: 'Transfert',
-  versement: 'Versement AV/PER',
-};
-
 function ScheduledModal({
   initial,
   accounts = [],
@@ -257,7 +261,36 @@ function ScheduledModal({
   onSave,
   onCancel,
 }: Readonly<ModalProps>) {
+  const { t } = useTranslation('scheduled');
+  const { t: tc } = useTranslation('common');
   const [form, setForm] = useState<FormState>(initial);
+
+  const modeLabels: Record<ScheduledMode, string> = {
+    transaction: t('modal.mode_transaction'),
+    transfer: t('modal.mode_transfer'),
+    versement: t('modal.mode_versement'),
+  };
+
+  const monthNames: Record<number, string> = {
+    1: t('months.1'),
+    2: t('months.2'),
+    3: t('months.3'),
+    4: t('months.4'),
+    5: t('months.5'),
+    6: t('months.6'),
+    7: t('months.7'),
+    8: t('months.8'),
+    9: t('months.9'),
+    10: t('months.10'),
+    11: t('months.11'),
+    12: t('months.12'),
+  };
+
+  const weekendLabels: Record<WeekendHandling, string> = {
+    allow: t('modal.weekend_allow'),
+    before: t('modal.weekend_before'),
+    after: t('modal.weekend_after'),
+  };
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -292,26 +325,26 @@ function ScheduledModal({
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.amount || !form.description || !form.start_date) {
-      showToast('Veuillez remplir tous les champs obligatoires.');
+      showToast(t('modal.err_required'));
       return;
     }
     if (Number.parseFloat(form.amount) <= 0) {
-      showToast('Le montant doit être positif.');
+      showToast(t('modal.err_amount'));
       return;
     }
     if (form.mode === 'transaction' && !form.account_id) {
-      showToast('Veuillez choisir un compte.');
+      showToast(t('modal.err_account'));
       return;
     }
     if (form.mode === 'transfer') {
       if (!form.account_id || !form.to_account_id) {
-        showToast('Veuillez choisir les comptes source et destination.');
+        showToast(t('modal.err_transfer_accounts'));
         return;
       }
     }
     if (form.mode === 'versement') {
       if (!form.account_id || !form.insurance_support_id || !form.to_account_id) {
-        showToast('Veuillez choisir le compte AV/PER, le support et le compte source.');
+        showToast(t('modal.err_versement_fields'));
         return;
       }
     }
@@ -336,7 +369,7 @@ function ScheduledModal({
                     : 'text-stone-500 hover:text-stone-700'
                 }`}
               >
-                {MODE_LABELS[m]}
+                {modeLabels[m]}
               </button>
             ))}
           </div>
@@ -380,10 +413,10 @@ function ScheduledModal({
           {/* Récurrence */}
           <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-              Récurrence
+              {t('modal.recurrence_title')}
             </p>
             <div className="flex gap-3 flex-wrap">
-              <FormGroup label="Tous les…">
+              <FormGroup label={t('modal.every_label')}>
                 <Input
                   type="number"
                   value={form.recurrence_interval}
@@ -392,19 +425,19 @@ function ScheduledModal({
                   className="w-20"
                 />
               </FormGroup>
-              <FormGroup label="Unité">
+              <FormGroup label={t('modal.unit_label')}>
                 <Select
                   value={form.recurrence_unit}
                   onChange={(e) => set('recurrence_unit', e.target.value as RecurrenceUnit)}
                 >
-                  <option value="day">Jour(s)</option>
-                  <option value="week">Semaine(s)</option>
-                  <option value="month">Mois</option>
-                  <option value="year">An(s)</option>
+                  <option value="day">{t('modal.unit_day')}</option>
+                  <option value="week">{t('modal.unit_week')}</option>
+                  <option value="month">{t('modal.unit_month')}</option>
+                  <option value="year">{t('modal.unit_year')}</option>
                 </Select>
               </FormGroup>
               {(form.recurrence_unit === 'month' || form.recurrence_unit === 'year') && (
-                <FormGroup label="Jour du mois">
+                <FormGroup label={t('modal.day_of_month')}>
                   <Input
                     type="number"
                     value={form.recurrence_day}
@@ -416,14 +449,14 @@ function ScheduledModal({
                 </FormGroup>
               )}
               {form.recurrence_unit === 'year' && (
-                <FormGroup label="Mois">
+                <FormGroup label={t('modal.month_label')}>
                   <Select
                     value={form.recurrence_month}
                     onChange={(e) => set('recurrence_month', e.target.value)}
                   >
-                    {MONTH_NAMES.map((name, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {name}
+                    {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((num) => (
+                      <option key={num} value={num}>
+                        {monthNames[num]}
                       </option>
                     ))}
                   </Select>
@@ -446,7 +479,7 @@ function ScheduledModal({
                     onChange={() => set('weekend_handling', v)}
                     className="accent-green-500"
                   />
-                  {WEEKEND_LABELS[v]}
+                  {weekendLabels[v]}
                 </label>
               ))}
             </div>
@@ -454,14 +487,14 @@ function ScheduledModal({
 
           {/* Dates + actif */}
           <div className="flex gap-3 flex-wrap items-end">
-            <FormGroup label="Date de début">
+            <FormGroup label={t('modal.start_date')}>
               <Input
                 type="date"
                 value={form.start_date}
                 onChange={(e) => set('start_date', e.target.value)}
               />
             </FormGroup>
-            <FormGroup label="Date de fin (optionnel)">
+            <FormGroup label={t('modal.end_date')}>
               <Input
                 type="date"
                 value={form.end_date}
@@ -475,16 +508,16 @@ function ScheduledModal({
                 onChange={(e) => set('active', e.target.checked)}
                 className="w-4 h-4 accent-green-500"
               />
-              <span className="text-sm text-stone-700">Actif</span>
+              <span className="text-sm text-stone-700">{t('modal.active_label')}</span>
             </label>
           </div>
 
           {/* Notes */}
-          <FormGroup label="Notes">
+          <FormGroup label={t('modal.notes_label')}>
             <textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
-              placeholder="Informations complémentaires…"
+              placeholder={t('modal.notes_placeholder')}
               rows={2}
               className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
             />
@@ -492,10 +525,10 @@ function ScheduledModal({
 
           <div className="flex gap-2 justify-end pt-1">
             <Button type="button" onClick={onCancel}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? '…' : 'Enregistrer'}
+              {isPending ? tc('loading') : tc('save')}
             </Button>
           </div>
         </form>
@@ -509,12 +542,13 @@ function ScheduledModal({
 function buildVersementDescription(
   accountName: string,
   support: { name: string; type: string } | undefined,
+  t: TScheduled,
 ): string {
   if (!support) return '';
   const prefix = accountName ? `${accountName} · ` : '';
   return support.type === 'uc'
-    ? `Versement UC — ${prefix}${support.name}`
-    : `Versement fonds euro — ${prefix}${support.name}`;
+    ? t('versement.desc_prefix_uc', { prefix, name: support.name })
+    : t('versement.desc_prefix_euro', { prefix, name: support.name });
 }
 
 interface VersementFieldsProps {
@@ -534,6 +568,8 @@ function VersementFields({
   logoMap,
   supports,
 }: Readonly<VersementFieldsProps>) {
+  const { t } = useTranslation('scheduled');
+  const { t: tc } = useTranslation('common');
   const accountName = insuranceAccounts.find((a) => String(a.id) === form.account_id)?.name ?? '';
 
   const handleAvAccountChange = (v: string) => {
@@ -543,58 +579,59 @@ function VersementFields({
   const handleSupportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const supportId = e.target.value;
     const support = supports.find((s) => String(s.id) === supportId);
-    const autoDesc = buildVersementDescription(accountName, support);
+    const autoDesc = buildVersementDescription(accountName, support, t);
     patch({ insurance_support_id: supportId, description: autoDesc });
   };
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <FormGroup label="Compte AV / PER">
+        <FormGroup label={t('versement.av_account_label')}>
           <AccountSelect
             id="versement-av-account"
             value={form.account_id}
             onChange={handleAvAccountChange}
             accounts={insuranceAccounts}
             logoMap={logoMap}
-            placeholder="— Choisir —"
+            placeholder={t('versement.choose')}
           />
         </FormGroup>
-        <FormGroup label="Support">
+        <FormGroup label={t('versement.support_label')}>
           <Select
             value={form.insurance_support_id}
             onChange={handleSupportChange}
             disabled={!form.account_id || supports.length === 0}
           >
-            <option value="">— Choisir —</option>
+            <option value="">{t('versement.choose')}</option>
             {supports.map((s) => (
               <option key={s.id} value={String(s.id)}>
-                {s.name} ({s.type === 'euro' ? 'Euro' : 'UC'})
+                {s.name} (
+                {s.type === 'euro' ? t('versement.support_euro') : t('versement.support_uc')})
               </option>
             ))}
           </Select>
         </FormGroup>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormGroup label="Compte source (débit)">
+        <FormGroup label={t('versement.source_account_label')}>
           <AccountSelect
             id="versement-source-account"
             value={form.to_account_id}
             onChange={(v) => patch({ to_account_id: v })}
             accounts={regularAccounts}
             logoMap={logoMap}
-            placeholder="— Choisir —"
+            placeholder={t('versement.choose')}
           />
         </FormGroup>
         <div className="flex gap-3">
-          <FormGroup label="Montant (€)" className="flex-1">
+          <FormGroup label={tc('amount')} className="flex-1">
             <DecimalInput
               value={form.amount}
               onChange={(e) => patch({ amount: e.target.value })}
               placeholder="0,00"
             />
           </FormGroup>
-          <FormGroup label="Frais (€)" className="w-28">
+          <FormGroup label={tc('fees')} className="w-28">
             <DecimalInput
               value={form.insurance_fees}
               onChange={(e) => patch({ insurance_fees: e.target.value })}
@@ -603,12 +640,12 @@ function VersementFields({
           </FormGroup>
         </div>
       </div>
-      <FormGroup label="Description (modifiable)">
+      <FormGroup label={t('versement.description_label')}>
         <Input
           type="text"
           value={form.description}
           onChange={(e) => patch({ description: e.target.value })}
-          placeholder="Auto-généré à la sélection du support"
+          placeholder={t('versement.description_placeholder')}
         />
       </FormGroup>
     </div>
@@ -623,6 +660,8 @@ interface ScheduledTxModalProps {
 }
 
 function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
+  const { t } = useTranslation('scheduled');
+  const { t: tc } = useTranslation('common');
   const { data, isLoading } = useTransactions({ scheduled_id: sched.id, limit: 200 });
   const transactions = data?.data ?? [];
 
@@ -636,7 +675,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
       </div>
     );
   } else if (transactions.length === 0) {
-    content = <p className="text-sm text-stone-400 py-2">Aucune transaction liée.</p>;
+    content = <p className="text-sm text-stone-400 py-2">{t('tx_modal.no_transactions')}</p>;
   } else {
     content = (
       <div className="overflow-y-auto flex-1 divide-y divide-black/6">
@@ -653,7 +692,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
                   : 'bg-amber-50 text-amber-600 border border-amber-200'
               }`}
             >
-              {tx.validated ? 'Validée' : 'En attente'}
+              {tx.validated ? t('tx_modal.validated') : t('tx_modal.pending')}
             </span>
             <span
               className={`text-sm font-medium tabular-nums shrink-0 ${
@@ -675,9 +714,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="font-sans text-lg leading-tight">{sched.description}</h3>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Transactions liées à cette planification
-            </p>
+            <p className="text-xs text-stone-400 mt-0.5">{t('tx_modal.subtitle')}</p>
           </div>
           <button
             type="button"
@@ -692,7 +729,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
 
         <div className="flex justify-end mt-4 pt-3 border-t border-black/6">
           <Button type="button" onClick={onClose}>
-            Fermer
+            {tc('close')}
           </Button>
         </div>
       </div>
@@ -717,6 +754,7 @@ function ScheduledRow({
   onDelete,
   onViewTransactions,
 }: Readonly<RowProps>) {
+  const { t } = useTranslation('scheduled');
   const isVersement = sched.insurance_support_id != null;
   const isTransfer = !isVersement && sched.to_account_id != null;
   const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
@@ -734,17 +772,17 @@ function ScheduledRow({
           <p className="text-sm font-medium truncate">{sched.description}</p>
           {isTransfer && (
             <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              ↔ Transfert
+              {t('row.transfer_badge')}
             </span>
           )}
           {isVersement && (
             <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              ↑ Versement AV
+              {t('row.versement_badge')}
             </span>
           )}
           {!sched.active && (
             <span className="text-[10px] bg-stone-100 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0">
-              Suspendu
+              {t('row.suspended_badge')}
             </span>
           )}
           {sched.transaction_count > 0 && (
@@ -758,11 +796,13 @@ function ScheduledRow({
           )}
         </div>
         <p className="text-[11px] text-stone-400 mt-0.5">
-          {recurrenceLabel(sched)} · {sched.account_name}
+          {recurrenceLabel(sched, t)} · {sched.account_name}
           {isTransfer && toAccount ? ` → ${toAccount.name}` : ''}
           {isVersement && sched.insurance_support_name ? ` · ${sched.insurance_support_name}` : ''}
-          {isVersement && sourceAccount ? ` · depuis ${sourceAccount.name}` : ''}
-          {sched.end_date ? ` · jusqu'au ${sched.end_date}` : ''}
+          {isVersement && sourceAccount
+            ? ` · ${t('row.from_label', { name: sourceAccount.name })}`
+            : ''}
+          {sched.end_date ? ` · ${t('row.until_label', { date: sched.end_date })}` : ''}
         </p>
       </div>
       <span className={`text-sm font-medium tabular-nums shrink-0 ${amountColor}`}>
@@ -777,6 +817,8 @@ function ScheduledRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ScheduledPage() {
+  const { t } = useTranslation('scheduled');
+  const { t: tc } = useTranslation('common');
   const { data: scheduled = [], isLoading } = useScheduled();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
@@ -804,7 +846,7 @@ export default function ScheduledPage() {
     e.preventDefault();
     const val = Number.parseInt(displayLeadDays);
     if (Number.isNaN(val) || val < 0 || val > 365) {
-      showToast('Valeur entre 0 et 365.');
+      showToast(t('lead_days.err_range'));
       return;
     }
     updateSettings.mutate(
@@ -818,7 +860,7 @@ export default function ScheduledPage() {
       {
         onSuccess: () => {
           setLeadDays('');
-          showToast("Délai d'anticipation mis à jour ✓");
+          showToast(t('lead_days.success'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -829,7 +871,7 @@ export default function ScheduledPage() {
     createScheduled.mutate(formToPayload(f, paymentMethods), {
       onSuccess: () => {
         setShowModal(false);
-        showToast('Planification créée ✓');
+        showToast(t('page.create_success'));
       },
       onError: (err) => showToast(err.message),
     });
@@ -842,7 +884,7 @@ export default function ScheduledPage() {
       {
         onSuccess: () => {
           setEditTarget(null);
-          showToast('Planification mise à jour ✓');
+          showToast(t('page.update_success'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -854,7 +896,7 @@ export default function ScheduledPage() {
     deleteScheduled.mutate(pendingDelete.id, {
       onSuccess: () => {
         setPendingDelete(null);
-        showToast('Planification supprimée');
+        showToast(t('page.delete_success'));
       },
       onError: (err) => showToast(err.message),
     });
@@ -867,7 +909,7 @@ export default function ScheduledPage() {
 
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
-      <p className="text-sm text-stone-400 py-2">Aucune planification.</p>
+      <p className="text-sm text-stone-400 py-2">{t('page.no_scheduled')}</p>
     ) : (
       <>
         {visibleScheduled.map((s) => (
@@ -887,7 +929,7 @@ export default function ScheduledPage() {
               onClick={() => setShowSuspended((v) => !v)}
               className="w-full flex items-center justify-between px-1 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
             >
-              <span>Suspendus ({suspendedScheduled.length})</span>
+              <span>{t('page.suspended_section', { count: suspendedScheduled.length })}</span>
               <span>{showSuspended ? '▲' : '▼'}</span>
             </button>
             {showSuspended &&
@@ -909,18 +951,16 @@ export default function ScheduledPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-sans text-2xl tracking-tight">Planifications</h2>
-        <p className="text-sm text-stone-400 mt-0.5">Récurrences automatiques</p>
+        <h2 className="font-sans text-2xl tracking-tight">{t('page.title')}</h2>
+        <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
       </div>
 
       {/* Paramètre global : délai d'anticipation */}
       <Card className="max-w-sm">
-        <CardTitle>Délai d&apos;anticipation</CardTitle>
-        <p className="text-xs text-stone-400 mb-3">
-          Nombre de jours à l&apos;avance où les transactions planifiées sont générées.
-        </p>
+        <CardTitle>{t('lead_days.title')}</CardTitle>
+        <p className="text-xs text-stone-400 mb-3">{t('lead_days.description')}</p>
         <form onSubmit={handleSaveLeadDays} className="flex gap-2 items-end">
-          <FormGroup label="Jours">
+          <FormGroup label={t('lead_days.label')}>
             <Input
               type="number"
               value={displayLeadDays}
@@ -931,13 +971,13 @@ export default function ScheduledPage() {
             />
           </FormGroup>
           <Button type="submit" variant="primary" disabled={updateSettings.isPending}>
-            {updateSettings.isPending ? '…' : 'Enregistrer'}
+            {updateSettings.isPending ? tc('loading') : tc('save')}
           </Button>
         </form>
       </Card>
       <div className="flex items-center justify-end mb-4">
         <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
-          + Nouvelle
+          {t('page.new_btn')}
         </Button>
       </div>
 
@@ -971,7 +1011,7 @@ export default function ScheduledPage() {
           logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
-          title="Nouvelle planification"
+          title={t('modal.title_create')}
           isPending={createScheduled.isPending}
           onSave={handleCreate}
           onCancel={() => setShowModal(false)}
@@ -986,7 +1026,7 @@ export default function ScheduledPage() {
           logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
-          title="Modifier la planification"
+          title={t('modal.title_edit')}
           isPending={updateScheduled.isPending}
           onSave={handleUpdate}
           onCancel={() => setEditTarget(null)}
@@ -1001,8 +1041,8 @@ export default function ScheduledPage() {
       {/* Confirmation suppression */}
       {pendingDelete && (
         <ConfirmModal
-          title="Supprimer la planification"
-          body={`Supprimer "${pendingDelete.description}" ? Les transactions futures non validées seront également supprimées. Les transactions passées sont conservées.`}
+          title={t('page.delete_title')}
+          body={t('page.delete_body', { description: pendingDelete.description })}
           onConfirm={handleDelete}
           onCancel={() => setPendingDelete(null)}
           isPending={deleteScheduled.isPending}
