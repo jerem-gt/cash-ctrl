@@ -15,7 +15,7 @@ import { TransactionsFilters } from './TransactionsFilters';
 interface Props {
   account?: Account;
   logoMap: Record<string, string | null>;
-  emptyMessage?: string | undefined;
+  emptyMessage?: string;
   readOnly?: boolean;
 }
 
