@@ -128,6 +128,32 @@ describe('CloseAccountModal — solde négatif', () => {
   });
 });
 
+describe('CloseAccountModal — composant Trans', () => {
+  it("rend le solde interpolé dans le message d'avertissement", () => {
+    const { container } = renderWithProviders(
+      <CloseAccountModal
+        account={accountPositive}
+        activeAccounts={[accountPositive, otherAccount]}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(container).toHaveTextContent(/virement de clôture sera créé automatiquement/i);
+  });
+
+  it('entoure le montant du solde dans un élément font-semibold', () => {
+    const { container } = renderWithProviders(
+      <CloseAccountModal
+        account={accountPositive}
+        activeAccounts={[accountPositive, otherAccount]}
+        onClose={vi.fn()}
+      />,
+    );
+    const bold = container.querySelector('span.font-semibold');
+    expect(bold).toBeInTheDocument();
+    expect(bold).toHaveTextContent(/500/);
+  });
+});
+
 describe('CloseAccountModal — erreur API', () => {
   it("affiche le message d'erreur de l'API", async () => {
     server.use(
