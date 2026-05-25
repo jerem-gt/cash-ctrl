@@ -1,17 +1,20 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle } from '@/components/ui';
 import { fmt } from '@/lib/format';
 import type { AccountProfitability } from '@/types';
 
-function formatDuration(openingDate: string): string {
+type TAccounts = ReturnType<typeof useTranslation<'accounts'>>['t'];
+
+function formatDuration(openingDate: string, t: TAccounts): string {
   const msPerMonth = 30.44 * 24 * 3600 * 1000;
   const totalMonths = Math.floor((Date.now() - new Date(openingDate).getTime()) / msPerMonth);
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
-  if (years === 0) return `${months} mois`;
-  if (months === 0) return `${years} an${years > 1 ? 's' : ''}`;
-  return `${years} an${years > 1 ? 's' : ''} ${months} mois`;
+  if (years === 0) return t('profitability.duration_months', { count: months });
+  if (months === 0) return t('profitability.duration_year', { count: years });
+  return t('profitability.duration_year_months', { count: years, months });
 }
 
 function sign(n: number): string {
@@ -23,6 +26,7 @@ interface Props {
 }
 
 export function ProfitabilityCard({ data }: Readonly<Props>) {
+  const { t } = useTranslation('accounts');
   const isSavings = data.envelope_type === null;
   const gainPos = data.plus_value_absolue >= 0;
   const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
@@ -30,19 +34,19 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
 
   return (
     <Card>
-      <CardTitle>Rendement</CardTitle>
+      <CardTitle>{t('profitability.title')}</CardTitle>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">Capital investi</div>
+          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.capital')}</div>
           <div className="font-semibold">{fmt(data.capital_investi)}</div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">Valeur actuelle</div>
+          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.value')}</div>
           <div className="font-semibold">{fmt(data.valeur_actuelle)}</div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">Plus-value</div>
+          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.gain')}</div>
           <div className={`font-semibold ${gainColor}`}>
             {sign(data.plus_value_absolue)}
             {fmt(data.plus_value_absolue)}{' '}
@@ -53,21 +57,18 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
           </div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">Rendement annuel</div>
+          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.annual_return')}</div>
           <div className="font-semibold">
             {data.rendement_annualise_pct === null
               ? '—'
-              : `${sign(data.rendement_annualise_pct)}${data.rendement_annualise_pct.toFixed(2)} % / an`}
+              : `${sign(data.rendement_annualise_pct)}${data.rendement_annualise_pct.toFixed(2)} ${t('profitability.per_year')}`}
           </div>
-          <div className="text-xs text-stone-400">{formatDuration(data.opening_date)}</div>
+          <div className="text-xs text-stone-400">{formatDuration(data.opening_date, t)}</div>
         </div>
       </div>
 
       {isSavings && (
-        <p className="text-xs text-stone-400 italic mb-3">
-          Estimation — plus-value calculée à partir des revenus sans virement associé (intérêts
-          implicites).
-        </p>
+        <p className="text-xs text-stone-400 italic mb-3">{t('profitability.estimation_note')}</p>
       )}
 
       {data.yearly_returns.length > 0 && (
@@ -77,7 +78,7 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
             onClick={() => setShowYearly((v) => !v)}
             className="w-full flex items-center justify-between pt-2 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
           >
-            <span>Détail par année ({data.yearly_returns.length})</span>
+            <span>{t('profitability.detail_btn', { count: data.yearly_returns.length })}</span>
             <span>{showYearly ? '▲' : '▼'}</span>
           </button>
           {showYearly && (
@@ -85,11 +86,21 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-stone-400 border-b border-stone-100">
-                    <th className="text-left py-1.5 pr-4 font-normal">Année</th>
-                    <th className="text-right py-1.5 pr-4 font-normal">Début</th>
-                    <th className="text-right py-1.5 pr-4 font-normal">Versements nets</th>
-                    <th className="text-right py-1.5 pr-4 font-normal">Gain</th>
-                    <th className="text-right py-1.5 font-normal">Rendement</th>
+                    <th className="text-left py-1.5 pr-4 font-normal">
+                      {t('profitability.col_year')}
+                    </th>
+                    <th className="text-right py-1.5 pr-4 font-normal">
+                      {t('profitability.col_start')}
+                    </th>
+                    <th className="text-right py-1.5 pr-4 font-normal">
+                      {t('profitability.col_net_flows')}
+                    </th>
+                    <th className="text-right py-1.5 pr-4 font-normal">
+                      {t('profitability.col_gain')}
+                    </th>
+                    <th className="text-right py-1.5 font-normal">
+                      {t('profitability.col_return')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

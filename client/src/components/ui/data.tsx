@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const LIMIT_OPTIONS = [10, 25, 50, 100];
@@ -19,6 +20,7 @@ export function Pagination({
   onChange,
   onLimitChange,
 }: Readonly<PaginationProps>) {
+  const { t } = useTranslation('common');
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
 
@@ -32,9 +34,7 @@ export function Pagination({
   return (
     <nav className="flex items-center justify-between pt-1">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-stone-400">
-          {from}–{to} sur {total}
-        </span>
+        <span className="text-xs text-stone-400">{t('pagination.info', { from, to, total })}</span>
         <select
           value={limit}
           onChange={(e) => onLimitChange(Number(e.target.value))}
@@ -42,7 +42,7 @@ export function Pagination({
         >
           {LIMIT_OPTIONS.map((o) => (
             <option key={o} value={o}>
-              {o} / page
+              {t('pagination.per_page', { n: o })}
             </option>
           ))}
         </select>
@@ -52,7 +52,7 @@ export function Pagination({
           onClick={() => onChange(1)}
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Première page"
+          title={t('pagination.first')}
         >
           «
         </button>
@@ -60,7 +60,7 @@ export function Pagination({
           onClick={() => onChange(page - 1)}
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Page précédente"
+          title={t('pagination.prev')}
         >
           ←
         </button>
@@ -79,7 +79,7 @@ export function Pagination({
           onClick={() => onChange(page + 1)}
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Page suivante"
+          title={t('pagination.next')}
         >
           →
         </button>
@@ -87,7 +87,7 @@ export function Pagination({
           onClick={() => onChange(totalPages)}
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Dernière page"
+          title={t('pagination.last')}
         >
           »
         </button>

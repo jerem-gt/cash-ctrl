@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Menu } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { Sidebar } from '@/components/Sidebar';
@@ -27,6 +28,8 @@ function ScrollToTop() {
 }
 
 function AppShell() {
+  const { t } = useTranslation('sidebar');
+  const { t: tc } = useTranslation('common');
   // Ajoute (dev) au titre si on est hors production
   const { isDev } = useAppVersion();
   useEffect(() => {
@@ -40,7 +43,7 @@ function AppShell() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center">
-        <p className="text-sm text-stone-400">Chargement…</p>
+        <p className="text-sm text-stone-400">{tc('loading_text')}</p>
       </div>
     );
   }
@@ -58,7 +61,7 @@ function AppShell() {
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-md hover:bg-stone-200 transition-colors"
-            aria-label="Ouvrir le menu"
+            aria-label={t('open_menu')}
           >
             <Menu className="h-5 w-5 text-stone-600" />
           </button>

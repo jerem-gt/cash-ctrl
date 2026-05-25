@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { IconButton } from '@/components/ui';
 
@@ -17,10 +18,14 @@ export function SubcategoryEditor({
   onSave,
   onCancel,
   isPending,
-  submitLabel = 'OK',
-  placeholder = 'Nom de la sous-catégorie',
+  submitLabel,
+  placeholder,
   autoFocus = false,
 }: Readonly<CategoryEditorProps>) {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
+  const resolvedLabel = submitLabel ?? 'OK';
+  const resolvedPlaceholder = placeholder ?? t('categories.subcategory_placeholder');
   const [nameValue, setNameValue] = useState(name);
 
   return (
@@ -31,7 +36,7 @@ export function SubcategoryEditor({
         value={nameValue}
         onChange={(e) => setNameValue(e.target.value)}
         className="flex-1 bg-transparent text-sm border-b border-black/10 focus:border-black outline-none py-1"
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         autoFocus={autoFocus}
         onKeyDown={(e) => e.key === 'Enter' && onSave(nameValue)}
       />
@@ -39,7 +44,7 @@ export function SubcategoryEditor({
       {/* ACTIONS */}
       <div className="flex items-center gap-0.5">
         <IconButton
-          label={isPending ? '...' : submitLabel}
+          label={isPending ? '...' : resolvedLabel}
           size="sm"
           disabled={isPending || !nameValue.trim()}
           onClick={() => onSave(nameValue)}
@@ -50,7 +55,7 @@ export function SubcategoryEditor({
           </span>
         </IconButton>
         {onCancel && (
-          <IconButton label="Annuler" size="sm" onClick={onCancel}>
+          <IconButton label={tc('cancel')} size="sm" onClick={onCancel}>
             <span aria-hidden="true" className="text-lg leading-none">
               ×
             </span>

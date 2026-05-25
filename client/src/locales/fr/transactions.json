@@ -127,5 +127,11 @@
     "err_no_subcat": "Chaque ligne doit avoir une sous-catégorie.",
     "err_no_amount": "Chaque ligne doit avoir un montant positif.",
     "err_total": "Total ventilation ({{sum}} €) ≠ montant ({{total}} €)."
+  },
+  "manage": {
+    "deleted_tx": "Transaction supprimée",
+    "deleted_transfer": "Transfert supprimé",
+    "updated_tx": "Transaction modifiée ✓",
+    "updated_transfer": "Transfert modifié ✓"
   }
 }

@@ -79,5 +79,25 @@
     "close_account": "Clôturer le compte",
     "reopen_account": "Rouvrir le compte",
     "delete_account": "Supprimer le compte"
+  },
+  "profitability": {
+    "title": "Rendement",
+    "capital": "Capital investi",
+    "value": "Valeur actuelle",
+    "gain": "Plus-value",
+    "annual_return": "Rendement annuel",
+    "per_year": "% / an",
+    "estimation_note": "Estimation — plus-value calculée à partir des revenus sans virement associé (intérêts implicites).",
+    "detail_btn": "Détail par année ({{count}})",
+    "col_year": "Année",
+    "col_start": "Début",
+    "col_net_flows": "Versements nets",
+    "col_gain": "Gain",
+    "col_return": "Rendement",
+    "duration_months": "{{count}} mois",
+    "duration_year_one": "1 an",
+    "duration_year_other": "{{count}} ans",
+    "duration_year_months_one": "1 an {{months}} mois",
+    "duration_year_months_other": "{{count}} ans {{months}} mois"
   }
 }

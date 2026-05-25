@@ -170,7 +170,7 @@ function AccountMappingRow({
   onChange: (c: AccountChoice) => void;
 }>) {
   const { t } = useTranslation('settings');
-  const label = qifName || '(transactions sans compte explicite)';
+  const label = qifName || t('import.no_account_explicit');
   const action = choice?.action ?? 'skip';
 
   const handleActionChange = (newAction: string) => {
@@ -181,7 +181,7 @@ function AccountMappingRow({
     } else {
       onChange({
         action: 'create',
-        name: qifName || 'Nouveau compte',
+        name: qifName || t('import.new_account_default'),
         bank_id: banks[0]?.id ?? null,
         bank_name: banks[0]?.name ?? null,
         account_type_id: accountTypes[0]?.id ?? null,
@@ -199,7 +199,7 @@ function AccountMappingRow({
         </span>
         <div className="flex flex-col gap-2 shrink-0 items-end">
           <Select
-            aria-label={`Action pour ${qifName}`}
+            aria-label={t('import.aria_action_for', { name: qifName })}
             className="w-36"
             value={action}
             onChange={(e) => handleActionChange(e.target.value)}
@@ -211,7 +211,7 @@ function AccountMappingRow({
 
           {action === 'map' && (
             <Select
-              aria-label={`Compte cible pour ${qifName}`}
+              aria-label={t('import.aria_target_account', { name: qifName })}
               className="w-56"
               value={choice?.action === 'map' ? choice.account_id : ''}
               onChange={(e) => onChange({ action: 'map', account_id: Number(e.target.value) })}
@@ -361,7 +361,7 @@ function CategoryMappingRow({
         </span>
         <div className="flex flex-col gap-2 shrink-0 items-end">
           <Select
-            aria-label={`Action pour ${qifCategory}`}
+            aria-label={t('import.aria_action_for', { name: qifCategory })}
             className="w-32"
             value={action}
             onChange={(e) => handleActionChange(e.target.value)}
@@ -373,7 +373,7 @@ function CategoryMappingRow({
 
           {action === 'map' && (
             <Select
-              aria-label={`Catégorie cible pour ${qifCategory}`}
+              aria-label={t('import.aria_target_category', { name: qifCategory })}
               className="w-64"
               value={choice?.action === 'map' ? choice.subcategory_id : ''}
               onChange={(e) => onChange({ action: 'map', subcategory_id: Number(e.target.value) })}
@@ -461,7 +461,7 @@ function PaymodeMappingRow({
       <div className="flex items-center gap-4">
         <span className="flex-1 text-sm font-mono text-stone-700">{name}</span>
         <Select
-          aria-label={`Méthode de paiement pour ${name}`}
+          aria-label={t('import.aria_paymethod', { name })}
           className="w-56"
           value={paymentMethodId ?? ''}
           onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
@@ -524,7 +524,7 @@ export default function ImportManager() {
 
       const makeDefaultAccChoice = (name: string, initialBalance = 0): AccountChoice => ({
         action: 'create',
-        name: name || 'Nouveau compte',
+        name: name || t('import.new_account_default'),
         bank_id: banks[0]?.id ?? null,
         bank_name: banks[0]?.name ?? null,
         account_type_id: accountTypes[0]?.id ?? null,
@@ -626,7 +626,7 @@ export default function ImportManager() {
       };
       reader.readAsText(file, 'UTF-8');
     },
-    [categories, banks, accountTypes, paymentMethods],
+    [categories, banks, accountTypes, paymentMethods, t],
   );
 
   const handleDrop = useCallback(
@@ -1080,9 +1080,9 @@ export default function ImportManager() {
                   <tr className="text-left text-stone-400 border-b border-stone-100">
                     <th className="pb-2 w-6" />
                     <th className="pb-2 pr-3">{tc('date')}</th>
-                    <th className="pb-2 pr-3">Description</th>
-                    <th className="pb-2 pr-3">Compte</th>
-                    <th className="pb-2 pr-3">Catégorie</th>
+                    <th className="pb-2 pr-3">{t('import.col_description')}</th>
+                    <th className="pb-2 pr-3">{t('import.col_account')}</th>
+                    <th className="pb-2 pr-3">{t('import.col_category')}</th>
                     <th className="pb-2 text-right">{tc('amount')}</th>
                   </tr>
                 </thead>

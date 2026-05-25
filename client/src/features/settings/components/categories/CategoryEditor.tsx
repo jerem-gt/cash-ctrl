@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const EmojiPickerWidget = React.lazy(() =>
   import('./EmojiPickerWidget').then((m) => ({ default: m.EmojiPickerWidget })),
@@ -21,10 +22,14 @@ export function CategoryEditor({
   onSave,
   onCancel,
   isPending,
-  submitLabel = 'Ajouter',
-  placeholder = 'Nom...',
+  submitLabel,
+  placeholder,
   autoFocus = false,
 }: Readonly<CategoryEditorProps>) {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
+  const resolvedLabel = submitLabel ?? t('categories.editor_add_label');
+  const resolvedPlaceholder = placeholder ?? t('categories.editor_placeholder');
   const [form, setForm] = useState(initialValues);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -60,7 +65,11 @@ export function CategoryEditor({
             />
             <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl border border-black/5 rounded-2xl overflow-hidden animate-in slide-in-from-top-2">
               <Suspense
-                fallback={<div className="p-8 text-xs text-stone-400 bg-white">Chargement...</div>}
+                fallback={
+                  <div className="p-8 text-xs text-stone-400 bg-white">
+                    {t('categories.loading_emoji')}
+                  </div>
+                }
               >
                 <EmojiPickerWidget
                   onSelect={(emoji) => {
@@ -74,14 +83,14 @@ export function CategoryEditor({
         )}
       </div>
 
-      {/* NOM : Input sans bordure inférieure bleue (plus sobre) */}
+      {/* NOM */}
       <input
-        aria-label="Nom de la nouvelle catégorie"
+        aria-label={t('categories.aria_name_new')}
         type="text"
         value={form.name}
         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         autoFocus={autoFocus}
         onKeyDown={(e) => {
           if (e.key === 'Enter') onSave(form);
@@ -96,7 +105,7 @@ export function CategoryEditor({
           disabled={isPending || !form.name.trim()}
           className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
-          {isPending ? '...' : submitLabel}
+          {isPending ? '...' : resolvedLabel}
         </button>
 
         {onCancel && (
@@ -106,7 +115,7 @@ export function CategoryEditor({
             hidden={isPending}
             className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
           >
-            Annuler
+            {tc('cancel')}
           </button>
         )}
       </div>

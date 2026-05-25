@@ -1,5 +1,6 @@
 import { Loader2, LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Card, CardTitle, Input, showToast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants';
@@ -10,6 +11,7 @@ import type { UserPublic } from '@/types';
 // ─── Add user form ─────────────────────────────────────────────────────────────
 
 function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
+  const { t } = useTranslation('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const create = useCreateUser();
@@ -20,7 +22,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
       { username, password },
       {
         onSuccess: () => {
-          showToast('Utilisateur créé');
+          showToast(t('toasts.created'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -31,13 +33,13 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-medium text-stone-800">Nouvel utilisateur</p>
+        <p className="text-sm font-medium text-stone-800">{t('add_form.title')}</p>
         <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600">
           <X className="h-4 w-4" />
         </button>
       </div>
       <Input
-        placeholder="Nom d'utilisateur"
+        placeholder={t('add_form.username_placeholder')}
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
@@ -45,14 +47,14 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
       />
       <Input
         type="password"
-        placeholder="Mot de passe (min. 8 caractères)"
+        placeholder={t('add_form.password_placeholder')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
         minLength={8}
       />
       <Button type="submit" variant="primary" disabled={create.isPending}>
-        Créer
+        {t('add_form.submit')}
       </Button>
     </form>
   );
@@ -61,6 +63,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
 // ─── Edit user form ────────────────────────────────────────────────────────────
 
 function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: () => void }>) {
+  const { t } = useTranslation('admin');
   const [username, setUsername] = useState(user.username);
   const [password, setPassword] = useState('');
   const update = useUpdateUser();
@@ -75,7 +78,7 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
       { id: user.id, ...payload },
       {
         onSuccess: () => {
-          showToast('Utilisateur modifié');
+          showToast(t('toasts.updated'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -86,26 +89,28 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-medium text-stone-800">Modifier {user.username}</p>
+        <p className="text-sm font-medium text-stone-800">
+          {t('edit_form.title', { username: user.username })}
+        </p>
         <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600">
           <X className="h-4 w-4" />
         </button>
       </div>
       <Input
-        placeholder="Nom d'utilisateur"
+        placeholder={t('edit_form.username_placeholder')}
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         required
       />
       <Input
         type="password"
-        placeholder="Nouveau mot de passe (laisser vide = inchangé)"
+        placeholder={t('edit_form.password_placeholder')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         minLength={8}
       />
       <Button type="submit" variant="primary" disabled={update.isPending}>
-        Enregistrer
+        {t('edit_form.submit')}
       </Button>
     </form>
   );
@@ -114,6 +119,7 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
 // ─── Main admin page ───────────────────────────────────────────────────────────
 
 export function AdminPage({ username }: Readonly<{ username: string }>) {
+  const { t } = useTranslation('admin');
   const { data: users = [], isLoading } = useUsers();
   const deleteUser = useDeleteUser();
   const logout = useLogout();
@@ -121,9 +127,9 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const handleDelete = (user: UserPublic) => {
-    if (!confirm(`Supprimer l'utilisateur "${user.username}" et toutes ses données ?`)) return;
+    if (!confirm(t('user.confirm_delete', { username: user.username }))) return;
     deleteUser.mutate(user.id, {
-      onSuccess: () => showToast('Utilisateur supprimé'),
+      onSuccess: () => showToast(t('toasts.deleted')),
       onError: (err) => showToast(err.message),
     });
   };
@@ -133,14 +139,16 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
       <header className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-stone-400" />
-          <span className="font-semibold">{APP_CONFIG.name} — Administration</span>
+          <span className="font-semibold">
+            {APP_CONFIG.name} {t('page.title_suffix')}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-stone-400">{username}</span>
           <button
             onClick={() => logout.mutate()}
             className="text-stone-400 hover:text-white transition-colors"
-            title="Se déconnecter"
+            title={t('page.logout_title')}
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -150,7 +158,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
       <main className="flex-1 p-4 md:p-6 max-w-2xl mx-auto w-full">
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle>Utilisateurs</CardTitle>
+            <CardTitle>{t('page.users_title')}</CardTitle>
             {!showAdd && (
               <Button
                 size="sm"
@@ -161,7 +169,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                 }}
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                Ajouter
+                {t('page.add_btn')}
               </Button>
             )}
           </div>
@@ -173,7 +181,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
           )}
 
           {isLoading ? (
-            <p className="text-sm text-stone-400">Chargement…</p>
+            <p className="text-sm text-stone-400">{t('page.loading')}</p>
           ) : (
             <ul className="divide-y divide-stone-100">
               {users.map((user) => (
@@ -191,20 +199,18 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                           </span>
                           {user.is_admin === 1 && (
                             <span className="text-[10px] font-medium uppercase tracking-wide bg-stone-100 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5">
-                              admin
+                              {t('user.admin_badge')}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-stone-400">
-                          <span>
-                            {user.account_count} compte{user.account_count === 1 ? '' : 's'}
-                          </span>
-                          <span>
-                            {user.tx_count} transaction{user.tx_count === 1 ? '' : 's'}
-                          </span>
+                          <span>{t('user.account_count', { count: user.account_count })}</span>
+                          <span>{t('user.tx_count', { count: user.tx_count })}</span>
                           {user.last_tx_date !== null && (
                             <span>
-                              dernière le {new Date(user.last_tx_date).toLocaleDateString('fr-FR')}
+                              {t('user.last_tx', {
+                                date: new Date(user.last_tx_date).toLocaleDateString('fr-FR'),
+                              })}
                             </span>
                           )}
                         </div>
@@ -218,7 +224,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                               setShowAdd(false);
                             }}
                             disabled={deleteUser.isPending}
-                            title="Modifier"
+                            title={t('user.edit_title')}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -227,7 +233,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                             variant="danger"
                             onClick={() => handleDelete(user)}
                             disabled={deleteUser.isPending}
-                            title="Supprimer"
+                            title={t('user.delete_title')}
                           >
                             {deleteUser.isPending && deleteUser.variables === user.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />

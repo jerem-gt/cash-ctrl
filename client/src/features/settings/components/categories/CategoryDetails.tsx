@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import {
@@ -15,6 +16,7 @@ export function CategoryDetails({
 }: Readonly<{
   selectedCategory?: Category;
 }>) {
+  const { t } = useTranslation('settings');
   const [isEditingCat, setIsEditingCat] = useState(false);
   const updateCat = useUpdateCategory();
   const deleteCat = useDeleteCategory();
@@ -26,7 +28,7 @@ export function CategoryDetails({
       {
         onSuccess: () => {
           setIsEditingCat(false);
-          showToast('Catégorie mise à jour ✓');
+          showToast(t('categories.update_success'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -45,7 +47,7 @@ export function CategoryDetails({
                   icon: selectedCategory.icon,
                 }}
                 isPending={updateCat.isPending}
-                submitLabel="Modifier"
+                submitLabel={t('categories.editor_edit_label')}
                 onCancel={() => setIsEditingCat(false)}
                 onSave={(values) => handleUpdateCategory(selectedCategory.id, values)}
               />
@@ -62,7 +64,7 @@ export function CategoryDetails({
                   </h2>
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                      Catégorie principale
+                      {t('categories.main_label')}
                     </span>
                   </div>
                 </div>
@@ -73,21 +75,21 @@ export function CategoryDetails({
                   onClick={() => setIsEditingCat(true)}
                   className="px-4 py-2 text-[11px] font-bold text-stone-500 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all"
                 >
-                  Modifier
+                  {t('categories.editor_edit_label')}
                 </button>
                 <button
                   onClick={() => {
                     requestDelete(
-                      'Supprimer la catégorie',
-                      'Confirmer la suppression ?',
+                      t('categories.delete_title'),
+                      t('categories.delete_body'),
                       selectedCategory.id,
                       deleteCat.mutate,
-                      'Catégorie supprimée',
+                      t('categories.delete_success'),
                     );
                   }}
                   className="px-4 py-2 text-[11px] font-bold text-red-400 hover:bg-red-50 rounded-xl transition-all"
                 >
-                  Supprimer
+                  {t('card.delete_label')}
                 </button>
               </div>
             </header>
@@ -102,7 +104,7 @@ export function CategoryDetails({
   }
   return (
     <div className="flex-1 h-64 flex flex-col items-center justify-center border-2 border-dashed border-black/5 rounded-4xl text-stone-300 italic animate-in fade-in duration-500">
-      Sélectionnez une catégorie pour gérer ses détails
+      {t('categories.select_prompt')}
     </div>
   );
 }
