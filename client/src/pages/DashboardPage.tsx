@@ -118,6 +118,17 @@ export default function DashboardPage() {
 
   if (statsLoading) return <DashboardSkeleton />;
 
+  const balanceTypes = balanceHistory?.account_types ?? [];
+  const balanceNegativeTypes = new Set(
+    balanceTypes.filter((t) => (balanceHistory?.data ?? []).some((d) => Number(d[t] ?? 0) < 0)),
+  );
+  const balanceLastPositiveType = balanceTypes.findLast((t) => !balanceNegativeTypes.has(t));
+  const balanceDataWithTotal = (balanceHistory?.data ?? []).map((d) => ({
+    ...d,
+    _total: balanceTypes.reduce((s, t) => s + Number(d[t] ?? 0), 0),
+  }));
+  const balanceHasLoans = (balanceHistory?.data ?? []).some((d) => Number(d['Prêts'] ?? 0) < 0);
+
   return (
     <div className="space-y-5">
       <div>
@@ -382,86 +393,72 @@ export default function DashboardPage() {
       </Card>
 
       {/* Patrimoine par catégorie */}
-      {balanceHistory &&
-        balanceHistory.data.length > 0 &&
-        (() => {
-          const types = balanceHistory.account_types;
-          const hasLoans = balanceHistory.data.some((d) => Number(d['Prêts'] ?? 0) < 0);
-          const negativeTypes = new Set(
-            types.filter((t) => balanceHistory.data.some((d) => Number(d[t] ?? 0) < 0)),
-          );
-          const lastPositiveType = types.findLast((t) => !negativeTypes.has(t));
-          const dataWithTotal = balanceHistory.data.map((d) => ({
-            ...d,
-            _total: types.reduce((s, t) => s + Number(d[t] ?? 0), 0),
-          }));
-          return (
-            <Card>
-              <CardTitle>{t('patrimony_title')}</CardTitle>
-              <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
-                {types.map((type, i) => (
-                  <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
-                    <div
-                      className="w-2 h-2 rounded-sm shrink-0"
-                      style={{ background: generateColor(i) }}
-                    />
-                    {type}
-                  </div>
-                ))}
+      {balanceHistory && balanceHistory.data.length > 0 && (
+        <Card>
+          <CardTitle>{t('patrimony_title')}</CardTitle>
+          <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
+            {balanceTypes.map((type, i) => (
+              <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
+                <div
+                  className="w-2 h-2 rounded-sm shrink-0"
+                  style={{ background: generateColor(i) }}
+                />
+                {type}
               </div>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                  data={dataWithTotal}
-                  stackOffset="sign"
-                  barGap={2}
-                  margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
-                >
-                  <XAxis dataKey="year" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => fmt(v)}
-                    width={70}
-                  />
-                  <Tooltip
-                    formatter={(v, name, entry) => {
-                      if (name === '_total') return null;
-                      const total = (entry.payload as Record<string, number>)._total;
-                      const pct = total === 0 ? 0 : (Number(v) / total) * 100;
-                      return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, String(name)];
-                    }}
-                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-                  />
-                  {hasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
-                  {types.map((type, i) => {
-                    const isNeg = negativeTypes.has(type);
-                    const isTopPositive = type === lastPositiveType;
-                    const radius = isNeg || isTopPositive ? [3, 3, 0, 0] : [0, 0, 0, 0];
-                    return (
-                      <Bar
-                        key={type}
-                        dataKey={type}
-                        stackId="a"
-                        fill={generateColor(i)}
-                        radius={radius as [number, number, number, number]}
-                      >
-                        {isTopPositive && (
-                          <LabelList
-                            dataKey="_total"
-                            position="top"
-                            formatter={(v: unknown) => fmt(Number(v ?? 0))}
-                            style={{ fontSize: 10, fill: '#78716c' }}
-                          />
-                        )}
-                      </Bar>
-                    );
-                  })}
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          );
-        })()}
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart
+              data={balanceDataWithTotal}
+              stackOffset="sign"
+              barGap={2}
+              margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
+            >
+              <XAxis dataKey="year" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => fmt(v)}
+                width={70}
+              />
+              <Tooltip
+                formatter={(v, name, entry) => {
+                  if (name === '_total') return null;
+                  const total = (entry.payload as Record<string, number>)._total;
+                  const pct = total === 0 ? 0 : (Number(v) / total) * 100;
+                  return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, String(name)];
+                }}
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+              />
+              {balanceHasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
+              {balanceTypes.map((type, i) => {
+                const isNeg = balanceNegativeTypes.has(type);
+                const isTopPositive = type === balanceLastPositiveType;
+                const radius = isNeg || isTopPositive ? [3, 3, 0, 0] : [0, 0, 0, 0];
+                return (
+                  <Bar
+                    key={type}
+                    dataKey={type}
+                    stackId="a"
+                    fill={generateColor(i)}
+                    radius={radius as [number, number, number, number]}
+                  >
+                    {isTopPositive && (
+                      <LabelList
+                        dataKey="_total"
+                        position="top"
+                        formatter={(v: unknown) => fmt(Number(v ?? 0))}
+                        style={{ fontSize: 10, fill: '#78716c' }}
+                      />
+                    )}
+                  </Bar>
+                );
+              })}
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       {/* Rendement de mes placements */}
       {profitabilityList.length > 0 && (

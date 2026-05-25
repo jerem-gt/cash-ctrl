@@ -14,7 +14,7 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
   const [resetCreationFormKey, setResetCreationFormKey] = useState(0);
   const createSub = useCreateSubcategory();
   const deleteSub = useDeleteSubcategory();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
 
   function handleSaveSubcategory(value: string) {
     createSub.mutate(
@@ -63,7 +63,7 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
           )}
         />
       </div>
-      <DeleteConfirmModal />
+      {deleteConfirmModal}
     </>
   );
 }

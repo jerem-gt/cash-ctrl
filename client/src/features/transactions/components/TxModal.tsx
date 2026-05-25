@@ -485,6 +485,13 @@ export function TxModal(props: Readonly<Props>) {
     );
   }
 
+  const schedulingOptions =
+    isEdit && !isTransferEdit
+      ? (scheduledList ?? []).filter(
+          (s) => s.active && s.type === tx!.type && s.to_account_id === null,
+        )
+      : [];
+
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
@@ -612,34 +619,26 @@ export function TxModal(props: Readonly<Props>) {
             <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
           </label>
 
-          {isEdit &&
-            !isTransferEdit &&
-            (() => {
-              const options = (scheduledList ?? []).filter(
-                (s) => s.active && s.type === tx!.type && s.to_account_id === null,
-              );
-              if (options.length === 0) return null;
-              return (
-                <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
-                  <select
-                    id="scheduled-select"
-                    value={scheduledId ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setScheduledId(val === '' ? null : Number.parseInt(val));
-                    }}
-                    className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
-                  >
-                    <option value="">{t('modal.no_scheduling')}</option>
-                    {options.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.description}
-                      </option>
-                    ))}
-                  </select>
-                </FormGroup>
-              );
-            })()}
+          {isEdit && !isTransferEdit && schedulingOptions.length > 0 && (
+            <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
+              <select
+                id="scheduled-select"
+                value={scheduledId ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setScheduledId(val === '' ? null : Number.parseInt(val));
+                }}
+                className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
+              >
+                <option value="">{t('modal.no_scheduling')}</option>
+                {schedulingOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.description}
+                  </option>
+                ))}
+              </select>
+            </FormGroup>
+          )}
 
           {isEdit && tx!.type === 'expense' && !isTransferEdit && <ReimbursementsPanel tx={tx!} />}
 

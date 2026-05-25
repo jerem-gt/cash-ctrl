@@ -20,7 +20,7 @@ export function CategoryDetails({
   const [isEditingCat, setIsEditingCat] = useState(false);
   const updateCat = useUpdateCategory();
   const deleteCat = useDeleteCategory();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
 
   function handleUpdateCategory(catId: number, values: CategoryForm) {
     updateCat.mutate(
@@ -98,7 +98,7 @@ export function CategoryDetails({
           {/* LISTE DES SOUS-CATÉGORIES */}
           <SubCategoriesManager key={selectedCategory?.id} parentCategory={selectedCategory} />
         </div>
-        <DeleteConfirmModal />
+        {deleteConfirmModal}
       </div>
     );
   }

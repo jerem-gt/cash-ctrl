@@ -43,25 +43,21 @@ export function useDeleteConfirmation(showToast: (msg: string) => void) {
     });
   };
 
-  function DeleteConfirmModal() {
-    if (!pendingDelete) return null;
-
-    return (
-      <ConfirmModal
-        title={pendingDelete.title}
-        body={pendingDelete.body}
-        onConfirm={pendingDelete.onConfirm}
-        onCancel={closeDelete}
-        isPending={isDeleting}
-      />
-    );
-  }
+  const deleteConfirmModal = pendingDelete ? (
+    <ConfirmModal
+      title={pendingDelete.title}
+      body={pendingDelete.body}
+      onConfirm={pendingDelete.onConfirm}
+      onCancel={closeDelete}
+      isPending={isDeleting}
+    />
+  ) : null;
 
   return {
     pendingDelete,
     isDeleting,
     requestDelete,
     closeDelete,
-    DeleteConfirmModal,
+    deleteConfirmModal,
   };
 }

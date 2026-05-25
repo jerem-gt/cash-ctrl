@@ -18,13 +18,10 @@
     "format": "prettier . --write"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.4",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
+    "@eslint-react/eslint-plugin": "^5.8.5",
+    "@eslint/js": "^10.0.1",
     "concurrently": "^9.2.1",
-    "eslint": "9.39.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-react": "^7.37.5",
+    "eslint": "^10.4.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "husky": "^9.1.7",
@@ -32,7 +29,8 @@
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "typescript-eslint": "^8.59.4"
+    "globals": "^17.6.0",
+    "typescript-eslint": "^8.60.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

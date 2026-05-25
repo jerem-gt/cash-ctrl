@@ -91,6 +91,21 @@ export function BackupManager() {
 
   const isDirty = form !== null;
 
+  let backupContent: ReactNode;
+  if (backupsLoading) {
+    backupContent = <p className="text-sm text-stone-400">{tc('loading')}</p>;
+  } else if (backups.length === 0) {
+    backupContent = <p className="text-sm text-stone-400 italic">{t('backup.no_backups')}</p>;
+  } else {
+    backupContent = (
+      <div className="flex flex-col">
+        {backups.toReversed().map((file) => (
+          <BackupRow key={file.filename} file={file} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl flex flex-col gap-8">
       {/* Configuration */}
@@ -222,23 +237,7 @@ export function BackupManager() {
           {t('backup.files_title')}
         </h2>
 
-        {(() => {
-          let content: ReactNode;
-          if (backupsLoading) {
-            content = <p className="text-sm text-stone-400">{tc('loading')}</p>;
-          } else if (backups.length === 0) {
-            content = <p className="text-sm text-stone-400 italic">{t('backup.no_backups')}</p>;
-          } else {
-            content = (
-              <div className="flex flex-col">
-                {backups.toReversed().map((file) => (
-                  <BackupRow key={file.filename} file={file} />
-                ))}
-              </div>
-            );
-          }
-          return content;
-        })()}
+        {backupContent}
       </div>
     </div>
   );

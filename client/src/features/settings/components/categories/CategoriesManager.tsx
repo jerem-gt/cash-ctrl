@@ -50,7 +50,7 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteCat = useDeleteCategory();
-  const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
 
   return (
     <>
@@ -77,7 +77,7 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
         editContent={<CategoryEditForm cat={cat} onClose={() => setEditing(false)} />}
         collapsibleContent={<SubCategoriesManager parentCategory={cat} />}
       />
-      <DeleteConfirmModal />
+      {deleteConfirmModal}
     </>
   );
 }

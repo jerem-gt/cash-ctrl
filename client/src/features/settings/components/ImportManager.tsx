@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { importApi, JsonFullImportResult } from '@/api/client.ts';
+import { importApi } from '@/api/client.ts';
 import { Button, Card, DecimalInput, Select } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
@@ -737,6 +737,51 @@ export default function ImportManager() {
     uniqueCategories = parsedFile.data.uniqueCategories;
   }
 
+  const handleJsonImport = async () => {
+    if (parsedFile?.format !== 'json') return;
+    try {
+      await jsonImportMutation.mutateAsync(parsedFile.data);
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      setStep('done');
+    } catch {
+      /* error shown inline */
+    }
+  };
+
+  let jsonConfirmData: {
+    d: Record<string, unknown[]>;
+    stats: Array<{ value: number; label: string }>;
+    cats: Array<{ subcategories: unknown[] }>;
+    subcatCount: number;
+  } | null = null;
+  if (step === 'confirm' && parsedFile?.format === 'json') {
+    const d = parsedFile.data as Record<string, unknown[]>;
+    const txs = (d.transactions ?? []) as Array<{ transfer_peer_id: unknown }>;
+    const transferCount = txs.filter((tx) => tx.transfer_peer_id !== null).length / 2;
+    const stats = [
+      { value: (d.accounts ?? []).length, label: t('import.stats_accounts') },
+      { value: txs.length - transferCount * 2, label: t('import.stats_transactions') },
+      { value: Math.round(transferCount), label: t('import.stats_transfers') },
+      { value: (d.scheduled_transactions ?? []).length, label: t('import.stats_scheduled') },
+      { value: (d.stock_operations ?? []).length, label: t('import.stats_stock_ops') },
+      { value: (d.loans ?? []).length, label: t('import.stats_loans') },
+    ].filter(({ value }) => value > 0);
+    const cats = (d.categories ?? []) as Array<{ subcategories: unknown[] }>;
+    const subcatCount = cats.reduce((s, c) => s + c.subcategories.length, 0);
+    jsonConfirmData = { d, stats, cats, subcatCount };
+  }
+
+  const jsonImportStats = jsonImportMutation.data
+    ? [
+        { value: jsonImportMutation.data.accounts, label: t('import.stats_cats_created') },
+        { value: jsonImportMutation.data.transactions, label: t('import.stats_transactions') },
+        { value: jsonImportMutation.data.transfers, label: t('import.stats_transfers') },
+        { value: jsonImportMutation.data.scheduled, label: t('import.stats_scheduled') },
+        { value: jsonImportMutation.data.stockOperations, label: t('import.stats_stock_ops') },
+        { value: jsonImportMutation.data.loans, label: t('import.stats_loans') },
+      ].filter(({ value }) => value > 0)
+    : [];
+
   return (
     <div className="max-w-4xl">
       <p className="text-sm text-stone-400 mb-8">{t('import.description')}</p>
@@ -933,108 +978,80 @@ export default function ImportManager() {
       )}
 
       {/* ── Step JSON: Confirm ── */}
-      {step === 'confirm' &&
-        parsedFile?.format === 'json' &&
-        (() => {
-          const d = parsedFile.data as Record<string, unknown[]>;
-          const txs = (d.transactions ?? []) as Array<{ transfer_peer_id: unknown }>;
-          const transferCount = txs.filter((t) => t.transfer_peer_id !== null).length / 2;
-          const stats = [
-            { value: (d.accounts ?? []).length, label: t('import.stats_accounts') },
-            { value: txs.length - transferCount * 2, label: t('import.stats_transactions') },
-            { value: Math.round(transferCount), label: t('import.stats_transfers') },
-            { value: (d.scheduled_transactions ?? []).length, label: t('import.stats_scheduled') },
-            { value: (d.stock_operations ?? []).length, label: t('import.stats_stock_ops') },
-            { value: (d.loans ?? []).length, label: t('import.stats_loans') },
-          ].filter(({ value }) => value > 0);
-          const cats = (d.categories ?? []) as Array<{ subcategories: unknown[] }>;
-          const subcatCount = cats.reduce((s, c) => s + c.subcategories.length, 0);
-
-          const handleJsonImport = async () => {
-            try {
-              await jsonImportMutation.mutateAsync(parsedFile.data);
-              await queryClient.invalidateQueries({ queryKey: ['accounts'] });
-              setStep('done');
-            } catch {
-              /* error shown inline */
-            }
-          };
-
-          return (
-            <div className="flex flex-col gap-6">
-              <div className="flex gap-4 flex-wrap">
-                {stats.map(({ value, label }) => (
-                  <div
-                    key={label}
-                    className="flex-1 min-w-22.5 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
-                  >
-                    <p className="text-2xl font-sans text-stone-800">{value}</p>
-                    <p className="text-xs text-stone-400 mt-0.5">{label}</p>
-                  </div>
-                ))}
+      {step === 'confirm' && parsedFile?.format === 'json' && jsonConfirmData && (
+        <div className="flex flex-col gap-6">
+          <div className="flex gap-4 flex-wrap">
+            {jsonConfirmData.stats.map(({ value, label }) => (
+              <div
+                key={label}
+                className="flex-1 min-w-22.5 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
+              >
+                <p className="text-2xl font-sans text-stone-800">{value}</p>
+                <p className="text-xs text-stone-400 mt-0.5">{label}</p>
               </div>
+            ))}
+          </div>
 
-              <Card>
-                <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
-                  {t('import.confirm_content_title')}
-                </p>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-stone-600">
-                  <span>{t('import.confirm_categories')}</span>
-                  <span className="text-stone-800 font-medium">
-                    {t('import.confirm_categories_count', {
-                      count: cats.length,
-                      subcount: subcatCount,
-                    })}
-                  </span>
-                  <span>{t('import.confirm_payment_methods')}</span>
-                  <span className="text-stone-800 font-medium">
-                    {(d.payment_methods ?? []).length}
-                  </span>
-                  <span>{t('import.confirm_account_types')}</span>
-                  <span className="text-stone-800 font-medium">
-                    {(d.account_types ?? []).length}
-                  </span>
-                  <span>{t('import.confirm_stock_positions')}</span>
-                  <span className="text-stone-800 font-medium">
-                    {(d.stock_positions ?? []).length}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-400 mt-4">{t('import.confirm_note')}</p>
-              </Card>
-
-              {jsonImportMutation.isError && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  <p className="font-medium mb-1">{tc('error_import')}</p>
-                  <ul className="list-disc list-inside space-y-0.5">
-                    {jsonImportMutation.error.message.split('\n').map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="flex justify-between">
-                <Button
-                  onClick={() => {
-                    setStep('upload');
-                    setParsedFile(null);
-                    setFileName('');
-                    jsonImportMutation.reset();
-                  }}
-                >
-                  {tc('back')}
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleJsonImport}
-                  disabled={jsonImportMutation.isPending}
-                >
-                  {jsonImportMutation.isPending ? t('import.importing') : t('import.import_btn')}
-                </Button>
-              </div>
+          <Card>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
+              {t('import.confirm_content_title')}
+            </p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-stone-600">
+              <span>{t('import.confirm_categories')}</span>
+              <span className="text-stone-800 font-medium">
+                {t('import.confirm_categories_count', {
+                  count: jsonConfirmData.cats.length,
+                  subcount: jsonConfirmData.subcatCount,
+                })}
+              </span>
+              <span>{t('import.confirm_payment_methods')}</span>
+              <span className="text-stone-800 font-medium">
+                {(jsonConfirmData.d.payment_methods ?? []).length}
+              </span>
+              <span>{t('import.confirm_account_types')}</span>
+              <span className="text-stone-800 font-medium">
+                {(jsonConfirmData.d.account_types ?? []).length}
+              </span>
+              <span>{t('import.confirm_stock_positions')}</span>
+              <span className="text-stone-800 font-medium">
+                {(jsonConfirmData.d.stock_positions ?? []).length}
+              </span>
             </div>
-          );
-        })()}
+            <p className="text-xs text-stone-400 mt-4">{t('import.confirm_note')}</p>
+          </Card>
+
+          {jsonImportMutation.isError && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="font-medium mb-1">{tc('error_import')}</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {jsonImportMutation.error.message.split('\n').map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex justify-between">
+            <Button
+              onClick={() => {
+                setStep('upload');
+                setParsedFile(null);
+                setFileName('');
+                jsonImportMutation.reset();
+              }}
+            >
+              {tc('back')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleJsonImport}
+              disabled={jsonImportMutation.isPending}
+            >
+              {jsonImportMutation.isPending ? t('import.importing') : t('import.import_btn')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Step 4/5: Preview ── */}
       {step === 'preview' && (
@@ -1228,28 +1245,16 @@ export default function ImportManager() {
                 </div>
               </div>
             )}
-            {jsonImportMutation.data &&
-              (() => {
-                const r: JsonFullImportResult = jsonImportMutation.data;
-                const stats = [
-                  { value: r.accounts, label: t('import.stats_cats_created') },
-                  { value: r.transactions, label: t('import.stats_transactions') },
-                  { value: r.transfers, label: t('import.stats_transfers') },
-                  { value: r.scheduled, label: t('import.stats_scheduled') },
-                  { value: r.stockOperations, label: t('import.stats_stock_ops') },
-                  { value: r.loans, label: t('import.stats_loans') },
-                ].filter(({ value }) => value > 0);
-                return (
-                  <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
-                    {stats.map(({ value, label }) => (
-                      <div key={label}>
-                        <p className="text-3xl font-sans text-stone-800">{value}</p>
-                        <p className="text-xs text-stone-400 mt-1">{label}</p>
-                      </div>
-                    ))}
+            {jsonImportStats.length > 0 && (
+              <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
+                {jsonImportStats.map(({ value, label }) => (
+                  <div key={label}>
+                    <p className="text-3xl font-sans text-stone-800">{value}</p>
+                    <p className="text-xs text-stone-400 mt-1">{label}</p>
                   </div>
-                );
-              })()}
+                ))}
+              </div>
+            )}
             <div className="flex justify-center gap-3">
               <Button
                 onClick={() => {

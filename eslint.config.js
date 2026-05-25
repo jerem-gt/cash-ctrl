@@ -1,7 +1,8 @@
+import reactPlugin from '@eslint-react/eslint-plugin';
 import js from '@eslint/js';
-import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
@@ -33,17 +34,27 @@ export default [
 
   // CLIENT (React)
   {
+    files: ['client/**/*.{tsx,jsx,ts}'],
+    ...reactPlugin.configs['recommended-typescript'],
+    languageOptions: {
+      parser: tseslint.parser,
+    },
+  },
+  {
     files: ['client/**/*.{tsx,jsx}'],
     plugins: {
-      react,
       'react-hooks': reactHooks,
     },
-    settings: {
-      react: { version: 'detect' },
-    },
     rules: {
-      'react/react-in-jsx-scope': 'off',
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+
+  // SCRIPTS NODE (docs/)
+  {
+    files: ['docs/**/*.mjs'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 
