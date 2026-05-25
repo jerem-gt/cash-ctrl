@@ -521,7 +521,7 @@ describe('/api/stats', () => {
   });
 
   describe('getBalanceHistory avec Stocks', () => {
-    it('devrait répartir cash non investi en Liquidités et valeur de marché en Actions & UC', async () => {
+    it('devrait répartir cash Bourse et valeur de marché en Actions & UC', async () => {
       // Dépôt 1000€ puis achat 500€ => cash restant 500€, 10 AAPL à PRU 50
       await ctx.agent.post('/api/transactions').send({
         account_id: bourseAccountId,
@@ -553,9 +553,9 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
-      // Liquidités = Courant initial (10) + Bourse cash non investi (500) = 510
+      // Liquidités = Courant initial (10) + Bourse cash non investi (500)
       expect(yearData['Liquidités']).toBe(510);
-      // Actions & UC = valeur de marché (10 x 60) pour l'année courante
+      // Actions & UC = valeur de marché des positions uniquement (10 x 60)
       expect(yearData['Actions & UC']).toBe(600);
     });
 
@@ -580,8 +580,9 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
-      // Liquidités = Courant initial (10) + Bourse cash (-100 achat + 150 vente = 50) = 60
+      // Liquidités = Courant initial (10) + Bourse cash net (-100 achat + 150 vente = 50)
       expect(yearData['Liquidités']).toBe(60);
+      // Actions & UC = valeur de marché des positions uniquement (aucune position)
       expect(yearData['Actions & UC']).toBe(0);
     });
   });
