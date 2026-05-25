@@ -5,6 +5,12 @@ import { SEED } from '../../tests/helpers/testDb.js';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
+}
+
 const base = {
   type: 'expense' as const,
   amount: 100,
@@ -117,6 +123,32 @@ describe('/api/scheduled', () => {
       .send({ ...base, account_id: accountId, amount: 75 });
     expect(res.status).toBe(200);
     expect(res.body.amount).toBe(75);
+  });
+
+  it('PUT /:id ne modifie pas les transactions passées lors du changement de montant', async () => {
+    const startDate = daysAgo(60);
+    const create = await ctx.agent
+      .post('/api/scheduled')
+      .send({ ...base, account_id: accountId, amount: 100, start_date: startDate });
+    expect(create.status).toBe(201);
+    const schedId = create.body.id as number;
+
+    const before = await ctx.agent.get(`/api/transactions?scheduled_id=${schedId}&per_page=100`);
+    const pastBefore = (before.body.data as { date: string; amount: number }[]).filter(
+      (tx) => tx.date <= TODAY,
+    );
+    expect(pastBefore.length).toBeGreaterThan(0);
+
+    await ctx.agent
+      .put(`/api/scheduled/${schedId}`)
+      .send({ ...base, account_id: accountId, amount: 200, start_date: startDate });
+
+    const after = await ctx.agent.get(`/api/transactions?scheduled_id=${schedId}&per_page=100`);
+    const pastAfter = (after.body.data as { date: string; amount: number }[]).filter(
+      (tx) => tx.date <= TODAY,
+    );
+    expect(pastAfter.length).toBe(pastBefore.length);
+    expect(pastAfter.every((tx) => tx.amount === 100)).toBe(true);
   });
 
   it('PUT /:id returns 404 for unknown schedule', async () => {
