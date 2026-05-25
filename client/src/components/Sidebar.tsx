@@ -63,7 +63,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
   const { pathname } = useLocation();
   useEffect(() => {
     onMobileClose();
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, onMobileClose]);
 
   const accountsActive = useMatch({ path: '/accounts/:id', end: true }) !== null;
   const logoMap = useLogoMap();
@@ -92,7 +92,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         label: groupBy === 'bank' && key === '' ? t('no_bank') : key,
         accounts: accs,
       }));
-  }, [accounts, groupBy, bankSortOrder]);
+  }, [accounts, groupBy, bankSortOrder, t]);
   const soldeTotal = useMemo(
     () =>
       groups.reduce((t, g) => t + g.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0), 0),
