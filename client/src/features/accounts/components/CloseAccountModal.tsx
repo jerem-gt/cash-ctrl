@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { useCloseAccount } from '@/hooks/useAccounts';
@@ -13,6 +14,9 @@ interface Props {
 }
 
 export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
+
   const balance = Math.round(accountDisplayBalance(account) * 100) / 100;
   const needsTransfer = balance !== 0;
 
@@ -25,11 +29,11 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
 
   const handleSubmit = () => {
     if (needsTransfer && !transferToId) {
-      showToast('Choisissez un compte de destination.');
+      showToast(t('close_modal.err_no_destination'));
       return;
     }
     if (!closedAt) {
-      showToast('Renseignez la date de clôture.');
+      showToast(t('close_modal.err_no_date'));
       return;
     }
     closeAccount.mutate(
@@ -40,7 +44,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
       },
       {
         onSuccess: () => {
-          showToast('Compte clôturé ✓');
+          showToast(t('close_modal.success'));
           onClose();
         },
         onError: (e) => showToast(e.message),
@@ -51,25 +55,29 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-1">Clôturer le compte</h3>
+        <h3 className="font-sans text-xl mb-1">{t('close_modal.title')}</h3>
         <p className="text-sm text-stone-400 mb-5">{account.name}</p>
 
         {needsTransfer ? (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-800">
-            Ce compte a un solde de <span className="font-semibold">{fmtDec(balance)}</span>. Un
-            virement de clôture sera créé automatiquement.
+            <Trans
+              i18nKey="close_modal.balance_warning"
+              ns="accounts"
+              values={{ balance: fmtDec(balance) }}
+              components={{ bold: <span className="font-semibold" /> }}
+            />
           </div>
         ) : (
           <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 mb-5 text-sm text-stone-600">
-            Le solde est nul, la clôture peut être effectuée directement.
+            {t('close_modal.balance_zero')}
           </div>
         )}
 
         <div className="space-y-3">
           {needsTransfer && (
-            <FormGroup label="Virer le solde vers">
+            <FormGroup label={t('close_modal.transfer_to')}>
               <Select value={transferToId} onChange={(e) => setTransferToId(e.target.value)}>
-                <option value="">— Choisir un compte —</option>
+                <option value="">{t('close_modal.choose_account')}</option>
                 {transferTargets.map((a) => (
                   <option key={a.id} value={String(a.id)}>
                     {a.name}
@@ -79,14 +87,14 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
               </Select>
             </FormGroup>
           )}
-          <FormGroup label="Date de clôture">
+          <FormGroup label={t('close_modal.closing_date')}>
             <Input type="date" value={closedAt} onChange={(e) => setClosedAt(e.target.value)} />
           </FormGroup>
         </div>
 
         <div className="flex gap-2 justify-end pt-5">
           <Button type="button" onClick={onClose}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             type="button"
@@ -94,7 +102,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
             onClick={handleSubmit}
             disabled={closeAccount.isPending}
           >
-            {closeAccount.isPending ? '…' : 'Clôturer'}
+            {closeAccount.isPending ? tc('loading') : t('close_modal.close_btn')}
           </Button>
         </div>
       </div>
