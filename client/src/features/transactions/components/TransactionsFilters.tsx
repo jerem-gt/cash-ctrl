@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, Input, Select, Switch } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
@@ -38,6 +39,7 @@ export const TransactionsFilters = ({
   logoMap,
   showAccountSelect,
 }: FilterProps) => {
+  const { t } = useTranslation('transactions');
   const [descriptionInput, setDescriptionInput] = useState(filters.description_contains ?? '');
   const [amountMinInput, setAmountMinInput] = useState(filters.amount_min?.toString() ?? '');
   const [amountMaxInput, setAmountMaxInput] = useState(filters.amount_max?.toString() ?? '');
@@ -86,7 +88,7 @@ export const TransactionsFilters = ({
         <div className="relative flex-1 min-w-40 max-w-72">
           <Input
             type="text"
-            placeholder="Rechercher une description…"
+            placeholder={t('filters.description_placeholder')}
             value={descriptionInput}
             onChange={(e) => setDescriptionInput(e.target.value)}
             className={`h-9${descriptionInput ? ' pr-8' : ''}`}
@@ -98,7 +100,7 @@ export const TransactionsFilters = ({
                 setDescriptionInput('');
                 onFilterChange({ description_contains: undefined });
               }}
-              aria-label="Effacer la recherche"
+              aria-label={t('filters.clear_search')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
             >
               <X size={14} />
@@ -107,7 +109,7 @@ export const TransactionsFilters = ({
         </div>
 
         <Select
-          aria-label="Choisir un type"
+          aria-label={t('filters.type_label')}
           className="flex-1 min-w-32 max-w-44"
           value={filters.type ?? ''}
           onChange={(e) =>
@@ -116,9 +118,9 @@ export const TransactionsFilters = ({
             })
           }
         >
-          <option value="">Tous types</option>
-          <option value="income">Revenus</option>
-          <option value="expense">Dépenses</option>
+          <option value="">{t('filters.all_types')}</option>
+          <option value="income">{t('filters.income')}</option>
+          <option value="expense">{t('filters.expense')}</option>
         </Select>
 
         <button
@@ -126,7 +128,7 @@ export const TransactionsFilters = ({
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 transition-colors shrink-0"
         >
-          Filtres avancés
+          {t('filters.advanced_filters')}
           {activeAdvancedCount > 0 && (
             <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-stone-700 text-white text-[10px] font-medium leading-none">
               {activeAdvancedCount}
@@ -147,13 +149,13 @@ export const TransactionsFilters = ({
                 onChange={(v) => onFilterChange({ account_id: v ? Number.parseInt(v) : undefined })}
                 accounts={accounts}
                 logoMap={logoMap}
-                placeholder="Tous les comptes"
+                placeholder={t('filters.all_accounts')}
               />
             </div>
           )}
 
           <Select
-            aria-label="Choisir une catégorie"
+            aria-label={t('filters.category_label')}
             className="flex-1 min-w-32 max-w-50"
             value={String(filters.category_id ?? '')}
             onChange={(e) =>
@@ -163,7 +165,7 @@ export const TransactionsFilters = ({
               })
             }
           >
-            <option value="">Toutes catégories</option>
+            <option value="">{t('filters.all_categories')}</option>
             {categories.map((c) => (
               <option key={c.id} value={String(c.id)}>
                 {c.name}
@@ -172,7 +174,7 @@ export const TransactionsFilters = ({
           </Select>
 
           <Select
-            aria-label="Choisir une sous-catégorie"
+            aria-label={t('filters.subcategory_label')}
             disabled={!filters.category_id}
             className="flex-1 min-w-32 max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
             value={String(filters.subcategory_id ?? '')}
@@ -182,7 +184,7 @@ export const TransactionsFilters = ({
               })
             }
           >
-            <option value="">Toutes sous-catégories</option>
+            <option value="">{t('filters.all_subcategories')}</option>
             {subcategories.map((sub) => (
               <option key={sub.id} value={String(sub.id)}>
                 {sub.name}
@@ -192,7 +194,7 @@ export const TransactionsFilters = ({
 
           <Input
             type="date"
-            aria-label="Date de début"
+            aria-label={t('filters.date_from')}
             className="flex-1 min-w-32 max-w-40 h-9"
             value={filters.date_from ?? ''}
             onChange={(e) => onFilterChange({ date_from: e.target.value || undefined })}
@@ -200,30 +202,30 @@ export const TransactionsFilters = ({
 
           <Input
             type="date"
-            aria-label="Date de fin"
+            aria-label={t('filters.date_to')}
             className="flex-1 min-w-32 max-w-40 h-9"
             value={filters.date_to ?? ''}
             onChange={(e) => onFilterChange({ date_to: e.target.value || undefined })}
           />
 
           <DecimalInput
-            placeholder="Montant min €"
-            aria-label="Montant minimum"
+            placeholder={t('filters.amount_min')}
+            aria-label={t('filters.amount_min_label')}
             className="flex-1 min-w-28 max-w-36 h-9"
             value={amountMinInput}
             onChange={(e) => setAmountMinInput(e.target.value)}
           />
 
           <DecimalInput
-            placeholder="Montant max €"
-            aria-label="Montant maximum"
+            placeholder={t('filters.amount_max')}
+            aria-label={t('filters.amount_max_label')}
             className="flex-1 min-w-28 max-w-36 h-9"
             value={amountMaxInput}
             onChange={(e) => setAmountMaxInput(e.target.value)}
           />
 
           <Select
-            aria-label="Choisir un moyen de paiement"
+            aria-label={t('filters.payment_method_label')}
             className="flex-1 min-w-36 max-w-52"
             value={String(filters.payment_method_id ?? '')}
             onChange={(e) =>
@@ -232,7 +234,7 @@ export const TransactionsFilters = ({
               })
             }
           >
-            <option value="">Tous moyens de paiement</option>
+            <option value="">{t('filters.all_payment_methods')}</option>
             {paymentMethods.map((pm) => (
               <option key={pm.id} value={String(pm.id)}>
                 {pm.name}
@@ -243,7 +245,7 @@ export const TransactionsFilters = ({
           <Switch
             checked={filters.validated === false}
             onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
-            label="Non validées seulement"
+            label={t('filters.not_validated_only')}
           />
         </div>
       )}

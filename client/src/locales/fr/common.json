@@ -5,5 +5,21 @@
   "confirm": "Confirmer",
   "close": "Fermer",
   "loading": "…",
-  "error_generic": "Une erreur est survenue."
+  "error_generic": "Une erreur est survenue.",
+  "add": "Ajouter",
+  "edit": "Modifier",
+  "no_result": "Aucun résultat",
+  "search": "Rechercher…",
+  "back": "← Retour",
+  "choose": "— Choisir —",
+  "none": "— Aucun —",
+  "optional": "(optionnel)",
+  "amount": "Montant (€)",
+  "fees": "Frais (€)",
+  "date": "Date",
+  "transfer": "Transfert",
+  "validate": "Valider",
+  "mark_done": "Marquer comme terminé",
+  "error_import": "Erreur lors de l'importation :",
+  "all_select": "Tout sélectionner"
 }

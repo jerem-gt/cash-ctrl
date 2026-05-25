@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ProfitabilityCard } from '@/components/ProfitabilityCard';
@@ -15,6 +16,7 @@ import { useLogoMap } from '@/hooks/useLogoMap';
 import { useProfitability } from '@/hooks/useStats';
 
 function AccountDetailSkeleton() {
+  const { t } = useTranslation('accounts');
   return (
     <div className="space-y-5">
       <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
@@ -31,7 +33,7 @@ function AccountDetailSkeleton() {
         </div>
       </div>
       <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-        Transactions
+        {t('detail.transactions_label')}
       </p>
       <div className="flex flex-col gap-2">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
@@ -50,6 +52,7 @@ function AccountDetailSkeleton() {
 }
 
 export default function AccountDetailPage() {
+  const { t } = useTranslation('accounts');
   const { id } = useParams<{ id: string }>();
   const accountId = Number.parseInt(id ?? '0');
   const navigate = useNavigate();
@@ -90,9 +93,9 @@ export default function AccountDetailPage() {
           onClick={() => navigate('/accounts')}
           className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
         >
-          ← Comptes
+          {t('detail.not_found_back')}
         </button>
-        <p className="text-sm text-stone-400">Compte introuvable.</p>
+        <p className="text-sm text-stone-400">{t('detail.not_found')}</p>
       </div>
     );
   }
@@ -150,14 +153,14 @@ export default function AccountDetailPage() {
         <>
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-              Transactions
+              {t('detail.transactions_label')}
             </p>
             {isClosed && (
               <button
                 onClick={() => setTemporarilyUnlocked((v) => !v)}
                 className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors"
                 title={
-                  temporarilyUnlocked ? 'Repasser en lecture seule' : 'Modifier temporairement'
+                  temporarilyUnlocked ? t('detail.readonly_off_title') : t('detail.readonly_title')
                 }
               >
                 <span
@@ -167,7 +170,7 @@ export default function AccountDetailPage() {
                     className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${temporarilyUnlocked ? 'translate-x-3' : 'translate-x-0.5'}`}
                   />
                 </span>
-                {temporarilyUnlocked ? 'Modification temporaire' : 'Lecture seule'}
+                {temporarilyUnlocked ? t('detail.editing_mode') : t('detail.read_only')}
               </button>
             )}
           </div>
@@ -175,7 +178,7 @@ export default function AccountDetailPage() {
             key={account?.id}
             account={account}
             logoMap={logoMap}
-            emptyMessage="Aucune transaction sur ce compte"
+            emptyMessage={t('detail.empty_message')}
             readOnly={readOnly}
           />
         </>

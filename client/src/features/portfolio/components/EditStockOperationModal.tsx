@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateStockOperation } from '@/features/portfolio/hooks/useStocks';
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('portfolio');
+  const { t: tc } = useTranslation('common');
   const op = tx.stock_operation!;
   const update = useUpdateStockOperation(tx.account_id);
 
@@ -39,7 +42,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
       },
       {
         onSuccess: () => {
-          showToast('Opération modifiée ✓');
+          showToast(t('edit_operation_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -51,17 +54,17 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
 
   return (
     <ModalFrame
-      title="Modifier l'opération"
+      title={t('edit_operation_modal.title')}
       subtitle={
         <>
-          {isBuy ? 'Achat' : 'Vente'} —{' '}
-          <span className="font-mono font-bold text-stone-600">{op.ticker}</span>
+          {isBuy ? t('edit_operation_modal.subtitle_buy') : t('edit_operation_modal.subtitle_sell')}{' '}
+          — <span className="font-mono font-bold text-stone-600">{op.ticker}</span>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex gap-3">
-          <FormGroup label="Nombre d'actions" htmlFor="edit-op-quantity">
+          <FormGroup label={t('edit_operation_modal.quantity_label')} htmlFor="edit-op-quantity">
             <Input
               id="edit-op-quantity"
               type="number"
@@ -72,7 +75,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               autoFocus
             />
           </FormGroup>
-          <FormGroup label="Prix unitaire (€)" htmlFor="edit-op-price">
+          <FormGroup label={t('edit_operation_modal.price_label')} htmlFor="edit-op-price">
             <DecimalInput
               id="edit-op-price"
               value={price}
@@ -82,14 +85,14 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
         </div>
 
         <div className="flex gap-3">
-          <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
+          <FormGroup label={t('edit_operation_modal.fees_label')} htmlFor="edit-op-fees">
             <DecimalInput
               id="edit-op-fees"
               value={fees}
               onChange={(e) => setFees(e.target.value)}
             />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="edit-op-date">
+          <FormGroup label={tc('date')} htmlFor="edit-op-date">
             <Input
               id="edit-op-date"
               type="date"
@@ -101,7 +104,9 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
 
         <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
           <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
-            {isBuy ? 'Montant total' : 'Montant net reçu'}
+            {isBuy
+              ? t('edit_operation_modal.total_label')
+              : t('edit_operation_modal.total_received')}
           </p>
           <p className={`font-sans text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
             {totalAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
@@ -110,14 +115,14 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={update.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             type="submit"
             variant="primary"
             disabled={update.isPending || qty <= 0 || pps <= 0}
           >
-            {update.isPending ? '…' : 'Enregistrer'}
+            {update.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

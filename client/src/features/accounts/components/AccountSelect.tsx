@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { type FocusEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useClickOutside } from '@/features/accounts/hooks/useClickOutside';
 import { useBanks } from '@/hooks/useBanks';
@@ -38,8 +39,10 @@ export function AccountSelect({
   onChange,
   accounts,
   logoMap,
-  placeholder = '— Choisir —',
+  placeholder,
 }: Readonly<Props>) {
+  const { t } = useTranslation('accounts');
+  const resolvedPlaceholder = placeholder ?? t('bank_select.choose');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -173,7 +176,7 @@ export function AccountSelect({
             <span className="flex-1 truncate">{selected.name}</span>
           </>
         ) : (
-          <span className="flex-1">{placeholder}</span>
+          <span className="flex-1">{resolvedPlaceholder}</span>
         )}
         <ChevronDown size={16} />
       </button>
@@ -195,7 +198,7 @@ export function AccountSelect({
                   setFocusedIndex(-1);
                 }}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Rechercher…"
+                placeholder={t('select.search_placeholder')}
                 className="w-full px-2 py-1.5 text-sm bg-stone-50 rounded outline-none focus:bg-white transition-colors"
               />
             </div>
@@ -212,14 +215,14 @@ export function AccountSelect({
             onKeyDown={(e) => handleItemKeyDown(e, 0)}
             className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 focus:bg-stone-50 outline-none transition-colors text-left"
           >
-            {placeholder}
+            {resolvedPlaceholder}
           </button>
 
           {groups.map((group) => (
             <div key={group.bank ?? '__none__'}>
               {groups.length > 1 && (
                 <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-400 select-none">
-                  {group.bank ?? 'Sans banque'}
+                  {group.bank ?? t('select.no_bank')}
                 </p>
               )}
               {group.accounts.map((a) => {
@@ -249,7 +252,7 @@ export function AccountSelect({
           ))}
 
           {filtered.length === 0 && (
-            <p className="px-3 py-2 text-sm text-stone-400 italic">Aucun résultat</p>
+            <p className="px-3 py-2 text-sm text-stone-400 italic">{t('select.no_result')}</p>
           )}
         </div>
       )}

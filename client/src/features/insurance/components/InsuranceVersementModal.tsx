@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function InsuranceVersementModal({ accountId, support, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
   const [fees, setFees] = useState('0');
   const [date, setDate] = useState(today());
@@ -39,7 +42,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
       },
       {
         onSuccess: () => {
-          showToast('Versement enregistré ✓');
+          showToast(t('versement_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -48,9 +51,9 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
   };
 
   return (
-    <ModalFrame title={`Versement — ${support.name}`}>
+    <ModalFrame title={t('versement_modal.title', { support: support.name })}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormGroup label="Montant versé (€)" htmlFor="vers-amount">
+        <FormGroup label={t('versement_modal.amount_label')} htmlFor="vers-amount">
           <DecimalInput
             id="vers-amount"
             value={amount}
@@ -66,9 +69,9 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
               htmlFor="vers-source"
               className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
             >
-              <span>Depuis le compte</span>
+              <span>{t('versement_modal.source_account_label')}</span>
               <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
-                (optionnel)
+                {tc('optional')}
               </span>
             </label>
             <AccountSelect
@@ -77,16 +80,16 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
               onChange={setSourceAccountId}
               accounts={sourceAccounts}
               logoMap={logoMap}
-              placeholder="— Aucun —"
+              placeholder={tc('none')}
             />
           </div>
         )}
 
         <div className="flex gap-3">
-          <FormGroup label="Frais (€)" htmlFor="vers-fees">
+          <FormGroup label={t('versement_modal.fees_label')} htmlFor="vers-fees">
             <DecimalInput id="vers-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="vers-date">
+          <FormGroup label={tc('date')} htmlFor="vers-date">
             <Input
               id="vers-date"
               type="date"
@@ -99,10 +102,10 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={versement.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button variant="primary" type="submit" disabled={!amount || versement.isPending}>
-            {versement.isPending ? '…' : 'Enregistrer'}
+            {versement.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

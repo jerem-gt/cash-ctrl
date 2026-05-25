@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useInterets } from '@/features/insurance/hooks/useInsurance';
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const interets = useInterets(accountId);
@@ -22,7 +25,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
       { support_id: support.id, amount: Number.parseFloat(amount), date },
       {
         onSuccess: () => {
-          showToast('Intérêts enregistrés ✓');
+          showToast(t('interets_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -31,9 +34,9 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
   };
 
   return (
-    <ModalFrame title={`Intérêts — ${support.name}`}>
+    <ModalFrame title={t('interets_modal.title', { support: support.name })}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormGroup label="Montant des intérêts (€)" htmlFor="interets-amount">
+        <FormGroup label={t('interets_modal.amount_label')} htmlFor="interets-amount">
           <DecimalInput
             id="interets-amount"
             value={amount}
@@ -42,12 +45,12 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
             autoFocus
           />
           <p className="text-[10px] text-stone-400 mt-1">
-            Solde actuel :{' '}
+            {t('interets_modal.current_balance')}{' '}
             {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
           </p>
         </FormGroup>
 
-        <FormGroup label="Date" htmlFor="interets-date">
+        <FormGroup label={tc('date')} htmlFor="interets-date">
           <Input
             id="interets-date"
             type="date"
@@ -59,10 +62,10 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={interets.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button variant="primary" type="submit" disabled={!amount || interets.isPending}>
-            Enregistrer
+            {tc('save')}
           </Button>
         </div>
       </form>

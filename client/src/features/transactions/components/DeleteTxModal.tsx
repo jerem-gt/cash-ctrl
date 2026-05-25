@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { ConfirmModal } from '@/components/ui';
 import type { Transaction } from '@/types';
 
@@ -9,15 +11,12 @@ interface Props {
 }
 
 export function DeleteTxModal({ tx, onConfirm, onCancel, isPending }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
   const isTransfer = tx.transfer_peer_id !== null;
   return (
     <ConfirmModal
-      title={isTransfer ? 'Supprimer le transfert' : 'Supprimer la transaction'}
-      body={
-        isTransfer
-          ? 'Les deux côtés du transfert seront supprimés. Cette action est irréversible.'
-          : 'Cette action est irréversible. Confirmer la suppression ?'
-      }
+      title={isTransfer ? t('delete_modal.title_transfer') : t('delete_modal.title_tx')}
+      body={isTransfer ? t('delete_modal.body_transfer') : t('delete_modal.body_tx')}
       onConfirm={onConfirm}
       onCancel={onCancel}
       isPending={isPending}

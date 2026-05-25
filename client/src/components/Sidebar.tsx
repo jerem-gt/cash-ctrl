@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 
 import { Tabs } from '@/components/ui';
@@ -17,10 +18,10 @@ import { fmt } from '@/lib/format';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 import type { Account } from '@/types';
 
-const NAV_BOTTOM = [
-  { to: '/transactions', label: 'Toutes les transactions', icon: '▣', end: true },
-  { to: '/scheduled', label: 'Planifications', icon: '🗓' },
-  { to: '/settings', label: 'Configuration', icon: '⚙' },
+const NAV_BOTTOM_ITEMS = [
+  { to: '/transactions', key: 'all_transactions' as const, icon: '▣', end: true },
+  { to: '/scheduled', key: 'scheduled' as const, icon: '🗓' },
+  { to: '/settings', key: 'settings' as const, icon: '⚙' },
 ];
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>) {
+  const { t } = useTranslation('sidebar');
   const qc = useQueryClient();
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
@@ -87,7 +89,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         return a.localeCompare(b);
       })
       .map(([key, accs]) => ({
-        label: groupBy === 'bank' && key === '' ? 'Sans banque' : key,
+        label: groupBy === 'bank' && key === '' ? t('no_bank') : key,
         accounts: accs,
       }));
   }, [accounts, groupBy, bankSortOrder]);
@@ -114,7 +116,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         <button
           onClick={onMobileClose}
           className="absolute top-4 right-4 p-1.5 text-white/30 hover:text-white/70 transition-colors rounded-md hover:bg-white/5 md:hidden"
-          aria-label="Fermer le menu"
+          aria-label={t('close_menu')}
         >
           <X className="h-5 w-5" />
         </button>
@@ -124,13 +126,15 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
             <img src="/favicon.svg" alt="logo cash-ctrl" className="h-[2em] w-auto" />
             {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
           </h1>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/30 mt-1">Suivi Personnel</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-white/30 mt-1">
+            {t('personal_tracking')}
+          </p>
         </NavLink>
 
         {/* Solde */}
         <div className="flex flex-col items-center py-6 border border-white/5">
           <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">
-            Patrimoine Net
+            {t('patrimony_net')}
           </span>
           <span className="text-4xl font-bold text-white tracking-tight">{fmt(soldeTotal)}</span>
         </div>
@@ -142,7 +146,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
               to="/accounts"
               className="flex items-center justify-between px-6 py-2 text-xs uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors font-semibold"
             >
-              <span>Comptes</span>
+              <span>{t('accounts_section')}</span>
             </NavLink>
             {/* Comptes */}
             <div
@@ -156,8 +160,8 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                 <Tabs
                   variant="dark"
                   tabs={[
-                    { key: 'bank', label: 'Banque' },
-                    { key: 'type', label: 'Type' },
+                    { key: 'bank', label: t('group_bank') },
+                    { key: 'type', label: t('group_type') },
                   ]}
                   active={groupBy}
                   onChange={(key) => setGroupBy(key as 'bank' | 'type')}
@@ -183,7 +187,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                             </span>
                             <button
                               onClick={() => toggleGroup(group.label)}
-                              aria-label={isCollapsed ? 'Réduire' : 'Développer'}
+                              aria-label={isCollapsed ? t('collapse') : t('expand')}
                               className="px-1.5 py-2.5 text-xs text-white/25 hover:text-white/60 transition-colors"
                             >
                               {isCollapsed ? '▾' : '▸'}
@@ -248,7 +252,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                 aria-hidden="true"
               />
               <div className="absolute bottom-full left-0 right-0 z-20 bg-sidebar-bg border-t border-white/[0.07] py-1">
-                {NAV_BOTTOM.map(({ to, label, icon, end }) => (
+                {NAV_BOTTOM_ITEMS.map(({ to, key, icon, end }) => (
                   <NavLink
                     key={to}
                     to={to}
@@ -258,7 +262,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                     onMouseEnter={() => prefetchForRoute(qc, to)}
                   >
                     <span className="text-base w-5 text-center opacity-80">{icon}</span>
-                    {label}
+                    {t(key)}
                   </NavLink>
                 ))}
               </div>
@@ -268,21 +272,21 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
           <div className="p-4 flex items-center justify-between">
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium text-white/70 truncate">{username}</span>
-              <span className="text-xs text-white/30">Session active</span>
+              <span className="text-xs text-white/30">{t('active_session')}</span>
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className={`p-2 transition-colors rounded-md hover:bg-white/5 ${menuOpen ? 'text-white/70' : 'text-white/30 hover:text-white/70'}`}
-                title="Menu"
+                title={t('menu_title')}
               >
                 <span className="text-lg">⚙</span>
               </button>
               <button
                 onClick={() => logout.mutate()}
                 className="p-2 text-white/30 hover:text-red-400/80 transition-colors rounded-md hover:bg-white/5"
-                title="Déconnexion"
+                title={t('logout_title')}
               >
                 <span className="text-lg">⏻</span>
               </button>

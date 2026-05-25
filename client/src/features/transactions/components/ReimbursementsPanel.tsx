@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Select, showToast } from '@/components/ui';
 import {
@@ -20,6 +21,7 @@ function AmountCell({
   reimbursement,
   onSave,
 }: Readonly<{ reimbursement: Reimbursement; onSave: (amount: number | null) => void }>) {
+  const { t } = useTranslation('transactions');
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
 
@@ -76,7 +78,7 @@ function AmountCell({
       type="button"
       onClick={handleStartEdit}
       className="text-right shrink-0 group"
-      title="Modifier le montant attribué"
+      title={t('reimbursements_panel.edit_amount_title')}
     >
       <span className="text-xs font-medium text-green-700 tabular-nums group-hover:underline decoration-dotted">
         +{fmtDec(reimbursement.amount)}
@@ -91,6 +93,8 @@ function AmountCell({
 }
 
 export function ReimbursementsPanel({ tx }: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
+  const { t: tc } = useTranslation('common');
   const [localStatus, setLocalStatus] = useState<'en_attente' | 'rembourse' | null>(
     tx.reimbursement_status,
   );
@@ -156,7 +160,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           setSelectedTxId('');
           setAttributedAmount('');
           setShowAdd(false);
-          showToast('Remboursement lié ✓');
+          showToast(t('reimbursements_panel.link_success'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -177,7 +181,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
     <div className="border-t border-black/[0.07] pt-4 mt-1">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-medium uppercase tracking-widest text-stone-400">
-          Suivi remboursement
+          {t('reimbursements_panel.label')}
         </p>
         <button
           type="button"
@@ -189,7 +193,9 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
           }`}
         >
-          {localStatus === null ? 'Activer' : '↩ Actif'}
+          {localStatus === null
+            ? t('reimbursements_panel.activate')
+            : t('reimbursements_panel.active')}
         </button>
       </div>
 
@@ -206,7 +212,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                   : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
               }`}
             >
-              En attente
+              {t('reimbursements_panel.pending')}
             </button>
             <button
               type="button"
@@ -217,7 +223,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                   : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
               }`}
             >
-              Remboursement terminé
+              {t('reimbursements_panel.done')}
             </button>
           </div>
 
@@ -244,7 +250,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                     onClick={() => handleUnlink(r.id)}
                     disabled={unlink.isPending}
                     className="text-stone-300 hover:text-red-400 transition-colors text-base leading-none px-1 shrink-0"
-                    title="Délier"
+                    title={t('reimbursements_panel.unlink_title')}
                   >
                     ×
                   </button>
@@ -256,7 +262,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           {/* Reste à charge */}
           <div className="flex items-center justify-between px-3 py-2 bg-stone-50 rounded-lg border border-black/6">
             <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
-              Reste à charge
+              {t('reimbursements_panel.remaining_label')}
             </span>
             <span
               className={`text-sm font-medium tabular-nums ${remaining > 0 ? 'text-red-700' : 'text-green-700'}`}
@@ -271,9 +277,9 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           {/* Lier un remboursement */}
           {showAdd ? (
             <div className="space-y-2">
-              <FormGroup label="Transaction de revenu">
+              <FormGroup label={t('reimbursements_panel.income_tx')}>
                 <Select value={selectedTxId} onChange={(e) => handleTxSelect(e.target.value)}>
-                  <option value="">— Choisir —</option>
+                  <option value="">{t('reimbursements_panel.choose')}</option>
                   {incomeTransactions.map((t) => {
                     const remaining = t.remaining_reimbursable ?? t.amount;
                     const isPartial = remaining < t.amount - 0.001;
@@ -289,7 +295,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                 </Select>
               </FormGroup>
               {selectedTx != null && (
-                <FormGroup label="Montant attribué">
+                <FormGroup label={t('reimbursements_panel.attributed_amount')}>
                   <DecimalInput
                     value={attributedAmount}
                     onChange={(e) => setAttributedAmount(e.target.value)}
@@ -304,7 +310,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                   onClick={handleLink}
                   disabled={!selectedTxId || link.isPending}
                 >
-                  Lier
+                  {t('reimbursements_panel.link_btn')}
                 </Button>
                 <Button
                   type="button"
@@ -315,7 +321,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                     setAttributedAmount('');
                   }}
                 >
-                  Annuler
+                  {tc('cancel')}
                 </Button>
               </div>
             </div>
@@ -325,7 +331,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               onClick={() => setShowAdd(true)}
               className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-all"
             >
-              + Lier un remboursement
+              {t('reimbursements_panel.add_reimbursement')}
             </button>
           )}
         </div>

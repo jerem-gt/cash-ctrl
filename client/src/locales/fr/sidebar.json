@@ -1,0 +1,17 @@
+{
+  "all_transactions": "Toutes les transactions",
+  "scheduled": "Planifications",
+  "settings": "Configuration",
+  "accounts_section": "Comptes",
+  "patrimony_net": "Patrimoine Net",
+  "personal_tracking": "Suivi Personnel",
+  "close_menu": "Fermer le menu",
+  "active_session": "Session active",
+  "menu_title": "Menu",
+  "logout_title": "Déconnexion",
+  "collapse": "Réduire",
+  "expand": "Développer",
+  "no_bank": "Sans banque",
+  "group_bank": "Banque",
+  "group_type": "Type"
+}

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { ReimbursementStatus } from '@/types.ts';
 
 interface ReimbStatusProps {
@@ -6,11 +8,13 @@ interface ReimbStatusProps {
 }
 
 export function ReimbursementStatusPicker({ status, onChange }: Readonly<ReimbStatusProps>) {
+  const { t } = useTranslation('transactions');
+
   return (
     <div className="border-t border-black/[0.07] pt-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-[11px] font-medium uppercase tracking-widest text-stone-400">
-          Suivi remboursement
+          {t('reimbursement_status.label')}
         </p>
         <button
           type="button"
@@ -21,7 +25,7 @@ export function ReimbursementStatusPicker({ status, onChange }: Readonly<ReimbSt
               : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
           }`}
         >
-          {status === null ? 'Activer' : '⚕ Actif'}
+          {status === null ? t('reimbursement_status.activate') : t('reimbursement_status.active')}
         </button>
       </div>
       {status !== null && (
@@ -35,7 +39,7 @@ export function ReimbursementStatusPicker({ status, onChange }: Readonly<ReimbSt
                 : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
             }`}
           >
-            En attente
+            {t('reimbursement_status.pending')}
           </button>
           <button
             type="button"
@@ -46,7 +50,7 @@ export function ReimbursementStatusPicker({ status, onChange }: Readonly<ReimbSt
                 : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
             }`}
           >
-            Remboursement terminé
+            {t('reimbursement_status.done')}
           </button>
         </div>
       )}

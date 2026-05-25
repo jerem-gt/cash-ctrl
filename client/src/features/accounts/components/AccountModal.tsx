@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { BankSelect } from '@/features/accounts/components/BankSelect';
@@ -29,12 +30,9 @@ type EditProps = BaseProps & {
 
 type Props = CreateProps | EditProps;
 
-function getSubmitLabel(isPending: boolean, isEdit: boolean): string {
-  if (isPending) return '…';
-  return isEdit ? 'Enregistrer' : 'Créer';
-}
-
 export function AccountModal(props: Readonly<Props>) {
+  const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const { banks, accountTypes, onClose } = props;
   const isEdit = props.mode === 'edit';
 
@@ -58,11 +56,11 @@ export function AccountModal(props: Readonly<Props>) {
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      showToast('Donnez un nom au compte.');
+      showToast(t('modal.err_no_name'));
       return;
     }
     if (!isEdit && !form.bank_id) {
-      showToast('Choisissez une banque.');
+      showToast(t('modal.err_no_bank'));
       return;
     }
     if (isEdit) {
@@ -80,7 +78,7 @@ export function AccountModal(props: Readonly<Props>) {
       },
       {
         onSuccess: () => {
-          showToast('Compte créé ✓');
+          showToast(t('modal.success_create'));
           onClose();
         },
         onError: (e) => showToast(e.message),
@@ -90,48 +88,57 @@ export function AccountModal(props: Readonly<Props>) {
 
   const isPending = isEdit ? (props as EditProps).isPending : createAccount.isPending;
 
+  let submitLabel: string;
+  if (isPending) {
+    submitLabel = tc('loading');
+  } else if (isEdit) {
+    submitLabel = t('modal.submit_edit');
+  } else {
+    submitLabel = t('modal.submit_create');
+  }
+
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
         <h3 className="font-sans text-xl mb-5">
-          {isEdit ? 'Modifier le compte' : 'Ajouter un compte'}
+          {isEdit ? t('modal.title_edit') : t('modal.title_create')}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <FormGroup label="Nom du compte">
+          <FormGroup label={t('modal.name')}>
             <Input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Ex : Compte courant"
+              placeholder={t('modal.name_placeholder')}
             />
           </FormGroup>
-          <FormGroup label="Banque">
+          <FormGroup label={t('modal.bank')}>
             <BankSelect
               value={form.bank_id}
               onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
               banks={banks}
             />
           </FormGroup>
-          <FormGroup label="Type">
+          <FormGroup label={t('modal.type')}>
             <Select
               value={effectiveAccountTypeId}
               onChange={(e) => setForm((f) => ({ ...f, account_type_id: e.target.value }))}
             >
-              {accountTypes.map((t) => (
-                <option key={t.id} value={String(t.id)}>
-                  {t.name}
+              {accountTypes.map((accountType) => (
+                <option key={accountType.id} value={String(accountType.id)}>
+                  {accountType.name}
                 </option>
               ))}
             </Select>
           </FormGroup>
-          <FormGroup label="Solde initial (€)">
+          <FormGroup label={t('modal.initial_balance')}>
             <DecimalInput
               value={form.initial_balance}
               onChange={(e) => setForm((f) => ({ ...f, initial_balance: e.target.value }))}
               placeholder="0,00"
             />
           </FormGroup>
-          <FormGroup label="Date d'ouverture">
+          <FormGroup label={t('modal.opening_date')}>
             <Input
               type="date"
               aria-label="opening-date"
@@ -141,10 +148,10 @@ export function AccountModal(props: Readonly<Props>) {
           </FormGroup>
           <div className="flex gap-2 justify-end pt-2">
             <Button type="button" onClick={onClose}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
-              {getSubmitLabel(isPending, isEdit)}
+              {submitLabel}
             </Button>
           </div>
         </form>

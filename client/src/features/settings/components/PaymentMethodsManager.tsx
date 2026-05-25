@@ -1,4 +1,5 @@
 import { SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
@@ -16,6 +17,8 @@ function PaymentMethodEditForm({
   pm,
   onClose,
 }: Readonly<{ pm: PaymentMethod; onClose: () => void }>) {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const updatePm = useUpdatePaymentMethod();
   const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
 
@@ -29,7 +32,7 @@ function PaymentMethodEditForm({
           {
             onSuccess: () => {
               onClose();
-              showToast('Moyen de paiement mis à jour ✓');
+              showToast(t('payment_methods.success_edit'));
             },
             onError: (err) => showToast(err.message),
           },
@@ -38,7 +41,7 @@ function PaymentMethodEditForm({
       className="flex flex-col gap-3"
     >
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-        Modifier le moyen de paiement
+        {t('payment_methods.edit_title')}
       </p>
       <div className="flex items-center gap-3">
         <input
@@ -63,14 +66,14 @@ function PaymentMethodEditForm({
           disabled={updatePm.isPending}
           className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
-          {updatePm.isPending ? '…' : 'Enregistrer'}
+          {updatePm.isPending ? tc('loading') : tc('save')}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
         >
-          Annuler
+          {tc('cancel')}
         </button>
       </div>
     </form>
@@ -78,6 +81,7 @@ function PaymentMethodEditForm({
 }
 
 function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
+  const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deletePm = useDeletePaymentMethod();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
@@ -94,11 +98,11 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
         canDelete={txCount === 0}
         onDelete={() =>
           requestDelete(
-            'Supprimer le moyen de paiement',
-            'Confirmer la suppression ?',
+            t('payment_methods.delete_title'),
+            t('payment_methods.delete_body'),
             pm.id,
             deletePm.mutate,
-            'Moyen de paiement supprimé',
+            t('payment_methods.deleted'),
           )
         }
         isEditing={editing}
@@ -111,6 +115,8 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
 }
 
 export function PaymentMethodsManager() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const { data: paymentMethods = [], isLoading: pmsLoading } = usePaymentMethods();
   const createPaymentMethod = useCreatePaymentMethod();
   const [newPm, setNewPm] = useState({ name: '', icon: '' });
@@ -120,7 +126,7 @@ export function PaymentMethodsManager() {
   const handleAddPaymentMethod = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newPm.name.trim()) {
-      showToast('Donnez un nom au moyen de paiement.');
+      showToast(t('payment_methods.err_no_name'));
       return;
     }
     createPaymentMethod.mutate(
@@ -128,7 +134,7 @@ export function PaymentMethodsManager() {
       {
         onSuccess: () => {
           setNewPm({ name: '', icon: '' });
-          showToast('Moyen de paiement ajouté ✓');
+          showToast(t('payment_methods.success_add'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -138,11 +144,11 @@ export function PaymentMethodsManager() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-        Moyens de paiement
+        {t('payment_methods.title')}
       </p>
       <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
         <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
-          Nouveau moyen de paiement
+          {t('payment_methods.new_title')}
         </p>
         <form onSubmit={handleAddPaymentMethod} className="flex items-center gap-2">
           <input
@@ -157,14 +163,14 @@ export function PaymentMethodsManager() {
             value={newPm.name}
             onChange={(e) => setNewPm((f) => ({ ...f, name: e.target.value }))}
             className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-            placeholder="Ex : Espèces"
+            placeholder={t('payment_methods.name_placeholder')}
           />
           <button
             type="submit"
             disabled={createPaymentMethod.isPending}
             className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30 shrink-0"
           >
-            {createPaymentMethod.isPending ? '…' : 'Ajouter'}
+            {createPaymentMethod.isPending ? tc('loading') : tc('add')}
           </button>
         </form>
       </div>

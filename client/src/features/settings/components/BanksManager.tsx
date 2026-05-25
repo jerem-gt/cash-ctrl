@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
 import { GripVertical } from 'lucide-react';
 import { ChangeEvent, SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
@@ -34,6 +35,8 @@ import {
 import { Bank } from '@/types.ts';
 
 function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => void }>) {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const updateBank = useUpdateBank();
   const uploadLogo = useUploadBankLogo();
   const [name, setName] = useState(bank.name);
@@ -70,7 +73,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
             if (prev) URL.revokeObjectURL(prev);
             return null;
           });
-          showToast('Banque mise à jour ✓');
+          showToast(t('banks.success_edit'));
         } catch (err) {
           showToast((err as Error).message);
         }
@@ -78,7 +81,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
       className="flex flex-col gap-3"
     >
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-        Modifier la banque
+        {t('banks.edit_title')}
       </p>
       <input
         type="text"
@@ -93,7 +96,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
         value={domain}
         onChange={(e) => setDomain(e.target.value)}
         className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
-        placeholder="Domaine (ex : boursobank.com)"
+        placeholder={t('banks.domain_edit_placeholder')}
       />
       <div className="flex items-center gap-2">
         {logoSrc && (
@@ -105,7 +108,9 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
           />
         )}
         <label className="cursor-pointer">
-          <span className="text-xs text-stone-400">{file ? file.name : 'Choisir un logo…'}</span>
+          <span className="text-xs text-stone-400">
+            {file ? file.name : t('banks.logo_choose')}
+          </span>
           <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </label>
       </div>
@@ -115,7 +120,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
           disabled={updateBank.isPending || uploadLogo.isPending}
           className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
-          {updateBank.isPending || uploadLogo.isPending ? '…' : 'Enregistrer'}
+          {updateBank.isPending || uploadLogo.isPending ? tc('loading') : tc('save')}
         </button>
         <button
           type="button"
@@ -129,7 +134,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
           }}
           className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
         >
-          Annuler
+          {tc('cancel')}
         </button>
       </div>
     </form>
@@ -137,6 +142,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
 }
 
 function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
+  const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteBank = useDeleteBank();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
@@ -185,7 +191,9 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
             '🏦'
           )
         }
-        subtitle={<p className="text-[10px] text-stone-400">{bank.domain ?? 'Aucun domaine'}</p>}
+        subtitle={
+          <p className="text-[10px] text-stone-400">{bank.domain ?? t('banks.no_domain')}</p>
+        }
         badge={
           accCount > 0 ? (
             <span className="text-[10px] font-bold text-stone-300 tabular-nums shrink-0">
@@ -196,11 +204,11 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
         canDelete={accCount === 0}
         onDelete={() =>
           requestDelete(
-            'Supprimer la banque',
-            'Les comptes existants garderont leur banque actuelle. Confirmer ?',
+            t('banks.delete_title'),
+            t('banks.delete_body'),
             bank.id,
             deleteBank.mutate,
-            'Banque supprimée',
+            t('banks.deleted'),
           )
         }
         isEditing={editing}
@@ -213,6 +221,8 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
 }
 
 export function BanksManager() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const { data: banks = [], isLoading: banksLoading } = useBanks();
   const createBank = useCreateBank();
   const reorderBanks = useReorderBanks();
@@ -229,7 +239,7 @@ export function BanksManager() {
   const handleAddBank = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newBank.name.trim()) {
-      showToast('Donnez un nom à la banque.');
+      showToast(t('banks.err_no_name'));
       return;
     }
     createBank.mutate(
@@ -237,7 +247,7 @@ export function BanksManager() {
       {
         onSuccess: () => {
           setNewBank({ name: '', domain: '' });
-          showToast('Banque ajoutée ✓');
+          showToast(t('banks.success_add'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -261,23 +271,27 @@ export function BanksManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Banques</p>
+      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+        {t('banks.title')}
+      </p>
       <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">Nouvelle banque</p>
+        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
+          {t('banks.new_title')}
+        </p>
         <form onSubmit={handleAddBank} className="flex flex-col gap-2">
           <input
             type="text"
             value={newBank.name}
             onChange={(e) => setNewBank((f) => ({ ...f, name: e.target.value }))}
             className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-            placeholder="Nom (ex : Fortuneo)"
+            placeholder={t('banks.name_placeholder')}
           />
           <input
             type="text"
             value={newBank.domain}
             onChange={(e) => setNewBank((f) => ({ ...f, domain: e.target.value }))}
             className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-            placeholder="Domaine (ex : fortuneo.fr)"
+            placeholder={t('banks.domain_placeholder')}
           />
           <div className="flex justify-end mt-1">
             <button
@@ -285,7 +299,7 @@ export function BanksManager() {
               disabled={createBank.isPending}
               className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
             >
-              {createBank.isPending ? '…' : 'Ajouter'}
+              {createBank.isPending ? tc('loading') : tc('add')}
             </button>
           </div>
         </form>

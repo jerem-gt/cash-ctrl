@@ -1,4 +1,5 @@
 import { SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
@@ -12,13 +13,6 @@ import {
 } from '@/hooks/useAccountTypes.ts';
 import { AccountType } from '@/types.ts';
 
-const ENVELOPE_LABELS: Record<string, string> = {
-  investment: 'Investissement',
-  loan: 'Prêt',
-  life_insurance: 'Assurance Vie',
-  per: 'PER',
-};
-
 const ENVELOPE_BADGE_CLASSES: Record<string, string> = {
   investment: 'bg-indigo-50 text-indigo-500 border border-indigo-200',
   loan: 'bg-amber-50 text-amber-700 border border-amber-200',
@@ -26,18 +20,20 @@ const ENVELOPE_BADGE_CLASSES: Record<string, string> = {
   per: 'bg-blue-50 text-blue-700 border border-blue-200',
 };
 
-const ENVELOPE_OPTIONS = [
-  { value: '', label: 'Aucune' },
-  { value: 'investment', label: 'Investissement' },
-  { value: 'loan', label: 'Prêt' },
-  { value: 'life_insurance', label: 'Assurance Vie' },
-  { value: 'per', label: 'PER' },
-];
-
 function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClose: () => void }>) {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const updateAt = useUpdateAccountType();
   const [name, setName] = useState(at.name);
   const [envelopeType, setEnvelopeType] = useState(at.envelope_type ?? '');
+
+  const envelopeOptions = [
+    { value: '', label: t('account_types.none_envelope') },
+    { value: 'investment', label: t('account_types.investment') },
+    { value: 'loan', label: t('account_types.loan') },
+    { value: 'life_insurance', label: t('account_types.life_insurance') },
+    { value: 'per', label: t('account_types.per') },
+  ];
 
   return (
     <form
@@ -49,7 +45,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
           {
             onSuccess: () => {
               onClose();
-              showToast('Type mis à jour ✓');
+              showToast(t('account_types.success_edit'));
             },
             onError: (err) => showToast(err.message),
           },
@@ -58,7 +54,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
       className="flex flex-col gap-3"
     >
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-        Modifier le type
+        {t('account_types.edit_title')}
       </p>
       <input
         type="text"
@@ -73,7 +69,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
           htmlFor={`edit-at-envelope-${at.id}`}
           className="text-[11px] text-stone-500 block mb-1"
         >
-          Enveloppe
+          {t('account_types.envelope_label')}
         </label>
         <select
           id={`edit-at-envelope-${at.id}`}
@@ -81,7 +77,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
           onChange={(e) => setEnvelopeType(e.target.value)}
           className="text-sm border border-black/10 rounded-lg px-2 py-1.5 bg-white w-full focus:outline-none"
         >
-          {ENVELOPE_OPTIONS.map((o) => (
+          {envelopeOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -94,14 +90,14 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
           disabled={updateAt.isPending}
           className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
-          {updateAt.isPending ? '…' : 'Enregistrer'}
+          {updateAt.isPending ? tc('loading') : tc('save')}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
         >
-          Annuler
+          {tc('cancel')}
         </button>
       </div>
     </form>
@@ -109,10 +105,18 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
 }
 
 function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
+  const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteAt = useDeleteAccountType();
   const { requestDelete, DeleteConfirmModal } = useDeleteConfirmation(showToast);
   const accCount = at.acc_count ?? 0;
+
+  const envelopeLabels: Record<string, string> = {
+    investment: t('account_types.investment'),
+    loan: t('account_types.loan'),
+    life_insurance: t('account_types.life_insurance'),
+    per: t('account_types.per'),
+  };
 
   return (
     <>
@@ -124,7 +128,7 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
             <span
               className={`text-[10px] rounded px-1.5 py-0.5 font-medium ${ENVELOPE_BADGE_CLASSES[at.envelope_type] ?? 'bg-stone-50 text-stone-500 border border-stone-200'}`}
             >
-              {ENVELOPE_LABELS[at.envelope_type] ?? at.envelope_type}
+              {envelopeLabels[at.envelope_type] ?? at.envelope_type}
             </span>
           ) : (
             <span className="text-[10px] text-stone-300">—</span>
@@ -140,11 +144,11 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
         canDelete={accCount === 0}
         onDelete={() =>
           requestDelete(
-            'Supprimer le type de compte',
-            'Les comptes existants garderont leur type actuel. Confirmer ?',
+            t('account_types.delete_title'),
+            t('account_types.delete_body'),
             at.id,
             deleteAt.mutate,
-            'Type supprimé',
+            t('account_types.deleted'),
           )
         }
         isEditing={editing}
@@ -157,6 +161,8 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
 }
 
 export function AccountTypesManager() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const { data: accountTypes = [], isLoading: atsLoading } = useAccountTypes();
   const createAccountType = useCreateAccountType();
   const [newAtName, setNewAtName] = useState('');
@@ -164,10 +170,18 @@ export function AccountTypesManager() {
 
   if (atsLoading) return <SettingsManagerSkeleton />;
 
+  const envelopeOptions = [
+    { value: '', label: t('account_types.none_envelope') },
+    { value: 'investment', label: t('account_types.investment') },
+    { value: 'loan', label: t('account_types.loan') },
+    { value: 'life_insurance', label: t('account_types.life_insurance') },
+    { value: 'per', label: t('account_types.per') },
+  ];
+
   const handleAddAccountType = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newAtName.trim()) {
-      showToast('Donnez un nom au type.');
+      showToast(t('account_types.err_no_name'));
       return;
     }
     createAccountType.mutate(
@@ -176,7 +190,7 @@ export function AccountTypesManager() {
         onSuccess: () => {
           setNewAtName('');
           setNewAtEnvelopeType('');
-          showToast('Type ajouté ✓');
+          showToast(t('account_types.success_add'));
         },
         onError: (err) => showToast(err.message),
       },
@@ -186,10 +200,12 @@ export function AccountTypesManager() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-        Types de compte
+        {t('account_types.title')}
       </p>
       <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">Nouveau type</p>
+        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
+          {t('account_types.new_title')}
+        </p>
         <form onSubmit={handleAddAccountType} className="flex items-center gap-2">
           <input
             type="text"
@@ -203,12 +219,12 @@ export function AccountTypesManager() {
             disabled={createAccountType.isPending}
             className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30 shrink-0"
           >
-            {createAccountType.isPending ? '…' : 'Ajouter'}
+            {createAccountType.isPending ? tc('loading') : tc('add')}
           </button>
         </form>
         <div className="mt-2 ml-1">
           <label htmlFor="new-at-envelope" className="text-[11px] text-stone-500 block mb-1">
-            Enveloppe
+            {t('account_types.envelope_label')}
           </label>
           <select
             id="new-at-envelope"
@@ -216,7 +232,7 @@ export function AccountTypesManager() {
             onChange={(e) => setNewAtEnvelopeType(e.target.value)}
             className="text-xs border border-black/10 rounded-lg px-2 py-1 bg-white focus:outline-none"
           >
-            {ENVELOPE_OPTIONS.map((o) => (
+            {envelopeOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

@@ -1,17 +1,9 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateInsuranceOperation } from '@/features/insurance/hooks/useInsurance';
 import type { InsuranceOperation } from '@/types';
-
-const OP_LABELS: Record<InsuranceOperation['type'], string> = {
-  versement: 'Versement',
-  rachat: 'Rachat',
-  arbitrage_in: 'Arbitrage ←',
-  arbitrage_out: 'Arbitrage →',
-  interets: 'Intérêts',
-  revalorisation: 'Revalorisation',
-};
 
 interface Props {
   accountId: number;
@@ -20,6 +12,8 @@ interface Props {
 }
 
 export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState(op.amount.toFixed(2));
   const [fees, setFees] = useState(op.fees.toFixed(2));
   const [socialFees, setSocialFees] = useState(op.social_fees.toFixed(2));
@@ -43,7 +37,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
       },
       {
         onSuccess: () => {
-          showToast('Opération modifiée ✓');
+          showToast(t('edit_operation_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -51,24 +45,32 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
     );
   };
 
+  const opLabels: Record<InsuranceOperation['type'], string> = {
+    versement: t('edit_operation_modal.op_versement'),
+    rachat: t('edit_operation_modal.op_rachat'),
+    arbitrage_in: t('edit_operation_modal.op_arbitrage_in'),
+    arbitrage_out: t('edit_operation_modal.op_arbitrage_out'),
+    interets: t('edit_operation_modal.op_interets'),
+    revalorisation: t('edit_operation_modal.op_revalorisation'),
+  };
+
   return (
     <ModalFrame
-      title="Modifier l'opération"
-      subtitle={`${OP_LABELS[op.type]} — ${op.support_name}`}
+      title={t('edit_operation_modal.title')}
+      subtitle={`${opLabels[op.type]} — ${op.support_name}`}
     >
       {isArbitrage ? (
         <>
           <p className="text-sm text-stone-500 mb-6">
-            Les arbitrages ne peuvent pas être modifiés. Supprimez l'opération et recréez-la si
-            nécessaire.
+            {t('edit_operation_modal.arbitrage_readonly')}
           </p>
           <div className="flex justify-end">
-            <Button onClick={onClose}>Fermer</Button>
+            <Button onClick={onClose}>{tc('close')}</Button>
           </div>
         </>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormGroup label="Montant (€)" htmlFor="edit-op-amount">
+          <FormGroup label={t('edit_operation_modal.amount_label')} htmlFor="edit-op-amount">
             <DecimalInput
               id="edit-op-amount"
               allowNegative={allowNegative}
@@ -81,7 +83,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
 
           <div className="flex gap-3 items-end">
             {hasFees && (
-              <FormGroup label="Frais (€)" htmlFor="edit-op-fees">
+              <FormGroup label={t('edit_operation_modal.fees_label')} htmlFor="edit-op-fees">
                 <DecimalInput
                   id="edit-op-fees"
                   value={fees}
@@ -90,7 +92,10 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
               </FormGroup>
             )}
             {hasSocialFees && (
-              <FormGroup label="Prélèvements sociaux (€)" htmlFor="edit-op-social-fees">
+              <FormGroup
+                label={t('edit_operation_modal.social_fees_label')}
+                htmlFor="edit-op-social-fees"
+              >
                 <DecimalInput
                   id="edit-op-social-fees"
                   value={socialFees}
@@ -98,7 +103,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                 />
               </FormGroup>
             )}
-            <FormGroup label="Date" htmlFor="edit-op-date" className="min-w-36">
+            <FormGroup label={tc('date')} htmlFor="edit-op-date" className="min-w-36">
               <Input
                 id="edit-op-date"
                 type="date"
@@ -111,10 +116,10 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
 
           <div className="flex gap-2 justify-end mt-1">
             <Button type="button" onClick={onClose} disabled={update.isPending}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button variant="primary" type="submit" disabled={!amount || update.isPending}>
-              {update.isPending ? '…' : 'Enregistrer'}
+              {update.isPending ? tc('loading') : tc('save')}
             </Button>
           </div>
         </form>

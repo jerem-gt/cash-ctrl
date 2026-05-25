@@ -1,20 +1,23 @@
 import { SyntheticEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui';
 import { useChangePassword } from '@/hooks/useAuth';
 
 export function PasswordChangeCard() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
 
   const handlePasswordSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (pwForm.next !== pwForm.confirm) {
-      showToast('Les mots de passe ne correspondent pas.');
+      showToast(t('password.err_mismatch'));
       return;
     }
     if (pwForm.next.length < 8) {
-      showToast('Minimum 8 caractères.');
+      showToast(t('password.err_too_short'));
       return;
     }
     changePassword.mutate(
@@ -22,7 +25,7 @@ export function PasswordChangeCard() {
       {
         onSuccess: () => {
           setPwForm({ current: '', next: '', confirm: '' });
-          showToast('Mot de passe mis à jour ✓');
+          showToast(t('password.success'));
         },
         onError: (e) => showToast(e.message),
       },
@@ -31,9 +34,9 @@ export function PasswordChangeCard() {
 
   return (
     <Card className="max-w-sm">
-      <CardTitle>Changer le mot de passe</CardTitle>
+      <CardTitle>{t('password.title')}</CardTitle>
       <form onSubmit={handlePasswordSubmit} className="space-y-3">
-        <FormGroup label="Mot de passe actuel">
+        <FormGroup label={t('password.current')}>
           <Input
             type="password"
             value={pwForm.current}
@@ -41,16 +44,16 @@ export function PasswordChangeCard() {
             autoComplete="current-password"
           />
         </FormGroup>
-        <FormGroup label="Nouveau mot de passe">
+        <FormGroup label={t('password.new')}>
           <Input
             type="password"
             value={pwForm.next}
             onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
-            placeholder="Min. 8 caractères"
+            placeholder={t('password.new_placeholder')}
             autoComplete="new-password"
           />
         </FormGroup>
-        <FormGroup label="Confirmer">
+        <FormGroup label={t('password.confirm')}>
           <Input
             type="password"
             value={pwForm.confirm}
@@ -64,7 +67,7 @@ export function PasswordChangeCard() {
           disabled={changePassword.isPending}
           className="mt-2"
         >
-          {changePassword.isPending ? '…' : 'Mettre à jour'}
+          {changePassword.isPending ? tc('loading') : t('password.submit')}
         </Button>
       </form>
     </Card>

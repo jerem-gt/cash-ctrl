@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { importApi, JsonFullImportResult } from '@/api/client.ts';
 import { Button, Card, DecimalInput, Select } from '@/components/ui';
@@ -29,14 +30,21 @@ type ParsedFile =
   | { format: 'xhb'; data: XhbParseResult }
   | { format: 'json'; data: unknown };
 
-function parsedFileStatsNode(pf: ParsedFile) {
+function ParsedFileStats({ pf }: Readonly<{ pf: ParsedFile }>) {
+  const { t } = useTranslation('settings');
   if (pf.format === 'qif') {
     return (
       <>
-        <span>{pf.data.transactions.length} transactions</span>
-        <span>{pf.data.uniqueCategories.length} catégories</span>
+        <span>
+          {pf.data.transactions.length} {t('import.label_transactions_count')}
+        </span>
+        <span>
+          {pf.data.uniqueCategories.length} {t('import.label_categories_count')}
+        </span>
         {pf.data.uniqueTransferTargets.length > 0 && (
-          <span>{pf.data.uniqueTransferTargets.length} compte(s) de virement</span>
+          <span>
+            {pf.data.uniqueTransferTargets.length} {t('import.label_transfer_targets')}
+          </span>
         )}
       </>
     );
@@ -44,11 +52,19 @@ function parsedFileStatsNode(pf: ParsedFile) {
   if (pf.format === 'xhb') {
     return (
       <>
-        <span>{pf.data.transactions.length} transactions</span>
-        <span>{pf.data.transfers.length} virements</span>
-        <span>{pf.data.uniqueCategories.length} catégories</span>
+        <span>
+          {pf.data.transactions.length} {t('import.label_transactions_count')}
+        </span>
+        <span>
+          {pf.data.transfers.length} {t('import.stats_transfers')}
+        </span>
+        <span>
+          {pf.data.uniqueCategories.length} {t('import.label_categories_count')}
+        </span>
         {pf.data.uniquePaymodes.length > 0 && (
-          <span>{pf.data.uniquePaymodes.length} mode(s) de paiement</span>
+          <span>
+            {pf.data.uniquePaymodes.length} {t('import.label_paymode_count')}
+          </span>
         )}
       </>
     );
@@ -73,20 +89,23 @@ function StepIndicator({
   step,
   format,
 }: Readonly<{ step: Step; format: 'qif' | 'xhb' | 'json' | null }>) {
+  const { t } = useTranslation('settings');
   const steps: { id: Step; label: string }[] =
     format === 'json'
       ? [
-          { id: 'upload', label: 'Fichier' },
-          { id: 'confirm', label: 'Confirmer' },
-          { id: 'done', label: 'Terminé' },
+          { id: 'upload', label: t('import.step_file') },
+          { id: 'confirm', label: t('import.step_confirm') },
+          { id: 'done', label: t('import.step_done') },
         ]
       : [
-          { id: 'upload', label: 'Fichier' },
-          { id: 'accounts', label: 'Comptes' },
-          { id: 'categories', label: 'Catégories' },
-          ...(format === 'xhb' ? [{ id: 'paymethods' as Step, label: 'Paiements' }] : []),
-          { id: 'preview', label: 'Aperçu' },
-          { id: 'done', label: 'Terminé' },
+          { id: 'upload', label: t('import.step_file') },
+          { id: 'accounts', label: t('import.step_accounts') },
+          { id: 'categories', label: t('import.step_categories') },
+          ...(format === 'xhb'
+            ? [{ id: 'paymethods' as Step, label: t('import.step_paymethods') }]
+            : []),
+          { id: 'preview', label: t('import.step_preview') },
+          { id: 'done', label: t('import.step_done') },
         ];
   const current = steps.findIndex((s) => s.id === step);
   const containerStyles = {
@@ -150,6 +169,7 @@ function AccountMappingRow({
   banks: Bank[];
   onChange: (c: AccountChoice) => void;
 }>) {
+  const { t } = useTranslation('settings');
   const label = qifName || '(transactions sans compte explicite)';
   const action = choice?.action ?? 'skip';
 
@@ -184,9 +204,9 @@ function AccountMappingRow({
             value={action}
             onChange={(e) => handleActionChange(e.target.value)}
           >
-            <option value="skip">Ignorer</option>
-            <option value="map">Mapper →</option>
-            <option value="create">Créer</option>
+            <option value="skip">{t('import.action_skip')}</option>
+            <option value="map">{t('import.action_map')}</option>
+            <option value="create">{t('import.action_create')}</option>
           </Select>
 
           {action === 'map' && (
@@ -208,17 +228,19 @@ function AccountMappingRow({
             <div className="flex flex-col gap-1.5 items-end w-72">
               <div className="flex items-center gap-2 w-full">
                 <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
-                  Nom du compte
+                  {t('import.account_name_label')}
                 </span>
                 <input
                   className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
                   value={choice.name}
                   onChange={(e) => onChange({ ...choice, name: e.target.value })}
-                  placeholder="Nom du compte"
+                  placeholder={t('import.account_name_placeholder')}
                 />
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">Banque</span>
+                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                  {t('import.bank_label')}
+                </span>
                 <Select
                   className="flex-1"
                   value={choice.bank_id ?? ''}
@@ -231,7 +253,7 @@ function AccountMappingRow({
                     });
                   }}
                 >
-                  <option value="">— aucune —</option>
+                  <option value="">{t('import.bank_none')}</option>
                   {banks.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -240,7 +262,9 @@ function AccountMappingRow({
                 </Select>
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">Type</span>
+                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                  {t('import.type_label')}
+                </span>
                 <Select
                   className="flex-1"
                   value={choice.account_type_id ?? ''}
@@ -251,7 +275,7 @@ function AccountMappingRow({
                     })
                   }
                 >
-                  <option value="">— aucun —</option>
+                  <option value="">{t('import.type_none')}</option>
                   {accountTypes.map((at) => (
                     <option key={at.id} value={at.id}>
                       {at.name}
@@ -261,10 +285,10 @@ function AccountMappingRow({
               </div>
               <div className="flex items-center gap-2 w-full">
                 <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
-                  Solde initial
+                  {t('import.initial_balance_label')}
                 </span>
                 <DecimalInput
-                  aria-label="Solde initial"
+                  aria-label={t('import.initial_balance_label')}
                   allowNegative
                   className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
                   value={String(choice.initial_balance)}
@@ -275,7 +299,7 @@ function AccountMappingRow({
               </div>
               <div className="flex items-center gap-2 w-full">
                 <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
-                  Date ouverture
+                  {t('import.opening_date_label')}
                 </span>
                 <input
                   type="date"
@@ -305,6 +329,7 @@ function CategoryMappingRow({
   categories: Category[];
   onChange: (c: CategoryChoice) => void;
 }>) {
+  const { t } = useTranslation('settings');
   const parts = qifCategory.split(':');
   const defaultSubcatName = parts.at(-1)!;
   const action = choice?.action ?? 'skip';
@@ -341,9 +366,9 @@ function CategoryMappingRow({
             value={action}
             onChange={(e) => handleActionChange(e.target.value)}
           >
-            <option value="skip">Ignorer</option>
-            <option value="map">Mapper →</option>
-            <option value="create">Créer</option>
+            <option value="skip">{t('import.action_skip')}</option>
+            <option value="map">{t('import.action_map')}</option>
+            <option value="create">{t('import.action_create')}</option>
           </Select>
 
           {action === 'map' && (
@@ -366,16 +391,16 @@ function CategoryMappingRow({
           {action === 'create' && choice?.action === 'create' && (
             <div className="flex flex-col gap-1.5 items-end">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">Sous-catégorie</span>
+                <span className="text-xs text-stone-400">{t('import.subcategory_label')}</span>
                 <input
                   className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
                   value={choice.subcategory_name}
                   onChange={(e) => onChange({ ...choice, subcategory_name: e.target.value })}
-                  placeholder="Nom sous-catégorie"
+                  placeholder={t('import.subcategory_placeholder')}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">Catégorie parente</span>
+                <span className="text-xs text-stone-400">{t('import.parent_category_label')}</span>
                 <Select
                   className="w-48"
                   value={choice.existing_category_id ?? '__new__'}
@@ -392,17 +417,19 @@ function CategoryMappingRow({
                       {cat.name}
                     </option>
                   ))}
-                  <option value="__new__">+ Nouvelle catégorie…</option>
+                  <option value="__new__">{t('import.new_category_option')}</option>
                 </Select>
               </div>
               {choice.existing_category_id === null && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-stone-400">Nom catégorie</span>
+                  <span className="text-xs text-stone-400">
+                    {t('import.new_category_name_label')}
+                  </span>
                   <input
                     className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
                     value={choice.new_category_name}
                     onChange={(e) => onChange({ ...choice, new_category_name: e.target.value })}
-                    placeholder="Nouvelle catégorie"
+                    placeholder={t('import.new_category_placeholder')}
                   />
                 </div>
               )}
@@ -427,6 +454,7 @@ function PaymodeMappingRow({
   paymentMethods: PaymentMethod[];
   onChange: (id: number | null) => void;
 }>) {
+  const { t } = useTranslation('settings');
   const name = XHB_PAYMODE_NAMES[paymode] ?? `Mode ${paymode}`;
   return (
     <div className="py-3 border-b border-stone-100 last:border-0">
@@ -438,7 +466,7 @@ function PaymodeMappingRow({
           value={paymentMethodId ?? ''}
           onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
         >
-          <option value="">— ignorer —</option>
+          <option value="">{t('import.paymethod_ignore')}</option>
           {paymentMethods.map((pm) => (
             <option key={pm.id} value={pm.id}>
               {pm.icon} {pm.name}
@@ -453,6 +481,8 @@ function PaymodeMappingRow({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ImportManager() {
+  const { t } = useTranslation('settings');
+  const { t: tc } = useTranslation('common');
   const queryClient = useQueryClient();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
@@ -487,7 +517,7 @@ export default function ImportManager() {
       const isJsonFile = nameLower.endsWith('.json');
 
       if (!isQifFile && !isXhbFile && !isJsonFile) {
-        setParseError("Le fichier doit avoir l'extension .qif, .xhb ou .json");
+        setParseError(t('import.err_extension'));
         return;
       }
       setParseError('');
@@ -505,7 +535,7 @@ export default function ImportManager() {
       const handleJsonFile = (text: string): boolean => {
         const data = JSON.parse(text) as { version?: unknown; amounts_in_cents?: unknown };
         if (data.version !== '1.0' || data.amounts_in_cents !== true) {
-          setParseError('Format JSON invalide ou version non supportée (attendu: version 1.0).');
+          setParseError(t('import.err_json_invalid'));
           return false;
         }
         setParsedFile({ format: 'json', data });
@@ -517,7 +547,7 @@ export default function ImportManager() {
       const handleQifFile = (text: string): boolean => {
         const result = parseQif(text);
         if (result.transactions.length === 0) {
-          setParseError('Aucune transaction trouvée dans ce fichier.');
+          setParseError(t('import.err_no_transactions'));
           return false;
         }
         setParsedFile({ format: 'qif', data: result });
@@ -543,7 +573,7 @@ export default function ImportManager() {
       const handleXhbFile = (text: string): boolean => {
         const result = parseXhb(text);
         if (result.transactions.length + result.transfers.length === 0) {
-          setParseError('Aucune transaction trouvée dans ce fichier.');
+          setParseError(t('import.err_no_transactions'));
           return false;
         }
         setParsedFile({ format: 'xhb', data: result });
@@ -591,7 +621,7 @@ export default function ImportManager() {
           const ok = isQifFile ? handleQifFile(text) : handleXhbFile(text);
           if (ok) setStep('accounts');
         } catch {
-          setParseError('Erreur lors de la lecture du fichier.');
+          setParseError(t('import.err_file_read'));
         }
       };
       reader.readAsText(file, 'UTF-8');
@@ -709,9 +739,7 @@ export default function ImportManager() {
 
   return (
     <div className="max-w-4xl">
-      <p className="text-sm text-stone-400 mb-8">
-        Importez des transactions depuis un fichier QIF, HomeBank (XHB) ou JSON CashCtrl.
-      </p>
+      <p className="text-sm text-stone-400 mb-8">{t('import.description')}</p>
 
       <StepIndicator step={step} format={parsedFile?.format ?? null} />
 
@@ -728,16 +756,14 @@ export default function ImportManager() {
             onDrop={handleDrop}
           >
             <div className="text-4xl mb-3 text-stone-300">⇪</div>
-            <p className="text-sm font-medium text-stone-600 mb-1">Déposez votre fichier ici</p>
-            <p className="text-xs text-stone-400">
-              QIF, XHB (HomeBank) ou JSON CashCtrl — cliquez pour parcourir
-            </p>
+            <p className="text-sm font-medium text-stone-600 mb-1">{t('import.upload_label')}</p>
+            <p className="text-xs text-stone-400">{t('import.upload_hint')}</p>
             <input
               ref={fileInputRef}
               type="file"
               accept=".qif,.xhb,.json"
               className="sr-only"
-              aria-label="Sélectionner un fichier QIF, XHB ou JSON"
+              aria-label={t('import.file_input_label')}
               onChange={(e) => {
                 if (e.target.files?.[0]) handleFile(e.target.files[0]);
               }}
@@ -756,27 +782,27 @@ export default function ImportManager() {
         <div className="flex flex-col gap-6">
           <Card>
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
-              Fichier chargé
+              {t('import.file_loaded')}
             </p>
             <div className="flex gap-6 text-sm text-stone-600">
               <span className="font-medium text-stone-800">{fileName}</span>
               <span className="uppercase text-[10px] font-bold tracking-widest text-stone-400 self-center">
                 {parsedFile.format}
               </span>
-              {parsedFileStatsNode(parsedFile)}
+              <ParsedFileStats pf={parsedFile} />
             </div>
           </Card>
 
           {parsedFile.format === 'qif' && (
             <Card>
               <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
-                Format de date
+                {t('import.date_format_title')}
               </p>
               <p className="text-xs text-stone-400 mb-3">
-                Détecté :{' '}
+                {t('import.date_detected')}{' '}
                 <strong>
                   {parsedFile.data.detectedDateFormat === 'ambiguous'
-                    ? 'ambigu — vérifiez'
+                    ? t('import.date_ambiguous')
                     : parsedFile.data.detectedDateFormat}
                 </strong>
               </p>
@@ -796,12 +822,9 @@ export default function ImportManager() {
 
           <Card>
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
-              Mapping des comptes
+              {t('import.account_mapping_title')}
             </p>
-            <p className="text-xs text-stone-400 mb-4">
-              Associez chaque compte à un compte existant, créez-en un nouveau, ou ignorez-le. Les
-              virements vers des comptes ignorés seront exclus.
-            </p>
+            <p className="text-xs text-stone-400 mb-4">{t('import.account_mapping_desc')}</p>
             {accountsToMap.map((name) => (
               <AccountMappingRow
                 key={name}
@@ -816,7 +839,7 @@ export default function ImportManager() {
             {qifTransferTargets.length > 0 && (
               <>
                 <p className="text-xs text-stone-400 mt-4 mb-1 pt-3 border-t border-stone-100">
-                  Comptes de virement détectés (non présents dans le fichier)
+                  {t('import.transfer_targets_title')}
                 </p>
                 {qifTransferTargets.map((name) => (
                   <AccountMappingRow
@@ -834,9 +857,9 @@ export default function ImportManager() {
           </Card>
 
           <div className="flex justify-between">
-            <Button onClick={() => setStep('upload')}>← Retour</Button>
+            <Button onClick={() => setStep('upload')}>{tc('back')}</Button>
             <Button variant="primary" onClick={() => setStep('categories')}>
-              Catégories →
+              {t('import.next_categories')}
             </Button>
           </div>
         </div>
@@ -847,15 +870,11 @@ export default function ImportManager() {
         <div className="flex flex-col gap-6">
           <Card>
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
-              Mapping des catégories
+              {t('import.category_mapping_title')}
             </p>
-            <p className="text-xs text-stone-400 mb-4">
-              Mappez, créez ou ignorez chaque catégorie trouvée dans le fichier.
-            </p>
+            <p className="text-xs text-stone-400 mb-4">{t('import.category_mapping_desc')}</p>
             {uniqueCategories.length === 0 ? (
-              <p className="text-sm text-stone-400 py-4 text-center">
-                Aucune catégorie dans ce fichier.
-              </p>
+              <p className="text-sm text-stone-400 py-4 text-center">{t('import.no_categories')}</p>
             ) : (
               uniqueCategories.map((cat) => (
                 <CategoryMappingRow
@@ -870,12 +889,12 @@ export default function ImportManager() {
           </Card>
 
           <div className="flex justify-between">
-            <Button onClick={() => setStep('accounts')}>← Retour</Button>
+            <Button onClick={() => setStep('accounts')}>{tc('back')}</Button>
             <Button
               variant="primary"
               onClick={() => (isXhb ? setStep('paymethods') : goToPreview())}
             >
-              {isXhb ? 'Méthodes de paiement →' : 'Aperçu →'}
+              {isXhb ? t('import.next_paymethods') : t('import.next_preview')}
             </Button>
           </div>
         </div>
@@ -886,16 +905,11 @@ export default function ImportManager() {
         <div className="flex flex-col gap-6">
           <Card>
             <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
-              Méthodes de paiement
+              {t('import.paymethod_title')}
             </p>
-            <p className="text-xs text-stone-400 mb-4">
-              Associez chaque mode de paiement HomeBank à une méthode de paiement existante, ou
-              ignorez-le.
-            </p>
+            <p className="text-xs text-stone-400 mb-4">{t('import.paymethod_desc')}</p>
             {parsedFile.data.uniquePaymodes.length === 0 ? (
-              <p className="text-sm text-stone-400 py-4 text-center">
-                Aucun mode de paiement dans ce fichier.
-              </p>
+              <p className="text-sm text-stone-400 py-4 text-center">{t('import.no_paymethods')}</p>
             ) : (
               parsedFile.data.uniquePaymodes.map((paymode) => (
                 <PaymodeMappingRow
@@ -910,9 +924,9 @@ export default function ImportManager() {
           </Card>
 
           <div className="flex justify-between">
-            <Button onClick={() => setStep('categories')}>← Retour</Button>
+            <Button onClick={() => setStep('categories')}>{tc('back')}</Button>
             <Button variant="primary" onClick={goToPreview}>
-              Aperçu →
+              {t('import.next_preview')}
             </Button>
           </div>
         </div>
@@ -926,12 +940,12 @@ export default function ImportManager() {
           const txs = (d.transactions ?? []) as Array<{ transfer_peer_id: unknown }>;
           const transferCount = txs.filter((t) => t.transfer_peer_id !== null).length / 2;
           const stats = [
-            { value: (d.accounts ?? []).length, label: 'comptes' },
-            { value: txs.length - transferCount * 2, label: 'transactions' },
-            { value: Math.round(transferCount), label: 'virements' },
-            { value: (d.scheduled_transactions ?? []).length, label: 'planifiées' },
-            { value: (d.stock_operations ?? []).length, label: 'opér. bourse' },
-            { value: (d.loans ?? []).length, label: 'prêts' },
+            { value: (d.accounts ?? []).length, label: t('import.stats_accounts') },
+            { value: txs.length - transferCount * 2, label: t('import.stats_transactions') },
+            { value: Math.round(transferCount), label: t('import.stats_transfers') },
+            { value: (d.scheduled_transactions ?? []).length, label: t('import.stats_scheduled') },
+            { value: (d.stock_operations ?? []).length, label: t('import.stats_stock_ops') },
+            { value: (d.loans ?? []).length, label: t('import.stats_loans') },
           ].filter(({ value }) => value > 0);
           const cats = (d.categories ?? []) as Array<{ subcategories: unknown[] }>;
           const subcatCount = cats.reduce((s, c) => s + c.subcategories.length, 0);
@@ -962,35 +976,35 @@ export default function ImportManager() {
 
               <Card>
                 <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
-                  Contenu du fichier
+                  {t('import.confirm_content_title')}
                 </p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-stone-600">
-                  <span>Catégories</span>
+                  <span>{t('import.confirm_categories')}</span>
                   <span className="text-stone-800 font-medium">
-                    {cats.length} ({subcatCount} sous-catégories)
+                    {t('import.confirm_categories_count', {
+                      count: cats.length,
+                      subcount: subcatCount,
+                    })}
                   </span>
-                  <span>Moyens de paiement</span>
+                  <span>{t('import.confirm_payment_methods')}</span>
                   <span className="text-stone-800 font-medium">
                     {(d.payment_methods ?? []).length}
                   </span>
-                  <span>Types de compte</span>
+                  <span>{t('import.confirm_account_types')}</span>
                   <span className="text-stone-800 font-medium">
                     {(d.account_types ?? []).length}
                   </span>
-                  <span>Positions bourse</span>
+                  <span>{t('import.confirm_stock_positions')}</span>
                   <span className="text-stone-800 font-medium">
                     {(d.stock_positions ?? []).length}
                   </span>
                 </div>
-                <p className="text-xs text-stone-400 mt-4">
-                  Les comptes, catégories et moyens de paiement existants (même nom) seront
-                  réutilisés, pas dupliqués. Les transactions seront ajoutées.
-                </p>
+                <p className="text-xs text-stone-400 mt-4">{t('import.confirm_note')}</p>
               </Card>
 
               {jsonImportMutation.isError && (
                 <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  <p className="font-medium mb-1">Erreur lors de l'importation :</p>
+                  <p className="font-medium mb-1">{tc('error_import')}</p>
                   <ul className="list-disc list-inside space-y-0.5">
                     {jsonImportMutation.error.message.split('\n').map((line) => (
                       <li key={line}>{line}</li>
@@ -1008,14 +1022,14 @@ export default function ImportManager() {
                     jsonImportMutation.reset();
                   }}
                 >
-                  ← Retour
+                  {tc('back')}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleJsonImport}
                   disabled={jsonImportMutation.isPending}
                 >
-                  {jsonImportMutation.isPending ? 'Importation…' : 'Importer'}
+                  {jsonImportMutation.isPending ? t('import.importing') : t('import.import_btn')}
                 </Button>
               </div>
             </div>
@@ -1027,9 +1041,9 @@ export default function ImportManager() {
         <div className="flex flex-col gap-6">
           <div className="flex gap-4">
             {[
-              { value: selectedTxCount, label: 'transactions' },
-              { value: selectedTfCount, label: 'virements' },
-              { value: skippedCount, label: 'ignorées' },
+              { value: selectedTxCount, label: t('import.stats_transactions') },
+              { value: selectedTfCount, label: t('import.stats_transfers') },
+              { value: skippedCount, label: t('import.stats_ignored') },
             ].map(({ value, label }) => (
               <div
                 key={label}
@@ -1044,7 +1058,10 @@ export default function ImportManager() {
           <Card>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-                Transactions ({importableCount} importables, {skippedCount} ignorées)
+                {t('import.preview_transactions', {
+                  importable: importableCount,
+                  skipped: skippedCount,
+                })}
               </p>
               <label className="flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
                 <input
@@ -1053,7 +1070,7 @@ export default function ImportManager() {
                   onChange={(e) => (e.target.checked ? selectAll() : deselectAll())}
                   className="rounded"
                 />
-                <span>Tout sélectionner</span>
+                <span>{tc('all_select')}</span>
               </label>
             </div>
 
@@ -1062,11 +1079,11 @@ export default function ImportManager() {
                 <thead>
                   <tr className="text-left text-stone-400 border-b border-stone-100">
                     <th className="pb-2 w-6" />
-                    <th className="pb-2 pr-3">Date</th>
+                    <th className="pb-2 pr-3">{tc('date')}</th>
                     <th className="pb-2 pr-3">Description</th>
                     <th className="pb-2 pr-3">Compte</th>
                     <th className="pb-2 pr-3">Catégorie</th>
-                    <th className="pb-2 text-right">Montant</th>
+                    <th className="pb-2 text-right">{tc('amount')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1112,10 +1129,13 @@ export default function ImportManager() {
                           </td>
                           <td className="py-1.5 pr-3 text-indigo-600">
                             {item.fromAccountName}
-                            {item.fromAccountQifName ? ' (nouveau)' : ''} → {item.toAccountName}
-                            {item.toAccountQifName ? ' (nouveau)' : ''}
+                            {item.fromAccountQifName ? t('import.new_account_suffix') : ''} →{' '}
+                            {item.toAccountName}
+                            {item.toAccountQifName ? t('import.new_account_suffix') : ''}
                           </td>
-                          <td className="py-1.5 pr-3 text-stone-400 italic">virement</td>
+                          <td className="py-1.5 pr-3 text-stone-400 italic">
+                            {t('import.transfer_label')}
+                          </td>
                           <td className="py-1.5 text-right tabular-nums text-indigo-600">
                             {item.amount.toFixed(2)} €
                           </td>
@@ -1141,7 +1161,7 @@ export default function ImportManager() {
                         </td>
                         <td className="py-1.5 pr-3 text-stone-600">
                           {item.accountName}
-                          {item.newAccountQifName ? ' (nouveau)' : ''}
+                          {item.newAccountQifName ? t('import.new_account_suffix') : ''}
                         </td>
                         <td className="py-1.5 pr-3 text-stone-400">{item.categoryLabel || '—'}</td>
                         <td
@@ -1160,7 +1180,7 @@ export default function ImportManager() {
 
           {importMutation.isError && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <p className="font-medium mb-1">Erreur lors de l'importation :</p>
+              <p className="font-medium mb-1">{tc('error_import')}</p>
               <ul className="list-disc list-inside space-y-0.5">
                 {importMutation.error.message.split('\n').map((line) => (
                   <li key={line}>{line}</li>
@@ -1170,13 +1190,17 @@ export default function ImportManager() {
           )}
 
           <div className="flex justify-between">
-            <Button onClick={() => setStep(isXhb ? 'paymethods' : 'categories')}>← Retour</Button>
+            <Button onClick={() => setStep(isXhb ? 'paymethods' : 'categories')}>
+              {tc('back')}
+            </Button>
             <Button
               variant="primary"
               onClick={handleImport}
               disabled={selected.size === 0 || importMutation.isPending}
             >
-              {importMutation.isPending ? 'Importation…' : `Importer ${selected.size} éléments`}
+              {importMutation.isPending
+                ? t('import.importing')
+                : t('import.import_n', { count: selected.size })}
             </Button>
           </div>
         </div>
@@ -1187,20 +1211,20 @@ export default function ImportManager() {
         <Card>
           <div className="text-center py-8">
             <div className="text-5xl mb-4">✓</div>
-            <h2 className="font-sans text-2xl text-stone-800 mb-2">Importation terminée</h2>
+            <h2 className="font-sans text-2xl text-stone-800 mb-2">{t('import.done_title')}</h2>
             {importMutation.data && (
               <div className="flex justify-center gap-8 mt-6 mb-8">
                 <div>
                   <p className="text-3xl font-sans text-stone-800">
                     {importMutation.data.transactions}
                   </p>
-                  <p className="text-xs text-stone-400 mt-1">transactions importées</p>
+                  <p className="text-xs text-stone-400 mt-1">{t('import.imported_transactions')}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-sans text-stone-800">
                     {importMutation.data.transfers}
                   </p>
-                  <p className="text-xs text-stone-400 mt-1">virements importés</p>
+                  <p className="text-xs text-stone-400 mt-1">{t('import.imported_transfers')}</p>
                 </div>
               </div>
             )}
@@ -1208,12 +1232,12 @@ export default function ImportManager() {
               (() => {
                 const r: JsonFullImportResult = jsonImportMutation.data;
                 const stats = [
-                  { value: r.accounts, label: 'comptes créés' },
-                  { value: r.transactions, label: 'transactions' },
-                  { value: r.transfers, label: 'virements' },
-                  { value: r.scheduled, label: 'planifiées' },
-                  { value: r.stockOperations, label: 'opér. bourse' },
-                  { value: r.loans, label: 'prêts' },
+                  { value: r.accounts, label: t('import.stats_cats_created') },
+                  { value: r.transactions, label: t('import.stats_transactions') },
+                  { value: r.transfers, label: t('import.stats_transfers') },
+                  { value: r.scheduled, label: t('import.stats_scheduled') },
+                  { value: r.stockOperations, label: t('import.stats_stock_ops') },
+                  { value: r.loans, label: t('import.stats_loans') },
                 ].filter(({ value }) => value > 0);
                 return (
                   <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
@@ -1236,13 +1260,13 @@ export default function ImportManager() {
                   jsonImportMutation.reset();
                 }}
               >
-                Nouvelle importation
+                {t('import.new_import_btn')}
               </Button>
               <Button
                 variant="primary"
                 onClick={() => (globalThis.location.href = '/transactions')}
               >
-                Voir les transactions
+                {t('import.view_transactions_btn')}
               </Button>
             </div>
           </div>

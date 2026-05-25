@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Button,
@@ -26,6 +27,8 @@ export function InsuranceArbitrageModal({
   allSupports,
   onClose,
 }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const destinations = allSupports.filter((s) => s.id !== fromSupport.id);
   const [toSupportId, setToSupportId] = useState(destinations[0]?.id ?? 0);
   const [fromAmount, setFromAmount] = useState('');
@@ -45,7 +48,7 @@ export function InsuranceArbitrageModal({
       },
       {
         onSuccess: () => {
-          showToast('Arbitrage enregistré ✓');
+          showToast(t('arbitrage_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -55,21 +58,19 @@ export function InsuranceArbitrageModal({
 
   if (destinations.length === 0) {
     return (
-      <ModalFrame title="Arbitrage">
-        <p className="text-sm text-stone-400 mb-6">
-          Aucun autre support disponible pour l'arbitrage.
-        </p>
+      <ModalFrame title={t('arbitrage_modal.title_no_dest')}>
+        <p className="text-sm text-stone-400 mb-6">{t('arbitrage_modal.no_destinations')}</p>
         <div className="flex justify-end">
-          <Button onClick={onClose}>Fermer</Button>
+          <Button onClick={onClose}>{tc('close')}</Button>
         </div>
       </ModalFrame>
     );
   }
 
   return (
-    <ModalFrame title={`Arbitrage depuis ${fromSupport.name}`}>
+    <ModalFrame title={t('arbitrage_modal.title', { support: fromSupport.name })}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormGroup label="Support destination" htmlFor="arb-to">
+        <FormGroup label={t('arbitrage_modal.dest_label')} htmlFor="arb-to">
           <Select
             id="arb-to"
             value={toSupportId}
@@ -77,7 +78,8 @@ export function InsuranceArbitrageModal({
           >
             {destinations.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.type === 'euro' ? 'Fonds euro' : 'UC'})
+                {s.name} (
+                {s.type === 'euro' ? t('arbitrage_modal.euro_type') : t('arbitrage_modal.uc_type')})
               </option>
             ))}
           </Select>
@@ -89,10 +91,10 @@ export function InsuranceArbitrageModal({
               htmlFor="arb-from-amount"
               className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
             >
-              Montant arbitré (€)
+              {t('arbitrage_modal.amount_label')}
             </label>
             <span className="text-[10px] text-stone-400">
-              Max :{' '}
+              {t('arbitrage_modal.max_label')}{' '}
               {fromSupport.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </span>
           </div>
@@ -106,10 +108,10 @@ export function InsuranceArbitrageModal({
         </div>
 
         <div className="flex gap-3">
-          <FormGroup label="Frais (€)" htmlFor="arb-fees">
+          <FormGroup label={tc('fees')} htmlFor="arb-fees">
             <DecimalInput id="arb-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="arb-date">
+          <FormGroup label={tc('date')} htmlFor="arb-date">
             <Input
               id="arb-date"
               type="date"
@@ -122,14 +124,14 @@ export function InsuranceArbitrageModal({
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={arbitrage.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             variant="primary"
             type="submit"
             disabled={!fromAmount || !toSupportId || arbitrage.isPending}
           >
-            {arbitrage.isPending ? '…' : 'Enregistrer'}
+            {arbitrage.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

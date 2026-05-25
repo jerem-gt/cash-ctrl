@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Skeleton } from '@/components/ui';
 
 export function SettingsManagerSkeleton() {
@@ -20,24 +22,18 @@ export function SettingsManagerSkeleton() {
 export const tabs = [
   {
     section: 'types',
-    label: 'Types',
     items: [
-      { key: 'categories', label: 'Catégories' },
-      { key: 'banks', label: 'Banques' },
-      { key: 'paymentMethods', label: 'Moyens de paiement' },
-      { key: 'accountTypes', label: 'Types de compte' },
+      { key: 'categories' },
+      { key: 'banks' },
+      { key: 'paymentMethods' },
+      { key: 'accountTypes' },
     ],
   },
   {
     section: 'data',
-    label: 'Données',
-    items: [
-      { key: 'export', label: 'Export' },
-      { key: 'import', label: 'Import' },
-      { key: 'backup', label: 'Backup' },
-    ],
+    items: [{ key: 'export' }, { key: 'import' }, { key: 'backup' }],
   },
-  { section: 'security', label: 'Sécurité', items: [{ key: 'password', label: 'Mot de passe' }] },
+  { section: 'security', items: [{ key: 'password' }] },
 ] as const;
 
 export type SettingsTab = (typeof tabs)[number]['items'][number]['key'];
@@ -48,11 +44,32 @@ type Props = {
 };
 
 export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
+  const { t } = useTranslation('settings');
+
+  const sectionLabels: Record<string, string> = {
+    types: t('nav.types_section'),
+    data: t('nav.data_section'),
+    security: t('nav.security_section'),
+  };
+
+  const itemLabels: Record<string, string> = {
+    categories: t('nav.categories'),
+    banks: t('nav.banks'),
+    paymentMethods: t('nav.payment_methods'),
+    accountTypes: t('nav.account_types'),
+    export: t('nav.export'),
+    import: t('nav.import'),
+    backup: t('nav.backup'),
+    password: t('nav.password'),
+  };
+
   return (
     <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 md:pr-8 md:border-r border-black/5">
       {tabs.map((group) => (
         <div key={group.section} className="mb-4">
-          <h3 className="text-[10px] uppercase tracking-widest opacity-30 mb-2">{group.label}</h3>
+          <h3 className="text-[10px] uppercase tracking-widest opacity-30 mb-2">
+            {sectionLabels[group.section]}
+          </h3>
           <div className="flex flex-col">
             {group.items.map((item) => (
               <button
@@ -64,7 +81,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
                     : 'text-black/60 hover:bg-black/5 hover:text-black'
                 }`}
               >
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium">{itemLabels[item.key]}</span>
               </button>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Input } from '@/components/ui';
 import { useStockSearch } from '@/features/portfolio/hooks/useStocks';
@@ -28,14 +29,19 @@ export function TickerInput({
   autoFocus,
   className,
 }: Readonly<Props>) {
+  const { t } = useTranslation('portfolio');
   const showDropdown = isIsin(value) && !disabled;
   const { data: searchResults = [], isFetching: isSearching } = useStockSearch(value.trim());
 
   let dropdownContent: ReactNode;
   if (isSearching) {
-    dropdownContent = <div className="px-3 py-2.5 text-sm text-stone-400">Recherche en cours…</div>;
+    dropdownContent = (
+      <div className="px-3 py-2.5 text-sm text-stone-400">{t('ticker_input.searching')}</div>
+    );
   } else if (searchResults.length === 0) {
-    dropdownContent = <div className="px-3 py-2.5 text-sm text-stone-400">Aucun résultat</div>;
+    dropdownContent = (
+      <div className="px-3 py-2.5 text-sm text-stone-400">{t('ticker_input.no_result')}</div>
+    );
   } else {
     dropdownContent = searchResults.map((r) => (
       <button

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, showToast, Spinner } from '@/components/ui';
 import { StockOperationModal } from '@/features/portfolio/components/StockOperationModal';
@@ -22,6 +23,7 @@ const getPnlColor = (pnl: number | null) => {
 };
 
 function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowProps>) {
+  const { t } = useTranslation('portfolio');
   const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
   const costBasis = pos.avg_price * pos.quantity;
   const pnl = marketValue == null ? null : marketValue - costBasis;
@@ -60,23 +62,31 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Quantité</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_quantity')}
+          </p>
           <p className="text-xs font-medium text-stone-700 tabular-nums">{pos.quantity}</p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_pru')}
+          </p>
           <p className="text-xs font-medium text-stone-700 tabular-nums">
             {fmtStockPrice(pos.avg_price, pos.currency)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Cours</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_price')}
+          </p>
           <p className="text-xs font-medium text-stone-700 tabular-nums">
             {pos.current_price == null ? '—' : fmtStockPrice(pos.current_price, pos.currency)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valorisation</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_valuation')}
+          </p>
           <p className="text-xs font-medium text-stone-700 tabular-nums">
             {marketValue == null
               ? '—'
@@ -92,7 +102,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
               onClick={() => onBuy(pos)}
               className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
             >
-              Acheter
+              {t('section.action_buy')}
             </button>
           )}
           {onSell && (
@@ -100,7 +110,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
               onClick={() => onSell(pos)}
               className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
             >
-              Vendre
+              {t('section.action_sell')}
             </button>
           )}
           {onTransfer && (
@@ -108,7 +118,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
               onClick={() => onTransfer(pos)}
               className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
             >
-              Transférer
+              {t('section.action_transfer')}
             </button>
           )}
         </div>
@@ -118,6 +128,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
 }
 
 function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowProps>) {
+  const { t } = useTranslation('portfolio');
   const marketValue = pos.current_price == null ? null : pos.current_price * pos.quantity;
   const costBasis = pos.avg_price * pos.quantity;
   const pnl = marketValue == null ? null : marketValue - costBasis;
@@ -137,23 +148,31 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
 
       <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Quantité</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_quantity')}
+          </p>
           <p className="font-medium text-stone-700 tabular-nums">{pos.quantity}</p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">PRU</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_pru')}
+          </p>
           <p className="font-medium text-stone-700 tabular-nums">
             {fmtStockPrice(pos.avg_price, pos.currency)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Cours</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_price')}
+          </p>
           <p className="font-medium text-stone-700 tabular-nums">
             {pos.current_price == null ? '—' : fmtStockPrice(pos.current_price, pos.currency)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Valorisation</p>
+          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+            {t('section.col_valuation')}
+          </p>
           <p className="font-medium text-stone-700 tabular-nums">
             {marketValue == null
               ? '—'
@@ -187,27 +206,27 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
             <button
               onClick={() => onBuy(pos)}
               className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
-              title="Acheter"
+              title={t('section.action_buy')}
             >
-              Acheter
+              {t('section.action_buy')}
             </button>
           )}
           {onSell && (
             <button
               onClick={() => onSell(pos)}
               className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
-              title="Vendre"
+              title={t('section.action_sell')}
             >
-              Vendre
+              {t('section.action_sell')}
             </button>
           )}
           {onTransfer && (
             <button
               onClick={() => onTransfer(pos)}
               className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
-              title="Transférer vers un autre compte"
+              title={t('section.transfer_title')}
             >
-              Transférer
+              {t('section.action_transfer')}
             </button>
           )}
         </div>
@@ -228,13 +247,14 @@ function PortfolioPositionsList({
   onSell,
   onTransfer,
 }: Readonly<Omit<PositionsListProps, 'pos'>>) {
+  const { t } = useTranslation('portfolio');
   if (isLoading) {
     return <Spinner className="h-4 w-4 text-stone-400 my-4 mx-auto" />;
   }
   if (positions.length === 0) {
     return (
       <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
-        Aucune position ouverte
+        {t('section.no_positions')}
       </div>
     );
   }
@@ -264,7 +284,7 @@ function PortfolioPositionsList({
         {positions.length > 1 && (
           <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-t border-stone-100">
             <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-              Total
+              {t('section.total_label')}
             </span>
             <div className="text-right">
               <p className="text-sm font-bold text-stone-800 tabular-nums">
@@ -297,7 +317,7 @@ function PortfolioPositionsList({
             <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
               <div className="w-24 shrink-0">
                 <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-                  Total
+                  {t('section.total_label')}
                 </span>
               </div>
               <div className="flex-1 grid grid-cols-4 gap-4 text-sm">
@@ -338,6 +358,7 @@ interface Props {
 }
 
 export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props>) {
+  const { t } = useTranslation('portfolio');
   const { data: positions = [], isLoading } = useStockPositions(accountId);
   const refresh = useRefreshPrices(accountId);
   const [showBuy, setShowBuy] = useState(false);
@@ -347,7 +368,7 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
 
   const handleRefresh = () => {
     refresh.mutate(undefined, {
-      onSuccess: () => showToast('Cours mis à jour ✓'),
+      onSuccess: () => showToast(t('section.refresh_success')),
       onError: (err) => showToast(err.message),
     });
   };
@@ -357,15 +378,15 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
       <div>
         <div className="flex items-center justify-between mb-4">
           <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Portefeuille
+            {t('section.title')}
           </p>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleRefresh} disabled={refresh.isPending}>
-              {refresh.isPending ? '…' : '↻ Actualiser les cours'}
+              {refresh.isPending ? t('section.refreshing') : t('section.refresh_btn')}
             </Button>
             {!readOnly && (
               <Button size="sm" variant="primary" onClick={() => setShowBuy(true)}>
-                + Acheter
+                {t('section.buy_btn')}
               </Button>
             )}
           </div>

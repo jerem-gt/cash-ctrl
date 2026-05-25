@@ -1,4 +1,5 @@
 import { type SubmitEvent, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, Select, showToast } from '@/components/ui';
 import { BankSelect } from '@/features/accounts/components/BankSelect';
@@ -50,6 +51,8 @@ const EMPTY_FORM = (today: string): FormState => ({
 });
 
 export function LoanFormModal(props: Readonly<Props>) {
+  const { t } = useTranslation('loans');
+  const { t: tc } = useTranslation('common');
   const today = new Date().toISOString().slice(0, 10);
   const { data: banks = [] } = useBanks();
   const { data: accounts = [] } = useAccounts();
@@ -103,34 +106,34 @@ export function LoanFormModal(props: Readonly<Props>) {
 
   const validate = (): boolean => {
     if (!form.name.trim()) {
-      showToast('Donnez un nom au prêt.');
+      showToast(t('form_modal.err_no_name'));
       return false;
     }
     if (!form.start_date) {
-      showToast('Renseignez la date de première mensualité.');
+      showToast(t('form_modal.err_no_start_date'));
       return false;
     }
     const principal = Number.parseFloat(form.principal_amount);
     if (!principal || principal <= 0) {
-      showToast('Montant invalide.');
+      showToast(t('form_modal.err_invalid_amount'));
       return false;
     }
     const rate = Number.parseFloat(form.interest_rate);
     if (Number.isNaN(rate) || rate < 0) {
-      showToast('Taux invalide.');
+      showToast(t('form_modal.err_invalid_rate'));
       return false;
     }
     const months = Number.parseInt(form.duration_months);
     if (!months || months <= 0) {
-      showToast('Durée invalide.');
+      showToast(t('form_modal.err_invalid_duration'));
       return false;
     }
     if (!form.source_account_id) {
-      showToast('Choisissez le compte à débiter.');
+      showToast(t('form_modal.err_no_source'));
       return false;
     }
     if (!isEdit && !form.deposit_account_id) {
-      showToast('Choisissez le compte à créditer.');
+      showToast(t('form_modal.err_no_deposit'));
       return false;
     }
     return true;
@@ -159,7 +162,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         },
         {
           onSuccess: () => {
-            showToast('Prêt créé ✓');
+            showToast(t('form_modal.success_create'));
             props.onClose();
           },
           onError: (e) => showToast(e.message),
@@ -175,7 +178,7 @@ export function LoanFormModal(props: Readonly<Props>) {
         },
         {
           onSuccess: () => {
-            showToast('Prêt mis à jour ✓');
+            showToast(t('form_modal.success_edit'));
             props.onClose();
           },
           onError: (e) => showToast(e.message),
@@ -185,24 +188,25 @@ export function LoanFormModal(props: Readonly<Props>) {
   };
 
   const nonLoanAccounts = accounts.filter((a) => a.envelope_type !== 'loan' && !a.closed_at);
-  const submitButtonText = props.mode === 'create' ? 'Créer le prêt' : 'Enregistrer';
+  const submitButtonText =
+    props.mode === 'create' ? t('form_modal.submit_create') : t('form_modal.submit_edit');
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 className="font-sans text-xl mb-5">
-          {props.mode === 'create' ? 'Nouveau prêt' : 'Modifier le prêt'}
+          {props.mode === 'create' ? t('form_modal.title_create') : t('form_modal.title_edit')}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <FormGroup label="Nom du prêt">
+          <FormGroup label={t('form_modal.name_label')}>
             <Input
               type="text"
               value={form.name}
               onChange={set('name')}
-              placeholder="Ex : Prêt immobilier"
+              placeholder={t('form_modal.name_placeholder')}
             />
           </FormGroup>
-          <FormGroup label="Banque prêteuse">
+          <FormGroup label={t('form_modal.bank_label')}>
             <BankSelect
               value={form.bank_id}
               onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
@@ -210,58 +214,58 @@ export function LoanFormModal(props: Readonly<Props>) {
             />
           </FormGroup>
           <div className="grid grid-cols-2 gap-3">
-            <FormGroup label="Date de souscription">
+            <FormGroup label={t('form_modal.subscription_date')}>
               <Input type="date" value={form.opening_date} onChange={handleOpeningDateChange} />
             </FormGroup>
-            <FormGroup label="1ère mensualité le">
+            <FormGroup label={t('form_modal.first_installment')}>
               <Input
                 type="date"
                 value={form.start_date}
                 onChange={set('start_date')}
                 disabled={isEdit}
-                title={isEdit ? 'Non modifiable après création' : undefined}
+                title={isEdit ? t('form_modal.first_installment_readonly') : undefined}
               />
             </FormGroup>
           </div>
-          <FormGroup label="Montant emprunté (€)">
+          <FormGroup label={t('form_modal.amount_label')}>
             <DecimalInput
               value={form.principal_amount}
               onChange={set('principal_amount')}
               placeholder="Ex : 200000"
               disabled={isEdit}
-              title={isEdit ? 'Non modifiable après création' : undefined}
+              title={isEdit ? t('form_modal.amount_readonly') : undefined}
             />
           </FormGroup>
           <div className="grid grid-cols-2 gap-3">
-            <FormGroup label="Taux annuel (%)">
+            <FormGroup label={t('form_modal.rate_label')}>
               <Input
                 type="number"
                 value={form.interest_rate}
                 onChange={set('interest_rate')}
-                placeholder="Ex : 3.5"
+                placeholder={t('form_modal.rate_placeholder')}
                 min="0"
                 step="0.001"
                 disabled={isEdit}
-                title={isEdit ? 'Non modifiable après création' : undefined}
+                title={isEdit ? t('form_modal.rate_readonly') : undefined}
               />
             </FormGroup>
-            <FormGroup label="Durée (mois)">
+            <FormGroup label={t('form_modal.duration_label')}>
               <Input
                 type="number"
                 value={form.duration_months}
                 onChange={set('duration_months')}
-                placeholder="Ex : 240"
+                placeholder={t('form_modal.duration_placeholder')}
                 min="1"
                 step="1"
                 disabled={isEdit}
-                title={isEdit ? 'Non modifiable après création' : undefined}
+                title={isEdit ? t('form_modal.duration_readonly') : undefined}
               />
             </FormGroup>
           </div>
           {monthlyPayment > 0 && (
             <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 flex items-center justify-between">
               <span className="text-xs text-stone-500 uppercase tracking-wide font-medium">
-                Mensualité estimée
+                {t('form_modal.monthly_estimate')}
               </span>
               <span className="font-sans text-xl text-stone-900">
                 {monthlyPayment.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
@@ -269,13 +273,13 @@ export function LoanFormModal(props: Readonly<Props>) {
             </div>
           )}
           {!isEdit && (
-            <FormGroup label="Compte crédité à l'ouverture">
+            <FormGroup label={t('form_modal.deposit_account')}>
               <Select
-                aria-label="Choisir le compte crédité à l'ouverture"
+                aria-label={t('form_modal.deposit_account_aria')}
                 value={form.deposit_account_id}
                 onChange={set('deposit_account_id')}
               >
-                <option value="">— Choisir un compte —</option>
+                <option value="">{t('form_modal.choose_account')}</option>
                 {nonLoanAccounts.map((a) => (
                   <option key={a.id} value={String(a.id)}>
                     {a.name}
@@ -285,13 +289,13 @@ export function LoanFormModal(props: Readonly<Props>) {
               </Select>
             </FormGroup>
           )}
-          <FormGroup label="Compte à débiter pour les remboursements">
+          <FormGroup label={t('form_modal.source_account')}>
             <Select
-              aria-label="Choisir le compte à débiter pour les remboursements"
+              aria-label={t('form_modal.source_account_aria')}
               value={form.source_account_id}
               onChange={set('source_account_id')}
             >
-              <option value="">— Choisir un compte —</option>
+              <option value="">{t('form_modal.choose_account')}</option>
               {nonLoanAccounts.map((a) => (
                 <option key={a.id} value={String(a.id)}>
                   {a.name}
@@ -302,10 +306,10 @@ export function LoanFormModal(props: Readonly<Props>) {
           </FormGroup>
           <div className="flex gap-2 justify-end pt-2">
             <Button type="button" onClick={props.onClose}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? '…' : submitButtonText}
+              {isPending ? tc('loading') : submitButtonText}
             </Button>
           </div>
         </form>

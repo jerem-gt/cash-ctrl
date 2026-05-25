@@ -1,4 +1,5 @@
 import { type SubmitEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('insurance');
+  const { t: tc } = useTranslation('common');
   const [amount, setAmount] = useState('');
   const [fees, setFees] = useState('0');
   const [socialFees, setSocialFees] = useState('0');
@@ -41,7 +44,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
       },
       {
         onSuccess: () => {
-          showToast('Rachat enregistré ✓');
+          showToast(t('rachat_modal.success'));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -50,7 +53,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
   };
 
   return (
-    <ModalFrame title={`Rachat — ${support.name}`}>
+    <ModalFrame title={t('rachat_modal.title', { support: support.name })}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
@@ -58,10 +61,11 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               htmlFor="rachat-amount"
               className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
             >
-              Montant racheté (€)
+              {t('rachat_modal.amount_label')}
             </label>
             <span className="text-[10px] text-stone-400">
-              Max : {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              {t('rachat_modal.max_label')}{' '}
+              {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </span>
           </div>
           <DecimalInput
@@ -79,9 +83,9 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               htmlFor="rachat-dest"
               className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
             >
-              <span>Vers le compte</span>
+              <span>{t('rachat_modal.dest_account_label')}</span>
               <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
-                (optionnel)
+                {tc('optional')}
               </span>
             </label>
             <AccountSelect
@@ -90,23 +94,23 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               onChange={setDestAccountId}
               accounts={destAccounts}
               logoMap={logoMap}
-              placeholder="— Aucun —"
+              placeholder={tc('none')}
             />
           </div>
         )}
 
         <div className="flex gap-3 items-end">
-          <FormGroup label="Frais (€)" htmlFor="rachat-fees">
+          <FormGroup label={t('rachat_modal.fees_label')} htmlFor="rachat-fees">
             <DecimalInput id="rachat-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
-          <FormGroup label="Prélèvements sociaux (€)" htmlFor="rachat-social-fees">
+          <FormGroup label={t('rachat_modal.social_fees_label')} htmlFor="rachat-social-fees">
             <DecimalInput
               id="rachat-social-fees"
               value={socialFees}
               onChange={(e) => setSocialFees(e.target.value)}
             />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="rachat-date" className="min-w-36">
+          <FormGroup label={tc('date')} htmlFor="rachat-date" className="min-w-36">
             <Input
               id="rachat-date"
               type="date"
@@ -119,10 +123,10 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={rachat.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button variant="primary" type="submit" disabled={!amount || rachat.isPending}>
-            {rachat.isPending ? '…' : 'Enregistrer'}
+            {rachat.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

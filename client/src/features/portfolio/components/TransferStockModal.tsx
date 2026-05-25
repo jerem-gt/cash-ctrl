@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useTransferStock } from '@/features/portfolio/hooks/useStocks';
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function TransferStockModal({ accountId, position, onClose }: Readonly<Props>) {
+  const { t } = useTranslation('portfolio');
+  const { t: tc } = useTranslation('common');
   const { data: allAccounts = [] } = useAccounts();
   const transfer = useTransferStock(accountId);
 
@@ -34,7 +37,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
       { to_account_id: toAccountId, ticker: position.ticker, quantity: qty, date },
       {
         onSuccess: () => {
-          showToast(`Transfert de ${qty} × ${position.ticker} enregistré ✓`);
+          showToast(t('transfer_modal.success', { qty, ticker: position.ticker }));
           onClose();
         },
         onError: (err) => showToast(err.message),
@@ -42,26 +45,29 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
     );
   };
 
+  const pru = position.avg_price.toLocaleString('fr-FR', {
+    style: 'currency',
+    currency: position.currency ?? 'EUR',
+  });
+
   return (
     <ModalFrame
-      title="Transférer des titres"
+      title={t('transfer_modal.title')}
       subtitle={
-        <>
-          <span className="font-mono font-bold text-stone-700">{position.ticker}</span> — PRU&nbsp;
-          {position.avg_price.toLocaleString('fr-FR', {
-            style: 'currency',
-            currency: position.currency ?? 'EUR',
-          })}{' '}
-          conservé
-        </>
+        <Trans
+          i18nKey="transfer_modal.subtitle"
+          ns="portfolio"
+          values={{ ticker: position.ticker, pru }}
+          components={{
+            ticker: <span className="font-mono font-bold text-stone-700" />,
+          }}
+        />
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormGroup label="Compte destination" htmlFor="tf-to-account">
+        <FormGroup label={t('transfer_modal.dest_account')} htmlFor="tf-to-account">
           {investmentTargets.length === 0 ? (
-            <p className="text-sm text-red-600 py-2">
-              Aucun autre compte d'investissement disponible.
-            </p>
+            <p className="text-sm text-red-600 py-2">{t('transfer_modal.no_targets')}</p>
           ) : (
             <select
               id="tf-to-account"
@@ -79,7 +85,10 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
         </FormGroup>
 
         <div className="flex gap-3">
-          <FormGroup label={`Nombre d'actions (max ${position.quantity})`} htmlFor="tf-quantity">
+          <FormGroup
+            label={t('transfer_modal.quantity_label', { max: position.quantity })}
+            htmlFor="tf-quantity"
+          >
             <Input
               id="tf-quantity"
               type="number"
@@ -92,7 +101,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
               autoFocus
             />
           </FormGroup>
-          <FormGroup label="Date" htmlFor="tf-date">
+          <FormGroup label={tc('date')} htmlFor="tf-date">
             <Input
               id="tf-date"
               type="date"
@@ -104,14 +113,14 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={transfer.isPending}>
-            Annuler
+            {tc('cancel')}
           </Button>
           <Button
             type="submit"
             variant="primary"
             disabled={transfer.isPending || !isValid || investmentTargets.length === 0}
           >
-            {transfer.isPending ? '…' : 'Transférer'}
+            {transfer.isPending ? tc('loading') : t('transfer_modal.submit')}
           </Button>
         </div>
       </form>

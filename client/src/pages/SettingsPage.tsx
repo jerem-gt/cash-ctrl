@@ -1,5 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { AccountTypesManager } from '@/features/settings/components/AccountTypesManager';
 import { BackupManager } from '@/features/settings/components/BackupManager';
@@ -13,6 +14,7 @@ import { SettingsManager, type SettingsTab } from '@/features/settings/component
 import ImportManager from '../features/settings/components/ImportManager.tsx';
 
 export default function SettingsPage() {
+  const { t } = useTranslation('settings');
   const [activeTab, setActiveTab] = useState<SettingsTab>('categories');
   const [mobileShowContent, setMobileShowContent] = useState(false);
 
@@ -24,8 +26,8 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-sans tracking-tight">Paramètres</h1>
-        <p className="text-sm text-black/40">Administration et gestion de l'application</p>
+        <h1 className="text-3xl font-sans tracking-tight">{t('page.title')}</h1>
+        <p className="text-sm text-black/40">{t('page.subtitle')}</p>
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-12">
@@ -39,7 +41,7 @@ export default function SettingsPage() {
             className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 mb-4 transition-colors md:hidden"
           >
             <ChevronLeft className="h-4 w-4" />
-            Paramètres
+            {t('page.back')}
           </button>
           {activeTab === 'categories' && <CategoriesManager />}
           {activeTab === 'banks' && <BanksManager />}
