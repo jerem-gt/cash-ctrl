@@ -35,6 +35,7 @@ Application de gestion de finances personnelles — multi-comptes, transactions 
 | **Simulateur PER** | Calcul de la déductibilité fiscale (barèmes IR en base) |
 | **Import / Export** | Import QIF / XHB (Homebank) ; export JSON toutes entités |
 | **Sauvegarde** | Sauvegardes incrémentales automatiques |
+| **i18n** | Interface entièrement traduite via react-i18next (namespaces par feature) |
 
 ---
 
@@ -66,6 +67,7 @@ npm run dev
 | Base de données | SQLite (better-sqlite3) | — |
 | Validation | Zod | 4 |
 | Charts | Recharts | 3 |
+| i18n | react-i18next | 15 |
 | Tests | Vitest + Testing Library + MSW | 4 |
 | CI/CD | GitHub Actions + Docker + Watchtower | — |
 

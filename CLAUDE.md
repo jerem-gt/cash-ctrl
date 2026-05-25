@@ -40,6 +40,14 @@ Le projet utilise Husky et lint-staged pour corriger automatiquement les problè
 - **Charts**: Utiliser `recharts` pour la visualisation financière.
 - **Mobile-first**: Toute interface doit être affichable sur mobile. Utiliser les breakpoints Tailwind (`md:`, `lg:`) pour adapter la mise en page. Éviter les largeurs fixes qui dépassent la largeur d'écran mobile.
 
+### Internationalisation (i18n)
+Les traductions sont découpées par namespace, chacun mappé à une feature ou page (`client/src/locales/fr/`). Utiliser `useTranslation('<namespace>')` dans le composant concerné. Les strings partagées entre plusieurs features vont dans `common`.
+
+Pour ajouter un **nouveau namespace**, mettre à jour trois fichiers :
+1. Créer `client/src/locales/fr/<namespace>.json`
+2. `client/src/i18n.ts` — ajouter l'import et la ressource dans `resources.fr`
+3. `client/src/i18next.d.ts` — ajouter l'import type et la clé dans `CustomTypeOptions.resources`
+
 ### Backend (Node.js)
 - **Logic**: Séparer les responsabilités entre les routes, les services et la validation des données.
 - **Export/Import** : Tout ajout ou modification de champ sur une entité exportée (`insurance_operations`, `stock_operations`, `loans`, `transactions`, etc.) doit être répercuté dans les trois endroits suivants :
