@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Menu } from 'lucide-react';
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -18,6 +19,34 @@ const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('App render error:', error, info);
+  }
+  override render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-stone-100">
+          <button
+            className="text-sm text-stone-500 underline"
+            onClick={() => window.location.reload()}
+          >
+            Une erreur est survenue — cliquez pour recharger
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -67,42 +96,44 @@ function AppShell() {
           </button>
           <span className="text-lg font-bold text-stone-800">{APP_CONFIG.name}</span>
         </div>
-        <Suspense
-          fallback={
-            <div className="space-y-5 animate-pulse">
-              <div className="space-y-1.5">
-                <Skeleton className="h-7 w-48" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[0, 1, 2, 3].map((i) => (
-                  <Card key={i} size="sm">
-                    <Skeleton className="h-3 w-20 mb-3" />
-                    <Skeleton className="h-7 w-28" />
-                  </Card>
-                ))}
-              </div>
-              <Card>
-                <Skeleton className="h-3 w-40 mb-4" />
-                <div className="space-y-3">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-11" />
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="space-y-5 animate-pulse">
+                <div className="space-y-1.5">
+                  <Skeleton className="h-7 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <Card key={i} size="sm">
+                      <Skeleton className="h-3 w-20 mb-3" />
+                      <Skeleton className="h-7 w-28" />
+                    </Card>
                   ))}
                 </div>
-              </Card>
-            </div>
-          }
-        >
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/accounts/:id" element={<AccountDetailPage />} />
-            <Route path="/scheduled" element={<ScheduledPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+                <Card>
+                  <Skeleton className="h-3 w-40 mb-4" />
+                  <div className="space-y-3">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} className="h-11" />
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/transactions" element={<TransactionsPage />} />
+              <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/accounts/:id" element={<AccountDetailPage />} />
+              <Route path="/scheduled" element={<ScheduledPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   );
