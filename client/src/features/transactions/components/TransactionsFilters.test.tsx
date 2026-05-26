@@ -30,19 +30,19 @@ describe('TransactionsFilters', () => {
 
   // --- Description ---
 
-  it('appelle onFilterChange avec la valeur quand la description est saisie', async () => {
+  it('appelle onFilterChange avec la valeur quand la description est saisie', () => {
     vi.useFakeTimers();
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
 
     fireEvent.change(screen.getByPlaceholderText(/rechercher/i), { target: { value: 'courses' } });
-    act(() => vi.runAllTimers());
+    void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ description_contains: 'courses' });
     vi.useRealTimers();
   });
 
-  it('appelle onFilterChange avec undefined quand la description est effacée', async () => {
+  it('appelle onFilterChange avec undefined quand la description est effacée', () => {
     vi.useFakeTimers();
     const onFilterChange = vi.fn();
     renderWithProviders(
@@ -54,7 +54,7 @@ describe('TransactionsFilters', () => {
     );
 
     fireEvent.change(screen.getByPlaceholderText(/rechercher/i), { target: { value: '' } });
-    act(() => vi.runAllTimers());
+    void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ description_contains: undefined });
     vi.useRealTimers();
@@ -99,7 +99,7 @@ describe('TransactionsFilters', () => {
 
   // --- Filtres avancés : section dépliable ---
 
-  it('la section avancée est masquée par défaut puis visible après le clic', async () => {
+  it('la section avancée est masquée par défaut puis visible après le clic', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
 
     expect(screen.queryByLabelText(/choisir une catégorie/i)).not.toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('TransactionsFilters', () => {
     expect(screen.getByLabelText(/choisir une catégorie/i)).toBeInTheDocument();
   });
 
-  it('affiche un badge avec le nombre de filtres avancés actifs', async () => {
+  it('affiche un badge avec le nombre de filtres avancés actifs', () => {
     renderWithProviders(
       <TransactionsFilters
         {...defaultProps}
@@ -122,7 +122,7 @@ describe('TransactionsFilters', () => {
 
   // --- Catégories ---
 
-  it('appelle onFilterChange lors du changement de catégorie', async () => {
+  it('appelle onFilterChange lors du changement de catégorie', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
@@ -133,7 +133,7 @@ describe('TransactionsFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ category_id: CATEGORIES[0].id });
   });
 
-  it("appelle onFilterChange avec undefined pour la catégorie quand on choisit 'Toutes'", async () => {
+  it("appelle onFilterChange avec undefined pour la catégorie quand on choisit 'Toutes'", () => {
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
     openAdvanced();
@@ -148,7 +148,7 @@ describe('TransactionsFilters', () => {
 
   // --- Sous-catégories ---
 
-  it("désactive le select des sous-catégories si aucune catégorie n'est sélectionnée", async () => {
+  it("désactive le select des sous-catégories si aucune catégorie n'est sélectionnée", () => {
     renderWithProviders(
       <TransactionsFilters {...defaultProps} filters={{ category_id: undefined }} />,
     );
@@ -157,14 +157,14 @@ describe('TransactionsFilters', () => {
     expect(screen.getByLabelText(/choisir une sous-catégorie/i)).toBeDisabled();
   });
 
-  it('active le select des sous-catégories si une catégorie est sélectionnée', async () => {
+  it('active le select des sous-catégories si une catégorie est sélectionnée', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} filters={{ category_id: 1 }} />);
     openAdvanced();
 
     expect(screen.getByLabelText(/choisir une sous-catégorie/i)).not.toBeDisabled();
   });
 
-  it("appelle onFilterChange avec undefined pour la sous-catégorie quand on choisit 'Toutes'", async () => {
+  it("appelle onFilterChange avec undefined pour la sous-catégorie quand on choisit 'Toutes'", () => {
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
     openAdvanced();
@@ -178,7 +178,7 @@ describe('TransactionsFilters', () => {
 
   // --- Sélecteur de compte ---
 
-  it('affiche le sélecteur de compte uniquement si showAccountSelect est true', async () => {
+  it('affiche le sélecteur de compte uniquement si showAccountSelect est true', () => {
     const { rerender } = renderWithProviders(
       <TransactionsFilters {...defaultProps} showAccountSelect={true} />,
     );
@@ -210,7 +210,7 @@ describe('TransactionsFilters', () => {
 
   // --- Dates ---
 
-  it('appelle onFilterChange avec date_from lors du changement de date de début', async () => {
+  it('appelle onFilterChange avec date_from lors du changement de date de début', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
@@ -221,7 +221,7 @@ describe('TransactionsFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ date_from: '2024-01-01' });
   });
 
-  it('appelle onFilterChange avec date_to lors du changement de date de fin', async () => {
+  it('appelle onFilterChange avec date_to lors du changement de date de fin', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
@@ -232,7 +232,7 @@ describe('TransactionsFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ date_to: '2024-12-31' });
   });
 
-  it('appelle onFilterChange avec undefined quand la date est effacée', async () => {
+  it('appelle onFilterChange avec undefined quand la date est effacée', () => {
     renderWithProviders(
       <TransactionsFilters {...defaultProps} filters={{ date_from: '2024-01-01' }} />,
     );
@@ -245,27 +245,27 @@ describe('TransactionsFilters', () => {
 
   // --- Montants ---
 
-  it('appelle onFilterChange avec amount_min après saisie du montant minimum', async () => {
+  it('appelle onFilterChange avec amount_min après saisie du montant minimum', () => {
     vi.useFakeTimers();
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
     openAdvanced();
 
     fireEvent.change(screen.getByLabelText(/montant minimum/i), { target: { value: '50' } });
-    act(() => vi.runAllTimers());
+    void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ amount_min: 50 });
     vi.useRealTimers();
   });
 
-  it('appelle onFilterChange avec amount_max après saisie du montant maximum', async () => {
+  it('appelle onFilterChange avec amount_max après saisie du montant maximum', () => {
     vi.useFakeTimers();
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
     openAdvanced();
 
     fireEvent.change(screen.getByLabelText(/montant maximum/i), { target: { value: '500' } });
-    act(() => vi.runAllTimers());
+    void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ amount_max: 500 });
     vi.useRealTimers();
@@ -273,7 +273,7 @@ describe('TransactionsFilters', () => {
 
   // --- Moyen de paiement ---
 
-  it('appelle onFilterChange lors du changement de moyen de paiement', async () => {
+  it('appelle onFilterChange lors du changement de moyen de paiement', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
@@ -288,7 +288,7 @@ describe('TransactionsFilters', () => {
 
   // --- Validées ---
 
-  it('appelle onFilterChange avec validated: false quand la checkbox est cochée', async () => {
+  it('appelle onFilterChange avec validated: false quand la checkbox est cochée', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} />);
     openAdvanced();
 
@@ -297,7 +297,7 @@ describe('TransactionsFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: false });
   });
 
-  it('appelle onFilterChange avec undefined quand la checkbox est décochée', async () => {
+  it('appelle onFilterChange avec undefined quand la checkbox est décochée', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} filters={{ validated: false }} />);
     openAdvanced();
 

@@ -10,7 +10,7 @@ const MOCK_FETCH_PRICE = { price: 15.5, currency: 'EUR' };
 function mockFetchSuccess() {
   vi.spyOn(global, 'fetch').mockResolvedValue({
     ok: true,
-    json: async () => ({
+    json: () => ({
       chart: { result: [{ meta: { regularMarketPrice: 15.5, currency: 'EUR' } }] },
     }),
   } as Response);

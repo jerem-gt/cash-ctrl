@@ -36,10 +36,10 @@ export function useInsuranceSupports(accountId: number) {
 function useInvalidate(accountId: number) {
   const qc = useQueryClient();
   return () => {
-    qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
-    qc.invalidateQueries({ queryKey: ['insurance-operations', accountId] });
-    qc.invalidateQueries({ queryKey: ['accounts'] });
-    qc.invalidateQueries({ queryKey: ['transactions'] });
+    void qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
+    void qc.invalidateQueries({ queryKey: ['insurance-operations', accountId] });
+    void qc.invalidateQueries({ queryKey: ['accounts'] });
+    void qc.invalidateQueries({ queryKey: ['transactions'] });
   };
 }
 
@@ -48,8 +48,8 @@ export function useCreateInsuranceSupport(accountId: number) {
   return useMutation({
     mutationFn: (payload: CreateSupportPayload) => insuranceApi.createSupport(accountId, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['insurance-supports', accountId] });
-      qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
+      void qc.invalidateQueries({ queryKey: ['insurance-supports', accountId] });
+      void qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
     },
   });
 }
@@ -87,8 +87,8 @@ export function useDeleteInsuranceSupport(accountId: number) {
   return useMutation({
     mutationFn: (supportId: number) => insuranceApi.deleteSupport(accountId, supportId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['insurance-supports', accountId] });
-      qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
+      void qc.invalidateQueries({ queryKey: ['insurance-supports', accountId] });
+      void qc.invalidateQueries({ queryKey: ['insurance-positions', accountId] });
     },
   });
 }

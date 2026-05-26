@@ -14,8 +14,8 @@ export function useCreateScheduled() {
   return useMutation({
     mutationFn: scheduledApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['scheduled'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['scheduled'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
@@ -26,8 +26,8 @@ export function useUpdateScheduled() {
     mutationFn: ({ id, ...data }: { id: number } & ScheduledPayload) =>
       scheduledApi.update(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['scheduled'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['scheduled'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
@@ -37,8 +37,8 @@ export function useDeleteScheduled() {
   return useMutation({
     mutationFn: scheduledApi.remove,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['scheduled'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['scheduled'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

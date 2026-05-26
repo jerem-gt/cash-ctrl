@@ -256,7 +256,7 @@ export function createTransactionsRepo(db: Database) {
   // Cache pour les requêtes dynamiques
   const getStatementCache = new Map<string, Statement>();
   const getDynamicStmt = (baseSql: string, filterKeys: string[]) => {
-    const sortedKeys = [...filterKeys].sort(collator.compare);
+    const sortedKeys = [...filterKeys].sort((a, b) => collator.compare(a, b));
     const cacheKey = baseSql + sortedKeys.join(',');
 
     let stmt = getStatementCache.get(cacheKey);

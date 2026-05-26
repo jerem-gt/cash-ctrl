@@ -345,7 +345,7 @@ function computeInvestmentProfitability(
   }
 
   return invAccounts
-    .filter((acc) => acc.opening_date !== null)
+    .filter((acc) => acc.opening_date != null)
     .map((acc) => {
       const transfers = stockTransferTotals.get(acc.account_id) ?? { in: 0, out: 0 };
       const capitalInvesti = toEuros(
@@ -505,7 +505,7 @@ function computeInsuranceProfitability(
   }
 
   return insAccounts
-    .filter((acc) => acc.opening_date !== null)
+    .filter((acc) => acc.opening_date != null)
     .map((acc) => {
       const capitalInvesti = toEuros(acc.versements_cents);
       const capitalRetire = toEuros(acc.rachats_cents);
@@ -651,7 +651,7 @@ function computeSavingsProfitability(
   }
 
   return savAccounts
-    .filter((acc) => acc.opening_date !== null)
+    .filter((acc) => acc.opening_date != null)
     .map((acc) => {
       const capitalInvesti = toEuros(
         acc.initial_balance + acc.deposits_cents - acc.withdrawals_cents,

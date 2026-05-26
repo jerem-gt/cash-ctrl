@@ -212,7 +212,7 @@ export default function DashboardPage() {
                 tick={{ fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => fmt(v)}
+                tickFormatter={(v) => fmt(Number(v))}
                 width={70}
               />
               <Tooltip formatter={(v) => (v == null ? '' : fmtDec(Number(v)))} />
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                 tick={{ fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => fmt(v)}
+                tickFormatter={(v) => fmt(Number(v))}
                 width={70}
               />
               <Tooltip

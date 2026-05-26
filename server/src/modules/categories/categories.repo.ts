@@ -47,7 +47,7 @@ export function createCategoriesRepo(db: Database, userId: number) {
       const rows = getAllStmt.all({ userId }) as RawCategoryRow[];
       return rows.map((row) => ({
         ...row,
-        subcategories: JSON.parse(row.subcategories ?? '[]'),
+        subcategories: JSON.parse(row.subcategories ?? '[]') as unknown[],
       }));
     },
 

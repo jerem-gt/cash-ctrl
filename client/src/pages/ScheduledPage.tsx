@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ScheduledPayload } from '@/api/client';
@@ -329,7 +329,7 @@ function ScheduledModal({
     payment_method_id: form.payment_method_id,
   };
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!form.amount || !form.description || !form.start_date) {
       showToast(t('modal.err_required'));
@@ -849,7 +849,7 @@ export default function ScheduledPage() {
   const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
   const displayLeadDays = leadDays === '' ? defaultLeadDays : leadDays;
 
-  const handleSaveLeadDays = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSaveLeadDays = (e: SubmitEvent) => {
     e.preventDefault();
     const val = Number.parseInt(displayLeadDays);
     if (Number.isNaN(val) || val < 0 || val > 365) {

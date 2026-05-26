@@ -35,7 +35,8 @@ function extractError(value: unknown): string {
   if (typeof value === 'object' && value !== null) {
     const messages: string[] = [];
     for (const [key, val] of Object.entries(value)) {
-      if (key === '_errors' && Array.isArray(val)) messages.push(...val.filter(Boolean));
+      if (key === '_errors' && Array.isArray(val))
+        messages.push(...(val as string[]).filter(Boolean));
       else {
         const nested = extractError(val);
         if (nested) messages.push(nested);
@@ -47,7 +48,7 @@ function extractError(value: unknown): string {
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {
-  const data = await res.json().catch(() => ({}));
+  const data: unknown = await res.json().catch(() => ({}));
   if (!res.ok)
     throw new Error(extractError((data as { error?: unknown }).error) || 'Request failed');
   return data as T;

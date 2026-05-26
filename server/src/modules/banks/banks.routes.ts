@@ -19,7 +19,7 @@ const reorderSchema = z.array(z.object({ id: z.number().int(), sort_order: z.num
 const upload = multer({
   storage: multer.diskStorage({
     destination: LOGOS_DIR,
-    filename: (req, _file, cb) => cb(null, `bank-${req.params.id}-${Date.now()}.png`),
+    filename: (req, _file, cb) => cb(null, `bank-${String(req.params.id)}-${Date.now()}.png`),
   }),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith('image/')),

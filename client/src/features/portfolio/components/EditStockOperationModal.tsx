@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
@@ -28,7 +28,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
 
   const totalAmount = calculateTotalAmount(op.type, qty, pps, f);
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (qty <= 0 || pps <= 0) return;
     update.mutate(

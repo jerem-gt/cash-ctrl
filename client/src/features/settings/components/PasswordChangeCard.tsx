@@ -1,4 +1,4 @@
-import { SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui';
@@ -10,7 +10,7 @@ export function PasswordChangeCard() {
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
 
-  const handlePasswordSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (pwForm.next !== pwForm.confirm) {
       showToast(t('password.err_mismatch'));

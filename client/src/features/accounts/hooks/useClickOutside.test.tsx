@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { useClickOutside } from './useClickOutside';
 
-function TestComponent({ onClose }: { onClose: () => void }) {
+function TestComponent({ onClose }: Readonly<{ onClose: () => void }>) {
   const ref = useClickOutside<HTMLDivElement>(onClose);
   return (
     <div ref={ref} data-testid="container">

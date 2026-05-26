@@ -22,7 +22,11 @@ function promisify<T>(
   fn: (cb: (err: unknown, result?: T | null) => void) => void,
 ): Promise<T | null | undefined> {
   return new Promise((resolve, reject) =>
-    fn((err, result) => (err ? reject(err) : resolve(result))),
+    fn((err, result) => {
+      if (err)
+        reject(err instanceof Error ? err : new Error('Session store error', { cause: err }));
+      else resolve(result);
+    }),
   );
 }
 
@@ -63,7 +67,7 @@ describe('SQLiteSessionStore', () => {
 
   it('touch updates expiry so session stays alive', async () => {
     await promisifyVoid((cb) => store.set('s4', makeSession(500), cb));
-    await promisifyVoid((cb) => store.touch!('s4', makeSession(60_000), cb));
+    await promisifyVoid((cb) => store.touch('s4', makeSession(60_000), cb));
     const sess = await promisify<SessionData>((cb) => store.get('s4', cb));
     expect(sess).toBeTruthy();
   });

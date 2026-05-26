@@ -13,7 +13,7 @@ export function useCreateAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountsApi.create,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
 
@@ -31,7 +31,7 @@ export function useUpdateAccount() {
       initial_balance: number;
       opening_date: string | null;
     }) => accountsApi.update(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
 
@@ -40,8 +40,8 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: accountsApi.remove,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['accounts'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
@@ -50,7 +50,7 @@ export function useReopenAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountsApi.reopen,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
 
@@ -66,8 +66,8 @@ export function useCloseAccount() {
       transfer_to_account_id?: number;
     }) => accountsApi.close(id, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['accounts'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

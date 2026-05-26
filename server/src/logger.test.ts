@@ -147,7 +147,7 @@ describe('requestLogger', () => {
 
   it('log error sur 5xx', () => {
     const { res, triggerFinish } = mockRes(500);
-    requestLogger(mockReq('POST', '/api'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('POST', '/api'), res, vi.fn());
     triggerFinish();
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toContain('POST /api 500');
@@ -155,7 +155,7 @@ describe('requestLogger', () => {
 
   it('log warn sur 4xx', () => {
     const { res, triggerFinish } = mockRes(404);
-    requestLogger(mockReq('GET', '/missing'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('GET', '/missing'), res, vi.fn());
     triggerFinish();
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(warnSpy.mock.calls[0][0]).toContain('GET /missing 404');
@@ -163,7 +163,7 @@ describe('requestLogger', () => {
 
   it('log debug pour GET 2xx', () => {
     const { res, triggerFinish } = mockRes(200);
-    requestLogger(mockReq('GET', '/data'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('GET', '/data'), res, vi.fn());
     triggerFinish();
     expect(debugSpy).toHaveBeenCalledOnce();
     expect(infoSpy).not.toHaveBeenCalled();
@@ -171,28 +171,28 @@ describe('requestLogger', () => {
 
   it('log info pour POST 2xx', () => {
     const { res, triggerFinish } = mockRes(201);
-    requestLogger(mockReq('POST', '/items'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('POST', '/items'), res, vi.fn());
     triggerFinish();
     expect(infoSpy).toHaveBeenCalledOnce();
   });
 
   it('log info pour PUT 2xx', () => {
     const { res, triggerFinish } = mockRes(200);
-    requestLogger(mockReq('PUT', '/items/1'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('PUT', '/items/1'), res, vi.fn());
     triggerFinish();
     expect(infoSpy).toHaveBeenCalledOnce();
   });
 
   it('log info pour DELETE 2xx', () => {
     const { res, triggerFinish } = mockRes(200);
-    requestLogger(mockReq('DELETE', '/items/1'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('DELETE', '/items/1'), res, vi.fn());
     triggerFinish();
     expect(infoSpy).toHaveBeenCalledOnce();
   });
 
   it('inclut le temps écoulé en ms dans la ligne de log', () => {
     const { res, triggerFinish } = mockRes(201);
-    requestLogger(mockReq('POST', '/timed'), res, vi.fn() as unknown as NextFunction);
+    requestLogger(mockReq('POST', '/timed'), res, vi.fn());
     triggerFinish();
     expect(infoSpy.mock.calls[0][0]).toMatch(/\d+ms/);
   });
@@ -223,12 +223,7 @@ describe('globalErrorHandler', () => {
 
   it("log méthode, chemin et message d'erreur", () => {
     const { res } = makeRes();
-    globalErrorHandler(
-      new Error('boom'),
-      mockReq('DELETE', '/items/1'),
-      res,
-      vi.fn() as unknown as NextFunction,
-    );
+    globalErrorHandler(new Error('boom'), mockReq('DELETE', '/items/1'), res, vi.fn());
     expect(errorSpy).toHaveBeenCalledOnce();
     const msg = errorSpy.mock.calls[0][0] as string;
     expect(msg).toContain('DELETE /items/1 500');
@@ -237,26 +232,21 @@ describe('globalErrorHandler', () => {
 
   it('répond 500 JSON quand les headers ne sont pas encore envoyés', () => {
     const { res, statusMock, jsonMock } = makeRes(false);
-    globalErrorHandler(new Error('oops'), mockReq(), res, vi.fn() as unknown as NextFunction);
+    globalErrorHandler(new Error('oops'), mockReq(), res, vi.fn());
     expect(statusMock).toHaveBeenCalledWith(500);
     expect(jsonMock).toHaveBeenCalledWith({ error: 'Erreur interne du serveur.' });
   });
 
   it('ne répond pas quand headersSent=true', () => {
     const { res, statusMock, jsonMock } = makeRes(true);
-    globalErrorHandler(new Error('late'), mockReq(), res, vi.fn() as unknown as NextFunction);
+    globalErrorHandler(new Error('late'), mockReq(), res, vi.fn());
     expect(statusMock).not.toHaveBeenCalled();
     expect(jsonMock).not.toHaveBeenCalled();
   });
 
   it('gère une valeur non-Error (string)', () => {
     const { res } = makeRes();
-    globalErrorHandler(
-      'raw string',
-      mockReq('GET', '/foo'),
-      res,
-      vi.fn() as unknown as NextFunction,
-    );
+    globalErrorHandler('raw string', mockReq('GET', '/foo'), res, vi.fn());
     expect(errorSpy.mock.calls[0][0]).toContain('raw string');
   });
 });

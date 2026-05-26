@@ -1,4 +1,4 @@
-import { SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
@@ -123,7 +123,7 @@ export function PaymentMethodsManager() {
 
   if (pmsLoading) return <SettingsManagerSkeleton />;
 
-  const handleAddPaymentMethod = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleAddPaymentMethod = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newPm.name.trim()) {
       showToast(t('payment_methods.err_no_name'));
