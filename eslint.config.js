@@ -77,6 +77,18 @@ export default [
     },
   },
 
+  // Tests client — utilise tsconfig.test.json (vitest globals)
+  {
+    files: ['client/src/**/*.test.{ts,tsx}', 'client/src/tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ['./client/tsconfig.test.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
   // Fichiers de test — assouplissements ciblés
   {
     files: ['**/*.test.{ts,tsx,js}', '**/*.spec.{ts,tsx,js}'],
