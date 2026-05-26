@@ -39,7 +39,7 @@ function checkTransferConstraints(
   transferPmId: number | undefined,
   res: Response,
 ): boolean {
-  if (d.payment_method_id !== transferPmId) return true;
+  if (d.payment_method_id != transferPmId) return true;
   if (!d.to_account_id) {
     res.status(400).json({ error: 'Un compte destination est requis pour un transfert' });
     return false;

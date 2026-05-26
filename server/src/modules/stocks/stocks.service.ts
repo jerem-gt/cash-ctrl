@@ -92,7 +92,7 @@ export async function fetchAndStorePriceHistory(
     const yearData = new Map<number, number>();
     for (let i = 0; i < timestamps.length; i++) {
       const close = closes[i];
-      if (close === null || close === undefined || !Number.isFinite(close)) continue;
+      if (close == null || !Number.isFinite(close)) continue;
       const year = new Date(timestamps[i] * 1000).getUTCFullYear();
       if (year >= currentYear) continue;
       yearData.set(year, close); // later iterations overwrite → last close of the year

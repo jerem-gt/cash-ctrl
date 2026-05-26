@@ -52,7 +52,7 @@ const mockManager = (overrides: ManagerOverrides = {}) => {
       handleUpdate: vi.fn(),
       ...overrides.actions,
     },
-  } as ManagerReturn);
+  });
 };
 
 describe('TransactionsList', () => {

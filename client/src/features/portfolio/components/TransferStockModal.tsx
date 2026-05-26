@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
@@ -30,7 +30,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
   const qty = Number.parseFloat(quantity) || 0;
   const isValid = toAccountId > 0 && qty > 0 && qty <= position.quantity;
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!isValid) return;
     transfer.mutate(

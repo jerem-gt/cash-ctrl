@@ -13,7 +13,7 @@ function setup() {
 }
 
 describe('AdminPage — affichage', () => {
-  it("affiche le titre et le nom de l'admin connecté", async () => {
+  it("affiche le titre et le nom de l'admin connecté", () => {
     setup();
     expect(screen.getByText(/Administration/)).toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();

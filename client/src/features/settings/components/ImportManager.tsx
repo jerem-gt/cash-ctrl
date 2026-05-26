@@ -1046,7 +1046,7 @@ export default function ImportManager() {
             </Button>
             <Button
               variant="primary"
-              onClick={handleJsonImport}
+              onClick={() => void handleJsonImport()}
               disabled={jsonImportMutation.isPending}
             >
               {jsonImportMutation.isPending ? t('import.importing') : t('import.import_btn')}
@@ -1214,7 +1214,7 @@ export default function ImportManager() {
             </Button>
             <Button
               variant="primary"
-              onClick={handleImport}
+              onClick={() => void handleImport()}
               disabled={selected.size === 0 || importMutation.isPending}
             >
               {importMutation.isPending

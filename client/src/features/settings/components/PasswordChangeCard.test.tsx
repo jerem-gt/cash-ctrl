@@ -8,7 +8,7 @@ import { server } from '@/tests/msw/server.ts';
 import { PasswordChangeCard } from './PasswordChangeCard';
 
 describe('PasswordChangeCard', () => {
-  it('affiche la section', async () => {
+  it('affiche la section', () => {
     renderWithProviders(<PasswordChangeCard />);
     expect(screen.getByText('Changer le mot de passe')).toBeInTheDocument();
   });

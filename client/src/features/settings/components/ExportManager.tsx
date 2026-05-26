@@ -62,7 +62,7 @@ export default function ExportManager() {
   const handleDownload = () => {
     const ids = selectedIds.size > 0 ? [...selectedIds].join(',') : undefined;
     const qs = ids ? `?accountIds=${ids}` : '';
-    downloadExport(
+    void downloadExport(
       `/api/export/json-full${qs}`,
       `cashctrl-full-${date}.json`,
       setPending,

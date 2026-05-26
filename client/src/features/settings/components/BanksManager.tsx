@@ -17,7 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
 import { GripVertical } from 'lucide-react';
-import { ChangeEvent, SyntheticEvent, useState } from 'react';
+import { type ChangeEvent, type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
@@ -55,31 +55,30 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
 
   const logoSrc = preview ?? bank.logo ?? null;
 
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    try {
+      if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
+      await updateBank.mutateAsync({
+        id: bank.id,
+        name: name.trim(),
+        domain: domain.trim() || null,
+      });
+      onClose();
+      setFile(null);
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      showToast(t('banks.success_edit'));
+    } catch (err) {
+      showToast((err as Error).message);
+    }
+  };
+
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        try {
-          if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
-          await updateBank.mutateAsync({
-            id: bank.id,
-            name: name.trim(),
-            domain: domain.trim() || null,
-          });
-          onClose();
-          setFile(null);
-          setPreview((prev) => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
-          showToast(t('banks.success_edit'));
-        } catch (err) {
-          showToast((err as Error).message);
-        }
-      }}
-      className="flex flex-col gap-3"
-    >
+    <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
         {t('banks.edit_title')}
       </p>
@@ -236,7 +235,7 @@ export function BanksManager() {
 
   if (banksLoading) return <SettingsManagerSkeleton />;
 
-  const handleAddBank = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleAddBank = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newBank.name.trim()) {
       showToast(t('banks.err_no_name'));
@@ -265,7 +264,7 @@ export function BanksManager() {
 
     reorderBanks.mutate(
       reordered.map((b, i) => ({ id: b.id, sort_order: i })),
-      { onError: () => qc.invalidateQueries({ queryKey: ['banks'] }) },
+      { onError: () => void qc.invalidateQueries({ queryKey: ['banks'] }) },
     );
   };
 

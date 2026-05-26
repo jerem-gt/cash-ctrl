@@ -1,4 +1,4 @@
-import { SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
@@ -180,7 +180,7 @@ export function AccountTypesManager() {
     { value: 'per', label: t('account_types.per') },
   ];
 
-  const handleAddAccountType = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleAddAccountType = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newAtName.trim()) {
       showToast(t('account_types.err_no_name'));

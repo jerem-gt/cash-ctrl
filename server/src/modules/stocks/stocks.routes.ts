@@ -139,7 +139,7 @@ export function createStocksRouter(db: Database): Router {
   });
 
   router.get('/search', async (req, res) => {
-    const q = String(req.query.q ?? '').trim();
+    const q = (typeof req.query.q === 'string' ? req.query.q : '').trim();
     if (!q || q.length < 3) {
       res.json([]);
       return;

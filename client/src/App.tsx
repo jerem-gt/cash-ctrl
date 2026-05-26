@@ -29,9 +29,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     return { hasError: true };
   }
   override componentDidCatch(error: Error, info: ErrorInfo) {
+    // eslint-disable-next-line no-console
     console.error('App render error:', error, info);
   }
-  override render() {
+  override render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-stone-100">
@@ -44,7 +45,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         </div>
       );
     }
-    return this.props.children;
+    return <>{this.props.children}</>;
   }
 }
 

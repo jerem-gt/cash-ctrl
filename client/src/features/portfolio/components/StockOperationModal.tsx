@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
@@ -48,7 +48,7 @@ export function StockOperationModal(props: Readonly<Props>) {
   const isBuy = mode === 'buy';
   const maxQty = isBuy ? undefined : position?.quantity;
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     if (!ticker.trim() || qty <= 0 || pps <= 0) return;
     const cleanTicker = ticker.trim().toUpperCase();

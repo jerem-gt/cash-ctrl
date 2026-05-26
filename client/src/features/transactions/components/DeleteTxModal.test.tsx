@@ -22,7 +22,7 @@ describe('DeleteTxModal', () => {
     expect(screen.getByText(/deux côtés/i)).toBeInTheDocument();
   });
 
-  it('appelle onConfirm au clic sur Confirmer', async () => {
+  it('appelle onConfirm au clic sur Confirmer', () => {
     const onConfirm = vi.fn();
     const { getByRole } = render(
       <DeleteTxModal tx={baseTx} onConfirm={onConfirm} onCancel={vi.fn()} />,

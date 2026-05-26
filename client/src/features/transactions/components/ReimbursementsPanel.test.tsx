@@ -144,7 +144,7 @@ describe('ReimbursementsPanel — montant partiel (AmountCell)', () => {
     // total de la transaction
     expect(
       screen.getByText(
-        (_, el) => el?.tagName === 'SPAN' && /\/.*90,00.*€/.test(el?.textContent ?? ''),
+        (_, el) => el?.tagName === 'SPAN' && /\/[^/]*90,00[^€]*€/.test(el?.textContent ?? ''),
       ),
     ).toBeInTheDocument();
   });
@@ -288,7 +288,7 @@ describe('ReimbursementsPanel — formulaire de liaison', () => {
     if (firstRealOption) {
       await user.selectOptions(select, firstRealOption.value);
       await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
-      const input = screen.getByRole('textbox') as HTMLInputElement;
+      const input = screen.getByRole('textbox');
       // Valeur formatée avec 2 décimales (ex: "24.50" pas "24.5")
       expect(input.value).toMatch(/^\d+\.\d{2}$/);
     }

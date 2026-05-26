@@ -90,7 +90,7 @@ export default function AccountDetailPage() {
     return (
       <div className="space-y-5">
         <button
-          onClick={() => navigate('/accounts')}
+          onClick={() => void navigate('/accounts')}
           className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
         >
           {t('detail.not_found_back')}

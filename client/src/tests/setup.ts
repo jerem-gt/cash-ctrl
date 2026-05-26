@@ -19,7 +19,7 @@ globalThis.ResizeObserver = class {
   disconnect() {
     /* no-op stub */
   }
-} as unknown as typeof ResizeObserver;
+};
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => server.resetHandlers());

@@ -35,9 +35,9 @@ export function useLinkReimbursement(transactionId: number) {
       attributedAmount?: number;
     }) => reimbursementsApi.link(transactionId, linkedTxId, attributedAmount),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
-      qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
@@ -48,8 +48,8 @@ export function useUpdateReimbursementAmount(transactionId: number) {
     mutationFn: ({ linkedId, amount }: { linkedId: number; amount: number | null }) =>
       reimbursementsApi.updateAmount(transactionId, linkedId, amount),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
-      qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
     },
   });
 }
@@ -59,9 +59,9 @@ export function useUnlinkReimbursement(transactionId: number) {
   return useMutation({
     mutationFn: (linkedId: number) => reimbursementsApi.unlink(transactionId, linkedId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
-      qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', transactionId] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }
@@ -72,9 +72,9 @@ export function useSetReimbursementStatus() {
     mutationFn: ({ id, status }: { id: number; status: 'en_attente' | 'rembourse' | null }) =>
       reimbursementsApi.setStatus(id, status),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['transactions'] });
-      qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['reimbursements', 'recent'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', 'pending'] });
+      void qc.invalidateQueries({ queryKey: ['reimbursements', 'recent'] });
     },
   });
 }

@@ -147,9 +147,7 @@ describe('ImportManager — étape Upload', () => {
   it('refuse un fichier non .qif/.xhb', () => {
     renderImportManager();
     const badFile = new File(['data'], 'export.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(
-      /sélectionner un fichier qif, xhb ou json/i,
-    ) as HTMLInputElement;
+    const input = screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i);
     fireEvent.change(input, { target: { files: [badFile] } });
     expect(
       screen.getByText(/le fichier doit avoir l'extension .qif, .xhb ou .json/i),

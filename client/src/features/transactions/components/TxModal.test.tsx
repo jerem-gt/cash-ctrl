@@ -240,7 +240,7 @@ describe('TxModal — champ Planification', () => {
     await user.selectOptions(document.getElementById('scheduled-select')!, String(SCHEDULED[0].id));
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     expect(onSave).toHaveBeenCalledOnce();
-    expect((onSave.mock.calls[0][0] as TxFormState).scheduled_id).toBe(SCHEDULED[0].id);
+    expect(onSave.mock.calls[0][0].scheduled_id).toBe(SCHEDULED[0].id);
   });
 
   it('inclut scheduled_id null dans onSave quand on détache', async () => {
@@ -252,7 +252,7 @@ describe('TxModal — champ Planification', () => {
     await user.selectOptions(document.getElementById('scheduled-select')!, '');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
     expect(onSave).toHaveBeenCalledOnce();
-    expect((onSave.mock.calls[0][0] as TxFormState).scheduled_id).toBeNull();
+    expect(onSave.mock.calls[0][0].scheduled_id).toBeNull();
   });
 });
 

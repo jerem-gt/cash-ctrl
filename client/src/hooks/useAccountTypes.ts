@@ -10,7 +10,7 @@ export function useCreateAccountType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountTypesApi.create,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['account-types'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['account-types'] }),
   });
 }
 
@@ -20,8 +20,8 @@ export function useUpdateAccountType() {
     mutationFn: ({ id, ...payload }: { id: number; name: string; envelope_type: string | null }) =>
       accountTypesApi.update(id, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['account-types'] });
-      qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: ['account-types'] });
+      void qc.invalidateQueries({ queryKey: ['accounts'] });
     },
   });
 }
@@ -30,6 +30,6 @@ export function useDeleteAccountType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountTypesApi.remove,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['account-types'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['account-types'] }),
   });
 }

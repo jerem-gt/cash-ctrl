@@ -40,7 +40,7 @@ describe('generateColor', () => {
     // Test sur un large échantillon pour vérifier les calculs de saturation/lightness
     for (let i = 8; i < 100; i++) {
       const color = generateColor(i);
-      const matches = color.match(/hsl\((.*)\)/)?.[1].split(', ');
+      const matches = /hsl\((.*)\)/.exec(color)?.[1].split(', ');
 
       if (matches) {
         const h = parseFloat(matches[0]);

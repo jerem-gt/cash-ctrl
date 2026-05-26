@@ -52,7 +52,7 @@ describe('PortfolioSection', () => {
     renderPortfolio();
     await screen.findAllByText('DCAM.PA');
     // PV = (15 - 12) * 10 = +30€
-    expect(screen.getAllByText(/\+.*30/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\+[^+]*30/).length).toBeGreaterThan(0);
   });
 
   it('actualise les cours au clic sur Actualiser', async () => {
