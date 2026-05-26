@@ -13,12 +13,22 @@ import { useMe } from '@/hooks/useAuth';
 import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage } from '@/pages/LoginPage';
 
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'));
-const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
-const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage'));
-const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const ScheduledPage = lazy(() => import('@/pages/ScheduledPage'));
+// Recharge la page si un chunk hashé n'existe plus (déploiement PWA)
+function lazyLoad<T extends { default: React.ComponentType }>(factory: () => Promise<T>) {
+  return lazy(() =>
+    factory().catch(() => {
+      globalThis.location.reload();
+      return new Promise<T>(() => {});
+    }),
+  );
+}
+
+const DashboardPage = lazyLoad(() => import('@/pages/DashboardPage'));
+const TransactionsPage = lazyLoad(() => import('@/pages/TransactionsPage'));
+const AccountsPage = lazyLoad(() => import('@/pages/AccountsPage'));
+const AccountDetailPage = lazyLoad(() => import('@/pages/AccountDetailPage'));
+const SettingsPage = lazyLoad(() => import('@/pages/SettingsPage'));
+const ScheduledPage = lazyLoad(() => import('@/pages/ScheduledPage'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
