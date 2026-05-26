@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         <div className="flex items-center justify-center min-h-screen bg-stone-100">
           <button
             className="text-sm text-stone-500 underline"
-            onClick={() => window.location.reload()}
+            onClick={() => globalThis.location.reload()}
           >
             Une erreur est survenue — cliquez pour recharger
           </button>
