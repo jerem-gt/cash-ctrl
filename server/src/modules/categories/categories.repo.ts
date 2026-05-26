@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { SubcategoryWithCount } from '../subcategories/subcategories.types';
 import {
   Category,
   CategoryWithCountAndSubCategories,
@@ -47,7 +48,7 @@ export function createCategoriesRepo(db: Database, userId: number) {
       const rows = getAllStmt.all({ userId }) as RawCategoryRow[];
       return rows.map((row) => ({
         ...row,
-        subcategories: JSON.parse(row.subcategories ?? '[]') as unknown[],
+        subcategories: JSON.parse(row.subcategories ?? '[]') as SubcategoryWithCount[],
       }));
     },
 
