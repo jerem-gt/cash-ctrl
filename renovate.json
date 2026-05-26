@@ -7,24 +7,41 @@
 
   "rangeStrategy": "bump",
 
+  "semanticCommits": "enabled",
+
+  "minimumReleaseAge": "3 days",
+
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+
+  "schedule": ["at any time"],
+
+  "labels": ["dependencies"],
+
+  "reviewers": ["jerem-gt"],
+
   "npm": {
     "enabled": true
   },
 
   "packageRules": [
     {
-      "description": "Group all minor/patch deps",
+      "description": "Group all minor/patch prod deps",
+      "matchDepTypes": ["dependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "all non-major deps"
+      "groupName": "prod deps (minor/patch)"
     },
     {
-      "description": "Separate devDependencies",
+      "description": "Group devDependencies minor/patch, automerge patches",
       "matchDepTypes": ["devDependencies"],
-      "groupName": "devDependencies"
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "devDependencies",
+      "automerge": true,
+      "automergeType": "pr"
     },
     {
-      "description": "Keep React updates isolated",
-      "matchPackageNames": ["react", "react-dom"],
+      "description": "Keep React + types updates isolated",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
       "groupName": "react",
       "automerge": false
     },
@@ -34,6 +51,7 @@
         "vite",
         "typescript",
         "@vitejs/plugin-react",
+        "vite-plugin-pwa",
         "tailwindcss",
         "postcss"
       ],
@@ -41,29 +59,9 @@
       "automerge": false
     },
     {
-      "description": "Backend critical deps",
-      "matchPackageNames": [
-        "express",
-        "better-sqlite3",
-        "express-session"
-      ],
+      "description": "Backend critical deps — never automerge",
+      "matchPackageNames": ["express", "better-sqlite3", "express-session"],
       "automerge": false
-    },
-    {
-      "matchPackageNames": ["eslint"],
-      "allowedVersions": "<10.0.0"
-    },
-    {
-      "matchPackageNames": ["@eslint/js"],
-      "allowedVersions": "<10.0.0"
     }
-  ],
-
-  "prConcurrentLimit": 5,
-
-  "schedule": ["at any time"],
-
-  "labels": ["dependencies"],
-
-  "reviewers": ["jerem-gt"]
+  ]
 }
