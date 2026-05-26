@@ -54,7 +54,7 @@ export default [
   {
     files: ['server/**/*.{ts,js}'],
     languageOptions: {
-      parser: tseslint.parser,
+      globals: globals.node,
     },
   },
 
