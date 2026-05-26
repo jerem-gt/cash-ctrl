@@ -63,7 +63,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
     }
   });
 
-  app.get('/api/version', (req, res) => {
+  app.get('/api/version', (_req, res) => {
     res.json({
       version: process.env.APP_VERSION || 'development',
     });

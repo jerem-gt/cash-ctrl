@@ -13,11 +13,11 @@ function mockFetchSuccess() {
     json: () => ({
       chart: { result: [{ meta: { regularMarketPrice: 15.5, currency: 'EUR' } }] },
     }),
-  } as Response);
+  } as unknown as Response);
 }
 
 function mockFetchFailure() {
-  vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false } as Response);
+  vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false } as unknown as Response);
 }
 
 describe('/api/stocks', () => {

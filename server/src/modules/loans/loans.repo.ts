@@ -284,7 +284,7 @@ export function createLoansRepo(db: Database) {
     getInstallments: (loanId: number, userId: number) =>
       getInstallmentsByLoanId.all({ loanId, userId }).map(mapInstallment),
 
-    updateLoan(userId: number, loanId: number, data: UpdateLoanInput): Loan | null {
+    updateLoan(_userId: number, loanId: number, data: UpdateLoanInput): Loan | null {
       const loan = getLoanById.get({ id: loanId });
       if (!loan) {
         return null;
