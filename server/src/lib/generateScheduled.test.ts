@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { RecurrenceUnit, TransactionType, WeekendHandling } from '../constants';
 import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
-import { generateScheduledTransactions } from './generateScheduled.js';
+import {
+  generateScheduledTransactions,
+  startScheduledGenerationInterval,
+} from './generateScheduled.js';
 import { dateStr } from './scheduledLogic.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -380,5 +383,30 @@ describe('generateScheduledTransactions', () => {
     const txs = getTx(f, id);
     expect(txs).toHaveLength(1);
     expect(txs[0].date).toBe('2026-02-28');
+  });
+});
+
+describe('startScheduledGenerationInterval', () => {
+  let f: Fixtures;
+
+  beforeEach(() => {
+    f = setupFixtures();
+  });
+
+  it('generates pending transactions for all users on the immediate startup pass', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const id = insertSchedule(f, {
+      recurrence_unit: 'day',
+      recurrence_interval: 1,
+      start_date: dateStr(yesterday),
+    });
+    setLeadDays(f, 1); // yesterday, today, +1 → 3 occurrences
+
+    // Large interval: only the immediate run() should fire during the test
+    const timer = startScheduledGenerationInterval(f.db, 60 * 60 * 1000);
+    clearInterval(timer);
+
+    expect(countTx(f, id)).toBe(3);
   });
 });

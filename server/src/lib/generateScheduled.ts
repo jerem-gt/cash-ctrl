@@ -1,5 +1,6 @@
 import type BetterSqlite3 from 'better-sqlite3';
 
+import { logger } from '../logger.js';
 import { createLoansRepo } from '../modules/loans/loans.repo';
 import { createScheduledRepo } from '../modules/scheduled/scheduled.repo';
 import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
@@ -169,4 +170,31 @@ export function generateScheduledTransactions(userId: number, database: Db): voi
   }
 
   generateLoanInstallments(userId, database, horizon, transfersRepo);
+}
+
+/**
+ * Génère en tâche de fond les transactions planifiées de tous les utilisateurs.
+ * Comme les transactions sont pré-générées jusqu'à `aujourd'hui + lead_days` (30j par
+ * défaut), il n'est jamais nécessaire de générer sur le chemin de lecture : ce job
+ * maintient simplement le tampon rempli. Un passage horaire est largement suffisant.
+ * La création/modification d'une planif ou d'un prêt déclenche en plus une génération
+ * immédiate (cf. scheduled.routes / loans.routes) pour un retour visuel instantané.
+ */
+export function startScheduledGenerationInterval(
+  database: Db,
+  intervalMs = 60 * 60 * 1000,
+): NodeJS.Timeout {
+  const run = () => {
+    try {
+      const rows = database.prepare<[], { id: number }>('SELECT id FROM users').all();
+      for (const { id } of rows) {
+        generateScheduledTransactions(id, database);
+      }
+    } catch (err: unknown) {
+      logger.error(`Scheduled generation interval error: ${String(err)}`);
+    }
+  };
+
+  run(); // rattrape immédiatement le retard accumulé pendant un éventuel arrêt
+  return setInterval(run, intervalMs);
 }

@@ -8,6 +8,7 @@ import express from 'express';
 import { createApp } from './app.js';
 import { createDb, initDatabase } from './db/init';
 import { startBackupInterval } from './lib/backup.js';
+import { startScheduledGenerationInterval } from './lib/generateScheduled.js';
 import { logger } from './logger';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
@@ -24,10 +25,24 @@ const app = createApp(db, {
 });
 
 app.set('trust proxy', 1);
-app.use('/logos', express.static(LOGOS_DIR));
+// Logos de banques : noms stables, changent rarement → cache navigateur d'une journée
+app.use('/logos', express.static(LOGOS_DIR, { maxAge: '1d' }));
+
+const CLIENT_DIST = path.join(__dirname, '../../client/dist');
 
 if (IS_PROD) {
-  app.use(express.static(path.join(__dirname, '../../client/dist')));
+  // Assets Vite à noms hashés → cache immuable 1 an ; index.html ne doit jamais être caché
+  app.use(
+    express.static(CLIENT_DIST, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        }
+      },
+    }),
+  );
 
   // Override health check in production to also verify the frontend bundle
   app.get('/api/health', (_req, res) => {
@@ -37,7 +52,7 @@ if (IS_PROD) {
       res.status(503).json({ ok: false, reason: 'db' });
       return;
     }
-    if (!fs.existsSync(path.join(__dirname, '../../client/dist', 'index.html'))) {
+    if (!fs.existsSync(path.join(CLIENT_DIST, 'index.html'))) {
       res.status(503).json({ ok: false, reason: 'frontend' });
       return;
     }
@@ -45,7 +60,9 @@ if (IS_PROD) {
   });
 
   app.get('*splat', (_req, res) =>
-    res.sendFile(path.join(__dirname, '../../client/dist', 'index.html')),
+    res.sendFile(path.join(CLIENT_DIST, 'index.html'), {
+      headers: { 'Cache-Control': 'no-cache' },
+    }),
   );
 }
 
@@ -67,4 +84,5 @@ app.listen(PORT, '0.0.0.0', () => {
   });
   startPriceRefreshInterval(db);
   startBackupInterval(db);
+  startScheduledGenerationInterval(db);
 });
