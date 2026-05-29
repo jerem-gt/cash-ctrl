@@ -32,6 +32,40 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
     `),
 ];
 
+// Drop the obsolete CHECK constraint on account_types.envelope_type on legacy DBs.
+// The Zod schema in account-types.routes.ts already validates the allowed values,
+// but the SQL CHECK was frozen at table creation, so DBs created before 'savings'
+// was added to ENVELOPE_TYPES silently rejected it. Not a versioned migration: some
+// production DBs have user_version ahead of the current MIGRATIONS array (historical
+// migrations were removed), which would skip a versioned fix entirely. This runs on
+// every startup and is idempotent: it only rebuilds when the CHECK is still present.
+function repairAccountTypesCheck(db: DatabaseType) {
+  const row = db
+    .prepare<
+      [],
+      { sql: string }
+    >("SELECT sql FROM sqlite_master WHERE type='table' AND name='account_types'")
+    .get();
+  if (!row || !row.sql.includes('CHECK')) return;
+  db.exec(`
+    PRAGMA foreign_keys=OFF;
+    CREATE TABLE account_types_new
+    (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        name          TEXT    NOT NULL,
+        envelope_type TEXT,
+        created_at    TEXT             DEFAULT (datetime('now')),
+        UNIQUE (user_id, name)
+    );
+    INSERT INTO account_types_new (id, user_id, name, envelope_type, created_at)
+      SELECT id, user_id, name, envelope_type, created_at FROM account_types;
+    DROP TABLE account_types;
+    ALTER TABLE account_types_new RENAME TO account_types;
+    PRAGMA foreign_keys=ON;
+  `);
+}
+
 function runMigrations(db: DatabaseType) {
   const version = db.pragma('user_version', { simple: true }) as number;
   for (let i = version; i < MIGRATIONS.length; i++) {
@@ -75,4 +109,5 @@ export function initDatabase(db: DatabaseType) {
   } else {
     runMigrations(db);
   }
+  repairAccountTypesCheck(db);
 }

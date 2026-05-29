@@ -1,7 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
 import {
-  ENVELOPE_TYPES,
   INSURANCE_OPERATION_TYPES,
   INSURANCE_SUPPORT_TYPES,
   RECURRENCE_UNITS,
@@ -106,7 +105,7 @@ export function initSchema(db: Database) {
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
             name          TEXT    NOT NULL,
-            envelope_type TEXT    CHECK (envelope_type IN (${sqlIn(ENVELOPE_TYPES)})),
+            envelope_type TEXT,
             created_at    TEXT             DEFAULT (datetime('now')),
             UNIQUE (user_id, name)
         );
