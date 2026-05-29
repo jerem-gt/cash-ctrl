@@ -141,6 +141,18 @@
     "fr": "Français",
     "en": "English"
   },
+  "system_refs": {
+    "title": "Entités système",
+    "placeholder": "— non défini —",
+    "financial_income_category_id": "Catégorie revenus financiers",
+    "transfer_subcategory_id": "Sous-catégorie transfert",
+    "transfer_payment_method_id": "Moyen de paiement transfert",
+    "bank_fees_subcategory_id": "Sous-catégorie frais bancaires",
+    "social_fees_subcategory_id": "Sous-catégorie prélèvements sociaux",
+    "prelevement_payment_method_id": "Moyen de paiement prélèvement",
+    "success": "Référence mise à jour ✓",
+    "error": "Erreur lors de la mise à jour"
+  },
   "nav": {
     "types_section": "Types",
     "data_section": "Données",
@@ -152,7 +164,9 @@
     "export": "Export",
     "import": "Import",
     "backup": "Backup",
-    "password": "Mot de passe"
+    "password": "Mot de passe",
+    "system_refs": "Entités système",
+    "system_section": "Système"
   },
   "card": {
     "edit_label": "Modifier",

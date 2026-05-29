@@ -175,7 +175,8 @@ describe('startBackupInterval', () => {
     fixtures.db
       .prepare(
         `INSERT INTO user_settings (user_id, lead_days, backup_enabled, backup_frequency_h, backup_max_files, backup_last_at)
-         VALUES (?, 30, 1, 24, 7, ?)`,
+         VALUES (?, 30, 1, 24, 7, ?)
+         ON CONFLICT(user_id) DO UPDATE SET backup_enabled = 1, backup_frequency_h = 24, backup_last_at = excluded.backup_last_at`,
       )
       .run(fixtures.userId, new Date().toISOString());
     const handle = startBackupInterval(fixtures.db, 1000, tmpDir);
@@ -189,7 +190,8 @@ describe('startBackupInterval', () => {
     fixtures.db
       .prepare(
         `INSERT INTO user_settings (user_id, lead_days, backup_enabled, backup_frequency_h, backup_max_files)
-         VALUES (?, 30, 1, 1, 7)`,
+         VALUES (?, 30, 1, 1, 7)
+         ON CONFLICT(user_id) DO UPDATE SET backup_enabled = 1, backup_frequency_h = 1`,
       )
       .run(fixtures.userId);
     const handle = startBackupInterval(fixtures.db, 1000, tmpDir);

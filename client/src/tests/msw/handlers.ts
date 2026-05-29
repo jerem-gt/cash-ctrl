@@ -119,6 +119,21 @@ export const handlers = [
   http.delete('/api/scheduled/:id', () => HttpResponse.json({ ok: true })),
 
   // Settings
+  http.patch('/api/settings/system-refs', () =>
+    HttpResponse.json({
+      lead_days: 3,
+      backup_enabled: false,
+      backup_frequency_h: 24,
+      backup_max_files: 7,
+      backup_last_at: null,
+      financial_income_category_id: 1,
+      transfer_subcategory_id: null,
+      transfer_payment_method_id: null,
+      bank_fees_subcategory_id: null,
+      social_fees_subcategory_id: null,
+      prelevement_payment_method_id: null,
+    }),
+  ),
   http.get('/api/settings', () =>
     HttpResponse.json({
       lead_days: 3,
@@ -126,6 +141,12 @@ export const handlers = [
       backup_frequency_h: 24,
       backup_max_files: 7,
       backup_last_at: null,
+      financial_income_category_id: null,
+      transfer_subcategory_id: null,
+      transfer_payment_method_id: null,
+      bank_fees_subcategory_id: null,
+      social_fees_subcategory_id: null,
+      prelevement_payment_method_id: null,
     }),
   ),
   http.put('/api/settings', () =>
@@ -135,6 +156,12 @@ export const handlers = [
       backup_frequency_h: 24,
       backup_max_files: 7,
       backup_last_at: null,
+      financial_income_category_id: null,
+      transfer_subcategory_id: null,
+      transfer_payment_method_id: null,
+      bank_fees_subcategory_id: null,
+      social_fees_subcategory_id: null,
+      prelevement_payment_method_id: null,
     }),
   ),
 

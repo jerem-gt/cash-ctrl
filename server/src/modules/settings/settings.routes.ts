@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { parseBody } from '../../lib/routeHelpers';
+import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntities';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
 
@@ -13,6 +14,52 @@ const settingsSchema = z.object({
   backup_max_files: z.number().int().min(1).max(100),
 });
 
+// Schema for updating system entity references
+const systemRefsSchema = z
+  .object({
+    financial_income_category_id: z.number().int().positive().nullable().optional(),
+    transfer_subcategory_id: z.number().int().positive().nullable().optional(),
+    transfer_payment_method_id: z.number().int().positive().nullable().optional(),
+    bank_fees_subcategory_id: z.number().int().positive().nullable().optional(),
+    social_fees_subcategory_id: z.number().int().positive().nullable().optional(),
+    prelevement_payment_method_id: z.number().int().positive().nullable().optional(),
+  })
+  .strict();
+
+function formatSettings(s: ReturnType<ReturnType<typeof createSettingsRepo>['get']>) {
+  return {
+    lead_days: s.lead_days,
+    backup_enabled: s.backup_enabled === 1,
+    backup_frequency_h: s.backup_frequency_h,
+    backup_max_files: s.backup_max_files,
+    backup_last_at: s.backup_last_at,
+    financial_income_category_id: s.financial_income_category_id,
+    transfer_subcategory_id: s.transfer_subcategory_id,
+    transfer_payment_method_id: s.transfer_payment_method_id,
+    bank_fees_subcategory_id: s.bank_fees_subcategory_id,
+    social_fees_subcategory_id: s.social_fees_subcategory_id,
+    prelevement_payment_method_id: s.prelevement_payment_method_id,
+  };
+}
+
+// Check that a given id exists for the given user in the given table
+function entityBelongsToUser(db: Database, table: string, id: number, userId: number): boolean {
+  const row = db.prepare(`SELECT id FROM ${table} WHERE id = ? AND user_id = ?`).get(id, userId) as
+    | { id: number }
+    | undefined;
+  return row !== undefined;
+}
+
+// For a given settings column, determine which table to look up
+const COLUMN_TABLE: Record<SystemRefColumn, string> = {
+  financial_income_category_id: 'categories',
+  transfer_subcategory_id: 'subcategories',
+  transfer_payment_method_id: 'payment_methods',
+  bank_fees_subcategory_id: 'subcategories',
+  social_fees_subcategory_id: 'subcategories',
+  prelevement_payment_method_id: 'payment_methods',
+};
+
 export function createSettingsRouter(db: Database): Router {
   const settingsRepo = createSettingsRepo(db);
   const router = Router();
@@ -20,13 +67,7 @@ export function createSettingsRouter(db: Database): Router {
 
   router.get('/', (req, res) => {
     const s = settingsRepo.get(sessionUserId(req));
-    res.json({
-      lead_days: s.lead_days,
-      backup_enabled: s.backup_enabled === 1,
-      backup_frequency_h: s.backup_frequency_h,
-      backup_max_files: s.backup_max_files,
-      backup_last_at: s.backup_last_at,
-    });
+    res.json(formatSettings(s));
   });
 
   router.put('/', (req, res) => {
@@ -41,13 +82,34 @@ export function createSettingsRouter(db: Database): Router {
       backupMaxFiles: backup_max_files,
     });
     const u = settingsRepo.get(userId);
-    res.json({
-      lead_days: u.lead_days,
-      backup_enabled: u.backup_enabled === 1,
-      backup_frequency_h: u.backup_frequency_h,
-      backup_max_files: u.backup_max_files,
-      backup_last_at: u.backup_last_at,
-    });
+    res.json(formatSettings(u));
+  });
+
+  router.patch('/system-refs', (req, res) => {
+    const data = parseBody(res, systemRefsSchema, req.body);
+    if (!data) return;
+    const userId = sessionUserId(req);
+
+    // Validate each provided id belongs to the user
+    const refs: Partial<Record<SystemRefColumn, number | null>> = {};
+    for (const col of SYSTEM_REF_COLUMNS) {
+      const val = data[col];
+      if (val === undefined) continue;
+      if (val === null) {
+        refs[col] = null;
+        continue;
+      }
+      const table = COLUMN_TABLE[col];
+      if (!entityBelongsToUser(db, table, val, userId)) {
+        res.status(400).json({ error: `${col}: id ${val} does not belong to this user` });
+        return;
+      }
+      refs[col] = val;
+    }
+
+    settingsRepo.setSystemRefs(userId, refs);
+    const u = settingsRepo.get(userId);
+    res.json(formatSettings(u));
   });
 
   return router;

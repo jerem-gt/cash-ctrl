@@ -23,7 +23,7 @@ describe('useCreateUser', () => {
     const { Wrapper, qc } = createHookWrapper();
     qc.setQueryData(['users'], USERS);
     const { result } = renderHook(() => useCreateUser(), { wrapper: Wrapper });
-    result.current.mutate({ username: 'newuser', password: 'password123' });
+    result.current.mutate({ username: 'newuser', password: 'password123', lang: 'fr' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.username).toBe('newuser');
   });
@@ -36,7 +36,7 @@ describe('useCreateUser', () => {
     );
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useCreateUser(), { wrapper: Wrapper });
-    result.current.mutate({ username: 'alice', password: 'password123' });
+    result.current.mutate({ username: 'alice', password: 'password123', lang: 'en' });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toBe('Username already taken');
   });

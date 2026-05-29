@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { toEuros } from '../../lib/money';
+import { createSettingsRepo } from '../settings/settings.repo';
 import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
 import type { Transaction } from '../transactions/transactions.types';
 
@@ -183,6 +184,7 @@ function computeInvestmentProfitability(
   userId: number,
   currentYear: number,
   todayStr: string,
+  financialIncomeCategoryId: number,
 ): AccountProfitability[] {
   type InvRow = {
     account_id: number;
@@ -204,12 +206,12 @@ function computeInvestmentProfitability(
   };
 
   const invAccounts = db
-    .prepare<[number], InvRow>(
+    .prepare<{ userId: number; finCatId: number }, InvRow>(
       `SELECT
          a.id AS account_id, a.name AS account_name,
          at.envelope_type, at.name AS account_type,
          COALESCE(a.opening_date, MIN(t.date), (SELECT MIN(so.date) FROM stock_operations so WHERE so.account_id = a.id)) AS opening_date, a.initial_balance,
-         COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+         COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
          COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
          a.initial_balance + COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS cash_balance_cents
        FROM accounts a
@@ -217,10 +219,10 @@ function computeInvestmentProfitability(
        LEFT JOIN transactions t ON t.account_id = a.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'investment' AND a.closed_at IS NULL
        GROUP BY a.id, a.name, at.envelope_type, at.name, a.initial_balance`,
     )
-    .all(userId);
+    .all({ userId, finCatId: financialIncomeCategoryId });
 
   const currentStockValues = new Map(
     db
@@ -276,11 +278,11 @@ function computeInvestmentProfitability(
 
   const invYearlyByAccount = new Map<number, TxYearRow[]>();
   for (const row of db
-    .prepare<[number], TxYearRow>(
+    .prepare<{ userId: number; finCatId: number }, TxYearRow>(
       `SELECT
          t.account_id,
          strftime('%Y', t.date) AS year,
-         COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+         COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
          COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
          COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS delta_cents
        FROM transactions t
@@ -288,18 +290,21 @@ function computeInvestmentProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'investment' AND a.closed_at IS NULL
        GROUP BY t.account_id, year
        ORDER BY t.account_id, year`,
     )
-    .all(userId)) {
+    .all({ userId, finCatId: financialIncomeCategoryId })) {
     if (!invYearlyByAccount.has(row.account_id)) invYearlyByAccount.set(row.account_id, []);
     invYearlyByAccount.get(row.account_id)!.push(row);
   }
 
   const invFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
   for (const row of db
-    .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+    .prepare<
+      { userId: number; finCatId: number },
+      { account_id: number; date: string; signed_cents: number }
+    >(
       `SELECT t.account_id, t.date,
          CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
        FROM transactions t
@@ -307,15 +312,15 @@ function computeInvestmentProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'investment' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'investment' AND a.closed_at IS NULL
          AND t.validated = 1
          AND (
-           (t.type = 'income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id))
+           (t.type = 'income' AND (c.id IS NULL OR c.id != :finCatId) AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id))
            OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
          )
        ORDER BY t.account_id, t.date`,
     )
-    .all(userId)) {
+    .all({ userId, finCatId: financialIncomeCategoryId })) {
     addToFlowMap(invFlowsByAccountYear, row.account_id, row.date, row.signed_cents);
   }
 
@@ -566,6 +571,7 @@ function computeSavingsProfitability(
   userId: number,
   currentYear: number,
   todayStr: string,
+  financialIncomeCategoryId: number,
 ): AccountProfitability[] {
   type SavRow = {
     account_id: number;
@@ -587,12 +593,12 @@ function computeSavingsProfitability(
   };
 
   const savAccounts = db
-    .prepare<[number], SavRow>(
+    .prepare<{ userId: number; finCatId: number }, SavRow>(
       `SELECT
          a.id AS account_id, a.name AS account_name,
          at.envelope_type, at.name AS account_type,
          COALESCE(a.opening_date, MIN(t.date)) AS opening_date, a.initial_balance,
-         COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+         COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
          COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
          a.initial_balance + COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS balance_cents
        FROM accounts a
@@ -600,18 +606,18 @@ function computeSavingsProfitability(
        LEFT JOIN transactions t ON t.account_id = a.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'savings' AND a.closed_at IS NULL
        GROUP BY a.id, a.name, at.envelope_type, at.name, a.initial_balance`,
     )
-    .all(userId);
+    .all({ userId, finCatId: financialIncomeCategoryId });
 
   const savYearlyByAccount = new Map<number, SavYearRow[]>();
   for (const row of db
-    .prepare<[number], SavYearRow>(
+    .prepare<{ userId: number; finCatId: number }, SavYearRow>(
       `SELECT
          t.account_id,
          strftime('%Y', t.date) AS year,
-         COALESCE(SUM(CASE WHEN t.type='income' AND (c.name IS NULL OR c.name != 'Revenus financiers') AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
+         COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
          COALESCE(SUM(CASE WHEN t.type='expense' AND t.transfer_peer_id IS NOT NULL AND t.validated=1 THEN t.amount ELSE 0 END),0) AS withdrawals_cents,
          COALESCE(SUM(CASE WHEN t.validated=1 THEN CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END ELSE 0 END),0) AS delta_cents
        FROM transactions t
@@ -619,18 +625,21 @@ function computeSavingsProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'savings' AND a.closed_at IS NULL
        GROUP BY t.account_id, year
        ORDER BY t.account_id, year`,
     )
-    .all(userId)) {
+    .all({ userId, finCatId: financialIncomeCategoryId })) {
     if (!savYearlyByAccount.has(row.account_id)) savYearlyByAccount.set(row.account_id, []);
     savYearlyByAccount.get(row.account_id)!.push(row);
   }
 
   const savFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
   for (const row of db
-    .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+    .prepare<
+      { userId: number; finCatId: number },
+      { account_id: number; date: string; signed_cents: number }
+    >(
       `SELECT t.account_id, t.date,
          CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
        FROM transactions t
@@ -638,15 +647,15 @@ function computeSavingsProfitability(
        JOIN account_types at ON a.account_type_id = at.id
        LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
        LEFT JOIN categories c ON sc.category_id = c.id
-       WHERE a.user_id = ? AND at.envelope_type = 'savings' AND a.closed_at IS NULL
+       WHERE a.user_id = :userId AND at.envelope_type = 'savings' AND a.closed_at IS NULL
          AND t.validated = 1
          AND (
-           (t.type = 'income' AND (c.name IS NULL OR c.name != 'Revenus financiers'))
+           (t.type = 'income' AND (c.id IS NULL OR c.id != :finCatId))
            OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
          )
        ORDER BY t.account_id, t.date`,
     )
-    .all(userId)) {
+    .all({ userId, finCatId: financialIncomeCategoryId })) {
     addToFlowMap(savFlowsByAccountYear, row.account_id, row.date, row.signed_cents);
   }
 
@@ -1050,10 +1059,25 @@ export function createStatsRepo(db: Database) {
     getProfitability(userId: number): AccountProfitability[] {
       const currentYear = new Date().getUTCFullYear();
       const todayStr = new Date().toISOString().slice(0, 10);
+      // Read financial income category id once; use -1 (matches nothing) if unset
+      const settings = createSettingsRepo(db).get(userId);
+      const financialIncomeCategoryId = settings.financial_income_category_id ?? -1;
       return [
-        ...computeInvestmentProfitability(db, userId, currentYear, todayStr),
+        ...computeInvestmentProfitability(
+          db,
+          userId,
+          currentYear,
+          todayStr,
+          financialIncomeCategoryId,
+        ),
         ...computeInsuranceProfitability(db, userId, currentYear, todayStr),
-        ...computeSavingsProfitability(db, userId, currentYear, todayStr),
+        ...computeSavingsProfitability(
+          db,
+          userId,
+          currentYear,
+          todayStr,
+          financialIncomeCategoryId,
+        ),
       ];
     },
   };

@@ -10,6 +10,7 @@ import { createUsersRepo } from './users.repo';
 const createUserSchema = z.object({
   username: z.string().min(1).max(64),
   password: z.string().min(8),
+  lang: z.enum(['fr', 'en']).default('fr'),
 });
 
 const updateUserSchema = z
@@ -37,14 +38,14 @@ export function createUsersRouter(db: Database): Router {
       res.status(400).json({ error: 'Invalid payload' });
       return;
     }
-    const { username, password } = parsed.data;
+    const { username, password, lang } = parsed.data;
     if (repo.getByUsername(username)) {
       res.status(409).json({ error: 'Username already taken' });
       return;
     }
     const hash = bcrypt.hashSync(password, 12);
     const newUser = repo.create(username, hash);
-    seedUserData(db, newUser.id);
+    seedUserData(db, newUser.id, lang);
     res.status(201).json(newUser);
   });
 
