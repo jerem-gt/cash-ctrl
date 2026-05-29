@@ -6,196 +6,112 @@ import { DEFAULT_CATEGORIES } from './categories.seed';
 
 type SubcategoryDef = {
   code: string;
-  names: { fr: string; en: string };
-  category_code: string;
+  fr: string;
+  en: string;
 };
 
-export const DEFAULT_SUBCATEGORIES: SubcategoryDef[] = [
-  {
-    code: 'housing_insurance',
-    names: { fr: 'Assurance', en: 'Insurance' },
-    category_code: 'housing',
-  },
-  { code: 'rent', names: { fr: 'Loyer', en: 'Rent' }, category_code: 'housing' },
-  {
-    code: 'electricity',
-    names: { fr: 'Électricité', en: 'Electricity' },
-    category_code: 'housing',
-  },
-  { code: 'gas', names: { fr: 'Gaz', en: 'Gas' }, category_code: 'housing' },
-  { code: 'internet', names: { fr: 'Internet', en: 'Internet' }, category_code: 'housing' },
-  { code: 'mobile', names: { fr: 'Mobile', en: 'Mobile' }, category_code: 'housing' },
-  { code: 'furniture', names: { fr: 'Mobilier', en: 'Furniture' }, category_code: 'housing' },
-  { code: 'renovation', names: { fr: 'Travaux', en: 'Renovation' }, category_code: 'housing' },
-  { code: 'water', names: { fr: 'Eau', en: 'Water' }, category_code: 'housing' },
-  { code: 'moving', names: { fr: 'Déménagement', en: 'Moving' }, category_code: 'housing' },
-  {
-    code: 'agency_fees',
-    names: { fr: "Frais d'agence", en: 'Agency fees' },
-    category_code: 'housing',
-  },
-
-  { code: 'car_purchase', names: { fr: 'Achat', en: 'Purchase' }, category_code: 'car' },
-  { code: 'car_admin', names: { fr: 'Administratif', en: 'Administrative' }, category_code: 'car' },
-  { code: 'car_fine', names: { fr: 'Amende', en: 'Fine' }, category_code: 'car' },
-  { code: 'car_insurance', names: { fr: 'Assurance', en: 'Insurance' }, category_code: 'car' },
-  { code: 'car_toll', names: { fr: 'Autoroute', en: 'Toll' }, category_code: 'car' },
-  { code: 'car_fuel', names: { fr: 'Carburant', en: 'Fuel' }, category_code: 'car' },
-  { code: 'car_maintenance', names: { fr: 'Entretien', en: 'Maintenance' }, category_code: 'car' },
-
-  { code: 'bus', names: { fr: 'Bus/Tram/Metro', en: 'Bus/Tram/Metro' }, category_code: 'transit' },
-  { code: 'carpool', names: { fr: 'Covoiturage', en: 'Carpool' }, category_code: 'transit' },
-  { code: 'train', names: { fr: 'Train', en: 'Train' }, category_code: 'transit' },
-  { code: 'vtc', names: { fr: 'VTC', en: 'Rideshare' }, category_code: 'transit' },
-
-  { code: 'hospital', names: { fr: 'Hôpital', en: 'Hospital' }, category_code: 'health' },
-  { code: 'doctor', names: { fr: 'Médecin', en: 'Doctor' }, category_code: 'health' },
-  { code: 'pharmacy', names: { fr: 'Pharmacie', en: 'Pharmacy' }, category_code: 'health' },
-  { code: 'cpam', names: { fr: 'CPAM', en: 'CPAM' }, category_code: 'health' },
-  { code: 'mutual', names: { fr: 'Mutuelle', en: 'Health insurance' }, category_code: 'health' },
-
-  { code: 'supermarket', names: { fr: 'Supermarché', en: 'Supermarket' }, category_code: 'food' },
-  { code: 'restaurant', names: { fr: 'Restaurant', en: 'Restaurant' }, category_code: 'food' },
-  { code: 'cafe', names: { fr: 'Café', en: 'Café' }, category_code: 'food' },
-
-  {
-    code: 'other_insurance',
-    names: { fr: 'Assurance autre', en: 'Other insurance' },
-    category_code: 'daily_life',
-  },
-  {
-    code: 'death_insurance',
-    names: { fr: 'Assurance décès', en: 'Death insurance' },
-    category_code: 'daily_life',
-  },
-  {
-    code: 'hairdresser',
-    names: { fr: 'Coiffeur', en: 'Hairdresser' },
-    category_code: 'daily_life',
-  },
-  { code: 'mail', names: { fr: 'Courrier', en: 'Mail' }, category_code: 'daily_life' },
-  {
-    code: 'cash_withdrawal',
-    names: { fr: 'Retrait', en: 'Cash withdrawal' },
-    category_code: 'daily_life',
-  },
-  { code: 'clothes', names: { fr: 'Vêtements', en: 'Clothing' }, category_code: 'daily_life' },
-  { code: 'hotel', names: { fr: 'Hôtel', en: 'Hotel' }, category_code: 'daily_life' },
-  {
-    code: 'bank_fees',
-    names: { fr: 'Frais bancaires', en: 'Bank fees' },
-    category_code: 'daily_life',
-  },
-  {
-    code: 'professional_fees',
-    names: { fr: 'Frais professionnels', en: 'Professional expenses' },
-    category_code: 'daily_life',
-  },
-
-  { code: 'gift', names: { fr: 'Cadeau', en: 'Gift' }, category_code: 'leisure' },
-  {
-    code: 'holiday_vouchers',
-    names: { fr: 'Chèques vacances', en: 'Holiday vouchers' },
-    category_code: 'leisure',
-  },
-  { code: 'cinema', names: { fr: 'Cinéma', en: 'Cinema' }, category_code: 'leisure' },
-  { code: 'cultural', names: { fr: 'Culturel', en: 'Cultural' }, category_code: 'leisure' },
-  { code: 'it', names: { fr: 'Informatique', en: 'IT' }, category_code: 'leisure' },
-  { code: 'streaming', names: { fr: 'Streaming', en: 'Streaming' }, category_code: 'leisure' },
-  { code: 'show', names: { fr: 'Spectacle', en: 'Show' }, category_code: 'leisure' },
-  { code: 'sport', names: { fr: 'Sport', en: 'Sport' }, category_code: 'leisure' },
-  { code: 'holidays', names: { fr: 'Vacances', en: 'Holidays' }, category_code: 'leisure' },
-
-  {
-    code: 'income_tax',
-    names: { fr: 'Impôt sur le revenu', en: 'Income tax' },
-    category_code: 'taxes',
-  },
-  {
-    code: 'property_tax',
-    names: { fr: 'Taxe foncière', en: 'Property tax' },
-    category_code: 'taxes',
-  },
-  {
-    code: 'residence_tax',
-    names: { fr: "Taxe d'habitation", en: 'Residence tax' },
-    category_code: 'taxes',
-  },
-  {
-    code: 'social_fees',
-    names: { fr: 'Prélèvements sociaux', en: 'Social charges' },
-    category_code: 'taxes',
-  },
-
-  { code: 'salary', names: { fr: 'Salaire', en: 'Salary' }, category_code: 'work_income' },
-  {
-    code: 'employer_contribution',
-    names: { fr: 'Abondement', en: 'Employer contribution' },
-    category_code: 'work_income',
-  },
-  {
-    code: 'profit_sharing',
-    names: { fr: 'Intéressement', en: 'Profit sharing' },
-    category_code: 'work_income',
-  },
-  {
-    code: 'participation',
-    names: { fr: 'Participation', en: 'Participation' },
-    category_code: 'work_income',
-  },
-  {
-    code: 'expense_reimbursement',
-    names: { fr: 'Remboursement de frais', en: 'Expense reimbursement' },
-    category_code: 'work_income',
-  },
-  {
-    code: 'pension_contribution',
-    names: { fr: 'Cotisation retraite', en: 'Pension contribution' },
-    category_code: 'work_income',
-  },
-  { code: 'cse', names: { fr: 'CSE', en: 'Works council' }, category_code: 'work_income' },
-
-  {
-    code: 'housing_allowance',
-    names: { fr: 'APL', en: 'Housing allowance' },
-    category_code: 'social_benefits',
-  },
-  {
-    code: 'unemployment',
-    names: { fr: 'Chômage', en: 'Unemployment' },
-    category_code: 'social_benefits',
-  },
-
-  {
-    code: 'interests',
-    names: { fr: 'Intérêts', en: 'Interest' },
-    category_code: 'financial_income',
-  },
-  {
-    code: 'unrealized_gain',
-    names: { fr: 'Plus value latente', en: 'Unrealized gain' },
-    category_code: 'financial_income',
-  },
-  {
-    code: 'dividend',
-    names: { fr: 'Dividende', en: 'Dividend' },
-    category_code: 'financial_income',
-  },
-
-  { code: 'income_gift', names: { fr: 'Cadeau', en: 'Gift' }, category_code: 'misc_income' },
-  { code: 'cashback', names: { fr: 'Cashback', en: 'Cashback' }, category_code: 'misc_income' },
-  { code: 'bonus', names: { fr: 'Prime', en: 'Bonus' }, category_code: 'misc_income' },
-  { code: 'sale', names: { fr: 'Vente', en: 'Sale' }, category_code: 'misc_income' },
-  { code: 'misc_other', names: { fr: 'Autre', en: 'Other' }, category_code: 'misc_income' },
-
-  {
-    code: 'transfer_subcat',
-    names: { fr: 'Transfert', en: 'Transfer' },
-    category_code: 'transfer',
-  },
-
-  { code: 'other_subcat', names: { fr: 'Autre', en: 'Other' }, category_code: 'other' },
-];
+// Subcategories grouped by their parent category code. Sharing the parent at the
+// key level avoids repeating `category_code` on every entry — Sonar was flagging
+// the syntactic repetition of the flat shape. Some FR/EN names exist under more
+// than one parent on purpose (e.g. "Cadeau" sits in `leisure` as an expense and
+// in `misc_income` as a gift received), guarded by UNIQUE (user_id, category_id, name).
+export const DEFAULT_SUBCATEGORIES_BY_CATEGORY: Record<string, SubcategoryDef[]> = {
+  housing: [
+    { code: 'housing_insurance', fr: 'Assurance', en: 'Insurance' },
+    { code: 'rent', fr: 'Loyer', en: 'Rent' },
+    { code: 'electricity', fr: 'Électricité', en: 'Electricity' },
+    { code: 'gas', fr: 'Gaz', en: 'Gas' },
+    { code: 'internet', fr: 'Internet', en: 'Internet' },
+    { code: 'mobile', fr: 'Mobile', en: 'Mobile' },
+    { code: 'furniture', fr: 'Mobilier', en: 'Furniture' },
+    { code: 'renovation', fr: 'Travaux', en: 'Renovation' },
+    { code: 'water', fr: 'Eau', en: 'Water' },
+    { code: 'moving', fr: 'Déménagement', en: 'Moving' },
+    { code: 'agency_fees', fr: "Frais d'agence", en: 'Agency fees' },
+  ],
+  car: [
+    { code: 'car_purchase', fr: 'Achat', en: 'Purchase' },
+    { code: 'car_admin', fr: 'Administratif', en: 'Administrative' },
+    { code: 'car_fine', fr: 'Amende', en: 'Fine' },
+    { code: 'car_insurance', fr: 'Assurance', en: 'Insurance' },
+    { code: 'car_toll', fr: 'Autoroute', en: 'Toll' },
+    { code: 'car_fuel', fr: 'Carburant', en: 'Fuel' },
+    { code: 'car_maintenance', fr: 'Entretien', en: 'Maintenance' },
+  ],
+  transit: [
+    { code: 'bus', fr: 'Bus/Tram/Metro', en: 'Bus/Tram/Metro' },
+    { code: 'carpool', fr: 'Covoiturage', en: 'Carpool' },
+    { code: 'train', fr: 'Train', en: 'Train' },
+    { code: 'vtc', fr: 'VTC', en: 'Rideshare' },
+  ],
+  health: [
+    { code: 'hospital', fr: 'Hôpital', en: 'Hospital' },
+    { code: 'doctor', fr: 'Médecin', en: 'Doctor' },
+    { code: 'pharmacy', fr: 'Pharmacie', en: 'Pharmacy' },
+    { code: 'cpam', fr: 'CPAM', en: 'CPAM' },
+    { code: 'mutual', fr: 'Mutuelle', en: 'Health insurance' },
+  ],
+  food: [
+    { code: 'supermarket', fr: 'Supermarché', en: 'Supermarket' },
+    { code: 'restaurant', fr: 'Restaurant', en: 'Restaurant' },
+    { code: 'cafe', fr: 'Café', en: 'Café' },
+  ],
+  daily_life: [
+    { code: 'other_insurance', fr: 'Assurance autre', en: 'Other insurance' },
+    { code: 'death_insurance', fr: 'Assurance décès', en: 'Death insurance' },
+    { code: 'hairdresser', fr: 'Coiffeur', en: 'Hairdresser' },
+    { code: 'mail', fr: 'Courrier', en: 'Mail' },
+    { code: 'cash_withdrawal', fr: 'Retrait', en: 'Cash withdrawal' },
+    { code: 'clothes', fr: 'Vêtements', en: 'Clothing' },
+    { code: 'hotel', fr: 'Hôtel', en: 'Hotel' },
+    { code: 'bank_fees', fr: 'Frais bancaires', en: 'Bank fees' },
+    { code: 'professional_fees', fr: 'Frais professionnels', en: 'Professional expenses' },
+  ],
+  leisure: [
+    { code: 'gift', fr: 'Cadeau', en: 'Gift' },
+    { code: 'holiday_vouchers', fr: 'Chèques vacances', en: 'Holiday vouchers' },
+    { code: 'cinema', fr: 'Cinéma', en: 'Cinema' },
+    { code: 'cultural', fr: 'Culturel', en: 'Cultural' },
+    { code: 'it', fr: 'Informatique', en: 'IT' },
+    { code: 'streaming', fr: 'Streaming', en: 'Streaming' },
+    { code: 'show', fr: 'Spectacle', en: 'Show' },
+    { code: 'sport', fr: 'Sport', en: 'Sport' },
+    { code: 'holidays', fr: 'Vacances', en: 'Holidays' },
+  ],
+  taxes: [
+    { code: 'income_tax', fr: 'Impôt sur le revenu', en: 'Income tax' },
+    { code: 'property_tax', fr: 'Taxe foncière', en: 'Property tax' },
+    { code: 'residence_tax', fr: "Taxe d'habitation", en: 'Residence tax' },
+    { code: 'social_fees', fr: 'Prélèvements sociaux', en: 'Social charges' },
+  ],
+  work_income: [
+    { code: 'salary', fr: 'Salaire', en: 'Salary' },
+    { code: 'employer_contribution', fr: 'Abondement', en: 'Employer contribution' },
+    { code: 'profit_sharing', fr: 'Intéressement', en: 'Profit sharing' },
+    { code: 'participation', fr: 'Participation', en: 'Participation' },
+    { code: 'expense_reimbursement', fr: 'Remboursement de frais', en: 'Expense reimbursement' },
+    { code: 'pension_contribution', fr: 'Cotisation retraite', en: 'Pension contribution' },
+    { code: 'cse', fr: 'CSE', en: 'Works council' },
+  ],
+  social_benefits: [
+    { code: 'housing_allowance', fr: 'APL', en: 'Housing allowance' },
+    { code: 'unemployment', fr: 'Chômage', en: 'Unemployment' },
+  ],
+  financial_income: [
+    { code: 'interests', fr: 'Intérêts', en: 'Interest' },
+    { code: 'unrealized_gain', fr: 'Plus value latente', en: 'Unrealized gain' },
+    { code: 'dividend', fr: 'Dividende', en: 'Dividend' },
+  ],
+  misc_income: [
+    { code: 'income_gift', fr: 'Cadeau', en: 'Gift' },
+    { code: 'cashback', fr: 'Cashback', en: 'Cashback' },
+    { code: 'bonus', fr: 'Prime', en: 'Bonus' },
+    { code: 'sale', fr: 'Vente', en: 'Sale' },
+    { code: 'misc_other', fr: 'Autre', en: 'Other' },
+  ],
+  transfer: [{ code: 'transfer_subcat', fr: 'Transfert', en: 'Transfer' }],
+  other: [{ code: 'other_subcat', fr: 'Autre', en: 'Other' }],
+};
 
 export function seedSubcategories(
   db: Database,
@@ -208,9 +124,7 @@ export function seedSubcategories(
     const categories = db
       .prepare('SELECT id, name FROM categories WHERE user_id = ?')
       .all(userId) as { id: number; name: string }[];
-    // Build a temporary map from name to id
     const nameToId = new Map(categories.map((c) => [c.name, c.id]));
-    // Build code→id by matching known FR/EN names from DEFAULT_CATEGORIES
     codeToId = new Map<string, number>();
     for (const cat of DEFAULT_CATEGORIES) {
       const id = nameToId.get(cat.names.fr) ?? nameToId.get(cat.names.en);
@@ -220,39 +134,40 @@ export function seedSubcategories(
     }
   }
 
-  const stmt = db.prepare(`
+  const insertStmt = db.prepare(`
     INSERT OR IGNORE INTO subcategories (user_id, category_id, name)
     VALUES (?, ?, ?)
   `);
+  const findExistingStmt = db.prepare(
+    'SELECT id FROM subcategories WHERE user_id = ? AND category_id = ? AND name = ?',
+  );
 
   const subcodeToId = new Map<string, number>();
 
   db.transaction(() => {
-    for (const sub of DEFAULT_SUBCATEGORIES) {
-      const parentId = codeToId.get(sub.category_code);
-
+    for (const [categoryCode, subs] of Object.entries(DEFAULT_SUBCATEGORIES_BY_CATEGORY)) {
+      const parentId = codeToId.get(categoryCode);
       if (parentId === undefined) {
         logger.warn(
-          `Attention : La catégorie parente "${sub.category_code}" n'existe pas pour la sous-catégorie "${sub.names[lang]}"`,
+          `Attention : La catégorie parente "${categoryCode}" n'existe pas, ${subs.length} sous-catégorie(s) ignorée(s)`,
         );
         continue;
       }
-
-      const name = sub.names[lang];
-      const result = stmt.run(userId, parentId, name);
-      let id: number;
-      if (result.lastInsertRowid && Number(result.lastInsertRowid) > 0) {
-        id = Number(result.lastInsertRowid);
-      } else {
-        const existing = db
-          .prepare(
-            'SELECT id FROM subcategories WHERE user_id = ? AND category_id = ? AND name = ?',
-          )
-          .get(userId, parentId, name) as { id: number } | undefined;
-        id = existing?.id ?? 0;
-      }
-      if (id > 0) {
-        subcodeToId.set(sub.code, id);
+      for (const sub of subs) {
+        const name = sub[lang];
+        const result = insertStmt.run(userId, parentId, name);
+        let id: number;
+        if (result.lastInsertRowid && Number(result.lastInsertRowid) > 0) {
+          id = Number(result.lastInsertRowid);
+        } else {
+          const existing = findExistingStmt.get(userId, parentId, name) as
+            | { id: number }
+            | undefined;
+          id = existing?.id ?? 0;
+        }
+        if (id > 0) {
+          subcodeToId.set(sub.code, id);
+        }
       }
     }
   })();
