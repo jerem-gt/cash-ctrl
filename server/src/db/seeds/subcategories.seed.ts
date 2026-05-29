@@ -231,27 +231,28 @@ export function seedSubcategories(
     for (const sub of DEFAULT_SUBCATEGORIES) {
       const parentId = codeToId.get(sub.category_code);
 
-      if (parentId !== undefined) {
-        const name = sub.names[lang];
-        const result = stmt.run(userId, parentId, name);
-        let id: number;
-        if (result.lastInsertRowid && Number(result.lastInsertRowid) > 0) {
-          id = Number(result.lastInsertRowid);
-        } else {
-          const existing = db
-            .prepare(
-              'SELECT id FROM subcategories WHERE user_id = ? AND category_id = ? AND name = ?',
-            )
-            .get(userId, parentId, name) as { id: number } | undefined;
-          id = existing?.id ?? 0;
-        }
-        if (id > 0) {
-          subcodeToId.set(sub.code, id);
-        }
-      } else {
+      if (parentId === undefined) {
         logger.warn(
           `Attention : La catégorie parente "${sub.category_code}" n'existe pas pour la sous-catégorie "${sub.names[lang]}"`,
         );
+        continue;
+      }
+
+      const name = sub.names[lang];
+      const result = stmt.run(userId, parentId, name);
+      let id: number;
+      if (result.lastInsertRowid && Number(result.lastInsertRowid) > 0) {
+        id = Number(result.lastInsertRowid);
+      } else {
+        const existing = db
+          .prepare(
+            'SELECT id FROM subcategories WHERE user_id = ? AND category_id = ? AND name = ?',
+          )
+          .get(userId, parentId, name) as { id: number } | undefined;
+        id = existing?.id ?? 0;
+      }
+      if (id > 0) {
+        subcodeToId.set(sub.code, id);
       }
     }
   })();
