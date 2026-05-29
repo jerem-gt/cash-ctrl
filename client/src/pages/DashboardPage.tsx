@@ -28,6 +28,14 @@ import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
 
+const PATRIMONY_LABEL_KEYS = {
+  prets: 'patrimony_categories.prets',
+  liquidites: 'patrimony_categories.liquidites',
+  epargne: 'patrimony_categories.epargne',
+  fonds_euros: 'patrimony_categories.fonds_euros',
+  actions_uc: 'patrimony_categories.actions_uc',
+} as const;
+
 const NOW = Date.now();
 
 function DashboardSkeleton() {
@@ -127,7 +135,7 @@ export default function DashboardPage() {
     ...d,
     _total: balanceTypes.reduce((s, t) => s + Number(d[t] ?? 0), 0),
   }));
-  const balanceHasLoans = (balanceHistory?.data ?? []).some((d) => Number(d['Prêts'] ?? 0) < 0);
+  const balanceHasLoans = (balanceHistory?.data ?? []).some((d) => Number(d['prets'] ?? 0) < 0);
 
   return (
     <div className="space-y-5">
@@ -403,7 +411,7 @@ export default function DashboardPage() {
                   className="w-2 h-2 rounded-sm shrink-0"
                   style={{ background: generateColor(i) }}
                 />
-                {type}
+                {t(PATRIMONY_LABEL_KEYS[type as keyof typeof PATRIMONY_LABEL_KEYS])}
               </div>
             ))}
           </div>
@@ -427,7 +435,11 @@ export default function DashboardPage() {
                   if (name === '_total') return null;
                   const total = (entry.payload as Record<string, number>)._total;
                   const pct = total === 0 ? 0 : (Number(v) / total) * 100;
-                  return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, String(name)];
+                  const nameKey = String(name) as keyof typeof PATRIMONY_LABEL_KEYS;
+                  return [
+                    `${fmtDec(Number(v))} (${pct.toFixed(1)} %)`,
+                    t(PATRIMONY_LABEL_KEYS[nameKey]),
+                  ];
                 }}
                 cursor={{ fill: 'rgba(0,0,0,0.04)' }}
               />

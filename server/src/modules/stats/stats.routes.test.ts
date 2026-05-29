@@ -105,7 +105,7 @@ describe('/api/stats', () => {
       });
       const res = await ctx2.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
-      expect(yearData['Épargne']).toBe(700);
+      expect(yearData['epargne']).toBe(700);
     });
 
     it('devrait comptabiliser les versements AV euro et UC dans Fonds euros et Actions & UC', async () => {
@@ -146,8 +146,8 @@ describe('/api/stats', () => {
 
       const res = await ctx2.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
-      expect(yearData['Fonds euros']).toBe(1000);
-      expect(yearData['Actions & UC']).toBe(500);
+      expect(yearData['fonds_euros']).toBe(1000);
+      expect(yearData['actions_uc']).toBe(500);
     });
 
     it("devrait refléter la dette d'un prêt dans la catégorie Prêts", async () => {
@@ -186,7 +186,7 @@ describe('/api/stats', () => {
 
       const res = await ctx2.agent.get('/api/stats/balance-history');
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
-      expect(yearData['Prêts']).toBe(-12000);
+      expect(yearData['prets']).toBe(-12000);
     });
   });
 
@@ -554,9 +554,9 @@ describe('/api/stats', () => {
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
       // Liquidités = Courant initial (10) + Bourse cash non investi (500)
-      expect(yearData['Liquidités']).toBe(510);
+      expect(yearData['liquidites']).toBe(510);
       // Actions & UC = valeur de marché des positions uniquement (10 x 60)
-      expect(yearData['Actions & UC']).toBe(600);
+      expect(yearData['actions_uc']).toBe(600);
     });
 
     it('devrait refléter une vente avec plus-value dans Liquidités', async () => {
@@ -581,9 +581,9 @@ describe('/api/stats', () => {
       const yearData = res.body.data.find((d: { year: string }) => d.year === CURRENT_YEAR);
 
       // Liquidités = Courant initial (10) + Bourse cash net (-100 achat + 150 vente = 50)
-      expect(yearData['Liquidités']).toBe(60);
+      expect(yearData['liquidites']).toBe(60);
       // Actions & UC = valeur de marché des positions uniquement (aucune position)
-      expect(yearData['Actions & UC']).toBe(0);
+      expect(yearData['actions_uc']).toBe(0);
     });
   });
 });

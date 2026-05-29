@@ -1,0 +1,42 @@
+{
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "close": "Close",
+  "loading": "…",
+  "error_generic": "An error occurred.",
+  "add": "Add",
+  "edit": "Edit",
+  "duplicate": "Duplicate",
+  "no_result": "No results",
+  "search": "Search…",
+  "back": "← Back",
+  "choose": "— Choose —",
+  "none": "— None —",
+  "optional": "(optional)",
+  "amount": "Amount (€)",
+  "fees": "Fees (€)",
+  "date": "Date",
+  "transfer": "Transfer",
+  "validate": "Validate",
+  "mark_done": "Mark as done",
+  "error_import": "Import error:",
+  "all_select": "Select all",
+  "loading_text": "Loading…",
+  "login": {
+    "subtitle": "Sign in to access your accounts",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…"
+  },
+  "pagination": {
+    "first": "First page",
+    "prev": "Previous page",
+    "next": "Next page",
+    "last": "Last page",
+    "per_page": "{{n}} / page",
+    "info": "{{from}}–{{to}} of {{total}}"
+  }
+}

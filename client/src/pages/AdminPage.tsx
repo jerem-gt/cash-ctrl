@@ -6,6 +6,7 @@ import { Button, Card, CardTitle, Input, showToast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants';
 import { useLogout } from '@/hooks/useAuth';
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/useUsers';
+import { currentLocale } from '@/lib/format';
 import type { UserPublic } from '@/types';
 
 // ─── Add user form ─────────────────────────────────────────────────────────────
@@ -209,7 +210,9 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                           {user.last_tx_date !== null && (
                             <span>
                               {t('user.last_tx', {
-                                date: new Date(user.last_tx_date).toLocaleDateString('fr-FR'),
+                                date: new Date(user.last_tx_date).toLocaleDateString(
+                                  currentLocale(),
+                                ),
                               })}
                             </span>
                           )}

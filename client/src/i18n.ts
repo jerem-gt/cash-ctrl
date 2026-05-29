@@ -1,6 +1,18 @@
 import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
+import accountsEn from './locales/en/accounts.json';
+import adminEn from './locales/en/admin.json';
+import commonEn from './locales/en/common.json';
+import dashboardEn from './locales/en/dashboard.json';
+import insuranceEn from './locales/en/insurance.json';
+import loansEn from './locales/en/loans.json';
+import portfolioEn from './locales/en/portfolio.json';
+import scheduledEn from './locales/en/scheduled.json';
+import settingsEn from './locales/en/settings.json';
+import sidebarEn from './locales/en/sidebar.json';
+import transactionsEn from './locales/en/transactions.json';
 import accountsFr from './locales/fr/accounts.json';
 import adminFr from './locales/fr/admin.json';
 import commonFr from './locales/fr/common.json';
@@ -13,28 +25,47 @@ import settingsFr from './locales/fr/settings.json';
 import sidebarFr from './locales/fr/sidebar.json';
 import transactionsFr from './locales/fr/transactions.json';
 
-void i18n.use(initReactI18next).init({
-  lng: 'fr',
-  fallbackLng: 'fr',
-  defaultNS: 'common',
-  resources: {
-    fr: {
-      common: commonFr,
-      accounts: accountsFr,
-      admin: adminFr,
-      transactions: transactionsFr,
-      settings: settingsFr,
-      loans: loansFr,
-      insurance: insuranceFr,
-      portfolio: portfolioFr,
-      dashboard: dashboardFr,
-      sidebar: sidebarFr,
-      scheduled: scheduledFr,
+void i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: 'fr',
+    defaultNS: 'common',
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
     },
-  },
-  interpolation: {
-    escapeValue: false,
-  },
-});
+    resources: {
+      fr: {
+        common: commonFr,
+        accounts: accountsFr,
+        admin: adminFr,
+        transactions: transactionsFr,
+        settings: settingsFr,
+        loans: loansFr,
+        insurance: insuranceFr,
+        portfolio: portfolioFr,
+        dashboard: dashboardFr,
+        sidebar: sidebarFr,
+        scheduled: scheduledFr,
+      },
+      en: {
+        common: commonEn,
+        accounts: accountsEn,
+        admin: adminEn,
+        transactions: transactionsEn,
+        settings: settingsEn,
+        loans: loansEn,
+        insurance: insuranceEn,
+        portfolio: portfolioEn,
+        dashboard: dashboardEn,
+        sidebar: sidebarEn,
+        scheduled: scheduledEn,
+      },
+    },
+    interpolation: {
+      escapeValue: false,
+    },
+  });
 
 export default i18n;

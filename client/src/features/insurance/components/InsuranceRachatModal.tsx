@@ -6,7 +6,7 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useRachat } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useLogoMap } from '@/hooks/useLogoMap';
-import { today } from '@/lib/format';
+import { currentLocale, today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -65,7 +65,10 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
             </label>
             <span className="text-[10px] text-stone-400">
               {t('rachat_modal.max_label')}{' '}
-              {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              {support.value.toLocaleString(currentLocale(), {
+                style: 'currency',
+                currency: 'EUR',
+              })}
             </span>
           </div>
           <DecimalInput

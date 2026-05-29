@@ -1,9 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import '../i18n';
 
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
+import i18n from '../i18n';
 import { server } from './msw/server';
+
+// Pin language to French so jsdom's navigator (en-US) doesn't flip the locale in tests
+void i18n.changeLanguage('fr');
 
 // jsdom doesn't implement scrollTo
 window.scrollTo = () => undefined;

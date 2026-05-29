@@ -136,6 +136,11 @@
     "download": "Télécharger",
     "no_backups": "Aucun backup disponible."
   },
+  "language": {
+    "title": "Langue",
+    "fr": "Français",
+    "en": "English"
+  },
   "nav": {
     "types_section": "Types",
     "data_section": "Données",

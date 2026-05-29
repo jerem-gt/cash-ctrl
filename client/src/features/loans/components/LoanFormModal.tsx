@@ -6,7 +6,7 @@ import { BankSelect } from '@/features/accounts/components/BankSelect';
 import { useCreateLoan, useUpdateLoan } from '@/features/loans/hooks/useLoans';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
-import { today } from '@/lib/format';
+import { currentLocale, today } from '@/lib/format';
 import type { Account, Loan } from '@/types';
 
 type Props =
@@ -268,7 +268,7 @@ export function LoanFormModal(props: Readonly<Props>) {
                 {t('form_modal.monthly_estimate')}
               </span>
               <span className="font-sans text-xl text-stone-900">
-                {monthlyPayment.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                {monthlyPayment.toLocaleString(currentLocale(), { minimumFractionDigits: 2 })} €
               </span>
             </div>
           )}

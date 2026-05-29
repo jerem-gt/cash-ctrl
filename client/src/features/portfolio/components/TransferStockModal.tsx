@@ -4,7 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useTransferStock } from '@/features/portfolio/hooks/useStocks';
 import { useAccounts } from '@/hooks/useAccounts';
-import { today } from '@/lib/format';
+import { currentLocale, today } from '@/lib/format';
 import type { StockPosition } from '@/types';
 
 interface Props {
@@ -45,7 +45,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
     );
   };
 
-  const pru = position.avg_price.toLocaleString('fr-FR', {
+  const pru = position.avg_price.toLocaleString(currentLocale(), {
     style: 'currency',
     currency: position.currency ?? 'EUR',
   });

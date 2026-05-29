@@ -35,7 +35,7 @@ Application de gestion de finances personnelles — multi-comptes, transactions 
 | **Simulateur PER** | Calcul de la déductibilité fiscale (barèmes IR en base) |
 | **Import / Export** | Import QIF / XHB (Homebank) ; export JSON toutes entités |
 | **Sauvegarde** | Sauvegardes incrémentales automatiques |
-| **i18n** | Interface entièrement traduite via react-i18next (namespaces par feature) |
+| **i18n** | Interface disponible en français et en anglais via react-i18next — détection automatique de la langue du navigateur, sélecteur dans les Réglages, persistance localStorage ; namespaces par feature |
 
 ---
 

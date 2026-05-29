@@ -1,0 +1,103 @@
+{
+  "close_modal": {
+    "title": "Close Account",
+    "balance_warning": "This account has a balance of <bold>{{balance}}</bold>. A closing transfer will be created automatically.",
+    "balance_zero": "The balance is zero, the account can be closed directly.",
+    "transfer_to": "Transfer balance to",
+    "choose_account": "— Choose an account —",
+    "closing_date": "Closing date",
+    "close_btn": "Close",
+    "success": "Account closed ✓",
+    "err_no_destination": "Choose a destination account.",
+    "err_no_date": "Enter the closing date."
+  },
+  "modal": {
+    "title_create": "Add an Account",
+    "title_edit": "Edit Account",
+    "name": "Account name",
+    "name_placeholder": "E.g.: Checking account",
+    "bank": "Bank",
+    "type": "Type",
+    "initial_balance": "Initial balance (€)",
+    "opening_date": "Opening date",
+    "err_no_name": "Give the account a name.",
+    "err_no_bank": "Choose a bank.",
+    "success_create": "Account created ✓",
+    "submit_create": "Create",
+    "submit_edit": "Save"
+  },
+  "header": {
+    "cash": "Available cash",
+    "portfolio": "Portfolio",
+    "total": "Total",
+    "insurance": "Euro funds & Unit-linked",
+    "balance": "Available balance",
+    "loan_due": "Outstanding capital",
+    "forecasted": "Forecasted",
+    "opened_on": "Opened on",
+    "investment_badge": "Investment",
+    "loan_badge": "Loan",
+    "closed_badge": "Closed"
+  },
+  "select": {
+    "search_placeholder": "Search…",
+    "no_result": "No results",
+    "no_bank": "No bank"
+  },
+  "bank_select": {
+    "choose": "— Choose —",
+    "aria_label": "Select a bank"
+  },
+  "detail": {
+    "not_found_back": "← Accounts",
+    "not_found": "Account not found.",
+    "transactions_label": "Transactions",
+    "readonly_title": "Edit temporarily",
+    "readonly_off_title": "Switch back to read-only",
+    "editing_mode": "Temporary editing",
+    "read_only": "Read-only",
+    "empty_message": "No transactions on this account"
+  },
+  "page": {
+    "title": "Accounts",
+    "subtitle": "Click on an account to view its transactions",
+    "group_bank": "Bank",
+    "group_type": "Type",
+    "add_loan": "+ Loan",
+    "add_account": "+ Account",
+    "no_accounts": "No accounts yet.",
+    "closed_section": "Closed accounts ({{count}})",
+    "no_bank": "No bank",
+    "closed_on": "Closed on {{date}}",
+    "delete_title": "Delete account {{name}}",
+    "delete_body": "All associated transactions will be deleted. This action is irreversible.",
+    "reopen_success": "Account reopened ✓",
+    "delete_success": "Account deleted",
+    "edit_success": "Account updated ✓",
+    "view_transactions": "View transactions for account {{name}}",
+    "edit_account": "Edit account",
+    "close_account": "Close account",
+    "reopen_account": "Reopen account",
+    "delete_account": "Delete account"
+  },
+  "profitability": {
+    "title": "Return",
+    "capital": "Invested capital",
+    "value": "Current value",
+    "gain": "Capital gain",
+    "annual_return": "Annual return",
+    "per_year": "% / year",
+    "estimation_note": "Estimate — capital gain calculated from income without associated transfer (implicit interest).",
+    "detail_btn": "Breakdown by year ({{count}})",
+    "col_year": "Year",
+    "col_start": "Start",
+    "col_net_flows": "Net contributions",
+    "col_gain": "Gain",
+    "col_return": "Return",
+    "duration_months": "{{count}} months",
+    "duration_year_one": "1 year",
+    "duration_year_other": "{{count}} years",
+    "duration_year_months_one": "1 year {{months}} months",
+    "duration_year_months_other": "{{count}} years {{months}} months"
+  }
+}

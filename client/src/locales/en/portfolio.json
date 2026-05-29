@@ -1,0 +1,64 @@
+{
+  "section": {
+    "title": "Portfolio",
+    "refresh_btn": "↻ Refresh prices",
+    "refreshing": "…",
+    "buy_btn": "+ Buy",
+    "no_positions": "No open positions",
+    "col_quantity": "Quantity",
+    "col_pru": "Average cost",
+    "col_price": "Price",
+    "col_valuation": "Valuation",
+    "total_label": "Total",
+    "refresh_success": "Prices updated ✓",
+    "action_buy": "Buy",
+    "action_sell": "Sell",
+    "action_transfer": "Transfer",
+    "transfer_title": "Transfer to another account"
+  },
+  "stock_operation_modal": {
+    "title_buy": "Buy shares",
+    "title_sell": "Sell shares",
+    "ticker_label": "Ticker or ISIN",
+    "ticker_placeholder": "e.g.: DCAM.PA, AAPL or FR0014000MR3",
+    "quantity_label": "Number of shares",
+    "quantity_label_max": "Number of shares (max {{max}})",
+    "quantity_placeholder_buy": "10",
+    "quantity_placeholder_sell": "5",
+    "price_label": "Unit price (€)",
+    "price_placeholder_buy": "12.50",
+    "price_placeholder_sell": "13.00",
+    "fees_label": "Fees (€)",
+    "fees_placeholder": "1.50",
+    "total_expense": "Total cost",
+    "total_received": "Net amount received",
+    "success_buy": "Purchase of {{qty}} × {{ticker}} recorded ✓",
+    "success_sell": "Sale of {{qty}} × {{ticker}} recorded ✓",
+    "submit_buy": "Buy",
+    "submit_sell": "Sell"
+  },
+  "edit_operation_modal": {
+    "title": "Edit operation",
+    "subtitle_buy": "Purchase",
+    "subtitle_sell": "Sale",
+    "quantity_label": "Number of shares",
+    "price_label": "Unit price (€)",
+    "fees_label": "Fees (€)",
+    "total_label": "Total amount",
+    "total_received": "Net amount received",
+    "success": "Operation updated ✓"
+  },
+  "transfer_modal": {
+    "title": "Transfer securities",
+    "subtitle": "<ticker>{{ticker}}</ticker> — average cost {{pru}} retained",
+    "no_targets": "No other investment account available.",
+    "dest_account": "Destination account",
+    "quantity_label": "Number of shares (max {{max}})",
+    "success": "Transfer of {{qty}} × {{ticker}} recorded ✓",
+    "submit": "Transfer"
+  },
+  "ticker_input": {
+    "searching": "Searching…",
+    "no_result": "No results"
+  }
+}

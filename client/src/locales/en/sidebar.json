@@ -1,0 +1,23 @@
+{
+  "all_transactions": "All transactions",
+  "scheduled": "Scheduled",
+  "settings": "Settings",
+  "accounts_section": "Accounts",
+  "patrimony_net": "Net Worth",
+  "personal_tracking": "Personal Tracking",
+  "close_menu": "Close menu",
+  "open_menu": "Open menu",
+  "active_session": "Active session",
+  "menu_title": "Menu",
+  "logout_title": "Log out",
+  "logout_success": "Logged out successfully",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "no_bank": "No bank",
+  "group_bank": "Bank",
+  "group_type": "Type",
+  "easter_egg_0": "You found developer mode. Unfortunately it does nothing.",
+  "easter_egg_1": "Congratulations! You just wasted 30 seconds you could have invested.",
+  "easter_egg_2": "All that clicking and you could have made a budget… but you chose this instead.",
+  "easter_egg_3": "Psst — the real secret is that the money you track here doesn't make you any richer."
+}

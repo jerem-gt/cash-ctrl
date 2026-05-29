@@ -5,7 +5,7 @@ import { Button, showToast, Spinner } from '@/components/ui';
 import { StockOperationModal } from '@/features/portfolio/components/StockOperationModal';
 import { TransferStockModal } from '@/features/portfolio/components/TransferStockModal';
 import { useRefreshPrices, useStockPositions } from '@/features/portfolio/hooks/useStocks';
-import { fmtStockPrice } from '@/lib/format';
+import { currentLocale, fmtStockPrice } from '@/lib/format';
 import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
@@ -48,7 +48,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
           <div className="text-right">
             <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
               {pnl >= 0 ? '+' : ''}
-              {pnl.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+              {pnl.toLocaleString(currentLocale(), { style: 'currency', currency: pos.currency })}
             </p>
             {pnlPct != null && (
               <p className={`text-[11px] tabular-nums ${pnlColor}`}>
@@ -90,7 +90,10 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
           <p className="text-xs font-medium text-stone-700 tabular-nums">
             {marketValue == null
               ? '—'
-              : marketValue.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+              : marketValue.toLocaleString(currentLocale(), {
+                  style: 'currency',
+                  currency: pos.currency,
+                })}
           </p>
         </div>
       </div>
@@ -176,7 +179,10 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
           <p className="font-medium text-stone-700 tabular-nums">
             {marketValue == null
               ? '—'
-              : marketValue.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+              : marketValue.toLocaleString(currentLocale(), {
+                  style: 'currency',
+                  currency: pos.currency,
+                })}
           </p>
         </div>
       </div>
@@ -188,7 +194,7 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
           <div>
             <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
               {pnl >= 0 ? '+' : ''}
-              {pnl.toLocaleString('fr-FR', { style: 'currency', currency: pos.currency })}
+              {pnl.toLocaleString(currentLocale(), { style: 'currency', currency: pos.currency })}
             </p>
             {pnlPct != null && (
               <p className={`text-[11px] tabular-nums ${pnlColor}`}>
@@ -288,11 +294,14 @@ function PortfolioPositionsList({
             </span>
             <div className="text-right">
               <p className="text-sm font-bold text-stone-800 tabular-nums">
-                {totalMarketValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                {totalMarketValue.toLocaleString(currentLocale(), {
+                  style: 'currency',
+                  currency: 'EUR',
+                })}
               </p>
               <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
                 {totalPnl >= 0 ? '+' : ''}
-                {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} (
+                {totalPnl.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })} (
                 {totalPnlPct >= 0 ? '+' : ''}
                 {totalPnlPct.toFixed(2)} %)
               </p>
@@ -326,7 +335,7 @@ function PortfolioPositionsList({
                 <div />
                 <div>
                   <p className="font-bold text-stone-800 tabular-nums">
-                    {totalMarketValue.toLocaleString('fr-FR', {
+                    {totalMarketValue.toLocaleString(currentLocale(), {
                       style: 'currency',
                       currency: 'EUR',
                     })}
@@ -336,7 +345,7 @@ function PortfolioPositionsList({
               <div className="w-28 text-right shrink-0">
                 <p className={`text-sm font-bold tabular-nums ${totalPnlColor}`}>
                   {totalPnl >= 0 ? '+' : ''}
-                  {totalPnl.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                  {totalPnl.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
                 </p>
                 <p className={`text-[11px] tabular-nums ${totalPnlColor}`}>
                   {totalPnlPct >= 0 ? '+' : ''}

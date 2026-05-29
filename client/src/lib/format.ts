@@ -1,5 +1,12 @@
+import i18n from '@/i18n';
+
+export function currentLocale(): string {
+  if (i18n.language.startsWith('en')) return 'en-GB';
+  return 'fr-FR';
+}
+
 export const fmtStockPrice = (n: number, currency = 'EUR') =>
-  new Intl.NumberFormat('fr-FR', {
+  new Intl.NumberFormat(currentLocale(), {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
@@ -7,24 +14,24 @@ export const fmtStockPrice = (n: number, currency = 'EUR') =>
   }).format(n);
 
 export const fmt = (n: number) =>
-  new Intl.NumberFormat('fr-FR', {
+  new Intl.NumberFormat(currentLocale(), {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(n);
 
 export const fmtDec = (n: number) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat(currentLocale(), { style: 'currency', currency: 'EUR' }).format(n);
 
 export const fmtDate = (s: string) =>
-  new Date(s + 'T00:00:00').toLocaleDateString('fr-FR', {
+  new Date(s + 'T00:00:00').toLocaleDateString(currentLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   });
 
 export const fmtDateShort = (s: string) =>
-  new Date(s + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  new Date(s + 'T00:00:00').toLocaleDateString(currentLocale(), { day: '2-digit', month: 'short' });
 
 export const today = () => new Date().toISOString().split('T')[0];
 
@@ -37,7 +44,7 @@ export function isThisMonth(dateStr: string): boolean {
 export function monthLabel(offset: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() - offset);
-  return d.toLocaleDateString('fr-FR', { month: 'short' });
+  return d.toLocaleDateString(currentLocale(), { month: 'short' });
 }
 
 export function isSameMonth(dateStr: string, offset: number): boolean {
