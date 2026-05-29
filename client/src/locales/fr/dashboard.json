@@ -24,6 +24,13 @@
   "reimb_mark_done_title": "Marquer remboursement terminé",
   "recent_transactions": "Dernières transactions validées",
   "no_transactions": "Aucune transaction",
+  "patrimony_categories": {
+    "prets": "Prêts",
+    "liquidites": "Liquidités",
+    "epargne": "Épargne",
+    "fonds_euros": "Fonds euros",
+    "actions_uc": "Actions & UC"
+  },
   "patrimony_title": "Répartition du patrimoine",
   "profitability_title": "Rendement de mes placements",
   "prof_col_account": "Compte",

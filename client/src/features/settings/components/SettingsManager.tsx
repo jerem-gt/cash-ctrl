@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { Skeleton } from '@/components/ui';
+import { LanguageSwitcher } from '@/features/settings/components/LanguageSwitcher';
 
 export function SettingsManagerSkeleton() {
   return (
@@ -90,3 +91,6 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     </nav>
   );
 }
+<div className="mt-4 pt-4 border-t border-black/5">
+  <LanguageSwitcher />
+</div>;

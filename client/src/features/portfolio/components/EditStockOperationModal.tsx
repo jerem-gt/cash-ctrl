@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateStockOperation } from '@/features/portfolio/hooks/useStocks';
+import { currentLocale } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 import type { Transaction } from '@/types';
 
@@ -109,7 +110,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               : t('edit_operation_modal.total_received')}
           </p>
           <p className={`font-sans text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
-            {totalAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+            {totalAmount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>
 

@@ -9,7 +9,7 @@ import {
   useLoanInstallments,
   useUpdateInstallment,
 } from '@/features/loans/hooks/useLoans';
-import { fmtDate, fmtDec, today } from '@/lib/format';
+import { currentLocale, fmtDate, fmtDec, today } from '@/lib/format';
 import type { Account, LoanInstallment } from '@/types';
 
 type Props = {
@@ -225,7 +225,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
           <LoanStat label={t('section.capital_borrowed')} value={fmtDec(loan.principal_amount)} />
           <LoanStat
             label={t('section.annual_rate')}
-            value={`${(loan.interest_rate * 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} %`}
+            value={`${(loan.interest_rate * 100).toLocaleString(currentLocale(), { minimumFractionDigits: 2 })} %`}
           />
           <LoanStat
             label={t('section.duration')}

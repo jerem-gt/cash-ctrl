@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { accountSeniority } from '@/lib/account.ts';
-import { fmtDec } from '@/lib/format.ts';
+import { currentLocale, fmtDec } from '@/lib/format.ts';
 import { Account } from '@/types.ts';
 
 interface AccountHeaderProps {
@@ -157,11 +157,14 @@ export function AccountHeader({
               {account.opening_date && (
                 <p className="text-sm text-stone-500 font-medium">
                   <span className="text-stone-400">{t('header.opened_on')}</span>{' '}
-                  {new Date(account.opening_date + 'T00:00:00').toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {new Date(account.opening_date + 'T00:00:00').toLocaleDateString(
+                    currentLocale(),
+                    {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    },
+                  )}
                   <span className="mx-2 text-stone-300">—</span>
                   <span className="bg-stone-200/50 text-stone-600 px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
                     {accountSeniority(account.opening_date)}

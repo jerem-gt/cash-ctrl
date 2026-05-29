@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { showToast } from '@/components/ui';
 import { useBackupList, useRunBackup } from '@/features/settings/hooks/useBackup';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { currentLocale } from '@/lib/format';
 import type { BackupFile } from '@/types';
 
 function formatBytes(bytes: number): string {
@@ -15,7 +16,7 @@ function formatBytes(bytes: number): string {
 
 function BackupRow({ file }: Readonly<{ file: BackupFile }>) {
   const { t } = useTranslation('settings');
-  const date = new Date(file.created_at).toLocaleString('fr-FR', {
+  const date = new Date(file.created_at).toLocaleString(currentLocale(), {
     dateStyle: 'short',
     timeStyle: 'short',
   });
@@ -188,7 +189,7 @@ export function BackupManager() {
           {settings?.backup_last_at && (
             <p className="text-[11px] text-stone-400">
               {t('backup.last_backup')}{' '}
-              {new Date(settings.backup_last_at).toLocaleString('fr-FR', {
+              {new Date(settings.backup_last_at).toLocaleString(currentLocale(), {
                 dateStyle: 'short',
                 timeStyle: 'short',
               })}

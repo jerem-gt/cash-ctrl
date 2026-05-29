@@ -846,14 +846,14 @@ export function createStatsRepo(db: Database) {
 
       if (!hasAccounts) return { account_types: [], data: [] };
 
-      const CATEGORY_LABELS = {
-        prets: 'Prêts',
-        liquidites: 'Liquidités',
-        epargne: 'Épargne',
-        fonds_euros: 'Fonds euros',
-        actions_uc: 'Actions & UC',
-      } as const;
-      type CategoryKey = keyof typeof CATEGORY_LABELS;
+      const CATEGORY_KEYS = [
+        'prets',
+        'liquidites',
+        'epargne',
+        'fonds_euros',
+        'actions_uc',
+      ] as const;
+      type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
       // Cash balance per account at year-end (amounts in cents)
       const cashStmt = db.prepare<
@@ -1038,14 +1038,13 @@ export function createStatsRepo(db: Database) {
         return point;
       });
 
-      const labels = Object.values(CATEGORY_LABELS);
       const labeledData = years.map((year, i) => ({
         year,
         ...(Object.fromEntries(
-          (Object.keys(data[i]) as CategoryKey[]).map((k) => [CATEGORY_LABELS[k], data[i][k]]),
+          (Object.keys(data[i]) as CategoryKey[]).map((k) => [k, data[i][k]]),
         ) as Record<string, number>),
       }));
-      return { account_types: labels, data: labeledData };
+      return { account_types: [...CATEGORY_KEYS], data: labeledData };
     },
 
     getProfitability(userId: number): AccountProfitability[] {

@@ -102,17 +102,17 @@ describe('DashboardPage', () => {
     server.use(
       http.get('/api/stats/balance-history', () =>
         HttpResponse.json({
-          account_types: ['Courant', 'Livret'],
+          account_types: ['liquidites', 'epargne'],
           data: [
-            { year: '2025', Courant: 1500, Livret: 500 },
-            { year: '2026', Courant: 2000, Livret: 600 },
+            { year: '2025', liquidites: 1500, epargne: 500 },
+            { year: '2026', liquidites: 2000, epargne: 600 },
           ],
         }),
       ),
     );
     renderWithProviders(<DashboardPage />);
     expect(await screen.findByText('Répartition du patrimoine')).toBeInTheDocument();
-    expect(screen.getByText('Courant')).toBeInTheDocument();
-    expect(screen.getByText('Livret')).toBeInTheDocument();
+    expect(screen.getByText('Liquidités')).toBeInTheDocument();
+    expect(screen.getByText('Épargne')).toBeInTheDocument();
   });
 });

@@ -8,7 +8,7 @@ import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useValidateTransaction } from '@/hooks/useTransactions';
-import { fmtDec, today } from '@/lib/format';
+import { currentLocale, fmtDec, today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, Transaction } from '@/types';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -53,10 +53,10 @@ function TxDateBlock({ date }: Readonly<{ date: string }>) {
   return (
     <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
       <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
-        {new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(d).replace('.', '')}
+        {new Intl.DateTimeFormat(currentLocale(), { month: 'short' }).format(d).replace('.', '')}
       </span>
       <span className="text-sm font-bold text-stone-700 leading-none mt-0.5">
-        {new Intl.DateTimeFormat('fr-FR', { day: '2-digit' }).format(d)}
+        {new Intl.DateTimeFormat(currentLocale(), { day: '2-digit' }).format(d)}
       </span>
       {!isCurrentYear && (
         <span className="text-[8px] text-stone-400 leading-none mt-0.5">{d.getFullYear()}</span>

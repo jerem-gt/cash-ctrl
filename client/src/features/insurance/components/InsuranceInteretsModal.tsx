@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useInterets } from '@/features/insurance/hooks/useInsurance';
-import { today } from '@/lib/format';
+import { currentLocale, today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -46,7 +46,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
           />
           <p className="text-[10px] text-stone-400 mt-1">
             {t('interets_modal.current_balance')}{' '}
-            {support.value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+            {support.value.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </FormGroup>
 

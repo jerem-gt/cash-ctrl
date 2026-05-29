@@ -3,15 +3,13 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Select } from '@/components/ui';
 import { useTaxYearData, useTaxYears } from '@/features/insurance/hooks/useTax';
+import { fmt } from '@/lib/format';
 import {
   type BracketDetail,
   simulate,
   type SimulationResult,
   type TaxResult,
 } from '@/lib/taxCalculator';
-
-const fmtEur = (n: number) =>
-  n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -24,7 +22,7 @@ function BracketRow({ detail }: Readonly<{ detail: BracketDetail }>) {
   return (
     <div className="flex items-center justify-between py-1 text-xs text-stone-600">
       <span className="text-stone-400">{label}</span>
-      <span className="tabular-nums font-medium">{fmtEur(detail.tax)}</span>
+      <span className="tabular-nums font-medium">{fmt(detail.tax)}</span>
     </div>
   );
 }
@@ -43,7 +41,7 @@ function TaxColumn({
         <div className="flex items-center justify-between pb-2 mb-1 border-b border-stone-100">
           <span className="text-xs text-stone-500">{t('per_simulator.taxable_income')}</span>
           <span className="text-xs font-semibold tabular-nums">
-            {fmtEur(result.revenuNetImposable)}
+            {fmt(result.revenuNetImposable)}
           </span>
         </div>
         {activeBrackets.map((d) => (
@@ -52,7 +50,7 @@ function TaxColumn({
         <div className="flex items-center justify-between pt-2 mt-1 border-t border-stone-200">
           <span className="text-xs font-bold text-stone-700">{t('per_simulator.total_ir')}</span>
           <span className={`text-sm font-bold tabular-nums ${colorClass}`}>
-            {fmtEur(result.impotTotal)}
+            {fmt(result.impotTotal)}
           </span>
         </div>
       </div>
@@ -203,8 +201,8 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                     {yearData && (
                       <span className="text-stone-400 text-xs ml-1">
                         {t('per_simulator.forfait_min_max', {
-                          min: fmtEur(yearData.params.abattement_min),
-                          max: fmtEur(yearData.params.abattement_max),
+                          min: fmt(yearData.params.abattement_min),
+                          max: fmt(yearData.params.abattement_max),
                         })}
                       </span>
                     )}
@@ -286,9 +284,9 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                     i18nKey="per_simulator.ceiling_exceeded"
                     ns="insurance"
                     values={{
-                      amount: fmtEur(Number.parseFloat(versementPER)),
-                      ceiling: fmtEur(result.plafondPER),
-                      deductible: fmtEur(result.versementDeductible),
+                      amount: fmt(Number.parseFloat(versementPER)),
+                      ceiling: fmt(result.plafondPER),
+                      deductible: fmt(result.versementDeductible),
                     }}
                     components={{ bold: <strong /> }}
                   />
@@ -303,7 +301,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                   {t('per_simulator.tax_saving_label')}
                 </span>
                 <span className="text-xl font-bold text-green-700 tabular-nums">
-                  {fmtEur(result.economie)}
+                  {fmt(result.economie)}
                 </span>
               </div>
               <p className="text-xs text-green-600 mt-1.5 leading-relaxed">

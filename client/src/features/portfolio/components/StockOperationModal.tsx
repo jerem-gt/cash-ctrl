@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput';
 import { useBuyStock, useSellStock } from '@/features/portfolio/hooks/useStocks';
-import { today } from '@/lib/format';
+import { currentLocale, today } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 import type { StockPosition } from '@/types';
 
@@ -156,7 +156,7 @@ export function StockOperationModal(props: Readonly<Props>) {
               : t('stock_operation_modal.total_received')}
           </p>
           <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
-            {amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+            {amount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>
 
