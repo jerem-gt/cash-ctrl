@@ -35,6 +35,7 @@ export const tabs = [
     items: [{ key: 'export' }, { key: 'import' }, { key: 'backup' }],
   },
   { section: 'security', items: [{ key: 'password' }] },
+  { section: 'system', items: [{ key: 'systemRefs' }] },
 ] as const;
 
 export type SettingsTab = (typeof tabs)[number]['items'][number]['key'];
@@ -51,6 +52,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     types: t('nav.types_section'),
     data: t('nav.data_section'),
     security: t('nav.security_section'),
+    system: t('nav.system_section'),
   };
 
   const itemLabels: Record<string, string> = {
@@ -62,6 +64,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     import: t('nav.import'),
     backup: t('nav.backup'),
     password: t('nav.password'),
+    systemRefs: t('nav.system_refs'),
   };
 
   return (
@@ -88,9 +91,10 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
           </div>
         </div>
       ))}
+      <div className="mt-4 pt-4 border-t border-black/5">
+        <LanguageSwitcher />
+      </div>
+      ;
     </nav>
   );
 }
-<div className="mt-4 pt-4 border-t border-black/5">
-  <LanguageSwitcher />
-</div>;

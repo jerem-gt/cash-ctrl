@@ -2,7 +2,7 @@ import { Loader2, LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Card, CardTitle, Input, showToast } from '@/components/ui';
+import { Button, Card, CardTitle, Input, Select, showToast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants';
 import { useLogout } from '@/hooks/useAuth';
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/useUsers';
@@ -15,12 +15,13 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
   const { t } = useTranslation('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const create = useCreateUser();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     create.mutate(
-      { username, password },
+      { username, password, lang },
       {
         onSuccess: () => {
           showToast(t('toasts.created'));
@@ -54,6 +55,17 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
         required
         minLength={8}
       />
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-stone-500">{t('add_form.language_label')}</label>
+        <Select
+          value={lang}
+          onChange={(e) => setLang(e.target.value as 'fr' | 'en')}
+          aria-label={t('add_form.language_label')}
+        >
+          <option value="fr">{t('add_form.language_fr')}</option>
+          <option value="en">{t('add_form.language_en')}</option>
+        </Select>
+      </div>
       <Button type="submit" variant="primary" disabled={create.isPending}>
         {t('add_form.submit')}
       </Button>

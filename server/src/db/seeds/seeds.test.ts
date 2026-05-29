@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createDb } from '../init.js';
 import { initSchema } from '../schema.js';
-import { seedDatabase } from '../seed.js';
+import { seedDatabase, seedUserData } from '../seed.js';
 import { seedAccountTypes } from './accountTypes.seed.js';
 import { seedBanks } from './banks.seed.js';
 import { seedCategories } from './categories.seed.js';
@@ -53,6 +53,19 @@ describe('seedAccountTypes', () => {
     expect(rows.map((r) => r.name)).toContain('PER');
   });
 
+  it('inserts English account types when lang=en', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedAccountTypes(db, id, 'en');
+    const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
+    expect(rows.map((r) => r.name)).toContain('Checking');
+    expect(rows.map((r) => r.name)).toContain('Savings');
+    expect(rows.map((r) => r.name)).toContain('Loan');
+    expect(rows.map((r) => r.name)).toContain('Life insurance');
+    expect(rows.map((r) => r.name)).toContain('Brokerage');
+  });
+
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
     const db = createFreshDb();
     seedAdminUser(db);
@@ -76,6 +89,18 @@ describe('seedCategories', () => {
     expect(rows).toHaveLength(14);
     expect(rows.every((r) => r.name)).toBe(true);
   });
+
+  it('inserts English category names when lang=en', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedCategories(db, id, 'en');
+    const rows = db.prepare('SELECT name FROM categories').all() as { name: string }[];
+    expect(rows.map((r) => r.name)).toContain('Financial income');
+    expect(rows.map((r) => r.name)).toContain('Housing');
+    expect(rows.map((r) => r.name)).toContain('Food');
+    expect(rows.map((r) => r.name)).toContain('Transfer');
+  });
 });
 
 describe('seedSubcategories', () => {
@@ -92,6 +117,20 @@ describe('seedSubcategories', () => {
     expect(rows).toHaveLength(71);
     expect(rows.every((r) => r.name && r.category_id)).toBe(true);
   });
+
+  it('inserts English subcategory names when lang=en', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    const catMap = seedCategories(db, id, 'en');
+    seedSubcategories(db, id, 'en', catMap);
+    const rows = db.prepare('SELECT name FROM subcategories').all() as { name: string }[];
+    expect(rows.map((r) => r.name)).toContain('Bank fees');
+    expect(rows.map((r) => r.name)).toContain('Salary');
+    expect(rows.map((r) => r.name)).toContain('Interest');
+    expect(rows.map((r) => r.name)).toContain('Transfer');
+    expect(rows.map((r) => r.name)).toContain('Social charges');
+  });
 });
 
 describe('seedPaymentMethods', () => {
@@ -106,6 +145,17 @@ describe('seedPaymentMethods', () => {
     }[];
     expect(rows).toHaveLength(6);
     expect(rows.every((r) => r.name)).toBe(true);
+  });
+
+  it('inserts English payment method names when lang=en', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedPaymentMethods(db, id, 'en');
+    const rows = db.prepare('SELECT name FROM payment_methods').all() as { name: string }[];
+    expect(rows.map((r) => r.name)).toContain('Direct debit');
+    expect(rows.map((r) => r.name)).toContain('Transfer');
+    expect(rows.map((r) => r.name)).toContain('Bank card');
   });
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
@@ -175,5 +225,89 @@ describe('seedDatabase', () => {
     expect(q('account_types')).toBe(0);
     expect(q('categories')).toBe(0);
     expect(q('payment_methods')).toBe(0);
+  });
+});
+
+describe('seedUserData', () => {
+  it('seeds FR data and populates all 6 system refs in user_settings', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedUserData(db, userId, 'fr');
+
+    const settings = db
+      .prepare(
+        `SELECT financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
+                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
+         FROM user_settings WHERE user_id = ?`,
+      )
+      .get(userId) as
+      | {
+          financial_income_category_id: number | null;
+          transfer_subcategory_id: number | null;
+          transfer_payment_method_id: number | null;
+          bank_fees_subcategory_id: number | null;
+          social_fees_subcategory_id: number | null;
+          prelevement_payment_method_id: number | null;
+        }
+      | undefined;
+
+    expect(settings).toBeDefined();
+    expect(settings?.financial_income_category_id).not.toBeNull();
+    expect(settings?.transfer_subcategory_id).not.toBeNull();
+    expect(settings?.transfer_payment_method_id).not.toBeNull();
+    expect(settings?.bank_fees_subcategory_id).not.toBeNull();
+    expect(settings?.social_fees_subcategory_id).not.toBeNull();
+    expect(settings?.prelevement_payment_method_id).not.toBeNull();
+
+    // Verify FR category name
+    const cat = db
+      .prepare('SELECT name FROM categories WHERE id = ?')
+      .get(settings?.financial_income_category_id) as { name: string } | undefined;
+    expect(cat?.name).toBe('Revenus financiers');
+  });
+
+  it('seeds EN data and populates all 6 system refs in user_settings', () => {
+    const db = createFreshDb();
+    seedAdminUser(db);
+    const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
+    seedUserData(db, userId, 'en');
+
+    const settings = db
+      .prepare(
+        `SELECT financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
+                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
+         FROM user_settings WHERE user_id = ?`,
+      )
+      .get(userId) as
+      | {
+          financial_income_category_id: number | null;
+          transfer_subcategory_id: number | null;
+          transfer_payment_method_id: number | null;
+          bank_fees_subcategory_id: number | null;
+          social_fees_subcategory_id: number | null;
+          prelevement_payment_method_id: number | null;
+        }
+      | undefined;
+
+    expect(settings).toBeDefined();
+    expect(settings?.financial_income_category_id).not.toBeNull();
+    expect(settings?.transfer_subcategory_id).not.toBeNull();
+    expect(settings?.transfer_payment_method_id).not.toBeNull();
+    expect(settings?.bank_fees_subcategory_id).not.toBeNull();
+    expect(settings?.social_fees_subcategory_id).not.toBeNull();
+    expect(settings?.prelevement_payment_method_id).not.toBeNull();
+
+    // Verify EN category name
+    const cat = db
+      .prepare('SELECT name FROM categories WHERE id = ?')
+      .get(settings?.financial_income_category_id) as { name: string } | undefined;
+    expect(cat?.name).toBe('Financial income');
+
+    // Verify EN payment method names
+    const pm = db
+      .prepare('SELECT name FROM payment_methods WHERE id = ?')
+      .get(settings?.prelevement_payment_method_id) as { name: string } | undefined;
+    expect(pm?.name).toBe('Direct debit');
   });
 });

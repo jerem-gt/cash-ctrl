@@ -141,6 +141,18 @@
     "fr": "Français",
     "en": "English"
   },
+  "system_refs": {
+    "title": "System entities",
+    "placeholder": "— not set —",
+    "financial_income_category_id": "Financial income category",
+    "transfer_subcategory_id": "Transfer sub-category",
+    "transfer_payment_method_id": "Transfer payment method",
+    "bank_fees_subcategory_id": "Bank fees sub-category",
+    "social_fees_subcategory_id": "Social fees sub-category",
+    "prelevement_payment_method_id": "Direct debit payment method",
+    "success": "Reference updated ✓",
+    "error": "Error updating reference"
+  },
   "nav": {
     "types_section": "Types",
     "data_section": "Data",
@@ -152,7 +164,9 @@
     "export": "Export",
     "import": "Import",
     "backup": "Backup",
-    "password": "Password"
+    "password": "Password",
+    "system_refs": "System entities",
+    "system_section": "System"
   },
   "card": {
     "edit_label": "Edit",

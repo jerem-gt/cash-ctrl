@@ -18,9 +18,11 @@ import type {
   PendingReimbursement,
   Reimbursement,
   ScheduledTransaction,
+  SettingsUpdate,
   StockOperation,
   StockPosition,
   StockPrice,
+  SystemRefsPayload,
   TaxYearData,
   Transaction,
   TransactionFilters,
@@ -79,7 +81,7 @@ export const authApi = {
 // Users (admin only)
 export const usersApi = {
   list: () => request<UserPublic[]>('GET', '/api/users'),
-  create: (payload: { username: string; password: string }) =>
+  create: (payload: { username: string; password: string; lang: 'fr' | 'en' }) =>
     request<UserPublic>('POST', '/api/users', payload),
   update: (id: number, payload: { username?: string; password?: string }) =>
     request<UserPublic>('PATCH', `/api/users/${id}`, payload),
@@ -223,7 +225,9 @@ export const scheduledApi = {
 // User settings
 export const settingsApi = {
   get: () => request<UserSettings>('GET', '/api/settings'),
-  update: (payload: UserSettings) => request<UserSettings>('PUT', '/api/settings', payload),
+  update: (payload: SettingsUpdate) => request<UserSettings>('PUT', '/api/settings', payload),
+  updateSystemRefs: (payload: SystemRefsPayload) =>
+    request<UserSettings>('PATCH', '/api/settings/system-refs', payload),
 };
 
 // Backup

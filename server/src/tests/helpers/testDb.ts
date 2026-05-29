@@ -3,6 +3,7 @@ import type { Database } from 'better-sqlite3';
 import { createDb } from '../../db/init';
 import { initSchema } from '../../db/schema';
 import { seedTaxData } from '../../db/seeds/tax.seed';
+import { createSettingsRepo } from '../../modules/settings/settings.repo';
 
 // IDs des données seed (stables car AUTOINCREMENT depuis 1 à chaque DB fraîche)
 export const SEED = {
@@ -127,6 +128,23 @@ export function seedTestReferenceData(db: Database, userId: number) {
     'Carte Bancaire',
   );
   db.prepare('INSERT INTO payment_methods (user_id, name) VALUES (?, ?)').run(userId, 'Transfert');
+
+  // Populate system refs in user_settings so business logic works correctly
+  const settingsRepo = createSettingsRepo(db);
+  const finCat = db
+    .prepare('SELECT id FROM categories WHERE user_id = ? AND name = ?')
+    .get(userId, 'Revenus financiers') as { id: number } | undefined;
+  const transferSubcat = db
+    .prepare('SELECT id FROM subcategories WHERE user_id = ? AND name = ?')
+    .get(userId, 'Transfert') as { id: number } | undefined;
+  const transferPm = db
+    .prepare('SELECT id FROM payment_methods WHERE user_id = ? AND name = ?')
+    .get(userId, 'Transfert') as { id: number } | undefined;
+  settingsRepo.setSystemRefs(userId, {
+    financial_income_category_id: finCat?.id ?? null,
+    transfer_subcategory_id: transferSubcat?.id ?? null,
+    transfer_payment_method_id: transferPm?.id ?? null,
+  });
 }
 
 export function createTestDb(): Database {

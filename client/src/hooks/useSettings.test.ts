@@ -27,7 +27,6 @@ describe('useUpdateSettings', () => {
       backup_enabled: false,
       backup_frequency_h: 24,
       backup_max_files: 7,
-      backup_last_at: null,
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const cached = qc.getQueryData(['settings']) as { lead_days: number };

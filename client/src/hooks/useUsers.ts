@@ -12,7 +12,8 @@ export function useUsers() {
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { username: string; password: string }) => usersApi.create(payload),
+    mutationFn: (payload: { username: string; password: string; lang: 'fr' | 'en' }) =>
+      usersApi.create(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 }

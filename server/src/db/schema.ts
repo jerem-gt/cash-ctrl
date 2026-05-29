@@ -43,14 +43,20 @@ export function initSchema(db: Database) {
 
         CREATE TABLE IF NOT EXISTS user_settings
         (
-            user_id            INTEGER PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
-            lead_days          INTEGER NOT NULL DEFAULT 30,
-            backup_enabled     INTEGER NOT NULL DEFAULT 0,
-            backup_frequency_h INTEGER NOT NULL DEFAULT 24,
-            backup_max_files   INTEGER NOT NULL DEFAULT 7,
-            backup_last_at     TEXT,
-            backup_last_hash   TEXT,
-            updated_at         TEXT DEFAULT (datetime('now'))
+            user_id                       INTEGER PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+            lead_days                     INTEGER NOT NULL DEFAULT 30,
+            backup_enabled                INTEGER NOT NULL DEFAULT 0,
+            backup_frequency_h            INTEGER NOT NULL DEFAULT 24,
+            backup_max_files              INTEGER NOT NULL DEFAULT 7,
+            backup_last_at                TEXT,
+            backup_last_hash              TEXT,
+            updated_at                    TEXT DEFAULT (datetime('now')),
+            financial_income_category_id  INTEGER,
+            transfer_subcategory_id       INTEGER,
+            transfer_payment_method_id    INTEGER,
+            bank_fees_subcategory_id      INTEGER,
+            social_fees_subcategory_id    INTEGER,
+            prelevement_payment_method_id INTEGER
         );
 
         CREATE TABLE IF NOT EXISTS users

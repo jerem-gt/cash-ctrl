@@ -279,7 +279,29 @@ export interface UserSettings {
   backup_frequency_h: number;
   backup_max_files: number;
   backup_last_at: string | null;
+  financial_income_category_id: number | null;
+  transfer_subcategory_id: number | null;
+  transfer_payment_method_id: number | null;
+  bank_fees_subcategory_id: number | null;
+  social_fees_subcategory_id: number | null;
+  prelevement_payment_method_id: number | null;
 }
+
+// Champs réellement modifiables via PUT /api/settings (les références système
+// passent par PATCH /api/settings/system-refs, voir SystemRefsPayload).
+export type SettingsUpdate = Pick<
+  UserSettings,
+  'lead_days' | 'backup_enabled' | 'backup_frequency_h' | 'backup_max_files'
+>;
+
+export type SystemRefsPayload = Partial<{
+  financial_income_category_id: number | null;
+  transfer_subcategory_id: number | null;
+  transfer_payment_method_id: number | null;
+  bank_fees_subcategory_id: number | null;
+  social_fees_subcategory_id: number | null;
+  prelevement_payment_method_id: number | null;
+}>;
 
 export interface BackupFile {
   filename: string;

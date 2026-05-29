@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import type { SystemRefColumn } from '../../lib/systemEntities';
 import type { UserSettings } from './settings.types';
 
 const DEFAULTS: Omit<UserSettings, 'user_id'> = {
@@ -9,12 +10,20 @@ const DEFAULTS: Omit<UserSettings, 'user_id'> = {
   backup_max_files: 7,
   backup_last_at: null,
   backup_last_hash: null,
+  financial_income_category_id: null,
+  transfer_subcategory_id: null,
+  transfer_payment_method_id: null,
+  bank_fees_subcategory_id: null,
+  social_fees_subcategory_id: null,
+  prelevement_payment_method_id: null,
 };
 
 export function createSettingsRepo(db: Database) {
   const getByUserIdStmt = db.prepare<{ userId: number }, UserSettings>(
     `SELECT lead_days, backup_enabled, backup_frequency_h, backup_max_files,
-            backup_last_at, backup_last_hash
+            backup_last_at, backup_last_hash,
+            financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
+            bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
      FROM user_settings WHERE user_id = :userId`,
   );
 
@@ -84,6 +93,42 @@ export function createSettingsRepo(db: Database) {
 
     updateAfterBackup(userId: number, lastAt: string, hash: string) {
       return updateAfterBackupStmt.run({ userId, lastAt, hash });
+    },
+
+    setSystemRefs(userId: number, refs: Partial<Record<SystemRefColumn, number | null>>) {
+      const entries = Object.entries(refs) as Array<[SystemRefColumn, number | null]>;
+      if (entries.length === 0) return;
+
+      const colNames = entries.map(([col]) => col).join(', ');
+      const colParams = entries.map(([col]) => `:${col}`).join(', ');
+      const setClauses = entries.map(([col]) => `${col} = :${col}`).join(', ');
+      const params: Record<string, number | null | undefined> = { userId };
+      for (const [col, val] of entries) {
+        params[col] = val;
+      }
+
+      db.prepare(
+        `
+        INSERT INTO user_settings (user_id, lead_days, backup_enabled, backup_frequency_h, backup_max_files, ${colNames})
+        VALUES (:userId, 30, 0, 24, 7, ${colParams})
+        ON CONFLICT(user_id) DO UPDATE SET ${setClauses}, updated_at = CURRENT_TIMESTAMP
+      `,
+      ).run(params);
+    },
+
+    updateSystemRefs(userId: number, refs: Partial<Record<SystemRefColumn, number | null>>) {
+      const entries = Object.entries(refs) as Array<[SystemRefColumn, number | null]>;
+      if (entries.length === 0) return;
+
+      const setClauses = entries.map(([col]) => `${col} = :${col}`).join(', ');
+      const params: Record<string, number | null | undefined> = { userId };
+      for (const [col, val] of entries) {
+        params[col] = val;
+      }
+
+      db.prepare(
+        `UPDATE user_settings SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE user_id = :userId`,
+      ).run(params);
     },
   };
 }

@@ -10,6 +10,9 @@
     "title": "New user",
     "username_placeholder": "Username",
     "password_placeholder": "Password (min. 8 characters)",
+    "language_label": "Data language",
+    "language_fr": "Français",
+    "language_en": "English",
     "submit": "Create"
   },
   "edit_form": {

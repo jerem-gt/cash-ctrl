@@ -60,7 +60,7 @@ describe('POST /api/users', () => {
     expect(res.body.is_admin).toBe(0);
   });
 
-  it('seed les données statiques du nouvel utilisateur', async () => {
+  it('seed les données statiques du nouvel utilisateur (défaut FR)', async () => {
     const { app, db } = setup();
     const agent = await loginAs(app, 'admin');
     await agent.post('/api/users').send({ username: 'bob', password: 'password123' });
@@ -83,6 +83,51 @@ describe('POST /api/users', () => {
     expect(atCount).toBeGreaterThan(0);
     expect(catCount).toBeGreaterThan(0);
     expect(pmCount).toBeGreaterThan(0);
+
+    // FR libellés par défaut
+    const catFr = db
+      .prepare("SELECT id FROM categories WHERE user_id = ? AND name = 'Revenus financiers'")
+      .get(bob.id) as { id: number } | undefined;
+    expect(catFr).toBeDefined();
+
+    // Les 6 system refs doivent être peuplées
+    const settings = db
+      .prepare('SELECT financial_income_category_id FROM user_settings WHERE user_id = ?')
+      .get(bob.id) as { financial_income_category_id: number | null } | undefined;
+    expect(settings?.financial_income_category_id).not.toBeNull();
+  });
+
+  it('seed les données en anglais quand lang=en', async () => {
+    const { app, db } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent
+      .post('/api/users')
+      .send({ username: 'charlie', password: 'password123', lang: 'en' });
+    expect(res.status).toBe(201);
+    const charlie = db.prepare('SELECT id FROM users WHERE username = ?').get('charlie') as {
+      id: number;
+    };
+
+    // EN libellés
+    const catEn = db
+      .prepare("SELECT id FROM categories WHERE user_id = ? AND name = 'Financial income'")
+      .get(charlie.id) as { id: number } | undefined;
+    expect(catEn).toBeDefined();
+
+    // Les system refs doivent pointer sur la catégorie EN
+    const settings = db
+      .prepare('SELECT financial_income_category_id FROM user_settings WHERE user_id = ?')
+      .get(charlie.id) as { financial_income_category_id: number | null } | undefined;
+    expect(settings?.financial_income_category_id).toBe(catEn?.id);
+  });
+
+  it('retourne 400 si lang est invalide', async () => {
+    const { app } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent
+      .post('/api/users')
+      .send({ username: 'dave', password: 'password123', lang: 'de' });
+    expect(res.status).toBe(400);
   });
 
   it('retourne 409 si le username est déjà pris', async () => {

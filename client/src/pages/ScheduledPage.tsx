@@ -861,7 +861,6 @@ export default function ScheduledPage() {
         backup_enabled: settings?.backup_enabled ?? false,
         backup_frequency_h: settings?.backup_frequency_h ?? 24,
         backup_max_files: settings?.backup_max_files ?? 7,
-        backup_last_at: settings?.backup_last_at ?? null,
         lead_days: val,
       },
       {

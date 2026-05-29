@@ -21,6 +21,15 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       CREATE INDEX IF NOT EXISTS idx_reimbursements_linked ON reimbursements(linked_transaction_id);
       CREATE INDEX IF NOT EXISTS idx_loan_installments_txid ON loan_installments(transaction_id);
     `),
+  (db) =>
+    db.exec(`
+      ALTER TABLE user_settings ADD COLUMN financial_income_category_id  INTEGER;
+      ALTER TABLE user_settings ADD COLUMN transfer_subcategory_id       INTEGER;
+      ALTER TABLE user_settings ADD COLUMN transfer_payment_method_id    INTEGER;
+      ALTER TABLE user_settings ADD COLUMN bank_fees_subcategory_id      INTEGER;
+      ALTER TABLE user_settings ADD COLUMN social_fees_subcategory_id    INTEGER;
+      ALTER TABLE user_settings ADD COLUMN prelevement_payment_method_id INTEGER;
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {
