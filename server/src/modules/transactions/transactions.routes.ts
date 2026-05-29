@@ -3,7 +3,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
-import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { parseBody } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -78,7 +77,6 @@ export function createTransactionsRouter(db: Database): Router {
 
   router.get('/', (req, res) => {
     const userId = sessionUserId(req);
-    generateScheduledTransactions(userId, db);
 
     const parsed = querySchema.safeParse(req.query);
     if (!parsed.success) {

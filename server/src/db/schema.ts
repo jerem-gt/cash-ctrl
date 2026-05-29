@@ -182,6 +182,7 @@ export function initSchema(db: Database) {
 
         CREATE INDEX IF NOT EXISTS idx_ins_ops_account ON insurance_operations (account_id);
         CREATE INDEX IF NOT EXISTS idx_ins_ops_support ON insurance_operations (support_id);
+        CREATE INDEX IF NOT EXISTS idx_ins_ops_txid ON insurance_operations (transaction_id);
 
         CREATE TRIGGER IF NOT EXISTS insurance_op_fees_cleanup
         AFTER DELETE ON insurance_operations

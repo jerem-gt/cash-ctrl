@@ -91,6 +91,13 @@ export function createDb(filePath?: string) {
 
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  // Réglages de robustesse/perf, surtout utiles sur stockage lent ou concurrent
+  // (sur SSD local le gain est négligeable, mais ces réglages sont sûrs avec WAL) :
+  db.pragma('synchronous = NORMAL'); // pas de fsync par commit (durabilité garantie au checkpoint)
+  db.pragma('busy_timeout = 5000'); // attend au lieu de renvoyer SQLITE_BUSY
+  db.pragma('cache_size = -16000'); // 16 Mo de cache pages
+  db.pragma('temp_store = MEMORY'); // tables temporaires (GROUP BY/ORDER BY) en RAM
+  db.pragma('mmap_size = 268435456'); // I/O mappée en mémoire (256 Mo)
 
   return db;
 }

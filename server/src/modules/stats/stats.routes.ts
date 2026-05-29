@@ -1,7 +1,6 @@
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
-import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo';
 import { fetchAndStorePriceHistory } from '../stocks/stocks.service';
@@ -15,8 +14,6 @@ export function createStatsRouter(db: Database): Router {
 
   router.get('/', (req, res) => {
     const userId = sessionUserId(req);
-    generateScheduledTransactions(userId, db);
-
     const today = new Date().toISOString().slice(0, 10);
     res.json(repo.getDashboardStats(userId, today));
   });
