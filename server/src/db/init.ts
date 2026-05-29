@@ -46,7 +46,7 @@ function repairAccountTypesCheck(db: DatabaseType) {
       { sql: string }
     >("SELECT sql FROM sqlite_master WHERE type='table' AND name='account_types'")
     .get();
-  if (!row || !row.sql.includes('CHECK')) return;
+  if (!row?.sql.includes('CHECK')) return;
   db.exec(`
     PRAGMA foreign_keys=OFF;
     CREATE TABLE account_types_new
