@@ -41,6 +41,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
     <ModalFrame
       title={t('revalorisation_modal.title', { support: support.name })}
       subtitle={t('revalorisation_modal.subtitle', { value: fmtDec(support.value) })}
+      onClose={revalorisation.isPending ? undefined : onClose}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

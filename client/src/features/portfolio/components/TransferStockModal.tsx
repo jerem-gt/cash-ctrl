@@ -53,6 +53,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
   return (
     <ModalFrame
       title={t('transfer_modal.title')}
+      onClose={transfer.isPending ? undefined : onClose}
       subtitle={
         <Trans
           i18nKey="transfer_modal.subtitle"

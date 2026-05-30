@@ -58,6 +58,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
     <ModalFrame
       title={t('edit_operation_modal.title')}
       subtitle={`${opLabels[op.type]} — ${op.support_name}`}
+      onClose={update.isPending ? undefined : onClose}
     >
       {isArbitrage ? (
         <>

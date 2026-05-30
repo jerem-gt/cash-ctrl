@@ -58,7 +58,7 @@ export function InsuranceArbitrageModal({
 
   if (destinations.length === 0) {
     return (
-      <ModalFrame title={t('arbitrage_modal.title_no_dest')}>
+      <ModalFrame title={t('arbitrage_modal.title_no_dest')} onClose={onClose}>
         <p className="text-sm text-stone-400 mb-6">{t('arbitrage_modal.no_destinations')}</p>
         <div className="flex justify-end">
           <Button onClick={onClose}>{tc('close')}</Button>
@@ -68,7 +68,10 @@ export function InsuranceArbitrageModal({
   }
 
   return (
-    <ModalFrame title={t('arbitrage_modal.title', { support: fromSupport.name })}>
+    <ModalFrame
+      title={t('arbitrage_modal.title', { support: fromSupport.name })}
+      onClose={arbitrage.isPending ? undefined : onClose}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormGroup label={t('arbitrage_modal.dest_label')} htmlFor="arb-to">
           <Select

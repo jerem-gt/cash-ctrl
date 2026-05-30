@@ -56,6 +56,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
   return (
     <ModalFrame
       title={t('edit_operation_modal.title')}
+      onClose={update.isPending ? undefined : onClose}
       subtitle={
         <>
           {isBuy ? t('edit_operation_modal.subtitle_buy') : t('edit_operation_modal.subtitle_sell')}{' '}

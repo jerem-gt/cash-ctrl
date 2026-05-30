@@ -51,7 +51,10 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
   };
 
   return (
-    <ModalFrame title={t('versement_modal.title', { support: support.name })}>
+    <ModalFrame
+      title={t('versement_modal.title', { support: support.name })}
+      onClose={versement.isPending ? undefined : onClose}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormGroup label={t('versement_modal.amount_label')} htmlFor="vers-amount">
           <DecimalInput

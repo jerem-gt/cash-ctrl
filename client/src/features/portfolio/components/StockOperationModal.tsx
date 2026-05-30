@@ -85,6 +85,7 @@ export function StockOperationModal(props: Readonly<Props>) {
   return (
     <ModalFrame
       title={isBuy ? t('stock_operation_modal.title_buy') : t('stock_operation_modal.title_sell')}
+      onClose={mutation.isPending ? undefined : onClose}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormGroup label={t('stock_operation_modal.ticker_label')} htmlFor="op-ticker">
