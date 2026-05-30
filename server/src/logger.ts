@@ -1,5 +1,7 @@
 import type { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 
+import { HttpError } from './lib/errors';
+
 const COLORS = {
   RESET: '\x1b[0m',
   GRAY: '\x1b[90m',
@@ -66,6 +68,13 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 // 4 params requis pour qu'Express reconnaisse le gestionnaire d'erreur (fn.length === 4)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  if (err instanceof HttpError) {
+    logger.warn(`${req.method} ${req.originalUrl} ${err.status} — ${err.message}`);
+    if (!res.headersSent) {
+      res.status(err.status).json({ error: err.message });
+    }
+    return;
+  }
   const message = err instanceof Error ? err.message : String(err);
   logger.error(`${req.method} ${req.originalUrl} 500 — ${message}`);
   if (!res.headersSent) {

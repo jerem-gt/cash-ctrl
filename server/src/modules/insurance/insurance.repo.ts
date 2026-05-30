@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
 import { getSocialFeesSubcategoryId } from '../../lib/administrationDataConstants';
+import { BadRequestError, NotFoundError } from '../../lib/errors';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
 import {
@@ -234,7 +235,7 @@ export function createInsuranceRepo(db: Database) {
           { transaction_id: number | null; arbitrage_peer_id: number | null }
         >('SELECT transaction_id, arbitrage_peer_id FROM insurance_operations WHERE id = ? AND user_id = ?')
         .get(operationId, userId);
-      if (!op) throw new Error('Opération introuvable');
+      if (!op) throw new NotFoundError('Opération introuvable');
       const peerId = op.arbitrage_peer_id;
       db.transaction(() => {
         db.prepare('DELETE FROM insurance_operations WHERE id = ?').run(operationId);
@@ -316,12 +317,12 @@ export function createInsuranceRepo(db: Database) {
           )
           .get(operationId, userId);
 
-        if (!op) throw new Error('Opération introuvable');
+        if (!op) throw new NotFoundError('Opération introuvable');
         if (op.type === 'arbitrage_in' || op.type === 'arbitrage_out') {
-          throw new Error('Les arbitrages ne peuvent pas être modifiés');
+          throw new BadRequestError('Les arbitrages ne peuvent pas être modifiés');
         }
         if (op.type !== 'revalorisation' && input.amount <= 0) {
-          throw new Error('Le montant doit être positif');
+          throw new BadRequestError('Le montant doit être positif');
         }
 
         const amountCents = toCents(input.amount);
@@ -442,12 +443,16 @@ export function createInsuranceRepo(db: Database) {
       const socialFeesCents = toCents(input.social_fees);
 
       if (amountCents - feesCents - socialFeesCents <= 0) {
-        throw new Error('Le montant net après frais et prélèvements sociaux doit être positif');
+        throw new BadRequestError(
+          'Le montant net après frais et prélèvements sociaux doit être positif',
+        );
       }
 
       const balanceCents = this.getBalanceCents(input.account_id, input.support_id);
       if (amountCents > balanceCents) {
-        throw new Error(`Solde insuffisant : ${toEuros(balanceCents).toFixed(2)} € disponible(s)`);
+        throw new BadRequestError(
+          `Solde insuffisant : ${toEuros(balanceCents).toFixed(2)} € disponible(s)`,
+        );
       }
 
       const support = this.getSupportById(input.support_id)!;
@@ -490,7 +495,7 @@ export function createInsuranceRepo(db: Database) {
 
       const balanceCents = this.getBalanceCents(input.account_id, input.from_support_id);
       if (fromAmountCents > balanceCents) {
-        throw new Error(
+        throw new BadRequestError(
           `Solde insuffisant sur ${fromSupport.name} : ${toEuros(balanceCents).toFixed(2)} €`,
         );
       }

@@ -8,7 +8,7 @@ import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createScheduledRepo } from '../scheduled/scheduled.repo';
-import { recalcPosition } from '../stocks/stocks.service';
+import { createStocksRepo } from '../stocks/stocks.repo';
 import { createTransactionsRepo } from './transactions.repo';
 
 const transactionSchema = z
@@ -72,6 +72,7 @@ export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
   const accountsRepo = createAccountsRepo(db);
   const scheduledRepo = createScheduledRepo(db);
+  const stocksRepo = createStocksRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -184,23 +185,18 @@ export function createTransactionsRouter(db: Database): Router {
       res.status(400).json({ error: 'Use DELETE /api/transfers/:id to delete a transfer' });
       return;
     }
-    const isStockFeesTx = db
-      .prepare('SELECT 1 FROM stock_operations WHERE fees_transaction_id = ?')
-      .get(id);
-    if (isStockFeesTx) {
+    if (stocksRepo.isFeesTransaction(id)) {
       res.status(400).json({
         error:
           "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
       });
       return;
     }
-    const op = db
-      .prepare('SELECT account_id, ticker FROM stock_operations WHERE transaction_id = ?')
-      .get(id) as { account_id: number; ticker: string } | undefined;
+    const op = stocksRepo.getOperationByTransactionId(id);
 
     transactionsRepo.delete(userId, id);
     if (op) {
-      recalcPosition(db, op.account_id, op.ticker, userId);
+      stocksRepo.recalcPosition(op.account_id, op.ticker, userId);
     }
 
     res.json({ ok: true });

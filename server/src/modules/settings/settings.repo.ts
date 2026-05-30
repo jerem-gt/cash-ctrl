@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { Database, Statement } from 'better-sqlite3';
 
 import type { SystemRefColumn } from '../../lib/systemEntities';
 import type { UserSettings } from './settings.types';
@@ -59,7 +59,22 @@ export function createSettingsRepo(db: Database) {
       backup_last_hash = excluded.backup_last_hash
   `);
 
+  // Cache des statements de vérification d'appartenance, un par table référencée
+  const entityOwnershipStmts = new Map<string, Statement<[number, number], number>>();
+
   return {
+    /** Vérifie qu'un id existe pour l'utilisateur dans la table donnée (table issue d'un allowlist appelant). */
+    entityBelongsToUser(table: string, id: number, userId: number): boolean {
+      let stmt = entityOwnershipStmts.get(table);
+      if (!stmt) {
+        stmt = db
+          .prepare<[number, number], number>(`SELECT 1 FROM ${table} WHERE id = ? AND user_id = ?`)
+          .pluck();
+        entityOwnershipStmts.set(table, stmt);
+      }
+      return stmt.get(id, userId) !== undefined;
+    },
+
     get(userId: number): UserSettings {
       const row = getByUserIdStmt.get({ userId });
       if (!row) {

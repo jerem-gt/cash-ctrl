@@ -2,17 +2,13 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { HttpError } from '../../lib/errors';
 import { makeCheckAccount, parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
-import {
-  getOrRefreshPrice,
-  recalcPosition,
-  refreshAllPrices,
-  searchByQuery,
-} from './stocks.service.js';
+import { getOrRefreshPrice, refreshAllPrices, searchByQuery } from './stocks.service.js';
 
 const buySchema = z.object({
   account_id: z.number().int().positive(),
@@ -59,7 +55,7 @@ export function createStocksRouter(db: Database): Router {
   router.post('/:accountId/buy', (req, res) => {
     handleStockAction(req, res, repo, buySchema, ({ userId, data }) => {
       const result = repo.buy(userId, data);
-      recalcPosition(db, data.account_id, data.ticker, userId);
+      repo.recalcPosition(data.account_id, data.ticker, userId);
       res.status(201).json(result);
     });
   });
@@ -67,7 +63,7 @@ export function createStocksRouter(db: Database): Router {
   router.post('/:accountId/sell', (req, res) => {
     handleStockAction(req, res, repo, sellSchema, ({ userId, data }) => {
       const result = repo.sell(userId, data);
-      recalcPosition(db, data.account_id, data.ticker, userId);
+      repo.recalcPosition(data.account_id, data.ticker, userId);
       res.status(201).json(result);
     });
   });
@@ -105,11 +101,12 @@ export function createStocksRouter(db: Database): Router {
 
     try {
       const result = repo.transfer(userId, { from_account_id: fromAccountId, ...data });
-      recalcPosition(db, fromAccountId, data.ticker, userId);
-      recalcPosition(db, data.to_account_id, data.ticker, userId);
+      repo.recalcPosition(fromAccountId, data.ticker, userId);
+      repo.recalcPosition(data.to_account_id, data.ticker, userId);
       res.status(201).json(result);
     } catch (err) {
-      res.status(400).json({ error: (err as Error).message });
+      const status = err instanceof HttpError ? err.status : 400;
+      res.status(status).json({ error: (err as Error).message });
     }
   });
 
@@ -133,10 +130,11 @@ export function createStocksRouter(db: Database): Router {
         account_id: accountId,
         ...data,
       });
-      recalcPosition(db, accountId, op.ticker, userId);
+      repo.recalcPosition(accountId, op.ticker, userId);
       res.json(operation);
     } catch (err) {
-      res.status(400).json({ error: (err as Error).message });
+      const status = err instanceof HttpError ? err.status : 400;
+      res.status(status).json({ error: (err as Error).message });
     }
   });
 
