@@ -29,6 +29,7 @@ import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance, accountSeniority } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
+import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 import type { Account } from '@/types.ts';
 
 function AccountsPageSkeleton() {
@@ -132,9 +133,9 @@ export default function AccountsPage() {
       {
         id: accountId,
         name: data.name.trim(),
-        bank_id: Number.parseInt(data.bank_id) || null,
-        account_type_id: Number.parseInt(data.account_type_id) || null,
-        initial_balance: Number.parseFloat(data.initial_balance) || 0,
+        bank_id: parseIdOrNull(data.bank_id),
+        account_type_id: parseIdOrNull(data.account_type_id),
+        initial_balance: parseAmountOrZero(data.initial_balance),
         opening_date: data.opening_date || null,
       },
       {
