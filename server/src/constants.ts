@@ -14,6 +14,11 @@ export const INSURANCE_OPERATION_TYPES = [
 export const INSURANCE_SUPPORT_TYPES = ['uc', 'euro'] as const;
 export const ENVELOPE_TYPES = ['life_insurance', 'per', 'investment', 'loan', 'savings'] as const;
 
+// Taille de page maximale pour la liste des transactions (le client charge parfois
+// de larges pages : prefetch, panneau remboursements, échéancier). Doit rester
+// cohérente entre le schéma de validation et le repo.
+export const MAX_PAGE_SIZE = 10000;
+
 export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 export type ReimbursementStatus = (typeof REIMBURSEMENT_STATUSES)[number];
 export type StockOperationType = (typeof STOCK_OPERATION_TYPES)[number];
