@@ -1,9 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Request, Router } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { createNamedIconEntityRouter } from '../../lib/namedIconEntityRouter';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createCategoriesRepo } from './categories.repo';
 
@@ -14,49 +13,12 @@ const categorySchema = z.object({
 
 export function createCategoriesRouter(db: Database): Router {
   const txRepo = createTransactionsRepo(db);
-  const router = Router();
-  router.use(requireAuth);
-
-  const getRepo = (req: Request) => createCategoriesRepo(db, sessionUserId(req));
-
-  router.get('/', (req, res) => {
-    res.json(getRepo(req).getAll());
+  return createNamedIconEntityRouter(db, {
+    schema: categorySchema,
+    repoFactory: createCategoriesRepo,
+    notFoundMsg: 'Category not found',
+    countUsage: (id) => txRepo.getCountByCategoryId(id),
+    usageConflictMsg: (n) =>
+      `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
   });
-
-  router.post('/', (req, res) => {
-    const data = parseBody(res, categorySchema, req.body);
-    if (!data) return;
-    const repo = getRepo(req);
-    const result = repo.create({ name: data.name.trim(), icon: data.icon });
-    res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
-  });
-
-  router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Category not found')) return;
-    const data = parseBody(res, categorySchema, req.body);
-    if (!data) return;
-    repo.update(id, { name: data.name.trim(), icon: data.icon });
-    res.json(repo.getById(id));
-  });
-
-  router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Category not found')) return;
-    const n = txRepo.getCountByCategoryId(id);
-    if (n > 0) {
-      res.status(409).json({
-        error: `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
-      });
-      return;
-    }
-    repo.delete(id);
-    res.json({ ok: true });
-  });
-
-  return router;
 }
