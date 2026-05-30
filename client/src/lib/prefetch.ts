@@ -10,8 +10,14 @@ import {
   settingsApi,
   transactionsApi,
 } from '@/api/client';
+import { prefetchRouteChunk } from '@/lib/routeChunks';
 
 export function prefetchForRoute(qc: QueryClient, route: string): void {
+  // Précharge le chunk JS de la route en plus de ses données : sans ça, le
+  // survol ne réchauffe que le cache React Query et le clic déclenche encore
+  // le téléchargement du bundle de page.
+  prefetchRouteChunk(route);
+
   const p = (key: unknown[], fn: () => Promise<unknown>) =>
     qc.prefetchQuery({ queryKey: key, queryFn: fn });
 
@@ -59,6 +65,7 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
 }
 
 export function prefetchAccountDetail(qc: QueryClient, accountId: number): void {
+  prefetchRouteChunk('/accounts/:id');
   void qc.prefetchQuery({
     queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
     queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
