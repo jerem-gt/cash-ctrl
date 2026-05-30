@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Select } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, ModalFrame, Select } from '@/components/ui';
 import { useTaxYearData, useTaxYears } from '@/features/insurance/hooks/useTax';
 import { fmt } from '@/lib/format';
 import {
@@ -112,213 +112,195 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
   const activeYear = years.includes(selectedYear) ? selectedYear : years[0];
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 pb-0">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h3 className="font-sans text-xl">{t('per_simulator.title')}</h3>
-              <p className="text-xs text-stone-400 mt-0.5">{t('per_simulator.subtitle')}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-stone-300 hover:text-stone-500 text-xl leading-none ml-4"
-              aria-label={t('per_simulator.close_aria')}
+    <ModalFrame
+      title={t('per_simulator.title')}
+      subtitle={t('per_simulator.subtitle')}
+      size="2xl"
+      onClose={onClose}
+      footer={<Button onClick={onClose}>{tc('close')}</Button>}
+    >
+      {/* Paramètres */}
+      <div className="space-y-4">
+        <div className="flex gap-3 flex-wrap">
+          <FormGroup label={t('per_simulator.gross_income_label')} htmlFor="sim-revenu">
+            <DecimalInput
+              id="sim-revenu"
+              placeholder={t('per_simulator.gross_income_placeholder')}
+              value={revenuBrut}
+              onChange={(e) => setRevenuBrut(e.target.value)}
+              autoFocus
+            />
+          </FormGroup>
+          <FormGroup label={t('per_simulator.per_amount_label')} htmlFor="sim-versement">
+            <DecimalInput
+              id="sim-versement"
+              placeholder={t('per_simulator.per_amount_placeholder')}
+              value={versementPER}
+              onChange={(e) => setVersementPER(e.target.value)}
+            />
+          </FormGroup>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <FormGroup label={t('per_simulator.parts_label')} htmlFor="sim-parts">
+            <Select
+              id="sim-parts"
+              value={nbParts}
+              onChange={(e) => setNbParts(Number(e.target.value))}
             >
-              ×
-            </button>
-          </div>
+              {partsOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
+          <FormGroup label={t('per_simulator.year_label')} htmlFor="sim-year">
+            <Select
+              id="sim-year"
+              value={activeYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              disabled={yearsLoading}
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
+        </div>
 
-          {/* Paramètres */}
-          <div className="space-y-4">
-            <div className="flex gap-3 flex-wrap">
-              <FormGroup label={t('per_simulator.gross_income_label')} htmlFor="sim-revenu">
-                <DecimalInput
-                  id="sim-revenu"
-                  placeholder={t('per_simulator.gross_income_placeholder')}
-                  value={revenuBrut}
-                  onChange={(e) => setRevenuBrut(e.target.value)}
-                  autoFocus
-                />
-              </FormGroup>
-              <FormGroup label={t('per_simulator.per_amount_label')} htmlFor="sim-versement">
-                <DecimalInput
-                  id="sim-versement"
-                  placeholder={t('per_simulator.per_amount_placeholder')}
-                  value={versementPER}
-                  onChange={(e) => setVersementPER(e.target.value)}
-                />
-              </FormGroup>
-            </div>
-
-            <div className="flex gap-3 flex-wrap">
-              <FormGroup label={t('per_simulator.parts_label')} htmlFor="sim-parts">
-                <Select
-                  id="sim-parts"
-                  value={nbParts}
-                  onChange={(e) => setNbParts(Number(e.target.value))}
-                >
-                  {partsOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-              <FormGroup label={t('per_simulator.year_label')} htmlFor="sim-year">
-                <Select
-                  id="sim-year"
-                  value={activeYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  disabled={yearsLoading}
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            </div>
-
-            {/* Mode déduction */}
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400 mb-2">
-                {t('per_simulator.deduction_title')}
-              </p>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deduction"
-                    value="forfait"
-                    checked={deductionMode === 'forfait'}
-                    onChange={() => setDeductionMode('forfait')}
-                    className="accent-stone-800"
-                  />
-                  <span className="text-sm text-stone-700">
-                    {t('per_simulator.forfait_label')}
-                    {yearData && (
-                      <span className="text-stone-400 text-xs ml-1">
-                        {t('per_simulator.forfait_min_max', {
-                          min: fmt(yearData.params.abattement_min),
-                          max: fmt(yearData.params.abattement_max),
-                        })}
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deduction"
-                    value="frais_reels"
-                    checked={deductionMode === 'frais_reels'}
-                    onChange={() => setDeductionMode('frais_reels')}
-                    className="accent-stone-800"
-                  />
-                  <span className="text-sm text-stone-700">
-                    {t('per_simulator.frais_reels_label')}
-                  </span>
-                </label>
-              </div>
-              {deductionMode === 'frais_reels' && (
-                <div className="mt-2 max-w-xs">
-                  <DecimalInput
-                    id="sim-frais"
-                    placeholder={t('per_simulator.frais_reels_placeholder')}
-                    value={fraisReels}
-                    onChange={(e) => setFraisReels(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Plafond PER */}
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+        {/* Mode déduction */}
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400 mb-2">
+            {t('per_simulator.deduction_title')}
+          </p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
-                type="checkbox"
-                checked={appliquerPlafond}
-                onChange={(e) => setAppliquerPlafond(e.target.checked)}
-                className="accent-stone-800 w-4 h-4 shrink-0"
+                type="radio"
+                name="deduction"
+                value="forfait"
+                checked={deductionMode === 'forfait'}
+                onChange={() => setDeductionMode('forfait')}
+                className="accent-stone-800"
               />
-              <span className="text-sm text-stone-700">{t('per_simulator.ceiling_label')}</span>
-              {!appliquerPlafond && (
-                <span className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
-                  {t('per_simulator.ceiling_carried_forward')}
-                </span>
-              )}
+              <span className="text-sm text-stone-700">
+                {t('per_simulator.forfait_label')}
+                {yearData && (
+                  <span className="text-stone-400 text-xs ml-1">
+                    {t('per_simulator.forfait_min_max', {
+                      min: fmt(yearData.params.abattement_min),
+                      max: fmt(yearData.params.abattement_max),
+                    })}
+                  </span>
+                )}
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="deduction"
+                value="frais_reels"
+                checked={deductionMode === 'frais_reels'}
+                onChange={() => setDeductionMode('frais_reels')}
+                className="accent-stone-800"
+              />
+              <span className="text-sm text-stone-700">{t('per_simulator.frais_reels_label')}</span>
             </label>
           </div>
-        </div>
-
-        {/* Résultats */}
-        {dataLoading && (
-          <div className="p-6 text-sm text-stone-400 text-center">
-            {t('per_simulator.loading_scale')}
-          </div>
-        )}
-
-        {!dataLoading && canCompute && result && (
-          <div className="p-6 pt-5 border-t border-stone-100 mt-5 space-y-4">
-            {/* Colonnes sans / avec PER */}
-            <div className="flex gap-3">
-              <TaxColumn
-                label={t('per_simulator.col_without_per')}
-                result={result.sansPER}
-                colorClass="text-stone-800"
-              />
-              <TaxColumn
-                label={t('per_simulator.col_with_per')}
-                result={result.avecPER}
-                colorClass="text-green-700"
+          {deductionMode === 'frais_reels' && (
+            <div className="mt-2 max-w-xs">
+              <DecimalInput
+                id="sim-frais"
+                placeholder={t('per_simulator.frais_reels_placeholder')}
+                value={fraisReels}
+                onChange={(e) => setFraisReels(e.target.value)}
               />
             </div>
+          )}
+        </div>
 
-            {/* Avertissement plafond */}
-            {result.plafondDepasse && (
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
-                <span className="shrink-0 mt-0.5">⚠</span>
-                <span>
-                  <Trans
-                    i18nKey="per_simulator.ceiling_exceeded"
-                    ns="insurance"
-                    values={{
-                      amount: fmt(Number.parseFloat(versementPER)),
-                      ceiling: fmt(result.plafondPER),
-                      deductible: fmt(result.versementDeductible),
-                    }}
-                    components={{ bold: <strong /> }}
-                  />
-                </span>
-              </div>
-            )}
+        {/* Plafond PER */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={appliquerPlafond}
+            onChange={(e) => setAppliquerPlafond(e.target.checked)}
+            className="accent-stone-800 w-4 h-4 shrink-0"
+          />
+          <span className="text-sm text-stone-700">{t('per_simulator.ceiling_label')}</span>
+          {!appliquerPlafond && (
+            <span className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+              {t('per_simulator.ceiling_carried_forward')}
+            </span>
+          )}
+        </label>
+      </div>
 
-            {/* Économie */}
-            <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-green-800">
-                  {t('per_simulator.tax_saving_label')}
-                </span>
-                <span className="text-xl font-bold text-green-700 tabular-nums">
-                  {fmt(result.economie)}
-                </span>
-              </div>
-              <p className="text-xs text-green-600 mt-1.5 leading-relaxed">
+      {/* Résultats */}
+      {dataLoading && (
+        <div className="mt-5 text-sm text-stone-400 text-center">
+          {t('per_simulator.loading_scale')}
+        </div>
+      )}
+
+      {!dataLoading && canCompute && result && (
+        <div className="pt-5 border-t border-stone-100 mt-5 space-y-4">
+          {/* Colonnes sans / avec PER */}
+          <div className="flex gap-3">
+            <TaxColumn
+              label={t('per_simulator.col_without_per')}
+              result={result.sansPER}
+              colorClass="text-stone-800"
+            />
+            <TaxColumn
+              label={t('per_simulator.col_with_per')}
+              result={result.avecPER}
+              colorClass="text-green-700"
+            />
+          </div>
+
+          {/* Avertissement plafond */}
+          {result.plafondDepasse && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
+              <span className="shrink-0 mt-0.5">⚠</span>
+              <span>
                 <Trans
-                  i18nKey="per_simulator.tax_saving_note"
+                  i18nKey="per_simulator.ceiling_exceeded"
                   ns="insurance"
+                  values={{
+                    amount: fmt(Number.parseFloat(versementPER)),
+                    ceiling: fmt(result.plafondPER),
+                    deductible: fmt(result.versementDeductible),
+                  }}
                   components={{ bold: <strong /> }}
                 />
-              </p>
+              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="p-6 pt-3 flex justify-end border-t border-stone-100">
-          <Button onClick={onClose}>{tc('close')}</Button>
+          {/* Économie */}
+          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-green-800">
+                {t('per_simulator.tax_saving_label')}
+              </span>
+              <span className="text-xl font-bold text-green-700 tabular-nums">
+                {fmt(result.economie)}
+              </span>
+            </div>
+            <p className="text-xs text-green-600 mt-1.5 leading-relaxed">
+              <Trans
+                i18nKey="per_simulator.tax_saving_note"
+                ns="insurance"
+                components={{ bold: <strong /> }}
+              />
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </ModalFrame>
   );
 }

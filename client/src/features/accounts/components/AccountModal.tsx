@@ -1,7 +1,15 @@
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, Select, showToast } from '@/components/ui';
+import {
+  Button,
+  DecimalInput,
+  FormGroup,
+  Input,
+  ModalFrame,
+  Select,
+  showToast,
+} from '@/components/ui';
 import { BankSelect } from '@/features/accounts/components/BankSelect';
 import { useCreateAccount } from '@/hooks/useAccounts';
 import type { Account, AccountType, Bank } from '@/types';
@@ -98,64 +106,64 @@ export function AccountModal(props: Readonly<Props>) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-md shadow-xl">
-        <h3 className="font-sans text-xl mb-5">
-          {isEdit ? t('modal.title_edit') : t('modal.title_create')}
-        </h3>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <FormGroup label={t('modal.name')}>
-            <Input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder={t('modal.name_placeholder')}
-            />
-          </FormGroup>
-          <FormGroup label={t('modal.bank')}>
-            <BankSelect
-              value={form.bank_id}
-              onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
-              banks={banks}
-            />
-          </FormGroup>
-          <FormGroup label={t('modal.type')}>
-            <Select
-              value={effectiveAccountTypeId}
-              onChange={(e) => setForm((f) => ({ ...f, account_type_id: e.target.value }))}
-            >
-              {accountTypes.map((accountType) => (
-                <option key={accountType.id} value={String(accountType.id)}>
-                  {accountType.name}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
-          <FormGroup label={t('modal.initial_balance')}>
-            <DecimalInput
-              value={form.initial_balance}
-              onChange={(e) => setForm((f) => ({ ...f, initial_balance: e.target.value }))}
-              placeholder="0,00"
-            />
-          </FormGroup>
-          <FormGroup label={t('modal.opening_date')}>
-            <Input
-              type="date"
-              aria-label="opening-date"
-              value={form.opening_date}
-              onChange={(e) => setForm((f) => ({ ...f, opening_date: e.target.value }))}
-            />
-          </FormGroup>
-          <div className="flex gap-2 justify-end pt-2">
-            <Button type="button" onClick={onClose}>
-              {tc('cancel')}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isPending}>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <ModalFrame
+      title={isEdit ? t('modal.title_edit') : t('modal.title_create')}
+      onClose={isPending ? undefined : onClose}
+      footer={
+        <>
+          <Button type="button" onClick={onClose}>
+            {tc('cancel')}
+          </Button>
+          <Button type="submit" form="account-modal-form" variant="primary" disabled={isPending}>
+            {submitLabel}
+          </Button>
+        </>
+      }
+    >
+      <form id="account-modal-form" onSubmit={handleSubmit} className="space-y-3">
+        <FormGroup label={t('modal.name')}>
+          <Input
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder={t('modal.name_placeholder')}
+          />
+        </FormGroup>
+        <FormGroup label={t('modal.bank')}>
+          <BankSelect
+            value={form.bank_id}
+            onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
+            banks={banks}
+          />
+        </FormGroup>
+        <FormGroup label={t('modal.type')}>
+          <Select
+            value={effectiveAccountTypeId}
+            onChange={(e) => setForm((f) => ({ ...f, account_type_id: e.target.value }))}
+          >
+            {accountTypes.map((accountType) => (
+              <option key={accountType.id} value={String(accountType.id)}>
+                {accountType.name}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
+        <FormGroup label={t('modal.initial_balance')}>
+          <DecimalInput
+            value={form.initial_balance}
+            onChange={(e) => setForm((f) => ({ ...f, initial_balance: e.target.value }))}
+            placeholder="0,00"
+          />
+        </FormGroup>
+        <FormGroup label={t('modal.opening_date')}>
+          <Input
+            type="date"
+            aria-label="opening-date"
+            value={form.opening_date}
+            onChange={(e) => setForm((f) => ({ ...f, opening_date: e.target.value }))}
+          />
+        </FormGroup>
+      </form>
+    </ModalFrame>
   );
 }

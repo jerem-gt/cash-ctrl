@@ -103,7 +103,6 @@
   "per_simulator": {
     "title": "Simulateur fiscal PER",
     "subtitle": "Calcul simplifié — sans plafonnement du quotient familial",
-    "close_aria": "Fermer la modale",
     "gross_income_label": "Revenu brut annuel (€)",
     "gross_income_placeholder": "ex : 45 000",
     "per_amount_label": "Versement PER prévu (€)",
