@@ -3,7 +3,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
-import { parseBody, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
@@ -51,7 +51,8 @@ export function createBanksRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
       res.status(404).json({ error: 'Bank not found' });
@@ -65,7 +66,8 @@ export function createBanksRouter(db: Database): Router {
   });
 
   router.post('/:id/logo', upload.single('logo'), (req, res) => {
-    const id = Number.parseInt(req.params.id as string);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
       res.status(404).json({ error: 'Bank not found' });
@@ -80,7 +82,8 @@ export function createBanksRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     if (!requireById(res, banksRepo, id, 'Bank not found')) return;
     const cnt = accountsRepo.countByBankId(id);
     if (cnt > 0) {

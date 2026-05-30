@@ -3,7 +3,7 @@ import { Request, Router } from 'express';
 import { z } from 'zod';
 
 import { ENVELOPE_TYPES } from '../../constants.js';
-import { parseBody, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
@@ -33,7 +33,8 @@ export function createAccountTypesRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'Account type not found')) return;
     const data = parseBody(res, schema, req.body);
@@ -43,7 +44,8 @@ export function createAccountTypesRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'Account type not found')) return;
     const cnt = accountsRepo.countByAccountTypeId(id);

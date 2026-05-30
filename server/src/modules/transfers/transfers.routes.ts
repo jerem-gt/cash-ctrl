@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
@@ -80,7 +80,8 @@ export function createTransfersRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
 
     const tx = transactionsRepo.getById(id, userId);
@@ -125,7 +126,8 @@ export function createTransfersRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
 
     const tx = transactionsRepo.getById(id, userId);

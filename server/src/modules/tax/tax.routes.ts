@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
+import { parseNumberParam } from '../../lib/routeHelpers.js';
 import { requireAuth } from '../../middleware.js';
 import { createTaxRepo } from './tax.repo.js';
 
@@ -14,11 +15,8 @@ export function createTaxRouter(db: Database): Router {
   });
 
   router.get('/:year', (req, res) => {
-    const year = Number.parseInt(req.params.year);
-    if (Number.isNaN(year)) {
-      res.status(400).json({ error: 'Année invalide' });
-      return;
-    }
+    const year = parseNumberParam(req, res, 'year');
+    if (year === null) return;
     const data = repo.getYearData(year);
     if (!data) {
       res.status(404).json({ error: `Barème ${year} introuvable` });

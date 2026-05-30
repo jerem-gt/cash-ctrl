@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES } from '../../constants';
 import { toCents } from '../../lib/money';
-import { parseBody } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo';
@@ -40,13 +40,15 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.get('/:transactionId', (req, res) => {
-    const transactionId = Number.parseInt(req.params.transactionId);
+    const transactionId = parseNumberParam(req, res, 'transactionId');
+    if (transactionId === null) return;
     const userId = sessionUserId(req);
     res.json(repo.getByTransactionId(transactionId, userId));
   });
 
   router.post('/:transactionId', (req, res) => {
-    const transactionId = Number.parseInt(req.params.transactionId);
+    const transactionId = parseNumberParam(req, res, 'transactionId');
+    if (transactionId === null) return;
     const userId = sessionUserId(req);
 
     const data = parseBody(res, linkSchema, req.body);
@@ -79,7 +81,8 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.patch('/:transactionId/status', (req, res) => {
-    const transactionId = Number.parseInt(req.params.transactionId);
+    const transactionId = parseNumberParam(req, res, 'transactionId');
+    if (transactionId === null) return;
     const userId = sessionUserId(req);
 
     const data = parseBody(res, statusSchema, req.body);
@@ -95,8 +98,10 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.patch('/:transactionId/:linkedId', (req, res) => {
-    const transactionId = Number.parseInt(req.params.transactionId);
-    const linkedId = Number.parseInt(req.params.linkedId);
+    const transactionId = parseNumberParam(req, res, 'transactionId');
+    if (transactionId === null) return;
+    const linkedId = parseNumberParam(req, res, 'linkedId');
+    if (linkedId === null) return;
     const userId = sessionUserId(req);
 
     const data = parseBody(res, attributedAmountSchema, req.body);
@@ -114,8 +119,10 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.delete('/:transactionId/:linkedId', (req, res) => {
-    const transactionId = Number.parseInt(req.params.transactionId);
-    const linkedId = Number.parseInt(req.params.linkedId);
+    const transactionId = parseNumberParam(req, res, 'transactionId');
+    if (transactionId === null) return;
+    const linkedId = parseNumberParam(req, res, 'linkedId');
+    if (linkedId === null) return;
     const userId = sessionUserId(req);
 
     if (!txRepo.getById(transactionId, userId)) {
