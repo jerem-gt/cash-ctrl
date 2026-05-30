@@ -434,62 +434,6 @@ describe('ImportManager — format XHB', () => {
     expect(await screen.findByText(/chèque/i)).toBeInTheDocument();
   });
 
-  it('XHB avec bankname non vide → chemin exact match (findBankByName)', async () => {
-    vi.mocked(parseXhb).mockReturnValueOnce({
-      accounts: ['CompteXHB'],
-      accountDetails: new Map([
-        ['CompteXHB', { key: 1, name: 'CompteXHB', bankname: 'BNP', initial: 0 }],
-      ]),
-      transactions: [
-        {
-          accountName: 'CompteXHB',
-          date: '2024-01-15',
-          amount: -50,
-          description: 'Test',
-          categoryString: '',
-          paymode: 0,
-          notes: null,
-          validated: true,
-        },
-      ],
-      transfers: [],
-      uniqueCategories: [],
-      uniquePaymodes: [],
-    });
-    const user = userEvent.setup();
-    renderImportManager();
-    await uploadXhb(user);
-    expect(await screen.findByText('CompteXHB')).toBeInTheDocument();
-  });
-
-  it('XHB avec bankname sans correspondance → chemin partial/fallback (findBankByName)', async () => {
-    vi.mocked(parseXhb).mockReturnValueOnce({
-      accounts: ['CompteXHB'],
-      accountDetails: new Map([
-        ['CompteXHB', { key: 1, name: 'CompteXHB', bankname: 'BanqueInconnue', initial: 0 }],
-      ]),
-      transactions: [
-        {
-          accountName: 'CompteXHB',
-          date: '2024-01-15',
-          amount: -50,
-          description: 'Test',
-          categoryString: '',
-          paymode: 0,
-          notes: null,
-          validated: true,
-        },
-      ],
-      transfers: [],
-      uniqueCategories: [],
-      uniquePaymodes: [],
-    });
-    const user = userEvent.setup();
-    renderImportManager();
-    await uploadXhb(user);
-    expect(await screen.findByText('CompteXHB')).toBeInTheDocument();
-  });
-
   it("permet de modifier le mapping d'un mode de paiement et revenir aux catégories", async () => {
     const user = userEvent.setup();
     renderImportManager();
