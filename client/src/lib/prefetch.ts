@@ -29,10 +29,11 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
 
   switch (route) {
     case '/':
+      // Le Dashboard tire ses transactions (récentes, à valider, à venir) de
+      // l'endpoint dashboard-stats : pas besoin de précharger la liste complète.
       void accounts();
       void banks();
       void cats();
-      void p(['transactions', { limit: 10000 }], () => transactionsApi.list({ limit: 10000 }));
       break;
     case '/transactions':
       void accounts();
