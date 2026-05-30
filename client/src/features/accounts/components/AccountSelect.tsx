@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useClickOutside } from '@/features/accounts/hooks/useClickOutside';
 import { useBanks } from '@/hooks/useBanks';
+import { bankSortOrderMap, groupAccountsByBank } from '@/lib/account';
 import type { Account } from '@/types';
 
 interface Props {
@@ -48,10 +49,7 @@ export function AccountSelect({
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const { data: banks = [] } = useBanks();
-  const bankOrderMap = useMemo(
-    () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
-    [banks],
-  );
+  const bankOrderMap = useMemo(() => bankSortOrderMap(banks), [banks]);
 
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
@@ -73,24 +71,10 @@ export function AccountSelect({
     );
   }, [accounts, search]);
 
-  const groups = useMemo(() => {
-    const groupMap = new Map<string, Account[]>();
-    for (const acc of filtered) {
-      const key = acc.bank ?? '';
-      if (!groupMap.has(key)) groupMap.set(key, []);
-      groupMap.get(key)!.push(acc);
-    }
-    return [...groupMap.entries()]
-      .sort(([a], [b]) => {
-        if (a === '') return 1;
-        if (b === '') return -1;
-        const orderA = bankOrderMap[a] ?? 999;
-        const orderB = bankOrderMap[b] ?? 999;
-        if (orderA !== orderB) return orderA - orderB;
-        return a.localeCompare(b);
-      })
-      .map(([bank, accs]) => ({ bank: bank || null, accounts: accs }));
-  }, [filtered, bankOrderMap]);
+  const groups = useMemo(
+    () => groupAccountsByBank(filtered, bankOrderMap),
+    [filtered, bankOrderMap],
+  );
 
   const flatAccounts = useMemo(() => groups.flatMap((g) => g.accounts), [groups]);
   const totalOptions = 1 + flatAccounts.length;

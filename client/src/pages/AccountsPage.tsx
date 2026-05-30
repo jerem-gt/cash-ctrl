@@ -27,7 +27,12 @@ import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAccountTypes } from '@/hooks/useAccountTypes';
 import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
-import { accountDisplayBalance, accountSeniority } from '@/lib/account';
+import {
+  accountDisplayBalance,
+  accountSeniority,
+  bankSortOrderMap,
+  groupAccountsByBank,
+} from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 import type { Account } from '@/types.ts';
@@ -67,10 +72,7 @@ export default function AccountsPage() {
   const { data: accountTypes = [] } = useAccountTypes();
   const { data: banks = [] } = useBanks();
   const logoMap = useLogoMap();
-  const bankSortOrder = useMemo(
-    () => Object.fromEntries(banks.map((b) => [b.name, b.sort_order])),
-    [banks],
-  );
+  const bankSortOrder = useMemo(() => bankSortOrderMap(banks), [banks]);
   const [addOpen, setAddOpen] = useState(false);
   const [addLoanOpen, setAddLoanOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
@@ -96,19 +98,10 @@ export default function AccountsPage() {
         }))
         .filter((g) => g.accounts.length > 0);
     }
-    const map = new Map<string, Account[]>();
-    for (const acc of activeAccounts) {
-      const key = acc.bank ?? '';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(acc);
-    }
-    return [...map.entries()]
-      .sort(([a], [b]) => {
-        if (a === '') return 1;
-        if (b === '') return -1;
-        return (bankSortOrder[a] ?? Infinity) - (bankSortOrder[b] ?? Infinity);
-      })
-      .map(([key, accs]) => ({ label: key === '' ? t('page.no_bank') : key, accounts: accs }));
+    return groupAccountsByBank(activeAccounts, bankSortOrder).map(({ bank, accounts }) => ({
+      label: bank ?? t('page.no_bank'),
+      accounts,
+    }));
   }, [activeAccounts, accountTypes, groupBy, bankSortOrder, t]);
 
   if (accountsLoading) return <AccountsPageSkeleton />;
