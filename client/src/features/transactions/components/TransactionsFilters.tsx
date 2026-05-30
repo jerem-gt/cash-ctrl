@@ -1,9 +1,10 @@
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, Input, Select, Switch } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { useDebouncedSync } from '@/lib/useDebouncedSync';
 import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
 
 interface FilterProps {
@@ -45,46 +46,40 @@ export const TransactionsFilters = ({
   const [amountMaxInput, setAmountMaxInput] = useState(filters.amount_max?.toString() ?? '');
   const [open, setOpen] = useState(false);
 
-  const onFilterChangeRef = useRef(onFilterChange);
-  useLayoutEffect(() => {
-    onFilterChangeRef.current = onFilterChange;
-  });
-
   const activeAdvancedCount = ADVANCED_KEYS.filter((k) => {
     if (!showAccountSelect && k === 'account_id') return false;
     return filters[k] != null;
   }).length;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmed = descriptionInput.trim();
-      const current = filters.description_contains ?? '';
-      if (trimmed !== current) {
-        onFilterChangeRef.current({ description_contains: trimmed || undefined });
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [descriptionInput, filters.description_contains]);
+  useDebouncedSync(
+    descriptionInput,
+    (s) => s.trim() || undefined,
+    filters.description_contains ?? undefined,
+    (value) => onFilterChange({ description_contains: value }),
+    300,
+  );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const val = Number.parseFloat(amountMinInput);
-      const current = filters.amount_min;
-      const next = amountMinInput.trim() && !Number.isNaN(val) ? val : undefined;
-      if (next !== current) onFilterChangeRef.current({ amount_min: next });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [amountMinInput, filters.amount_min]);
+  useDebouncedSync(
+    amountMinInput,
+    (s) => {
+      const v = Number.parseFloat(s);
+      return s.trim() && !Number.isNaN(v) ? v : undefined;
+    },
+    filters.amount_min,
+    (value) => onFilterChange({ amount_min: value }),
+    400,
+  );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const val = Number.parseFloat(amountMaxInput);
-      const current = filters.amount_max;
-      const next = amountMaxInput.trim() && !Number.isNaN(val) ? val : undefined;
-      if (next !== current) onFilterChangeRef.current({ amount_max: next });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [amountMaxInput, filters.amount_max]);
+  useDebouncedSync(
+    amountMaxInput,
+    (s) => {
+      const v = Number.parseFloat(s);
+      return s.trim() && !Number.isNaN(v) ? v : undefined;
+    },
+    filters.amount_max,
+    (value) => onFilterChange({ amount_max: value }),
+    400,
+  );
 
   return (
     <div className="flex flex-col gap-2 w-full">
