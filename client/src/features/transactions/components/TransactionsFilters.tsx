@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, Input, Select, Switch } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { parseIdOrUndefined } from '@/lib/parse';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
 import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
 
@@ -146,7 +147,7 @@ export const TransactionsFilters = ({
               <AccountSelect
                 id="filtered-account-select"
                 value={String(filters.account_id ?? '')}
-                onChange={(v) => onFilterChange({ account_id: v ? Number.parseInt(v) : undefined })}
+                onChange={(v) => onFilterChange({ account_id: parseIdOrUndefined(v) })}
                 accounts={accounts}
                 logoMap={logoMap}
                 placeholder={t('filters.all_accounts')}
@@ -160,7 +161,7 @@ export const TransactionsFilters = ({
             value={String(filters.category_id ?? '')}
             onChange={(e) =>
               onFilterChange({
-                category_id: e.target.value ? Number.parseInt(e.target.value) : undefined,
+                category_id: parseIdOrUndefined(e.target.value),
                 subcategory_id: undefined,
               })
             }
@@ -180,7 +181,7 @@ export const TransactionsFilters = ({
             value={String(filters.subcategory_id ?? '')}
             onChange={(e) =>
               onFilterChange({
-                subcategory_id: e.target.value ? Number.parseInt(e.target.value) : undefined,
+                subcategory_id: parseIdOrUndefined(e.target.value),
               })
             }
           >
@@ -230,7 +231,7 @@ export const TransactionsFilters = ({
             value={String(filters.payment_method_id ?? '')}
             onChange={(e) =>
               onFilterChange({
-                payment_method_id: e.target.value ? Number.parseInt(e.target.value) : undefined,
+                payment_method_id: parseIdOrUndefined(e.target.value),
               })
             }
           >

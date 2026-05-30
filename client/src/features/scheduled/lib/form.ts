@@ -1,5 +1,6 @@
 import type { ScheduledPayload } from '@/api/client';
 import { today } from '@/lib/format';
+import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 import type { Account, RecurrenceUnit, ScheduledTransaction, WeekendHandling } from '@/types';
 
 import type { TScheduled } from './recurrence';
@@ -115,7 +116,7 @@ export function formToPayload(
     return {
       ...base,
       account_id: Number.parseInt(f.account_id),
-      to_account_id: f.to_account_id ? Number.parseInt(f.to_account_id) : null,
+      to_account_id: parseIdOrNull(f.to_account_id),
       type: 'expense',
       subcategory_id: null,
       payment_method_id: transferPm?.id ?? null,
@@ -128,12 +129,12 @@ export function formToPayload(
     return {
       ...base,
       account_id: Number.parseInt(f.account_id),
-      to_account_id: f.to_account_id ? Number.parseInt(f.to_account_id) : null,
+      to_account_id: parseIdOrNull(f.to_account_id),
       type: 'expense',
       subcategory_id: null,
       payment_method_id: null,
-      insurance_support_id: f.insurance_support_id ? Number.parseInt(f.insurance_support_id) : null,
-      insurance_fees: Number.parseFloat(f.insurance_fees) || 0,
+      insurance_support_id: parseIdOrNull(f.insurance_support_id),
+      insurance_fees: parseAmountOrZero(f.insurance_fees),
     };
   }
 
@@ -143,8 +144,8 @@ export function formToPayload(
     account_id: Number.parseInt(f.account_id),
     to_account_id: null,
     type: f.type,
-    subcategory_id: Number.parseInt(f.subcategory_id) || null,
-    payment_method_id: Number.parseInt(f.payment_method_id) || null,
+    subcategory_id: parseIdOrNull(f.subcategory_id),
+    payment_method_id: parseIdOrNull(f.payment_method_id),
     insurance_support_id: null,
     insurance_fees: 0,
   };
