@@ -11,6 +11,7 @@ import {
   DecimalInput,
   FormGroup,
   Input,
+  ModalFrame,
   Select,
   showToast,
   Skeleton,
@@ -359,188 +360,190 @@ function ScheduledModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-2xl shadow-xl my-4">
-        <h3 className="font-sans text-xl mb-5">{title}</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Sélecteur de mode */}
-          <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
-            {(['transaction', 'transfer', 'versement'] as ScheduledMode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => handleModeChange(m)}
-                className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-lg transition-all ${
-                  form.mode === m
-                    ? 'bg-white text-stone-800 shadow-sm'
-                    : 'text-stone-500 hover:text-stone-700'
-                }`}
+    <ModalFrame
+      title={title}
+      size="2xl"
+      onClose={isPending ? undefined : onCancel}
+      footer={
+        <>
+          <Button type="button" onClick={onCancel}>
+            {tc('cancel')}
+          </Button>
+          <Button type="submit" form="scheduled-modal-form" variant="primary" disabled={isPending}>
+            {isPending ? tc('loading') : tc('save')}
+          </Button>
+        </>
+      }
+    >
+      <form id="scheduled-modal-form" onSubmit={handleSubmit} className="space-y-4">
+        {/* Sélecteur de mode */}
+        <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
+          {(['transaction', 'transfer', 'versement'] as ScheduledMode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => handleModeChange(m)}
+              className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-lg transition-all ${
+                form.mode === m
+                  ? 'bg-white text-stone-800 shadow-sm'
+                  : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              {modeLabels[m]}
+            </button>
+          ))}
+        </div>
+
+        {/* Champs selon le mode */}
+        {form.mode === 'transaction' && (
+          <TxCoreFields
+            value={coreValue}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            accounts={accounts}
+            logoMap={logoMap}
+            categories={categories}
+            paymentMethods={paymentMethods}
+            isTransfer={false}
+          />
+        )}
+
+        {form.mode === 'transfer' && (
+          <TxCoreFields
+            value={coreValue}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            accounts={accounts}
+            logoMap={logoMap}
+            categories={categories}
+            paymentMethods={paymentMethods}
+            isTransfer={true}
+          />
+        )}
+
+        {form.mode === 'versement' && (
+          <VersementFields
+            form={form}
+            patch={(updates) => setForm((f) => ({ ...f, ...updates }))}
+            insuranceAccounts={insuranceAccounts}
+            regularAccounts={regularAccounts}
+            logoMap={logoMap}
+            supports={supports}
+          />
+        )}
+
+        {/* Récurrence */}
+        <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+            {t('modal.recurrence_title')}
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            <FormGroup label={t('modal.every_label')}>
+              <Input
+                type="number"
+                value={form.recurrence_interval}
+                onChange={(e) => set('recurrence_interval', e.target.value)}
+                min="1"
+                className="w-20"
+              />
+            </FormGroup>
+            <FormGroup label={t('modal.unit_label')}>
+              <Select
+                value={form.recurrence_unit}
+                onChange={(e) => set('recurrence_unit', e.target.value as RecurrenceUnit)}
               >
-                {modeLabels[m]}
-              </button>
-            ))}
-          </div>
-
-          {/* Champs selon le mode */}
-          {form.mode === 'transaction' && (
-            <TxCoreFields
-              value={coreValue}
-              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-              accounts={accounts}
-              logoMap={logoMap}
-              categories={categories}
-              paymentMethods={paymentMethods}
-              isTransfer={false}
-            />
-          )}
-
-          {form.mode === 'transfer' && (
-            <TxCoreFields
-              value={coreValue}
-              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-              accounts={accounts}
-              logoMap={logoMap}
-              categories={categories}
-              paymentMethods={paymentMethods}
-              isTransfer={true}
-            />
-          )}
-
-          {form.mode === 'versement' && (
-            <VersementFields
-              form={form}
-              patch={(updates) => setForm((f) => ({ ...f, ...updates }))}
-              insuranceAccounts={insuranceAccounts}
-              regularAccounts={regularAccounts}
-              logoMap={logoMap}
-              supports={supports}
-            />
-          )}
-
-          {/* Récurrence */}
-          <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
-              {t('modal.recurrence_title')}
-            </p>
-            <div className="flex gap-3 flex-wrap">
-              <FormGroup label={t('modal.every_label')}>
+                <option value="day">{t('modal.unit_day')}</option>
+                <option value="week">{t('modal.unit_week')}</option>
+                <option value="month">{t('modal.unit_month')}</option>
+                <option value="year">{t('modal.unit_year')}</option>
+              </Select>
+            </FormGroup>
+            {(form.recurrence_unit === 'month' || form.recurrence_unit === 'year') && (
+              <FormGroup label={t('modal.day_of_month')}>
                 <Input
                   type="number"
-                  value={form.recurrence_interval}
-                  onChange={(e) => set('recurrence_interval', e.target.value)}
+                  value={form.recurrence_day}
+                  onChange={(e) => set('recurrence_day', e.target.value)}
                   min="1"
+                  max="31"
                   className="w-20"
                 />
               </FormGroup>
-              <FormGroup label={t('modal.unit_label')}>
+            )}
+            {form.recurrence_unit === 'year' && (
+              <FormGroup label={t('modal.month_label')}>
                 <Select
-                  value={form.recurrence_unit}
-                  onChange={(e) => set('recurrence_unit', e.target.value as RecurrenceUnit)}
+                  value={form.recurrence_month}
+                  onChange={(e) => set('recurrence_month', e.target.value)}
                 >
-                  <option value="day">{t('modal.unit_day')}</option>
-                  <option value="week">{t('modal.unit_week')}</option>
-                  <option value="month">{t('modal.unit_month')}</option>
-                  <option value="year">{t('modal.unit_year')}</option>
+                  {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((num) => (
+                    <option key={num} value={num}>
+                      {monthNames[num]}
+                    </option>
+                  ))}
                 </Select>
               </FormGroup>
-              {(form.recurrence_unit === 'month' || form.recurrence_unit === 'year') && (
-                <FormGroup label={t('modal.day_of_month')}>
-                  <Input
-                    type="number"
-                    value={form.recurrence_day}
-                    onChange={(e) => set('recurrence_day', e.target.value)}
-                    min="1"
-                    max="31"
-                    className="w-20"
-                  />
-                </FormGroup>
-              )}
-              {form.recurrence_unit === 'year' && (
-                <FormGroup label={t('modal.month_label')}>
-                  <Select
-                    value={form.recurrence_month}
-                    onChange={(e) => set('recurrence_month', e.target.value)}
-                  >
-                    {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((num) => (
-                      <option key={num} value={num}>
-                        {monthNames[num]}
-                      </option>
-                    ))}
-                  </Select>
-                </FormGroup>
-              )}
-            </div>
-
-            {/* Week-end */}
-            <div className="flex gap-4 flex-wrap">
-              {(['allow', 'before', 'after'] as WeekendHandling[]).map((v) => (
-                <label
-                  key={v}
-                  className="flex items-center gap-1.5 cursor-pointer text-sm text-stone-700 select-none"
-                >
-                  <input
-                    type="radio"
-                    name="weekend_handling"
-                    value={v}
-                    checked={form.weekend_handling === v}
-                    onChange={() => set('weekend_handling', v)}
-                    className="accent-green-500"
-                  />
-                  {weekendLabels[v]}
-                </label>
-              ))}
-            </div>
+            )}
           </div>
 
-          {/* Dates + actif */}
-          <div className="flex gap-3 flex-wrap items-end">
-            <FormGroup label={t('modal.start_date')}>
-              <Input
-                type="date"
-                value={form.start_date}
-                onChange={(e) => set('start_date', e.target.value)}
-              />
-            </FormGroup>
-            <FormGroup label={t('modal.end_date')}>
-              <Input
-                type="date"
-                value={form.end_date}
-                onChange={(e) => set('end_date', e.target.value)}
-              />
-            </FormGroup>
-            <label className="flex items-center gap-2 cursor-pointer select-none pb-2">
-              <input
-                type="checkbox"
-                checked={form.active}
-                onChange={(e) => set('active', e.target.checked)}
-                className="w-4 h-4 accent-green-500"
-              />
-              <span className="text-sm text-stone-700">{t('modal.active_label')}</span>
-            </label>
+          {/* Week-end */}
+          <div className="flex gap-4 flex-wrap">
+            {(['allow', 'before', 'after'] as WeekendHandling[]).map((v) => (
+              <label
+                key={v}
+                className="flex items-center gap-1.5 cursor-pointer text-sm text-stone-700 select-none"
+              >
+                <input
+                  type="radio"
+                  name="weekend_handling"
+                  value={v}
+                  checked={form.weekend_handling === v}
+                  onChange={() => set('weekend_handling', v)}
+                  className="accent-green-500"
+                />
+                {weekendLabels[v]}
+              </label>
+            ))}
           </div>
+        </div>
 
-          {/* Notes */}
-          <FormGroup label={t('modal.notes_label')}>
-            <textarea
-              value={form.notes}
-              onChange={(e) => set('notes', e.target.value)}
-              placeholder={t('modal.notes_placeholder')}
-              rows={2}
-              className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+        {/* Dates + actif */}
+        <div className="flex gap-3 flex-wrap items-end">
+          <FormGroup label={t('modal.start_date')}>
+            <Input
+              type="date"
+              value={form.start_date}
+              onChange={(e) => set('start_date', e.target.value)}
             />
           </FormGroup>
+          <FormGroup label={t('modal.end_date')}>
+            <Input
+              type="date"
+              value={form.end_date}
+              onChange={(e) => set('end_date', e.target.value)}
+            />
+          </FormGroup>
+          <label className="flex items-center gap-2 cursor-pointer select-none pb-2">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => set('active', e.target.checked)}
+              className="w-4 h-4 accent-green-500"
+            />
+            <span className="text-sm text-stone-700">{t('modal.active_label')}</span>
+          </label>
+        </div>
 
-          <div className="flex gap-2 justify-end pt-1">
-            <Button type="button" onClick={onCancel}>
-              {tc('cancel')}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? tc('loading') : tc('save')}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Notes */}
+        <FormGroup label={t('modal.notes_label')}>
+          <textarea
+            value={form.notes}
+            onChange={(e) => set('notes', e.target.value)}
+            placeholder={t('modal.notes_placeholder')}
+            rows={2}
+            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+          />
+        </FormGroup>
+      </form>
+    </ModalFrame>
   );
 }
 
@@ -685,7 +688,7 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
     content = <p className="text-sm text-stone-400 py-2">{t('tx_modal.no_transactions')}</p>;
   } else {
     content = (
-      <div className="overflow-y-auto flex-1 divide-y divide-black/6">
+      <div className="divide-y divide-black/6">
         {transactions.map((tx) => (
           <div key={tx.id} className="flex items-center gap-3 py-2.5">
             <div className="flex-1 min-w-0">
@@ -716,31 +719,19 @@ function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalProps>) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="font-sans text-lg leading-tight">{sched.description}</h3>
-            <p className="text-xs text-stone-400 mt-0.5">{t('tx_modal.subtitle')}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-stone-400 hover:text-stone-600 text-lg leading-none ml-4 shrink-0"
-          >
-            ✕
-          </button>
-        </div>
-
-        {content}
-
-        <div className="flex justify-end mt-4 pt-3 border-t border-black/6">
-          <Button type="button" onClick={onClose}>
-            {tc('close')}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ModalFrame
+      title={sched.description}
+      subtitle={t('tx_modal.subtitle')}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <Button type="button" onClick={onClose}>
+          {tc('close')}
+        </Button>
+      }
+    >
+      {content}
+    </ModalFrame>
   );
 }
 

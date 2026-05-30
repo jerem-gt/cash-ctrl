@@ -2,7 +2,7 @@ import { type TFunction } from 'i18next';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, showToast } from '@/components/ui';
+import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { ReimbursementsPanel } from '@/features/transactions/components/ReimbursementsPanel';
 import { ReimbursementStatusPicker } from '@/features/transactions/components/ReimbursementStatusPicker';
@@ -485,30 +485,7 @@ export function TxModal(props: Readonly<Props>) {
   const showNoOtherAccounts = !isEdit && isTransfer && noOtherAccounts;
   if (showNoOtherAccounts) {
     return (
-      <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-          <h3 className="font-sans text-xl mb-1">{modalTitle}</h3>
-          <TxModalHeader
-            isEdit={isEdit}
-            isTransferEdit={isTransferEdit}
-            isTransfer={isTransfer}
-            noOtherAccounts={noOtherAccounts}
-            onToggle={handleModeToggle}
-            t={t}
-          />
-          <p className="text-sm text-stone-400">{t('modal.no_other_account')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList);
-
-  return (
-    <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-7 w-full max-w-lg shadow-xl min-h-135">
-        <h3 className="font-sans text-xl mb-1">{modalTitle}</h3>
-
+      <ModalFrame title={modalTitle} size="lg" onClose={onClose}>
         <TxModalHeader
           isEdit={isEdit}
           isTransferEdit={isTransferEdit}
@@ -517,160 +494,181 @@ export function TxModal(props: Readonly<Props>) {
           onToggle={handleModeToggle}
           t={t}
         />
+        <p className="text-sm text-stone-400">{t('modal.no_other_account')}</p>
+      </ModalFrame>
+    );
+  }
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {isTransferEdit ? (
-            <div className="space-y-3">
-              <div className="flex gap-3 flex-wrap">
-                <FormGroup label={t('modal.amount')}>
-                  <DecimalInput
-                    value={core.amount}
-                    onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
-                    placeholder="0,00"
-                  />
-                </FormGroup>
-                <FormGroup label={t('modal.description')}>
-                  <Input
-                    type="text"
-                    value={core.description}
-                    onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
-                    placeholder={t('modal.description_placeholder_transfer')}
-                  />
-                </FormGroup>
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                <FormGroup label={t('modal.source_account')}>
-                  <AccountSelect
-                    id="source-account-select"
-                    value={core.account_id}
-                    onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
-                    accounts={accounts}
-                    logoMap={logoMap}
-                  />
-                </FormGroup>
-                <FormGroup label={t('modal.dest_account')}>
-                  <AccountSelect
-                    id="dest-account-select"
-                    value={core.to_account_id}
-                    onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
-                    accounts={accounts.filter((a) => String(a.id) !== core.account_id)}
-                    logoMap={logoMap}
-                    placeholder={tc('choose')}
-                  />
-                </FormGroup>
-              </div>
+  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList);
+
+  return (
+    <ModalFrame
+      title={modalTitle}
+      size="lg"
+      onClose={isPending ? undefined : onClose}
+      footer={
+        <>
+          <Button type="button" onClick={onClose}>
+            {tc('cancel')}
+          </Button>
+          <Button type="submit" form="tx-modal-form" variant="primary" disabled={isPending}>
+            {submitLabel}
+          </Button>
+        </>
+      }
+    >
+      <TxModalHeader
+        isEdit={isEdit}
+        isTransferEdit={isTransferEdit}
+        isTransfer={isTransfer}
+        noOtherAccounts={noOtherAccounts}
+        onToggle={handleModeToggle}
+        t={t}
+      />
+
+      <form id="tx-modal-form" onSubmit={handleSubmit} className="space-y-3">
+        {isTransferEdit ? (
+          <div className="space-y-3">
+            <div className="flex gap-3 flex-wrap">
+              <FormGroup label={t('modal.amount')}>
+                <DecimalInput
+                  value={core.amount}
+                  onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
+                  placeholder="0,00"
+                />
+              </FormGroup>
+              <FormGroup label={t('modal.description')}>
+                <Input
+                  type="text"
+                  value={core.description}
+                  onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
+                  placeholder={t('modal.description_placeholder_transfer')}
+                />
+              </FormGroup>
             </div>
-          ) : (
-            <>
-              <TxCoreFields
-                value={core}
-                onChange={(patch) => setCore((c) => ({ ...c, ...patch }))}
-                accounts={accounts}
-                logoMap={logoMap}
-                categories={categories}
-                paymentMethods={paymentMethods}
-                isTransfer={isTransferCreate}
-                fixedAccountId={fixedAccountId}
-                hideCategories={isVentilated}
-              />
-              {!isTransferCreate && (
-                <>
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsVentilated((v) => !v);
-                        setSplits([]);
-                        setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
-                      }}
-                      className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
-                        isVentilated
-                          ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                          : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
-                      }`}
-                    >
-                      {isVentilated ? t('modal.ventilated') : t('modal.ventilate')}
-                    </button>
-                  </div>
-                  {isVentilated && (
-                    <TxSplitEditor
-                      splits={splits}
-                      onChange={setSplits}
-                      categories={categories}
-                      totalAmount={Number.parseFloat(core.amount) || 0}
-                    />
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          <div className="flex gap-3 flex-wrap items-end">
-            <FormGroup label={tc('date')}>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </FormGroup>
+            <div className="flex gap-3 flex-wrap">
+              <FormGroup label={t('modal.source_account')}>
+                <AccountSelect
+                  id="source-account-select"
+                  value={core.account_id}
+                  onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
+                  accounts={accounts}
+                  logoMap={logoMap}
+                />
+              </FormGroup>
+              <FormGroup label={t('modal.dest_account')}>
+                <AccountSelect
+                  id="dest-account-select"
+                  value={core.to_account_id}
+                  onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
+                  accounts={accounts.filter((a) => String(a.id) !== core.account_id)}
+                  logoMap={logoMap}
+                  placeholder={tc('choose')}
+                />
+              </FormGroup>
+            </div>
           </div>
-
-          <FormGroup label={t('modal.notes_label')}>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('modal.notes_placeholder')}
-              rows={2}
-              className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+        ) : (
+          <>
+            <TxCoreFields
+              value={core}
+              onChange={(patch) => setCore((c) => ({ ...c, ...patch }))}
+              accounts={accounts}
+              logoMap={logoMap}
+              categories={categories}
+              paymentMethods={paymentMethods}
+              isTransfer={isTransferCreate}
+              fixedAccountId={fixedAccountId}
+              hideCategories={isVentilated}
             />
+            {!isTransferCreate && (
+              <>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVentilated((v) => !v);
+                      setSplits([]);
+                      setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
+                    }}
+                    className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
+                      isVentilated
+                        ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                        : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    {isVentilated ? t('modal.ventilated') : t('modal.ventilate')}
+                  </button>
+                </div>
+                {isVentilated && (
+                  <TxSplitEditor
+                    splits={splits}
+                    onChange={setSplits}
+                    categories={categories}
+                    totalAmount={Number.parseFloat(core.amount) || 0}
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        <div className="flex gap-3 flex-wrap items-end">
+          <FormGroup label={tc('date')}>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </FormGroup>
+        </div>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={validated}
-              onChange={(e) => setValidated(e.target.checked)}
-              className="w-4 h-4 accent-green-500"
-            />
-            <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
-          </label>
+        <FormGroup label={t('modal.notes_label')}>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t('modal.notes_placeholder')}
+            rows={2}
+            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+          />
+        </FormGroup>
 
-          {isEdit && !isTransferEdit && schedulingOptions.length > 0 && (
-            <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
-              <select
-                id="scheduled-select"
-                value={scheduledId ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setScheduledId(val === '' ? null : Number.parseInt(val));
-                }}
-                className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
-              >
-                <option value="">{t('modal.no_scheduling')}</option>
-                {schedulingOptions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.description}
-                  </option>
-                ))}
-              </select>
-            </FormGroup>
-          )}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={validated}
+            onChange={(e) => setValidated(e.target.checked)}
+            className="w-4 h-4 accent-green-500"
+          />
+          <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
+        </label>
 
-          {isEdit && tx!.type === 'expense' && !isTransferEdit && <ReimbursementsPanel tx={tx!} />}
+        {isEdit && !isTransferEdit && schedulingOptions.length > 0 && (
+          <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
+            <select
+              id="scheduled-select"
+              value={scheduledId ?? ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setScheduledId(val === '' ? null : Number.parseInt(val));
+              }}
+              className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
+            >
+              <option value="">{t('modal.no_scheduling')}</option>
+              {schedulingOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.description}
+                </option>
+              ))}
+            </select>
+          </FormGroup>
+        )}
 
-          {!isEdit && !isTransferCreate && core.type === 'expense' && (
-            <ReimbursementStatusPicker
-              status={reimbursementStatus}
-              onChange={setReimbursementStatus}
-            />
-          )}
+        {isEdit && tx!.type === 'expense' && !isTransferEdit && <ReimbursementsPanel tx={tx!} />}
 
-          <div className="flex gap-2 justify-end pt-2">
-            <Button type="button" onClick={onClose}>
-              {tc('cancel')}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isPending}>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {!isEdit && !isTransferCreate && core.type === 'expense' && (
+          <ReimbursementStatusPicker
+            status={reimbursementStatus}
+            onChange={setReimbursementStatus}
+          />
+        )}
+      </form>
+    </ModalFrame>
   );
 }

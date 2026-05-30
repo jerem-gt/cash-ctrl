@@ -645,12 +645,12 @@ describe('ScheduledPage', () => {
     );
   });
 
-  it('ferme la modale des transactions au clic sur ✕', async () => {
+  it('ferme la modale des transactions au clic sur Fermer', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ScheduledPage />);
     await user.click(await screen.findByRole('button', { name: '3 tx' }));
     await screen.findByText('Transactions liées à cette planification');
-    await user.click(screen.getByRole('button', { name: '✕' }));
+    await user.click(screen.getByRole('button', { name: 'Fermer' }));
     await waitFor(() =>
       expect(
         screen.queryByText('Transactions liées à cette planification'),
