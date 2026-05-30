@@ -671,3 +671,38 @@ describe('/api/transactions — filtre scheduled_id', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('/api/transactions — pagination au-delà de 100', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+    // 150 transactions pour vérifier qu'une page > 100 n'est plus tronquée
+    for (let i = 0; i < 150; i++) {
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 10 + i,
+        description: `Dépense ${i}`,
+        subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+        date: TODAY,
+        payment_method_id: SEED.PM_CARTE,
+      });
+    }
+  });
+
+  it('une limite de 150 renvoie bien les 150 transactions (pas de cap à 100)', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}&limit=150`);
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(150);
+    expect(res.body.data).toHaveLength(150);
+    expect(res.body.totalPages).toBe(1);
+  });
+
+  it('rejette une limite au-delà du maximum autorisé', async () => {
+    const res = await ctx.agent.get('/api/transactions?limit=10001');
+    expect(res.status).toBe(400);
+  });
+});

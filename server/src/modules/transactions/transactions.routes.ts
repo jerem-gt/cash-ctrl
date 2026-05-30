@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { type Response, Router } from 'express';
 import { z } from 'zod';
 
-import { REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
+import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -63,10 +63,35 @@ const querySchema = z.object({
     .transform((v) => v === 'true')
     .optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(10000).default(25),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(25),
 });
 
 const validateSchema = z.object({ validated: z.boolean() });
+
+/**
+ * Récupère le compte cible d'une écriture et vérifie qu'il appartient à
+ * l'utilisateur et qu'il n'est pas une enveloppe AV/PER (écriture interdite en
+ * direct). Répond directement (403/400) et renvoie null si la condition échoue.
+ */
+function resolveWritableAccount(
+  res: Response,
+  accountsRepo: ReturnType<typeof createAccountsRepo>,
+  accountId: number,
+  userId: number,
+) {
+  const account = accountsRepo.getById(accountId, userId);
+  if (!account) {
+    res.status(403).json({ error: 'Account not found or does not belong to user' });
+    return null;
+  }
+  if (account.envelope_type === 'life_insurance' || account.envelope_type === 'per') {
+    res
+      .status(400)
+      .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
+    return null;
+  }
+  return account;
+}
 
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
@@ -93,17 +118,7 @@ export function createTransactionsRouter(db: Database): Router {
     if (!data) return;
     const userId = sessionUserId(req);
 
-    const targetAccount = accountsRepo.getById(data.account_id, userId);
-    if (!targetAccount) {
-      res.status(403).json({ error: 'Account not found or does not belong to user' });
-      return;
-    }
-    if (targetAccount.envelope_type === 'life_insurance' || targetAccount.envelope_type === 'per') {
-      res
-        .status(400)
-        .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
-      return;
-    }
+    if (!resolveWritableAccount(res, accountsRepo, data.account_id, userId)) return;
 
     const result = transactionsRepo.create(userId, {
       ...data,
@@ -129,17 +144,7 @@ export function createTransactionsRouter(db: Database): Router {
 
     const data = parseBody(res, transactionSchema, req.body);
     if (!data) return;
-    const targetAccount = accountsRepo.getById(data.account_id, userId);
-    if (!targetAccount) {
-      res.status(403).json({ error: 'Account not found or does not belong to user' });
-      return;
-    }
-    if (targetAccount.envelope_type === 'life_insurance' || targetAccount.envelope_type === 'per') {
-      res
-        .status(400)
-        .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
-      return;
-    }
+    if (!resolveWritableAccount(res, accountsRepo, data.account_id, userId)) return;
 
     if (data.scheduled_id !== null) {
       if (!scheduledRepo.getById(data.scheduled_id, userId)) {

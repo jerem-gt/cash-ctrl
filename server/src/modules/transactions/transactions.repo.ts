@@ -1,6 +1,6 @@
 import type { Database, Statement } from 'better-sqlite3';
 
-import { ReimbursementStatus } from '../../constants';
+import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants';
 import { toCents, toEuros } from '../../lib/money';
 import type {
   CreateScheduledTransactionInput,
@@ -289,7 +289,7 @@ export function createTransactionsRepo(db: Database) {
       getCountByPaymentMethodIdStmt.get({ paymentMethodId }) ?? 0,
     getByUserId(userId: number, filters: TransactionFilters): PaginatedResult<Transaction> {
       const page = Math.max(1, filters.page ?? 1);
-      const limit = Math.min(100, Math.max(1, filters.limit ?? 25));
+      const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, filters.limit ?? 25));
       const { conditions, params } = buildFilterConditions(userId, filters);
       const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
