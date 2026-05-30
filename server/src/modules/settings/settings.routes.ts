@@ -42,14 +42,6 @@ function formatSettings(s: ReturnType<ReturnType<typeof createSettingsRepo>['get
   };
 }
 
-// Check that a given id exists for the given user in the given table
-function entityBelongsToUser(db: Database, table: string, id: number, userId: number): boolean {
-  const row = db.prepare(`SELECT id FROM ${table} WHERE id = ? AND user_id = ?`).get(id, userId) as
-    | { id: number }
-    | undefined;
-  return row !== undefined;
-}
-
 // For a given settings column, determine which table to look up
 const COLUMN_TABLE: Record<SystemRefColumn, string> = {
   financial_income_category_id: 'categories',
@@ -100,7 +92,7 @@ export function createSettingsRouter(db: Database): Router {
         continue;
       }
       const table = COLUMN_TABLE[col];
-      if (!entityBelongsToUser(db, table, val, userId)) {
+      if (!settingsRepo.entityBelongsToUser(table, val, userId)) {
         res.status(400).json({ error: `${col}: id ${val} does not belong to this user` });
         return;
       }

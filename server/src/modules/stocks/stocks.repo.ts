@@ -6,6 +6,7 @@ import {
   getPrelevementPaymentMethodId,
   getTransferIds,
 } from '../../lib/administrationDataConstants';
+import { BadRequestError, NotFoundError } from '../../lib/errors';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
 import {
@@ -124,6 +125,31 @@ export function createStocksRepo(db: Database) {
     )
     .pluck();
 
+  const getOpsForPositionStmt = db.prepare<
+    { accountId: number; ticker: string },
+    { type: string; quantity: number; price_per_share: number }
+  >(
+    `SELECT type, quantity, price_per_share FROM stock_operations
+     WHERE account_id = :accountId AND ticker = :ticker ORDER BY date, id`,
+  );
+  const deletePositionStmt = db.prepare<{ accountId: number; ticker: string }>(
+    'DELETE FROM stock_positions WHERE account_id = :accountId AND ticker = :ticker',
+  );
+  const upsertPositionStmt = db.prepare(
+    `INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
+     VALUES (:userId, :accountId, :ticker, :quantity, :avgPrice, datetime('now'))
+     ON CONFLICT(account_id, ticker) DO UPDATE SET
+       quantity   = excluded.quantity,
+       avg_price  = excluded.avg_price,
+       updated_at = datetime('now')`,
+  );
+  const isFeesTransactionStmt = db
+    .prepare<[number], number>('SELECT 1 FROM stock_operations WHERE fees_transaction_id = ?')
+    .pluck();
+  const getOpByTransactionIdStmt = db.prepare<[number], { account_id: number; ticker: string }>(
+    'SELECT account_id, ticker FROM stock_operations WHERE transaction_id = ?',
+  );
+
   return {
     accountBelongsToUser: (accountId: number, userId: number): boolean =>
       checkAccountOwnership(db, accountId, userId),
@@ -149,7 +175,7 @@ export function createStocksRepo(db: Database) {
         .get(input.account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {
-        throw new Error(
+        throw new BadRequestError(
           `Position insuffisante : ${position?.quantity ?? 0} action(s) disponible(s)`,
         );
       }
@@ -157,7 +183,7 @@ export function createStocksRepo(db: Database) {
       const feesCents = toCents(input.fees);
       const mainCents = toCents(input.quantity * input.price_per_share);
       if (mainCents - feesCents <= 0) {
-        throw new Error('Le montant net après frais doit être positif');
+        throw new BadRequestError('Le montant net après frais doit être positif');
       }
 
       return db.transaction(() =>
@@ -203,7 +229,7 @@ export function createStocksRepo(db: Database) {
         .get(input.from_account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {
-        throw new Error(
+        throw new BadRequestError(
           `Position insuffisante : ${position?.quantity ?? 0} action(s) disponible(s)`,
         );
       }
@@ -342,6 +368,39 @@ export function createStocksRepo(db: Database) {
       return row ? mapOperation(row) : undefined;
     },
 
+    isFeesTransaction: (transactionId: number): boolean =>
+      isFeesTransactionStmt.get(transactionId) !== undefined,
+
+    getOperationByTransactionId: (transactionId: number) =>
+      getOpByTransactionIdStmt.get(transactionId) ?? undefined,
+
+    /**
+     * Recalcule la position (quantité + PRU) d'un ticker à partir de ses opérations.
+     * Supprime la position si la quantité tombe à zéro.
+     */
+    recalcPosition(accountId: number, ticker: string, userId: number): void {
+      const ops = getOpsForPositionStmt.all({ accountId, ticker });
+
+      let totalQty = 0;
+      let avgPrice = 0;
+      for (const { type, quantity, price_per_share } of ops) {
+        if (type === 'buy' || type === 'transfer_in') {
+          const totalCost = totalQty * avgPrice + quantity * price_per_share;
+          totalQty += quantity;
+          avgPrice = totalQty > 0 ? totalCost / totalQty : 0;
+        } else {
+          totalQty -= quantity;
+        }
+      }
+
+      if (totalQty <= 0) {
+        deletePositionStmt.run({ accountId, ticker });
+        return;
+      }
+
+      upsertPositionStmt.run({ userId, accountId, ticker, quantity: totalQty, avgPrice });
+    },
+
     updateOperation(
       operationId: number,
       userId: number,
@@ -358,13 +417,13 @@ export function createStocksRepo(db: Database) {
         const op = db
           .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
           .get(operationId);
-        if (!op) throw new Error('Opération introuvable');
+        if (!op) throw new NotFoundError('Opération introuvable');
 
         const feesCents = toCents(input.fees);
         const mainCents = toCents(input.quantity * input.price_per_share);
 
         if (op.type === 'sell' && mainCents - feesCents <= 0)
-          throw new Error('Le montant net doit être positif');
+          throw new BadRequestError('Le montant net doit être positif');
 
         const description =
           input.description ??

@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { HttpError } from '../../lib/errors';
 import { makeCheckAccount, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth } from '../../middleware.js';
@@ -143,9 +144,8 @@ export function createInsuranceRouter(db: Database): Router {
       const operation = repo.updateOperation(operationId, userId, parsed.data);
       res.json(operation);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-      const status = msg.includes('introuvable') ? 404 : 400;
-      res.status(status).json({ error: msg });
+      const status = err instanceof HttpError ? err.status : 400;
+      res.status(status).json({ error: err instanceof Error ? err.message : 'Erreur inconnue' });
     }
   });
 

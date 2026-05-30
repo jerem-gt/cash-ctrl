@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { BadRequestError, NotFoundError } from './lib/errors.js';
 import { globalErrorHandler, logger, requestLogger } from './logger.js';
 
 function mockReq(method = 'GET', originalUrl = '/test'): Request {
@@ -248,5 +249,22 @@ describe('globalErrorHandler', () => {
     const { res } = makeRes();
     globalErrorHandler('raw string', mockReq('GET', '/foo'), res, vi.fn());
     expect(errorSpy.mock.calls[0][0]).toContain('raw string');
+  });
+
+  it('mappe une HttpError sur son statut et son message (warn, pas error)', () => {
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const { res, statusMock, jsonMock } = makeRes(false);
+    globalErrorHandler(new NotFoundError('Compte introuvable'), mockReq('GET', '/x'), res, vi.fn());
+    expect(statusMock).toHaveBeenCalledWith(404);
+    expect(jsonMock).toHaveBeenCalledWith({ error: 'Compte introuvable' });
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('ne répond pas pour une HttpError quand headersSent=true', () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const { res, statusMock } = makeRes(true);
+    globalErrorHandler(new BadRequestError('nope'), mockReq(), res, vi.fn());
+    expect(statusMock).not.toHaveBeenCalled();
   });
 });

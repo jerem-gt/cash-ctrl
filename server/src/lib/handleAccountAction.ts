@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { sessionUserId } from '../middleware';
+import { HttpError } from './errors';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
@@ -39,6 +40,7 @@ export function handleAccountAction<T>(
   try {
     handler({ userId, data: parsed.data }, req, res);
   } catch (err) {
-    res.status(400).json({ error: (err as Error).message });
+    const status = err instanceof HttpError ? err.status : 400;
+    res.status(status).json({ error: (err as Error).message });
   }
 }
