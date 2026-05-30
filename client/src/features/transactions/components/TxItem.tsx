@@ -1,5 +1,5 @@
 import { Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
@@ -138,7 +138,7 @@ function TxMobileMenu({
   );
 }
 
-export function TxItem({
+function TxItemBase({
   tx,
   accounts,
   logoMap,
@@ -276,3 +276,9 @@ export function TxItem({
     </div>
   );
 }
+
+// Mémoïsé : évite de re-rendre toutes les lignes quand le parent se re-rend
+// (validation d'une autre ligne, pagination, etc.). Seules les lignes dont les
+// props changent réellement sont recalculées. Suppose des callbacks stables côté
+// parent (cf. useTransactionsManager).
+export const TxItem = memo(TxItemBase);
