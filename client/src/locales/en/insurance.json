@@ -103,7 +103,6 @@
   "per_simulator": {
     "title": "PER Tax Simulator",
     "subtitle": "Simplified calculation — without family quotient cap",
-    "close_aria": "Close modal",
     "gross_income_label": "Annual gross income (€)",
     "gross_income_placeholder": "e.g.: 45 000",
     "per_amount_label": "Planned PER contribution (€)",

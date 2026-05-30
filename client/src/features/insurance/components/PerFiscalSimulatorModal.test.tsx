@@ -125,12 +125,12 @@ describe('PerFiscalSimulatorModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('ferme au clic sur le bouton ×', async () => {
+  it('ferme au clic sur le bouton Fermer', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
     renderModal(onClose);
     await screen.findByText('Simulateur fiscal PER');
-    await user.click(screen.getByRole('button', { name: 'Fermer la modale' }));
+    await user.click(screen.getByRole('button', { name: 'Fermer' }));
     expect(onClose).toHaveBeenCalled();
   });
 
