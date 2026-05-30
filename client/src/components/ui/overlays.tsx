@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './primitives';
 
@@ -35,6 +36,7 @@ export function ConfirmModal({
   onCancel,
   isPending,
 }: Readonly<ConfirmModalProps>) {
+  const { t } = useTranslation('common');
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-7 w-full max-w-sm shadow-xl">
@@ -42,10 +44,10 @@ export function ConfirmModal({
         <p className="text-sm text-stone-500 leading-relaxed mb-6">{body}</p>
         <div className="flex gap-2 justify-end">
           <Button onClick={onCancel} disabled={isPending}>
-            Annuler
+            {t('cancel')}
           </Button>
           <Button variant="primary" onClick={onConfirm} disabled={isPending}>
-            {isPending ? '…' : 'Confirmer'}
+            {isPending ? t('loading') : t('confirm')}
           </Button>
         </div>
       </div>
