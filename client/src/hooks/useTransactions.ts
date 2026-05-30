@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
 import type { PaginatedTransactions, TransactionFilters, TransactionSplit } from '@/types';
@@ -32,6 +32,9 @@ export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => transactionsApi.list(filters),
+    // Garde l'ancienne page affichée pendant le chargement de la suivante
+    // (pagination/filtres fluides, sans flash de spinner).
+    placeholderData: keepPreviousData,
   });
 }
 

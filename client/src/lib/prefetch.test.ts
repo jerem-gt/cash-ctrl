@@ -20,14 +20,14 @@ describe('prefetchForRoute', () => {
     vi.mocked(prefetchRouteChunk).mockClear();
   });
 
-  it(`précharge accounts, banks, categories et transactions pour "/"`, () => {
+  it(`précharge accounts, banks et categories pour "/" sans la liste des transactions`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/');
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown }).queryKey);
     expect(keys).toContainEqual(['accounts']);
     expect(keys).toContainEqual(['banks']);
     expect(keys).toContainEqual(['categories']);
-    expect(keys.some((k) => Array.isArray(k) && k[0] === 'transactions')).toBe(true);
+    expect(keys.some((k) => Array.isArray(k) && k[0] === 'transactions')).toBe(false);
   });
 
   it('précharge aussi le chunk JS de la route', () => {
