@@ -57,5 +57,27 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Isole les dépendances stables dans des chunks dédiés : elles changent
+        // rarement, donc le navigateur les garde en cache entre deux déploiements
+        // (seul le chunk applicatif est réinvalidé). recharts est déjà code-splitté
+        // via les imports lazy du Dashboard, on le laisse à Rollup.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/scheduler/') ||
+            id.includes('/react-router/') ||
+            id.includes('/react-router-dom/')
+          ) {
+            return 'react-vendor';
+          }
+          if (id.includes('/@tanstack/')) return 'query-vendor';
+          if (id.includes('/i18next') || id.includes('/react-i18next/')) return 'i18n-vendor';
+        },
+      },
+    },
   },
 });

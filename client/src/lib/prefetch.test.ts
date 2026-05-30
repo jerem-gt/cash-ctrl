@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestQueryClient } from '@/tests/helpers/renderWithProviders';
 
 import { prefetchAccountDetail, prefetchForRoute } from './prefetch';
+import { prefetchRouteChunk } from './routeChunks';
+
+// On mocke le préchargement de chunk pour éviter de déclencher les vrais imports
+// dynamiques de pages pendant les tests, et pour pouvoir asserter les appels.
+vi.mock('./routeChunks', () => ({ prefetchRouteChunk: vi.fn() }));
 
 function makeQc() {
   const qc = createTestQueryClient();
@@ -11,6 +16,10 @@ function makeQc() {
 }
 
 describe('prefetchForRoute', () => {
+  beforeEach(() => {
+    vi.mocked(prefetchRouteChunk).mockClear();
+  });
+
   it(`précharge accounts, banks, categories et transactions pour "/"`, () => {
     const { qc, spy } = makeQc();
     prefetchForRoute(qc, '/');
@@ -19,6 +28,12 @@ describe('prefetchForRoute', () => {
     expect(keys).toContainEqual(['banks']);
     expect(keys).toContainEqual(['categories']);
     expect(keys.some((k) => Array.isArray(k) && k[0] === 'transactions')).toBe(true);
+  });
+
+  it('précharge aussi le chunk JS de la route', () => {
+    const { qc } = makeQc();
+    prefetchForRoute(qc, '/transactions');
+    expect(prefetchRouteChunk).toHaveBeenCalledWith('/transactions');
   });
 
   it(`précharge accounts, banks, categories, payment-methods et transactions pour "/transactions"`, () => {
@@ -78,5 +93,12 @@ describe('prefetchAccountDetail', () => {
         queryKey: ['transactions', { account_id: 42, page: 1, limit: 25 }],
       }),
     );
+  });
+
+  it('précharge aussi le chunk JS de la page de détail', () => {
+    const { qc } = makeQc();
+    vi.mocked(prefetchRouteChunk).mockClear();
+    prefetchAccountDetail(qc, 42);
+    expect(prefetchRouteChunk).toHaveBeenCalledWith('/accounts/:id');
   });
 });

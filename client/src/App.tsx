@@ -10,6 +10,7 @@ import { Card, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
+import { routeChunk } from '@/lib/routeChunks';
 import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage } from '@/pages/LoginPage';
 
@@ -23,12 +24,12 @@ function lazyLoad<T extends { default: React.ComponentType }>(factory: () => Pro
   );
 }
 
-const DashboardPage = lazyLoad(() => import('@/pages/DashboardPage'));
-const TransactionsPage = lazyLoad(() => import('@/pages/TransactionsPage'));
-const AccountsPage = lazyLoad(() => import('@/pages/AccountsPage'));
-const AccountDetailPage = lazyLoad(() => import('@/pages/AccountDetailPage'));
-const SettingsPage = lazyLoad(() => import('@/pages/SettingsPage'));
-const ScheduledPage = lazyLoad(() => import('@/pages/ScheduledPage'));
+const DashboardPage = lazyLoad(routeChunk['/']);
+const TransactionsPage = lazyLoad(routeChunk['/transactions']);
+const AccountsPage = lazyLoad(routeChunk['/accounts']);
+const AccountDetailPage = lazyLoad(routeChunk['/accounts/:id']);
+const SettingsPage = lazyLoad(routeChunk['/settings']);
+const ScheduledPage = lazyLoad(routeChunk['/scheduled']);
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {

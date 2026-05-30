@@ -1,17 +1,5 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Bar,
-  BarChart,
-  LabelList,
-  Pie,
-  PieChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { TxItem } from '@/features/transactions/components/TxItem';
@@ -27,6 +15,12 @@ import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/
 import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
+
+// Graphiques recharts chargés à la demande : ils représentent l'essentiel du
+// poids JS de la page mais ne sont pas nécessaires au premier rendu (KPI, listes).
+const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
+const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
+const PatrimonyBarChart = lazy(() => import('@/components/charts/PatrimonyBarChart'));
 
 const PATRIMONY_LABEL_KEYS = {
   prets: 'patrimony_categories.prets',
@@ -168,20 +162,9 @@ export default function DashboardPage() {
             <Empty>{t('chart_no_expenses')}</Empty>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={catData}
-                    dataKey="value"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                  />
-                  <Tooltip formatter={(v) => (v == null ? '' : fmtDec(Number(v)))} />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="h-44" />}>
+                <ExpensesPieChart data={catData} />
+              </Suspense>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
                 {catData.map((d) => (
                   <div
@@ -213,31 +196,13 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={barData} barGap={4}>
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmt(Number(v))}
-                width={70}
-              />
-              <Tooltip formatter={(v) => (v == null ? '' : fmtDec(Number(v)))} />
-              <Bar
-                dataKey="Revenus"
-                name={t('chart_income')}
-                fill="#7DBB4A"
-                radius={[3, 3, 0, 0]}
-              />
-              <Bar
-                dataKey="Depenses"
-                name={t('chart_expenses')}
-                fill="#D46060"
-                radius={[3, 3, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<Skeleton className="h-44" />}>
+            <IncomeExpenseBarChart
+              data={barData}
+              incomeLabel={t('chart_income')}
+              expenseLabel={t('chart_expenses')}
+            />
+          </Suspense>
         </Card>
       </div>
 
@@ -415,60 +380,18 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart
+          <Suspense fallback={<Skeleton className="h-60" />}>
+            <PatrimonyBarChart
               data={balanceDataWithTotal}
-              stackOffset="sign"
-              barGap={2}
-              margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
-            >
-              <XAxis dataKey="year" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmt(Number(v))}
-                width={70}
-              />
-              <Tooltip
-                formatter={(v, name, entry) => {
-                  if (name === '_total') return null;
-                  const total = (entry.payload as Record<string, number>)._total;
-                  const pct = total === 0 ? 0 : (Number(v) / total) * 100;
-                  const nameKey = String(name) as keyof typeof PATRIMONY_LABEL_KEYS;
-                  return [
-                    `${fmtDec(Number(v))} (${pct.toFixed(1)} %)`,
-                    t(PATRIMONY_LABEL_KEYS[nameKey]),
-                  ];
-                }}
-                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-              />
-              {balanceHasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
-              {balanceTypes.map((type, i) => {
-                const isNeg = balanceNegativeTypes.has(type);
-                const isTopPositive = type === balanceLastPositiveType;
-                const radius = isNeg || isTopPositive ? [3, 3, 0, 0] : [0, 0, 0, 0];
-                return (
-                  <Bar
-                    key={type}
-                    dataKey={type}
-                    stackId="a"
-                    fill={generateColor(i)}
-                    radius={radius as [number, number, number, number]}
-                  >
-                    {isTopPositive && (
-                      <LabelList
-                        dataKey="_total"
-                        position="top"
-                        formatter={(v: unknown) => fmt(Number(v ?? 0))}
-                        style={{ fontSize: 10, fill: '#78716c' }}
-                      />
-                    )}
-                  </Bar>
-                );
-              })}
-            </BarChart>
-          </ResponsiveContainer>
+              types={balanceTypes}
+              negativeTypes={balanceNegativeTypes}
+              lastPositiveType={balanceLastPositiveType}
+              hasLoans={balanceHasLoans}
+              labelFor={(type) =>
+                t(PATRIMONY_LABEL_KEYS[type as keyof typeof PATRIMONY_LABEL_KEYS])
+              }
+            />
+          </Suspense>
         </Card>
       )}
 
