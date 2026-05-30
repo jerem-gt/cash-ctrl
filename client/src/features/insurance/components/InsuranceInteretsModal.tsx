@@ -34,7 +34,10 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
   };
 
   return (
-    <ModalFrame title={t('interets_modal.title', { support: support.name })}>
+    <ModalFrame
+      title={t('interets_modal.title', { support: support.name })}
+      onClose={interets.isPending ? undefined : onClose}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormGroup label={t('interets_modal.amount_label')} htmlFor="interets-amount">
           <DecimalInput

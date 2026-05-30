@@ -53,7 +53,10 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
   };
 
   return (
-    <ModalFrame title={t('rachat_modal.title', { support: support.name })}>
+    <ModalFrame
+      title={t('rachat_modal.title', { support: support.name })}
+      onClose={rachat.isPending ? undefined : onClose}
+    >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
