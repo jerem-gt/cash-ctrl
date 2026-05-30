@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { makeCheckAccount, parseBody } from '../../lib/routeHelpers';
+import { makeCheckAccount, parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
@@ -73,7 +73,8 @@ export function createStocksRouter(db: Database): Router {
   });
 
   router.post('/:accountId/transfer', (req, res) => {
-    const fromAccountId = Number.parseInt(req.params.accountId, 10);
+    const fromAccountId = parseNumberParam(req, res, 'accountId');
+    if (fromAccountId === null) return;
     const userId = sessionUserId(req);
 
     if (!repo.accountBelongsToUser(fromAccountId, userId)) {
@@ -115,7 +116,8 @@ export function createStocksRouter(db: Database): Router {
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
     const accountId = res.locals.accountId as number;
     const userId = res.locals.userId as number;
-    const operationId = Number.parseInt(req.params.operationId as string, 10);
+    const operationId = parseNumberParam(req, res, 'operationId');
+    if (operationId === null) return;
 
     const op = repo.getOperationById(operationId);
     if (op?.account_id !== accountId) {

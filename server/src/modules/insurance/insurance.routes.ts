@@ -2,12 +2,11 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { makeCheckAccount } from '../../lib/routeHelpers';
+import { makeCheckAccount, parseNumberParam } from '../../lib/routeHelpers';
+import { dateSchema } from '../../lib/validators';
 import { requireAuth } from '../../middleware.js';
 import { handleInsuranceAction } from './insurance.handlers.js';
 import { createInsuranceRepo } from './insurance.repo.js';
-
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const createSupportSchema = z.object({
   account_id: z.number().int().positive(),
@@ -21,7 +20,7 @@ const versementSchema = z.object({
   support_id: z.number().int().positive(),
   amount: z.number().positive(),
   fees: z.number().min(0).default(0),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
   source_account_id: z
     .number()
     .int()
@@ -37,7 +36,7 @@ const rachatSchema = z.object({
   amount: z.number().positive(),
   fees: z.number().min(0).default(0),
   social_fees: z.number().min(0).default(0),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
   dest_account_id: z
     .number()
     .int()
@@ -53,28 +52,28 @@ const arbitrageSchema = z.object({
   to_support_id: z.number().int().positive(),
   from_amount: z.number().positive(),
   fees: z.number().min(0).default(0),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
 });
 
 const interetsSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: z.number().positive(),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
 });
 
 const revaloriserSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: z.number(),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
 });
 
 const updateOperationSchema = z.object({
   amount: z.number(),
   fees: z.number().min(0).default(0),
   social_fees: z.number().min(0).default(0),
-  date: z.string().regex(DATE_REGEX),
+  date: dateSchema,
 });
 
 export function createInsuranceRouter(db: Database): Router {
@@ -99,7 +98,8 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.delete('/:accountId/supports/:supportId', checkAccount, (req, res) => {
     const accountId = res.locals.accountId as number;
-    const supportId = Number.parseInt(req.params.supportId as string, 10);
+    const supportId = parseNumberParam(req, res, 'supportId');
+    if (supportId === null) return;
 
     const support = repo.getSupportById(supportId);
     if (support?.account_id !== accountId) {
@@ -129,7 +129,8 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
-    const operationId = Number.parseInt(req.params.operationId as string, 10);
+    const operationId = parseNumberParam(req, res, 'operationId');
+    if (operationId === null) return;
     const userId = res.locals.userId as number;
 
     const parsed = updateOperationSchema.safeParse(req.body);
@@ -149,7 +150,8 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.delete('/:accountId/operations/:operationId', checkAccount, (req, res) => {
-    const operationId = Number.parseInt(req.params.operationId as string, 10);
+    const operationId = parseNumberParam(req, res, 'operationId');
+    if (operationId === null) return;
     const userId = res.locals.userId as number;
     try {
       repo.deleteOperation(operationId, userId);

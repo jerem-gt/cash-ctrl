@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
+import { parseNumberParam } from '../../lib/routeHelpers.js';
 import { requireAdmin } from '../../middleware.js';
 import { createUsersRepo } from './users.repo';
 
@@ -50,7 +51,8 @@ export function createUsersRouter(db: Database): Router {
   });
 
   router.patch('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id, 10);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
@@ -79,7 +81,8 @@ export function createUsersRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id, 10);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
       res.status(404).json({ error: 'User not found' });

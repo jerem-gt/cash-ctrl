@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from '../loans/loans.repo.js';
@@ -42,7 +42,8 @@ export function createAccountsRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
     if (!accountsRepo.getById(id, userId)) {
       res.status(404).json({ error: 'Account not found' });
@@ -55,7 +56,8 @@ export function createAccountsRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
@@ -70,7 +72,8 @@ export function createAccountsRouter(db: Database): Router {
   });
 
   router.post('/:id/close', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
@@ -116,7 +119,8 @@ export function createAccountsRouter(db: Database): Router {
   });
 
   router.post('/:id/reopen', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {

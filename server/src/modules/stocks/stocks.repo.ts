@@ -133,7 +133,7 @@ export function createStocksRepo(db: Database) {
 
     buy(userId: number, input: BuyInput): { operation: StockOperation; transaction_id: number } {
       const feesCents = toCents(input.fees);
-      const mainCents = Math.round(input.quantity * input.price_per_share * 100);
+      const mainCents = toCents(input.quantity * input.price_per_share);
 
       return db.transaction(() =>
         insertStockTxAndOp(db, userId, input, 'expense', 'buy', mainCents, feesCents),
@@ -155,7 +155,7 @@ export function createStocksRepo(db: Database) {
       }
 
       const feesCents = toCents(input.fees);
-      const mainCents = Math.round(input.quantity * input.price_per_share * 100);
+      const mainCents = toCents(input.quantity * input.price_per_share);
       if (mainCents - feesCents <= 0) {
         throw new Error('Le montant net après frais doit être positif');
       }
@@ -361,7 +361,7 @@ export function createStocksRepo(db: Database) {
         if (!op) throw new Error('Opération introuvable');
 
         const feesCents = toCents(input.fees);
-        const mainCents = Math.round(input.quantity * input.price_per_share * 100);
+        const mainCents = toCents(input.quantity * input.price_per_share);
 
         if (op.type === 'sell' && mainCents - feesCents <= 0)
           throw new Error('Le montant net doit être positif');

@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { parseBody } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
@@ -51,7 +51,8 @@ export function createLoansRouter(db: Database): Router {
   });
 
   router.patch('/:loanId', (req, res) => {
-    const loanId = Number.parseInt(req.params.loanId);
+    const loanId = parseNumberParam(req, res, 'loanId');
+    if (loanId === null) return;
     const data = parseBody(res, updateLoanSchema, req.body);
     if (!data) return;
     const userId = sessionUserId(req);
@@ -65,7 +66,8 @@ export function createLoansRouter(db: Database): Router {
   });
 
   router.get('/account/:accountId', (req, res) => {
-    const accountId = Number.parseInt(req.params.accountId);
+    const accountId = parseNumberParam(req, res, 'accountId');
+    if (accountId === null) return;
     const loan = loansRepo.getByAccountId(accountId, sessionUserId(req));
     if (!loan) {
       res.status(404).json({ error: 'Prêt introuvable' });
@@ -75,13 +77,16 @@ export function createLoansRouter(db: Database): Router {
   });
 
   router.get('/:loanId/installments', (req, res) => {
-    const loanId = Number.parseInt(req.params.loanId);
+    const loanId = parseNumberParam(req, res, 'loanId');
+    if (loanId === null) return;
     res.json(loansRepo.getInstallments(loanId, sessionUserId(req)));
   });
 
   router.patch('/:loanId/installments/:installmentId', (req, res) => {
-    const loanId = Number.parseInt(req.params.loanId);
-    const installmentId = Number.parseInt(req.params.installmentId);
+    const loanId = parseNumberParam(req, res, 'loanId');
+    if (loanId === null) return;
+    const installmentId = parseNumberParam(req, res, 'installmentId');
+    if (installmentId === null) return;
     const data = parseBody(res, updateInstallmentSchema, req.body);
     if (!data) return;
     const result = loansRepo.updateInstallment(sessionUserId(req), loanId, installmentId, data);

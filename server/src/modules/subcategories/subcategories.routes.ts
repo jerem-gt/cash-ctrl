@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
@@ -45,7 +45,8 @@ export function createSubcategoriesRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
     const data = parseBody(res, updateSchema, req.body);
@@ -55,7 +56,8 @@ export function createSubcategoriesRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id);
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
     const n = txRepo.getCountBySubcategoryId(id);

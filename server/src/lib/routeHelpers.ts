@@ -1,7 +1,20 @@
-import type { RequestHandler, Response } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 
 import { sessionUserId } from '../middleware';
+
+/**
+ * Parse un paramètre de route numérique (radix 10). Répond 400 et renvoie null
+ * si la valeur n'est pas un entier valide. À utiliser avec `if (value === null) return;`.
+ */
+export function parseNumberParam(req: Request, res: Response, paramName = 'id'): number | null {
+  const value = Number.parseInt(req.params[paramName] as string, 10);
+  if (Number.isNaN(value)) {
+    res.status(400).json({ error: `Paramètre ${paramName} invalide` });
+    return null;
+  }
+  return value;
+}
 
 export function makeCheckAccount(
   belongsToUser: (accountId: number, userId: number) => boolean,
