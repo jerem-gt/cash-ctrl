@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@/components/ui';
+import { ImportErrorMessage } from '@/features/settings/components/import/Shared';
 
 export interface JsonConfirmData {
   d: Record<string, unknown[]>;
@@ -67,16 +68,7 @@ export function JsonConfirmStep({
         <p className="text-xs text-stone-400 mt-4">{t('import.confirm_note')}</p>
       </Card>
 
-      {errorMessage && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          <p className="font-medium mb-1">{tc('error_import')}</p>
-          <ul className="list-disc list-inside space-y-0.5">
-            {errorMessage.split('\n').map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {errorMessage && <ImportErrorMessage message={errorMessage} />}
 
       <div className="flex justify-between">
         <Button onClick={onBack}>{tc('back')}</Button>

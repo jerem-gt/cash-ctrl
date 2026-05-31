@@ -103,6 +103,22 @@ function getStatus(index: number, cur: number) {
   return 'upcoming';
 }
 
+// ─── ImportErrorMessage ──────────────────────────────────────────────────────
+
+export function ImportErrorMessage({ message }: Readonly<{ message: string }>) {
+  const { t: tc } = useTranslation('common');
+  return (
+    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+      <p className="font-medium mb-1">{tc('error_import')}</p>
+      <ul className="list-disc list-inside space-y-0.5">
+        {message.split('\n').map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function StepIndicator({
   step,
   format,

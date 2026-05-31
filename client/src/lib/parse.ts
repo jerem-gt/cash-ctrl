@@ -15,8 +15,7 @@ export function parseIdOrNull(s: string | null | undefined): number | null {
  * Utile pour les payloads où le champ peut être omis.
  */
 export function parseIdOrUndefined(s: string | null | undefined): number | undefined {
-  const v = parseIdOrNull(s);
-  return v === null ? undefined : v;
+  return parseIdOrNull(s) ?? undefined;
 }
 
 /**
