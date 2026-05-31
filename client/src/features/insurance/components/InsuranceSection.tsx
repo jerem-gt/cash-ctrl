@@ -197,6 +197,8 @@ function SupportRow({
   );
 }
 
+const OPERATIONS_PAGE_SIZE = 10;
+
 const OP_BADGE_CLASSES: Record<InsuranceOperation['type'], string> = {
   versement: 'bg-green-100 text-green-700',
   rachat: 'bg-red-100 text-red-700',
@@ -299,6 +301,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
   const [showSimulator, setShowSimulator] = useState(false);
   const [editingOp, setEditingOp] = useState<InsuranceOperation | null>(null);
   const [deletingOp, setDeletingOp] = useState<InsuranceOperation | null>(null);
+  const [visibleCount, setVisibleCount] = useState(OPERATIONS_PAGE_SIZE);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
   const [showZero, setShowZero] = useState(false);
@@ -402,7 +405,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden divide-y divide-stone-50">
-            {operations.map((op) => (
+            {operations.slice(0, visibleCount).map((op) => (
               <OperationRow
                 key={op.id}
                 op={op}
@@ -410,6 +413,15 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
                 onDelete={readOnly ? undefined : () => setDeletingOp(op)}
               />
             ))}
+            {operations.length > visibleCount && (
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + OPERATIONS_PAGE_SIZE)}
+                className="w-full flex items-center justify-center px-4 py-2.5 bg-stone-50 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+              >
+                {t('section.show_more', { count: operations.length - visibleCount })}
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -32,7 +32,8 @@
     "op_social_fees": "prél. soc. {{amount}}",
     "scheduled_title": "Transaction planifiée",
     "edit_label": "Modifier",
-    "delete_label": "Supprimer"
+    "delete_label": "Supprimer",
+    "show_more": "Afficher plus ({{count}})"
   },
   "versement_modal": {
     "title": "Versement — {{support}}",

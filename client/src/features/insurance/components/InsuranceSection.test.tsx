@@ -7,6 +7,7 @@ import { InsuranceSection } from '@/features/insurance/components/InsuranceSecti
 import { INSURANCE_OPERATIONS, INSURANCE_POSITIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
+import type { InsuranceOperation } from '@/types';
 
 function renderSection(accountId = 10, isPer = false) {
   return renderWithProviders(<InsuranceSection accountId={accountId} isPer={isPer} />);
@@ -187,6 +188,46 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByTitle('Modifier')[0]);
     expect(screen.getByText("Modifier l'opération")).toBeInTheDocument();
+  });
+
+  // ─── Historique « Afficher plus » ─────────────────────────────────────────
+
+  function makeOperations(count: number): InsuranceOperation[] {
+    return Array.from({ length: count }, (_, i) => ({
+      ...INSURANCE_OPERATIONS[0],
+      id: 1000 + i,
+      transaction_id: 2000 + i,
+      from_scheduled: false,
+    }));
+  }
+
+  it("n'affiche pas le bouton Afficher plus quand 10 opérations ou moins", async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(makeOperations(10))),
+    );
+    renderSection();
+    await screen.findAllByText('Fonds Euro Sécurité');
+    expect(screen.queryByRole('button', { name: /afficher plus/i })).not.toBeInTheDocument();
+  });
+
+  it("limite l'historique à 10 opérations et affiche le bouton Afficher plus", async () => {
+    server.use(
+      http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(makeOperations(13))),
+    );
+    renderSection();
+    await screen.findByRole('button', { name: /afficher plus \(3\)/i });
+    expect(screen.getAllByTitle('Modifier')).toHaveLength(10);
+  });
+
+  it('affiche le lot suivant au clic sur Afficher plus', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(makeOperations(13))),
+    );
+    renderSection();
+    await user.click(await screen.findByRole('button', { name: /afficher plus \(3\)/i }));
+    expect(screen.getAllByTitle('Modifier')).toHaveLength(13);
+    expect(screen.queryByRole('button', { name: /afficher plus/i })).not.toBeInTheDocument();
   });
 
   // ─── Supports soldés (section repliée) ────────────────────────────────────
