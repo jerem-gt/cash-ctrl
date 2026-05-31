@@ -1,22 +1,32 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { setGroupBy } from '@/hooks/useAccountsGroupBy';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
-import AccountsPage from './AccountsPage';
+let AccountsPage: typeof import('./AccountsPage').default;
+let setGroupBy: typeof import('@/hooks/useAccountsGroupBy').setGroupBy;
+
+beforeAll(async () => {
+  vi.doMock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return { ...actual };
+  });
+  vi.resetModules();
+  AccountsPage = (await import('./AccountsPage')).default;
+  ({ setGroupBy } = await import('@/hooks/useAccountsGroupBy'));
+});
+
+afterAll(() => {
+  vi.doUnmock('react-router-dom');
+  vi.resetModules();
+});
 
 function renderAccountsPage() {
   return renderWithProviders(<AccountsPage />);
 }
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return { ...actual };
-});
 
 beforeEach(() => {
   localStorage.clear();

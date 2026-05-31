@@ -1,34 +1,56 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAccounts } from '@/hooks/useAccounts';
-import { useCategories } from '@/hooks/useCategories';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import {
-  useDeleteTransaction,
-  useDeleteTransfer,
-  useTransactions,
-  useUpdateTransaction,
-  useUpdateTransfer,
-} from '@/hooks/useTransactions';
 import { Transaction } from '@/types.ts';
 
-import { useTransactionsManager } from './useTransactionsManager';
+let useAccounts: typeof import('@/hooks/useAccounts').useAccounts;
+let useCategories: typeof import('@/hooks/useCategories').useCategories;
+let usePaymentMethods: typeof import('@/hooks/usePaymentMethods').usePaymentMethods;
+let useTransactions: typeof import('@/hooks/useTransactions').useTransactions;
+let useUpdateTransaction: typeof import('@/hooks/useTransactions').useUpdateTransaction;
+let useUpdateTransfer: typeof import('@/hooks/useTransactions').useUpdateTransfer;
+let useDeleteTransaction: typeof import('@/hooks/useTransactions').useDeleteTransaction;
+let useDeleteTransfer: typeof import('@/hooks/useTransactions').useDeleteTransfer;
+let useTransactionsManager: typeof import('./useTransactionsManager').useTransactionsManager;
 
-// 1. Mock de tous les hooks dont dépend le manager
-vi.mock('@/hooks/useTransactions', () => ({
-  useTransactions: vi.fn(),
-  useUpdateTransaction: vi.fn(),
-  useUpdateTransfer: vi.fn(),
-  useDeleteTransaction: vi.fn(),
-  useDeleteTransfer: vi.fn(),
-}));
-vi.mock('@/hooks/useCategories');
-vi.mock('@/hooks/useAccounts');
-vi.mock('@/hooks/usePaymentMethods');
-vi.mock('@/components/ui', () => ({
-  showToast: vi.fn(),
-}));
+beforeAll(async () => {
+  // 1. Mock de tous les hooks dont dépend le manager
+  vi.doMock('@/hooks/useTransactions', () => ({
+    useTransactions: vi.fn(),
+    useUpdateTransaction: vi.fn(),
+    useUpdateTransfer: vi.fn(),
+    useDeleteTransaction: vi.fn(),
+    useDeleteTransfer: vi.fn(),
+  }));
+  vi.doMock('@/hooks/useCategories');
+  vi.doMock('@/hooks/useAccounts');
+  vi.doMock('@/hooks/usePaymentMethods');
+  vi.doMock('@/components/ui', () => ({
+    showToast: vi.fn(),
+  }));
+  vi.resetModules();
+
+  ({ useAccounts } = await import('@/hooks/useAccounts'));
+  ({ useCategories } = await import('@/hooks/useCategories'));
+  ({ usePaymentMethods } = await import('@/hooks/usePaymentMethods'));
+  ({
+    useTransactions,
+    useUpdateTransaction,
+    useUpdateTransfer,
+    useDeleteTransaction,
+    useDeleteTransfer,
+  } = await import('@/hooks/useTransactions'));
+  ({ useTransactionsManager } = await import('./useTransactionsManager'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@/hooks/useTransactions');
+  vi.doUnmock('@/hooks/useCategories');
+  vi.doUnmock('@/hooks/useAccounts');
+  vi.doUnmock('@/hooks/usePaymentMethods');
+  vi.doUnmock('@/components/ui');
+  vi.resetModules();
+});
 
 describe('useTransactionsManager', () => {
   // Setup des mocks avec des valeurs par défaut avant chaque test

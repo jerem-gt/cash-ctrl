@@ -1,14 +1,23 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, BANKS } from '@/tests/fixtures';
 
-import { AccountSelect } from './AccountSelect';
+let AccountSelect: typeof import('./AccountSelect').AccountSelect;
 
-vi.mock('@/hooks/useBanks', () => ({
-  useBanks: () => ({ data: BANKS }),
-}));
+beforeAll(async () => {
+  vi.doMock('@/hooks/useBanks', () => ({
+    useBanks: () => ({ data: BANKS }),
+  }));
+  vi.resetModules();
+  ({ AccountSelect } = await import('./AccountSelect'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@/hooks/useBanks');
+  vi.resetModules();
+});
 
 const logoMap: Record<string, string | null> = { BNP: null };
 

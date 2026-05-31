@@ -63,6 +63,26 @@ Le formatage des montants/dates suit la langue via `currentLocale()` de `client/
 - **Mocks**: Utiliser **MSW** (Mock Service Worker) pour intercepter les appels API et `vi.fn()` pour les mocks unitaires.
 - **Intitulés de tests** : laisser Prettier gérer les quotes (`singleQuote: true` dans la config). Prettier bascule automatiquement en double guillemets quand l'intitulé contient une apostrophe française (`d'`, `l'`, `n'`…), ce qui protège déjà contre les bugs de parsing silencieux. Utiliser des backticks `` ` `` uniquement si l'intitulé contient lui-même des guillemets doubles (ex. texte UI cité, valeur d'enum).
 
+### `vi.mock` côté client — pattern obligatoire
+Le client tourne avec `isolate: false` : `vi.mock` (hoisté) leak entre fichiers. Utiliser `vi.doMock` + import dynamique du SUT :
+
+```ts
+let MyComponent: typeof import('./MyComponent').MyComponent;
+
+beforeAll(async () => {
+  vi.doMock('@/some-dep', () => ({ ... }));
+  vi.resetModules();
+  ({ MyComponent } = await import('./MyComponent'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@/some-dep');
+  vi.resetModules();
+});
+```
+
+Si un module **avec état** (store, singleton) est partagé entre le test et le SUT, le re-importer aussi après le reset.
+
 ### Écrire les TUs avec chaque évolution
 Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 
