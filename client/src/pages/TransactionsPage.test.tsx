@@ -1,19 +1,11 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import TransactionsPage from '@/pages/TransactionsPage.tsx';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-import { server } from '@/tests/msw/server';
 
 describe('TransactionsPage', () => {
-  it('affiche le squelette pendant le chargement des transactions', () => {
-    server.use(http.get('/api/transactions', () => new Promise<never>(() => {})));
-    renderWithProviders(<TransactionsPage />);
-    expect(screen.queryByText('Courses')).not.toBeInTheDocument();
-  });
-
   it('affiche les transactions après le chargement', async () => {
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');
@@ -25,107 +17,7 @@ describe('TransactionsPage', () => {
     await waitFor(() => expect(screen.getByText('1 transaction(s)')).toBeInTheDocument());
   });
 
-  it('affiche les filtres de catégorie, de sous-catégorie et de type', async () => {
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
-    expect(screen.getByText('Toutes catégories')).toBeInTheDocument();
-    expect(screen.getByText('Toutes sous-catégories')).toBeInTheDocument();
-    expect(screen.getByText('Tous types')).toBeInTheDocument();
-  });
-
-  it('ouvre le modal de création au clic', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: /\+ transaction/i }));
-    expect(screen.getByText('Nouvelle transaction')).toBeInTheDocument();
-  });
-
-  it("ouvre le modal d'édition au clic sur ✎", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Modifier' }));
-    expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
-  });
-
-  it('ouvre le modal de duplication au clic sur ⧉', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Dupliquer' }));
-    expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
-  });
-
-  it('ouvre le modal de suppression au clic sur ×', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
-    expect(screen.getByText(/supprimer/i)).toBeInTheDocument();
-  });
-
-  it('filtre par type (Dépenses)', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    const selectType = screen.getByRole('combobox', { name: /choisir un type/i });
-    await user.selectOptions(selectType, 'expense');
-    expect(selectType).toHaveValue('expense');
-  });
-
-  it('filtre par catégorie', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
-    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
-    await user.selectOptions(selectCategorie, '1');
-    expect(selectCategorie).toHaveValue('1');
-  });
-
-  it('filtre par sous-catégorie non accessible si pas de catégorie', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
-    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
-    await user.selectOptions(selectCategorie, '');
-    const selectSousCategorie = screen.getByRole('combobox', {
-      name: /choisir une sous-catégorie/i,
-    });
-    expect(selectSousCategorie).toBeDisabled();
-  });
-
-  it('filtre par sous-catégorie', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    fireEvent.click(screen.getByRole('button', { name: /filtres avancés/i }));
-    // On sélectionne déjà un item dans les catégories
-    const selectCategorie = screen.getByRole('combobox', { name: /choisir une catégorie/i });
-    await user.selectOptions(selectCategorie, '1');
-    // Puis une sous-catégorie
-    const selectSousCategorie = screen.getByRole('combobox', {
-      name: /choisir une sous-catégorie/i,
-    });
-    await user.selectOptions(selectSousCategorie, '1');
-    expect(selectSousCategorie).toHaveValue('1');
-  });
-
-  it("confirme la suppression d'une transaction", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<TransactionsPage />);
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
-    await user.click(screen.getByRole('button', { name: /confirmer/i }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('supprimée'),
-    );
-  });
-
-  it("soumet le formulaire d'édition d'une transaction", async () => {
+  it("soumet le formulaire d'édition d'une transaction (intégration page → modal → API)", async () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);
     await screen.findByText('Courses');

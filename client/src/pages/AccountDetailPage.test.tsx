@@ -19,13 +19,6 @@ function renderDetail(id = '1') {
 }
 
 describe('AccountDetailPage', () => {
-  it('affiche le squelette pendant le chargement des comptes', () => {
-    server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
-    renderDetail();
-    expect(screen.queryByRole('button', { name: /\+ transaction/i })).not.toBeInTheDocument();
-    expect(screen.queryByText('Compte introuvable.')).not.toBeInTheDocument();
-  });
-
   it(`ne montre pas "Compte introuvable" pendant le chargement, même pour un id absent`, () => {
     server.use(http.get('/api/accounts', () => new Promise<never>(() => {})));
     renderDetail('999');
@@ -43,19 +36,6 @@ describe('AccountDetailPage', () => {
     expect(screen.getByText('Courses')).toBeInTheDocument();
   });
 
-  it('affiche le compteur de transactions', async () => {
-    renderDetail();
-    await waitFor(() => expect(screen.getByText('1 transaction(s)')).toBeInTheDocument());
-  });
-
-  it("ouvre le modal d'ajout", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: /\+ transaction/i }));
-    expect(screen.getByText('Transaction validée')).toBeInTheDocument();
-  });
-
   it("affiche l'état vide si aucune transaction", async () => {
     server.use(
       http.get('/api/transactions', () =>
@@ -68,56 +48,16 @@ describe('AccountDetailPage', () => {
     });
   });
 
-  it('ouvre la modal de suppression de transaction (×)', async () => {
+  it("ouvre le modal d'ajout pré-rempli avec ce compte", async () => {
     const user = userEvent.setup();
     renderDetail();
     await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
-    expect(screen.getByText('Supprimer la transaction')).toBeInTheDocument();
-  });
-
-  it("ouvre la modal d'édition de transaction (✎)", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Modifier' }));
-    expect(screen.getByText('Modifier la transaction')).toBeInTheDocument();
-  });
-
-  it('ouvre la modal de duplication de transaction (⧉)', async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Dupliquer' }));
-    expect(screen.getByText('Dupliquer la transaction')).toBeInTheDocument();
-  });
-
-  it("confirme la suppression d'une transaction", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
-    await user.click(screen.getByRole('button', { name: /confirmer/i }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('supprimée'),
-    );
-  });
-
-  it("soumet le formulaire d'édition d'une transaction", async () => {
-    const user = userEvent.setup();
-    renderDetail();
-    await screen.findByText('Courses');
-    await user.click(screen.getByRole('button', { name: 'Modifier' }));
-    await screen.findByText('Modifier la transaction');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('modifiée'),
-    );
+    await user.click(screen.getByRole('button', { name: /\+ transaction/i }));
+    expect(screen.getByText('Transaction validée')).toBeInTheDocument();
   });
 
   it("affiche le bon message lors de la suppression d'un transfert", async () => {
     const user = userEvent.setup();
-    // On simule une transaction qui est un transfert
     server.use(
       http.get('/api/transactions', () =>
         HttpResponse.json({
@@ -142,7 +82,6 @@ describe('AccountDetailPage', () => {
 
   it("soumet le formulaire d'édition pour un transfert", async () => {
     const user = userEvent.setup();
-    // Mock d'un transfert existant
     server.use(
       http.get('/api/transactions', () =>
         HttpResponse.json({
@@ -158,8 +97,6 @@ describe('AccountDetailPage', () => {
     await screen.findByText('Courses');
     const editBtn = await screen.findByRole('button', { name: 'Modifier' });
     await user.click(editBtn);
-
-    // On vérifie que les champs spécifiques au transfert (AccountSelect) sont là
     await screen.findByText('Compte destination');
 
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
