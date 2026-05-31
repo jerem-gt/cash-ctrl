@@ -49,6 +49,7 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
+          setupFiles: ['./src/tests/setup-node.ts'],
           include: NODE_GLOBS,
         },
       },
