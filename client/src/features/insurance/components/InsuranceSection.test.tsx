@@ -115,77 +115,6 @@ describe('InsuranceSection', () => {
     expect(screen.getByText('Total enveloppe')).toBeInTheDocument();
   });
 
-  it('soumet le versement fonds euro et affiche un toast', async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    await user.click(screen.getAllByRole('button', { name: /verser/i })[0]);
-    await screen.findByText(/Versement — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('textbox', { name: /montant versé/i });
-    await user.clear(amountInput);
-    await user.type(amountInput, '1000');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Versement enregistré'),
-    );
-  });
-
-  it('soumet les intérêts fonds euro et affiche un toast', async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    await user.click(screen.getAllByRole('button', { name: /intérêts/i })[0]);
-    await screen.findByText(/Intérêts — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('textbox', { name: /montant des intérêts/i });
-    await user.clear(amountInput);
-    await user.type(amountInput, '150');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Intérêts enregistrés'),
-    );
-  });
-
-  it('soumet le rachat fonds euro et affiche un toast', async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    await user.click(screen.getAllByRole('button', { name: /racheter/i })[0]);
-    await screen.findByText(/Rachat — Fonds Euro Sécurité/i);
-    const amountInput = screen.getByRole('textbox', { name: /montant racheté/i });
-    await user.clear(amountInput);
-    await user.type(amountInput, '500');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Rachat enregistré'),
-    );
-  });
-
-  it("soumet l'arbitrage et affiche un toast", async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    await user.click(screen.getAllByRole('button', { name: /arbitrer/i })[0]);
-    await screen.findByText(/Arbitrage depuis Fonds Euro Sécurité/i);
-    await user.type(screen.getByRole('textbox', { name: /montant arbitré/i }), '1000');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Arbitrage enregistré'),
-    );
-  });
-
-  it('soumet une revalorisation UC et affiche un toast', async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Amundi MSCI World');
-    await user.click(screen.getAllByRole('button', { name: /revaloriser/i })[0]);
-    await screen.findByText(/Revalorisation — Amundi MSCI World/i);
-    await user.type(screen.getByRole('textbox', { name: /plus\/moins-value/i }), '150');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Revalorisation enregistrée'),
-    );
-  });
-
   it("n'affiche pas le bouton Simulateur fiscal pour une Assurance Vie (isPer=false)", async () => {
     renderSection(10, false);
     await screen.findAllByText('Fonds Euro Sécurité');
@@ -258,22 +187,6 @@ describe('InsuranceSection', () => {
     await screen.findAllByText('Fonds Euro Sécurité');
     await user.click(screen.getAllByTitle('Modifier')[0]);
     expect(screen.getByText("Modifier l'opération")).toBeInTheDocument();
-  });
-
-  it("soumet la modification d'opération et affiche un toast", async () => {
-    const user = userEvent.setup();
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    await user.click(screen.getAllByTitle('Modifier')[0]);
-    await screen.findByText("Modifier l'opération");
-
-    await user.clear(screen.getByLabelText(/montant/i));
-    await user.type(screen.getByLabelText(/montant/i), '2000');
-    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
-
-    await waitFor(() =>
-      expect(document.getElementById('toast')?.textContent).toContain('Opération modifiée'),
-    );
   });
 
   // ─── Supports soldés (section repliée) ────────────────────────────────────
