@@ -47,11 +47,11 @@ export function ModalFrame({
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
-      <div
-        role="dialog"
+      <dialog
+        open
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`bg-white rounded-2xl p-7 w-full ${MODAL_SIZE_CLASS[size]} shadow-xl max-h-[calc(100vh-2rem)] ${hasFooter ? 'flex flex-col' : 'overflow-y-auto'}`}
+        className={`static m-0 border-0 bg-white rounded-2xl p-7 w-full ${MODAL_SIZE_CLASS[size]} shadow-xl max-h-[calc(100vh-2rem)] ${hasFooter ? 'flex flex-col' : 'block overflow-y-auto'}`}
       >
         <h3 id={titleId} className={`font-sans text-xl ${subtitle ? 'mb-1' : 'mb-5'} shrink-0`}>
           {title}
@@ -69,7 +69,7 @@ export function ModalFrame({
         ) : (
           children
         )}
-      </div>
+      </dialog>
     </div>
   );
 }
