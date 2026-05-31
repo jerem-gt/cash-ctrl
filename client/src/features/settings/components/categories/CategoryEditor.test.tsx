@@ -1,22 +1,31 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EmojiClickData } from 'emoji-picker-react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { CategoryEditor } from './CategoryEditor';
+let CategoryEditor: typeof import('./CategoryEditor').CategoryEditor;
 
-vi.mock('emoji-picker-react', () => ({
-  default: ({
-    onEmojiClick,
-  }: {
-    onEmojiClick: (emojiData: EmojiClickData, event: MouseEvent) => void;
-  }) => (
-    <button onClick={() => onEmojiClick({ emoji: '🚀' } as EmojiClickData, {} as MouseEvent)}>
-      Mock Picker Click
-    </button>
-  ),
-  Categories: {},
-}));
+beforeAll(async () => {
+  vi.doMock('emoji-picker-react', () => ({
+    default: ({
+      onEmojiClick,
+    }: {
+      onEmojiClick: (emojiData: EmojiClickData, event: MouseEvent) => void;
+    }) => (
+      <button onClick={() => onEmojiClick({ emoji: '🚀' } as EmojiClickData, {} as MouseEvent)}>
+        Mock Picker Click
+      </button>
+    ),
+    Categories: {},
+  }));
+  vi.resetModules();
+  ({ CategoryEditor } = await import('./CategoryEditor'));
+});
+
+afterAll(() => {
+  vi.doUnmock('emoji-picker-react');
+  vi.resetModules();
+});
 
 describe('CategoryEditor', () => {
   const defaultProps = {

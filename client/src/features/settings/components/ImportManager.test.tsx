@@ -1,76 +1,90 @@
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findTransferPeer, parseQif } from '@/lib/qif-parser.ts';
-import { parseXhb } from '@/lib/xhb-parser.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
-import ImportManager from './ImportManager';
+let ImportManager: typeof import('./ImportManager').default;
+let parseQif: typeof import('@/lib/qif-parser.ts').parseQif;
+let findTransferPeer: typeof import('@/lib/qif-parser.ts').findTransferPeer;
+let parseXhb: typeof import('@/lib/xhb-parser.ts').parseXhb;
 
-vi.mock('@/lib/qif-parser', () => ({
-  parseQif: vi.fn(() => ({
-    transactions: [
-      {
-        date: '15/01/2024',
-        amount: -50,
-        description: 'Courses',
-        qifAccountName: 'ACC1',
-        category: 'Alimentation',
-        memo: null,
-        cleared: true,
-        isTransfer: false,
-        transferTarget: null,
-      },
-      {
-        date: '20/01/2024',
-        amount: 2000,
-        description: 'Salaire',
-        qifAccountName: 'ACC1',
-        category: '',
-        memo: null,
-        cleared: false,
-        isTransfer: false,
-        transferTarget: null,
-      },
-    ],
-    accounts: ['ACC1'],
-    uniqueCategories: ['Alimentation'],
-    uniqueTransferTargets: [],
-    detectedDateFormat: 'DD/MM',
-  })),
-  parseQifDate: vi.fn((raw: string) => {
-    const [d, m, y] = raw.split('/');
-    return `${y}-${m}-${d}`;
-  }),
-  findTransferPeer: vi.fn(() => -1),
-}));
+beforeAll(async () => {
+  vi.doMock('@/lib/qif-parser', () => ({
+    parseQif: vi.fn(() => ({
+      transactions: [
+        {
+          date: '15/01/2024',
+          amount: -50,
+          description: 'Courses',
+          qifAccountName: 'ACC1',
+          category: 'Alimentation',
+          memo: null,
+          cleared: true,
+          isTransfer: false,
+          transferTarget: null,
+        },
+        {
+          date: '20/01/2024',
+          amount: 2000,
+          description: 'Salaire',
+          qifAccountName: 'ACC1',
+          category: '',
+          memo: null,
+          cleared: false,
+          isTransfer: false,
+          transferTarget: null,
+        },
+      ],
+      accounts: ['ACC1'],
+      uniqueCategories: ['Alimentation'],
+      uniqueTransferTargets: [],
+      detectedDateFormat: 'DD/MM',
+    })),
+    parseQifDate: vi.fn((raw: string) => {
+      const [d, m, y] = raw.split('/');
+      return `${y}-${m}-${d}`;
+    }),
+    findTransferPeer: vi.fn(() => -1),
+  }));
 
-vi.mock('@/lib/xhb-parser', () => ({
-  parseXhb: vi.fn(() => ({
-    accounts: ['CompteXHB'],
-    accountDetails: new Map([
-      ['CompteXHB', { key: 1, name: 'CompteXHB', bankname: '', initial: 100 }],
-    ]),
-    transactions: [
-      {
-        accountName: 'CompteXHB',
-        date: '2024-01-15',
-        amount: -50,
-        description: 'Dépense XHB',
-        categoryString: 'Alimentation',
-        paymode: 2,
-        notes: null,
-        validated: true,
-      },
-    ],
-    transfers: [],
-    uniqueCategories: ['Alimentation'],
-    uniquePaymodes: [2],
-  })),
-}));
+  vi.doMock('@/lib/xhb-parser', () => ({
+    parseXhb: vi.fn(() => ({
+      accounts: ['CompteXHB'],
+      accountDetails: new Map([
+        ['CompteXHB', { key: 1, name: 'CompteXHB', bankname: '', initial: 100 }],
+      ]),
+      transactions: [
+        {
+          accountName: 'CompteXHB',
+          date: '2024-01-15',
+          amount: -50,
+          description: 'Dépense XHB',
+          categoryString: 'Alimentation',
+          paymode: 2,
+          notes: null,
+          validated: true,
+        },
+      ],
+      transfers: [],
+      uniqueCategories: ['Alimentation'],
+      uniquePaymodes: [2],
+    })),
+  }));
+
+  vi.resetModules();
+  ImportManager = (await import('./ImportManager')).default;
+  ({ parseQif, findTransferPeer } = await import('@/lib/qif-parser.ts'));
+  ({ parseXhb } = await import('@/lib/xhb-parser.ts'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@/lib/qif-parser');
+  vi.doUnmock('@/lib/xhb-parser');
+  vi.resetModules();
+});
 
 const validJsonData = {
   version: '1.0',

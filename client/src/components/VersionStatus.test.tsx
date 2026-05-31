@@ -1,23 +1,33 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { VersionStatus } from './VersionStatus';
+let VersionStatus: typeof import('./VersionStatus').VersionStatus;
+let useAppVersion: typeof import('../hooks/useAppVersion.ts').useAppVersion;
+let showToast: typeof import('./ui').showToast;
 
-vi.mock('../hooks/useAppVersion.ts', () => ({
-  useAppVersion: vi.fn(() => ({
-    version: '1.2.3',
-    isOnline: true,
-    isDev: false,
-    isLoading: false,
-  })),
-}));
+beforeAll(async () => {
+  vi.doMock('../hooks/useAppVersion.ts', () => ({
+    useAppVersion: vi.fn(() => ({
+      version: '1.2.3',
+      isOnline: true,
+      isDev: false,
+      isLoading: false,
+    })),
+  }));
+  vi.doMock('./ui', () => ({
+    showToast: vi.fn(),
+  }));
+  vi.resetModules();
+  ({ VersionStatus } = await import('./VersionStatus'));
+  ({ useAppVersion } = await import('../hooks/useAppVersion.ts'));
+  ({ showToast } = await import('./ui'));
+});
 
-vi.mock('./ui', () => ({
-  showToast: vi.fn(),
-}));
-
-import { useAppVersion } from '../hooks/useAppVersion.ts';
-import { showToast } from './ui';
+afterAll(() => {
+  vi.doUnmock('../hooks/useAppVersion.ts');
+  vi.doUnmock('./ui');
+  vi.resetModules();
+});
 
 function clickTimes(el: HTMLElement, n: number) {
   for (let i = 0; i < n; i++) fireEvent.click(el);

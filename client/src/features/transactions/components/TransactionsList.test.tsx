@@ -1,15 +1,25 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useTransactionsManager } from '@/features/transactions/hooks/useTransactionsManager';
 import { ACCOUNTS, LOAN_ACCOUNT, TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { Transaction } from '@/types.ts';
 
-import { TransactionsList } from './TransactionsList';
+let useTransactionsManager: typeof import('@/features/transactions/hooks/useTransactionsManager').useTransactionsManager;
+let TransactionsList: typeof import('./TransactionsList').TransactionsList;
 
-// 1. Mock du hook manager
-vi.mock('@/features/transactions/hooks/useTransactionsManager');
+beforeAll(async () => {
+  vi.doMock('@/features/transactions/hooks/useTransactionsManager');
+  vi.resetModules();
+  ({ useTransactionsManager } =
+    await import('@/features/transactions/hooks/useTransactionsManager'));
+  ({ TransactionsList } = await import('./TransactionsList'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@/features/transactions/hooks/useTransactionsManager');
+  vi.resetModules();
+});
 
 const mockLogoMap = { BNP: '/logos/bnp.png' };
 

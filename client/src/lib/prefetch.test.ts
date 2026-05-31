@@ -1,13 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestQueryClient } from '@/tests/helpers/renderWithProviders';
 
-import { prefetchAccountDetail, prefetchForRoute } from './prefetch';
-import { prefetchRouteChunk } from './routeChunks';
+let prefetchForRoute: typeof import('./prefetch').prefetchForRoute;
+let prefetchAccountDetail: typeof import('./prefetch').prefetchAccountDetail;
+let prefetchRouteChunk: typeof import('./routeChunks').prefetchRouteChunk;
 
-// On mocke le préchargement de chunk pour éviter de déclencher les vrais imports
-// dynamiques de pages pendant les tests, et pour pouvoir asserter les appels.
-vi.mock('./routeChunks', () => ({ prefetchRouteChunk: vi.fn() }));
+beforeAll(async () => {
+  // On mocke le préchargement de chunk pour éviter de déclencher les vrais imports
+  // dynamiques de pages pendant les tests, et pour pouvoir asserter les appels.
+  vi.doMock('./routeChunks', () => ({ prefetchRouteChunk: vi.fn() }));
+  vi.resetModules();
+  ({ prefetchForRoute, prefetchAccountDetail } = await import('./prefetch'));
+  ({ prefetchRouteChunk } = await import('./routeChunks'));
+});
+
+afterAll(() => {
+  vi.doUnmock('./routeChunks');
+  vi.resetModules();
+});
 
 function makeQc() {
   const qc = createTestQueryClient();
