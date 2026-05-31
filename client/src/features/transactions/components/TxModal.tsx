@@ -1,40 +1,32 @@
-import { type TFunction } from 'i18next';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
-import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { Button, ModalFrame } from '@/components/ui';
 import { ReimbursementsPanel } from '@/features/transactions/components/ReimbursementsPanel';
 import { ReimbursementStatusPicker } from '@/features/transactions/components/ReimbursementStatusPicker';
-import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
-import { type SplitInput, TxSplitEditor } from '@/features/transactions/components/TxSplitEditor';
+import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
+import { TxFormBody } from '@/features/transactions/components/TxFormBody';
+import { TxMetaFields } from '@/features/transactions/components/TxMetaFields';
+import { TxModalHeader } from '@/features/transactions/components/TxModalHeader';
+import { type SplitInput } from '@/features/transactions/components/TxSplitEditor';
 import { useScheduled } from '@/features/transactions/hooks/useScheduled';
+import {
+  buildToggleCore,
+  getModalTitle,
+  getSchedulingOptions,
+  getSubmitLabel,
+  initCore,
+  initSplits,
+  runSubmitEdit,
+  runSubmitTransfer,
+  runSubmitTx,
+  type TxFormState,
+} from '@/features/transactions/lib/txForm';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
-import type {
-  Account,
-  Category,
-  PaymentMethod,
-  ReimbursementStatus,
-  ScheduledTransaction,
-  Transaction,
-} from '@/types';
+import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
 
-export type TxFormState = {
-  type: 'income' | 'expense';
-  amount: string;
-  description: string;
-  subcategory_id: string;
-  account_id: string;
-  to_account_id: string;
-  date: string;
-  payment_method_id: string;
-  notes: string;
-  validated: boolean;
-  isVentilated: boolean;
-  splits: { subcategory_id: number; amount: number }[];
-  scheduled_id: number | null;
-};
+export type { TxFormState };
 
 type BaseProps = {
   accounts: Account[];
@@ -57,304 +49,6 @@ type EditProps = BaseProps & {
 };
 
 type Props = CreateProps | EditProps;
-
-function emptyCore(fixedAccountId?: number): TxCoreState {
-  return {
-    type: 'expense',
-    amount: '',
-    description: '',
-    category_id: '',
-    subcategory_id: '',
-    account_id: fixedAccountId == null ? '' : String(fixedAccountId),
-    to_account_id: '',
-    payment_method_id: '',
-  };
-}
-
-function getTransferAccounts(tx: Transaction): { from: string; to: string } {
-  const isExpense = tx.type === 'expense';
-  return {
-    from: String(isExpense ? tx.account_id : (tx.transfer_peer_account_id ?? tx.account_id)),
-    to: String(isExpense ? (tx.transfer_peer_account_id ?? '') : tx.account_id),
-  };
-}
-
-function initCore(
-  tx: Transaction | null,
-  duplicateFrom: Transaction | undefined,
-  fixedAccountId: number | undefined,
-): TxCoreState {
-  const source = tx ?? duplicateFrom;
-  if (!source) return emptyCore(fixedAccountId);
-
-  const isTransfer = source.transfer_peer_id !== null;
-  const isDuplicate = !tx && !!duplicateFrom;
-
-  let account_id = String(source.account_id);
-  let to_account_id = '';
-  if (isTransfer) {
-    const accounts = getTransferAccounts(source);
-    account_id = accounts.from;
-    to_account_id = accounts.to;
-  }
-
-  return {
-    type: isDuplicate && isTransfer ? 'expense' : source.type,
-    amount: source.amount.toFixed(2),
-    description: source.description,
-    category_id: source.category_id == null ? '' : String(source.category_id),
-    subcategory_id: source.subcategory_id == null ? '' : String(source.subcategory_id),
-    account_id:
-      fixedAccountId && !(isTransfer && tx !== null) ? String(fixedAccountId) : account_id,
-    to_account_id,
-    payment_method_id: String(source.payment_method_id),
-  };
-}
-
-function getTransferTabClass(isTransfer: boolean, noOtherAccounts: boolean): string {
-  if (isTransfer) return 'bg-stone-900 text-white';
-  if (noOtherAccounts) return 'bg-stone-50 text-stone-300 cursor-not-allowed';
-  return 'bg-stone-50 text-stone-400 hover:bg-stone-100';
-}
-
-interface HeaderProps {
-  isEdit: boolean;
-  isTransferEdit: boolean;
-  isTransfer: boolean;
-  noOtherAccounts: boolean;
-  onToggle: (toTransfer: boolean) => void;
-  t: TFunction<'transactions'>;
-}
-
-function TxModalHeader({
-  isEdit,
-  isTransferEdit,
-  isTransfer,
-  noOtherAccounts,
-  onToggle,
-  t,
-}: Readonly<HeaderProps>) {
-  if (isEdit) {
-    if (isTransferEdit) {
-      return <p className="text-[11px] text-stone-400 mb-4">{t('modal.transfer_edit_note')}</p>;
-    }
-    return <div className="mb-4" />;
-  }
-  return (
-    <div className="flex rounded-lg border border-black/13 overflow-hidden text-sm mb-4">
-      <button
-        type="button"
-        onClick={() => onToggle(false)}
-        className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-50 text-stone-400 hover:bg-stone-100' : 'bg-stone-900 text-white'}`}
-      >
-        {t('modal.tab_transaction')}
-      </button>
-      <button
-        type="button"
-        onClick={() => onToggle(true)}
-        disabled={noOtherAccounts}
-        className={`flex-1 py-2 font-medium transition-colors ${getTransferTabClass(isTransfer, noOtherAccounts)}`}
-      >
-        {t('modal.tab_transfer')}
-      </button>
-    </div>
-  );
-}
-
-// ─── Helpers extraits pour réduire la complexité cognitive de TxModal ─────────
-
-function findCategoryId(
-  categories: Pick<Category, 'id' | 'name' | 'subcategories'>[],
-  subcategoryId: number,
-): string {
-  const cat = categories.find((c) => c.subcategories.some((sub) => sub.id === subcategoryId));
-  return String(cat?.id ?? '');
-}
-
-function initSplits(
-  source: Transaction | null | undefined,
-  categories: Pick<Category, 'id' | 'name' | 'subcategories'>[],
-): SplitInput[] {
-  if (!source?.splits?.length) return [];
-  return source.splits.map((s) => ({
-    _key: String(s.subcategory_id),
-    category_id: findCategoryId(categories, s.subcategory_id),
-    subcategory_id: String(s.subcategory_id),
-    amount: s.amount.toFixed(2),
-  }));
-}
-
-function validateSplits(
-  rows: SplitInput[],
-  total: number,
-  t: TFunction<'transactions'>,
-): string | null {
-  if (rows.length === 0) return t('split_validation.err_no_rows');
-  for (const s of rows) {
-    if (!s.subcategory_id) return t('split_validation.err_no_subcat');
-    if ((Number.parseFloat(s.amount) || 0) <= 0) return t('split_validation.err_no_amount');
-  }
-  const sum = rows.reduce((acc, s) => acc + Number.parseFloat(s.amount), 0);
-  if (Math.abs(sum - total) > 0.01)
-    return t('split_validation.err_total', { sum: sum.toFixed(2), total: total.toFixed(2) });
-  return null;
-}
-
-function isEditFormIncomplete(
-  core: TxCoreState,
-  isTransferEdit: boolean,
-  isVentilated: boolean,
-): boolean {
-  if (!core.amount || !core.description) return true;
-  if (isTransferEdit) return !core.account_id || !core.to_account_id;
-  return !core.account_id || (!isVentilated && !core.subcategory_id) || !core.payment_method_id;
-}
-
-function isTxFormIncomplete(
-  core: TxCoreState,
-  fixedAccountId: number | undefined,
-  isVentilated: boolean,
-): boolean {
-  if (!core.amount || !core.description) return true;
-  if (!Number.parseInt(core.payment_method_id)) return true;
-  if (fixedAccountId == null && !core.account_id) return true;
-  return !isVentilated && !Number.parseInt(core.subcategory_id);
-}
-
-function buildSplitPayload(splits: SplitInput[]): { subcategory_id: number; amount: number }[] {
-  return splits.map((s) => ({
-    subcategory_id: Number.parseInt(s.subcategory_id),
-    amount: Number.parseFloat(s.amount),
-  }));
-}
-
-interface EditCtx {
-  isVentilated: boolean;
-  splits: SplitInput[];
-  core: TxCoreState;
-  isTransferEdit: boolean;
-  date: string;
-  notes: string;
-  validated: boolean;
-  scheduledId: number | null;
-  onSave: EditProps['onSave'];
-  t: TFunction<'transactions'>;
-}
-
-function runSubmitEdit(ctx: EditCtx): void {
-  if (ctx.isVentilated) {
-    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount), ctx.t);
-    if (err) {
-      showToast(err);
-      return;
-    }
-  }
-  if (isEditFormIncomplete(ctx.core, ctx.isTransferEdit, ctx.isVentilated)) {
-    showToast(ctx.t('modal.err_required'));
-    return;
-  }
-  ctx.onSave({
-    type: ctx.core.type,
-    amount: ctx.core.amount,
-    description: ctx.core.description,
-    subcategory_id: ctx.core.subcategory_id,
-    account_id: ctx.core.account_id,
-    to_account_id: ctx.core.to_account_id,
-    date: ctx.date,
-    payment_method_id: ctx.core.payment_method_id,
-    notes: ctx.notes,
-    validated: ctx.validated,
-    isVentilated: ctx.isVentilated,
-    splits: buildSplitPayload(ctx.splits),
-    scheduled_id: ctx.scheduledId,
-  });
-}
-
-interface TxCtx {
-  isVentilated: boolean;
-  splits: SplitInput[];
-  core: TxCoreState;
-  fixedAccountId: number | undefined;
-  date: string;
-  notes: string;
-  validated: boolean;
-  reimbursementStatus: ReimbursementStatus;
-  createTx: ReturnType<typeof useCreateTransaction>;
-  onClose: () => void;
-  t: TFunction<'transactions'>;
-}
-
-function runSubmitTx(ctx: TxCtx): void {
-  if (ctx.isVentilated) {
-    const err = validateSplits(ctx.splits, Number.parseFloat(ctx.core.amount), ctx.t);
-    if (err) {
-      showToast(err);
-      return;
-    }
-  }
-  if (isTxFormIncomplete(ctx.core, ctx.fixedAccountId, ctx.isVentilated)) {
-    showToast(ctx.t('modal.err_required'));
-    return;
-  }
-  ctx.createTx.mutate(
-    {
-      type: ctx.core.type,
-      amount: Number.parseFloat(ctx.core.amount),
-      description: ctx.core.description,
-      subcategory_id: ctx.isVentilated ? null : Number.parseInt(ctx.core.subcategory_id),
-      splits: ctx.isVentilated ? buildSplitPayload(ctx.splits) : undefined,
-      account_id: ctx.fixedAccountId ?? Number.parseInt(ctx.core.account_id),
-      date: ctx.date,
-      payment_method_id: Number.parseInt(ctx.core.payment_method_id),
-      reimbursement_status: ctx.core.type === 'expense' ? ctx.reimbursementStatus : null,
-      validated: ctx.validated,
-    },
-    {
-      onSuccess: () => {
-        showToast(ctx.t('modal.success_add'));
-        ctx.onClose();
-      },
-      onError: (err) => showToast(err.message),
-    },
-  );
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-type TTx = ReturnType<typeof useTranslation<'transactions'>>['t'];
-type TCommon = ReturnType<typeof useTranslation<'common'>>['t'];
-
-function getModalTitle(isEdit: boolean, isDuplicate: boolean, isTransfer: boolean, t: TTx): string {
-  if (isEdit) return t('modal.title_edit');
-  if (isDuplicate && isTransfer) return t('modal.title_duplicate_transfer');
-  if (isDuplicate) return t('modal.title_duplicate');
-  if (isTransfer) return t('modal.title_transfer');
-  return t('modal.title_new');
-}
-
-function getSubmitLabel(
-  isPending: boolean,
-  isEdit: boolean,
-  isTransferCreate: boolean,
-  t: TTx,
-  tc: TCommon,
-): string {
-  if (isPending) return tc('loading');
-  if (isEdit) return t('modal.submit_edit');
-  if (isTransferCreate) return t('modal.submit_transfer');
-  return t('modal.submit_add');
-}
-
-function getSchedulingOptions(
-  isEdit: boolean,
-  isTransferEdit: boolean,
-  scheduledList: ScheduledTransaction[] | undefined,
-): ScheduledTransaction[] {
-  if (!isEdit || isTransferEdit) return [];
-  return (scheduledList ?? []).filter((s) => s.active && s.to_account_id === null);
-}
-
-// ─── Composant principal ──────────────────────────────────────────────────────
 
 export function TxModal(props: Readonly<Props>) {
   const { t } = useTranslation('transactions');
@@ -395,60 +89,47 @@ export function TxModal(props: Readonly<Props>) {
     if (toTransfer) {
       setIsVentilated(false);
       setSplits([]);
-      const srcId = fixedAccountId ?? Number.parseInt(core.account_id);
-      const src = accounts.find((a) => a.id === srcId);
-      setCore((c) => ({
-        ...c,
-        subcategory_id: '',
-        payment_method_id: '',
-        to_account_id: '',
-        description: src ? `${src.name} →` : '',
-      }));
-    } else {
-      setCore((c) => ({ ...c, to_account_id: '', description: '' }));
     }
+    setCore((c) => buildToggleCore(c, toTransfer, accounts, fixedAccountId));
   };
 
-  const submitEdit = () =>
-    runSubmitEdit({
-      isVentilated,
-      splits,
-      core,
-      isTransferEdit,
-      date,
-      notes,
-      validated,
-      scheduledId,
-      onSave: (props as EditProps).onSave,
-      t,
-    });
+  const handleToggleVentilation = () => {
+    setIsVentilated((v) => !v);
+    setSplits([]);
+    setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
+  };
 
-  const submitTransfer = () => {
-    if (!core.amount || !core.to_account_id) {
-      showToast(t('modal.err_transfer_required'));
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    if (isEdit) {
+      runSubmitEdit({
+        isVentilated,
+        splits,
+        core,
+        isTransferEdit,
+        date,
+        notes,
+        validated,
+        scheduledId,
+        onSave: (props as EditProps).onSave,
+        t,
+      });
       return;
     }
-    createTransfer.mutate(
-      {
-        from_account_id: fixedAccountId ?? Number.parseInt(core.account_id),
-        to_account_id: Number.parseInt(core.to_account_id),
-        amount: Number.parseFloat(core.amount),
-        description: core.description || tc('transfer'),
+    if (isTransferCreate) {
+      runSubmitTransfer({
+        core,
+        fixedAccountId,
         date,
-        notes: notes || null,
+        notes,
         validated,
-      },
-      {
-        onSuccess: () => {
-          showToast(t('modal.success_transfer'));
-          onClose();
-        },
-        onError: (err) => showToast(err.message),
-      },
-    );
-  };
-
-  const submitTx = () =>
+        createTransfer,
+        onClose,
+        t,
+        tc,
+      });
+      return;
+    }
     runSubmitTx({
       isVentilated,
       splits,
@@ -462,18 +143,6 @@ export function TxModal(props: Readonly<Props>) {
       onClose,
       t,
     });
-
-  const handleSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (isEdit) {
-      submitEdit();
-      return;
-    }
-    if (isTransferCreate) {
-      submitTransfer();
-      return;
-    }
-    submitTx();
   };
 
   const createPending = createTx.isPending || createTransfer.isPending;
@@ -492,14 +161,14 @@ export function TxModal(props: Readonly<Props>) {
           isTransfer={isTransfer}
           noOtherAccounts={noOtherAccounts}
           onToggle={handleModeToggle}
-          t={t}
         />
         <p className="text-sm text-stone-400">{t('modal.no_other_account')}</p>
       </ModalFrame>
     );
   }
 
-  const schedulingOptions = getSchedulingOptions(isEdit, isTransferEdit, scheduledList);
+  const schedulingOptions =
+    isEdit && !isTransferEdit ? getSchedulingOptions(isEdit, isTransferEdit, scheduledList) : [];
 
   return (
     <ModalFrame
@@ -523,142 +192,36 @@ export function TxModal(props: Readonly<Props>) {
         isTransfer={isTransfer}
         noOtherAccounts={noOtherAccounts}
         onToggle={handleModeToggle}
-        t={t}
       />
 
       <form id="tx-modal-form" onSubmit={handleSubmit} className="space-y-3">
-        {isTransferEdit ? (
-          <div className="space-y-3">
-            <div className="flex gap-3 flex-wrap">
-              <FormGroup label={t('modal.amount')}>
-                <DecimalInput
-                  value={core.amount}
-                  onChange={(e) => setCore((c) => ({ ...c, amount: e.target.value }))}
-                  placeholder="0,00"
-                />
-              </FormGroup>
-              <FormGroup label={t('modal.description')}>
-                <Input
-                  type="text"
-                  value={core.description}
-                  onChange={(e) => setCore((c) => ({ ...c, description: e.target.value }))}
-                  placeholder={t('modal.description_placeholder_transfer')}
-                />
-              </FormGroup>
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              <FormGroup label={t('modal.source_account')}>
-                <AccountSelect
-                  id="source-account-select"
-                  value={core.account_id}
-                  onChange={(v) => setCore((c) => ({ ...c, account_id: v }))}
-                  accounts={accounts}
-                  logoMap={logoMap}
-                />
-              </FormGroup>
-              <FormGroup label={t('modal.dest_account')}>
-                <AccountSelect
-                  id="dest-account-select"
-                  value={core.to_account_id}
-                  onChange={(v) => setCore((c) => ({ ...c, to_account_id: v }))}
-                  accounts={accounts.filter((a) => String(a.id) !== core.account_id)}
-                  logoMap={logoMap}
-                  placeholder={tc('choose')}
-                />
-              </FormGroup>
-            </div>
-          </div>
-        ) : (
-          <>
-            <TxCoreFields
-              value={core}
-              onChange={(patch) => setCore((c) => ({ ...c, ...patch }))}
-              accounts={accounts}
-              logoMap={logoMap}
-              categories={categories}
-              paymentMethods={paymentMethods}
-              isTransfer={isTransferCreate}
-              fixedAccountId={fixedAccountId}
-              hideCategories={isVentilated}
-            />
-            {!isTransferCreate && (
-              <>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsVentilated((v) => !v);
-                      setSplits([]);
-                      setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
-                    }}
-                    className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
-                      isVentilated
-                        ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                        : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    {isVentilated ? t('modal.ventilated') : t('modal.ventilate')}
-                  </button>
-                </div>
-                {isVentilated && (
-                  <TxSplitEditor
-                    splits={splits}
-                    onChange={setSplits}
-                    categories={categories}
-                    totalAmount={Number.parseFloat(core.amount) || 0}
-                  />
-                )}
-              </>
-            )}
-          </>
-        )}
+        <TxFormBody
+          isTransferEdit={isTransferEdit}
+          isTransferCreate={isTransferCreate}
+          isVentilated={isVentilated}
+          onToggleVentilation={handleToggleVentilation}
+          splits={splits}
+          onSplitsChange={setSplits}
+          core={core}
+          onCorePatch={(patch) => setCore((c) => ({ ...c, ...patch }))}
+          accounts={accounts}
+          logoMap={logoMap}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          fixedAccountId={fixedAccountId}
+        />
 
-        <div className="flex gap-3 flex-wrap items-end">
-          <FormGroup label={tc('date')}>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </FormGroup>
-        </div>
-
-        <FormGroup label={t('modal.notes_label')}>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t('modal.notes_placeholder')}
-            rows={2}
-            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
-          />
-        </FormGroup>
-
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={validated}
-            onChange={(e) => setValidated(e.target.checked)}
-            className="w-4 h-4 accent-green-500"
-          />
-          <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
-        </label>
-
-        {isEdit && !isTransferEdit && schedulingOptions.length > 0 && (
-          <FormGroup label={t('modal.scheduling_label')} htmlFor="scheduled-select">
-            <select
-              id="scheduled-select"
-              value={scheduledId ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setScheduledId(val === '' ? null : Number.parseInt(val));
-              }}
-              className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
-            >
-              <option value="">{t('modal.no_scheduling')}</option>
-              {schedulingOptions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.description}
-                </option>
-              ))}
-            </select>
-          </FormGroup>
-        )}
+        <TxMetaFields
+          date={date}
+          onDateChange={setDate}
+          notes={notes}
+          onNotesChange={setNotes}
+          validated={validated}
+          onValidatedChange={setValidated}
+          schedulingOptions={schedulingOptions}
+          scheduledId={scheduledId}
+          onScheduledChange={setScheduledId}
+        />
 
         {isEdit && tx!.type === 'expense' && !isTransferEdit && <ReimbursementsPanel tx={tx!} />}
 
