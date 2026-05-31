@@ -21,9 +21,10 @@ import {
 
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return function Wrapper({ children }: { children: ReactNode }) {
+  function Wrapper({ children }: { children: ReactNode }) {
     return createElement(QueryClientProvider, { client: qc }, children);
-  };
+  }
+  return Object.assign(Wrapper, { qc });
 }
 
 describe('useTransactions', () => {
@@ -104,8 +105,14 @@ describe('useCreateTransaction', () => {
 });
 
 describe('useUpdateTransaction', () => {
-  it('met à jour une transaction et invalide le cache', async () => {
-    const { result } = renderHook(() => useUpdateTransaction(), { wrapper: createWrapper() });
+  it('met à jour une transaction et patche le cache', async () => {
+    const updated = { ...TRANSACTIONS.data[0], description: 'Modifié', amount: 30 };
+    server.use(http.put('/api/transactions/:id', () => HttpResponse.json(updated)));
+    const wrapper = createWrapper();
+    const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
+    await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
+
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
     act(() => {
       result.current.mutate({
         id: 10,
@@ -113,6 +120,28 @@ describe('useUpdateTransaction', () => {
         type: 'expense',
         amount: 30,
         description: 'Modifié',
+        subcategory_id: 1,
+        date: '2026-01-01',
+        payment_method_id: 1,
+        notes: null,
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
+    expect(cache?.data[0].description).toBe('Modifié');
+    expect(cache?.data[0].amount).toBe(30);
+  });
+
+  it('gère un cache vide (old undefined)', async () => {
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate({
+        id: 99,
+        account_id: 1,
+        type: 'expense',
+        amount: 30,
+        description: 'X',
         subcategory_id: 1,
         date: '2026-01-01',
         payment_method_id: 1,
@@ -215,7 +244,12 @@ describe('useDeleteTransfer', () => {
 });
 
 describe('useValidateTransaction', () => {
-  it('valide une transaction et met à jour le cache', async () => {
+  it('valide une transaction et patche le cache', async () => {
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({ ...TRANSACTIONS, data: [{ ...TRANSACTIONS.data[0], validated: 0 }] }),
+      ),
+    );
     const wrapper = createWrapper();
     const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
     await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
@@ -225,7 +259,8 @@ describe('useValidateTransaction', () => {
       result.current.mutate({ id: 10, validated: true });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(qResult.current.data?.data[0].validated).toBe(1);
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
+    expect(cache?.data[0].validated).toBe(1);
   });
 
   it('gère un cache vide (old undefined)', async () => {

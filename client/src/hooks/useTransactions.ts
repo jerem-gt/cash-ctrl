@@ -53,9 +53,12 @@ export function useUpdateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+    onSuccess: (updated) => {
+      qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
+        old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
+      );
       void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
   });
 }
