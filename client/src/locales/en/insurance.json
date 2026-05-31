@@ -32,7 +32,8 @@
     "op_social_fees": "soc. levies {{amount}}",
     "scheduled_title": "Scheduled transaction",
     "edit_label": "Edit",
-    "delete_label": "Delete"
+    "delete_label": "Delete",
+    "show_more": "Show more ({{count}})"
   },
   "versement_modal": {
     "title": "Deposit — {{support}}",
