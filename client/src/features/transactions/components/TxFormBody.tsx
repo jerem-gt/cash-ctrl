@@ -1,0 +1,88 @@
+import { useTranslation } from 'react-i18next';
+
+import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
+import { type SplitInput, TxSplitEditor } from '@/features/transactions/components/TxSplitEditor';
+import { TxTransferFields } from '@/features/transactions/components/TxTransferFields';
+import type { Account, Category, PaymentMethod } from '@/types';
+
+interface Props {
+  isTransferEdit: boolean;
+  isTransferCreate: boolean;
+  isVentilated: boolean;
+  onToggleVentilation: () => void;
+  splits: SplitInput[];
+  onSplitsChange: (s: SplitInput[]) => void;
+  core: TxCoreState;
+  onCorePatch: (patch: Partial<TxCoreState>) => void;
+  accounts: Account[];
+  logoMap: Record<string, string | null>;
+  categories: Pick<Category, 'id' | 'name' | 'subcategories'>[];
+  paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
+  fixedAccountId: number | undefined;
+}
+
+export function TxFormBody({
+  isTransferEdit,
+  isTransferCreate,
+  isVentilated,
+  onToggleVentilation,
+  splits,
+  onSplitsChange,
+  core,
+  onCorePatch,
+  accounts,
+  logoMap,
+  categories,
+  paymentMethods,
+  fixedAccountId,
+}: Readonly<Props>) {
+  const { t } = useTranslation('transactions');
+
+  if (isTransferEdit) {
+    return (
+      <TxTransferFields core={core} onPatch={onCorePatch} accounts={accounts} logoMap={logoMap} />
+    );
+  }
+
+  const ventilateLabel = isVentilated ? t('modal.ventilated') : t('modal.ventilate');
+  const ventilateClass = isVentilated
+    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+    : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50';
+
+  return (
+    <>
+      <TxCoreFields
+        value={core}
+        onChange={onCorePatch}
+        accounts={accounts}
+        logoMap={logoMap}
+        categories={categories}
+        paymentMethods={paymentMethods}
+        isTransfer={isTransferCreate}
+        fixedAccountId={fixedAccountId}
+        hideCategories={isVentilated}
+      />
+      {!isTransferCreate && (
+        <>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onToggleVentilation}
+              className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${ventilateClass}`}
+            >
+              {ventilateLabel}
+            </button>
+          </div>
+          {isVentilated && (
+            <TxSplitEditor
+              splits={splits}
+              onChange={onSplitsChange}
+              categories={categories}
+              totalAmount={Number.parseFloat(core.amount) || 0}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+}
