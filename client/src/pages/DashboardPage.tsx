@@ -2,11 +2,14 @@ import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
+import { DashboardSkeleton } from '@/features/dashboard/components/DashboardSkeleton';
+import { PatrimonyCard } from '@/features/dashboard/components/PatrimonyCard';
+import { ProfitabilityTable } from '@/features/dashboard/components/ProfitabilityTable';
+import { ReimbursementsCard } from '@/features/dashboard/components/ReimbursementsCard';
 import { TxItem } from '@/features/transactions/components/TxItem';
 import {
   usePendingReimbursements,
   useRecentReimbursements,
-  useSetReimbursementStatus,
 } from '@/features/transactions/hooks/useReimbursements';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
@@ -14,60 +17,14 @@ import { useLogoMap } from '@/hooks/useLogoMap';
 import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/useStats';
 import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors.ts';
-import { fmt, fmtDate, fmtDec, monthLabel } from '@/lib/format';
+import { fmt, monthLabel } from '@/lib/format';
 
 // Graphiques recharts chargés à la demande : ils représentent l'essentiel du
 // poids JS de la page mais ne sont pas nécessaires au premier rendu (KPI, listes).
 const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
-const PatrimonyBarChart = lazy(() => import('@/components/charts/PatrimonyBarChart'));
-
-const PATRIMONY_LABEL_KEYS = {
-  prets: 'patrimony_categories.prets',
-  liquidites: 'patrimony_categories.liquidites',
-  epargne: 'patrimony_categories.epargne',
-  fonds_euros: 'patrimony_categories.fonds_euros',
-  actions_uc: 'patrimony_categories.actions_uc',
-} as const;
 
 const NOW = Date.now();
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5">
-      <div className="space-y-1.5">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[0, 1, 2, 3].map((i) => (
-          <Card key={i} size="sm">
-            <Skeleton className="h-3 w-20 mb-3" />
-            <Skeleton className="h-7 w-28" />
-          </Card>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-        <Card className="md:col-span-2">
-          <Skeleton className="h-3 w-32 mb-4" />
-          <Skeleton className="h-44" />
-        </Card>
-        <Card className="md:col-span-3">
-          <Skeleton className="h-3 w-40 mb-4" />
-          <Skeleton className="h-44" />
-        </Card>
-      </div>
-      <Card>
-        <Skeleton className="h-3 w-48 mb-4" />
-        <div className="space-y-3">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-11" />
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const { t } = useTranslation('dashboard');
@@ -114,22 +71,13 @@ export default function DashboardPage() {
 
   const { data: pendingReimbursements = [] } = usePendingReimbursements();
   const { data: recentReimbursements = [] } = useRecentReimbursements();
-  const setReimbursementStatus = useSetReimbursementStatus();
 
   const txItemProps = { accounts, logoMap };
 
   if (statsLoading) return <DashboardSkeleton />;
 
-  const balanceTypes = balanceHistory?.account_types ?? [];
-  const balanceNegativeTypes = new Set(
-    balanceTypes.filter((t) => (balanceHistory?.data ?? []).some((d) => Number(d[t] ?? 0) < 0)),
-  );
-  const balanceLastPositiveType = balanceTypes.findLast((t) => !balanceNegativeTypes.has(t));
-  const balanceDataWithTotal = (balanceHistory?.data ?? []).map((d) => ({
-    ...d,
-    _total: balanceTypes.reduce((s, t) => s + Number(d[t] ?? 0), 0),
-  }));
-  const balanceHasLoans = (balanceHistory?.data ?? []).some((d) => Number(d['prets'] ?? 0) < 0);
+  const hasReimbursements = pendingReimbursements.length > 0 || recentReimbursements.length > 0;
+  const hasPatrimony = balanceHistory && balanceHistory.data.length > 0;
 
   return (
     <div className="space-y-5">
@@ -232,123 +180,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Remboursements */}
-      {(pendingReimbursements.length > 0 || recentReimbursements.length > 0) && (
-        <Card>
-          <CardTitle>{t('reimbursements_title')}</CardTitle>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-120 text-xs">
-              <thead>
-                <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
-                  <th className="text-left pb-2 font-medium">{t('reimb_col_description')}</th>
-                  <th className="text-left pb-2 font-medium hidden sm:table-cell">
-                    {t('reimb_col_date')}
-                  </th>
-                  <th className="text-right pb-2 font-medium">{t('reimb_col_expense')}</th>
-                  <th className="text-right pb-2 font-medium hidden sm:table-cell">
-                    {t('reimb_col_reimbursed')}
-                  </th>
-                  <th className="text-right pb-2 font-medium">{t('reimb_col_remaining')}</th>
-                  <th className="pb-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/4">
-                {pendingReimbursements.length > 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-amber-500"
-                    >
-                      {t('reimb_pending_section')}
-                    </td>
-                  </tr>
-                )}
-                {pendingReimbursements.map((item) => {
-                  const remaining = item.amount - item.total_reimbursed;
-                  return (
-                    <tr key={item.id} className="group">
-                      <td className="py-2 pr-3">
-                        <p className="font-medium text-stone-700 truncate max-w-40">
-                          {item.description}
-                        </p>
-                        <p className="text-stone-400 text-[10px]">
-                          {item.subcategory || item.category} · {item.account_name}
-                        </p>
-                      </td>
-                      <td className="py-2 pr-3 text-stone-500 hidden sm:table-cell whitespace-nowrap">
-                        {fmtDate(item.date)}
-                      </td>
-                      <td className="py-2 pr-3 text-right text-red-700 tabular-nums font-medium whitespace-nowrap">
-                        −{fmtDec(item.amount)}
-                      </td>
-                      <td className="py-2 pr-3 text-right text-green-700 tabular-nums hidden sm:table-cell whitespace-nowrap">
-                        {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
-                        <span className={remaining > 0 ? 'text-red-700' : 'text-green-700'}>
-                          {fmtDec(Math.max(0, remaining))}
-                        </span>
-                      </td>
-                      <td className="py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setReimbursementStatus.mutate({ id: item.id, status: 'rembourse' })
-                          }
-                          disabled={setReimbursementStatus.isPending}
-                          title={t('reimb_mark_done_title')}
-                          className="text-stone-300 hover:text-green-500 transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
-                        >
-                          ✓
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {recentReimbursements.length > 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-green-600"
-                    >
-                      {t('reimb_done_section')}
-                    </td>
-                  </tr>
-                )}
-                {recentReimbursements.map((item) => {
-                  const remaining = item.amount - item.total_reimbursed;
-                  return (
-                    <tr key={item.id} className="opacity-60">
-                      <td className="py-2 pr-3">
-                        <p className="font-medium text-stone-700 truncate max-w-40">
-                          {item.description}
-                        </p>
-                        <p className="text-stone-400 text-[10px]">
-                          {item.subcategory || item.category} · {item.account_name}
-                        </p>
-                      </td>
-                      <td className="py-2 pr-3 text-stone-500 hidden sm:table-cell whitespace-nowrap">
-                        {fmtDate(item.date)}
-                      </td>
-                      <td className="py-2 pr-3 text-right text-stone-500 tabular-nums whitespace-nowrap">
-                        −{fmtDec(item.amount)}
-                      </td>
-                      <td className="py-2 pr-3 text-right text-green-700 tabular-nums hidden sm:table-cell whitespace-nowrap">
-                        {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
-                        <span className={remaining > 0 ? 'text-red-700' : 'text-green-700'}>
-                          {fmtDec(Math.max(0, remaining))}
-                        </span>
-                      </td>
-                      <td />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+      {hasReimbursements && (
+        <ReimbursementsCard pending={pendingReimbursements} recent={recentReimbursements} />
       )}
 
       {/* Dernières transactions */}
@@ -365,110 +198,9 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {/* Patrimoine par catégorie */}
-      {balanceHistory && balanceHistory.data.length > 0 && (
-        <Card>
-          <CardTitle>{t('patrimony_title')}</CardTitle>
-          <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
-            {balanceTypes.map((type, i) => (
-              <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
-                <div
-                  className="w-2 h-2 rounded-sm shrink-0"
-                  style={{ background: generateColor(i) }}
-                />
-                {t(PATRIMONY_LABEL_KEYS[type as keyof typeof PATRIMONY_LABEL_KEYS])}
-              </div>
-            ))}
-          </div>
-          <Suspense fallback={<Skeleton className="h-60" />}>
-            <PatrimonyBarChart
-              data={balanceDataWithTotal}
-              types={balanceTypes}
-              negativeTypes={balanceNegativeTypes}
-              lastPositiveType={balanceLastPositiveType}
-              hasLoans={balanceHasLoans}
-              labelFor={(type) =>
-                t(PATRIMONY_LABEL_KEYS[type as keyof typeof PATRIMONY_LABEL_KEYS])
-              }
-            />
-          </Suspense>
-        </Card>
-      )}
+      {hasPatrimony && <PatrimonyCard history={balanceHistory} />}
 
-      {/* Rendement de mes placements */}
-      {profitabilityList.length > 0 && (
-        <Card>
-          <CardTitle>{t('profitability_title')}</CardTitle>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-stone-400 border-b border-stone-100">
-                  <th className="text-left py-1.5 pr-4 font-normal">{t('prof_col_account')}</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_capital')}</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_value')}</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_gain')}</th>
-                  <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_annual')}</th>
-                  <th className="text-right py-1.5 font-normal">{t('prof_col_seniority')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {profitabilityList.map((p) => {
-                  const gainPos = p.plus_value_absolue >= 0;
-                  const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
-                  let annualizedLabel: string;
-                  if (p.rendement_annualise_pct === null) {
-                    annualizedLabel = '—';
-                  } else {
-                    const sign = p.rendement_annualise_pct >= 0 ? '+' : '';
-                    annualizedLabel = `${sign}${p.rendement_annualise_pct.toFixed(1)} %`;
-                  }
-                  const msPerMonth = 30.44 * 24 * 3600 * 1000;
-                  const totalMonths = Math.floor(
-                    (NOW - new Date(p.opening_date).getTime()) / msPerMonth,
-                  );
-                  const years = Math.floor(totalMonths / 12);
-                  const months = totalMonths % 12;
-                  let durationLabel: string;
-                  if (years === 0) {
-                    durationLabel = t('duration_months', { months });
-                  } else if (months === 0) {
-                    durationLabel =
-                      years > 1
-                        ? t('duration_years_plural', { years })
-                        : t('duration_years', { years });
-                  } else {
-                    durationLabel =
-                      years > 1
-                        ? t('duration_years_months_plural', { years, months })
-                        : t('duration_years_months', { years, months });
-                  }
-                  return (
-                    <tr key={p.account_id} className="border-b border-stone-50 last:border-0">
-                      <td className="py-1.5 pr-4 font-medium">{p.account_name}</td>
-                      <td className="text-right py-1.5 pr-4 tabular-nums text-stone-500">
-                        {fmt(p.capital_investi)}
-                      </td>
-                      <td className="text-right py-1.5 pr-4 tabular-nums">
-                        {fmt(p.valeur_actuelle)}
-                      </td>
-                      <td className={`text-right py-1.5 pr-4 tabular-nums ${gainColor}`}>
-                        {gainPos ? '+' : ''}
-                        {fmt(p.plus_value_absolue)}
-                      </td>
-                      <td className={`text-right py-1.5 pr-4 tabular-nums ${gainColor}`}>
-                        {annualizedLabel}
-                      </td>
-                      <td className="text-right py-1.5 tabular-nums text-stone-400">
-                        {durationLabel}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {profitabilityList.length > 0 && <ProfitabilityTable list={profitabilityList} now={NOW} />}
     </div>
   );
 }
