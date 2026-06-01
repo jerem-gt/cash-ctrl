@@ -56,7 +56,16 @@
     "amount_max_label": "Maximum amount",
     "payment_method_label": "Choose a payment method",
     "all_payment_methods": "All payment methods",
-    "not_validated_only": "Unvalidated only"
+    "not_validated_only": "Unvalidated only",
+    "field_account": "Account",
+    "field_category": "Category",
+    "field_subcategory": "Subcategory",
+    "field_payment_method": "Payment method",
+    "field_period": "Period",
+    "field_amount": "Amount (€)",
+    "amount_min_ph": "Min",
+    "amount_max_ph": "Max",
+    "reset": "Reset"
   },
   "list": {
     "count": "{{count}} transaction(s)",
