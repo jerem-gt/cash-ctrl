@@ -5,19 +5,23 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'DM Sans', 'sans-serif'],
+        display: ['Manrope Variable', 'Manrope', 'sans-serif'],
       },
       colors: {
+        canvas: '#EAEEF2',
         brand: {
-          50: '#eaf2e2',
-          100: '#d0e6b8',
-          400: '#7DBB4A',
-          600: '#5A8A2A',
-          800: '#2C4F0E',
+          50: '#ECFDFE',
+          100: '#CBF3F7',
+          400: '#2CC5DD',
+          500: '#139AAE',
+          600: '#0D8896',
+          700: '#0B6B7A',
+          800: '#11555F',
         },
         sidebar: {
-          bg: '#141210',
+          bg: '#102E3A',
           fg: '#F4F1EB',
-          accent: '#8BBF5A',
+          accent: '#2CC5DD',
         },
       },
     },

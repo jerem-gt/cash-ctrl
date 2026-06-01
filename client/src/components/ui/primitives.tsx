@@ -44,7 +44,7 @@ export function Button({
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm' };
   const variants = {
     default: 'bg-white border border-black/[0.13] text-stone-800 hover:bg-stone-50',
-    primary: 'bg-stone-900 text-white border border-transparent hover:bg-stone-700',
+    primary: 'bg-brand-600 text-white border border-transparent hover:bg-brand-700',
     danger: 'bg-white border border-red-200 text-red-700 hover:bg-red-50',
     export: 'bg-green-50 border border-transparent text-green-800 hover:bg-green-100',
   };
@@ -89,7 +89,7 @@ export function Input({
 }: Readonly<InputHTMLAttributes<HTMLInputElement>>) {
   return (
     <input
-      className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       {...props}
     />
   );
@@ -127,7 +127,7 @@ export function Select({
 }: Readonly<SelectHTMLAttributes<HTMLSelectElement>>) {
   return (
     <select
-      className={`w-full h-9 px-3 py-2 text-sm text-stone-700 bg-white border border-stone-200 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all ${className}`}
+      className={`w-full h-9 px-3 py-2 text-sm text-stone-700 bg-white border border-stone-200 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all ${className}`}
       {...props}
     />
   );

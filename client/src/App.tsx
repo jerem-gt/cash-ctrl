@@ -46,7 +46,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   override render(): React.ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen bg-stone-100">
+        <div className="flex items-center justify-center min-h-screen bg-canvas">
           <button
             className="text-sm text-stone-500 underline"
             onClick={() => globalThis.location.reload()}
@@ -83,7 +83,7 @@ function AppShell() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-stone-100 flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <p className="text-sm text-stone-400">{tc('loading_text')}</p>
       </div>
     );
@@ -94,7 +94,7 @@ function AppShell() {
   if (me.isAdmin) return <AdminPage username={me.username} />;
 
   return (
-    <div className="flex min-h-screen bg-stone-100 overflow-x-hidden">
+    <div className="flex min-h-screen bg-canvas overflow-x-hidden">
       <ScrollToTop />
       <Sidebar username={me.username} mobileOpen={sidebarOpen} onMobileClose={closeSidebar} />
       <main className="md:ml-72 flex-1 min-w-0 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">

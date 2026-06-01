@@ -22,7 +22,7 @@ export function ReimbursementStatusPicker({ status, onChange }: Readonly<ReimbSt
           className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
             status === null
               ? 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
-              : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
+              : 'bg-brand-50 text-brand-700 hover:bg-brand-100'
           }`}
         >
           {status === null ? t('reimbursement_status.activate') : t('reimbursement_status.active')}

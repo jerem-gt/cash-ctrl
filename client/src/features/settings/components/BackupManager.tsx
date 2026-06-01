@@ -130,7 +130,7 @@ export function BackupManager() {
                 setForm((f) => ({ ...current, ...f, backup_enabled: !current.backup_enabled }))
               }
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                current.backup_enabled ? 'bg-black' : 'bg-stone-200'
+                current.backup_enabled ? 'bg-brand-600' : 'bg-stone-200'
               }`}
             >
               <span

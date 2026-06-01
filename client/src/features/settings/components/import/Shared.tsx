@@ -80,7 +80,7 @@ export function ParsedFileStats({ pf }: Readonly<{ pf: ParsedFile }>) {
 // ─── StepIndicator ────────────────────────────────────────────────────────────
 
 const CONTAINER_STYLES = {
-  active: 'bg-stone-900 text-white',
+  active: 'bg-brand-600 text-white',
   completed: 'text-stone-400',
   upcoming: 'text-stone-300',
 } as const;

@@ -23,7 +23,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
         type="button"
         aria-label={t('bank_select.aria_label')}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all text-left"
       >
         {selected ? (
           <>

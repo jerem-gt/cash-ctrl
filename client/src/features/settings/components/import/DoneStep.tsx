@@ -20,15 +20,15 @@ export function DoneStep({ qifResult, jsonStats, onReset }: Readonly<DoneStepPro
     <Card>
       <div className="text-center py-8">
         <div className="text-5xl mb-4">✓</div>
-        <h2 className="font-sans text-2xl text-stone-800 mb-2">{t('import.done_title')}</h2>
+        <h2 className="font-display text-2xl text-stone-800 mb-2">{t('import.done_title')}</h2>
         {qifResult && (
           <div className="flex justify-center gap-8 mt-6 mb-8">
             <div>
-              <p className="text-3xl font-sans text-stone-800">{qifResult.transactions}</p>
+              <p className="text-3xl font-display text-stone-800">{qifResult.transactions}</p>
               <p className="text-xs text-stone-400 mt-1">{t('import.imported_transactions')}</p>
             </div>
             <div>
-              <p className="text-3xl font-sans text-stone-800">{qifResult.transfers}</p>
+              <p className="text-3xl font-display text-stone-800">{qifResult.transfers}</p>
               <p className="text-xs text-stone-400 mt-1">{t('import.imported_transfers')}</p>
             </div>
           </div>
@@ -37,7 +37,7 @@ export function DoneStep({ qifResult, jsonStats, onReset }: Readonly<DoneStepPro
           <div className="flex justify-center flex-wrap gap-6 mt-6 mb-8">
             {jsonStats.map(({ value, label }) => (
               <div key={label}>
-                <p className="text-3xl font-sans text-stone-800">{value}</p>
+                <p className="text-3xl font-display text-stone-800">{value}</p>
                 <p className="text-xs text-stone-400 mt-1">{label}</p>
               </div>
             ))}

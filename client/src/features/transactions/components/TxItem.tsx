@@ -38,7 +38,7 @@ function getTxIcons(
 function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['type']) {
   const stateClass =
     isFuture && !validated
-      ? 'bg-indigo-50/60 border-indigo-100 hover:border-indigo-200'
+      ? 'bg-indigo-50 border-indigo-200 hover:border-indigo-300'
       : 'bg-white border-black/[0.07] hover:border-black/[0.13]';
   const rowClass = validated ? 'bg-white border-green-200 hover:border-green-300' : stateClass;
   const typeColor = type === 'income' ? 'text-green-800' : 'text-red-700';

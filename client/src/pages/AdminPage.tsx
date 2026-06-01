@@ -148,7 +148,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <header className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-stone-400" />

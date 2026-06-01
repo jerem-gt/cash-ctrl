@@ -167,7 +167,7 @@ export default function ScheduledPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-sans text-2xl tracking-tight">{t('page.title')}</h2>
+        <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
         <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
       </div>
 
