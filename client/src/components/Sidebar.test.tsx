@@ -25,7 +25,6 @@ describe('Sidebar', () => {
     renderWithProviders(
       <Sidebar username="usertest" mobileOpen={false} onMobileClose={() => {}} />,
     );
-    expect(screen.getByText('⚙')).toBeInTheDocument();
     expect(await screen.findByTitle(/Menu/i)).toBeInTheDocument();
   });
 

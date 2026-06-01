@@ -1,4 +1,4 @@
-import { Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
+import { Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -138,6 +138,201 @@ function TxMobileMenu({
   );
 }
 
+function TxItemBody({
+  tx,
+  validated,
+  isScheduled,
+  isFuture,
+  isTransfer,
+  accounts,
+  logoMap,
+  logo,
+  pmIcon,
+}: Readonly<
+  Pick<Props, 'tx' | 'accounts' | 'logoMap'> & {
+    validated: boolean;
+    isScheduled: boolean;
+    isFuture: boolean;
+    isTransfer: boolean;
+    logo: string | null;
+    pmIcon: string;
+  }
+>) {
+  const { t } = useTranslation('transactions');
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-0.5">
+        {isScheduled && (
+          <span
+            className="text-[12px] text-indigo-400 shrink-0"
+            title={t('tx_item.scheduled_title')}
+          >
+            ↻
+          </span>
+        )}
+        {tx.notes && (
+          <span title={tx.notes}>
+            <StickyNote size={11} className="text-amber-400 shrink-0" />
+          </span>
+        )}
+        <p
+          className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
+        >
+          {tx.description}
+        </p>
+        <TxBadges
+          tx={tx}
+          validated={validated}
+          isScheduled={isScheduled}
+          isFuture={isFuture}
+          isTransfer={isTransfer}
+        />
+      </div>
+
+      <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} pmIcon={pmIcon} />
+    </div>
+  );
+}
+
+function TxBadges({
+  tx,
+  validated,
+  isScheduled,
+  isFuture,
+  isTransfer,
+}: Readonly<
+  Pick<Props, 'tx'> & {
+    validated: boolean;
+    isScheduled: boolean;
+    isFuture: boolean;
+    isTransfer: boolean;
+  }
+>) {
+  const { t } = useTranslation('transactions');
+  return (
+    <div className="flex gap-1 shrink-0">
+      {isFuture && !validated && (
+        <Badge variant="indigo">
+          {isScheduled ? t('tx_item.upcoming_scheduled') : t('tx_item.upcoming')}
+        </Badge>
+      )}
+      {isTransfer && <Badge variant="blue">↔</Badge>}
+      {tx.reimbursement_status === 'en_attente' && (
+        <Badge variant="amber">{t('tx_item.pending')}</Badge>
+      )}
+      {tx.reimbursement_status === 'rembourse' && (
+        <Badge variant="green">{t('tx_item.reimbursed')}</Badge>
+      )}
+    </div>
+  );
+}
+
+function TxMeta({
+  tx,
+  accounts,
+  logoMap,
+  logo,
+  pmIcon,
+}: Readonly<Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null; pmIcon: string }>) {
+  const { t } = useTranslation('transactions');
+  return (
+    <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
+      <span className="truncate text-stone-500 font-medium">
+        {tx.splits?.length ? t('tx_item.ventilated', { count: tx.splits.length }) : tx.subcategory}
+      </span>
+      {accounts && logoMap && (
+        <>
+          <span className="opacity-30">·</span>
+          <AccountBadge name={tx.account_name ?? ''} logo={logo} />
+        </>
+      )}
+      {tx.payment_method && (
+        <>
+          <span className="opacity-30">·</span>
+          <span className="inline-flex items-center translate-y-[0.5px] text-[13px] leading-none">
+            {pmIcon}
+          </span>
+        </>
+      )}
+    </p>
+  );
+}
+
+function TxItemTrailing({
+  tx,
+  amountColor,
+  validated,
+  runningBalance,
+  readOnly,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: Readonly<
+  Pick<Props, 'tx' | 'runningBalance' | 'onEdit' | 'onDuplicate' | 'onDelete'> & {
+    amountColor: string;
+    validated: boolean;
+    readOnly: boolean;
+  }
+>) {
+  const { t } = useTranslation('transactions');
+  const editCb = onEdit ? () => onEdit(tx) : undefined;
+  const dupCb = onDuplicate ? () => onDuplicate(tx) : undefined;
+  const delCb = onDelete ? () => onDelete(tx) : undefined;
+  const sign = tx.type === 'income' ? '+' : '−';
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      {/* Contrôles placés AVANT le montant : les actions desktop (cachées au
+          repos) occupent un espace qui se fond dans le blanc de la description,
+          au lieu de laisser un trou en bout de ligne. Le montant reste épinglé
+          à droite et ne bouge donc jamais au survol. */}
+      <div className="flex items-center gap-0">
+        <div className="hidden sm:flex sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
+          <ItemActions onEdit={editCb} onDuplicate={dupCb} onDelete={delCb} />
+        </div>
+        {!readOnly && (
+          <TxMobileMenu tx={tx} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
+        )}
+        {!readOnly && <ValidateButton tx={tx} validated={validated} />}
+      </div>
+
+      <div className="text-right min-w-18.75 border-l border-stone-100 pl-2 sm:pl-3">
+        <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
+          {sign}
+          {fmtDec(tx.amount)}
+        </div>
+        {runningBalance != null && (
+          <div
+            className="text-[10px] text-stone-400 tabular-nums leading-tight"
+            title={t('tx_item.running_balance_title')}
+          >
+            {fmtDec(runningBalance)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ValidateButton({ tx, validated }: Readonly<Pick<Props, 'tx'> & { validated: boolean }>) {
+  const { t } = useTranslation('transactions');
+  const validate = useValidateTransaction();
+  const colorClass = validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100';
+  return (
+    <button
+      onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
+      disabled={validate.isPending}
+      className={`p-1.5 rounded-md transition-colors ${colorClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+      title={validated ? t('tx_item.unvalidate_title') : t('tx_item.validate_title')}
+    >
+      {validate.isPending ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <Check size={15} strokeWidth={2.5} />
+      )}
+    </button>
+  );
+}
+
 function TxItemBase({
   tx,
   accounts,
@@ -148,14 +343,12 @@ function TxItemBase({
   onDuplicate,
   onDelete,
 }: Readonly<Props>) {
-  const { t } = useTranslation('transactions');
   const isTransfer = tx.transfer_peer_id !== null;
   const isScheduled = tx.scheduled_id !== null;
   const isFuture = tx.date > today();
   const validated = !!tx.validated;
   const account = accounts?.find((a) => a.id === tx.account_id);
   const logo = account?.bank ? (logoMap?.[account.bank] ?? null) : null;
-  const validate = useValidateTransaction();
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: categories = [] } = useCategories();
 
@@ -165,114 +358,34 @@ function TxItemBase({
   return (
     <div
       title={tx.notes || undefined}
-      className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
+      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
     >
       <TxDateBlock date={tx.date} />
 
       <span className="text-base leading-none shrink-0 w-5 text-center">{catIcon}</span>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          {isScheduled && (
-            <span
-              className="text-[12px] text-indigo-400 shrink-0"
-              title={t('tx_item.scheduled_title')}
-            >
-              ↻
-            </span>
-          )}
-          {tx.notes && (
-            <span title={tx.notes}>
-              <StickyNote size={11} className="text-amber-400 shrink-0" />
-            </span>
-          )}
-          <p
-            className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
-          >
-            {tx.description}
-          </p>
-          <div className="flex gap-1 shrink-0">
-            {isFuture && !validated && (
-              <Badge variant="indigo">
-                {isScheduled ? t('tx_item.upcoming_scheduled') : t('tx_item.upcoming')}
-              </Badge>
-            )}
-            {isTransfer && <Badge variant="blue">↔</Badge>}
-            {tx.reimbursement_status === 'en_attente' && (
-              <Badge variant="amber">{t('tx_item.pending')}</Badge>
-            )}
-            {tx.reimbursement_status === 'rembourse' && (
-              <Badge variant="green">{t('tx_item.reimbursed')}</Badge>
-            )}
-          </div>
-        </div>
+      <TxItemBody
+        tx={tx}
+        validated={validated}
+        isScheduled={isScheduled}
+        isFuture={isFuture}
+        isTransfer={isTransfer}
+        accounts={accounts}
+        logoMap={logoMap}
+        logo={logo}
+        pmIcon={pmIcon}
+      />
 
-        <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
-          <span className="truncate text-stone-500 font-medium">
-            {tx.splits?.length
-              ? t('tx_item.ventilated', { count: tx.splits.length })
-              : tx.subcategory}
-          </span>
-          {accounts && logoMap && (
-            <>
-              <span className="opacity-30">·</span>
-              <AccountBadge name={tx.account_name ?? ''} logo={logo} />
-            </>
-          )}
-          {tx.payment_method && (
-            <>
-              <span className="opacity-30">·</span>
-              <span className="inline-flex items-center translate-y-[0.5px] text-[13px] leading-none">
-                {pmIcon}
-              </span>
-            </>
-          )}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        <div className="text-right min-w-18.75">
-          <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
-            {tx.type === 'income' ? '+' : '−'}
-            {fmtDec(tx.amount)}
-          </div>
-          {runningBalance != null && (
-            <div
-              className="text-[10px] text-stone-400 tabular-nums leading-tight"
-              title={t('tx_item.running_balance_title')}
-            >
-              {fmtDec(runningBalance)}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-0 border-l border-stone-100 pl-2">
-          {!readOnly && (
-            <button
-              onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
-              disabled={validate.isPending}
-              className={`p-1.5 rounded-md transition-colors ${validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100'} disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={validated ? t('tx_item.unvalidate_title') : t('tx_item.validate_title')}
-            >
-              {validate.isPending ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <span className="block scale-110">✓</span>
-              )}
-            </button>
-          )}
-          {!readOnly && (
-            <TxMobileMenu tx={tx} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
-          )}
-          <div className="hidden sm:flex">
-            <ItemActions
-              onEdit={onEdit ? () => onEdit(tx) : undefined}
-              onDuplicate={onDuplicate ? () => onDuplicate(tx) : undefined}
-              onDelete={onDelete ? () => onDelete(tx) : undefined}
-            />
-          </div>
-        </div>
-      </div>
+      <TxItemTrailing
+        tx={tx}
+        amountColor={amountColor}
+        validated={validated}
+        runningBalance={runningBalance}
+        readOnly={readOnly}
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+      />
     </div>
   );
 }
