@@ -23,6 +23,30 @@ services:
     networks:
       mynet:
         ipv4_address: 172.18.0.2
+  cashctrl-dev:
+    image: ghcr.io/jerem-gt/cash-ctrl:dev
+    user: "${PUID}:${PGID}"
+    container_name: cash-ctrl-dev
+    labels:
+      # Pour watchtower-fast
+      - "com.centurylinklabs.watchtower.scope=app-fast"
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    volumes:
+      - /volume1/data/cash-ctrl-dev:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATA_DIR=/data
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECURE_COOKIE=true
+      - LOG_LEVEL=INFO
+    networks:
+      mynet:
+        ipv4_address: 172.18.0.3
 networks:
   mynet:
     driver: bridge
