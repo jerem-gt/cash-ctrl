@@ -80,12 +80,12 @@ describe('AccountsPage', () => {
     expect(await screen.findByText(/aucun compte pour l'instant/i)).toBeInTheDocument();
   });
 
-  it(`ouvre le modal de création lors du clic sur "Compte"`, async () => {
+  it(`ouvre le modal de création via le menu « Ajouter » → « Compte »`, async () => {
     const user = userEvent.setup();
     renderAccountsPage();
 
-    const addBtn = await screen.findByRole('button', { name: /\+ compte/i });
-    await user.click(addBtn);
+    await user.click(await screen.findByRole('button', { name: /ajouter/i }));
+    await user.click(await screen.findByRole('button', { name: /^compte$/i }));
 
     expect(screen.getByText('Ajouter un compte')).toBeInTheDocument();
   });
