@@ -1,4 +1,11 @@
-import { Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Check,
+  Loader2,
+  MoreHorizontal,
+  RefreshCw,
+  StickyNote,
+} from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -6,10 +13,9 @@ import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
 import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { currentLocale, fmtDec, today } from '@/lib/format';
-import type { Account, Category, PaymentMethod, Transaction } from '@/types';
+import type { Account, Transaction } from '@/types';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -22,17 +28,6 @@ interface Props {
   onEdit?: (tx: Transaction) => void;
   onDuplicate?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
-}
-
-function getTxIcons(
-  tx: Transaction,
-  categories: Category[],
-  paymentMethods: PaymentMethod[],
-): { catIcon: string; pmIcon: string } {
-  if (!tx.payment_method) return { catIcon: '', pmIcon: '' };
-  const catIcon = categories.find((m) => m.id === tx.category_id)?.icon ?? '';
-  const pmIcon = paymentMethods.find((m) => m.name === tx.payment_method)?.icon ?? '';
-  return { catIcon, pmIcon };
 }
 
 function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['type']) {
@@ -147,7 +142,6 @@ function TxItemBody({
   accounts,
   logoMap,
   logo,
-  pmIcon,
 }: Readonly<
   Pick<Props, 'tx' | 'accounts' | 'logoMap'> & {
     validated: boolean;
@@ -155,68 +149,63 @@ function TxItemBody({
     isFuture: boolean;
     isTransfer: boolean;
     logo: string | null;
-    pmIcon: string;
   }
 >) {
-  const { t } = useTranslation('transactions');
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
-        {isScheduled && (
-          <span
-            className="text-[12px] text-indigo-400 shrink-0"
-            title={t('tx_item.scheduled_title')}
-          >
-            ↻
-          </span>
-        )}
-        {tx.notes && (
-          <span title={tx.notes}>
-            <StickyNote size={11} className="text-amber-400 shrink-0" />
-          </span>
-        )}
         <p
           className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
         >
           {tx.description}
         </p>
-        <TxBadges
-          tx={tx}
-          validated={validated}
-          isScheduled={isScheduled}
-          isFuture={isFuture}
-          isTransfer={isTransfer}
-        />
+        <TxIndicators tx={tx} isScheduled={isScheduled} isTransfer={isTransfer} />
+        <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
       </div>
 
-      <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} pmIcon={pmIcon} />
+      <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} />
     </div>
+  );
+}
+
+// Indicateurs d'état discrets : un seul langage (lucide), monochrome gris.
+function TxIndicators({
+  tx,
+  isScheduled,
+  isTransfer,
+}: Readonly<Pick<Props, 'tx'> & { isScheduled: boolean; isTransfer: boolean }>) {
+  const { t } = useTranslation('transactions');
+  if (!isScheduled && !isTransfer && !tx.notes) return null;
+  return (
+    <span className="flex items-center gap-1 shrink-0 text-stone-400">
+      {isScheduled && (
+        <span title={t('tx_item.scheduled_title')}>
+          <RefreshCw size={12} />
+        </span>
+      )}
+      {isTransfer && (
+        <span title={t('tx_item.transfer_title')}>
+          <ArrowLeftRight size={12} />
+        </span>
+      )}
+      {tx.notes && (
+        <span title={tx.notes}>
+          <StickyNote size={12} />
+        </span>
+      )}
+    </span>
   );
 }
 
 function TxBadges({
   tx,
   validated,
-  isScheduled,
   isFuture,
-  isTransfer,
-}: Readonly<
-  Pick<Props, 'tx'> & {
-    validated: boolean;
-    isScheduled: boolean;
-    isFuture: boolean;
-    isTransfer: boolean;
-  }
->) {
+}: Readonly<Pick<Props, 'tx'> & { validated: boolean; isFuture: boolean }>) {
   const { t } = useTranslation('transactions');
   return (
     <div className="flex gap-1 shrink-0">
-      {isFuture && !validated && (
-        <Badge variant="indigo">
-          {isScheduled ? t('tx_item.upcoming_scheduled') : t('tx_item.upcoming')}
-        </Badge>
-      )}
-      {isTransfer && <Badge variant="blue">↔</Badge>}
+      {isFuture && !validated && <Badge variant="brand">{t('tx_item.upcoming')}</Badge>}
       {tx.reimbursement_status === 'en_attente' && (
         <Badge variant="amber">{t('tx_item.pending')}</Badge>
       )}
@@ -232,8 +221,7 @@ function TxMeta({
   accounts,
   logoMap,
   logo,
-  pmIcon,
-}: Readonly<Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null; pmIcon: string }>) {
+}: Readonly<Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null }>) {
   const { t } = useTranslation('transactions');
   return (
     <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
@@ -244,14 +232,6 @@ function TxMeta({
         <>
           <span className="opacity-30">·</span>
           <AccountBadge name={tx.account_name ?? ''} logo={logo} />
-        </>
-      )}
-      {tx.payment_method && (
-        <>
-          <span className="opacity-30">·</span>
-          <span className="inline-flex items-center translate-y-[0.5px] text-[13px] leading-none">
-            {pmIcon}
-          </span>
         </>
       )}
     </p>
@@ -349,10 +329,9 @@ function TxItemBase({
   const validated = !!tx.validated;
   const account = accounts?.find((a) => a.id === tx.account_id);
   const logo = account?.bank ? (logoMap?.[account.bank] ?? null) : null;
-  const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: categories = [] } = useCategories();
 
-  const { catIcon, pmIcon } = getTxIcons(tx, categories, paymentMethods);
+  const category = categories.find((c) => c.id === tx.category_id);
   const { rowClass, amountColor } = getTxClasses(isFuture, validated, tx.type);
 
   return (
@@ -362,7 +341,12 @@ function TxItemBase({
     >
       <TxDateBlock date={tx.date} />
 
-      <span className="text-base leading-none shrink-0 w-5 text-center">{catIcon}</span>
+      <span
+        title={category?.name || undefined}
+        className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-stone-50 border border-black/[0.05] text-base leading-none cursor-default select-none"
+      >
+        {category?.icon ?? ''}
+      </span>
 
       <TxItemBody
         tx={tx}
@@ -373,7 +357,6 @@ function TxItemBase({
         accounts={accounts}
         logoMap={logoMap}
         logo={logo}
-        pmIcon={pmIcon}
       />
 
       <TxItemTrailing

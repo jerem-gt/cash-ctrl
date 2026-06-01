@@ -87,7 +87,7 @@ describe('DashboardPage', () => {
       ),
     );
     renderWithProviders(<DashboardPage />);
-    expect(await screen.findByText('À venir')).toBeInTheDocument();
+    expect((await screen.findAllByText('À venir')).length).toBeGreaterThan(0);
     expect(screen.getByText('Loyer à venir')).toBeInTheDocument();
   });
 

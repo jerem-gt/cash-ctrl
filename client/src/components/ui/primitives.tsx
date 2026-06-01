@@ -8,7 +8,7 @@ import type {
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 interface BadgeProps {
-  variant: 'blue' | 'indigo' | 'green' | 'amber' | 'stone';
+  variant: 'blue' | 'indigo' | 'green' | 'amber' | 'stone' | 'brand';
   children: ReactNode;
 }
 export function Badge({ variant, children }: Readonly<BadgeProps>) {
@@ -18,6 +18,7 @@ export function Badge({ variant, children }: Readonly<BadgeProps>) {
     green: 'bg-green-50 text-green-600 border-green-200',
     amber: 'bg-amber-50 text-amber-700 border-amber-200',
     stone: 'bg-stone-100 text-stone-500 border-stone-200',
+    brand: 'bg-brand-50 text-brand-700 border-brand-200',
   };
   return (
     <span

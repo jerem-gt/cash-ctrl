@@ -26,10 +26,10 @@ describe('TxItem', () => {
     expect(screen.getByText(/24,50/)).toBeInTheDocument();
   });
 
-  it(`affiche le badge "Transfert" si transfer_peer_id est renseigné`, () => {
+  it(`affiche l'indicateur de transfert si transfer_peer_id est renseigné`, () => {
     const transferTx: Transaction = { ...baseTx, transfer_peer_id: 42, validated: 0 };
     renderTx(transferTx);
-    expect(screen.getByText(/↔/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/transfert/i)).toBeInTheDocument();
   });
 
   it(`affiche le badge "À venir" pour une transaction planifiée future`, () => {
