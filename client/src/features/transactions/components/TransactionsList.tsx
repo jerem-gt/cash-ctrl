@@ -43,28 +43,28 @@ export function TransactionsList({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
-        <div className="flex-1 min-w-0">
-          <TransactionsFilters
-            filters={state.filters}
-            onFilterChange={actions.handleFilterChange}
-            categories={state.categories}
-            subcategories={state.activeSubcategories}
-            accounts={state.accounts}
-            paymentMethods={state.paymentMethods}
-            logoMap={logoMap}
-            showAccountSelect={!account}
-          />
-        </div>
-        <div className="flex items-center justify-between sm:justify-start gap-3 sm:shrink-0 sm:h-9">
-          <span className="text-xs text-stone-400">{t('list.count', { count: state.total })}</span>
-          {!readOnly && (
-            <Button variant="primary" onClick={actions.openAdd}>
-              {t('list.add_btn')}
-            </Button>
-          )}
-        </div>
-      </div>
+      <TransactionsFilters
+        filters={state.filters}
+        onFilterChange={actions.handleFilterChange}
+        categories={state.categories}
+        subcategories={state.activeSubcategories}
+        accounts={state.accounts}
+        paymentMethods={state.paymentMethods}
+        logoMap={logoMap}
+        showAccountSelect={!account}
+        rightSlot={
+          <>
+            <span className="text-xs text-stone-400">
+              {t('list.count', { count: state.total })}
+            </span>
+            {!readOnly && (
+              <Button variant="primary" onClick={actions.openAdd}>
+                {t('list.add_btn')}
+              </Button>
+            )}
+          </>
+        }
+      />
       <div className="flex flex-col gap-2">
         {state.isLoading ? (
           // Le Skeleton s'affiche ici uniquement à la place des items

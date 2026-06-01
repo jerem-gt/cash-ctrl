@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +8,18 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { parseIdOrUndefined } from '@/lib/parse';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
 import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
+
+// Champ libellé du panneau de filtres avancés : libellé court au-dessus du contrôle.
+function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
 
 interface FilterProps {
   filters: Filters;
@@ -17,6 +30,7 @@ interface FilterProps {
   paymentMethods: PaymentMethod[];
   logoMap: Record<string, string | null>;
   showAccountSelect?: boolean;
+  rightSlot?: ReactNode;
 }
 
 const ADVANCED_KEYS: (keyof Filters)[] = [
@@ -40,6 +54,7 @@ export const TransactionsFilters = ({
   paymentMethods,
   logoMap,
   showAccountSelect,
+  rightSlot,
 }: FilterProps) => {
   const { t } = useTranslation('transactions');
   const [descriptionInput, setDescriptionInput] = useState(filters.description_contains ?? '');
@@ -81,6 +96,12 @@ export const TransactionsFilters = ({
     (value) => onFilterChange({ amount_max: value }),
     400,
   );
+
+  const resetAdvanced = () => {
+    setAmountMinInput('');
+    setAmountMaxInput('');
+    onFilterChange(Object.fromEntries(ADVANCED_KEYS.map((k) => [k, undefined])));
+  };
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -127,127 +148,159 @@ export const TransactionsFilters = ({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-600 hover:bg-stone-50 transition-colors shrink-0"
+          className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors shrink-0 ${
+            activeAdvancedCount > 0
+              ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+              : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+          }`}
         >
           {t('filters.advanced_filters')}
           {activeAdvancedCount > 0 && (
-            <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-stone-700 text-white text-[10px] font-medium leading-none">
+            <span className="flex items-center justify-center w-4.5 h-4.5 rounded-full bg-brand-600 text-white text-[10px] font-medium leading-none">
               {activeAdvancedCount}
             </span>
           )}
           {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
+
+        {rightSlot && <div className="flex items-center gap-3 ml-auto">{rightSlot}</div>}
       </div>
 
-      {/* Section avancée */}
+      {/* Panneau avancé */}
       {open && (
-        <div className="flex gap-3 flex-wrap items-center pt-1 border-t border-stone-100">
-          {showAccountSelect && (
-            <div className="flex-1 min-w-44 max-w-64">
-              <AccountSelect
-                id="filtered-account-select"
-                value={String(filters.account_id ?? '')}
-                onChange={(v) => onFilterChange({ account_id: parseIdOrUndefined(v) })}
-                accounts={accounts}
-                logoMap={logoMap}
-                placeholder={t('filters.all_accounts')}
-              />
-            </div>
-          )}
+        <div className="rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+            {showAccountSelect && (
+              <Field label={t('filters.field_account')}>
+                <AccountSelect
+                  id="filtered-account-select"
+                  value={String(filters.account_id ?? '')}
+                  onChange={(v) => onFilterChange({ account_id: parseIdOrUndefined(v) })}
+                  accounts={accounts}
+                  logoMap={logoMap}
+                  placeholder={t('filters.all_accounts')}
+                />
+              </Field>
+            )}
 
-          <Select
-            aria-label={t('filters.category_label')}
-            className="flex-1 min-w-32 max-w-50"
-            value={String(filters.category_id ?? '')}
-            onChange={(e) =>
-              onFilterChange({
-                category_id: parseIdOrUndefined(e.target.value),
-                subcategory_id: undefined,
-              })
-            }
-          >
-            <option value="">{t('filters.all_categories')}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
+            <Field label={t('filters.field_category')}>
+              <Select
+                aria-label={t('filters.category_label')}
+                value={String(filters.category_id ?? '')}
+                onChange={(e) =>
+                  onFilterChange({
+                    category_id: parseIdOrUndefined(e.target.value),
+                    subcategory_id: undefined,
+                  })
+                }
+              >
+                <option value="">{t('filters.all_categories')}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-          <Select
-            aria-label={t('filters.subcategory_label')}
-            disabled={!filters.category_id}
-            className="flex-1 min-w-32 max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            value={String(filters.subcategory_id ?? '')}
-            onChange={(e) =>
-              onFilterChange({
-                subcategory_id: parseIdOrUndefined(e.target.value),
-              })
-            }
-          >
-            <option value="">{t('filters.all_subcategories')}</option>
-            {subcategories.map((sub) => (
-              <option key={sub.id} value={String(sub.id)}>
-                {sub.name}
-              </option>
-            ))}
-          </Select>
+            <Field label={t('filters.field_subcategory')}>
+              <Select
+                aria-label={t('filters.subcategory_label')}
+                disabled={!filters.category_id}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
+                value={String(filters.subcategory_id ?? '')}
+                onChange={(e) =>
+                  onFilterChange({
+                    subcategory_id: parseIdOrUndefined(e.target.value),
+                  })
+                }
+              >
+                <option value="">{t('filters.all_subcategories')}</option>
+                {subcategories.map((sub) => (
+                  <option key={sub.id} value={String(sub.id)}>
+                    {sub.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-          <Input
-            type="date"
-            aria-label={t('filters.date_from')}
-            className="flex-1 min-w-32 max-w-40 h-9"
-            value={filters.date_from ?? ''}
-            onChange={(e) => onFilterChange({ date_from: e.target.value || undefined })}
-          />
+            <Field label={t('filters.field_payment_method')}>
+              <Select
+                aria-label={t('filters.payment_method_label')}
+                value={String(filters.payment_method_id ?? '')}
+                onChange={(e) =>
+                  onFilterChange({
+                    payment_method_id: parseIdOrUndefined(e.target.value),
+                  })
+                }
+              >
+                <option value="">{t('filters.all_payment_methods')}</option>
+                {paymentMethods.map((pm) => (
+                  <option key={pm.id} value={String(pm.id)}>
+                    {pm.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
 
-          <Input
-            type="date"
-            aria-label={t('filters.date_to')}
-            className="flex-1 min-w-32 max-w-40 h-9"
-            value={filters.date_to ?? ''}
-            onChange={(e) => onFilterChange({ date_to: e.target.value || undefined })}
-          />
+            <Field label={t('filters.field_period')}>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  aria-label={t('filters.date_from')}
+                  className="h-9"
+                  value={filters.date_from ?? ''}
+                  onChange={(e) => onFilterChange({ date_from: e.target.value || undefined })}
+                />
+                <span className="text-stone-300 shrink-0">–</span>
+                <Input
+                  type="date"
+                  aria-label={t('filters.date_to')}
+                  className="h-9"
+                  value={filters.date_to ?? ''}
+                  onChange={(e) => onFilterChange({ date_to: e.target.value || undefined })}
+                />
+              </div>
+            </Field>
 
-          <DecimalInput
-            placeholder={t('filters.amount_min')}
-            aria-label={t('filters.amount_min_label')}
-            className="flex-1 min-w-28 max-w-36 h-9"
-            value={amountMinInput}
-            onChange={(e) => setAmountMinInput(e.target.value)}
-          />
+            <Field label={t('filters.field_amount')}>
+              <div className="flex items-center gap-2">
+                <DecimalInput
+                  placeholder={t('filters.amount_min_ph')}
+                  aria-label={t('filters.amount_min_label')}
+                  className="h-9"
+                  value={amountMinInput}
+                  onChange={(e) => setAmountMinInput(e.target.value)}
+                />
+                <span className="text-stone-300 shrink-0">–</span>
+                <DecimalInput
+                  placeholder={t('filters.amount_max_ph')}
+                  aria-label={t('filters.amount_max_label')}
+                  className="h-9"
+                  value={amountMaxInput}
+                  onChange={(e) => setAmountMaxInput(e.target.value)}
+                />
+              </div>
+            </Field>
+          </div>
 
-          <DecimalInput
-            placeholder={t('filters.amount_max')}
-            aria-label={t('filters.amount_max_label')}
-            className="flex-1 min-w-28 max-w-36 h-9"
-            value={amountMaxInput}
-            onChange={(e) => setAmountMaxInput(e.target.value)}
-          />
-
-          <Select
-            aria-label={t('filters.payment_method_label')}
-            className="flex-1 min-w-36 max-w-52"
-            value={String(filters.payment_method_id ?? '')}
-            onChange={(e) =>
-              onFilterChange({
-                payment_method_id: parseIdOrUndefined(e.target.value),
-              })
-            }
-          >
-            <option value="">{t('filters.all_payment_methods')}</option>
-            {paymentMethods.map((pm) => (
-              <option key={pm.id} value={String(pm.id)}>
-                {pm.name}
-              </option>
-            ))}
-          </Select>
-
-          <Switch
-            checked={filters.validated === false}
-            onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
-            label={t('filters.not_validated_only')}
-          />
+          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-black/[0.06]">
+            <Switch
+              checked={filters.validated === false}
+              onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
+              label={t('filters.not_validated_only')}
+            />
+            {activeAdvancedCount > 0 && (
+              <button
+                type="button"
+                onClick={resetAdvanced}
+                className="flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors"
+              >
+                <RotateCcw size={13} />
+                {t('filters.reset')}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
