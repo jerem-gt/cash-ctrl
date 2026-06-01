@@ -6,6 +6,7 @@
   "metric_income": "Revenus ce mois",
   "metric_expense": "Dépenses ce mois",
   "metric_monthly": "Bilan mensuel",
+  "metric_trend_vs_last_month": "vs mois dernier",
   "chart_expenses_by_cat": "Dépenses par catégorie",
   "chart_no_expenses": "Aucune dépense ce mois",
   "chart_income_vs_expenses": "Revenus vs dépenses — 6 mois",

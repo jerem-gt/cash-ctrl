@@ -6,6 +6,7 @@
   "metric_income": "Income this month",
   "metric_expense": "Expenses this month",
   "metric_monthly": "Monthly balance",
+  "metric_trend_vs_last_month": "vs last month",
   "chart_expenses_by_cat": "Expenses by category",
   "chart_no_expenses": "No expenses this month",
   "chart_income_vs_expenses": "Income vs expenses — 6 months",

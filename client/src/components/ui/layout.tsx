@@ -1,3 +1,4 @@
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
@@ -26,23 +27,88 @@ export function CardTitle({ children }: Readonly<{ children: ReactNode }>) {
 }
 
 // ─── Metric ───────────────────────────────────────────────────────────────────
+export interface MetricTrend {
+  direction: 'up' | 'down' | 'flat'; // sens de la variation (flèche)
+  value: string; // magnitude déjà formatée (ex. « 12 % », « 150 € »)
+  positive: boolean; // true = variation favorable (vert), false = défavorable (rouge)
+}
 interface MetricProps {
   label: string;
   value: string;
   sub?: string;
   variant?: 'default' | 'positive' | 'negative';
+  icon?: ReactNode;
+  trend?: MetricTrend;
+  trendLabel?: string;
 }
-export function Metric({ label, value, sub, variant = 'default' }: Readonly<MetricProps>) {
-  const colors = {
-    default: 'text-stone-900',
-    positive: 'text-green-800',
-    negative: 'text-red-800',
-  };
+
+const METRIC_VALUE_COLORS = {
+  default: 'text-stone-900',
+  positive: 'text-green-800',
+  negative: 'text-red-800',
+};
+const METRIC_ICON_COLORS = {
+  default: 'bg-brand-50 text-brand-600',
+  positive: 'bg-green-50 text-green-600',
+  negative: 'bg-red-50 text-red-600',
+};
+
+function MetricTrendBadge({
+  trend,
+  trendLabel,
+}: Readonly<{ trend: MetricTrend; trendLabel?: string }>) {
+  // Couleur = favorable/défavorable ; flèche = sens réel de la variation.
+  let tone: string;
+  let Arrow: typeof Minus;
+  if (trend.direction === 'flat') {
+    tone = 'text-stone-400';
+    Arrow = Minus;
+  } else {
+    tone = trend.positive ? 'text-green-600' : 'text-red-500';
+    Arrow = trend.direction === 'up' ? ArrowUpRight : ArrowDownRight;
+  }
+  return (
+    <p className="flex items-center gap-1 mt-1 text-[11px]">
+      <span className={`inline-flex items-center gap-0.5 font-medium ${tone}`}>
+        <Arrow size={12} strokeWidth={2.5} />
+        {trend.value}
+      </span>
+      {trendLabel && <span className="text-stone-300">{trendLabel}</span>}
+    </p>
+  );
+}
+
+export function Metric({
+  label,
+  value,
+  sub,
+  variant = 'default',
+  icon,
+  trend,
+  trendLabel,
+}: Readonly<MetricProps>) {
+  let footer: ReactNode = null;
+  if (trend) {
+    footer = <MetricTrendBadge trend={trend} trendLabel={trendLabel} />;
+  } else if (sub) {
+    footer = <p className="text-[11px] text-stone-300 mt-1">{sub}</p>;
+  }
   return (
     <Card size="sm">
-      <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
-      <p className={`font-display text-2xl tabular-nums ${colors[variant]}`}>{value}</p>
-      {sub && <p className="text-[11px] text-stone-300 mt-1">{sub}</p>}
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
+        {icon && (
+          <span
+            className={`shrink-0 flex items-center justify-center w-7 h-7 rounded-lg ${METRIC_ICON_COLORS[variant]}`}
+          >
+            {icon}
+          </span>
+        )}
+      </div>
+      <p className={`font-display text-2xl tabular-nums ${METRIC_VALUE_COLORS[variant]}`}>
+        {value}
+      </p>
+      {footer}
     </Card>
   );
 }

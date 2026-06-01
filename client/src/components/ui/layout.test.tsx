@@ -30,6 +30,27 @@ describe('Metric', () => {
     render(<Metric label="Solde" value="0 €" />);
     expect(screen.queryByText('compte')).not.toBeInTheDocument();
   });
+
+  it('affiche le badge de tendance (pourcentage arrondi + label) à la place du sous-titre', () => {
+    render(
+      <Metric
+        label="Revenus"
+        value="1 200 €"
+        sub="ignoré"
+        variant="positive"
+        trend={{ direction: 'up', value: '12 %', positive: true }}
+        trendLabel="vs mois dernier"
+      />,
+    );
+    expect(screen.getByText(/12/)).toBeInTheDocument();
+    expect(screen.getByText('vs mois dernier')).toBeInTheDocument();
+    expect(screen.queryByText('ignoré')).not.toBeInTheDocument();
+  });
+
+  it('affiche le sous-titre quand aucune tendance n’est fournie', () => {
+    render(<Metric label="Solde total" value="3 000 €" sub="3 compte(s)" />);
+    expect(screen.getByText('3 compte(s)')).toBeInTheDocument();
+  });
 });
 
 describe('Tabs', () => {
