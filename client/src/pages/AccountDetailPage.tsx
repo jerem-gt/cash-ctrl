@@ -19,7 +19,7 @@ function AccountDetailSkeleton() {
   const { t } = useTranslation('accounts');
   return (
     <div className="space-y-5">
-      <div className="p-8 bg-[#fafaf9] border-b border-stone-200">
+      <div className="p-8 bg-white rounded-2xl border border-black/[0.07] shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex gap-5 items-start">
             <Skeleton className="w-14 h-14 rounded-xl shrink-0" />

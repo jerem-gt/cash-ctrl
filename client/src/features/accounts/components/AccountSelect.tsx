@@ -152,7 +152,7 @@ export function AccountSelect({
         onBlur={handleBlur}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500/20 transition-all text-left"
+        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all text-left"
       >
         {selected ? (
           <>

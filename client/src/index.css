@@ -1,4 +1,4 @@
-@import '@fontsource/dm-serif-display';
+@import '@fontsource-variable/manrope';
 @import '@fontsource-variable/dm-sans';
 @import "tailwindcss";
 @config "../tailwind.config.js";

@@ -285,7 +285,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             <span className="text-xs text-stone-500 uppercase tracking-wide font-medium">
               {t('form_modal.monthly_estimate')}
             </span>
-            <span className="font-sans text-xl text-stone-900">
+            <span className="font-display text-xl text-stone-900">
               {monthlyPayment.toLocaleString(currentLocale(), { minimumFractionDigits: 2 })} €
             </span>
           </div>

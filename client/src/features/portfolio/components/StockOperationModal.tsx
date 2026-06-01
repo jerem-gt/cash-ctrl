@@ -156,7 +156,7 @@ export function StockOperationModal(props: Readonly<Props>) {
               ? t('stock_operation_modal.total_expense')
               : t('stock_operation_modal.total_received')}
           </p>
-          <p className={`font-sans text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
+          <p className={`font-display text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
             {amount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>

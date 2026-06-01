@@ -51,7 +51,7 @@ export function PreviewStep({
             key={label}
             className="flex-1 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
           >
-            <p className="text-2xl font-sans text-stone-800">{value}</p>
+            <p className="text-2xl font-display text-stone-800">{value}</p>
             <p className="text-xs text-stone-400 mt-0.5">{label}</p>
           </div>
         ))}

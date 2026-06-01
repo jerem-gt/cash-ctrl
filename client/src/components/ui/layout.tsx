@@ -41,7 +41,7 @@ export function Metric({ label, value, sub, variant = 'default' }: Readonly<Metr
   return (
     <Card size="sm">
       <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
-      <p className={`font-sans text-2xl tabular-nums ${colors[variant]}`}>{value}</p>
+      <p className={`font-display text-2xl tabular-nums ${colors[variant]}`}>{value}</p>
       {sub && <p className="text-[11px] text-stone-300 mt-1">{sub}</p>}
     </Card>
   );
@@ -57,7 +57,7 @@ interface TabsProps {
   active: string;
   onChange: (key: string) => void;
   className?: string;
-  variant?: 'default' | 'dark';
+  variant?: 'default' | 'sidebar';
 }
 
 const TAB_STYLES = {
@@ -67,11 +67,11 @@ const TAB_STYLES = {
     active: 'bg-white text-stone-900 shadow-sm',
     inactive: 'text-stone-500 hover:text-stone-700',
   },
-  dark: {
+  sidebar: {
     container: 'bg-white/6 rounded-md p-0.5',
     button: 'px-1.5 py-1 text-xs rounded',
-    active: 'bg-white/15 text-white/80 shadow-sm',
-    inactive: 'text-white/30 hover:text-white/55',
+    active: 'bg-brand-600 text-white shadow-sm',
+    inactive: 'text-white/40 hover:text-white/70',
   },
 };
 

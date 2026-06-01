@@ -273,7 +273,7 @@ export function ScheduledModal({
                   value={v}
                   checked={form.weekend_handling === v}
                   onChange={() => set('weekend_handling', v)}
-                  className="accent-green-500"
+                  className="accent-brand-500"
                 />
                 {weekendLabels[v]}
               </label>
@@ -302,7 +302,7 @@ export function ScheduledModal({
               type="checkbox"
               checked={form.active}
               onChange={(e) => set('active', e.target.checked)}
-              className="w-4 h-4 accent-green-500"
+              className="w-4 h-4 accent-brand-500"
             />
             <span className="text-sm text-stone-700">{t('modal.active_label')}</span>
           </label>
@@ -315,7 +315,7 @@ export function ScheduledModal({
             onChange={(e) => set('notes', e.target.value)}
             placeholder={t('modal.notes_placeholder')}
             rows={2}
-            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all resize-none"
           />
         </FormGroup>
       </form>

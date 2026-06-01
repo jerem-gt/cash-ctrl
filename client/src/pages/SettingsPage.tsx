@@ -27,7 +27,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-sans tracking-tight">{t('page.title')}</h1>
+        <h1 className="text-3xl font-display tracking-tight">{t('page.title')}</h1>
         <p className="text-sm text-black/40">{t('page.subtitle')}</p>
       </div>
 

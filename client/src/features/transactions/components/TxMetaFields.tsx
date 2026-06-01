@@ -43,7 +43,7 @@ export function TxMetaFields({
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder={t('modal.notes_placeholder')}
           rows={2}
-          className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all resize-none"
+          className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all resize-none"
         />
       </FormGroup>
 
@@ -52,7 +52,7 @@ export function TxMetaFields({
           type="checkbox"
           checked={validated}
           onChange={(e) => onValidatedChange(e.target.checked)}
-          className="w-4 h-4 accent-green-500"
+          className="w-4 h-4 accent-brand-500"
         />
         <span className="text-sm text-stone-700">{t('modal.validated_label')}</span>
       </label>
@@ -66,7 +66,7 @@ export function TxMetaFields({
               const val = e.target.value;
               onScheduledChange(val === '' ? null : Number.parseInt(val));
             }}
-            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500 transition-all"
+            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all"
           >
             <option value="">{t('modal.no_scheduling')}</option>
             {schedulingOptions.map((s) => (

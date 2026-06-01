@@ -110,7 +110,9 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               ? t('edit_operation_modal.total_label')
               : t('edit_operation_modal.total_received')}
           </p>
-          <p className={`font-sans text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
+          <p
+            className={`font-display text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
+          >
             {totalAmount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>

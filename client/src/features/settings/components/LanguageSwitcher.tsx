@@ -19,7 +19,7 @@ export function LanguageSwitcher() {
           onClick={() => handleChange('fr')}
           className={`px-4 py-2 text-sm rounded-xl border transition-all ${
             current === 'fr'
-              ? 'bg-black text-white border-black shadow-md'
+              ? 'bg-brand-600 text-white border-brand-600 shadow-md'
               : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:text-black'
           }`}
         >
@@ -30,7 +30,7 @@ export function LanguageSwitcher() {
           onClick={() => handleChange('en')}
           className={`px-4 py-2 text-sm rounded-xl border transition-all ${
             current === 'en' || current.startsWith('en')
-              ? 'bg-black text-white border-black shadow-md'
+              ? 'bg-brand-600 text-white border-brand-600 shadow-md'
               : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:text-black'
           }`}
         >

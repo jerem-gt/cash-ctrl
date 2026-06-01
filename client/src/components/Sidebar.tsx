@@ -122,7 +122,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         </button>
         {/* Logo */}
         <NavLink to="/" className="block px-6 py-6 hover:bg-white/5 transition-colors group">
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-white group-hover:text-brand-400 transition-colors">
             <img src="/favicon.svg" alt="logo cash-ctrl" className="h-[2em] w-auto" />
             {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
           </h1>
@@ -132,11 +132,13 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
         </NavLink>
 
         {/* Solde */}
-        <div className="flex flex-col items-center py-6 border border-white/5">
+        <div className="flex flex-col items-center py-6 border-y border-white/[0.07]">
           <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">
             {t('patrimony_net')}
           </span>
-          <span className="text-4xl font-bold text-white tracking-tight">{fmt(soldeTotal)}</span>
+          <span className="font-display text-4xl font-bold text-white tracking-tight tabular-nums">
+            {fmt(soldeTotal)}
+          </span>
         </div>
 
         {/* Nav */}
@@ -158,7 +160,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
                 }`}
               >
                 <Tabs
-                  variant="dark"
+                  variant="sidebar"
                   tabs={[
                     { key: 'bank', label: t('group_bank') },
                     { key: 'type', label: t('group_type') },

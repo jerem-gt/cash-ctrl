@@ -679,7 +679,7 @@ describe('ImportManager — navigation et interactions QIF supplémentaires', ()
     await uploadQif(user);
     const mmddButton = await screen.findByRole('button', { name: /mm\/dd/i });
     await user.click(mmddButton);
-    expect(mmddButton).toHaveClass('bg-stone-900');
+    expect(mmddButton).toHaveClass('bg-brand-600');
   });
 
   it('le bouton ← Retour de Catégories revient à Comptes', async () => {

@@ -81,7 +81,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
                 onClick={() => onChange(item.key)}
                 className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all ${
                   activeTab === item.key
-                    ? 'bg-black text-white shadow-md'
+                    ? 'bg-brand-600 text-white shadow-md'
                     : 'text-black/60 hover:bg-black/5 hover:text-black'
                 }`}
               >

@@ -87,7 +87,7 @@ function AccountMappingRow({
                   {t('import.account_name_label')}
                 </span>
                 <input
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
+                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
                   value={choice.name}
                   onChange={(e) => onChange({ ...choice, name: e.target.value })}
                   placeholder={t('import.account_name_placeholder')}
@@ -146,7 +146,7 @@ function AccountMappingRow({
                 <DecimalInput
                   aria-label={t('import.initial_balance_label')}
                   allowNegative
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
+                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
                   value={String(choice.initial_balance)}
                   onChange={(e) =>
                     onChange({ ...choice, initial_balance: Number.parseFloat(e.target.value) || 0 })
@@ -159,7 +159,7 @@ function AccountMappingRow({
                 </span>
                 <input
                   type="date"
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
+                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
                   value={choice.opening_date ?? ''}
                   onChange={(e) => onChange({ ...choice, opening_date: e.target.value || null })}
                 />
@@ -241,7 +241,7 @@ export function AccountsStep({
               <button
                 key={fmt}
                 onClick={() => onDateFormatChange(fmt)}
-                className={`px-4 py-2 text-sm rounded-lg border transition-all ${dateFormat === fmt ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400'}`}
+                className={`px-4 py-2 text-sm rounded-lg border transition-all ${dateFormat === fmt ? 'border-brand-600 bg-brand-600 text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400'}`}
               >
                 {fmt} {fmt === 'DD/MM' ? '(FR/EU)' : '(US)'}
               </button>

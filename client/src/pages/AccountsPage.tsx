@@ -144,7 +144,7 @@ export default function AccountsPage() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-sans text-2xl tracking-tight">{t('page.title')}</h2>
+          <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
           <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -202,7 +202,7 @@ export default function AccountsPage() {
                     {label}
                   </span>
                   <span
-                    className={`font-sans text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}
+                    className={`font-display text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}
                   >
                     {fmtDec(subtotal)}
                   </span>
@@ -420,7 +420,7 @@ function AccountCard({
           </IconButton>
         </div>
       </div>
-      <p className={`font-sans text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
+      <p className={`font-display text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
       <div className="mt-4">
         {isClosed && acc.closed_at ? (
           <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium">

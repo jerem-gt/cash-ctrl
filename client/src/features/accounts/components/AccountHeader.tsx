@@ -16,7 +16,7 @@ interface AccountHeaderProps {
 const LoanHeader = ({ value }: { value: number }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
       <StatItem label={t('header.loan_due')} value={value} isMain forceRed />
     </div>
   );
@@ -25,11 +25,11 @@ const LoanHeader = ({ value }: { value: number }) => {
 const InvestmentHeader = ({ account }: { account: Account }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 gap-4 md:gap-5">
+    <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] gap-4 md:gap-5">
       <StatItem label={t('header.cash')} value={account.balance} valueAll={account.balance_all} />
-      <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+      <div className="hidden md:block self-stretch w-px bg-black/[0.08]" />
       <StatItem label={t('header.portfolio')} value={account.balance_stocks} />
-      <div className="hidden md:block self-stretch w-px bg-stone-200/60" />
+      <div className="hidden md:block self-stretch w-px bg-black/[0.08]" />
       <StatItem label={t('header.total')} value={account.balance + account.balance_stocks} isMain />
     </div>
   );
@@ -55,7 +55,7 @@ const StatItem = ({
         {label}
       </span>
       <p
-        className={`font-sans ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
+        className={`font-display ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
       >
         {fmtDec(value)}
       </p>
@@ -78,7 +78,7 @@ const StatItem = ({
 const InsuranceHeader = ({ account }: { account: Account }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
       <StatItem label={t('header.insurance')} value={account.balance_insurance} isMain />
     </div>
   );
@@ -87,7 +87,7 @@ const InsuranceHeader = ({ account }: { account: Account }) => {
 const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-stone-100/40 p-6 rounded-2xl border border-stone-200/60 md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
       <StatItem label={t('header.balance')} value={value} valueAll={valueAll} isMain />
     </div>
   );
@@ -104,7 +104,7 @@ export function AccountHeader({
   const { t } = useTranslation('accounts');
   return (
     <div>
-      <div className="p-4 md:p-8 bg-[#fafaf9] border-b border-stone-200">
+      <div className="p-4 md:p-8 bg-white rounded-2xl border border-black/[0.07] shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
           <div className="flex gap-5 items-start">
             {/* Conteneur Logo */}
@@ -150,7 +150,7 @@ export function AccountHeader({
                 )}
               </div>
 
-              <h2 className="font-sans text-4xl text-stone-900 tracking-tight">
+              <h2 className="font-display text-4xl text-stone-900 tracking-tight">
                 {account.name ?? 'Compte'}
               </h2>
 

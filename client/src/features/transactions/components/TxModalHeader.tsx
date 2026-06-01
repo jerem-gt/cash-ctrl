@@ -9,7 +9,7 @@ interface Props {
 }
 
 function getTransferTabClass(isTransfer: boolean, noOtherAccounts: boolean): string {
-  if (isTransfer) return 'bg-stone-900 text-white';
+  if (isTransfer) return 'bg-brand-600 text-white';
   if (noOtherAccounts) return 'bg-stone-50 text-stone-300 cursor-not-allowed';
   return 'bg-stone-50 text-stone-400 hover:bg-stone-100';
 }
@@ -34,7 +34,7 @@ export function TxModalHeader({
       <button
         type="button"
         onClick={() => onToggle(false)}
-        className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-50 text-stone-400 hover:bg-stone-100' : 'bg-stone-900 text-white'}`}
+        className={`flex-1 py-2 font-medium transition-colors ${isTransfer ? 'bg-stone-50 text-stone-400 hover:bg-stone-100' : 'bg-brand-600 text-white'}`}
       >
         {t('modal.tab_transaction')}
       </button>

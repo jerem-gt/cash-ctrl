@@ -53,14 +53,14 @@ describe('Tabs', () => {
   });
 });
 
-describe('Tabs variant dark', () => {
+describe('Tabs variant sidebar', () => {
   const tabs = [
     { key: 'bank', label: 'Banque' },
     { key: 'type', label: 'Type' },
   ];
 
   it('affiche les onglets', () => {
-    render(<Tabs tabs={tabs} active="bank" onChange={vi.fn()} variant="dark" />);
+    render(<Tabs tabs={tabs} active="bank" onChange={vi.fn()} variant="sidebar" />);
     expect(screen.getByText('Banque')).toBeInTheDocument();
     expect(screen.getByText('Type')).toBeInTheDocument();
   });
@@ -68,7 +68,7 @@ describe('Tabs variant dark', () => {
   it('appelle onChange au clic', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<Tabs tabs={tabs} active="bank" onChange={onChange} variant="dark" />);
+    render(<Tabs tabs={tabs} active="bank" onChange={onChange} variant="sidebar" />);
     await user.click(screen.getByText('Type'));
     expect(onChange).toHaveBeenCalledWith('type');
   });

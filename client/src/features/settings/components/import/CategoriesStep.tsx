@@ -78,7 +78,7 @@ function CategoryMappingRow({ qifCategory, choice, categories, onChange }: Reado
               <div className="flex items-center gap-2">
                 <span className="text-xs text-stone-400">{t('import.subcategory_label')}</span>
                 <input
-                  className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
+                  className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
                   value={choice.subcategory_name}
                   onChange={(e) => onChange({ ...choice, subcategory_name: e.target.value })}
                   placeholder={t('import.subcategory_placeholder')}
@@ -111,7 +111,7 @@ function CategoryMappingRow({ qifCategory, choice, categories, onChange }: Reado
                     {t('import.new_category_name_label')}
                   </span>
                   <input
-                    className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-green-500"
+                    className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
                     value={choice.new_category_name}
                     onChange={(e) => onChange({ ...choice, new_category_name: e.target.value })}
                     placeholder={t('import.new_category_placeholder')}
