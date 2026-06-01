@@ -1,4 +1,12 @@
-import { Archive, ArchiveRestore, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -11,6 +19,7 @@ import {
   IconButton,
   showToast,
   Skeleton,
+  Tabs,
 } from '@/components/ui';
 import { type AccountFormState, AccountModal } from '@/features/accounts/components/AccountModal';
 import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
@@ -74,6 +83,7 @@ export default function AccountsPage() {
   const bankSortOrder = useMemo(() => bankSortOrderMap(banks), [banks]);
   const [addOpen, setAddOpen] = useState(false);
   const [addLoanOpen, setAddLoanOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
@@ -147,37 +157,48 @@ export default function AccountsPage() {
           <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
           <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center bg-stone-100 rounded-lg p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setGroupBy('bank')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                groupBy === 'bank'
-                  ? 'bg-white text-stone-800 shadow-sm font-medium'
-                  : 'text-stone-400 hover:text-stone-600'
-              }`}
-            >
-              {t('page.group_bank')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setGroupBy('type')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                groupBy === 'type'
-                  ? 'bg-white text-stone-800 shadow-sm font-medium'
-                  : 'text-stone-400 hover:text-stone-600'
-              }`}
-            >
-              {t('page.group_type')}
-            </button>
-          </div>
-          <Button size="sm" onClick={() => setAddLoanOpen(true)}>
-            {t('page.add_loan')}
+        <div className="relative shrink-0">
+          <Button
+            variant="primary"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setAddMenuOpen((v) => !v)}
+          >
+            <Plus size={15} />
+            {t('page.add')}
+            <ChevronDown size={14} className="opacity-80" />
           </Button>
-          <Button variant="primary" size="sm" onClick={() => setAddOpen(true)}>
-            {t('page.add_account')}
-          </Button>
+          {addMenuOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                aria-hidden="true"
+                onClick={() => setAddMenuOpen(false)}
+              />
+              <div className="absolute right-0 top-full mt-1.5 z-20 min-w-40 bg-white border border-stone-200 rounded-xl shadow-lg py-1 text-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddOpen(true);
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 transition-colors"
+                >
+                  {t('page.add_account_menu')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddLoanOpen(true);
+                    setAddMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 transition-colors"
+                >
+                  {t('page.add_loan_menu')}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -185,6 +206,22 @@ export default function AccountsPage() {
         <Empty>{t('page.no_accounts')}</Empty>
       ) : (
         <div className="space-y-6">
+          {/* Groupement */}
+          {groups.length > 0 && (
+            <div className="flex justify-end">
+              <Tabs
+                variant="default"
+                className="w-44"
+                tabs={[
+                  { key: 'bank', label: t('page.group_bank') },
+                  { key: 'type', label: t('page.group_type') },
+                ]}
+                active={groupBy}
+                onChange={(key) => setGroupBy(key as 'bank' | 'type')}
+              />
+            </div>
+          )}
+
           {/* Comptes actifs */}
           {groups.map(({ label, accounts: groupAccounts }) => {
             const subtotal = groupAccounts.reduce(
