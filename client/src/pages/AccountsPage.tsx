@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -12,7 +12,6 @@ import {
   showToast,
   Skeleton,
 } from '@/components/ui';
-import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { type AccountFormState, AccountModal } from '@/features/accounts/components/AccountModal';
 import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
 import { LoanFormModal } from '@/features/loans/components/LoanFormModal';
@@ -214,6 +213,7 @@ export default function AccountsPage() {
                       key={acc.id}
                       acc={acc}
                       logoMap={logoMap}
+                      showBank={groupBy === 'type'}
                       onEdit={() =>
                         acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
                       }
@@ -236,9 +236,7 @@ export default function AccountsPage() {
               >
                 <Archive size={13} strokeWidth={2} />
                 {t('page.closed_section', { count: closedAccounts.length })}
-                <span className="font-normal normal-case tracking-normal">
-                  {showClosed ? '▴' : '▾'}
-                </span>
+                {showClosed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
               {showClosed && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -247,6 +245,7 @@ export default function AccountsPage() {
                       key={acc.id}
                       acc={acc}
                       logoMap={logoMap}
+                      showBank
                       onEdit={() =>
                         acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
                       }
@@ -311,6 +310,7 @@ export default function AccountsPage() {
 function AccountCard({
   acc,
   logoMap,
+  showBank = false,
   onEdit,
   onDelete,
   onClose,
@@ -318,6 +318,7 @@ function AccountCard({
 }: Readonly<{
   acc: Account;
   logoMap: Record<string, string | null>;
+  showBank?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose?: () => void;
@@ -325,6 +326,7 @@ function AccountCard({
 }>) {
   const { t } = useTranslation('accounts');
   const isClosed = acc.closed_at !== null;
+  const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
 
   let displayBal: number;
   if (isClosed) {
@@ -355,9 +357,26 @@ function AccountCard({
         className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         aria-label={t('page.view_transactions', { name: acc.name })}
       />
-      <div className="relative z-10 flex justify-between items-start mb-3">
-        <AccountBadge name={acc.name} bank={acc.bank} logo={logoMap[acc.bank] ?? null} />
-        <div className="flex gap-1">
+      <div className="relative z-10 flex justify-between items-start gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          {logo ? (
+            <img
+              src={logo}
+              alt={`Logo ${acc.bank}`}
+              className="w-5 h-5 object-contain rounded shrink-0"
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          ) : (
+            acc.bank && <span className="w-5 h-5 rounded bg-stone-100 inline-block shrink-0" />
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-medium text-stone-800 leading-tight">{acc.name}</p>
+            {showBank && acc.bank && (
+              <p className="truncate text-[11px] text-stone-400 leading-tight">{acc.bank}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-1 shrink-0 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <IconButton
             label={t('page.edit_account')}
             onClick={(e) => {
