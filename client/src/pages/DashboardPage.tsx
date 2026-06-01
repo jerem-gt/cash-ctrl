@@ -1,7 +1,9 @@
+import { Scale, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
+import type { MetricTrend } from '@/components/ui/layout';
 import { DashboardSkeleton } from '@/features/dashboard/components/DashboardSkeleton';
 import { PatrimonyCard } from '@/features/dashboard/components/PatrimonyCard';
 import { ProfitabilityTable } from '@/features/dashboard/components/ProfitabilityTable';
@@ -26,6 +28,39 @@ const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpen
 
 const NOW = Date.now();
 
+const FLAT_PCT: MetricTrend = { direction: 'flat', value: '0 %', positive: true };
+
+// Variation en % du mois courant vs mois précédent. `higherIsBetter` détermine la
+// couleur : pour les revenus une hausse est favorable, pour les dépenses non.
+function pctTrend(current: number, prev: number, higherIsBetter: boolean): MetricTrend | undefined {
+  if (prev === 0) {
+    // Pas de base de comparaison : état neutre seulement si le mois courant est
+    // lui aussi nul (stable à 0). Sinon le % n'aurait pas de sens.
+    if (current === 0) return FLAT_PCT;
+    return undefined;
+  }
+  const pct = ((current - prev) / Math.abs(prev)) * 100;
+  const rounded = Math.round(pct);
+  if (rounded === 0) return FLAT_PCT;
+  return {
+    direction: rounded > 0 ? 'up' : 'down',
+    value: `${Math.abs(rounded)} %`,
+    positive: pct > 0 === higherIsBetter,
+  };
+}
+
+// Pour un solde net (bilan), un % serait trompeur si la base est négative : on
+// compare en valeur absolue (écart en euros). Une hausse est toujours favorable.
+function deltaTrend(current: number, prev: number): MetricTrend {
+  const diff = current - prev;
+  if (Math.round(diff) === 0) return { direction: 'flat', value: fmt(0), positive: true };
+  return {
+    direction: diff > 0 ? 'up' : 'down',
+    value: fmt(Math.abs(diff)),
+    positive: diff > 0,
+  };
+}
+
 export default function DashboardPage() {
   const { t } = useTranslation('dashboard');
   const { data: accounts = [] } = useAccounts();
@@ -44,6 +79,16 @@ export default function DashboardPage() {
   const monthIncome = stats?.month_income ?? 0;
   const monthExpense = stats?.month_expense ?? 0;
   const bilan = monthIncome - monthExpense;
+
+  // monthly[] est ordonné ancien→récent ; l'avant-dernier élément = mois précédent.
+  const monthly = stats?.monthly ?? [];
+  const prevMonth = monthly.length >= 2 ? monthly[monthly.length - 2] : undefined;
+  const incomeTrend = prevMonth ? pctTrend(monthIncome, prevMonth.income, true) : undefined;
+  const expenseTrend = prevMonth ? pctTrend(monthExpense, prevMonth.expense, false) : undefined;
+  const bilanTrend = prevMonth
+    ? deltaTrend(bilan, prevMonth.income - prevMonth.expense)
+    : undefined;
+  const trendLabel = t('metric_trend_vs_last_month');
 
   const catData = useMemo(
     () =>
@@ -92,13 +137,31 @@ export default function DashboardPage() {
           label={t('metric_total_balance')}
           value={fmt(totalBalance)}
           sub={t('metric_accounts', { count: accounts.length })}
+          icon={<Wallet size={15} />}
         />
-        <Metric label={t('metric_income')} value={fmt(monthIncome)} variant="positive" />
-        <Metric label={t('metric_expense')} value={fmt(monthExpense)} variant="negative" />
+        <Metric
+          label={t('metric_income')}
+          value={fmt(monthIncome)}
+          variant="positive"
+          icon={<TrendingUp size={15} />}
+          trend={incomeTrend}
+          trendLabel={trendLabel}
+        />
+        <Metric
+          label={t('metric_expense')}
+          value={fmt(monthExpense)}
+          variant="negative"
+          icon={<TrendingDown size={15} />}
+          trend={expenseTrend}
+          trendLabel={trendLabel}
+        />
         <Metric
           label={t('metric_monthly')}
           value={fmt(bilan)}
           variant={bilan >= 0 ? 'positive' : 'negative'}
+          icon={<Scale size={15} />}
+          trend={bilanTrend}
+          trendLabel={trendLabel}
         />
       </div>
 
