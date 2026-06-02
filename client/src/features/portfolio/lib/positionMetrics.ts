@@ -17,10 +17,10 @@ export interface TotalMetrics {
 }
 
 export function getPnlColor(pnl: number | null): string {
-  if (pnl == null) return 'text-stone-400';
-  if (pnl > 0) return 'text-green-700';
-  if (pnl < 0) return 'text-red-700';
-  return 'text-stone-500';
+  if (pnl === null) return 'text-content-subtle';
+  if (pnl > 0) return 'text-success';
+  if (pnl < 0) return 'text-danger';
+  return 'text-content-muted';
 }
 
 export function getPositionMetrics(pos: StockPosition): PositionMetrics {

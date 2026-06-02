@@ -203,7 +203,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
   return (
     <div className="space-y-5">
       {/* Résumé */}
-      <div className="bg-[#fafaf9] border border-line rounded-2xl p-6">
+      <div className="bg-surface-muted border border-line rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('section.details_title')}

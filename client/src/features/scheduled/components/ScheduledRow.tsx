@@ -42,7 +42,7 @@ export function ScheduledRow({
             </span>
           )}
           {isVersement && (
-            <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+            <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30 rounded px-1.5 py-0.5 font-medium shrink-0">
               {t('row.versement_badge')}
             </span>
           )}

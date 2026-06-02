@@ -10,10 +10,10 @@ const NOW = new Date('2026-05-31').getTime();
 
 describe('getGainColor', () => {
   it('vert si gain positif', () => {
-    expect(getGainColor(true)).toBe('text-emerald-600');
+    expect(getGainColor(true)).toBe('text-success');
   });
   it('rouge sinon', () => {
-    expect(getGainColor(false)).toBe('text-red-600');
+    expect(getGainColor(false)).toBe('text-danger');
   });
 });
 

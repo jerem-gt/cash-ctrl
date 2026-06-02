@@ -73,7 +73,7 @@ function SupportRow({
       {support.type === 'uc' && (
         <button
           onClick={() => setActiveModal('revalorisation')}
-          className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 px-2 py-1 rounded-lg border border-violet-200 transition-all"
+          className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-200 dark:hover:bg-violet-500/15 px-2 py-1 rounded-lg border border-violet-200 dark:border-violet-500/30 transition-all"
         >
           {t('section.action_revalorisation')}
         </button>
@@ -205,7 +205,7 @@ const OP_BADGE_CLASSES: Record<InsuranceOperation['type'], string> = {
   arbitrage_in: 'bg-info-surface text-info',
   arbitrage_out: 'bg-info-surface text-info',
   interets: 'bg-warning-surface text-warning',
-  revalorisation: 'bg-violet-100 text-violet-700',
+  revalorisation: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
 };
 
 const OP_SIGN: Record<InsuranceOperation['type'], (op: InsuranceOperation) => number> = {
