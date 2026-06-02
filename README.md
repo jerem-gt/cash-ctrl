@@ -18,6 +18,14 @@ Application de gestion de finances personnelles — multi-comptes, transactions 
 |---|---|
 | ![Planifications](./docs/screenshots/scheduled.png) | ![Paramètres](./docs/screenshots/settings.png) |
 
+### 🌗 Thème clair / sombre
+
+L'interface suit la préférence système et se bascule manuellement (Clair / Sombre / Système) depuis les Réglages.
+
+| Clair | Sombre |
+|---|---|
+| ![Dashboard clair](./docs/screenshots/dashboard.png) | ![Dashboard sombre](./docs/screenshots/dashboard-dark.png) |
+
 ---
 
 ## ✨ Fonctionnalités
