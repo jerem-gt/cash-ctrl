@@ -1,7 +1,8 @@
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { showToast } from '@/components/ui';
+import { Button, Input, showToast } from '@/components/ui';
+import { AddCard } from '@/features/settings/components/AddCard.tsx';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
@@ -44,37 +45,31 @@ function PaymentMethodEditForm({
         {t('payment_methods.edit_title')}
       </p>
       <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={form.icon}
-          onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-          className="w-10 text-center text-base bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors font-medium"
-          placeholder="💶"
-        />
-        <input
+        <div className="w-11 shrink-0">
+          <Input
+            type="text"
+            value={form.icon}
+            onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+            className="px-1 text-center text-lg leading-none"
+            placeholder="💶"
+          />
+        </div>
+        <Input
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="flex-1 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
-          placeholder="Nom"
+          className="flex-1"
+          placeholder={t('payment_methods.name_placeholder')}
           autoFocus
         />
       </div>
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={updatePm.isPending}
-          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-        >
+        <Button type="submit" variant="primary" size="sm" disabled={updatePm.isPending}>
           {updatePm.isPending ? tc('loading') : tc('save')}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
-        >
+        </Button>
+        <Button type="button" variant="default" size="sm" onClick={onClose}>
           {tc('cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -146,34 +141,35 @@ export function PaymentMethodsManager() {
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
         {t('payment_methods.title')}
       </p>
-      <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
-          {t('payment_methods.new_title')}
-        </p>
+      <AddCard title={t('payment_methods.new_title')}>
         <form onSubmit={handleAddPaymentMethod} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={newPm.icon}
-            onChange={(e) => setNewPm((f) => ({ ...f, icon: e.target.value }))}
-            className="w-10 text-center text-base bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors font-medium"
-            placeholder="💶"
-          />
-          <input
+          <div className="w-11 shrink-0">
+            <Input
+              type="text"
+              value={newPm.icon}
+              onChange={(e) => setNewPm((f) => ({ ...f, icon: e.target.value }))}
+              className="px-1 text-center text-lg leading-none"
+              placeholder="💶"
+            />
+          </div>
+          <Input
             type="text"
             value={newPm.name}
             onChange={(e) => setNewPm((f) => ({ ...f, name: e.target.value }))}
-            className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+            className="flex-1 min-w-0"
             placeholder={t('payment_methods.name_placeholder')}
           />
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="sm"
             disabled={createPaymentMethod.isPending}
-            className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30 shrink-0"
+            className="shrink-0"
           >
             {createPaymentMethod.isPending ? tc('loading') : tc('add')}
-          </button>
+          </Button>
         </form>
-      </div>
+      </AddCard>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {paymentMethods.map((pm) => (
           <PaymentMethodCard key={pm.id} pm={pm} />

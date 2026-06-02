@@ -1,6 +1,8 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Button, Input } from '@/components/ui';
+
 const EmojiPickerWidget = React.lazy(() =>
   import('./EmojiPickerWidget').then((m) => ({ default: m.EmojiPickerWidget })),
 );
@@ -84,12 +86,12 @@ export function CategoryEditor({
       </div>
 
       {/* NOM */}
-      <input
+      <Input
         aria-label={t('categories.aria_name_new')}
         type="text"
         value={form.name}
         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-        className="flex-1 min-w-0 text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
+        className="flex-1 min-w-0"
         placeholder={resolvedPlaceholder}
         autoFocus={autoFocus}
         onKeyDown={(e) => {
@@ -98,25 +100,21 @@ export function CategoryEditor({
       />
 
       {/* ACTIONS COMPACTES */}
-      <div className="flex items-center">
-        <button
+      <div className="flex items-center gap-2 shrink-0">
+        <Button
           type="button"
+          variant="primary"
+          size="sm"
           onClick={() => onSave(form)}
           disabled={isPending || !form.name.trim()}
-          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
           {isPending ? '...' : resolvedLabel}
-        </button>
+        </Button>
 
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            hidden={isPending}
-            className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-          >
+          <Button type="button" variant="default" size="sm" onClick={onCancel} hidden={isPending}>
             {tc('cancel')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

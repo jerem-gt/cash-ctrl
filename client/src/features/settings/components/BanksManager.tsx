@@ -20,7 +20,8 @@ import { GripVertical } from 'lucide-react';
 import { type ChangeEvent, type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { showToast } from '@/components/ui';
+import { Button, Input, showToast } from '@/components/ui';
+import { AddCard } from '@/features/settings/components/AddCard.tsx';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
@@ -82,19 +83,17 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
         {t('banks.edit_title')}
       </p>
-      <input
+      <Input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
-        placeholder="Nom"
+        placeholder={t('banks.name_placeholder')}
         autoFocus
       />
-      <input
+      <Input
         type="text"
         value={domain}
         onChange={(e) => setDomain(e.target.value)}
-        className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium w-full"
         placeholder={t('banks.domain_edit_placeholder')}
       />
       <div className="flex items-center gap-2">
@@ -114,15 +113,18 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
         </label>
       </div>
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="sm"
           disabled={updateBank.isPending || uploadLogo.isPending}
-          className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
         >
           {updateBank.isPending || uploadLogo.isPending ? tc('loading') : tc('save')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="default"
+          size="sm"
           onClick={() => {
             setFile(null);
             setPreview((prev) => {
@@ -131,10 +133,9 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
             });
             onClose();
           }}
-          className="text-[11px] font-black text-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
         >
           {tc('cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -273,36 +274,27 @@ export function BanksManager() {
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
         {t('banks.title')}
       </p>
-      <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
-          {t('banks.new_title')}
-        </p>
+      <AddCard title={t('banks.new_title')}>
         <form onSubmit={handleAddBank} className="flex flex-col gap-2">
-          <input
+          <Input
             type="text"
             value={newBank.name}
             onChange={(e) => setNewBank((f) => ({ ...f, name: e.target.value }))}
-            className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
             placeholder={t('banks.name_placeholder')}
           />
-          <input
+          <Input
             type="text"
             value={newBank.domain}
             onChange={(e) => setNewBank((f) => ({ ...f, domain: e.target.value }))}
-            className="text-sm bg-transparent border-b border-black/10 focus:border-black outline-none py-1.5 transition-colors placeholder:text-stone-300 font-medium"
             placeholder={t('banks.domain_placeholder')}
           />
           <div className="flex justify-end mt-1">
-            <button
-              type="submit"
-              disabled={createBank.isPending}
-              className="text-[11px] font-black text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all disabled:opacity-30"
-            >
+            <Button type="submit" variant="primary" size="sm" disabled={createBank.isPending}>
               {createBank.isPending ? tc('loading') : tc('add')}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </AddCard>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={banks.map((b) => b.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

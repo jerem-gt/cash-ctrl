@@ -188,6 +188,7 @@
     "title": "Account types",
     "new_title": "New type",
     "edit_title": "Edit type",
+    "name_placeholder": "E.g.: PEA",
     "envelope_label": "Envelope",
     "none_envelope": "None",
     "savings": "Savings",

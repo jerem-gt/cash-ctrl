@@ -94,7 +94,7 @@ describe('BanksManager', () => {
     renderWithProviders(<BanksManager />);
     await screen.findByText('BNP');
     await user.click(screen.getByRole('button', { name: /modifier/i }));
-    const nameInput = screen.getByPlaceholderText('Nom');
+    const nameInput = screen.getByDisplayValue('BNP');
     await user.clear(nameInput);
     await user.type(nameInput, 'BNP Paribas');
     await user.click(screen.getByRole('button', { name: /enregistrer/i }));

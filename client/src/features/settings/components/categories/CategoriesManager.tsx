@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
+import { AddCard } from '@/features/settings/components/AddCard.tsx';
 import {
   CategoryEditor,
   CategoryForm,
@@ -111,19 +112,15 @@ export function CategoriesManager() {
       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
         {t('categories.title')}
       </p>
-      <div
-        data-testid="new-category-form"
-        className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200"
-      >
-        <p className="text-[10px] font-bold text-stone-400 uppercase mb-3 ml-1">
-          {t('categories.new_title')}
-        </p>
-        <CategoryEditor
-          key={resetCreationFormKey}
-          initialValues={{ name: '', icon: '❓' }}
-          isPending={createCategory.isPending}
-          onSave={(values) => handleSaveCategory(values)}
-        />
+      <div data-testid="new-category-form">
+        <AddCard title={t('categories.new_title')}>
+          <CategoryEditor
+            key={resetCreationFormKey}
+            initialValues={{ name: '', icon: '❓' }}
+            isPending={createCategory.isPending}
+            onSave={(values) => handleSaveCategory(values)}
+          />
+        </AddCard>
       </div>
       <div className="relative">
         <Search
@@ -135,7 +132,7 @@ export function CategoriesManager() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('categories.search_placeholder')}
-          className="w-full text-sm bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2 outline-none focus:border-black/30 transition-colors placeholder:text-stone-300"
+          className="w-full text-sm bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all placeholder:text-stone-300"
         />
       </div>
       {filtered.length === 0 ? (

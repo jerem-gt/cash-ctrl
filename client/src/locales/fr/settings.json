@@ -188,6 +188,7 @@
     "title": "Types de compte",
     "new_title": "Nouveau type",
     "edit_title": "Modifier le type",
+    "name_placeholder": "Ex : PEA",
     "envelope_label": "Enveloppe",
     "none_envelope": "Aucune",
     "savings": "Épargne",
