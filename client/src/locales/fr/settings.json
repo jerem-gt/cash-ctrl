@@ -104,7 +104,14 @@
     "aria_action_for": "Action pour {{name}}",
     "aria_target_account": "Compte cible pour {{name}}",
     "aria_target_category": "Catégorie cible pour {{name}}",
-    "aria_paymethod": "Méthode de paiement pour {{name}}"
+    "aria_paymethod": "Méthode de paiement pour {{name}}",
+    "no_description": "(sans description)",
+    "category_new_suffix": "(nouveau)",
+    "skip_reason": {
+      "unmapped_account": "Compte non mappé",
+      "skipped_category": "Catégorie ignorée",
+      "transfer_no_peer": "Virement sans contrepartie"
+    }
   },
   "password": {
     "title": "Changer le mot de passe",
