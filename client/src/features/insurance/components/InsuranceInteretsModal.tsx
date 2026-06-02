@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useInterets } from '@/features/insurance/hooks/useInsurance';
-import { currentLocale, today } from '@/lib/format';
+import { fmtDec, today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -48,8 +48,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
             autoFocus
           />
           <p className="text-[10px] text-content-subtle mt-1">
-            {t('interets_modal.current_balance')}{' '}
-            {support.value.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
+            {t('interets_modal.current_balance')} {fmtDec(support.value)}
           </p>
         </FormGroup>
 
@@ -68,7 +67,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
             {tc('cancel')}
           </Button>
           <Button variant="primary" type="submit" disabled={!amount || interets.isPending}>
-            {tc('save')}
+            {interets.isPending ? tc('loading') : tc('save')}
           </Button>
         </div>
       </form>

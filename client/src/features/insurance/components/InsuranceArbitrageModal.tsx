@@ -11,7 +11,7 @@ import {
   showToast,
 } from '@/components/ui';
 import { useArbitrage } from '@/features/insurance/hooks/useInsurance';
-import { currentLocale, today } from '@/lib/format';
+import { fmtDec, today } from '@/lib/format';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -97,11 +97,7 @@ export function InsuranceArbitrageModal({
               {t('arbitrage_modal.amount_label')}
             </label>
             <span className="text-[10px] text-content-subtle">
-              {t('arbitrage_modal.max_label')}{' '}
-              {fromSupport.value.toLocaleString(currentLocale(), {
-                style: 'currency',
-                currency: 'EUR',
-              })}
+              {t('arbitrage_modal.max_label')} {fmtDec(fromSupport.value)}
             </span>
           </div>
           <DecimalInput

@@ -6,7 +6,9 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useVersement } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useLogoMap } from '@/hooks/useLogoMap';
+import { liquidAccounts } from '@/lib/account';
 import { today } from '@/lib/format';
+import { parseIdOrNull } from '@/lib/parse';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -26,9 +28,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
   const { data: allAccounts = [] } = useAccounts();
   const logoMap = useLogoMap();
 
-  const sourceAccounts = allAccounts.filter(
-    (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
-  );
+  const sourceAccounts = liquidAccounts(allAccounts, accountId);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -38,7 +38,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
         amount: Number.parseFloat(amount),
         fees: Number.parseFloat(fees) || 0,
         date,
-        source_account_id: sourceAccountId ? Number(sourceAccountId) : null,
+        source_account_id: parseIdOrNull(sourceAccountId),
       },
       {
         onSuccess: () => {
@@ -67,16 +67,11 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
         </FormGroup>
 
         {sourceAccounts.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="vers-source"
-              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
-            >
-              <span>{t('versement_modal.source_account_label')}</span>
-              <span className="ml-1 text-content-faint normal-case tracking-normal font-normal">
-                {tc('optional')}
-              </span>
-            </label>
+          <FormGroup
+            label={t('versement_modal.source_account_label')}
+            htmlFor="vers-source"
+            optional
+          >
             <AccountSelect
               id="vers-source"
               value={sourceAccountId}
@@ -85,7 +80,7 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
               logoMap={logoMap}
               placeholder={tc('none')}
             />
-          </div>
+          </FormGroup>
         )}
 
         <div className="flex gap-3">
