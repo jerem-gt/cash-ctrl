@@ -235,7 +235,7 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
         </div>
 
         {/* Ligne 2 — suivi dynamique */}
-        <div className="grid grid-cols-2 gap-5 pt-4 border-t border-line">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-line">
           {/* Capital */}
           <div>
             <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-content-subtle block mb-3">

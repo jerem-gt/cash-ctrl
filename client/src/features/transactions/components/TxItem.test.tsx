@@ -41,7 +41,9 @@ describe('TxItem', () => {
       transfer_peer_id: null,
     };
     renderTx(futureTx);
-    expect(screen.getByText(/à venir/i)).toBeInTheDocument();
+    // Badge rendu en double (variante mobile + desktop, masquées par media query) :
+    // la copie hors écran est en display:none, donc invisible et muette pour l'AT.
+    expect(screen.getAllByText(/à venir/i).length).toBeGreaterThan(0);
   });
 
   it('affiche le bouton de validation', () => {

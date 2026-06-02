@@ -157,15 +157,24 @@ function TxItemBody({
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
         <p
-          className={`text-sm truncate font-semibold ${validated ? 'text-content-secondary' : 'text-content-subtle'}`}
+          className={`text-sm truncate font-semibold flex-1 min-w-0 ${validated ? 'text-content-secondary' : 'text-content-subtle'}`}
         >
           {tx.description}
         </p>
         <TxIndicators tx={tx} isScheduled={isScheduled} isTransfer={isTransfer} />
-        <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
+        {/* Desktop : badges sur la ligne du titre */}
+        <div className="hidden sm:flex shrink-0">
+          <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
+        </div>
       </div>
 
-      <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} />
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} />
+        {/* Mobile : badges renvoyés sous la description pour ne pas l'écraser */}
+        <div className="flex sm:hidden">
+          <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
+        </div>
+      </div>
     </div>
   );
 }
