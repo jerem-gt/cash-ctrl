@@ -11,8 +11,10 @@ import {
   WeekendHandling,
 } from '../constants';
 import { toCents } from '../lib/money';
+import { dateStr } from '../lib/scheduledLogic';
 import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
 import { createLoansRepo } from '../modules/loans/loans.repo';
+import { createStocksRepo } from '../modules/stocks/stocks.repo';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo';
 import { createDb, DATA_DIR } from './init';
 import { seedUserData } from './seed';
@@ -28,6 +30,28 @@ export function seedTestData(db: Database) {
   };
   const USER_ID = testUser.id;
   seedUserData(db, USER_ID);
+
+  // ── Ancre temporelle ─────────────────────────────────────────────────────────
+  // Les dates « récentes » (salaires, charges, achats du trimestre) sont calculées
+  // par rapport à aujourd'hui pour que le compte démo reste frais à chaque (re)seed
+  // — sinon les KPI « mois courant / vs mois dernier » se vident avec le temps.
+  // L'historique profond (ouvertures, vieux achats Bourse/AV) utilise `yearsAgo`
+  // pour rester crédible sans dénaturer les PRU.
+  // SEED_TODAY=YYYY-MM-DD permet de figer l'ancre pour un seed reproductible.
+  const TODAY = process.env.SEED_TODAY ? new Date(process.env.SEED_TODAY) : new Date();
+
+  /** Date ISO à `monthOffset` mois d'aujourd'hui, jour `day` (clampé à la fin du mois). */
+  function monthDay(monthOffset: number, day: number): string {
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth() + monthOffset, 1);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+    return dateStr(d);
+  }
+
+  /** Date ISO à `years` années d'aujourd'hui (historique : ouvertures, vieux achats). */
+  function yearsAgo(years: number, month = 0, day = 1): string {
+    return dateStr(new Date(TODAY.getFullYear() - years, month, day));
+  }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   function lookupId(table: string, name: string): number {
@@ -104,33 +128,43 @@ export function seedTestData(db: Database) {
     bankBNP,
     typeCourant,
     toCents(500),
-    '2022-01-10',
+    yearsAgo(4, 0, 10),
   );
   const accBNPLivret = insertAccount(
     'Livret A BNP',
     bankBNP,
     typeEpargne,
     toCents(1000),
-    '2022-01-10',
+    yearsAgo(4, 0, 10),
   );
   const accBourso = insertAccount(
     'Compte Bourso',
     bankBourso,
     typeCourant,
     toCents(200),
-    '2023-03-15',
+    yearsAgo(3, 2, 15),
   );
-  const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, toCents(5000), '2020-06-01');
-  const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, '2024-01-01');
+  const accCA = insertAccount('Épargne CA', bankCA, typeEpargne, toCents(5000), yearsAgo(6, 5, 1));
+  const accRevolut = insertAccount('Revolut', bankRevolut, typeAutre, 0, yearsAgo(2, 0, 1));
   const accPEA = insertAccount(
     'PEA BoursoBank',
     bankBourso,
     typeBourse,
     toCents(5000),
-    '2024-01-01',
+    yearsAgo(2, 0, 1),
   );
-  const accAV = insertAccount('AV Linxea Spirit 2', bankLinxea, typeAV, 0, '2024-01-15');
-  const accPER = insertAccount('PER Linxea Spirit PER', bankLinxea, typePER, 0, '2025-02-15');
+  const accAV = insertAccount('AV Linxea Spirit 2', bankLinxea, typeAV, 0, yearsAgo(2, 0, 15));
+  const accPER = insertAccount('PER Linxea Spirit PER', bankLinxea, typePER, 0, yearsAgo(1, 1, 15));
+
+  // Compte clôturé — illustre la gestion des comptes fermés (closed_at)
+  const accClosed = insertAccount(
+    'Livret Jeune (clôturé)',
+    bankCA,
+    typeEpargne,
+    toCents(0),
+    yearsAgo(8, 8, 1),
+  );
+  db.prepare('UPDATE accounts SET closed_at = ? WHERE id = ?').run(yearsAgo(3, 10, 30), accClosed);
 
   // ── Transactions ─────────────────────────────────────────────────────────────
   type TxInput = {
@@ -205,14 +239,14 @@ export function seedTestData(db: Database) {
     stmtLink.run(a, b);
   }
 
-  // BNP Courant — revenus + dépenses courantes
+  // BNP Courant — revenus + dépenses courantes (mois -3 et -2)
   insertTx({
     account_id: accBNPCourant,
     type: 'income',
     amount: 2800,
-    description: 'Salaire mars',
+    description: 'Salaire',
     subcategory_id: subcatSalaire,
-    date: '2026-03-01',
+    date: monthDay(-3, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
@@ -220,9 +254,9 @@ export function seedTestData(db: Database) {
     account_id: accBNPCourant,
     type: 'income',
     amount: 2800,
-    description: 'Salaire avril',
+    description: 'Salaire',
     subcategory_id: subcatSalaire,
-    date: '2026-04-01',
+    date: monthDay(-2, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
@@ -230,9 +264,9 @@ export function seedTestData(db: Database) {
     account_id: accBNPCourant,
     type: 'expense',
     amount: 850,
-    description: 'Loyer mars',
+    description: 'Loyer',
     subcategory_id: subcatLoyer,
-    date: '2026-03-05',
+    date: monthDay(-3, 5),
     payment_method_id: pmVirement,
     validated: 1,
   });
@@ -240,9 +274,9 @@ export function seedTestData(db: Database) {
     account_id: accBNPCourant,
     type: 'expense',
     amount: 850,
-    description: 'Loyer avril',
+    description: 'Loyer',
     subcategory_id: subcatLoyer,
-    date: '2026-04-05',
+    date: monthDay(-2, 5),
     payment_method_id: pmVirement,
     validated: 1,
   });
@@ -250,9 +284,9 @@ export function seedTestData(db: Database) {
     account_id: accBNPCourant,
     type: 'expense',
     amount: 65,
-    description: 'EDF mars',
+    description: 'EDF',
     subcategory_id: subcatElec,
-    date: '2026-03-10',
+    date: monthDay(-3, 10),
     payment_method_id: pmPrelevement,
     validated: 1,
   });
@@ -260,9 +294,9 @@ export function seedTestData(db: Database) {
     account_id: accBNPCourant,
     type: 'expense',
     amount: 65,
-    description: 'EDF avril',
+    description: 'EDF',
     subcategory_id: subcatElec,
-    date: '2026-04-10',
+    date: monthDay(-2, 10),
     payment_method_id: pmPrelevement,
     validated: 1,
   });
@@ -272,7 +306,7 @@ export function seedTestData(db: Database) {
     amount: 78.5,
     description: 'Carrefour',
     subcategory_id: subcatSupermarche,
-    date: '2026-03-08',
+    date: monthDay(-3, 8),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -282,7 +316,7 @@ export function seedTestData(db: Database) {
     amount: 45.2,
     description: 'Lidl',
     subcategory_id: subcatSupermarche,
-    date: '2026-03-20',
+    date: monthDay(-3, 20),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -292,7 +326,7 @@ export function seedTestData(db: Database) {
     amount: 92.3,
     description: 'Leclerc',
     subcategory_id: subcatSupermarche,
-    date: '2026-04-12',
+    date: monthDay(-2, 12),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -302,7 +336,7 @@ export function seedTestData(db: Database) {
     amount: 38,
     description: 'Restaurant Le Zinc',
     subcategory_id: subcatRestaurant,
-    date: '2026-04-19',
+    date: monthDay(-2, 19),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -312,7 +346,7 @@ export function seedTestData(db: Database) {
     amount: 22.5,
     description: 'Pharmacie',
     subcategory_id: subcatPharmacie,
-    date: '2026-03-15',
+    date: monthDay(-3, 15),
     payment_method_id: pmCB,
     validated: 1,
     reimbursement_status: 'rembourse',
@@ -323,7 +357,7 @@ export function seedTestData(db: Database) {
     amount: 38,
     description: 'Consultation Dr. Martin',
     subcategory_id: subcatMedecin,
-    date: '2026-04-10',
+    date: monthDay(-2, 10),
     payment_method_id: pmCB,
     validated: 1,
     reimbursement_status: 'en_attente',
@@ -334,7 +368,7 @@ export function seedTestData(db: Database) {
     amount: 65,
     description: 'Dentiste',
     subcategory_id: subcatMedecin,
-    date: '2026-04-25',
+    date: monthDay(-2, 25),
     payment_method_id: pmCB,
     validated: 0,
     reimbursement_status: 'en_attente',
@@ -345,7 +379,7 @@ export function seedTestData(db: Database) {
     amount: 15,
     description: 'Taxi',
     subcategory_id: subcatVTC,
-    date: '2026-04-08',
+    date: monthDay(-2, 8),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -355,31 +389,70 @@ export function seedTestData(db: Database) {
     amount: 120,
     description: 'Vêtements Uniqlo',
     subcategory_id: subcatVetements,
-    date: '2026-04-22',
+    date: monthDay(-2, 22),
     payment_method_id: pmCB,
     validated: 0,
   });
 
-  // BNP Livret A — intérêts
+  // ── Mois courant et précédent (offsets -1 et 0) ──────────────────────────────
+  // Garde des données fraîches pour le mois en cours et le précédent
+  // (le KPI dashboard « tendance vs mois dernier » a besoin des deux).
+  const stmtSplit = db.prepare(
+    'INSERT INTO transaction_splits (user_id, transaction_id, subcategory_id, amount) VALUES (?, ?, ?, ?)',
+  );
+
+  // Mois -1
   insertTx({
-    account_id: accBNPLivret,
+    account_id: accBNPCourant,
     type: 'income',
-    amount: 18.45,
-    description: 'Intérêts 2025',
-    subcategory_id: subcatInterets,
-    date: '2026-01-01',
+    amount: 2800,
+    description: 'Salaire',
+    subcategory_id: subcatSalaire,
+    date: monthDay(-1, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
-
-  // BoursoBank — abonnements + transport
   insertTx({
-    account_id: accBourso,
+    account_id: accBNPCourant,
     type: 'expense',
-    amount: 52,
-    description: 'Cinéma + dîner',
-    subcategory_id: subcatCinema,
-    date: '2026-04-05',
+    amount: 850,
+    description: 'Loyer',
+    subcategory_id: subcatLoyer,
+    date: monthDay(-1, 5),
+    payment_method_id: pmVirement,
+    validated: 1,
+  });
+  insertTx({
+    account_id: accBNPCourant,
+    type: 'expense',
+    amount: 65,
+    description: 'EDF',
+    subcategory_id: subcatElec,
+    date: monthDay(-1, 10),
+    payment_method_id: pmPrelevement,
+    validated: 1,
+  });
+  // Transaction ventilée : courses + textile sur le même ticket Carrefour
+  const carrefourSplitId = insertTx({
+    account_id: accBNPCourant,
+    type: 'expense',
+    amount: 82,
+    description: 'Carrefour (courses + textile)',
+    subcategory_id: subcatSupermarche,
+    date: monthDay(-1, 8),
+    payment_method_id: pmCB,
+    validated: 1,
+  });
+  stmtSplit.run(USER_ID, carrefourSplitId, subcatSupermarche, toCents(60));
+  stmtSplit.run(USER_ID, carrefourSplitId, subcatVetements, toCents(22));
+
+  insertTx({
+    account_id: accBNPCourant,
+    type: 'expense',
+    amount: 42,
+    description: 'Restaurant La Table',
+    subcategory_id: subcatRestaurant,
+    date: monthDay(-1, 17),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -389,17 +462,7 @@ export function seedTestData(db: Database) {
     amount: 15.99,
     description: 'Netflix',
     subcategory_id: subcatStreaming,
-    date: '2026-04-15',
-    payment_method_id: pmCB,
-    validated: 1,
-  });
-  insertTx({
-    account_id: accBourso,
-    type: 'expense',
-    amount: 9.99,
-    description: 'Spotify',
-    subcategory_id: subcatStreaming,
-    date: '2026-04-15',
+    date: monthDay(-1, 15),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -409,31 +472,107 @@ export function seedTestData(db: Database) {
     amount: 86.4,
     description: 'Pass Navigo',
     subcategory_id: subcatBTM,
-    date: '2026-04-01',
+    date: monthDay(-1, 1),
     payment_method_id: pmPrelevement,
     validated: 1,
   });
 
-  // Crédit Agricole — épargne
+  // Mois en cours (offset 0)
   insertTx({
-    account_id: accCA,
+    account_id: accBNPCourant,
     type: 'income',
-    amount: 112,
-    description: 'Intérêts 2025',
+    amount: 2800,
+    description: 'Salaire',
+    subcategory_id: subcatSalaire,
+    date: monthDay(0, 1),
+    payment_method_id: pmVirement,
+    validated: 1,
+  });
+  insertTx({
+    account_id: accBNPCourant,
+    type: 'expense',
+    amount: 47.3,
+    description: 'Lidl',
+    subcategory_id: subcatSupermarche,
+    date: monthDay(0, 1),
+    payment_method_id: pmCB,
+    validated: 1,
+  });
+
+  // BNP Livret A — intérêts annuels (mois -5)
+  insertTx({
+    account_id: accBNPLivret,
+    type: 'income',
+    amount: 18.45,
+    description: 'Intérêts annuels',
     subcategory_id: subcatInterets,
-    date: '2026-01-01',
+    date: monthDay(-5, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
 
-  // Revolut — voyage
+  // BoursoBank — abonnements + transport (mois -2)
+  insertTx({
+    account_id: accBourso,
+    type: 'expense',
+    amount: 52,
+    description: 'Cinéma + dîner',
+    subcategory_id: subcatCinema,
+    date: monthDay(-2, 5),
+    payment_method_id: pmCB,
+    validated: 1,
+  });
+  insertTx({
+    account_id: accBourso,
+    type: 'expense',
+    amount: 15.99,
+    description: 'Netflix',
+    subcategory_id: subcatStreaming,
+    date: monthDay(-2, 15),
+    payment_method_id: pmCB,
+    validated: 1,
+  });
+  insertTx({
+    account_id: accBourso,
+    type: 'expense',
+    amount: 9.99,
+    description: 'Spotify',
+    subcategory_id: subcatStreaming,
+    date: monthDay(-2, 15),
+    payment_method_id: pmCB,
+    validated: 1,
+  });
+  insertTx({
+    account_id: accBourso,
+    type: 'expense',
+    amount: 86.4,
+    description: 'Pass Navigo',
+    subcategory_id: subcatBTM,
+    date: monthDay(-2, 1),
+    payment_method_id: pmPrelevement,
+    validated: 1,
+  });
+
+  // Crédit Agricole — épargne (mois -5)
+  insertTx({
+    account_id: accCA,
+    type: 'income',
+    amount: 112,
+    description: 'Intérêts annuels',
+    subcategory_id: subcatInterets,
+    date: monthDay(-5, 1),
+    payment_method_id: pmVirement,
+    validated: 1,
+  });
+
+  // Revolut — voyage (mois -3)
   insertTx({
     account_id: accRevolut,
     type: 'expense',
     amount: 320,
     description: 'Airbnb Amsterdam',
     subcategory_id: subcatVacances,
-    date: '2026-03-22',
+    date: monthDay(-3, 22),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -443,7 +582,7 @@ export function seedTestData(db: Database) {
     amount: 45.8,
     description: 'Alimentation voyage',
     subcategory_id: subcatRestaurant,
-    date: '2026-03-23',
+    date: monthDay(-3, 23),
     payment_method_id: pmCB,
     validated: 1,
   });
@@ -453,7 +592,7 @@ export function seedTestData(db: Database) {
     amount: 60,
     description: 'Remboursement Pierre',
     subcategory_id: subcatAutre,
-    date: '2026-04-01',
+    date: monthDay(-2, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
@@ -465,7 +604,7 @@ export function seedTestData(db: Database) {
     300,
     'Épargne → Livret A',
     'Virement entrant BNP',
-    '2026-03-28',
+    monthDay(-3, 28),
   );
   insertTransfer(
     accBNPCourant,
@@ -473,7 +612,7 @@ export function seedTestData(db: Database) {
     300,
     'Épargne → Livret A',
     'Virement entrant BNP',
-    '2026-04-28',
+    monthDay(-2, 28),
   );
   insertTransfer(
     accBNPCourant,
@@ -481,7 +620,7 @@ export function seedTestData(db: Database) {
     200,
     'Virement vers Bourso',
     'Virement entrant BNP',
-    '2026-03-02',
+    monthDay(-3, 2),
   );
   insertTransfer(
     accCA,
@@ -489,7 +628,7 @@ export function seedTestData(db: Database) {
     400,
     'Budget voyage Amsterdam',
     'Virement depuis CA',
-    '2026-03-20',
+    monthDay(-3, 20),
   );
 
   // ── Remboursements ───────────────────────────────────────────────────────────
@@ -499,94 +638,76 @@ export function seedTestData(db: Database) {
     amount: 15.75,
     description: 'Remboursement Sécu — Pharmacie',
     subcategory_id: subcatPharmacie,
-    date: '2026-04-01',
+    date: monthDay(-2, 1),
     payment_method_id: pmVirement,
     validated: 1,
   });
+  // Remboursement partiel : la Sécu (15,75 €) ne couvre qu'une partie de la
+  // dépense Pharmacie (22,50 €) → montant attribué explicite.
   db.prepare(
-    'INSERT INTO reimbursements (user_id, transaction_id, linked_transaction_id) VALUES (?, ?, ?)',
-  ).run(USER_ID, pharmacieId, secuRembId);
+    'INSERT INTO reimbursements (user_id, transaction_id, linked_transaction_id, attributed_amount) VALUES (?, ?, ?, ?)',
+  ).run(USER_ID, pharmacieId, secuRembId, toCents(15.75));
 
   // ── Bourse (PEA) ─────────────────────────────────────────────────────────────
-  const stmtStockTx = db.prepare(`
-    INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes)
-    VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL)
-  `);
-  const stmtStockOp = db.prepare(`
-    INSERT INTO stock_operations (user_id, account_id, transaction_id, ticker, type, quantity, price_per_share, fees, date)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  const stmtPositionBuy = db.prepare(`
-    INSERT INTO stock_positions (user_id, account_id, ticker, quantity, avg_price, updated_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(account_id, ticker) DO UPDATE SET
-      avg_price  = (quantity * avg_price + excluded.quantity * excluded.avg_price) / (quantity + excluded.quantity),
-      quantity   = quantity + excluded.quantity,
-      updated_at = datetime('now')
-  `);
-  const stmtPositionSell = db.prepare(`
-    UPDATE stock_positions SET quantity = quantity - ?, updated_at = datetime('now')
-    WHERE account_id = ? AND ticker = ?
-  `);
-  const stmtPrice = db.prepare(`
-    INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at, name)
-    VALUES (?, ?, ?, datetime('now'), ?)
-  `);
+  // On passe par le repo de production : chaque opération génère sa transaction
+  // principale + une transaction de frais séparée (fees_transaction_id), exactement
+  // comme via l'UI. recalcPosition recompute quantité + PRU à partir des opérations.
+  const stocksRepo = createStocksRepo(db);
 
-  function insertStockOp(
+  function buyStock(
     accountId: number,
     ticker: string,
     quantity: number,
     pricePerShare: number,
     fees: number,
     date: string,
-    type: 'buy' | 'sell',
   ): void {
-    const feesCents = toCents(fees);
-    const mainCents = Math.round(quantity * pricePerShare * 100);
-    const amount = type === 'buy' ? mainCents + feesCents : mainCents - feesCents;
-    const description =
-      type === 'buy' ? `Achat ${quantity} × ${ticker}` : `Vente ${quantity} × ${ticker}`;
-    const txId = Number(
-      stmtStockTx.run(
-        USER_ID,
-        accountId,
-        type === 'buy' ? 'expense' : 'income',
-        amount,
-        description,
-        date,
-      ).lastInsertRowid,
-    );
-    stmtStockOp.run(
-      USER_ID,
-      accountId,
-      txId,
+    stocksRepo.buy(USER_ID, {
+      account_id: accountId,
       ticker,
-      type,
       quantity,
-      pricePerShare,
-      feesCents,
+      price_per_share: pricePerShare,
+      fees,
       date,
-    );
-    if (type === 'buy') {
-      stmtPositionBuy.run(USER_ID, accountId, ticker, quantity, pricePerShare);
-    } else {
-      stmtPositionSell.run(quantity, accountId, ticker);
-    }
+    });
+    stocksRepo.recalcPosition(accountId, ticker, USER_ID);
   }
 
-  // DCAM.PA — ETF Amundi Diversifié : 2 achats → PRU ≈ 10,80 €
-  insertStockOp(accPEA, 'DCAM.PA', 20, 10.5, 0.99, '2025-01-15', 'buy');
-  insertStockOp(accPEA, 'DCAM.PA', 15, 11.2, 0.99, '2025-03-10', 'buy');
+  function sellStock(
+    accountId: number,
+    ticker: string,
+    quantity: number,
+    pricePerShare: number,
+    fees: number,
+    date: string,
+  ): void {
+    stocksRepo.sell(USER_ID, {
+      account_id: accountId,
+      ticker,
+      quantity,
+      price_per_share: pricePerShare,
+      fees,
+      date,
+    });
+    stocksRepo.recalcPosition(accountId, ticker, USER_ID);
+  }
+
+  // DCAM.PA — ETF Amundi Diversifié : 2 achats → PRU ≈ 10,80 € (historique ~1 an)
+  buyStock(accPEA, 'DCAM.PA', 20, 10.5, 0.99, yearsAgo(1, 0, 15));
+  buyStock(accPEA, 'DCAM.PA', 15, 11.2, 0.99, yearsAgo(1, 2, 10));
 
   // AAPL — Apple : 1 achat
-  insertStockOp(accPEA, 'AAPL', 5, 170, 1.99, '2025-02-10', 'buy');
+  buyStock(accPEA, 'AAPL', 5, 170, 1.99, yearsAgo(1, 1, 10));
 
-  // LVMH.PA — LVMH : achat + vente partielle → 1 action en portefeuille
-  insertStockOp(accPEA, 'LVMH.PA', 2, 580, 1.99, '2025-01-20', 'buy');
-  insertStockOp(accPEA, 'LVMH.PA', 1, 620, 1.99, '2026-04-15', 'sell');
+  // LVMH.PA — LVMH : achat (historique) + vente partielle récente → 1 action restante
+  buyStock(accPEA, 'LVMH.PA', 2, 580, 1.99, yearsAgo(1, 0, 20));
+  sellStock(accPEA, 'LVMH.PA', 1, 620, 1.99, monthDay(-2, 15));
 
   // Cours actuels simulés
+  const stmtPrice = db.prepare(`
+    INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at, name)
+    VALUES (?, ?, ?, datetime('now'), ?)
+  `);
   stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
   stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
   stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
@@ -612,42 +733,42 @@ export function seedTestData(db: Database) {
     support_id: avFondsEuro.id,
     amount: 5000,
     fees: 0,
-    date: '2024-01-15',
+    date: yearsAgo(2, 0, 15),
   });
   insuranceRepo.interets(USER_ID, {
     account_id: accAV,
     support_id: avFondsEuro.id,
     amount: 125,
-    date: '2025-01-01',
+    date: yearsAgo(1, 0, 1),
   });
   insuranceRepo.rachat(USER_ID, {
     account_id: accAV,
     support_id: avFondsEuro.id,
     amount: 1000,
     fees: 0,
-    social_fees: 0,
-    date: '2025-09-01',
+    social_fees: 14.5, // prélèvements sociaux 17,2% sur la part de gains rachetée
+    date: yearsAgo(1, 8, 1),
   });
 
   insuranceRepo.versement(USER_ID, {
     account_id: accAV,
     support_id: avAmundi.id,
     amount: 2000,
-    fees: 0,
-    date: '2024-03-20',
+    fees: 20, // frais d'entrée 1% sur versement UC
+    date: yearsAgo(2, 2, 20),
   });
   insuranceRepo.versement(USER_ID, {
     account_id: accAV,
     support_id: avAmundi.id,
     amount: 1000,
     fees: 0,
-    date: '2024-11-10',
+    date: yearsAgo(2, 10, 10),
   });
   insuranceRepo.revaloriser(USER_ID, {
     account_id: accAV,
     support_id: avAmundi.id,
     amount: 150,
-    date: '2025-01-01',
+    date: yearsAgo(1, 0, 1),
   });
 
   const perFondsEuro = insuranceRepo.createSupport(USER_ID, {
@@ -661,26 +782,29 @@ export function seedTestData(db: Database) {
     support_id: perFondsEuro.id,
     amount: 1500,
     fees: 0,
-    date: '2025-02-15',
+    date: yearsAgo(1, 1, 15),
   });
 
   // ── Prêts ────────────────────────────────────────────────────────────────────
   const loansRepo = createLoansRepo(db);
   const transfersRepo = createTransfersRepo(db);
 
+  // Démarré il y a 18 mois → toujours « en cours » (~18/60 échéances payées)
+  // quelle que soit la date du seed.
+  const loanStart = monthDay(-18, 1);
   const carLoan = loansRepo.create(USER_ID, {
     name: 'Prêt voiture',
     bank_id: bankBNP,
-    opening_date: '2023-07-01',
+    opening_date: loanStart,
     principal_amount: 12000,
     interest_rate: 0.03,
     duration_months: 60,
-    start_date: '2023-07-01',
+    start_date: loanStart,
     source_account_id: accBNPCourant,
     deposit_account_id: accBNPCourant,
   });
 
-  const paidInstallments = loansRepo.getPendingInstallments(carLoan.id, '2026-05-07');
+  const paidInstallments = loansRepo.getPendingInstallments(carLoan.id, dateStr(TODAY));
 
   for (const inst of paidInstallments) {
     const transferTxs = transfersRepo.create(USER_ID, {
@@ -728,7 +852,7 @@ export function seedTestData(db: Database) {
       s.account_id,
       s.to_account_id,
       s.type,
-      s.amount,
+      toCents(s.amount),
       s.description,
       s.subcategory_id,
       s.payment_method_id,
@@ -758,7 +882,7 @@ export function seedTestData(db: Database) {
     recurrence_day: 1,
     recurrence_month: null,
     weekend_handling: 'allow',
-    start_date: '2024-01-01',
+    start_date: yearsAgo(2, 0, 1),
     end_date: null,
     active: 1,
   });
@@ -776,7 +900,7 @@ export function seedTestData(db: Database) {
     recurrence_day: 5,
     recurrence_month: null,
     weekend_handling: 'allow',
-    start_date: '2022-01-10',
+    start_date: yearsAgo(4, 0, 10),
     end_date: null,
     active: 1,
   });
@@ -794,7 +918,7 @@ export function seedTestData(db: Database) {
     recurrence_day: 10,
     recurrence_month: null,
     weekend_handling: 'allow',
-    start_date: '2022-01-10',
+    start_date: yearsAgo(4, 0, 10),
     end_date: null,
     active: 1,
   });
@@ -812,7 +936,7 @@ export function seedTestData(db: Database) {
     recurrence_day: 28,
     recurrence_month: null,
     weekend_handling: 'allow',
-    start_date: '2022-01-28',
+    start_date: yearsAgo(4, 0, 28),
     end_date: null,
     active: 1,
   });
@@ -830,7 +954,7 @@ export function seedTestData(db: Database) {
     recurrence_day: 15,
     recurrence_month: null,
     weekend_handling: 'allow',
-    start_date: '2023-03-15',
+    start_date: yearsAgo(3, 2, 15),
     end_date: null,
     active: 1,
   });
@@ -848,30 +972,55 @@ export function seedTestData(db: Database) {
     recurrence_day: 1,
     recurrence_month: null,
     weekend_handling: 'after',
-    start_date: '2023-03-15',
+    start_date: yearsAgo(3, 2, 15),
     end_date: null,
     active: 1,
   });
 
+  // Versement PER planifié — débité du compte courant vers un support d'assurance.
+  // account_id = compte AV/PER cible, to_account_id = compte source débité.
+  db.prepare(
+    `
+      INSERT INTO scheduled_transactions
+          (user_id, account_id, to_account_id, type, amount, description,
+           subcategory_id, payment_method_id, notes, recurrence_unit, recurrence_interval,
+           recurrence_day, recurrence_month, weekend_handling, start_date, end_date, active,
+           insurance_support_id, insurance_fees)
+      VALUES (?, ?, ?, 'expense', ?, ?, NULL, ?, NULL, 'month', 1, ?, NULL, 'allow', ?, NULL, 1, ?, ?)
+  `,
+  ).run(
+    USER_ID,
+    accPER,
+    accBNPCourant,
+    toCents(150),
+    'Versement PER mensuel',
+    pmVirement,
+    15,
+    yearsAgo(1, 1, 15),
+    perFondsEuro.id,
+    toCents(0),
+  );
+
   console.log('Jeu de données de développement chargé.');
   console.log(
-    '  Comptes       : 9 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, PEA, AV Linxea, PER Linxea, Prêt voiture)',
+    '  Comptes       : 10 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, PEA, AV Linxea, PER Linxea, Prêt voiture) + 1 clôturé',
   );
   console.log(
-    `  Transactions  : ~${44 + paidInstallments.length * 2} (dont 8 virements liés, 5 opérations boursières, ${paidInstallments.length} mensualités payées, 1 remboursement Sécu)`,
+    `  Transactions  : ~${40 + paidInstallments.length * 2} (dont 8 virements liés, Bourse achats/ventes + frais séparés, 1 ventilée, ${paidInstallments.length} mensualités payées, 1 remboursement partiel Sécu)`,
   );
   console.log(
-    '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€)',
+    '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€) — frais en tx séparées',
   );
   console.log(
-    '  Assurance Vie : Fonds Euro 4 125€ + Amundi MSCI World ~71,91 parts (PRU ~41,72€, VL 42,50€)',
+    '  Assurance Vie : Fonds Euro 4 110,50€ (rachat avec prélèv. sociaux) + Amundi MSCI World 3 130€ (versement avec frais)',
   );
   console.log('  PER           : Fonds Euro PER 1 500€');
   console.log(
     `  Prêts         : 1 (Prêt voiture 12 000€ à 3%, ${paidInstallments.length}/60 mensualités payées)`,
   );
-  console.log('  Remboursements: 1 lien (Pharmacie → Sécu 15,75€)');
-  console.log('  Planifications: 6');
+  console.log('  Remboursements: 1 lien partiel (Pharmacie 22,50€ → Sécu 15,75€ attribués)');
+  console.log('  Planifications: 7 (dont 1 versement PER mensuel)');
+  console.log(`  Dates ancrées sur : ${dateStr(TODAY)} (override possible via SEED_TODAY)`);
   console.log('  Identifiants  : test / test (admin inchangé)');
 }
 
