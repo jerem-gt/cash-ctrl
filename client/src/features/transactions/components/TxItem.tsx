@@ -13,6 +13,7 @@ import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
 import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { currentLocale, fmtDec, today } from '@/lib/format';
 import type { Account, Transaction } from '@/types';
@@ -70,9 +71,10 @@ function TxMobileMenu({
 }: Readonly<Pick<Props, 'tx' | 'onEdit' | 'onDuplicate' | 'onDelete'>>) {
   const { t } = useTranslation('transactions');
   const [menuOpen, setMenuOpen] = useState(false);
+  const ref = useClickOutside<HTMLDivElement>(() => setMenuOpen(false));
   if (onEdit == null && onDuplicate == null && onDelete == null) return null;
   return (
-    <div className="relative sm:hidden">
+    <div ref={ref} className="relative sm:hidden">
       <button
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
@@ -82,54 +84,44 @@ function TxMobileMenu({
         <MoreHorizontal size={15} />
       </button>
       {menuOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            aria-hidden="true"
-            onClick={() => setMenuOpen(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setMenuOpen(false);
-            }}
-          />
-          <div className="absolute right-0 top-8 z-20 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-32 text-sm">
-            {onEdit && (
-              <button
-                type="button"
-                onClick={() => {
-                  onEdit(tx);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
-              >
-                {t('tx_item.edit')}
-              </button>
-            )}
-            {onDuplicate && (
-              <button
-                type="button"
-                onClick={() => {
-                  onDuplicate(tx);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
-              >
-                {t('tx_item.duplicate')}
-              </button>
-            )}
-            {onDelete && (
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete(tx);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-danger-surface text-danger transition-colors"
-              >
-                {t('tx_item.delete')}
-              </button>
-            )}
-          </div>
-        </>
+        <div className="absolute right-0 top-8 z-20 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-32 text-sm">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                onEdit(tx);
+                setMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
+            >
+              {t('tx_item.edit')}
+            </button>
+          )}
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={() => {
+                onDuplicate(tx);
+                setMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
+            >
+              {t('tx_item.duplicate')}
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                onDelete(tx);
+                setMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-danger-surface text-danger transition-colors"
+            >
+              {t('tx_item.delete')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
