@@ -15,15 +15,16 @@
       // Anti-FOUC : applique le thème avant le premier paint.
       (function () {
         try {
-          var stored = localStorage.getItem('cashctrl.theme');
-          var mode = stored === 'light' || stored === 'dark' ? stored : 'system';
-          var dark =
+          const stored = localStorage.getItem('cashctrl.theme');
+          const mode = stored === 'light' || stored === 'dark' ? stored : 'system';
+          const dark =
             mode === 'dark' ||
             (mode === 'system' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches);
+              globalThis.matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.classList.toggle('dark', dark);
-        } catch (e) {
-          /* localStorage indisponible : on reste en clair */
+        } catch {
+          // localStorage indisponible ou bloqué : repli explicite en mode clair.
+          document.documentElement.classList.remove('dark');
         }
       })();
     </script>

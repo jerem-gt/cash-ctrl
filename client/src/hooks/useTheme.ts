@@ -14,8 +14,8 @@ let current: ThemeMode = readStored();
 const listeners = new Set<() => void>();
 
 const media =
-  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-color-scheme: dark)')
+  typeof globalThis !== 'undefined' && typeof globalThis.matchMedia === 'function'
+    ? globalThis.matchMedia('(prefers-color-scheme: dark)')
     : null;
 
 /** Calcule l'état sombre effectif pour un mode donné. */
