@@ -16,6 +16,8 @@ interface SettingsCardProps {
   onEditStart: () => void;
   editContent: ReactNode;
   collapsibleContent?: ReactNode;
+  /** Force l'ouverture du contenu repliable (ex. recherche qui matche un enfant). */
+  forceExpanded?: boolean;
   dragRef?: (el: HTMLElement | null) => void;
   dragStyle?: CSSProperties;
 }
@@ -32,11 +34,13 @@ export function SettingsCard({
   onEditStart,
   editContent,
   collapsibleContent,
+  forceExpanded = false,
   dragRef,
   dragStyle,
 }: Readonly<SettingsCardProps>) {
   const { t } = useTranslation('settings');
   const [expanded, setExpanded] = useState(false);
+  const isExpanded = forceExpanded || expanded;
 
   return (
     <article
@@ -53,7 +57,7 @@ export function SettingsCard({
             {collapsibleContent ? (
               <button
                 aria-label={title}
-                aria-expanded={expanded}
+                aria-expanded={isExpanded}
                 onClick={() => setExpanded((v) => !v)}
                 className="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-70 transition-opacity"
               >
@@ -64,7 +68,7 @@ export function SettingsCard({
                   <div className="flex items-center gap-1">
                     <ChevronDown
                       size={12}
-                      className={`text-stone-300 transition-transform duration-200 shrink-0 ${expanded ? '' : '-rotate-90'}`}
+                      className={`text-stone-300 transition-transform duration-200 shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
                     />
                     <p className="font-semibold text-sm tracking-tight leading-none">{title}</p>
                   </div>
@@ -103,7 +107,7 @@ export function SettingsCard({
         )}
       </div>
       {collapsibleContent && (
-        <div hidden={!expanded} className="border-t border-black/5 p-4 pt-3">
+        <div hidden={!isExpanded} className="border-t border-black/5 p-4 pt-3">
           {collapsibleContent}
         </div>
       )}

@@ -37,6 +37,26 @@ describe('CategoriesManager — Filtre', () => {
     expect(screen.queryByText('Logement')).not.toBeInTheDocument();
   });
 
+  it('filtre les catégories par nom de sous-catégorie', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CategoriesManager />);
+    await screen.findByText('Alimentation');
+    await user.type(screen.getByPlaceholderText(/Rechercher/i), 'supermarché');
+    expect(screen.getByText('Alimentation')).toBeInTheDocument();
+    expect(screen.queryByText('Logement')).not.toBeInTheDocument();
+  });
+
+  it('déplie la catégorie quand la recherche matche une sous-catégorie', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CategoriesManager />);
+    await screen.findByText('Alimentation');
+    await user.type(screen.getByPlaceholderText(/Rechercher/i), 'supermarché');
+    expect(screen.getByRole('button', { name: 'Alimentation' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  });
+
   it('affiche un message quand aucune catégorie ne correspond', async () => {
     const user = userEvent.setup();
     renderWithProviders(<CategoriesManager />);

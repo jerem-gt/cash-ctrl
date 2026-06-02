@@ -47,7 +47,10 @@ function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: (
   );
 }
 
-export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
+export function CategoryCard({
+  cat,
+  forceExpanded = false,
+}: Readonly<{ cat: Category; forceExpanded?: boolean }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
   const deleteCat = useDeleteCategory();
@@ -77,6 +80,7 @@ export function CategoryCard({ cat }: Readonly<{ cat: Category }>) {
         onEditStart={() => setEditing(true)}
         editContent={<CategoryEditForm cat={cat} onClose={() => setEditing(false)} />}
         collapsibleContent={<SubCategoriesManager parentCategory={cat} />}
+        forceExpanded={forceExpanded}
       />
       {deleteConfirmModal}
     </>
@@ -92,8 +96,13 @@ export function CategoriesManager() {
 
   if (catsLoading) return <SettingsManagerSkeleton />;
 
-  const filtered = search.trim()
-    ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? categories.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.subcategories.some((s) => s.name.toLowerCase().includes(query)),
+      )
     : categories;
 
   function handleSaveCategory(values: CategoryForm) {
@@ -142,7 +151,13 @@ export function CategoriesManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {filtered.map((cat) => (
-            <CategoryCard key={cat.id} cat={cat} />
+            <CategoryCard
+              key={cat.id}
+              cat={cat}
+              forceExpanded={
+                query !== '' && cat.subcategories.some((s) => s.name.toLowerCase().includes(query))
+              }
+            />
           ))}
         </div>
       )}
