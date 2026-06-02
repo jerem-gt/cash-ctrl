@@ -4,10 +4,6 @@
     "subtitle": "Administration et gestion de l'application",
     "back": "Paramètres"
   },
-  "row_actions": {
-    "edit": "Modifier",
-    "delete": "×"
-  },
   "export": {
     "description": "Exportez toutes vos données au format JSON CashCtrl.",
     "open_btn": "⬇ Exporter…",
