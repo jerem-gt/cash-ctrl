@@ -1,7 +1,8 @@
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { IconButton } from '@/components/ui';
+import { IconButton, Input } from '@/components/ui';
 
 interface CategoryEditorProps {
   name: string;
@@ -31,18 +32,18 @@ export function SubcategoryEditor({
   return (
     <div className="flex items-center gap-2 w-full">
       {/* NOM */}
-      <input
+      <Input
         type="text"
         value={nameValue}
         onChange={(e) => setNameValue(e.target.value)}
-        className="flex-1 bg-transparent text-sm border-b border-black/10 focus:border-black outline-none py-1"
+        className="flex-1"
         placeholder={resolvedPlaceholder}
         autoFocus={autoFocus}
         onKeyDown={(e) => e.key === 'Enter' && onSave(nameValue)}
       />
 
       {/* ACTIONS */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5 shrink-0">
         <IconButton
           label={isPending ? '...' : resolvedLabel}
           size="sm"
@@ -50,15 +51,11 @@ export function SubcategoryEditor({
           onClick={() => onSave(nameValue)}
           className="text-green-600 hover:text-green-700 hover:bg-green-50"
         >
-          <span aria-hidden="true" className="text-base leading-none">
-            ✓
-          </span>
+          <Check size={16} strokeWidth={2.5} />
         </IconButton>
         {onCancel && (
           <IconButton label={tc('cancel')} size="sm" onClick={onCancel}>
-            <span aria-hidden="true" className="text-lg leading-none">
-              ×
-            </span>
+            <X size={16} strokeWidth={2} />
           </IconButton>
         )}
       </div>

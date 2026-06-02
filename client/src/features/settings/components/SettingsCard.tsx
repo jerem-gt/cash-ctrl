@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pencil, X } from 'lucide-react';
 import { CSSProperties, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -86,9 +86,7 @@ export function SettingsCard({
             {badge}
             <div className="flex items-center gap-0.5 shrink-0">
               <IconButton label={t('card.edit_label')} size="sm" onClick={onEditStart}>
-                <span aria-hidden="true" className="text-[12px]">
-                  ✎
-                </span>
+                <Pencil size={14} strokeWidth={1.5} />
               </IconButton>
               {canDelete && onDelete && (
                 <IconButton
@@ -97,9 +95,7 @@ export function SettingsCard({
                   variant="danger"
                   onClick={onDelete}
                 >
-                  <span aria-hidden="true" className="text-lg leading-none">
-                    ×
-                  </span>
+                  <X size={16} strokeWidth={2} />
                 </IconButton>
               )}
             </div>

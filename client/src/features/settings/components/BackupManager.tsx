@@ -2,7 +2,7 @@ import { Download, HardDrive, Play } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { showToast } from '@/components/ui';
+import { Button, Input, showToast } from '@/components/ui';
 import { useBackupList, useRunBackup } from '@/features/settings/hooks/useBackup';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { currentLocale } from '@/lib/format';
@@ -146,7 +146,7 @@ export function BackupManager() {
             <label className="text-sm font-medium text-stone-700" htmlFor="backup-freq">
               {t('backup.freq_label')}
             </label>
-            <input
+            <Input
               id="backup-freq"
               type="number"
               min={1}
@@ -159,7 +159,7 @@ export function BackupManager() {
                   backup_frequency_h: Number.parseInt(e.target.value) || 24,
                 }))
               }
-              className="w-24 text-sm text-right bg-stone-50 border border-black/10 focus:border-black outline-none rounded-lg px-3 py-1.5 transition-colors"
+              className="w-24 text-right"
             />
           </div>
 
@@ -168,7 +168,7 @@ export function BackupManager() {
             <label className="text-sm font-medium text-stone-700" htmlFor="backup-max">
               {t('backup.max_files_label')}
             </label>
-            <input
+            <Input
               id="backup-max"
               type="number"
               min={1}
@@ -181,7 +181,7 @@ export function BackupManager() {
                   backup_max_files: Number.parseInt(e.target.value) || 7,
                 }))
               }
-              className="w-24 text-sm text-right bg-stone-50 border border-black/10 focus:border-black outline-none rounded-lg px-3 py-1.5 transition-colors"
+              className="w-24 text-right"
             />
           </div>
 
@@ -198,35 +198,34 @@ export function BackupManager() {
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-2 border-t border-black/5">
-            <button
+            <Button
               type="button"
+              variant="default"
+              size="sm"
               onClick={handleRunBackup}
               disabled={runBackup.isPending}
-              className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-stone-600 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all disabled:opacity-30"
+              className="gap-2"
             >
               <Play className="w-3.5 h-3.5" />
               {runBackup.isPending ? t('backup.running') : t('backup.run_now')}
-            </button>
+            </Button>
 
             {isDirty && (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={() => void handleSave()}
                 disabled={updateSettings.isPending}
-                className="px-4 py-2 text-[11px] font-black text-green-600 hover:bg-green-50 rounded-xl uppercase tracking-wider transition-all disabled:opacity-30"
               >
                 {updateSettings.isPending ? tc('loading') : tc('save')}
-              </button>
+              </Button>
             )}
 
             {isDirty && (
-              <button
-                type="button"
-                onClick={() => setForm(null)}
-                className="px-4 py-2 text-[11px] font-black text-stone-300 hover:bg-stone-100 rounded-xl uppercase tracking-wider transition-all"
-              >
+              <Button type="button" variant="default" size="sm" onClick={() => setForm(null)}>
                 {tc('cancel')}
-              </button>
+              </Button>
             )}
           </div>
         </div>

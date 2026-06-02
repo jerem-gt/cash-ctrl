@@ -74,7 +74,7 @@ export default function ExportManager() {
     <div className="space-y-5">
       <p className="text-sm text-stone-400 mb-8">{t('export.description')}</p>
 
-      <Button variant="export" onClick={handleOpen}>
+      <Button variant="primary" onClick={handleOpen}>
         {panelOpen ? t('export.close_btn') : t('export.open_btn')}
       </Button>
 

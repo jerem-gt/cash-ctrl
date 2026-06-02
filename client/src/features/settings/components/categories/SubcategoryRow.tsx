@@ -1,3 +1,4 @@
+import { Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -69,9 +70,7 @@ export function SubcategoryRow({
         {/* 3. Groupe d'actions */}
         <div className="flex items-center gap-0.5">
           <IconButton label={t('card.edit_label')} size="sm" onClick={() => setEditing(true)}>
-            <span aria-hidden="true" className="text-[12px]">
-              ✎
-            </span>
+            <Pencil size={14} strokeWidth={1.5} />
           </IconButton>
           <IconButton
             label={t('card.delete_label')}
@@ -81,9 +80,7 @@ export function SubcategoryRow({
             disabled={txCount > 0}
             title={deleteTitle}
           >
-            <span aria-hidden="true" className="text-lg leading-none">
-              ×
-            </span>
+            <X size={16} strokeWidth={2} />
           </IconButton>
         </div>
       </div>

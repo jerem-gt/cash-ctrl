@@ -31,7 +31,7 @@ export function Badge({ variant, children }: Readonly<BadgeProps>) {
 
 // ─── Button ───────────────────────────────────────────────────────────────────
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'primary' | 'danger' | 'export';
+  variant?: 'default' | 'primary' | 'danger';
   size?: 'sm' | 'md';
 }
 export function Button({
@@ -47,7 +47,6 @@ export function Button({
     default: 'bg-white border border-black/[0.13] text-stone-800 hover:bg-stone-50',
     primary: 'bg-brand-600 text-white border border-transparent hover:bg-brand-700',
     danger: 'bg-white border border-red-200 text-red-700 hover:bg-red-50',
-    export: 'bg-green-50 border border-transparent text-green-800 hover:bg-green-100',
   };
   return (
     <button className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} {...props} />
