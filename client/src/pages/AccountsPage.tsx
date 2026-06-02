@@ -468,7 +468,7 @@ function AccountCard({
         ) : (
           acc.opening_date && (
             <p className="text-[11px] text-content-faint uppercase tracking-wider font-medium">
-              {accountSeniority(acc.opening_date)}
+              {accountSeniority(acc.opening_date, t)}
             </p>
           )
         )}

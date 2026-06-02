@@ -167,7 +167,7 @@ export function AccountHeader({
                   )}
                   <span className="mx-2 text-content-faint">—</span>
                   <span className="bg-surface-strong/50 text-content-secondary px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
-                    {accountSeniority(account.opening_date)}
+                    {accountSeniority(account.opening_date, t)}
                   </span>
                 </p>
               )}

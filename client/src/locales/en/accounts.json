@@ -102,5 +102,13 @@
     "duration_year_other": "{{count}} years",
     "duration_year_months_one": "1 year {{months}} months",
     "duration_year_months_other": "{{count}} years {{months}} months"
+  },
+  "seniority": {
+    "less_than_month": "less than a month",
+    "months": "{{count}} months",
+    "year_one": "1 year",
+    "year_other": "{{count}} years",
+    "year_months_one": "1 year {{months}} months",
+    "year_months_other": "{{count}} years {{months}} months"
   }
 }
