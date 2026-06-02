@@ -20,8 +20,10 @@ export const fmt = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-export const fmtDec = (n: number) =>
-  new Intl.NumberFormat(currentLocale(), { style: 'currency', currency: 'EUR' }).format(n);
+export const fmtCurrency = (n: number, currency = 'EUR') =>
+  new Intl.NumberFormat(currentLocale(), { style: 'currency', currency }).format(n);
+
+export const fmtDec = (n: number) => fmtCurrency(n);
 
 export const fmtDate = (s: string) =>
   new Date(s + 'T00:00:00').toLocaleDateString(currentLocale(), {

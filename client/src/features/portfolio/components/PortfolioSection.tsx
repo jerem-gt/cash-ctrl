@@ -11,7 +11,7 @@ import { StockOperationModal } from '@/features/portfolio/components/StockOperat
 import { TransferStockModal } from '@/features/portfolio/components/TransferStockModal';
 import { useRefreshPrices, useStockPositions } from '@/features/portfolio/hooks/useStocks';
 import { getPositionMetrics, getTotalMetrics } from '@/features/portfolio/lib/positionMetrics';
-import { currentLocale } from '@/lib/format';
+import { fmtDec } from '@/lib/format';
 import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
@@ -121,14 +121,8 @@ function PortfolioPositionsList({
   }
 
   const totals = getTotalMetrics(positions);
-  const totalValueEUR = totals.totalMarketValue.toLocaleString(currentLocale(), {
-    style: 'currency',
-    currency: 'EUR',
-  });
-  const totalPnlEUR = totals.totalPnl.toLocaleString(currentLocale(), {
-    style: 'currency',
-    currency: 'EUR',
-  });
+  const totalValueEUR = fmtDec(totals.totalMarketValue);
+  const totalPnlEUR = fmtDec(totals.totalPnl);
 
   return (
     <div className="bg-surface rounded-2xl border border-line-subtle shadow-sm overflow-hidden">

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { currentLocale, fmtStockPrice } from '@/lib/format';
+import { fmtCurrency, fmtStockPrice } from '@/lib/format';
 import type { StockPosition } from '@/types';
 
 import type { PositionMetrics } from '../lib/positionMetrics';
@@ -33,12 +33,7 @@ export function PositionMetricCells({
 }: Readonly<PositionMetricCellsProps>) {
   const { t } = useTranslation('portfolio');
   const valuation =
-    metrics.marketValue == null
-      ? '—'
-      : metrics.marketValue.toLocaleString(currentLocale(), {
-          style: 'currency',
-          currency: pos.currency,
-        });
+    metrics.marketValue == null ? '—' : fmtCurrency(metrics.marketValue, pos.currency);
   return (
     <>
       <MetricCell
@@ -74,7 +69,7 @@ export function PnlBadge({ pnl, pnlPct, pnlColor, currency }: Readonly<PnlBadgeP
     <div className="text-right">
       <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
         {pnl >= 0 ? '+' : ''}
-        {pnl.toLocaleString(currentLocale(), { style: 'currency', currency })}
+        {fmtCurrency(pnl, currency)}
       </p>
       {pnlPct != null && (
         <p className={`text-[11px] tabular-nums ${pnlColor}`}>

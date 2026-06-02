@@ -39,6 +39,17 @@ export function groupAccountsByBank(
     .map(([bank, accs]) => ({ bank: bank === '' ? null : bank, accounts: accs }));
 }
 
+/**
+ * Comptes « liquides » éligibles comme source/destination d'un flux : ni
+ * enveloppe (assurance/PER/bourse), ni clôturés, en excluant le compte courant
+ * de l'opération.
+ */
+export function liquidAccounts(accounts: Account[], exceptId: number): Account[] {
+  return accounts.filter(
+    (a) => a.envelope_type == null && a.closed_at == null && a.id !== exceptId,
+  );
+}
+
 export function accountDisplayBalance(a: Account): number {
   if (a.envelope_type === 'life_insurance' || a.envelope_type === 'per') {
     return a.balance_insurance;

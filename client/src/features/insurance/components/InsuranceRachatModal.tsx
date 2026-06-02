@@ -6,7 +6,9 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useRachat } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useLogoMap } from '@/hooks/useLogoMap';
-import { currentLocale, today } from '@/lib/format';
+import { liquidAccounts } from '@/lib/account';
+import { fmtDec, today } from '@/lib/format';
+import { parseIdOrNull } from '@/lib/parse';
 import type { InsuranceSupportView } from '@/types';
 
 interface Props {
@@ -27,9 +29,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
   const { data: allAccounts = [] } = useAccounts();
   const logoMap = useLogoMap();
 
-  const destAccounts = allAccounts.filter(
-    (a) => a.envelope_type == null && a.closed_at == null && a.id !== accountId,
-  );
+  const destAccounts = liquidAccounts(allAccounts, accountId);
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -40,7 +40,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
         fees: Number.parseFloat(fees) || 0,
         social_fees: Number.parseFloat(socialFees) || 0,
         date,
-        dest_account_id: destAccountId ? Number(destAccountId) : null,
+        dest_account_id: parseIdOrNull(destAccountId),
       },
       {
         onSuccess: () => {
@@ -67,11 +67,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               {t('rachat_modal.amount_label')}
             </label>
             <span className="text-[10px] text-content-subtle">
-              {t('rachat_modal.max_label')}{' '}
-              {support.value.toLocaleString(currentLocale(), {
-                style: 'currency',
-                currency: 'EUR',
-              })}
+              {t('rachat_modal.max_label')} {fmtDec(support.value)}
             </span>
           </div>
           <DecimalInput
@@ -84,16 +80,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
         </div>
 
         {destAccounts.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="rachat-dest"
-              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
-            >
-              <span>{t('rachat_modal.dest_account_label')}</span>
-              <span className="ml-1 text-content-faint normal-case tracking-normal font-normal">
-                {tc('optional')}
-              </span>
-            </label>
+          <FormGroup label={t('rachat_modal.dest_account_label')} htmlFor="rachat-dest" optional>
             <AccountSelect
               id="rachat-dest"
               value={destAccountId}
@@ -102,7 +89,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               logoMap={logoMap}
               placeholder={tc('none')}
             />
-          </div>
+          </FormGroup>
         )}
 
         <div className="flex gap-3 items-end">
