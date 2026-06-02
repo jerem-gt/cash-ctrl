@@ -1,4 +1,8 @@
+import { type TFunction } from 'i18next';
+
 import type { Account, Bank } from '@/types';
+
+type TAccounts = TFunction<'accounts'>;
 
 /**
  * Index { nom de banque → sort_order }, prêt à passer à groupAccountsByBank.
@@ -42,7 +46,7 @@ export function accountDisplayBalance(a: Account): number {
   return a.balance + a.balance_stocks;
 }
 
-export function accountSeniority(openingDate: string): string {
+export function accountSeniority(openingDate: string, t: TAccounts): string {
   const open = new Date(openingDate + 'T00:00:00');
   const now = new Date();
   let years = now.getFullYear() - open.getFullYear();
@@ -52,8 +56,8 @@ export function accountSeniority(openingDate: string): string {
     years--;
     months += 12;
   }
-  if (years === 0 && months === 0) return "moins d'un mois";
-  if (years === 0) return `${months} mois`;
-  if (months === 0) return `${years} an${years > 1 ? 's' : ''}`;
-  return `${years} an${years > 1 ? 's' : ''} ${months} mois`;
+  if (years === 0 && months === 0) return t('seniority.less_than_month');
+  if (years === 0) return t('seniority.months', { count: months });
+  if (months === 0) return t('seniority.year', { count: years });
+  return t('seniority.year_months', { count: years, months });
 }
