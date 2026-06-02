@@ -125,7 +125,7 @@ export default function ScheduledPage() {
 
   const scheduledListOrEmpty =
     scheduled.length === 0 ? (
-      <p className="text-sm text-stone-400 py-2">{t('page.no_scheduled')}</p>
+      <p className="text-sm text-content-subtle py-2">{t('page.no_scheduled')}</p>
     ) : (
       <>
         {visibleScheduled.map((s) => (
@@ -143,7 +143,7 @@ export default function ScheduledPage() {
             <button
               type="button"
               onClick={() => setShowSuspended((v) => !v)}
-              className="w-full flex items-center justify-between px-1 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+              className="w-full flex items-center justify-between px-1 py-2 bg-surface-muted border-t border-line-subtle text-[11px] font-medium text-content-subtle hover:text-content-secondary transition-colors"
             >
               <span>{t('page.suspended_section', { count: suspendedScheduled.length })}</span>
               <span>{showSuspended ? '▲' : '▼'}</span>
@@ -168,13 +168,13 @@ export default function ScheduledPage() {
     <div className="space-y-5">
       <div>
         <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
-        <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
+        <p className="text-sm text-content-subtle mt-0.5">{t('page.subtitle')}</p>
       </div>
 
       {/* Paramètre global : délai d'anticipation */}
       <Card className="max-w-sm">
         <CardTitle>{t('lead_days.title')}</CardTitle>
-        <p className="text-xs text-stone-400 mb-3">{t('lead_days.description')}</p>
+        <p className="text-xs text-content-subtle mb-3">{t('lead_days.description')}</p>
         <form onSubmit={handleSaveLeadDays} className="flex gap-2 items-end">
           <FormGroup label={t('lead_days.label')}>
             <Input
@@ -204,7 +204,7 @@ export default function ScheduledPage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0"
+                className="flex items-center gap-3 py-2.5 border-b border-line-subtle last:border-0"
               >
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-48" />

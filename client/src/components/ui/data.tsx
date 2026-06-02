@@ -34,11 +34,13 @@ export function Pagination({
   return (
     <nav className="flex items-center justify-between pt-1">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-stone-400">{t('pagination.info', { from, to, total })}</span>
+        <span className="text-xs text-content-subtle">
+          {t('pagination.info', { from, to, total })}
+        </span>
         <select
           value={limit}
           onChange={(e) => onLimitChange(Number(e.target.value))}
-          className="text-xs text-stone-500 bg-transparent border border-black/10 rounded px-1.5 py-1 outline-none hover:border-black/20 transition-all"
+          className="text-xs text-content-muted bg-transparent border border-line rounded px-1.5 py-1 outline-none hover:border-line-strong transition-all"
         >
           {LIMIT_OPTIONS.map((o) => (
             <option key={o} value={o}>
@@ -51,7 +53,7 @@ export function Pagination({
         <button
           onClick={() => onChange(1)}
           disabled={page === 1}
-          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.first')}
         >
           «
@@ -59,7 +61,7 @@ export function Pagination({
         <button
           onClick={() => onChange(page - 1)}
           disabled={page === 1}
-          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.prev')}
         >
           ←
@@ -71,14 +73,14 @@ export function Pagination({
             max={totalPages}
             placeholder={String(page)}
             onKeyDown={handlePageInput}
-            className="w-10 text-center text-xs text-stone-600 bg-white border border-black/10 rounded px-1 py-1 outline-none focus:border-black/30 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-10 text-center text-xs text-content-secondary bg-surface border border-line rounded px-1 py-1 outline-none focus:border-line-strong transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <span className="text-xs text-stone-400">/ {totalPages}</span>
+          <span className="text-xs text-content-subtle">/ {totalPages}</span>
         </div>
         <button
           onClick={() => onChange(page + 1)}
           disabled={page === totalPages}
-          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.next')}
         >
           →
@@ -86,7 +88,7 @@ export function Pagination({
         <button
           onClick={() => onChange(totalPages)}
           disabled={page === totalPages}
-          className="px-2.5 py-1.5 text-xs rounded-lg border border-black/10 bg-white text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.last')}
         >
           »

@@ -20,8 +20,8 @@ function BracketRow({ detail }: Readonly<{ detail: BracketDetail }>) {
       ? t('per_simulator.bracket_above', { rate: detail.rate })
       : t('per_simulator.bracket_label', { rate: detail.rate });
   return (
-    <div className="flex items-center justify-between py-1 text-xs text-stone-600">
-      <span className="text-stone-400">{label}</span>
+    <div className="flex items-center justify-between py-1 text-xs text-content-secondary">
+      <span className="text-content-subtle">{label}</span>
       <span className="tabular-nums font-medium">{fmt(detail.tax)}</span>
     </div>
   );
@@ -36,10 +36,12 @@ function TaxColumn({
   const activeBrackets = result.bracketDetails.filter((d) => d.rate > 0);
   return (
     <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">{label}</p>
-      <div className="bg-stone-50 rounded-xl p-3 space-y-1">
-        <div className="flex items-center justify-between pb-2 mb-1 border-b border-stone-100">
-          <span className="text-xs text-stone-500">{t('per_simulator.taxable_income')}</span>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-content-subtle mb-2">
+        {label}
+      </p>
+      <div className="bg-surface-muted rounded-xl p-3 space-y-1">
+        <div className="flex items-center justify-between pb-2 mb-1 border-b border-line-subtle">
+          <span className="text-xs text-content-muted">{t('per_simulator.taxable_income')}</span>
           <span className="text-xs font-semibold tabular-nums">
             {fmt(result.revenuNetImposable)}
           </span>
@@ -47,8 +49,10 @@ function TaxColumn({
         {activeBrackets.map((d) => (
           <BracketRow key={d.rate} detail={d} />
         ))}
-        <div className="flex items-center justify-between pt-2 mt-1 border-t border-stone-200">
-          <span className="text-xs font-bold text-stone-700">{t('per_simulator.total_ir')}</span>
+        <div className="flex items-center justify-between pt-2 mt-1 border-t border-line">
+          <span className="text-xs font-bold text-content-secondary">
+            {t('per_simulator.total_ir')}
+          </span>
           <span className={`text-sm font-bold tabular-nums ${colorClass}`}>
             {fmt(result.impotTotal)}
           </span>
@@ -173,7 +177,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
 
         {/* Mode déduction */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400 mb-2">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-content-subtle mb-2">
             {t('per_simulator.deduction_title')}
           </p>
           <div className="flex gap-4">
@@ -186,10 +190,10 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                 onChange={() => setDeductionMode('forfait')}
                 className="accent-stone-800"
               />
-              <span className="text-sm text-stone-700">
+              <span className="text-sm text-content-secondary">
                 {t('per_simulator.forfait_label')}
                 {yearData && (
-                  <span className="text-stone-400 text-xs ml-1">
+                  <span className="text-content-subtle text-xs ml-1">
                     {t('per_simulator.forfait_min_max', {
                       min: fmt(yearData.params.abattement_min),
                       max: fmt(yearData.params.abattement_max),
@@ -207,7 +211,9 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
                 onChange={() => setDeductionMode('frais_reels')}
                 className="accent-stone-800"
               />
-              <span className="text-sm text-stone-700">{t('per_simulator.frais_reels_label')}</span>
+              <span className="text-sm text-content-secondary">
+                {t('per_simulator.frais_reels_label')}
+              </span>
             </label>
           </div>
           {deductionMode === 'frais_reels' && (
@@ -230,9 +236,9 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
             onChange={(e) => setAppliquerPlafond(e.target.checked)}
             className="accent-stone-800 w-4 h-4 shrink-0"
           />
-          <span className="text-sm text-stone-700">{t('per_simulator.ceiling_label')}</span>
+          <span className="text-sm text-content-secondary">{t('per_simulator.ceiling_label')}</span>
           {!appliquerPlafond && (
-            <span className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+            <span className="text-xs text-info bg-info-surface border border-info/30 px-1.5 py-0.5 rounded">
               {t('per_simulator.ceiling_carried_forward')}
             </span>
           )}
@@ -241,30 +247,30 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
 
       {/* Résultats */}
       {dataLoading && (
-        <div className="mt-5 text-sm text-stone-400 text-center">
+        <div className="mt-5 text-sm text-content-subtle text-center">
           {t('per_simulator.loading_scale')}
         </div>
       )}
 
       {!dataLoading && canCompute && result && (
-        <div className="pt-5 border-t border-stone-100 mt-5 space-y-4">
+        <div className="pt-5 border-t border-line-subtle mt-5 space-y-4">
           {/* Colonnes sans / avec PER */}
           <div className="flex gap-3">
             <TaxColumn
               label={t('per_simulator.col_without_per')}
               result={result.sansPER}
-              colorClass="text-stone-800"
+              colorClass="text-content"
             />
             <TaxColumn
               label={t('per_simulator.col_with_per')}
               result={result.avecPER}
-              colorClass="text-green-700"
+              colorClass="text-success"
             />
           </div>
 
           {/* Avertissement plafond */}
           {result.plafondDepasse && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
+            <div className="flex items-start gap-2 bg-warning-surface border border-warning/30 rounded-xl px-3 py-2.5 text-xs text-warning">
               <span className="shrink-0 mt-0.5">⚠</span>
               <span>
                 <Trans
@@ -282,16 +288,16 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
           )}
 
           {/* Économie */}
-          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <div className="bg-success-surface border border-success/30 rounded-xl px-4 py-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-green-800">
+              <span className="text-sm font-semibold text-success">
                 {t('per_simulator.tax_saving_label')}
               </span>
-              <span className="text-xl font-bold text-green-700 tabular-nums">
+              <span className="text-xl font-bold text-success tabular-nums">
                 {fmt(result.economie)}
               </span>
             </div>
-            <p className="text-xs text-green-600 mt-1.5 leading-relaxed">
+            <p className="text-xs text-success mt-1.5 leading-relaxed">
               <Trans
                 i18nKey="per_simulator.tax_saving_note"
                 ns="insurance"

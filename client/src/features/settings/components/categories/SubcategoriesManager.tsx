@@ -31,7 +31,7 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
 
   return (
     <>
-      <div className="mb-8 p-1 border-b border-black/5 focus-within:border-black/20 transition-colors">
+      <div className="mb-8 p-1 border-b border-line-subtle focus-within:border-line-strong transition-colors">
         <SubcategoryEditor
           key={resetCreationFormKey}
           name=""

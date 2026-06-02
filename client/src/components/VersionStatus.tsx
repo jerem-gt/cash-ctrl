@@ -79,10 +79,10 @@ export function VersionStatus() {
     >
       <div
         className={`h-1.5 w-1.5 rounded-full transition-colors ${
-          isOnline ? 'bg-green-500' : 'bg-red-500'
+          isOnline ? 'bg-success' : 'bg-danger'
         }`}
       />
-      <span className="text-[10px] font-mono tracking-wider text-zinc-400 uppercase">
+      <span className="text-[10px] font-mono tracking-wider text-content-subtle uppercase">
         version {version}
       </span>
     </button>

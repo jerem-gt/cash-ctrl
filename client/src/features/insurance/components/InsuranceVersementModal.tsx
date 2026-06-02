@@ -70,10 +70,10 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="vers-source"
-              className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
             >
               <span>{t('versement_modal.source_account_label')}</span>
-              <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
+              <span className="ml-1 text-content-faint normal-case tracking-normal font-normal">
                 {tc('optional')}
               </span>
             </label>

@@ -23,7 +23,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
         type="button"
         aria-label={t('bank_select.aria_label')}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500 transition-all text-left"
       >
         {selected ? (
           <>
@@ -35,25 +35,25 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
                 onError={(e) => (e.currentTarget.style.display = 'none')}
               />
             ) : (
-              <span className="w-4 h-4 rounded bg-stone-200 shrink-0 inline-block" />
+              <span className="w-4 h-4 rounded bg-surface-strong shrink-0 inline-block" />
             )}
             <span className="flex-1 truncate">{selected.name}</span>
           </>
         ) : (
-          <span className="flex-1 text-stone-400">{t('bank_select.choose')}</span>
+          <span className="flex-1 text-content-subtle">{t('bank_select.choose')}</span>
         )}
-        <span className="text-stone-300 text-xs">▾</span>
+        <span className="text-content-faint text-xs">▾</span>
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-black/[0.09] rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto">
+        <div className="absolute z-20 mt-1 w-full bg-surface border border-line-subtle rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto">
           <button
             type="button"
             onClick={() => {
               onChange('');
               setOpen(false);
             }}
-            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 transition-colors text-left"
+            className="w-full flex items-center px-3 py-2 text-sm text-content-subtle hover:bg-surface-muted transition-colors text-left"
           >
             {t('bank_select.choose')}
           </button>
@@ -65,7 +65,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
                 onChange(String(b.id));
                 setOpen(false);
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 transition-colors text-left ${String(b.id) === value ? 'bg-stone-50 font-medium' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-muted transition-colors text-left ${String(b.id) === value ? 'bg-surface-muted font-medium' : ''}`}
             >
               {b.logo ? (
                 <img
@@ -75,7 +75,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
                   onError={(e) => (e.currentTarget.style.display = 'none')}
                 />
               ) : (
-                <span className="w-4 h-4 rounded bg-stone-200 shrink-0 inline-block" />
+                <span className="w-4 h-4 rounded bg-surface-strong shrink-0 inline-block" />
               )}
               {b.name}
             </button>

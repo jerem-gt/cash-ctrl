@@ -36,7 +36,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('split_editor.title')}
       </p>
       {splits.map((s) => {
@@ -78,7 +78,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
             <button
               type="button"
               onClick={() => remove(s._key)}
-              className="text-stone-300 hover:text-red-400 transition-colors text-lg leading-none px-1"
+              className="text-content-faint hover:text-danger transition-colors text-lg leading-none px-1"
             >
               ×
             </button>
@@ -89,12 +89,12 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
         <button
           type="button"
           onClick={add}
-          className="text-[11px] font-bold text-stone-400 hover:text-stone-700 uppercase tracking-wider"
+          className="text-[11px] font-bold text-content-subtle hover:text-content-secondary uppercase tracking-wider"
         >
           {t('split_editor.add')}
         </button>
         <span
-          className={`text-[11px] font-mono tabular-nums ${Math.abs(remaining) < 0.005 ? 'text-green-600' : 'text-red-500'}`}
+          className={`text-[11px] font-mono tabular-nums ${Math.abs(remaining) < 0.005 ? 'text-success' : 'text-danger'}`}
         >
           {t('split_editor.remaining', { amount: remaining.toFixed(2) })}
         </span>

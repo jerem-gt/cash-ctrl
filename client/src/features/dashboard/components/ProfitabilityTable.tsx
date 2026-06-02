@@ -22,7 +22,7 @@ export function ProfitabilityTable({ list, now }: Readonly<Props>) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs text-stone-400 border-b border-stone-100">
+            <tr className="text-xs text-content-subtle border-b border-line-subtle">
               <th className="text-left py-1.5 pr-4 font-normal">{t('prof_col_account')}</th>
               <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_capital')}</th>
               <th className="text-right py-1.5 pr-4 font-normal">{t('prof_col_value')}</th>
@@ -36,9 +36,9 @@ export function ProfitabilityTable({ list, now }: Readonly<Props>) {
               const gainPos = p.plus_value_absolue >= 0;
               const gainColor = getGainColor(gainPos);
               return (
-                <tr key={p.account_id} className="border-b border-stone-50 last:border-0">
+                <tr key={p.account_id} className="border-b border-line-subtle last:border-0">
                   <td className="py-1.5 pr-4 font-medium">{p.account_name}</td>
-                  <td className="text-right py-1.5 pr-4 tabular-nums text-stone-500">
+                  <td className="text-right py-1.5 pr-4 tabular-nums text-content-muted">
                     {fmt(p.capital_investi)}
                   </td>
                   <td className="text-right py-1.5 pr-4 tabular-nums">{fmt(p.valeur_actuelle)}</td>
@@ -49,7 +49,7 @@ export function ProfitabilityTable({ list, now }: Readonly<Props>) {
                   <td className={`text-right py-1.5 pr-4 tabular-nums ${gainColor}`}>
                     {formatAnnualized(p.rendement_annualise_pct)}
                   </td>
-                  <td className="text-right py-1.5 tabular-nums text-stone-400">
+                  <td className="text-right py-1.5 tabular-nums text-content-subtle">
                     {formatDuration(p.opening_date, now, t)}
                   </td>
                 </tr>

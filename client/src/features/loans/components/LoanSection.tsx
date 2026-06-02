@@ -21,18 +21,18 @@ type Props = {
 function LoanStat({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400">
+      <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-content-subtle">
         {label}
       </span>
-      <span className="font-display text-lg text-stone-900">{value}</span>
+      <span className="font-display text-lg text-content">{value}</span>
     </div>
   );
 }
 
 const STATUS_COLORS = {
-  paid: 'bg-green-50 text-green-700 border-green-200',
-  pending: 'bg-amber-50 text-amber-700 border-amber-200',
-  planned: 'bg-stone-50 text-stone-400 border-stone-200',
+  paid: 'bg-success-surface text-success border-success/30',
+  pending: 'bg-warning-surface text-warning border-warning/30',
+  planned: 'bg-surface-muted text-content-subtle border-line',
 };
 
 function InstallmentRow({
@@ -92,14 +92,14 @@ function InstallmentRow({
 
   if (editing) {
     return (
-      <tr className="bg-stone-50">
-        <td className="px-3 py-2 text-xs text-stone-500">{inst.installment_number}</td>
+      <tr className="bg-surface-muted">
+        <td className="px-3 py-2 text-xs text-content-muted">{inst.installment_number}</td>
         <td className="px-3 py-2">
           <input
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="text-xs border border-stone-300 rounded px-2 py-1 w-36"
+            className="text-xs border border-line-strong rounded px-2 py-1 w-36"
           />
         </td>
         <td className="px-3 py-2">
@@ -107,13 +107,13 @@ function InstallmentRow({
             aria-label={tc('amount')}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="text-xs border border-stone-300 rounded px-2 py-1 w-28 text-right"
+            className="text-xs border border-line-strong rounded px-2 py-1 w-28 text-right"
           />
         </td>
-        <td className="px-3 py-2 text-xs text-stone-400 text-right">
+        <td className="px-3 py-2 text-xs text-content-subtle text-right">
           {fmtDec(inst.principal_amount)}
         </td>
-        <td className="px-3 py-2 text-xs text-stone-400 text-right">
+        <td className="px-3 py-2 text-xs text-content-subtle text-right">
           {fmtDec(inst.interest_amount)}
         </td>
         <td className="px-3 py-2">{statusBadge}</td>
@@ -123,14 +123,14 @@ function InstallmentRow({
               type="button"
               onClick={handleSave}
               disabled={updateInstallment.isPending}
-              className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+              className="p-1.5 text-success hover:bg-success-surface rounded transition-colors"
             >
               <Check size={14} />
             </button>
             <button
               type="button"
               onClick={handleCancel}
-              className="p-1.5 text-stone-400 hover:bg-stone-100 rounded transition-colors"
+              className="p-1.5 text-content-subtle hover:bg-surface-emphasis rounded transition-colors"
             >
               <X size={14} />
             </button>
@@ -141,16 +141,16 @@ function InstallmentRow({
   }
 
   return (
-    <tr className={isPast && !isPaid ? 'bg-red-50/40' : ''}>
-      <td className="px-3 py-2 text-xs text-stone-400">{inst.installment_number}</td>
-      <td className="px-3 py-2 text-xs text-stone-700">{fmtDate(inst.due_date)}</td>
-      <td className="px-3 py-2 text-xs text-stone-900 text-right font-medium">
+    <tr className={isPast && !isPaid ? 'bg-danger-surface/40' : ''}>
+      <td className="px-3 py-2 text-xs text-content-subtle">{inst.installment_number}</td>
+      <td className="px-3 py-2 text-xs text-content-secondary">{fmtDate(inst.due_date)}</td>
+      <td className="px-3 py-2 text-xs text-content text-right font-medium">
         {fmtDec(inst.total_amount)}
       </td>
-      <td className="px-3 py-2 text-xs text-stone-400 text-right">
+      <td className="px-3 py-2 text-xs text-content-subtle text-right">
         {fmtDec(inst.principal_amount)}
       </td>
-      <td className="px-3 py-2 text-xs text-stone-400 text-right">
+      <td className="px-3 py-2 text-xs text-content-subtle text-right">
         {fmtDec(inst.interest_amount)}
       </td>
       <td className="px-3 py-2">{statusBadge}</td>
@@ -159,7 +159,7 @@ function InstallmentRow({
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded transition-colors"
+            className="p-1.5 text-content-subtle hover:text-content-secondary hover:bg-surface-emphasis rounded transition-colors"
           >
             <Pencil size={14} />
           </button>
@@ -203,16 +203,16 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
   return (
     <div className="space-y-5">
       {/* Résumé */}
-      <div className="bg-[#fafaf9] border border-stone-200 rounded-2xl p-6">
+      <div className="bg-[#fafaf9] border border-line rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('section.details_title')}
           </p>
           {!readOnly && (
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-content-subtle hover:text-content-secondary transition-colors"
             >
               <Settings size={13} />
               {t('section.edit_btn')}
@@ -235,99 +235,99 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
         </div>
 
         {/* Ligne 2 — suivi dynamique */}
-        <div className="grid grid-cols-2 gap-5 pt-4 border-t border-stone-200">
+        <div className="grid grid-cols-2 gap-5 pt-4 border-t border-line">
           {/* Capital */}
           <div>
-            <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 block mb-3">
+            <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-content-subtle block mb-3">
               {t('section.capital_section')}
             </span>
             <div className="flex justify-between items-end mb-2">
               <div>
-                <span className="text-[10px] text-stone-400 block mb-0.5">
+                <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.repaid')}
                 </span>
-                <span className="font-display text-lg text-stone-900">{fmtDec(paidPrincipal)}</span>
+                <span className="font-display text-lg text-content">{fmtDec(paidPrincipal)}</span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-stone-400 block mb-0.5">
+                <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.remaining_due')}
                 </span>
-                <span className="font-display text-lg text-red-700">
-                  {fmtDec(capitalRestantDu)}
-                </span>
+                <span className="font-display text-lg text-danger">{fmtDec(capitalRestantDu)}</span>
               </div>
             </div>
-            <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-emphasis rounded-full overflow-hidden">
               <div
-                className="h-full bg-stone-700 rounded-full transition-all"
+                className="h-full bg-surface-strong rounded-full transition-all"
                 style={{ width: `${capitalPct}%` }}
               />
             </div>
-            <p className="text-[10px] text-stone-300 mt-1 text-right">{capitalPct} %</p>
+            <p className="text-[10px] text-content-faint mt-1 text-right">{capitalPct} %</p>
           </div>
 
           {/* Intérêts */}
           <div>
-            <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 block mb-3">
+            <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-content-subtle block mb-3">
               {t('section.interest_section')}
             </span>
             <div className="flex justify-between items-end mb-2">
               <div>
-                <span className="text-[10px] text-stone-400 block mb-0.5">{t('section.paid')}</span>
-                <span className="font-display text-lg text-stone-900">{fmtDec(paidInterest)}</span>
+                <span className="text-[10px] text-content-subtle block mb-0.5">
+                  {t('section.paid')}
+                </span>
+                <span className="font-display text-lg text-content">{fmtDec(paidInterest)}</span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-stone-400 block mb-0.5">
+                <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.remaining')}
                 </span>
-                <span className="font-display text-lg text-stone-900">
+                <span className="font-display text-lg text-content">
                   {fmtDec(remainingInterest)}
                 </span>
               </div>
             </div>
-            <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-emphasis rounded-full overflow-hidden">
               <div
-                className="h-full bg-amber-400 rounded-full transition-all"
+                className="h-full bg-warning rounded-full transition-all"
                 style={{ width: `${interestPct}%` }}
               />
             </div>
-            <p className="text-[10px] text-stone-300 mt-1 text-right">{interestPct} %</p>
+            <p className="text-[10px] text-content-faint mt-1 text-right">{interestPct} %</p>
           </div>
         </div>
       </div>
 
       {/* Échéancier */}
       <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-3">
           {t('section.schedule_title', { count: installments.length })}
         </p>
-        <div className="border border-stone-200 rounded-2xl overflow-hidden">
+        <div className="border border-line rounded-2xl overflow-hidden">
           <div className="overflow-x-auto max-h-120 overflow-y-auto">
             <table className="w-full min-w-[480px] text-sm">
-              <thead className="bg-stone-50 sticky top-0 z-10">
+              <thead className="bg-surface-muted sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_number')}
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_due_date')}
                   </th>
-                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_installment')}
                   </th>
-                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_capital')}
                   </th>
-                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-right text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_interest')}
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-stone-400 font-medium">
+                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wide text-content-subtle font-medium">
                     {t('section.col_status')}
                   </th>
                   <th className="px-3 py-2.5 w-10" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody className="divide-y divide-line-subtle">
                 {installments.map((inst) => (
                   <InstallmentRow
                     key={inst.id}

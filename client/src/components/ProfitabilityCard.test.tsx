@@ -55,6 +55,6 @@ describe('ProfitabilityCard', () => {
   it('affiche la couleur rouge pour une plus-value négative', () => {
     renderWithProviders(<ProfitabilityCard data={negativeData} />);
     const plusValueCell = screen.getByText(/-500/);
-    expect(plusValueCell.closest('div')).toHaveClass('text-red-600');
+    expect(plusValueCell.closest('div')).toHaveClass('text-danger');
   });
 });

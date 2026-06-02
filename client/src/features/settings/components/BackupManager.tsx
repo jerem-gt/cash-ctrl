@@ -22,12 +22,12 @@ function BackupRow({ file }: Readonly<{ file: BackupFile }>) {
   });
 
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-black/3 transition-all">
+    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-surface-emphasis transition-all">
       <div className="flex items-center gap-3 min-w-0">
-        <HardDrive className="w-4 h-4 text-stone-400 shrink-0" />
+        <HardDrive className="w-4 h-4 text-content-subtle shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-medium text-stone-800 truncate">{file.filename}</p>
-          <p className="text-[11px] text-stone-400">
+          <p className="text-sm font-medium text-content truncate">{file.filename}</p>
+          <p className="text-[11px] text-content-subtle">
             {date} · {formatBytes(file.size)}
           </p>
         </div>
@@ -35,7 +35,7 @@ function BackupRow({ file }: Readonly<{ file: BackupFile }>) {
       <a
         href={`/api/backup/${encodeURIComponent(file.filename)}`}
         download={file.filename}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-stone-500 hover:text-black bg-stone-50 hover:bg-stone-100 rounded-xl transition-all shrink-0 ml-4"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-content-muted hover:text-content bg-surface-muted hover:bg-surface-emphasis rounded-xl transition-all shrink-0 ml-4"
       >
         <Download className="w-3.5 h-3.5" />
         {t('backup.download')}
@@ -94,9 +94,9 @@ export function BackupManager() {
 
   let backupContent: ReactNode;
   if (backupsLoading) {
-    backupContent = <p className="text-sm text-stone-400">{tc('loading')}</p>;
+    backupContent = <p className="text-sm text-content-subtle">{tc('loading')}</p>;
   } else if (backups.length === 0) {
-    backupContent = <p className="text-sm text-stone-400 italic">{t('backup.no_backups')}</p>;
+    backupContent = <p className="text-sm text-content-subtle italic">{t('backup.no_backups')}</p>;
   } else {
     backupContent = (
       <div className="flex flex-col">
@@ -110,15 +110,15 @@ export function BackupManager() {
   return (
     <div className="max-w-2xl flex flex-col gap-8">
       {/* Configuration */}
-      <div className="bg-white rounded-4xl p-8 shadow-sm border border-black/5">
-        <h2 className="text-lg font-extrabold tracking-tight text-stone-900 mb-6">
+      <div className="bg-surface rounded-4xl p-8 shadow-sm border border-line-subtle">
+        <h2 className="text-lg font-extrabold tracking-tight text-content mb-6">
           {t('backup.config_title')}
         </h2>
 
         <div className="flex flex-col gap-5">
           {/* Activation */}
           <div className="flex items-center justify-between gap-4 cursor-pointer">
-            <span id="backup-enabled-label" className="text-sm font-medium text-stone-700">
+            <span id="backup-enabled-label" className="text-sm font-medium text-content-secondary">
               {t('backup.enable_label')}
             </span>
             <button
@@ -130,11 +130,11 @@ export function BackupManager() {
                 setForm((f) => ({ ...current, ...f, backup_enabled: !current.backup_enabled }))
               }
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                current.backup_enabled ? 'bg-brand-600' : 'bg-stone-200'
+                current.backup_enabled ? 'bg-brand-600' : 'bg-surface-strong'
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 ${
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-surface shadow ring-0 transition-transform duration-200 ${
                   current.backup_enabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -143,7 +143,7 @@ export function BackupManager() {
 
           {/* Fréquence */}
           <div className="flex items-center justify-between gap-4">
-            <label className="text-sm font-medium text-stone-700" htmlFor="backup-freq">
+            <label className="text-sm font-medium text-content-secondary" htmlFor="backup-freq">
               {t('backup.freq_label')}
             </label>
             <Input
@@ -165,7 +165,7 @@ export function BackupManager() {
 
           {/* Fichiers max */}
           <div className="flex items-center justify-between gap-4">
-            <label className="text-sm font-medium text-stone-700" htmlFor="backup-max">
+            <label className="text-sm font-medium text-content-secondary" htmlFor="backup-max">
               {t('backup.max_files_label')}
             </label>
             <Input
@@ -187,7 +187,7 @@ export function BackupManager() {
 
           {/* Dernier backup */}
           {settings?.backup_last_at && (
-            <p className="text-[11px] text-stone-400">
+            <p className="text-[11px] text-content-subtle">
               {t('backup.last_backup')}{' '}
               {new Date(settings.backup_last_at).toLocaleString(currentLocale(), {
                 dateStyle: 'short',
@@ -197,7 +197,7 @@ export function BackupManager() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-2 border-t border-black/5">
+          <div className="flex items-center gap-3 pt-2 border-t border-line-subtle">
             <Button
               type="button"
               variant="default"
@@ -232,8 +232,8 @@ export function BackupManager() {
       </div>
 
       {/* Liste des backups */}
-      <div className="bg-white rounded-4xl p-8 shadow-sm border border-black/5">
-        <h2 className="text-lg font-extrabold tracking-tight text-stone-900 mb-4">
+      <div className="bg-surface rounded-4xl p-8 shadow-sm border border-line-subtle">
+        <h2 className="text-lg font-extrabold tracking-tight text-content mb-4">
           {t('backup.files_title')}
         </h2>
 

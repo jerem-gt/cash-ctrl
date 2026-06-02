@@ -128,7 +128,7 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <div>
         <h2 className="font-display text-2xl tracking-tight">{t('title')}</h2>
-        <p className="text-sm text-stone-400 mt-0.5">{t('subtitle')}</p>
+        <p className="text-sm text-content-subtle mt-0.5">{t('subtitle')}</p>
       </div>
 
       {/* Metrics */}
@@ -180,13 +180,13 @@ export default function DashboardPage() {
                 {catData.map((d) => (
                   <div
                     key={d.name}
-                    className="flex items-center gap-1.5 text-[11px] text-stone-500"
+                    className="flex items-center gap-1.5 text-[11px] text-content-muted"
                   >
                     <div
                       className="w-2 h-2 rounded-sm shrink-0"
                       style={{ background: colorMap[d.name] }}
                     />
-                    {d.name} <strong className="text-stone-700">{fmt(d.value)}</strong>
+                    {d.name} <strong className="text-content-secondary">{fmt(d.value)}</strong>
                   </div>
                 ))}
               </div>
@@ -201,7 +201,10 @@ export default function DashboardPage() {
               ['#7DBB4A', t('chart_income')],
               ['#D46060', t('chart_expenses')],
             ].map(([color, label]) => (
-              <div key={label} className="flex items-center gap-1.5 text-[11px] text-stone-400">
+              <div
+                key={label}
+                className="flex items-center gap-1.5 text-[11px] text-content-subtle"
+              >
                 <div className="w-2 h-2 rounded-sm" style={{ background: color }} />
                 {label}
               </div>

@@ -66,7 +66,7 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
         </FormGroup>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-content-subtle">
             {t('add_support_modal.type_label')}
           </span>
           <div className="flex gap-4">

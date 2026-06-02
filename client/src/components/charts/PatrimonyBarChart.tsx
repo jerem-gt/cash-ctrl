@@ -9,6 +9,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import { useIsDark } from '@/hooks/useTheme';
+import { chartTheme } from '@/lib/chartTheme';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDec } from '@/lib/format';
 
@@ -29,6 +31,7 @@ export default function PatrimonyBarChart({
   hasLoans,
   labelFor,
 }: Readonly<Props>) {
+  const theme = chartTheme(useIsDark());
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart
@@ -37,9 +40,14 @@ export default function PatrimonyBarChart({
         barGap={2}
         margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
       >
-        <XAxis dataKey="year" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+        <XAxis
+          dataKey="year"
+          tick={{ fontSize: 11, fill: theme.axisTick }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: theme.axisTick }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v) => fmt(Number(v))}
@@ -52,9 +60,12 @@ export default function PatrimonyBarChart({
             const pct = total === 0 ? 0 : (Number(v) / total) * 100;
             return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, labelFor(String(name))];
           }}
-          cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+          contentStyle={theme.tooltipContentStyle}
+          itemStyle={theme.tooltipItemStyle}
+          labelStyle={theme.tooltipLabelStyle}
+          cursor={{ fill: theme.cursor }}
         />
-        {hasLoans && <ReferenceLine y={0} stroke="rgba(0,0,0,0.15)" strokeWidth={1} />}
+        {hasLoans && <ReferenceLine y={0} stroke={theme.refLine} strokeWidth={1} />}
         {types.map((type, i) => {
           const isNeg = negativeTypes.has(type);
           const isTopPositive = type === lastPositiveType;
@@ -72,7 +83,7 @@ export default function PatrimonyBarChart({
                   dataKey="_total"
                   position="top"
                   formatter={(v: unknown) => fmt(Number(v ?? 0))}
-                  style={{ fontSize: 10, fill: '#78716c' }}
+                  style={{ fontSize: 10, fill: theme.axisTick }}
                 />
               )}
             </Bar>

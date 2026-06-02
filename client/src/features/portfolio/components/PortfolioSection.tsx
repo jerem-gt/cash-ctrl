@@ -24,10 +24,10 @@ interface PositionRowProps {
 function PositionTicker({ pos, lineClamp }: Readonly<{ pos: StockPosition; lineClamp?: boolean }>) {
   return (
     <>
-      <span className="text-sm font-bold text-stone-800 font-mono">{pos.ticker}</span>
+      <span className="text-sm font-bold text-content font-mono">{pos.ticker}</span>
       {pos.name && (
         <p
-          className={`text-[10px] text-stone-400 mt-0.5 ${lineClamp ? 'line-clamp-2' : 'truncate'}`}
+          className={`text-[10px] text-content-subtle mt-0.5 ${lineClamp ? 'line-clamp-2' : 'truncate'}`}
           title={pos.name}
         >
           {pos.name}
@@ -41,7 +41,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
   const metrics = getPositionMetrics(pos);
 
   return (
-    <div className="px-4 py-3 border-b border-stone-100 last:border-0">
+    <div className="px-4 py-3 border-b border-line-subtle last:border-0">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div>
           <PositionTicker pos={pos} />
@@ -58,7 +58,7 @@ function PositionRowMobile({ pos, onBuy, onSell, onTransfer }: Readonly<Position
         <PositionMetricCells
           pos={pos}
           metrics={metrics}
-          cellClassName="text-xs font-medium text-stone-700 tabular-nums"
+          cellClassName="text-xs font-medium text-content-secondary tabular-nums"
         />
       </div>
 
@@ -73,7 +73,7 @@ function PositionRow({ pos, onBuy, onSell, onTransfer }: Readonly<PositionRowPro
   const metrics = getPositionMetrics(pos);
 
   return (
-    <div className="flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
+    <div className="flex items-center gap-4 py-3 px-4 hover:bg-surface-muted rounded-xl transition-colors">
       <div className="w-24 shrink-0">
         <PositionTicker pos={pos} lineClamp />
       </div>
@@ -110,11 +110,11 @@ function PortfolioPositionsList({
 }: Readonly<Omit<PositionsListProps, 'pos'>>) {
   const { t } = useTranslation('portfolio');
   if (isLoading) {
-    return <Spinner className="h-4 w-4 text-stone-400 my-4 mx-auto" />;
+    return <Spinner className="h-4 w-4 text-content-subtle my-4 mx-auto" />;
   }
   if (positions.length === 0) {
     return (
-      <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
+      <div className="text-center py-8 text-content-faint text-sm border-2 border-dashed border-line-subtle rounded-2xl">
         {t('section.no_positions')}
       </div>
     );
@@ -131,7 +131,7 @@ function PortfolioPositionsList({
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-line-subtle shadow-sm overflow-hidden">
       {/* Mobile : cards empilées */}
       <div className="sm:hidden">
         {positions.map((pos) => (
@@ -144,12 +144,12 @@ function PortfolioPositionsList({
           />
         ))}
         {positions.length > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-t border-stone-100">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface-muted border-t border-line-subtle">
+            <span className="text-[11px] font-bold text-content-subtle uppercase tracking-wider">
               {t('section.total_label')}
             </span>
             <div className="text-right">
-              <p className="text-sm font-bold text-stone-800 tabular-nums">{totalValueEUR}</p>
+              <p className="text-sm font-bold text-content tabular-nums">{totalValueEUR}</p>
               <p className={`text-[11px] tabular-nums ${totals.totalPnlColor}`}>
                 {totals.totalPnl >= 0 ? '+' : ''}
                 {totalPnlEUR} ({totals.totalPnlPct >= 0 ? '+' : ''}
@@ -173,9 +173,9 @@ function PortfolioPositionsList({
             />
           ))}
           {positions.length > 1 && (
-            <div className="flex items-center gap-4 py-3 px-4 bg-stone-50 border-t border-stone-100">
+            <div className="flex items-center gap-4 py-3 px-4 bg-surface-muted border-t border-line-subtle">
               <div className="w-24 shrink-0">
-                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-content-subtle uppercase tracking-wider">
                   {t('section.total_label')}
                 </span>
               </div>
@@ -184,7 +184,7 @@ function PortfolioPositionsList({
                 <div />
                 <div />
                 <div>
-                  <p className="font-bold text-stone-800 tabular-nums">{totalValueEUR}</p>
+                  <p className="font-bold text-content tabular-nums">{totalValueEUR}</p>
                 </div>
               </div>
               <div className="w-28 shrink-0">
@@ -229,7 +229,7 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
     <>
       <div>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('section.title')}
           </p>
           <div className="flex gap-2">

@@ -281,11 +281,11 @@ export function LoanFormModal(props: Readonly<Props>) {
           </FormGroup>
         </div>
         {monthlyPayment > 0 && (
-          <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-xs text-stone-500 uppercase tracking-wide font-medium">
+          <div className="bg-surface-muted border border-line rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-xs text-content-muted uppercase tracking-wide font-medium">
               {t('form_modal.monthly_estimate')}
             </span>
-            <span className="font-display text-xl text-stone-900">
+            <span className="font-display text-xl text-content">
               {monthlyPayment.toLocaleString(currentLocale(), { minimumFractionDigits: 2 })} €
             </span>
           </div>

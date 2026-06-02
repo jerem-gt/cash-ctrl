@@ -21,13 +21,13 @@ describe('AccountBadge', () => {
 
   it('affiche un placeholder si pas de logo mais banque connue', () => {
     const { container } = render(<AccountBadge name="Compte" bank="BNP" logo={null} />);
-    const placeholder = container.querySelector('.bg-stone-100');
+    const placeholder = container.querySelector('.bg-surface-emphasis');
     expect(placeholder).toBeInTheDocument();
   });
 
   it("n'affiche pas de placeholder si pas de banque", () => {
     const { container } = render(<AccountBadge name="Compte" />);
-    expect(container.querySelector('.bg-stone-100')).not.toBeInTheDocument();
+    expect(container.querySelector('.bg-surface-emphasis')).not.toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 

@@ -22,14 +22,14 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-canvas flex items-center justify-center p-6">
-      <div className="bg-white border border-black/[0.07] rounded-2xl p-8 w-full max-w-sm shadow-lg">
+      <div className="bg-surface border border-line-subtle rounded-2xl p-8 w-full max-w-sm shadow-lg">
         <h1 className="font-display text-2xl mb-1">
           {APP_CONFIG.name} {isDev && <span className="opacity-50 font-light">(dev)</span>}
         </h1>
-        <p className="text-sm text-stone-400 mb-7">{t('login.subtitle')}</p>
+        <p className="text-sm text-content-subtle mb-7">{t('login.subtitle')}</p>
 
         {login.error && (
-          <div className="bg-red-50 border border-red-100 text-red-700 text-sm px-3 py-2 rounded-lg mb-5">
+          <div className="bg-danger-surface border border-danger/30 text-danger text-sm px-3 py-2 rounded-lg mb-5">
             {login.error.message}
           </div>
         )}

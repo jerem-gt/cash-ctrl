@@ -11,7 +11,7 @@ export function Card({ children, className = '', size = 'md' }: Readonly<CardPro
   const padding = { sm: 'p-4', md: 'p-5' };
   return (
     <div
-      className={`bg-white border border-black/[0.07] rounded-2xl ${padding[size]} shadow-sm ${className}`}
+      className={`bg-surface border border-line-subtle rounded-2xl ${padding[size]} shadow-sm ${className}`}
     >
       {children}
     </div>
@@ -20,7 +20,7 @@ export function Card({ children, className = '', size = 'md' }: Readonly<CardPro
 
 export function CardTitle({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
+    <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-4">
       {children}
     </p>
   );
@@ -43,14 +43,14 @@ interface MetricProps {
 }
 
 const METRIC_VALUE_COLORS = {
-  default: 'text-stone-900',
-  positive: 'text-green-800',
-  negative: 'text-red-800',
+  default: 'text-content',
+  positive: 'text-success',
+  negative: 'text-danger',
 };
 const METRIC_ICON_COLORS = {
   default: 'bg-brand-50 text-brand-600',
-  positive: 'bg-green-50 text-green-600',
-  negative: 'bg-red-50 text-red-600',
+  positive: 'bg-success-surface text-success',
+  negative: 'bg-danger-surface text-danger',
 };
 
 function MetricTrendBadge({
@@ -61,10 +61,10 @@ function MetricTrendBadge({
   let tone: string;
   let Arrow: typeof Minus;
   if (trend.direction === 'flat') {
-    tone = 'text-stone-400';
+    tone = 'text-content-subtle';
     Arrow = Minus;
   } else {
-    tone = trend.positive ? 'text-green-600' : 'text-red-500';
+    tone = trend.positive ? 'text-success' : 'text-danger';
     Arrow = trend.direction === 'up' ? ArrowUpRight : ArrowDownRight;
   }
   return (
@@ -73,7 +73,7 @@ function MetricTrendBadge({
         <Arrow size={12} strokeWidth={2.5} />
         {trend.value}
       </span>
-      {trendLabel && <span className="text-stone-300">{trendLabel}</span>}
+      {trendLabel && <span className="text-content-faint">{trendLabel}</span>}
     </p>
   );
 }
@@ -91,12 +91,12 @@ export function Metric({
   if (trend) {
     footer = <MetricTrendBadge trend={trend} trendLabel={trendLabel} />;
   } else if (sub) {
-    footer = <p className="text-[11px] text-stone-300 mt-1">{sub}</p>;
+    footer = <p className="text-[11px] text-content-faint mt-1">{sub}</p>;
   }
   return (
     <Card size="sm">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">{label}</p>
+        <p className="text-[11px] text-content-subtle uppercase tracking-wider mb-1.5">{label}</p>
         {icon && (
           <span
             className={`shrink-0 flex items-center justify-center w-7 h-7 rounded-lg ${METRIC_ICON_COLORS[variant]}`}
@@ -128,10 +128,10 @@ interface TabsProps {
 
 const TAB_STYLES = {
   default: {
-    container: 'bg-stone-100 rounded-lg p-1',
+    container: 'bg-surface-emphasis rounded-lg p-1',
     button: 'px-3 py-1.5 text-sm rounded-md',
-    active: 'bg-white text-stone-900 shadow-sm',
-    inactive: 'text-stone-500 hover:text-stone-700',
+    active: 'bg-surface text-content shadow-sm',
+    inactive: 'text-content-muted hover:text-content-secondary',
   },
   sidebar: {
     container: 'bg-white/6 rounded-md p-0.5',

@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 export function Skeleton({ className = '' }: Readonly<{ className?: string }>) {
-  return <div className={`bg-stone-100 animate-pulse rounded-md ${className}`} />;
+  return <div className={`bg-surface-emphasis animate-pulse rounded-md ${className}`} />;
 }
 
 // ─── Empty ────────────────────────────────────────────────────────────────────
 export function Empty({ children }: Readonly<{ children: ReactNode }>) {
-  return <div className="text-center py-12 text-stone-300 text-sm">{children}</div>;
+  return <div className="text-center py-12 text-content-faint text-sm">{children}</div>;
 }
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
@@ -37,10 +37,10 @@ interface AlertProps {
 }
 export function Alert({ variant, children }: Readonly<AlertProps>) {
   const variants = {
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    warning: 'bg-amber-50 border-amber-200 text-amber-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
+    info: 'bg-info-surface border-info/30 text-info',
+    success: 'bg-success-surface border-success/30 text-success',
+    warning: 'bg-warning-surface border-warning/30 text-warning',
+    error: 'bg-danger-surface border-danger/30 text-danger',
   };
   return (
     <div className={`text-sm px-4 py-3 rounded-lg border ${variants[variant]}`}>{children}</div>
@@ -66,7 +66,7 @@ export function Toast() {
   return (
     <div
       id="toast"
-      className="fixed bottom-6 right-6 bg-stone-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg opacity-0 translate-y-2 transition-all duration-200 pointer-events-none z-50"
+      className="fixed bottom-6 right-6 bg-inverse text-inverse-fg px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg opacity-0 translate-y-2 transition-all duration-200 pointer-events-none z-50"
     />
   );
 }

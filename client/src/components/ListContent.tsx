@@ -18,7 +18,7 @@ function SkeletonRows({ count = 3 }: Readonly<{ count?: number }>) {
         <div
           // eslint-disable-next-line @eslint-react/no-array-index-key -- skeleton statique sans données
           key={`skeleton-item-${id}-${i}`}
-          className="flex items-center gap-2.5 py-2 border-b border-black/[0.06] last:border-0"
+          className="flex items-center gap-2.5 py-2 border-b border-line-subtle last:border-0"
         >
           <Skeleton className="w-5 h-5 shrink-0" />
           <Skeleton className="h-3.5 flex-1" />
@@ -36,7 +36,7 @@ export function ListContent<T>({
   skeletonCount = 3,
 }: Readonly<Props<T>>) {
   if (isLoading) return <SkeletonRows count={skeletonCount} />;
-  if (items.length === 0) return <p className="text-sm text-stone-400 py-2">{empty}</p>;
+  if (items.length === 0) return <p className="text-sm text-content-subtle py-2">{empty}</p>;
 
   return <>{items.map(render)}</>;
 }

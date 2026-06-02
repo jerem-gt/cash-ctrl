@@ -34,38 +34,34 @@ export function JsonConfirmStep({
         {data.stats.map(({ value, label }) => (
           <div
             key={label}
-            className="flex-1 min-w-22.5 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
+            className="flex-1 min-w-22.5 bg-surface border border-line-subtle rounded-2xl p-4 shadow-sm text-center"
           >
-            <p className="text-2xl font-display text-stone-800">{value}</p>
-            <p className="text-xs text-stone-400 mt-0.5">{label}</p>
+            <p className="text-2xl font-display text-content">{value}</p>
+            <p className="text-xs text-content-subtle mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
       <Card>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-3">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-3">
           {t('import.confirm_content_title')}
         </p>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-stone-600">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm text-content-secondary">
           <span>{t('import.confirm_categories')}</span>
-          <span className="text-stone-800 font-medium">
+          <span className="text-content font-medium">
             {t('import.confirm_categories_count', {
               count: data.cats.length,
               subcount: data.subcatCount,
             })}
           </span>
           <span>{t('import.confirm_payment_methods')}</span>
-          <span className="text-stone-800 font-medium">
-            {(data.d.payment_methods ?? []).length}
-          </span>
+          <span className="text-content font-medium">{(data.d.payment_methods ?? []).length}</span>
           <span>{t('import.confirm_account_types')}</span>
-          <span className="text-stone-800 font-medium">{(data.d.account_types ?? []).length}</span>
+          <span className="text-content font-medium">{(data.d.account_types ?? []).length}</span>
           <span>{t('import.confirm_stock_positions')}</span>
-          <span className="text-stone-800 font-medium">
-            {(data.d.stock_positions ?? []).length}
-          </span>
+          <span className="text-content font-medium">{(data.d.stock_positions ?? []).length}</span>
         </div>
-        <p className="text-xs text-stone-400 mt-4">{t('import.confirm_note')}</p>
+        <p className="text-xs text-content-subtle mt-4">{t('import.confirm_note')}</p>
       </Card>
 
       {errorMessage && <ImportErrorMessage message={errorMessage} />}

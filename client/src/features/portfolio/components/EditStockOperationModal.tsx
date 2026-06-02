@@ -60,7 +60,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
       subtitle={
         <>
           {isBuy ? t('edit_operation_modal.subtitle_buy') : t('edit_operation_modal.subtitle_sell')}{' '}
-          — <span className="font-mono font-bold text-stone-600">{op.ticker}</span>
+          — <span className="font-mono font-bold text-content-secondary">{op.ticker}</span>
         </>
       }
     >
@@ -104,15 +104,13 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
           </FormGroup>
         </div>
 
-        <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
-          <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
+        <div className="bg-surface-muted rounded-xl p-3 border border-line">
+          <p className="text-[11px] text-content-subtle uppercase tracking-wider mb-1">
             {isBuy
               ? t('edit_operation_modal.total_label')
               : t('edit_operation_modal.total_received')}
           </p>
-          <p
-            className={`font-display text-xl ${totalAmount < 0 ? 'text-red-700' : 'text-stone-900'}`}
-          >
+          <p className={`font-display text-xl ${totalAmount < 0 ? 'text-danger' : 'text-content'}`}>
             {totalAmount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>

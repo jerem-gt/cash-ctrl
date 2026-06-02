@@ -343,7 +343,7 @@ export default function ImportManager() {
 
   return (
     <div className="max-w-4xl">
-      <p className="text-sm text-stone-400 mb-8">{t('import.description')}</p>
+      <p className="text-sm text-content-subtle mb-8">{t('import.description')}</p>
 
       <StepIndicator step={step} format={parsedFile?.format ?? null} />
 

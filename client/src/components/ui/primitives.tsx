@@ -13,11 +13,11 @@ interface BadgeProps {
 }
 export function Badge({ variant, children }: Readonly<BadgeProps>) {
   const variants = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-200',
-    indigo: 'bg-indigo-50 text-indigo-500 border-indigo-200',
-    green: 'bg-green-50 text-green-600 border-green-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    stone: 'bg-stone-100 text-stone-500 border-stone-200',
+    blue: 'bg-info-surface text-info border-info/30',
+    indigo: 'bg-info-surface text-info border-info/30',
+    green: 'bg-success-surface text-success border-success/30',
+    amber: 'bg-warning-surface text-warning border-warning/30',
+    stone: 'bg-surface-emphasis text-content-muted border-line',
     brand: 'bg-brand-50 text-brand-700 border-brand-200',
   };
   return (
@@ -44,9 +44,9 @@ export function Button({
     'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed';
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm' };
   const variants = {
-    default: 'bg-white border border-black/[0.13] text-stone-800 hover:bg-stone-50',
+    default: 'bg-surface border border-line text-content hover:bg-surface-muted',
     primary: 'bg-brand-600 text-white border border-transparent hover:bg-brand-700',
-    danger: 'bg-white border border-red-200 text-red-700 hover:bg-red-50',
+    danger: 'bg-surface border border-danger/30 text-danger hover:bg-danger-surface',
   };
   return (
     <button className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} {...props} />
@@ -68,9 +68,9 @@ export function IconButton({
 }: Readonly<IconButtonProps>) {
   const sizes = { sm: 'h-7 w-7', md: 'h-8 w-8' };
   const variants = {
-    ghost: 'text-stone-400 hover:text-stone-700 hover:bg-stone-100',
-    default: 'bg-white border border-black/[0.13] text-stone-700 hover:bg-stone-50',
-    danger: 'text-red-400 hover:text-red-700 hover:bg-red-50',
+    ghost: 'text-content-subtle hover:text-content-secondary hover:bg-surface-emphasis',
+    default: 'bg-surface border border-line text-content-secondary hover:bg-surface-muted',
+    danger: 'text-danger hover:text-danger hover:bg-danger-surface',
   };
   return (
     <button
@@ -89,7 +89,7 @@ export function Input({
 }: Readonly<InputHTMLAttributes<HTMLInputElement>>) {
   return (
     <input
-      className={`w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      className={`w-full px-3 py-2 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       {...props}
     />
   );
@@ -127,7 +127,7 @@ export function Select({
 }: Readonly<SelectHTMLAttributes<HTMLSelectElement>>) {
   return (
     <select
-      className={`w-full h-9 px-3 py-2 text-sm text-stone-700 bg-white border border-stone-200 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all ${className}`}
+      className={`w-full h-9 px-3 py-2 text-sm text-content-secondary bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all ${className}`}
       {...props}
     />
   );

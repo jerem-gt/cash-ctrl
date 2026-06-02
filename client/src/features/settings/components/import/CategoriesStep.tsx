@@ -36,10 +36,10 @@ function CategoryMappingRow({ qifCategory, choice, categories, onChange }: Reado
   };
 
   return (
-    <div className="py-3 border-b border-stone-100 last:border-0">
+    <div className="py-3 border-b border-line-subtle last:border-0">
       <div className="flex items-start gap-4">
         <span
-          className="flex-1 text-sm font-mono text-stone-700 pt-1.5 truncate"
+          className="flex-1 text-sm font-mono text-content-secondary pt-1.5 truncate"
           title={qifCategory}
         >
           {qifCategory}
@@ -76,16 +76,18 @@ function CategoryMappingRow({ qifCategory, choice, categories, onChange }: Reado
           {action === 'create' && choice?.action === 'create' && (
             <div className="flex flex-col gap-1.5 items-end">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">{t('import.subcategory_label')}</span>
+                <span className="text-xs text-content-subtle">{t('import.subcategory_label')}</span>
                 <input
-                  className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
+                  className="w-40 px-2 py-1 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500"
                   value={choice.subcategory_name}
                   onChange={(e) => onChange({ ...choice, subcategory_name: e.target.value })}
                   placeholder={t('import.subcategory_placeholder')}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">{t('import.parent_category_label')}</span>
+                <span className="text-xs text-content-subtle">
+                  {t('import.parent_category_label')}
+                </span>
                 <Select
                   className="w-48"
                   value={choice.existing_category_id ?? '__new__'}
@@ -107,11 +109,11 @@ function CategoryMappingRow({ qifCategory, choice, categories, onChange }: Reado
               </div>
               {choice.existing_category_id === null && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs text-content-subtle">
                     {t('import.new_category_name_label')}
                   </span>
                   <input
-                    className="w-40 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
+                    className="w-40 px-2 py-1 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500"
                     value={choice.new_category_name}
                     onChange={(e) => onChange({ ...choice, new_category_name: e.target.value })}
                     placeholder={t('import.new_category_placeholder')}
@@ -153,12 +155,14 @@ export function CategoriesStep({
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-1">
           {t('import.category_mapping_title')}
         </p>
-        <p className="text-xs text-stone-400 mb-4">{t('import.category_mapping_desc')}</p>
+        <p className="text-xs text-content-subtle mb-4">{t('import.category_mapping_desc')}</p>
         {uniqueCategories.length === 0 ? (
-          <p className="text-sm text-stone-400 py-4 text-center">{t('import.no_categories')}</p>
+          <p className="text-sm text-content-subtle py-4 text-center">
+            {t('import.no_categories')}
+          </p>
         ) : (
           uniqueCategories.map((cat) => (
             <CategoryMappingRow

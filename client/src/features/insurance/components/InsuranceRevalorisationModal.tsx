@@ -47,7 +47,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="reval-amount"
-            className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+            className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
           >
             {t('revalorisation_modal.amount_label')}
           </label>
@@ -59,7 +59,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
             required
             autoFocus
           />
-          <p className="text-[10px] text-stone-400">{t('revalorisation_modal.amount_hint')}</p>
+          <p className="text-[10px] text-content-subtle">{t('revalorisation_modal.amount_hint')}</p>
         </div>
 
         <FormGroup label={tc('date')} htmlFor="reval-date">

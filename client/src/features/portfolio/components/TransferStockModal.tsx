@@ -60,7 +60,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
           ns="portfolio"
           values={{ ticker: position.ticker, pru }}
           components={{
-            ticker: <span className="font-mono font-bold text-stone-700" />,
+            ticker: <span className="font-mono font-bold text-content-secondary" />,
           }}
         />
       }
@@ -68,13 +68,13 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormGroup label={t('transfer_modal.dest_account')} htmlFor="tf-to-account">
           {investmentTargets.length === 0 ? (
-            <p className="text-sm text-red-600 py-2">{t('transfer_modal.no_targets')}</p>
+            <p className="text-sm text-danger py-2">{t('transfer_modal.no_targets')}</p>
           ) : (
             <select
               id="tf-to-account"
               value={toAccountId}
               onChange={(e) => setToAccountId(Number.parseInt(e.target.value, 10))}
-              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
+              className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-line-strong"
             >
               {investmentTargets.map((a) => (
                 <option key={a.id} value={a.id}>

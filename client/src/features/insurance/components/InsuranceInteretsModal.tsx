@@ -47,7 +47,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
             required
             autoFocus
           />
-          <p className="text-[10px] text-stone-400 mt-1">
+          <p className="text-[10px] text-content-subtle mt-1">
             {t('interets_modal.current_balance')}{' '}
             {support.value.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>

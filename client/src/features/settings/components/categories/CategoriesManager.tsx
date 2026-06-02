@@ -62,7 +62,7 @@ export function CategoryCard({
         title={cat.name}
         icon={cat.icon}
         subtitle={
-          <p className="text-[10px] text-stone-400">
+          <p className="text-[10px] text-content-subtle">
             {t('categories.count_sub', { count: cat.subcategories.length })}
           </p>
         }
@@ -118,7 +118,7 @@ export function CategoriesManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('categories.title')}
       </p>
       <div data-testid="new-category-form">
@@ -134,18 +134,18 @@ export function CategoriesManager() {
       <div className="relative">
         <Search
           size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-content-faint pointer-events-none"
         />
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('categories.search_placeholder')}
-          className="w-full text-sm bg-white border border-black/10 rounded-xl pl-8 pr-3 py-2 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all placeholder:text-stone-300"
+          className="w-full text-sm bg-surface border border-line rounded-xl pl-8 pr-3 py-2 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all placeholder:text-content-faint"
         />
       </div>
       {filtered.length === 0 ? (
-        <p className="text-sm text-stone-300 italic text-center py-6">
+        <p className="text-sm text-content-faint italic text-center py-6">
           {t('categories.no_match', { search })}
         </p>
       ) : (

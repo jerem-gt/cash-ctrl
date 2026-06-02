@@ -28,7 +28,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-display tracking-tight">{t('page.title')}</h1>
-        <p className="text-sm text-black/40">{t('page.subtitle')}</p>
+        <p className="text-sm text-content-subtle">{t('page.subtitle')}</p>
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-12">
@@ -39,7 +39,7 @@ export default function SettingsPage() {
         <div className={`flex-1 min-w-0 ${mobileShowContent ? '' : 'hidden md:block'}`}>
           <button
             onClick={() => setMobileShowContent(false)}
-            className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 mb-4 transition-colors md:hidden"
+            className="flex items-center gap-1 text-sm text-content-muted hover:text-content mb-4 transition-colors md:hidden"
           >
             <ChevronLeft className="h-4 w-4" />
             {t('page.back')}

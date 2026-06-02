@@ -59,7 +59,7 @@ export function InsuranceArbitrageModal({
   if (destinations.length === 0) {
     return (
       <ModalFrame title={t('arbitrage_modal.title_no_dest')} onClose={onClose}>
-        <p className="text-sm text-stone-400 mb-6">{t('arbitrage_modal.no_destinations')}</p>
+        <p className="text-sm text-content-subtle mb-6">{t('arbitrage_modal.no_destinations')}</p>
         <div className="flex justify-end">
           <Button onClick={onClose}>{tc('close')}</Button>
         </div>
@@ -92,11 +92,11 @@ export function InsuranceArbitrageModal({
           <div className="flex items-center justify-between">
             <label
               htmlFor="arb-from-amount"
-              className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
             >
               {t('arbitrage_modal.amount_label')}
             </label>
-            <span className="text-[10px] text-stone-400">
+            <span className="text-[10px] text-content-subtle">
               {t('arbitrage_modal.max_label')}{' '}
               {fromSupport.value.toLocaleString(currentLocale(), {
                 style: 'currency',
