@@ -3,7 +3,7 @@ import { type TFunction } from 'i18next';
 type TDashboard = TFunction<'dashboard'>;
 
 export function getGainColor(positive: boolean): string {
-  return positive ? 'text-emerald-600' : 'text-red-600';
+  return positive ? 'text-success' : 'text-danger';
 }
 
 /**

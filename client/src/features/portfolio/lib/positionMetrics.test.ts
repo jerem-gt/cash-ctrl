@@ -23,19 +23,19 @@ function makePos(overrides: Partial<StockPosition> = {}): StockPosition {
 
 describe('getPnlColor', () => {
   it('renvoie gris si pnl null', () => {
-    expect(getPnlColor(null)).toBe('text-stone-400');
+    expect(getPnlColor(null)).toBe('text-content-subtle');
   });
 
   it('renvoie vert si pnl > 0', () => {
-    expect(getPnlColor(10)).toBe('text-green-700');
+    expect(getPnlColor(10)).toBe('text-success');
   });
 
   it('renvoie rouge si pnl < 0', () => {
-    expect(getPnlColor(-5)).toBe('text-red-700');
+    expect(getPnlColor(-5)).toBe('text-danger');
   });
 
   it('renvoie gris neutre si pnl exactement 0', () => {
-    expect(getPnlColor(0)).toBe('text-stone-500');
+    expect(getPnlColor(0)).toBe('text-content-muted');
   });
 });
 
@@ -46,7 +46,7 @@ describe('getPositionMetrics', () => {
     expect(m.costBasis).toBe(1000);
     expect(m.pnl).toBe(200);
     expect(m.pnlPct).toBe(20);
-    expect(m.pnlColor).toBe('text-green-700');
+    expect(m.pnlColor).toBe('text-success');
   });
 
   it('renvoie marketValue/pnl null si current_price est null', () => {
@@ -54,7 +54,7 @@ describe('getPositionMetrics', () => {
     expect(m.marketValue).toBeNull();
     expect(m.pnl).toBeNull();
     expect(m.pnlPct).toBeNull();
-    expect(m.pnlColor).toBe('text-stone-400');
+    expect(m.pnlColor).toBe('text-content-subtle');
     expect(m.costBasis).toBe(1000);
   });
 
@@ -67,7 +67,7 @@ describe('getPositionMetrics', () => {
   it('couleur rouge sur une perte', () => {
     const m = getPositionMetrics(makePos({ avg_price: 200, current_price: 100 }));
     expect(m.pnl).toBe(-1000);
-    expect(m.pnlColor).toBe('text-red-700');
+    expect(m.pnlColor).toBe('text-danger');
   });
 });
 
@@ -82,7 +82,7 @@ describe('getTotalMetrics', () => {
     expect(t.totalCostBasis).toBe(1250);
     expect(t.totalPnl).toBe(250);
     expect(t.totalPnlPct).toBe(20);
-    expect(t.totalPnlColor).toBe('text-green-700');
+    expect(t.totalPnlColor).toBe('text-success');
   });
 
   it('ignore les positions sans current_price dans le market mais pas dans le cost', () => {
@@ -94,7 +94,7 @@ describe('getTotalMetrics', () => {
     expect(t.totalMarketValue).toBe(300);
     expect(t.totalCostBasis).toBe(1250);
     expect(t.totalPnl).toBe(-950);
-    expect(t.totalPnlColor).toBe('text-red-700');
+    expect(t.totalPnlColor).toBe('text-danger');
   });
 
   it('renvoie totalPnlPct 0 quand costBasis = 0', () => {
