@@ -104,7 +104,14 @@
     "aria_action_for": "Action for {{name}}",
     "aria_target_account": "Target account for {{name}}",
     "aria_target_category": "Target category for {{name}}",
-    "aria_paymethod": "Payment method for {{name}}"
+    "aria_paymethod": "Payment method for {{name}}",
+    "no_description": "(no description)",
+    "category_new_suffix": "(new)",
+    "skip_reason": {
+      "unmapped_account": "Unmapped account",
+      "skipped_category": "Skipped category",
+      "transfer_no_peer": "Transfer without counterpart"
+    }
   },
   "password": {
     "title": "Change password",

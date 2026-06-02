@@ -35,6 +35,9 @@ export type CategoryChoice =
     }
   | { action: 'skip' };
 
+/** Motif d'exclusion d'un item du preview, traduit à l'affichage (cf. PreviewStep). */
+export type SkipReason = 'unmapped_account' | 'skipped_category' | 'transfer_no_peer';
+
 export type PreviewItem =
   | {
       kind: 'transaction';
@@ -49,6 +52,7 @@ export type PreviewItem =
       subcategoryId: number | null;
       newSubcategoryKey: string | null;
       categoryLabel: string;
+      categoryIsNew: boolean;
       notes: string | null;
       validated: boolean;
       paymentMethodId: number | null;
@@ -74,13 +78,14 @@ export type PreviewItem =
       date: string;
       amount: number;
       description: string;
-      reason: string;
+      reason: SkipReason;
     };
 
 export type CategoryInfo = {
   subcategoryId: number | null;
   newSubcategoryKey: string | null;
   categoryLabel: string;
+  isNew: boolean;
 };
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
@@ -142,7 +147,8 @@ export function resolveCategoryInfo(
   categoryChoices: Map<string, CategoryChoice>,
   categories: Category[],
 ): CategoryInfo | null {
-  if (!category) return { subcategoryId: null, newSubcategoryKey: null, categoryLabel: '' };
+  if (!category)
+    return { subcategoryId: null, newSubcategoryKey: null, categoryLabel: '', isNew: false };
   const catChoice = categoryChoices.get(category);
   if (!catChoice || catChoice.action === 'skip') return null;
   if (catChoice.action === 'map') {
@@ -154,9 +160,10 @@ export function resolveCategoryInfo(
           subcategoryId,
           newSubcategoryKey: null,
           categoryLabel: `${cat.name} / ${sub.name}`,
+          isNew: false,
         };
     }
-    return { subcategoryId, newSubcategoryKey: null, categoryLabel: '' };
+    return { subcategoryId, newSubcategoryKey: null, categoryLabel: '', isNew: false };
   }
   const catName = catChoice.existing_category_id
     ? (categories.find((c) => c.id === catChoice.existing_category_id)?.name ?? '')
@@ -164,7 +171,8 @@ export function resolveCategoryInfo(
   return {
     subcategoryId: null,
     newSubcategoryKey: category,
-    categoryLabel: `${catName} / ${catChoice.subcategory_name} (nouveau)`,
+    categoryLabel: `${catName} / ${catChoice.subcategory_name}`,
+    isNew: true,
   };
 }
 
@@ -185,7 +193,7 @@ export function resolveTransferItem(
   accounts: Account[],
   date: string,
 ): PreviewItem {
-  const skip = (reason: string): PreviewItem => ({
+  const skip = (reason: SkipReason): PreviewItem => ({
     kind: 'skip',
     idx: i,
     date,
@@ -202,7 +210,7 @@ export function resolveTransferItem(
   let notes: string | null;
 
   if (peerIdx === -1) {
-    if (!tx.transferTarget) return skip('Virement sans contrepartie');
+    if (!tx.transferTarget) return skip('transfer_no_peer');
     fromQifName = tx.amount < 0 ? tx.qifAccountName : tx.transferTarget;
     toQifName = tx.amount < 0 ? tx.transferTarget : tx.qifAccountName;
     notes = tx.memo;
@@ -218,7 +226,7 @@ export function resolveTransferItem(
 
   const fromInfo = resolveAccountInfo(fromQifName, accountChoices.get(fromQifName), accounts);
   const toInfo = resolveAccountInfo(toQifName, accountChoices.get(toQifName), accounts);
-  if (!fromInfo.resolved || !toInfo.resolved) return skip('Compte non mappé');
+  if (!fromInfo.resolved || !toInfo.resolved) return skip('unmapped_account');
 
   const description = transferLabel(
     { name: fromInfo.accountName, bank: fromInfo.bankName },
@@ -276,7 +284,7 @@ export function resolvePreview(
         date,
         amount: Math.abs(tx.amount),
         description: tx.description,
-        reason: 'Compte non mappé',
+        reason: 'unmapped_account',
       });
       continue;
     }
@@ -289,11 +297,11 @@ export function resolvePreview(
         date,
         amount: Math.abs(tx.amount),
         description: tx.description,
-        reason: 'Catégorie ignorée',
+        reason: 'skipped_category',
       });
       continue;
     }
-    const { subcategoryId, newSubcategoryKey, categoryLabel } = catInfo;
+    const { subcategoryId, newSubcategoryKey, categoryLabel, isNew } = catInfo;
 
     items.push({
       kind: 'transaction',
@@ -301,13 +309,14 @@ export function resolvePreview(
       date,
       type: tx.amount >= 0 ? 'income' : 'expense',
       amount: Math.abs(tx.amount),
-      description: tx.description || '(sans description)',
+      description: tx.description,
       accountId: accInfo.accountId,
       newAccountQifName: accInfo.newAccountQifName,
       accountName: accInfo.accountName,
       subcategoryId,
       newSubcategoryKey,
       categoryLabel,
+      categoryIsNew: isNew,
       notes: tx.memo,
       validated: true,
       paymentMethodId: null,
@@ -322,6 +331,8 @@ export function buildExecuteBody(
   selected: Set<number>,
   accountChoices: Map<string, AccountChoice>,
   categoryChoices: Map<string, CategoryChoice>,
+  // Repli pour les transactions sans libellé : le serveur exige description.min(1).
+  noDescriptionLabel: string,
 ): ImportExecuteBody {
   const newAccountsMap = new Map<string, ImportExecuteBody['newAccounts'][number]>();
   const newSubcategoriesMap = new Map<string, ImportExecuteBody['newSubcategories'][number]>();
@@ -384,7 +395,7 @@ export function buildExecuteBody(
         new_account_qif_name: item.newAccountQifName,
         type: item.type,
         amount: item.amount,
-        description: item.description,
+        description: item.description || noDescriptionLabel,
         subcategory_id: item.subcategoryId,
         new_subcategory_key: item.newSubcategoryKey,
         date: item.date,
@@ -461,7 +472,7 @@ export function resolveXhbPreview(
         date: tf.date,
         amount: tf.amount,
         description: tf.description,
-        reason: 'Compte non mappé',
+        reason: 'unmapped_account',
       });
       continue;
     }
@@ -505,7 +516,7 @@ export function resolveXhbPreview(
         date: tx.date,
         amount: Math.abs(tx.amount),
         description: tx.description,
-        reason: 'Compte non mappé',
+        reason: 'unmapped_account',
       });
       continue;
     }
@@ -518,12 +529,12 @@ export function resolveXhbPreview(
         date: tx.date,
         amount: Math.abs(tx.amount),
         description: tx.description,
-        reason: 'Catégorie ignorée',
+        reason: 'skipped_category',
       });
       continue;
     }
 
-    const { subcategoryId, newSubcategoryKey, categoryLabel } = catInfo;
+    const { subcategoryId, newSubcategoryKey, categoryLabel, isNew } = catInfo;
 
     items.push({
       kind: 'transaction',
@@ -531,13 +542,14 @@ export function resolveXhbPreview(
       date: tx.date,
       type: tx.amount >= 0 ? 'income' : 'expense',
       amount: Math.abs(tx.amount),
-      description: tx.description || '(sans description)',
+      description: tx.description,
       accountId: accInfo.accountId,
       newAccountQifName: accInfo.newAccountQifName,
       accountName: accInfo.accountName,
       subcategoryId,
       newSubcategoryKey,
       categoryLabel,
+      categoryIsNew: isNew,
       notes: tx.notes,
       validated: tx.validated,
       paymentMethodId: paymodeChoices.get(tx.paymode) ?? null,

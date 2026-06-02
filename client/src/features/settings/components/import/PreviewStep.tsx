@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { ImportErrorMessage } from '@/features/settings/components/import/Shared';
 import { fmtDate } from '@/lib/format.ts';
-import type { PreviewItem } from '@/pages/import.helpers.ts';
+import type { PreviewItem, SkipReason } from '@/pages/import.helpers.ts';
 
 interface PreviewStepProps {
   previewItems: PreviewItem[];
@@ -38,6 +38,14 @@ export function PreviewStep({
 }: Readonly<PreviewStepProps>) {
   const { t } = useTranslation('settings');
   const { t: tc } = useTranslation('common');
+
+  const skipReasonLabel = (reason: SkipReason) => t(`import.skip_reason.${reason}`);
+
+  const categoryText = (item: Extract<PreviewItem, { kind: 'transaction' }>) => {
+    if (!item.categoryLabel) return '—';
+    if (!item.categoryIsNew) return item.categoryLabel;
+    return `${item.categoryLabel} ${t('import.category_new_suffix')}`;
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,10 +107,10 @@ export function PreviewStep({
                       <td className="py-1.5 w-6" />
                       <td className="py-1.5 pr-3">{item.date ? fmtDate(item.date) : '—'}</td>
                       <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
-                        {item.description}
+                        {item.description || t('import.no_description')}
                       </td>
                       <td className="py-1.5 pr-3 italic text-content-faint" colSpan={2}>
-                        {item.reason}
+                        {skipReasonLabel(item.reason)}
                       </td>
                       <td className="py-1.5 text-right tabular-nums">{item.amount.toFixed(2)}</td>
                     </tr>
@@ -157,13 +165,13 @@ export function PreviewStep({
                     </td>
                     <td className="py-1.5 pr-3">{fmtDate(item.date)}</td>
                     <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
-                      {item.description}
+                      {item.description || t('import.no_description')}
                     </td>
                     <td className="py-1.5 pr-3 text-content-secondary">
                       {item.accountName}
                       {item.newAccountQifName ? t('import.new_account_suffix') : ''}
                     </td>
-                    <td className="py-1.5 pr-3 text-content-subtle">{item.categoryLabel || '—'}</td>
+                    <td className="py-1.5 pr-3 text-content-subtle">{categoryText(item)}</td>
                     <td
                       className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-success' : 'text-content'}`}
                     >

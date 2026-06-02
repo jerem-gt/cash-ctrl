@@ -249,7 +249,13 @@ export default function ImportManager() {
   };
 
   const handleImport = async () => {
-    const body = buildExecuteBody(previewItems, selected, accountChoices, categoryChoices);
+    const body = buildExecuteBody(
+      previewItems,
+      selected,
+      accountChoices,
+      categoryChoices,
+      t('import.no_description'),
+    );
     try {
       await importMutation.mutateAsync(body);
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });

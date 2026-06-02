@@ -177,6 +177,7 @@ describe('resolveCategoryInfo', () => {
     expect(r!.subcategoryId).toBe(10);
     expect(r!.categoryLabel).toBe('Alimentation / Supermarché');
     expect(r!.newSubcategoryKey).toBeNull();
+    expect(r!.isNew).toBe(false);
   });
 
   it("retourne subcategoryId sans label si la sous-catégorie n'est pas trouvée", () => {
@@ -201,8 +202,9 @@ describe('resolveCategoryInfo', () => {
     ]);
     const r = resolveCategoryInfo('Food:New', m, CATEGORIES);
     expect(r!.newSubcategoryKey).toBe('Food:New');
-    expect(r!.categoryLabel).toBe('Alimentation / Épicerie (nouveau)');
+    expect(r!.categoryLabel).toBe('Alimentation / Épicerie');
     expect(r!.subcategoryId).toBeNull();
+    expect(r!.isNew).toBe(true);
   });
 
   it('utilise new_category_name si pas de catégorie existante', () => {
@@ -219,7 +221,7 @@ describe('resolveCategoryInfo', () => {
       ],
     ]);
     const r = resolveCategoryInfo('Pets', m, CATEGORIES);
-    expect(r!.categoryLabel).toBe('Animaux / Vétérinaire (nouveau)');
+    expect(r!.categoryLabel).toBe('Animaux / Vétérinaire');
   });
 });
 
@@ -278,7 +280,7 @@ describe('resolvePreview', () => {
     const parsed = { ...baseParsed, transactions: [makeTx()] };
     const items = resolvePreview(parsed, 'DD/MM', new Map(), new Map(), [ACCOUNT], CATEGORIES);
     expect(items[0].kind).toBe('skip');
-    if (items[0].kind === 'skip') expect(items[0].reason).toBe('Compte non mappé');
+    if (items[0].kind === 'skip') expect(items[0].reason).toBe('unmapped_account');
   });
 
   it('skip si catégorie ignorée', () => {
@@ -293,7 +295,7 @@ describe('resolvePreview', () => {
       CATEGORIES,
     );
     expect(items[0].kind).toBe('skip');
-    if (items[0].kind === 'skip') expect(items[0].reason).toBe('Catégorie ignorée');
+    if (items[0].kind === 'skip') expect(items[0].reason).toBe('skipped_category');
   });
 
   it('transaction sans catégorie est incluse', () => {
@@ -323,7 +325,7 @@ describe('resolvePreview', () => {
       CATEGORIES,
     );
     expect(items[0].kind).toBe('skip');
-    if (items[0].kind === 'skip') expect(items[0].reason).toBe('Virement sans contrepartie');
+    if (items[0].kind === 'skip') expect(items[0].reason).toBe('transfer_no_peer');
   });
 
   it("skip un virement sans contrepartie quand le compte cible n'est pas mappé", () => {
@@ -340,7 +342,7 @@ describe('resolvePreview', () => {
       CATEGORIES,
     );
     expect(items[0].kind).toBe('skip');
-    if (items[0].kind === 'skip') expect(items[0].reason).toBe('Compte non mappé');
+    if (items[0].kind === 'skip') expect(items[0].reason).toBe('unmapped_account');
   });
 
   it('produit un transfer depuis une seule transaction quand le compte cible est mappé', () => {
@@ -415,7 +417,7 @@ describe('resolvePreview', () => {
       CATEGORIES,
     );
     expect(items[0].kind).toBe('skip');
-    if (items[0].kind === 'skip') expect(items[0].reason).toBe('Compte non mappé');
+    if (items[0].kind === 'skip') expect(items[0].reason).toBe('unmapped_account');
   });
 
   it("n'inclut pas la transaction côté crédit d'un virement dans les items", () => {
@@ -488,6 +490,7 @@ describe('buildExecuteBody', () => {
     subcategoryId: 10,
     newSubcategoryKey: null,
     categoryLabel: 'Alimentation / Supermarché',
+    categoryIsNew: false,
     notes: null,
     validated: false,
     paymentMethodId: null,
@@ -513,29 +516,47 @@ describe('buildExecuteBody', () => {
     date: '2024-01-01',
     amount: 0,
     description: 'X',
-    reason: 'test',
+    reason: 'unmapped_account',
   };
 
   it('inclut une transaction sélectionnée', () => {
-    const body = buildExecuteBody([txItem], new Set([0]), new Map(), new Map());
+    const body = buildExecuteBody([txItem], new Set([0]), new Map(), new Map(), '(no description)');
     expect(body.transactions).toHaveLength(1);
     expect(body.transactions[0].account_id).toBe(1);
     expect(body.transactions[0].amount).toBe(50);
   });
 
   it('exclut une transaction non sélectionnée', () => {
-    const body = buildExecuteBody([txItem], new Set(), new Map(), new Map());
+    const body = buildExecuteBody([txItem], new Set(), new Map(), new Map(), '(no description)');
     expect(body.transactions).toHaveLength(0);
   });
 
+  it('remplace une description vide par le libellé de repli (serveur exige min(1))', () => {
+    const item: PreviewItem = { ...txItem, description: '' };
+    const body = buildExecuteBody([item], new Set([0]), new Map(), new Map(), '(no description)');
+    expect(body.transactions[0].description).toBe('(no description)');
+  });
+
   it('ignore les items de type skip', () => {
-    const body = buildExecuteBody([skipItem], new Set([0]), new Map(), new Map());
+    const body = buildExecuteBody(
+      [skipItem],
+      new Set([0]),
+      new Map(),
+      new Map(),
+      '(no description)',
+    );
     expect(body.transactions).toHaveLength(0);
     expect(body.transfers).toHaveLength(0);
   });
 
   it('inclut un virement sélectionné', () => {
-    const body = buildExecuteBody([transferItem], new Set([0]), new Map(), new Map());
+    const body = buildExecuteBody(
+      [transferItem],
+      new Set([0]),
+      new Map(),
+      new Map(),
+      '(no description)',
+    );
     expect(body.transfers).toHaveLength(1);
     expect(body.transfers[0].from_account_id).toBe(1);
     expect(body.transfers[0].to_account_id).toBe(2);
@@ -558,7 +579,7 @@ describe('buildExecuteBody', () => {
         },
       ],
     ]);
-    const body = buildExecuteBody([item], new Set([0]), accChoices, new Map());
+    const body = buildExecuteBody([item], new Set([0]), accChoices, new Map(), '(no description)');
     expect(body.newAccounts).toHaveLength(1);
     expect(body.newAccounts[0].qif_name).toBe('QIF_NEW');
     expect(body.newAccounts[0].name).toBe('Nouveau');
@@ -581,7 +602,13 @@ describe('buildExecuteBody', () => {
         },
       ],
     ]);
-    const body = buildExecuteBody([item1, item2], new Set([0, 1]), accChoices, new Map());
+    const body = buildExecuteBody(
+      [item1, item2],
+      new Set([0, 1]),
+      accChoices,
+      new Map(),
+      '(no description)',
+    );
     expect(body.newAccounts).toHaveLength(1);
   });
 
@@ -599,7 +626,7 @@ describe('buildExecuteBody', () => {
         },
       ],
     ]);
-    const body = buildExecuteBody([item], new Set([0]), new Map(), catChoices);
+    const body = buildExecuteBody([item], new Set([0]), new Map(), catChoices, '(no description)');
     expect(body.newSubcategories).toHaveLength(1);
     expect(body.newSubcategories[0].qif_key).toBe('Food:New');
     expect(body.newSubcategories[0].subcategory_name).toBe('Épicerie');
@@ -640,14 +667,14 @@ describe('buildExecuteBody', () => {
         },
       ],
     ]);
-    const body = buildExecuteBody([item], new Set([0]), accChoices, new Map());
+    const body = buildExecuteBody([item], new Set([0]), accChoices, new Map(), '(no description)');
     expect(body.newAccounts).toHaveLength(2);
     expect(body.transfers[0].from_account_qif_name).toBe('QIF_FROM');
     expect(body.transfers[0].to_account_qif_name).toBe('QIF_TO');
   });
 
   it('retourne des tableaux vides pour un body vide', () => {
-    const body = buildExecuteBody([], new Set(), new Map(), new Map());
+    const body = buildExecuteBody([], new Set(), new Map(), new Map(), '(no description)');
     expect(body.transactions).toHaveLength(0);
     expect(body.transfers).toHaveLength(0);
     expect(body.newAccounts).toHaveLength(0);
