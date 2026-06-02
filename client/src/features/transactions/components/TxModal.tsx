@@ -162,7 +162,7 @@ export function TxModal(props: Readonly<Props>) {
           noOtherAccounts={noOtherAccounts}
           onToggle={handleModeToggle}
         />
-        <p className="text-sm text-stone-400">{t('modal.no_other_account')}</p>
+        <p className="text-sm text-content-subtle">{t('modal.no_other_account')}</p>
       </ModalFrame>
     );
   }

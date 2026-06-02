@@ -57,8 +57,8 @@ describe('ReimbursementStatusPicker', () => {
     const btnTermine = screen.getByRole('button', { name: 'Remboursement terminé' });
 
     // Vérification des classes Tailwind spécifiques au statut actif
-    expect(btnEnAttente).toHaveClass('bg-amber-50');
-    expect(btnTermine).toHaveClass('bg-stone-50'); // Style inactif
+    expect(btnEnAttente).toHaveClass('bg-warning-surface');
+    expect(btnTermine).toHaveClass('bg-surface-muted'); // Style inactif
   });
 
   it(`couvre la branche "false" de la ligne 31 (status est null)`, () => {

@@ -48,7 +48,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
       return (
         <div className="flex items-center justify-center min-h-screen bg-canvas">
           <button
-            className="text-sm text-stone-500 underline"
+            className="text-sm text-content-muted underline"
             onClick={() => globalThis.location.reload()}
           >
             Une erreur est survenue — cliquez pour recharger
@@ -84,7 +84,7 @@ function AppShell() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
-        <p className="text-sm text-stone-400">{tc('loading_text')}</p>
+        <p className="text-sm text-content-subtle">{tc('loading_text')}</p>
       </div>
     );
   }
@@ -101,12 +101,12 @@ function AppShell() {
         <div className="flex items-center gap-3 mb-4 md:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md hover:bg-stone-200 transition-colors"
+            className="p-2 rounded-md hover:bg-surface-strong transition-colors"
             aria-label={t('open_menu')}
           >
-            <Menu className="h-5 w-5 text-stone-600" />
+            <Menu className="h-5 w-5 text-content-secondary" />
           </button>
-          <span className="text-lg font-bold text-stone-800">{APP_CONFIG.name}</span>
+          <span className="text-lg font-bold text-content">{APP_CONFIG.name}</span>
         </div>
         <ErrorBoundary>
           <Suspense

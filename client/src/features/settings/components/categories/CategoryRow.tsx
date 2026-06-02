@@ -15,8 +15,8 @@ export function CategoryRow({
       onClick={() => handleSelectCat(cat.id)}
       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
         selectedId === cat.id
-          ? 'bg-white shadow-sm ring-1 ring-black/5 text-black'
-          : 'text-stone-500 hover:bg-black/5'
+          ? 'bg-surface shadow-sm ring-1 ring-line text-content'
+          : 'text-content-muted hover:bg-surface-emphasis'
       }`}
     >
       <div className="flex items-center gap-3">

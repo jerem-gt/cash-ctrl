@@ -22,9 +22,9 @@ function PaymodeMappingRow({
   const { t } = useTranslation('settings');
   const name = XHB_PAYMODE_NAMES[paymode] ?? `Mode ${paymode}`;
   return (
-    <div className="py-3 border-b border-stone-100 last:border-0">
+    <div className="py-3 border-b border-line-subtle last:border-0">
       <div className="flex items-center gap-4">
-        <span className="flex-1 text-sm font-mono text-stone-700">{name}</span>
+        <span className="flex-1 text-sm font-mono text-content-secondary">{name}</span>
         <Select
           aria-label={t('import.aria_paymethod', { name })}
           className="w-56"
@@ -68,12 +68,14 @@ export function PaymodesStep({
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-1">
           {t('import.paymethod_title')}
         </p>
-        <p className="text-xs text-stone-400 mb-4">{t('import.paymethod_desc')}</p>
+        <p className="text-xs text-content-subtle mb-4">{t('import.paymethod_desc')}</p>
         {paymodes.length === 0 ? (
-          <p className="text-sm text-stone-400 py-4 text-center">{t('import.no_paymethods')}</p>
+          <p className="text-sm text-content-subtle py-4 text-center">
+            {t('import.no_paymethods')}
+          </p>
         ) : (
           paymodes.map((paymode) => (
             <PaymodeMappingRow

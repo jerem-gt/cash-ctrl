@@ -8,8 +8,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="CashCtrl" />
-    <meta name="theme-color" content="#141210" />
+    <meta name="theme-color" content="#eaeef2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1a21" media="(prefers-color-scheme: dark)" />
     <title>CashCtrl</title>
+    <script>
+      // Anti-FOUC : applique le thème avant le premier paint.
+      (function () {
+        try {
+          var stored = localStorage.getItem('cashctrl.theme');
+          var mode = stored === 'light' || stored === 'dark' ? stored : 'system';
+          var dark =
+            mode === 'dark' ||
+            (mode === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          /* localStorage indisponible : on reste en clair */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

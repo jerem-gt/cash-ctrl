@@ -80,7 +80,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('banks.edit_title')}
       </p>
       <Input
@@ -106,7 +106,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
           />
         )}
         <label className="cursor-pointer">
-          <span className="text-xs text-stone-400">
+          <span className="text-xs text-content-subtle">
             {file ? file.name : t('banks.logo_choose')}
           </span>
           <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
@@ -169,12 +169,12 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
             <button
               {...attributes}
               {...listeners}
-              className="p-1 text-stone-300 hover:text-stone-500 cursor-grab active:cursor-grabbing touch-none"
+              className="p-1 text-content-faint hover:text-content-muted cursor-grab active:cursor-grabbing touch-none"
               tabIndex={-1}
             >
               <GripVertical size={14} />
             </button>
-            <span className="text-[9px] font-bold text-stone-300 tabular-nums leading-none">
+            <span className="text-[9px] font-bold text-content-faint tabular-nums leading-none">
               {index + 1}
             </span>
           </div>
@@ -192,11 +192,11 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
           )
         }
         subtitle={
-          <p className="text-[10px] text-stone-400">{bank.domain ?? t('banks.no_domain')}</p>
+          <p className="text-[10px] text-content-subtle">{bank.domain ?? t('banks.no_domain')}</p>
         }
         badge={
           accCount > 0 ? (
-            <span className="text-[10px] font-bold text-stone-300 tabular-nums shrink-0">
+            <span className="text-[10px] font-bold text-content-faint tabular-nums shrink-0">
               {accCount}
             </span>
           ) : undefined
@@ -271,7 +271,7 @@ export function BanksManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('banks.title')}
       </p>
       <AddCard title={t('banks.new_title')}>

@@ -62,11 +62,11 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
           <div className="flex items-center justify-between">
             <label
               htmlFor="rachat-amount"
-              className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
             >
               {t('rachat_modal.amount_label')}
             </label>
-            <span className="text-[10px] text-stone-400">
+            <span className="text-[10px] text-content-subtle">
               {t('rachat_modal.max_label')}{' '}
               {support.value.toLocaleString(currentLocale(), {
                 style: 'currency',
@@ -87,10 +87,10 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="rachat-dest"
-              className="text-[11px] font-medium uppercase tracking-wider text-stone-400"
+              className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
             >
               <span>{t('rachat_modal.dest_account_label')}</span>
-              <span className="ml-1 text-stone-300 normal-case tracking-normal font-normal">
+              <span className="ml-1 text-content-faint normal-case tracking-normal font-normal">
                 {tc('optional')}
               </span>
             </label>

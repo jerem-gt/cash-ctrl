@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
  */
 export function AddCard({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
   return (
-    <article className="bg-white rounded-2xl border-2 border-dashed border-brand-200 shadow-sm p-4">
+    <article className="bg-surface rounded-2xl border-2 border-dashed border-brand-200 shadow-sm p-4">
       <div className="flex items-center gap-2.5 mb-3">
         <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
           <Plus size={18} strokeWidth={2.5} />

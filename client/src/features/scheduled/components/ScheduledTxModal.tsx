@@ -27,28 +27,28 @@ export function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalPr
       </div>
     );
   } else if (transactions.length === 0) {
-    content = <p className="text-sm text-stone-400 py-2">{t('tx_modal.no_transactions')}</p>;
+    content = <p className="text-sm text-content-subtle py-2">{t('tx_modal.no_transactions')}</p>;
   } else {
     content = (
-      <div className="divide-y divide-black/6">
+      <div className="divide-y divide-line-subtle">
         {transactions.map((tx) => (
           <div key={tx.id} className="flex items-center gap-3 py-2.5">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-stone-400">{fmtDate(tx.date)}</p>
-              <p className="text-sm text-stone-700 truncate">{tx.description}</p>
+              <p className="text-xs text-content-subtle">{fmtDate(tx.date)}</p>
+              <p className="text-sm text-content-secondary truncate">{tx.description}</p>
             </div>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
                 tx.validated
-                  ? 'bg-green-50 text-green-600 border border-green-200'
-                  : 'bg-amber-50 text-amber-600 border border-amber-200'
+                  ? 'bg-success-surface text-success border border-success/30'
+                  : 'bg-warning-surface text-warning border border-warning/30'
               }`}
             >
               {tx.validated ? t('tx_modal.validated') : t('tx_modal.pending')}
             </span>
             <span
               className={`text-sm font-medium tabular-nums shrink-0 ${
-                tx.type === 'income' ? 'text-green-700' : 'text-red-700'
+                tx.type === 'income' ? 'text-success' : 'text-danger'
               }`}
             >
               {tx.type === 'income' ? '+' : '−'}

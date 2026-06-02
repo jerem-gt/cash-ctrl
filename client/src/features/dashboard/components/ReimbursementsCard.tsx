@@ -17,17 +17,17 @@ interface RowProps {
 
 function Row({ item, onMarkDone, pendingMutation, faded, markDoneTitle }: Readonly<RowProps>) {
   const remaining = item.amount - item.total_reimbursed;
-  const remainingColor = remaining > 0 ? 'text-red-700' : 'text-green-700';
-  const amountColor = faded ? 'text-stone-500' : 'text-red-700';
+  const remainingColor = remaining > 0 ? 'text-danger' : 'text-success';
+  const amountColor = faded ? 'text-content-muted' : 'text-danger';
   return (
     <tr className={faded ? 'opacity-60' : 'group'}>
       <td className="py-2 pr-3">
-        <p className="font-medium text-stone-700 truncate max-w-40">{item.description}</p>
-        <p className="text-stone-400 text-[10px]">
+        <p className="font-medium text-content-secondary truncate max-w-40">{item.description}</p>
+        <p className="text-content-subtle text-[10px]">
           {item.subcategory || item.category} · {item.account_name}
         </p>
       </td>
-      <td className="py-2 pr-3 text-stone-500 hidden sm:table-cell whitespace-nowrap">
+      <td className="py-2 pr-3 text-content-muted hidden sm:table-cell whitespace-nowrap">
         {fmtDate(item.date)}
       </td>
       <td
@@ -35,7 +35,7 @@ function Row({ item, onMarkDone, pendingMutation, faded, markDoneTitle }: Readon
       >
         −{fmtDec(item.amount)}
       </td>
-      <td className="py-2 pr-3 text-right text-green-700 tabular-nums hidden sm:table-cell whitespace-nowrap">
+      <td className="py-2 pr-3 text-right text-success tabular-nums hidden sm:table-cell whitespace-nowrap">
         {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
       </td>
       <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
@@ -48,7 +48,7 @@ function Row({ item, onMarkDone, pendingMutation, faded, markDoneTitle }: Readon
             onClick={() => onMarkDone(item.id)}
             disabled={pendingMutation}
             title={markDoneTitle}
-            className="text-stone-300 hover:text-green-500 transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
+            className="text-content-faint hover:text-success transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
           >
             ✓
           </button>
@@ -74,7 +74,7 @@ export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-120 text-xs">
           <thead>
-            <tr className="text-stone-400 text-[10px] uppercase tracking-wider">
+            <tr className="text-content-subtle text-[10px] uppercase tracking-wider">
               <th className="text-left pb-2 font-medium">{t('reimb_col_description')}</th>
               <th className="text-left pb-2 font-medium hidden sm:table-cell">
                 {t('reimb_col_date')}
@@ -87,12 +87,12 @@ export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
               <th className="pb-2" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/4">
+          <tbody className="divide-y divide-line-subtle">
             {pending.length > 0 && (
               <tr>
                 <td
                   colSpan={6}
-                  className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-amber-500"
+                  className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-warning"
                 >
                   {t('reimb_pending_section')}
                 </td>
@@ -111,7 +111,7 @@ export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
               <tr>
                 <td
                   colSpan={6}
-                  className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-green-600"
+                  className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-success"
                 >
                   {t('reimb_done_section')}
                 </td>

@@ -14,8 +14,8 @@ interface MetricCellProps {
 export function MetricCell({ label, value, className }: Readonly<MetricCellProps>) {
   return (
     <div>
-      <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">{label}</p>
-      <p className={className ?? 'font-medium text-stone-700 tabular-nums'}>{value}</p>
+      <p className="text-[10px] text-content-subtle uppercase tracking-wider mb-0.5">{label}</p>
+      <p className={className ?? 'font-medium text-content-secondary tabular-nums'}>{value}</p>
     </div>
   );
 }
@@ -69,7 +69,7 @@ interface PnlBadgeProps {
 }
 
 export function PnlBadge({ pnl, pnlPct, pnlColor, currency }: Readonly<PnlBadgeProps>) {
-  if (pnl === null) return <p className="text-sm text-stone-300">—</p>;
+  if (pnl === null) return <p className="text-sm text-content-faint">—</p>;
   return (
     <div className="text-right">
       <p className={`text-sm font-bold tabular-nums ${pnlColor}`}>
@@ -106,7 +106,7 @@ export function PositionActions({
       {onBuy && (
         <button
           onClick={() => onBuy(pos)}
-          className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+          className="text-[11px] font-bold text-success hover:text-success hover:bg-success-surface px-2 py-1 rounded-lg border border-success/30 transition-all"
           title={t('section.action_buy')}
         >
           {t('section.action_buy')}
@@ -115,7 +115,7 @@ export function PositionActions({
       {onSell && (
         <button
           onClick={() => onSell(pos)}
-          className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+          className="text-[11px] font-bold text-danger hover:text-danger hover:bg-danger-surface px-2 py-1 rounded-lg border border-danger/30 transition-all"
           title={t('section.action_sell')}
         >
           {t('section.action_sell')}
@@ -124,7 +124,7 @@ export function PositionActions({
       {onTransfer && (
         <button
           onClick={() => onTransfer(pos)}
-          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+          className="text-[11px] font-bold text-info hover:text-info hover:bg-info-surface px-2 py-1 rounded-lg border border-info/30 transition-all"
           title={t('section.transfer_title')}
         >
           {t('section.action_transfer')}

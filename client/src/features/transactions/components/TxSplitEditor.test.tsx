@@ -65,7 +65,7 @@ describe('TxSplitEditor', () => {
         totalAmount={200}
       />,
     );
-    expect(screen.getByText(/reste/i)).toHaveClass('text-red-500');
+    expect(screen.getByText(/reste/i)).toHaveClass('text-danger');
   });
 
   it('affiche le reste en vert quand les montants correspondent', () => {
@@ -77,7 +77,7 @@ describe('TxSplitEditor', () => {
         totalAmount={200}
       />,
     );
-    expect(screen.getByText(/reste/i)).toHaveClass('text-green-600');
+    expect(screen.getByText(/reste/i)).toHaveClass('text-success');
   });
 
   it('appelle onChange sans la ligne supprimée au clic sur ×', async () => {

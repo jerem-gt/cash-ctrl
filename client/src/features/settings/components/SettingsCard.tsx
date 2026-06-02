@@ -47,7 +47,7 @@ export function SettingsCard({
       ref={dragRef}
       style={dragStyle}
       aria-label={title}
-      className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden"
+      className="bg-surface rounded-2xl border border-line-subtle shadow-sm overflow-hidden"
     >
       <div className="p-4 flex flex-col gap-3">
         {isEditing ? (
@@ -61,14 +61,14 @@ export function SettingsCard({
                 onClick={() => setExpanded((v) => !v)}
                 className="flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-70 transition-opacity"
               >
-                <div className="w-9 h-9 rounded-xl bg-stone-50 flex items-center justify-center text-lg shadow-inner ring-1 ring-black/5 shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-xl bg-surface-muted flex items-center justify-center text-lg shadow-inner ring-1 ring-line shrink-0 overflow-hidden">
                   {icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
                     <ChevronDown
                       size={12}
-                      className={`text-stone-300 transition-transform duration-200 shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
+                      className={`text-content-faint transition-transform duration-200 shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
                     />
                     <p className="font-semibold text-sm tracking-tight leading-none">{title}</p>
                   </div>
@@ -78,7 +78,7 @@ export function SettingsCard({
             ) : (
               <>
                 {leading}
-                <div className="w-9 h-9 rounded-xl bg-stone-50 flex items-center justify-center text-lg shadow-inner ring-1 ring-black/5 shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-xl bg-surface-muted flex items-center justify-center text-lg shadow-inner ring-1 ring-line shrink-0 overflow-hidden">
                   {icon}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ export function SettingsCard({
         )}
       </div>
       {collapsibleContent && (
-        <div hidden={!isExpanded} className="border-t border-black/5 p-4 pt-3">
+        <div hidden={!isExpanded} className="border-t border-line-subtle p-4 pt-3">
           {collapsibleContent}
         </div>
       )}

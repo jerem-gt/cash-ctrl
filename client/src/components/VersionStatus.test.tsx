@@ -60,8 +60,8 @@ describe('VersionStatus', () => {
 
   it('affiche le point vert quand en ligne', () => {
     const { container } = render(<VersionStatus />);
-    expect(container.querySelector('.bg-green-500')).toBeInTheDocument();
-    expect(container.querySelector('.bg-red-500')).not.toBeInTheDocument();
+    expect(container.querySelector('.bg-success')).toBeInTheDocument();
+    expect(container.querySelector('.bg-danger')).not.toBeInTheDocument();
   });
 
   it('affiche le point rouge quand hors ligne', () => {
@@ -72,8 +72,8 @@ describe('VersionStatus', () => {
       isLoading: false,
     });
     const { container } = render(<VersionStatus />);
-    expect(container.querySelector('.bg-red-500')).toBeInTheDocument();
-    expect(container.querySelector('.bg-green-500')).not.toBeInTheDocument();
+    expect(container.querySelector('.bg-danger')).toBeInTheDocument();
+    expect(container.querySelector('.bg-success')).not.toBeInTheDocument();
   });
 
   it('ne déclenche rien avant 7 clics', () => {

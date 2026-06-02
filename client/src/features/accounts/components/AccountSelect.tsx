@@ -30,7 +30,7 @@ function Logo({
         onError={(e) => (e.currentTarget.style.display = 'none')}
       />
     );
-  if (bank) return <span className="w-4 h-4 rounded bg-stone-200 shrink-0 inline-block" />;
+  if (bank) return <span className="w-4 h-4 rounded bg-surface-strong shrink-0 inline-block" />;
   return null;
 }
 
@@ -152,7 +152,7 @@ export function AccountSelect({
         onBlur={handleBlur}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-white border border-stone-200 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all text-left"
+        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all text-left"
       >
         {selected ? (
           <>
@@ -169,10 +169,10 @@ export function AccountSelect({
         <div
           role="listbox"
           onBlur={handleBlur}
-          className="absolute z-20 mt-1 w-full bg-white border border-black/9 rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto"
+          className="absolute z-20 mt-1 w-full bg-surface border border-line-subtle rounded-lg shadow-lg py-1 max-h-52 overflow-y-auto"
         >
           {showSearch && (
-            <div className="px-2 pb-1 border-b border-black/6">
+            <div className="px-2 pb-1 border-b border-line-subtle">
               <input
                 ref={searchRef}
                 type="text"
@@ -183,7 +183,7 @@ export function AccountSelect({
                 }}
                 onKeyDown={handleSearchKeyDown}
                 placeholder={t('select.search_placeholder')}
-                className="w-full px-2 py-1.5 text-sm bg-stone-50 rounded outline-none focus:bg-white transition-colors"
+                className="w-full px-2 py-1.5 text-sm bg-surface-muted rounded outline-none focus:bg-surface transition-colors"
               />
             </div>
           )}
@@ -197,7 +197,7 @@ export function AccountSelect({
             aria-selected={value === ''}
             onClick={() => handleSelect('')}
             onKeyDown={(e) => handleItemKeyDown(e, 0)}
-            className="w-full flex items-center px-3 py-2 text-sm text-stone-400 hover:bg-stone-50 focus:bg-stone-50 outline-none transition-colors text-left"
+            className="w-full flex items-center px-3 py-2 text-sm text-content-subtle hover:bg-surface-muted focus:bg-surface-muted outline-none transition-colors text-left"
           >
             {resolvedPlaceholder}
           </button>
@@ -205,7 +205,7 @@ export function AccountSelect({
           {groups.map((group) => (
             <div key={group.bank ?? '__none__'}>
               {groups.length > 1 && (
-                <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-widest text-stone-400 select-none">
+                <p className="px-3 pt-2 pb-0.5 text-[10px] font-medium uppercase tracking-widest text-content-subtle select-none">
                   {group.bank ?? t('select.no_bank')}
                 </p>
               )}
@@ -222,12 +222,12 @@ export function AccountSelect({
                     aria-selected={String(a.id) === value}
                     onClick={() => handleSelect(String(a.id))}
                     onKeyDown={(e) => handleItemKeyDown(e, index)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-stone-50 focus:bg-stone-50 outline-none transition-colors text-left ${String(a.id) === value ? 'bg-stone-50 font-medium' : ''}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-muted focus:bg-surface-muted outline-none transition-colors text-left ${String(a.id) === value ? 'bg-surface-muted font-medium' : ''}`}
                   >
                     <Logo bank={a.bank} logoMap={logoMap} />
                     <span className="flex-1 truncate">{a.name}</span>
                     {a.bank && groups.length <= 1 && (
-                      <span className="text-stone-400 text-xs shrink-0">({a.bank})</span>
+                      <span className="text-content-subtle text-xs shrink-0">({a.bank})</span>
                     )}
                   </button>
                 );
@@ -236,7 +236,7 @@ export function AccountSelect({
           ))}
 
           {filtered.length === 0 && (
-            <p className="px-3 py-2 text-sm text-stone-400 italic">{t('select.no_result')}</p>
+            <p className="px-3 py-2 text-sm text-content-subtle italic">{t('select.no_result')}</p>
           )}
         </div>
       )}

@@ -46,8 +46,8 @@ export function TxFormBody({
 
   const ventilateLabel = isVentilated ? t('modal.ventilated') : t('modal.ventilate');
   const ventilateClass = isVentilated
-    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-    : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50';
+    ? 'bg-info-surface text-info hover:bg-info-surface'
+    : 'text-content-subtle hover:text-content-secondary hover:bg-surface-muted';
 
   return (
     <>

@@ -81,20 +81,20 @@ export function ParsedFileStats({ pf }: Readonly<{ pf: ParsedFile }>) {
 
 const CONTAINER_STYLES = {
   active: 'bg-brand-600 text-white',
-  completed: 'text-stone-400',
-  upcoming: 'text-stone-300',
+  completed: 'text-content-subtle',
+  upcoming: 'text-content-faint',
 } as const;
 
 const BADGE_STYLES = {
   active: 'bg-white/20',
-  completed: 'bg-stone-200',
-  upcoming: 'bg-stone-100',
+  completed: 'bg-surface-strong',
+  upcoming: 'bg-surface-emphasis',
 } as const;
 
 const LINE_STYLES = {
-  active: 'bg-stone-200',
-  completed: 'bg-stone-400',
-  upcoming: 'bg-stone-200',
+  active: 'bg-surface-strong',
+  completed: 'bg-surface-strong',
+  upcoming: 'bg-surface-strong',
 } as const;
 
 function getStatus(index: number, cur: number) {
@@ -108,7 +108,7 @@ function getStatus(index: number, cur: number) {
 export function ImportErrorMessage({ message }: Readonly<{ message: string }>) {
   const { t: tc } = useTranslation('common');
   return (
-    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+    <div className="text-sm text-danger bg-danger-surface border border-danger/30 rounded-lg px-3 py-2">
       <p className="font-medium mb-1">{tc('error_import')}</p>
       <ul className="list-disc list-inside space-y-0.5">
         {message.split('\n').map((line) => (

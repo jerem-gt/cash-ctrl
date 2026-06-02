@@ -32,7 +32,7 @@ export function PatrimonyCard({ history }: Readonly<Props>) {
       <CardTitle>{t('patrimony_title')}</CardTitle>
       <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-3">
         {types.map((type, i) => (
-          <div key={type} className="flex items-center gap-1.5 text-[11px] text-stone-500">
+          <div key={type} className="flex items-center gap-1.5 text-[11px] text-content-muted">
             <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: generateColor(i) }} />
             {labelFor(type)}
           </div>

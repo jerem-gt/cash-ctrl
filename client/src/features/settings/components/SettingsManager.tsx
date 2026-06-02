@@ -2,12 +2,13 @@ import { useTranslation } from 'react-i18next';
 
 import { Skeleton } from '@/components/ui';
 import { LanguageSwitcher } from '@/features/settings/components/LanguageSwitcher';
+import { ThemeSwitcher } from '@/features/settings/components/ThemeSwitcher';
 
 export function SettingsManagerSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <Skeleton className="h-3 w-24" />
-      <div className="p-3 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-2">
+      <div className="p-3 bg-surface-muted rounded-2xl border border-dashed border-line space-y-2">
         <Skeleton className="h-3 w-28" />
         <Skeleton className="h-8" />
       </div>
@@ -68,7 +69,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
   };
 
   return (
-    <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 md:pr-8 md:border-r border-black/5">
+    <nav className="w-full md:w-64 md:shrink-0 flex flex-col gap-1 md:pr-8 md:border-r border-line-subtle">
       {tabs.map((group) => (
         <div key={group.section} className="mb-4">
           <h3 className="text-[10px] uppercase tracking-widest opacity-30 mb-2">
@@ -82,7 +83,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
                 className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all ${
                   activeTab === item.key
                     ? 'bg-brand-600 text-white shadow-md'
-                    : 'text-black/60 hover:bg-black/5 hover:text-black'
+                    : 'text-content-secondary hover:bg-surface-emphasis hover:text-content'
                 }`}
               >
                 <span className="font-medium">{itemLabels[item.key]}</span>
@@ -91,10 +92,10 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
           </div>
         </div>
       ))}
-      <div className="mt-4 pt-4 border-t border-black/5">
+      <div className="mt-4 pt-4 border-t border-line-subtle flex flex-col gap-5">
+        <ThemeSwitcher />
         <LanguageSwitcher />
       </div>
-      ;
     </nav>
   );
 }

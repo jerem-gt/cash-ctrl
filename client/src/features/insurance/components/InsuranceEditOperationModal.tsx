@@ -62,7 +62,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
     >
       {isArbitrage ? (
         <>
-          <p className="text-sm text-stone-500 mb-6">
+          <p className="text-sm text-content-muted mb-6">
             {t('edit_operation_modal.arbitrage_readonly')}
           </p>
           <div className="flex justify-end">

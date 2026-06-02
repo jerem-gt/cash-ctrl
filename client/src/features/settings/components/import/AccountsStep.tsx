@@ -48,9 +48,12 @@ function AccountMappingRow({
   };
 
   return (
-    <div className="py-3 border-b border-stone-100 last:border-0">
+    <div className="py-3 border-b border-line-subtle last:border-0">
       <div className="flex items-start gap-4">
-        <span className="flex-1 text-sm font-mono text-stone-700 pt-1.5 truncate" title={qifName}>
+        <span
+          className="flex-1 text-sm font-mono text-content-secondary pt-1.5 truncate"
+          title={qifName}
+        >
           {label}
         </span>
         <div className="flex flex-col gap-2 shrink-0 items-end">
@@ -83,18 +86,18 @@ function AccountMappingRow({
           {action === 'create' && choice?.action === 'create' && (
             <div className="flex flex-col gap-1.5 items-end w-72">
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                <span className="text-xs text-content-subtle shrink-0 w-24 text-right">
                   {t('import.account_name_label')}
                 </span>
                 <input
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
+                  className="flex-1 px-2 py-1 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500"
                   value={choice.name}
                   onChange={(e) => onChange({ ...choice, name: e.target.value })}
                   placeholder={t('import.account_name_placeholder')}
                 />
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                <span className="text-xs text-content-subtle shrink-0 w-24 text-right">
                   {t('import.bank_label')}
                 </span>
                 <Select
@@ -118,7 +121,7 @@ function AccountMappingRow({
                 </Select>
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                <span className="text-xs text-content-subtle shrink-0 w-24 text-right">
                   {t('import.type_label')}
                 </span>
                 <Select
@@ -140,13 +143,13 @@ function AccountMappingRow({
                 </Select>
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                <span className="text-xs text-content-subtle shrink-0 w-24 text-right">
                   {t('import.initial_balance_label')}
                 </span>
                 <DecimalInput
                   aria-label={t('import.initial_balance_label')}
                   allowNegative
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
+                  className="flex-1 px-2 py-1 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500"
                   value={String(choice.initial_balance)}
                   onChange={(e) =>
                     onChange({ ...choice, initial_balance: Number.parseFloat(e.target.value) || 0 })
@@ -154,12 +157,12 @@ function AccountMappingRow({
                 />
               </div>
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-stone-400 shrink-0 w-24 text-right">
+                <span className="text-xs text-content-subtle shrink-0 w-24 text-right">
                   {t('import.opening_date_label')}
                 </span>
                 <input
                   type="date"
-                  className="flex-1 px-2 py-1 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500"
+                  className="flex-1 px-2 py-1 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500"
                   value={choice.opening_date ?? ''}
                   onChange={(e) => onChange({ ...choice, opening_date: e.target.value || null })}
                 />
@@ -211,12 +214,12 @@ export function AccountsStep({
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-4">
           {t('import.file_loaded')}
         </p>
-        <div className="flex gap-6 text-sm text-stone-600">
-          <span className="font-medium text-stone-800">{fileName}</span>
-          <span className="uppercase text-[10px] font-bold tracking-widest text-stone-400 self-center">
+        <div className="flex gap-6 text-sm text-content-secondary">
+          <span className="font-medium text-content">{fileName}</span>
+          <span className="uppercase text-[10px] font-bold tracking-widest text-content-subtle self-center">
             {parsedFile.format}
           </span>
           <ParsedFileStats pf={parsedFile} />
@@ -225,10 +228,10 @@ export function AccountsStep({
 
       {parsedFile.format === 'qif' && (
         <Card>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-1">
             {t('import.date_format_title')}
           </p>
-          <p className="text-xs text-stone-400 mb-3">
+          <p className="text-xs text-content-subtle mb-3">
             {t('import.date_detected')}{' '}
             <strong>
               {parsedFile.data.detectedDateFormat === 'ambiguous'
@@ -241,7 +244,7 @@ export function AccountsStep({
               <button
                 key={fmt}
                 onClick={() => onDateFormatChange(fmt)}
-                className={`px-4 py-2 text-sm rounded-lg border transition-all ${dateFormat === fmt ? 'border-brand-600 bg-brand-600 text-white' : 'border-stone-200 text-stone-600 hover:border-stone-400'}`}
+                className={`px-4 py-2 text-sm rounded-lg border transition-all ${dateFormat === fmt ? 'border-brand-600 bg-brand-600 text-white' : 'border-line text-content-secondary hover:border-line-strong'}`}
               >
                 {fmt} {fmt === 'DD/MM' ? '(FR/EU)' : '(US)'}
               </button>
@@ -251,10 +254,10 @@ export function AccountsStep({
       )}
 
       <Card>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-1">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-1">
           {t('import.account_mapping_title')}
         </p>
-        <p className="text-xs text-stone-400 mb-4">{t('import.account_mapping_desc')}</p>
+        <p className="text-xs text-content-subtle mb-4">{t('import.account_mapping_desc')}</p>
         {accountsToMap.map((name) => (
           <AccountMappingRow
             key={name}
@@ -268,7 +271,7 @@ export function AccountsStep({
         ))}
         {qifTransferTargets.length > 0 && (
           <>
-            <p className="text-xs text-stone-400 mt-4 mb-1 pt-3 border-t border-stone-100">
+            <p className="text-xs text-content-subtle mt-4 mb-1 pt-3 border-t border-line-subtle">
               {t('import.transfer_targets_title')}
             </p>
             {qifTransferTargets.map((name) => (

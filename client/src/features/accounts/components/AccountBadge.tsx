@@ -16,10 +16,10 @@ export function AccountBadge({ name, bank, logo, className = '' }: Readonly<Prop
           onError={(e) => (e.currentTarget.style.display = 'none')}
         />
       ) : (
-        bank && <span className="w-4 h-4 rounded bg-stone-100 inline-block shrink-0" />
+        bank && <span className="w-4 h-4 rounded bg-surface-emphasis inline-block shrink-0" />
       )}
       <span className="truncate">{name}</span>
-      {bank && <span className="text-stone-400 shrink-0">({bank})</span>}
+      {bank && <span className="text-content-subtle shrink-0">({bank})</span>}
     </span>
   );
 }

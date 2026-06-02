@@ -29,7 +29,7 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
   const isSavings = data.envelope_type === 'savings';
   const gainPos = data.plus_value_absolue >= 0;
-  const gainColor = gainPos ? 'text-emerald-600' : 'text-red-600';
+  const gainColor = gainPos ? 'text-success' : 'text-danger';
   const [showYearly, setShowYearly] = useState(false);
 
   return (
@@ -38,15 +38,15 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.capital')}</div>
+          <div className="text-xs text-content-muted mb-0.5">{t('profitability.capital')}</div>
           <div className="font-semibold">{fmt(data.capital_investi)}</div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.value')}</div>
+          <div className="text-xs text-content-muted mb-0.5">{t('profitability.value')}</div>
           <div className="font-semibold">{fmt(data.valeur_actuelle)}</div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.gain')}</div>
+          <div className="text-xs text-content-muted mb-0.5">{t('profitability.gain')}</div>
           <div className={`font-semibold ${gainColor}`}>
             {sign(data.plus_value_absolue)}
             {fmt(data.plus_value_absolue)}{' '}
@@ -57,18 +57,22 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
           </div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 mb-0.5">{t('profitability.annual_return')}</div>
+          <div className="text-xs text-content-muted mb-0.5">
+            {t('profitability.annual_return')}
+          </div>
           <div className="font-semibold">
             {data.rendement_annualise_pct === null
               ? '—'
               : `${sign(data.rendement_annualise_pct)}${data.rendement_annualise_pct.toFixed(2)} ${t('profitability.per_year')}`}
           </div>
-          <div className="text-xs text-stone-400">{formatDuration(data.opening_date, t)}</div>
+          <div className="text-xs text-content-subtle">{formatDuration(data.opening_date, t)}</div>
         </div>
       </div>
 
       {isSavings && (
-        <p className="text-xs text-stone-400 italic mb-3">{t('profitability.estimation_note')}</p>
+        <p className="text-xs text-content-subtle italic mb-3">
+          {t('profitability.estimation_note')}
+        </p>
       )}
 
       {data.yearly_returns.length > 0 && (
@@ -76,7 +80,7 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
           <button
             type="button"
             onClick={() => setShowYearly((v) => !v)}
-            className="w-full flex items-center justify-between pt-2 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+            className="w-full flex items-center justify-between pt-2 text-[11px] font-medium text-content-subtle hover:text-content-secondary transition-colors"
           >
             <span>{t('profitability.detail_btn', { count: data.yearly_returns.length })}</span>
             <span>{showYearly ? '▲' : '▼'}</span>
@@ -85,7 +89,7 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-stone-400 border-b border-stone-100">
+                  <tr className="text-xs text-content-subtle border-b border-line-subtle">
                     <th className="text-left py-1.5 pr-4 font-normal">
                       {t('profitability.col_year')}
                     </th>
@@ -106,17 +110,19 @@ export function ProfitabilityCard({ data }: Readonly<Props>) {
                 <tbody>
                   {data.yearly_returns.map((yr) => {
                     const yrPos = yr.gain >= 0;
-                    const yrColor = yrPos ? 'text-emerald-600' : 'text-red-600';
+                    const yrColor = yrPos ? 'text-success' : 'text-danger';
                     return (
-                      <tr key={yr.year} className="border-b border-stone-50 last:border-0">
+                      <tr key={yr.year} className="border-b border-line-subtle last:border-0">
                         <td className="py-1.5 pr-4 font-medium">
                           {yr.year}
-                          {yr.is_ytd && <span className="text-xs text-stone-400 ml-1">ytd</span>}
+                          {yr.is_ytd && (
+                            <span className="text-xs text-content-subtle ml-1">ytd</span>
+                          )}
                         </td>
                         <td className="text-right py-1.5 pr-4 tabular-nums">
                           {fmt(yr.start_value)}
                         </td>
-                        <td className="text-right py-1.5 pr-4 tabular-nums text-stone-500">
+                        <td className="text-right py-1.5 pr-4 tabular-nums text-content-muted">
                           {yr.net_flows === 0 ? '—' : `${sign(yr.net_flows)}${fmt(yr.net_flows)}`}
                         </td>
                         <td className={`text-right py-1.5 pr-4 tabular-nums ${yrColor}`}>

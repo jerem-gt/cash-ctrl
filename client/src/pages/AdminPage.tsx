@@ -35,8 +35,12 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-medium text-stone-800">{t('add_form.title')}</p>
-        <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600">
+        <p className="text-sm font-medium text-content">{t('add_form.title')}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-content-subtle hover:text-content-secondary"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -56,7 +60,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
         minLength={8}
       />
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-stone-500">{t('add_form.language_label')}</label>
+        <label className="text-xs text-content-muted">{t('add_form.language_label')}</label>
         <Select
           value={lang}
           onChange={(e) => setLang(e.target.value as 'fr' | 'en')}
@@ -102,10 +106,14 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-medium text-stone-800">
+        <p className="text-sm font-medium text-content">
           {t('edit_form.title', { username: user.username })}
         </p>
-        <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600">
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-content-subtle hover:text-content-secondary"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -149,18 +157,18 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
 
   return (
     <div className="min-h-screen bg-canvas flex flex-col">
-      <header className="bg-stone-900 text-white px-6 py-4 flex items-center justify-between">
+      <header className="bg-sidebar-bg text-sidebar-fg px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-stone-400" />
+          <Shield className="h-5 w-5 text-white/50" />
           <span className="font-semibold">
             {APP_CONFIG.name} {t('page.title_suffix')}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-stone-400">{username}</span>
+          <span className="text-sm text-white/50">{username}</span>
           <button
             onClick={() => logout.mutate()}
-            className="text-stone-400 hover:text-white transition-colors"
+            className="text-white/50 hover:text-white transition-colors"
             title={t('page.logout_title')}
           >
             <LogOut className="h-4 w-4" />
@@ -188,35 +196,33 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
           </div>
 
           {showAdd && (
-            <div className="mb-4 p-4 bg-stone-50 rounded-xl border border-black/[0.07]">
+            <div className="mb-4 p-4 bg-surface-muted rounded-xl border border-line-subtle">
               <AddUserForm onClose={() => setShowAdd(false)} />
             </div>
           )}
 
           {isLoading ? (
-            <p className="text-sm text-stone-400">{t('page.loading')}</p>
+            <p className="text-sm text-content-subtle">{t('page.loading')}</p>
           ) : (
-            <ul className="divide-y divide-stone-100">
+            <ul className="divide-y divide-line-subtle">
               {users.map((user) => (
                 <li key={user.id} className="py-3">
                   {editingId === user.id ? (
-                    <div className="p-3 bg-stone-50 rounded-xl border border-black/[0.07]">
+                    <div className="p-3 bg-surface-muted rounded-xl border border-line-subtle">
                       <EditUserForm user={user} onClose={() => setEditingId(null)} />
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-stone-800">
-                            {user.username}
-                          </span>
+                          <span className="text-sm font-medium text-content">{user.username}</span>
                           {user.is_admin === 1 && (
-                            <span className="text-[10px] font-medium uppercase tracking-wide bg-stone-100 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5">
+                            <span className="text-[10px] font-medium uppercase tracking-wide bg-surface-emphasis text-content-muted border border-line rounded px-1.5 py-0.5">
                               {t('user.admin_badge')}
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-stone-400">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-content-subtle">
                           <span>{t('user.account_count', { count: user.account_count })}</span>
                           <span>{t('user.tx_count', { count: user.tx_count })}</span>
                           {user.last_tx_date !== null && (

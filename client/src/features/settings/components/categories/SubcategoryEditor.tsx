@@ -49,7 +49,7 @@ export function SubcategoryEditor({
           size="sm"
           disabled={isPending || !nameValue.trim()}
           onClick={() => onSave(nameValue)}
-          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+          className="text-success hover:text-success hover:bg-success-surface"
         >
           <Check size={16} strokeWidth={2.5} />
         </IconButton>

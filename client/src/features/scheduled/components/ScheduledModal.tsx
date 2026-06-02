@@ -153,7 +153,7 @@ export function ScheduledModal({
     >
       <form id="scheduled-modal-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Sélecteur de mode */}
-        <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
+        <div className="flex gap-1 bg-surface-emphasis rounded-xl p-1">
           {(['transaction', 'transfer', 'versement'] as ScheduledMode[]).map((m) => (
             <button
               key={m}
@@ -161,8 +161,8 @@ export function ScheduledModal({
               onClick={() => handleModeChange(m)}
               className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-lg transition-all ${
                 form.mode === m
-                  ? 'bg-white text-stone-800 shadow-sm'
-                  : 'text-stone-500 hover:text-stone-700'
+                  ? 'bg-surface text-content shadow-sm'
+                  : 'text-content-muted hover:text-content-secondary'
               }`}
             >
               {modeLabels[m]}
@@ -207,8 +207,8 @@ export function ScheduledModal({
         )}
 
         {/* Récurrence */}
-        <div className="border border-black/[0.07] rounded-xl p-4 space-y-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+        <div className="border border-line-subtle rounded-xl p-4 space-y-3">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('modal.recurrence_title')}
           </p>
           <div className="flex gap-3 flex-wrap">
@@ -265,7 +265,7 @@ export function ScheduledModal({
             {(['allow', 'before', 'after'] as WeekendHandling[]).map((v) => (
               <label
                 key={v}
-                className="flex items-center gap-1.5 cursor-pointer text-sm text-stone-700 select-none"
+                className="flex items-center gap-1.5 cursor-pointer text-sm text-content-secondary select-none"
               >
                 <input
                   type="radio"
@@ -304,7 +304,7 @@ export function ScheduledModal({
               onChange={(e) => set('active', e.target.checked)}
               className="w-4 h-4 accent-brand-500"
             />
-            <span className="text-sm text-stone-700">{t('modal.active_label')}</span>
+            <span className="text-sm text-content-secondary">{t('modal.active_label')}</span>
           </label>
         </div>
 
@@ -315,7 +315,7 @@ export function ScheduledModal({
             onChange={(e) => set('notes', e.target.value)}
             placeholder={t('modal.notes_placeholder')}
             rows={2}
-            className="w-full px-3 py-2 text-sm bg-stone-50 border border-black/13 rounded-lg outline-none focus:border-brand-500 transition-all resize-none"
+            className="w-full px-3 py-2 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500 transition-all resize-none"
           />
         </FormGroup>
       </form>

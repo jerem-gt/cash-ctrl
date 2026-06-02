@@ -19,7 +19,7 @@ function AccountDetailSkeleton() {
   const { t } = useTranslation('accounts');
   return (
     <div className="space-y-5">
-      <div className="p-8 bg-white rounded-2xl border border-black/[0.07] shadow-sm">
+      <div className="p-8 bg-surface rounded-2xl border border-line-subtle shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="flex gap-5 items-start">
             <Skeleton className="w-14 h-14 rounded-xl shrink-0" />
@@ -32,14 +32,14 @@ function AccountDetailSkeleton() {
           <Skeleton className="h-16 w-48 rounded-2xl shrink-0" />
         </div>
       </div>
-      <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
         {t('detail.transactions_label')}
       </p>
       <div className="flex flex-col gap-2">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
           <div
             key={i}
-            className="flex items-center gap-3 px-4 py-3 border rounded-xl border-black/[0.07] bg-white"
+            className="flex items-center gap-3 px-4 py-3 border rounded-xl border-line-subtle bg-surface"
           >
             <Skeleton className="w-4 h-4 shrink-0" />
             <Skeleton className="h-4 flex-1" />
@@ -91,11 +91,11 @@ export default function AccountDetailPage() {
       <div className="space-y-5">
         <button
           onClick={() => void navigate('/accounts')}
-          className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+          className="text-sm text-content-subtle hover:text-content-secondary transition-colors"
         >
           {t('detail.not_found_back')}
         </button>
-        <p className="text-sm text-stone-400">{t('detail.not_found')}</p>
+        <p className="text-sm text-content-subtle">{t('detail.not_found')}</p>
       </div>
     );
   }
@@ -152,22 +152,22 @@ export default function AccountDetailPage() {
       {!isInsurance && (
         <>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
               {t('detail.transactions_label')}
             </p>
             {isClosed && (
               <button
                 onClick={() => setTemporarilyUnlocked((v) => !v)}
-                className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-content-subtle hover:text-content-secondary transition-colors"
                 title={
                   temporarilyUnlocked ? t('detail.readonly_off_title') : t('detail.readonly_title')
                 }
               >
                 <span
-                  className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors ${temporarilyUnlocked ? 'bg-amber-400 border-amber-400' : 'bg-stone-200 border-stone-200'}`}
+                  className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors ${temporarilyUnlocked ? 'bg-warning border-warning/30' : 'bg-surface-strong border-line'}`}
                 >
                   <span
-                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${temporarilyUnlocked ? 'translate-x-3' : 'translate-x-0.5'}`}
+                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-surface shadow transition-transform ${temporarilyUnlocked ? 'translate-x-3' : 'translate-x-0.5'}`}
                   />
                 </span>
                 {temporarilyUnlocked ? t('detail.editing_mode') : t('detail.read_only')}

@@ -32,7 +32,7 @@ describe('Alert', () => {
 
   it('applique les classes de la variante error', () => {
     const { container } = render(<Alert variant="error">Erreur</Alert>);
-    expect(container.firstChild).toHaveClass('bg-red-50');
+    expect(container.firstChild).toHaveClass('bg-danger-surface');
   });
 });
 

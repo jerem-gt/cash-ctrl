@@ -65,7 +65,7 @@ function AmountCell({
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="text-[11px] text-stone-400 hover:text-stone-600 leading-none"
+          className="text-[11px] text-content-subtle hover:text-content-secondary leading-none"
         >
           ✕
         </button>
@@ -80,11 +80,11 @@ function AmountCell({
       className="text-right shrink-0 group"
       title={t('reimbursements_panel.edit_amount_title')}
     >
-      <span className="text-xs font-medium text-green-700 tabular-nums group-hover:underline decoration-dotted">
+      <span className="text-xs font-medium text-success tabular-nums group-hover:underline decoration-dotted">
         +{fmtDec(reimbursement.amount)}
       </span>
       {isPartial && (
-        <span className="block text-[10px] text-stone-400 tabular-nums leading-none mt-0.5">
+        <span className="block text-[10px] text-content-subtle tabular-nums leading-none mt-0.5">
           / {fmtDec(reimbursement.transaction_amount)}
         </span>
       )}
@@ -178,9 +178,9 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
   };
 
   return (
-    <div className="border-t border-black/[0.07] pt-4 mt-1">
+    <div className="border-t border-line-subtle pt-4 mt-1">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-medium uppercase tracking-widest text-stone-400">
+        <p className="text-[11px] font-medium uppercase tracking-widest text-content-subtle">
           {t('reimbursements_panel.label')}
         </p>
         <button
@@ -189,7 +189,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           disabled={setStatus.isPending}
           className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${
             localStatus === null
-              ? 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+              ? 'text-content-subtle hover:text-content-secondary hover:bg-surface-muted'
               : 'bg-brand-50 text-brand-700 hover:bg-brand-100'
           }`}
         >
@@ -208,8 +208,8 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               onClick={() => handleStatusChange('en_attente')}
               className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                 localStatus === 'en_attente'
-                  ? 'bg-amber-50 border-amber-300 text-amber-700'
-                  : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
+                  ? 'bg-warning-surface border-warning/30 text-warning'
+                  : 'bg-surface-muted border-line text-content-subtle hover:bg-surface-emphasis'
               }`}
             >
               {t('reimbursements_panel.pending')}
@@ -219,8 +219,8 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               onClick={() => handleStatusChange('rembourse')}
               className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                 localStatus === 'rembourse'
-                  ? 'bg-green-50 border-green-300 text-green-700'
-                  : 'bg-stone-50 border-black/10 text-stone-400 hover:bg-stone-100'
+                  ? 'bg-success-surface border-success/30 text-success'
+                  : 'bg-surface-muted border-line text-content-subtle hover:bg-surface-emphasis'
               }`}
             >
               {t('reimbursements_panel.done')}
@@ -233,11 +233,13 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               {reimbursements.map((r) => (
                 <div
                   key={r.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-lg border border-black/6"
+                  className="flex items-center gap-2 px-3 py-2 bg-surface-muted rounded-lg border border-line-subtle"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-stone-700 truncate">{r.description}</p>
-                    <p className="text-[11px] text-stone-400">
+                    <p className="text-xs font-medium text-content-secondary truncate">
+                      {r.description}
+                    </p>
+                    <p className="text-[11px] text-content-subtle">
                       {r.subcategory || r.category} · {fmtDate(r.date)}
                     </p>
                   </div>
@@ -249,7 +251,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                     type="button"
                     onClick={() => handleUnlink(r.id)}
                     disabled={unlink.isPending}
-                    className="text-stone-300 hover:text-red-400 transition-colors text-base leading-none px-1 shrink-0"
+                    className="text-content-faint hover:text-danger transition-colors text-base leading-none px-1 shrink-0"
                     title={t('reimbursements_panel.unlink_title')}
                   >
                     ×
@@ -260,15 +262,15 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           )}
 
           {/* Reste à charge */}
-          <div className="flex items-center justify-between px-3 py-2 bg-stone-50 rounded-lg border border-black/6">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+          <div className="flex items-center justify-between px-3 py-2 bg-surface-muted rounded-lg border border-line-subtle">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-content-subtle">
               {t('reimbursements_panel.remaining_label')}
             </span>
             <span
-              className={`text-sm font-medium tabular-nums ${remaining > 0 ? 'text-red-700' : 'text-green-700'}`}
+              className={`text-sm font-medium tabular-nums ${remaining > 0 ? 'text-danger' : 'text-success'}`}
             >
               {fmtDec(Math.max(0, remaining))}
-              <span className="text-[11px] text-stone-400 font-normal ml-1">
+              <span className="text-[11px] text-content-subtle font-normal ml-1">
                 / {fmtDec(tx.amount)}
               </span>
             </span>
@@ -329,7 +331,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
             <button
               type="button"
               onClick={() => setShowAdd(true)}
-              className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-all"
+              className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg text-content-subtle hover:text-content-secondary hover:bg-surface-muted transition-all"
             >
               {t('reimbursements_panel.add_reimbursement')}
             </button>

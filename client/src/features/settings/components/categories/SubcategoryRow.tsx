@@ -50,10 +50,10 @@ export function SubcategoryRow({
       ? t('categories.subcategory_delete_disabled', { count: txCount })
       : t('card.delete_label');
   return (
-    <div className="flex items-center gap-4 py-2 px-3 border-b border-black/3 group hover:bg-stone-50/80 transition-colors">
+    <div className="flex items-center gap-4 py-2 px-3 border-b border-line-subtle group hover:bg-surface-muted/80 transition-colors">
       {/* 1. Zone Nom : prend tout l'espace et gère le débordement */}
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-medium text-stone-600 truncate block tracking-tight">
+        <span className="text-sm font-medium text-content-secondary truncate block tracking-tight">
           {sub.name}
         </span>
       </div>
@@ -62,7 +62,7 @@ export function SubcategoryRow({
       <div className="flex items-center gap-3 shrink-0">
         {/* Compteur compact : "tx" au lieu de "transactions" pour gagner de la place */}
         {txCount > 0 && (
-          <span className="text-[10px] font-bold text-stone-400 bg-stone-100/80 px-2 py-0.5 rounded-full tabular-nums">
+          <span className="text-[10px] font-bold text-content-subtle bg-surface-emphasis/80 px-2 py-0.5 rounded-full tabular-nums">
             {txCount} tx
           </span>
         )}

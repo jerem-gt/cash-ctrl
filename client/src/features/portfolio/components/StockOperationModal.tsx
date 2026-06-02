@@ -150,13 +150,13 @@ export function StockOperationModal(props: Readonly<Props>) {
           </FormGroup>
         </div>
 
-        <div className="bg-stone-50 rounded-xl p-3 border border-stone-200">
-          <p className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">
+        <div className="bg-surface-muted rounded-xl p-3 border border-line">
+          <p className="text-[11px] text-content-subtle uppercase tracking-wider mb-1">
             {isBuy
               ? t('stock_operation_modal.total_expense')
               : t('stock_operation_modal.total_received')}
           </p>
-          <p className={`font-display text-xl ${amount < 0 ? 'text-red-700' : 'text-stone-900'}`}>
+          <p className={`font-display text-xl ${amount < 0 ? 'text-danger' : 'text-content'}`}>
             {amount.toLocaleString(currentLocale(), { style: 'currency', currency: 'EUR' })}
           </p>
         </div>

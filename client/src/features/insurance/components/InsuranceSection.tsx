@@ -40,32 +40,32 @@ function SupportRow({
   const deleteSupport = useDeleteInsuranceSupport(accountId);
 
   const badgeClass =
-    support.type === 'euro' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700';
+    support.type === 'euro' ? 'bg-warning-surface text-warning' : 'bg-info-surface text-info';
   const badgeLabel = support.type === 'euro' ? t('section.badge_euro') : t('section.badge_uc');
   const actionButtons = !readOnly && (
     <div className="flex gap-1 flex-wrap">
       <button
         onClick={() => setActiveModal('versement')}
-        className="text-[11px] font-bold text-green-700 hover:text-green-900 hover:bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-all"
+        className="text-[11px] font-bold text-success hover:text-success hover:bg-success-surface px-2 py-1 rounded-lg border border-success/30 transition-all"
       >
         {t('section.action_versement')}
       </button>
       <button
         onClick={() => setActiveModal('rachat')}
-        className="text-[11px] font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition-all"
+        className="text-[11px] font-bold text-danger hover:text-danger hover:bg-danger-surface px-2 py-1 rounded-lg border border-danger/30 transition-all"
       >
         {t('section.action_rachat')}
       </button>
       <button
         onClick={() => setActiveModal('arbitrage')}
-        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 transition-all"
+        className="text-[11px] font-bold text-info hover:text-info hover:bg-info-surface px-2 py-1 rounded-lg border border-info/30 transition-all"
       >
         {t('section.action_arbitrage')}
       </button>
       {support.type === 'euro' && (
         <button
           onClick={() => setActiveModal('interets')}
-          className="text-[11px] font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 transition-all"
+          className="text-[11px] font-bold text-warning hover:text-warning hover:bg-warning-surface px-2 py-1 rounded-lg border border-warning/30 transition-all"
         >
           {t('section.action_interets')}
         </button>
@@ -80,7 +80,7 @@ function SupportRow({
       )}
       <button
         onClick={() => setActiveModal('delete')}
-        className="text-[11px] text-stone-400 hover:text-red-500 px-2 py-1 rounded-lg transition-all"
+        className="text-[11px] text-content-subtle hover:text-danger px-2 py-1 rounded-lg transition-all"
         title={t('section.delete_support_btn_title')}
       >
         ×
@@ -91,7 +91,7 @@ function SupportRow({
   return (
     <>
       {/* Mobile card */}
-      <div className="sm:hidden px-4 py-3 border-b border-stone-100">
+      <div className="sm:hidden px-4 py-3 border-b border-line-subtle">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <span
@@ -99,14 +99,14 @@ function SupportRow({
             >
               {badgeLabel}
             </span>
-            <p className="text-sm font-medium text-stone-800 mt-0.5 leading-tight truncate">
+            <p className="text-sm font-medium text-content mt-0.5 leading-tight truncate">
               {support.name}
             </p>
             {support.ticker && (
-              <p className="text-[10px] text-stone-400 font-mono">{support.ticker}</p>
+              <p className="text-[10px] text-content-subtle font-mono">{support.ticker}</p>
             )}
           </div>
-          <p className="text-sm font-bold text-stone-800 tabular-nums shrink-0">
+          <p className="text-sm font-bold text-content tabular-nums shrink-0">
             {fmtDec(support.value)}
           </p>
         </div>
@@ -114,7 +114,7 @@ function SupportRow({
       </div>
 
       {/* Desktop row */}
-      <div className="hidden sm:flex items-center gap-4 py-3 px-4 hover:bg-stone-50 rounded-xl transition-colors">
+      <div className="hidden sm:flex items-center gap-4 py-3 px-4 hover:bg-surface-muted rounded-xl transition-colors">
         <div className="w-40 shrink-0">
           <div className="flex items-center gap-1.5">
             <span
@@ -123,21 +123,21 @@ function SupportRow({
               {badgeLabel}
             </span>
           </div>
-          <p className="text-sm font-medium text-stone-800 mt-0.5 leading-tight">{support.name}</p>
+          <p className="text-sm font-medium text-content mt-0.5 leading-tight">{support.name}</p>
           {support.ticker && (
-            <p className="text-[10px] text-stone-400 font-mono">{support.ticker}</p>
+            <p className="text-[10px] text-content-subtle font-mono">{support.ticker}</p>
           )}
         </div>
 
         <div className="flex-1">
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] text-content-subtle uppercase tracking-wider mb-0.5">
             {t('section.support_value_label')}
           </p>
-          <p className="font-medium text-stone-700 tabular-nums">{fmtDec(support.value)}</p>
+          <p className="font-medium text-content-secondary tabular-nums">{fmtDec(support.value)}</p>
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="text-sm font-bold text-stone-800 tabular-nums">{fmtDec(support.value)}</p>
+          <p className="text-sm font-bold text-content tabular-nums">{fmtDec(support.value)}</p>
         </div>
 
         {actionButtons && <div className="shrink-0 justify-end">{actionButtons}</div>}
@@ -200,11 +200,11 @@ function SupportRow({
 const OPERATIONS_PAGE_SIZE = 10;
 
 const OP_BADGE_CLASSES: Record<InsuranceOperation['type'], string> = {
-  versement: 'bg-green-100 text-green-700',
-  rachat: 'bg-red-100 text-red-700',
-  arbitrage_in: 'bg-blue-100 text-blue-700',
-  arbitrage_out: 'bg-blue-100 text-blue-700',
-  interets: 'bg-amber-100 text-amber-700',
+  versement: 'bg-success-surface text-success',
+  rachat: 'bg-danger-surface text-danger',
+  arbitrage_in: 'bg-info-surface text-info',
+  arbitrage_out: 'bg-info-surface text-info',
+  interets: 'bg-warning-surface text-warning',
   revalorisation: 'bg-violet-100 text-violet-700',
 };
 
@@ -234,8 +234,8 @@ function OperationRow({
   const signed = OP_SIGN[op.type](op);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition-colors">
-      <span className="text-[10px] text-stone-400 w-20 shrink-0 tabular-nums">
+    <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors">
+      <span className="text-[10px] text-content-subtle w-20 shrink-0 tabular-nums">
         {fmtDate(op.date)}
       </span>
 
@@ -244,25 +244,25 @@ function OperationRow({
       >
         {opLabels[op.type]}
       </span>
-      <span className="text-sm text-stone-600 flex-1 truncate">{op.support_name}</span>
+      <span className="text-sm text-content-secondary flex-1 truncate">{op.support_name}</span>
       {op.from_scheduled && (
-        <span className="text-[12px] text-indigo-400 shrink-0" title={t('section.scheduled_title')}>
+        <span className="text-[12px] text-info shrink-0" title={t('section.scheduled_title')}>
           ↻
         </span>
       )}
       {op.fees > 0 && (
-        <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
+        <span className="hidden sm:inline text-[10px] text-content-subtle shrink-0">
           {t('section.op_fees', { amount: fmtDec(op.fees) })}
         </span>
       )}
       {op.social_fees > 0 && (
-        <span className="hidden sm:inline text-[10px] text-stone-400 shrink-0">
+        <span className="hidden sm:inline text-[10px] text-content-subtle shrink-0">
           {t('section.op_social_fees', { amount: fmtDec(op.social_fees) })}
         </span>
       )}
       <span
         className={`text-sm font-medium tabular-nums shrink-0 ${
-          signed >= 0 ? 'text-green-600' : 'text-red-600'
+          signed >= 0 ? 'text-success' : 'text-danger'
         }`}
       >
         {signed >= 0 ? '+' : ''}
@@ -308,11 +308,11 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
 
   function renderPositions() {
     if (isLoading) {
-      return <Spinner className="h-4 w-4 text-stone-400 my-4 mx-auto" />;
+      return <Spinner className="h-4 w-4 text-content-subtle my-4 mx-auto" />;
     }
     if (positions.length === 0) {
       return (
-        <div className="text-center py-8 text-stone-300 text-sm border-2 border-dashed border-stone-100 rounded-2xl">
+        <div className="text-center py-8 text-content-faint text-sm border-2 border-dashed border-line-subtle rounded-2xl">
           {t('section.no_support')}
         </div>
       );
@@ -323,7 +323,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
     const hasZeroSection = activePositions.length > 0 && zeroPositions.length > 0;
 
     return (
-      <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-line-subtle shadow-sm overflow-hidden">
         {visiblePositions.map((pos) => (
           <SupportRow
             key={pos.id}
@@ -339,7 +339,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
             <button
               type="button"
               onClick={() => setShowZero((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-2 bg-stone-50 border-t border-stone-100 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2 bg-surface-muted border-t border-line-subtle text-[11px] font-medium text-content-subtle hover:text-content-secondary transition-colors"
             >
               <span>{t('section.zero_supports', { count: zeroPositions.length })}</span>
               <span>{showZero ? '▲' : '▼'}</span>
@@ -358,11 +358,11 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
         )}
 
         {positions.length > 1 && (
-          <div className="flex items-center justify-between py-3 px-4 bg-stone-50 border-t border-stone-100">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between py-3 px-4 bg-surface-muted border-t border-line-subtle">
+            <span className="text-[11px] font-bold text-content-subtle uppercase tracking-wider">
               {t('section.total_envelope')}
             </span>
-            <span className="text-sm font-bold text-stone-800 tabular-nums">
+            <span className="text-sm font-bold text-content tabular-nums">
               {fmtDec(totalValue)}
             </span>
           </div>
@@ -375,7 +375,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
     <>
       <div className="mb-4">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('section.envelope_title')}
           </p>
           <div className="flex items-center gap-2">
@@ -396,15 +396,15 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
       </div>
 
       <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400 mb-4">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-4">
           {t('section.history_title')}
         </p>
         {operations.length === 0 ? (
-          <div className="text-sm text-stone-300 text-center py-6">
+          <div className="text-sm text-content-faint text-center py-6">
             {t('section.no_operations')}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-black/[0.07] shadow-sm overflow-hidden divide-y divide-stone-50">
+          <div className="bg-surface rounded-2xl border border-line-subtle shadow-sm overflow-hidden divide-y divide-line-subtle">
             {operations.slice(0, visibleCount).map((op) => (
               <OperationRow
                 key={op.id}
@@ -417,7 +417,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
               <button
                 type="button"
                 onClick={() => setVisibleCount((c) => c + OPERATIONS_PAGE_SIZE)}
-                className="w-full flex items-center justify-center px-4 py-2.5 bg-stone-50 text-[11px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+                className="w-full flex items-center justify-center px-4 py-2.5 bg-surface-muted text-[11px] font-medium text-content-subtle hover:text-content-secondary transition-colors"
               >
                 {t('section.show_more', { count: operations.length - visibleCount })}
               </button>

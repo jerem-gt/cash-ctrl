@@ -26,18 +26,18 @@ export function ScheduledRow({
   const toAccount = isTransfer ? accounts.find((a) => a.id === sched.to_account_id) : null;
   const sourceAccount = isVersement ? accounts.find((a) => a.id === sched.to_account_id) : null;
 
-  const typeColor = sched.type === 'income' ? 'text-green-800' : 'text-red-700';
-  const amountColor = isTransfer || isVersement ? 'text-stone-500' : typeColor;
+  const typeColor = sched.type === 'income' ? 'text-success' : 'text-danger';
+  const amountColor = isTransfer || isVersement ? 'text-content-muted' : typeColor;
   const typeSign = sched.type === 'income' ? '+' : '−';
   const amountSign = isTransfer || isVersement ? '' : typeSign;
 
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-black/6 last:border-0">
+    <div className="flex items-center gap-3 py-2.5 border-b border-line-subtle last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium truncate">{sched.description}</p>
           {isTransfer && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+            <span className="text-[10px] bg-info-surface text-info border border-info/30 rounded px-1.5 py-0.5 font-medium shrink-0">
               {t('row.transfer_badge')}
             </span>
           )}
@@ -47,7 +47,7 @@ export function ScheduledRow({
             </span>
           )}
           {!sched.active && (
-            <span className="text-[10px] bg-stone-100 text-stone-400 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0">
+            <span className="text-[10px] bg-surface-emphasis text-content-subtle border border-line rounded px-1.5 py-0.5 font-medium shrink-0">
               {t('row.suspended_badge')}
             </span>
           )}
@@ -55,13 +55,13 @@ export function ScheduledRow({
             <button
               type="button"
               onClick={() => onViewTransactions(sched)}
-              className="text-[10px] bg-stone-50 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5 font-medium shrink-0 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+              className="text-[10px] bg-surface-muted text-content-muted border border-line rounded px-1.5 py-0.5 font-medium shrink-0 hover:bg-surface-emphasis hover:text-content-secondary transition-colors"
             >
               {sched.transaction_count} tx
             </button>
           )}
         </div>
-        <p className="text-[11px] text-stone-400 mt-0.5">
+        <p className="text-[11px] text-content-subtle mt-0.5">
           {recurrenceLabel(sched, t)} · {sched.account_name}
           {isTransfer && toAccount ? ` → ${toAccount.name}` : ''}
           {isVersement && sched.insurance_support_name ? ` · ${sched.insurance_support_name}` : ''}

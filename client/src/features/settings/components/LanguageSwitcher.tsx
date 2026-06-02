@@ -10,7 +10,7 @@ export function LanguageSwitcher() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[10px] uppercase tracking-widest font-semibold text-stone-400">
+      <p className="text-[10px] uppercase tracking-widest font-semibold text-content-subtle">
         {t('language.title')}
       </p>
       <div className="flex gap-2">
@@ -20,7 +20,7 @@ export function LanguageSwitcher() {
           className={`px-4 py-2 text-sm rounded-xl border transition-all ${
             current === 'fr'
               ? 'bg-brand-600 text-white border-brand-600 shadow-md'
-              : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:text-black'
+              : 'bg-surface text-content-secondary border-line hover:border-line-strong hover:text-content'
           }`}
         >
           {t('language.fr')}
@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
           className={`px-4 py-2 text-sm rounded-xl border transition-all ${
             current === 'en' || current.startsWith('en')
               ? 'bg-brand-600 text-white border-brand-600 shadow-md'
-              : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:text-black'
+              : 'bg-surface text-content-secondary border-line hover:border-line-strong hover:text-content'
           }`}
         >
           {t('language.en')}

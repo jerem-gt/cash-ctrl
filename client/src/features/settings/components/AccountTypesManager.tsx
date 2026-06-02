@@ -15,10 +15,10 @@ import {
 import { AccountType } from '@/types.ts';
 
 const ENVELOPE_BADGE_CLASSES: Record<string, string> = {
-  investment: 'bg-indigo-50 text-indigo-500 border border-indigo-200',
-  loan: 'bg-amber-50 text-amber-700 border border-amber-200',
-  life_insurance: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  per: 'bg-blue-50 text-blue-700 border border-blue-200',
+  investment: 'bg-info-surface text-info border border-info/30',
+  loan: 'bg-warning-surface text-warning border border-warning/30',
+  life_insurance: 'bg-success-surface text-success border border-success/30',
+  per: 'bg-info-surface text-info border border-info/30',
 };
 
 function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClose: () => void }>) {
@@ -55,7 +55,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
       }}
       className="flex flex-col gap-3"
     >
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('account_types.edit_title')}
       </p>
       <Input
@@ -68,7 +68,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
       <div>
         <label
           htmlFor={`edit-at-envelope-${at.id}`}
-          className="text-[11px] text-stone-500 block mb-1"
+          className="text-[11px] text-content-muted block mb-1"
         >
           {t('account_types.envelope_label')}
         </label>
@@ -118,17 +118,17 @@ function AccountTypeCard({ at }: Readonly<{ at: AccountType }>) {
         subtitle={
           at.envelope_type ? (
             <span
-              className={`text-[10px] rounded px-1.5 py-0.5 font-medium ${ENVELOPE_BADGE_CLASSES[at.envelope_type] ?? 'bg-stone-50 text-stone-500 border border-stone-200'}`}
+              className={`text-[10px] rounded px-1.5 py-0.5 font-medium ${ENVELOPE_BADGE_CLASSES[at.envelope_type] ?? 'bg-surface-muted text-content-muted border border-line'}`}
             >
               {envelopeLabels[at.envelope_type] ?? at.envelope_type}
             </span>
           ) : (
-            <span className="text-[10px] text-stone-300">—</span>
+            <span className="text-[10px] text-content-faint">—</span>
           )
         }
         badge={
           accCount > 0 ? (
-            <span className="text-[10px] font-bold text-stone-300 tabular-nums shrink-0">
+            <span className="text-[10px] font-bold text-content-faint tabular-nums shrink-0">
               {accCount}
             </span>
           ) : undefined
@@ -192,7 +192,7 @@ export function AccountTypesManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('account_types.title')}
       </p>
       <AddCard title={t('account_types.new_title')}>
@@ -215,7 +215,7 @@ export function AccountTypesManager() {
           </Button>
         </form>
         <div className="mt-2">
-          <label htmlFor="new-at-envelope" className="text-[11px] text-stone-500 block mb-1">
+          <label htmlFor="new-at-envelope" className="text-[11px] text-content-muted block mb-1">
             {t('account_types.envelope_label')}
           </label>
           <div className="max-w-56">

@@ -72,20 +72,20 @@ export default function ExportManager() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-stone-400 mb-8">{t('export.description')}</p>
+      <p className="text-sm text-content-subtle mb-8">{t('export.description')}</p>
 
       <Button variant="primary" onClick={handleOpen}>
         {panelOpen ? t('export.close_btn') : t('export.open_btn')}
       </Button>
 
       {panelOpen && (
-        <div className="border border-stone-200 rounded-xl p-4 bg-stone-50 space-y-4">
+        <div className="border border-line rounded-xl p-4 bg-surface-muted space-y-4">
           <div>
-            <p className="text-xs font-medium text-stone-500 uppercase tracking-widest mb-3">
+            <p className="text-xs font-medium text-content-muted uppercase tracking-widest mb-3">
               {t('export.accounts_title')}
             </p>
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -94,11 +94,11 @@ export default function ExportManager() {
                 />
                 <span className="font-medium">{tc('all_select')}</span>
               </label>
-              <div className="border-t border-stone-200 pt-2 space-y-1.5 pl-1">
+              <div className="border-t border-line pt-2 space-y-1.5 pl-1">
                 {accounts.map((a) => (
                   <label
                     key={a.id}
-                    className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer select-none"
+                    className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer select-none"
                   >
                     <input
                       type="checkbox"
@@ -107,9 +107,11 @@ export default function ExportManager() {
                       className="rounded"
                     />
                     <span>{a.name}</span>
-                    {a.bank && <span className="text-xs text-stone-400">— {a.bank}</span>}
+                    {a.bank && <span className="text-xs text-content-subtle">— {a.bank}</span>}
                     {a.closed_at && (
-                      <span className="text-xs text-stone-300 italic">{t('export.closed')}</span>
+                      <span className="text-xs text-content-faint italic">
+                        {t('export.closed')}
+                      </span>
                     )}
                   </label>
                 ))}
@@ -118,7 +120,7 @@ export default function ExportManager() {
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-content-subtle">
               {t('export.summary', { count: selectedIds.size })}
             </p>
             <Button

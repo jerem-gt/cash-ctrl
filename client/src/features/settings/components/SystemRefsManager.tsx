@@ -52,7 +52,7 @@ export function SystemRefsManager() {
     return (
       <div className="flex flex-col gap-3">
         {REFS.map((ref) => (
-          <div key={ref.key} className="h-9 bg-stone-100 animate-pulse rounded-lg" />
+          <div key={ref.key} className="h-9 bg-surface-emphasis animate-pulse rounded-lg" />
         ))}
       </div>
     );
@@ -60,7 +60,7 @@ export function SystemRefsManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('system_refs.title')}
       </p>
       <div className="flex flex-col gap-4">
@@ -70,7 +70,7 @@ export function SystemRefsManager() {
 
           return (
             <div key={ref.key} className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium uppercase tracking-wider text-stone-400">
+              <label className="text-[11px] font-medium uppercase tracking-wider text-content-subtle">
                 {t(`system_refs.${ref.key}`)}
               </label>
               <Select

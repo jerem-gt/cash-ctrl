@@ -41,7 +41,7 @@ function PaymentMethodEditForm({
       }}
       className="flex flex-col gap-3"
     >
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('payment_methods.edit_title')}
       </p>
       <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ function PaymentMethodCard({ pm }: Readonly<{ pm: PaymentMethod }>) {
         title={pm.name}
         icon={pm.icon || '💳'}
         subtitle={
-          txCount > 0 ? <p className="text-[10px] text-stone-400">{txCount} tx</p> : undefined
+          txCount > 0 ? <p className="text-[10px] text-content-subtle">{txCount} tx</p> : undefined
         }
         canDelete={txCount === 0}
         onDelete={() =>
@@ -138,7 +138,7 @@ export function PaymentMethodsManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+      <p className="text-[10px] font-bold text-content-subtle uppercase tracking-widest">
         {t('payment_methods.title')}
       </p>
       <AddCard title={t('payment_methods.new_title')}>

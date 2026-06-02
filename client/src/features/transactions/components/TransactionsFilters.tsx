@@ -13,7 +13,7 @@ import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className="flex flex-col gap-1 min-w-0">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-content-subtle">
         {label}
       </span>
       {children}
@@ -123,7 +123,7 @@ export const TransactionsFilters = ({
                 onFilterChange({ description_contains: undefined });
               }}
               aria-label={t('filters.clear_search')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-content-subtle hover:text-content-secondary transition-colors"
             >
               <X size={14} />
             </button>
@@ -151,7 +151,7 @@ export const TransactionsFilters = ({
           className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-sm transition-colors shrink-0 ${
             activeAdvancedCount > 0
               ? 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
-              : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+              : 'border-line bg-surface text-content-secondary hover:bg-surface-muted'
           }`}
         >
           {t('filters.advanced_filters')}
@@ -168,7 +168,7 @@ export const TransactionsFilters = ({
 
       {/* Panneau avancé */}
       {open && (
-        <div className="rounded-xl border border-black/[0.07] bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-line-subtle bg-surface p-4 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
             {showAccountSelect && (
               <Field label={t('filters.field_account')}>
@@ -252,7 +252,7 @@ export const TransactionsFilters = ({
                   value={filters.date_from ?? ''}
                   onChange={(e) => onFilterChange({ date_from: e.target.value || undefined })}
                 />
-                <span className="text-stone-300 shrink-0">–</span>
+                <span className="text-content-faint shrink-0">–</span>
                 <Input
                   type="date"
                   aria-label={t('filters.date_to')}
@@ -272,7 +272,7 @@ export const TransactionsFilters = ({
                   value={amountMinInput}
                   onChange={(e) => setAmountMinInput(e.target.value)}
                 />
-                <span className="text-stone-300 shrink-0">–</span>
+                <span className="text-content-faint shrink-0">–</span>
                 <DecimalInput
                   placeholder={t('filters.amount_max_ph')}
                   aria-label={t('filters.amount_max_label')}
@@ -284,7 +284,7 @@ export const TransactionsFilters = ({
             </Field>
           </div>
 
-          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-black/[0.06]">
+          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-line-subtle">
             <Switch
               checked={filters.validated === false}
               onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
@@ -294,7 +294,7 @@ export const TransactionsFilters = ({
               <button
                 type="button"
                 onClick={resetAdvanced}
-                className="flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium text-content-muted hover:text-content transition-colors"
               >
                 <RotateCcw size={13} />
                 {t('filters.reset')}

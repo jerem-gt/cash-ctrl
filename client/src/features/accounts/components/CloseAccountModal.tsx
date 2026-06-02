@@ -74,7 +74,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
       }
     >
       {needsTransfer ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-800">
+        <div className="bg-warning-surface border border-warning/30 rounded-xl p-4 mb-5 text-sm text-warning">
           <Trans
             i18nKey="close_modal.balance_warning"
             ns="accounts"
@@ -83,7 +83,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
           />
         </div>
       ) : (
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 mb-5 text-sm text-stone-600">
+        <div className="bg-surface-muted border border-line rounded-xl p-4 mb-5 text-sm text-content-secondary">
           {t('close_modal.balance_zero')}
         </div>
       )}

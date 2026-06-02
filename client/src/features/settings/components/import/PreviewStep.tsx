@@ -49,23 +49,23 @@ export function PreviewStep({
         ].map(({ value, label }) => (
           <div
             key={label}
-            className="flex-1 bg-white border border-black/[0.07] rounded-2xl p-4 shadow-sm text-center"
+            className="flex-1 bg-surface border border-line-subtle rounded-2xl p-4 shadow-sm text-center"
           >
-            <p className="text-2xl font-display text-stone-800">{value}</p>
-            <p className="text-xs text-stone-400 mt-0.5">{label}</p>
+            <p className="text-2xl font-display text-content">{value}</p>
+            <p className="text-xs text-content-subtle mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
       <Card>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
             {t('import.preview_transactions', {
               importable: importableCount,
               skipped: skippedCount,
             })}
           </p>
-          <label className="flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-content-muted cursor-pointer">
             <input
               type="checkbox"
               checked={selected.size === importableCount && importableCount > 0}
@@ -79,7 +79,7 @@ export function PreviewStep({
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-stone-400 border-b border-stone-100">
+              <tr className="text-left text-content-subtle border-b border-line-subtle">
                 <th className="pb-2 w-6" />
                 <th className="pb-2 pr-3">{tc('date')}</th>
                 <th className="pb-2 pr-3">{t('import.col_description')}</th>
@@ -94,14 +94,14 @@ export function PreviewStep({
                   return (
                     <tr
                       key={`skip-${item.idx}`}
-                      className="text-stone-300 border-b border-stone-50"
+                      className="text-content-faint border-b border-line-subtle"
                     >
                       <td className="py-1.5 w-6" />
                       <td className="py-1.5 pr-3">{item.date ? fmtDate(item.date) : '—'}</td>
                       <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
                         {item.description}
                       </td>
-                      <td className="py-1.5 pr-3 italic text-stone-300" colSpan={2}>
+                      <td className="py-1.5 pr-3 italic text-content-faint" colSpan={2}>
                         {item.reason}
                       </td>
                       <td className="py-1.5 text-right tabular-nums">{item.amount.toFixed(2)}</td>
@@ -113,7 +113,7 @@ export function PreviewStep({
                   return (
                     <tr
                       key={`transfer-${item.idxPrimary}`}
-                      className={`border-b border-stone-100 ${isChecked ? '' : 'opacity-40'}`}
+                      className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'}`}
                     >
                       <td className="py-1.5 w-6">
                         <input
@@ -127,16 +127,16 @@ export function PreviewStep({
                       <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
                         {item.description}
                       </td>
-                      <td className="py-1.5 pr-3 text-indigo-600">
+                      <td className="py-1.5 pr-3 text-info">
                         {item.fromAccountName}
                         {item.fromAccountQifName ? t('import.new_account_suffix') : ''} →{' '}
                         {item.toAccountName}
                         {item.toAccountQifName ? t('import.new_account_suffix') : ''}
                       </td>
-                      <td className="py-1.5 pr-3 text-stone-400 italic">
+                      <td className="py-1.5 pr-3 text-content-subtle italic">
                         {t('import.transfer_label')}
                       </td>
-                      <td className="py-1.5 text-right tabular-nums text-indigo-600">
+                      <td className="py-1.5 text-right tabular-nums text-info">
                         {item.amount.toFixed(2)} €
                       </td>
                     </tr>
@@ -145,7 +145,7 @@ export function PreviewStep({
                 return (
                   <tr
                     key={`tx-${item.idx}`}
-                    className={`border-b border-stone-100 ${isChecked ? '' : 'opacity-40'}`}
+                    className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'}`}
                   >
                     <td className="py-1.5 w-6">
                       <input
@@ -159,13 +159,13 @@ export function PreviewStep({
                     <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
                       {item.description}
                     </td>
-                    <td className="py-1.5 pr-3 text-stone-600">
+                    <td className="py-1.5 pr-3 text-content-secondary">
                       {item.accountName}
                       {item.newAccountQifName ? t('import.new_account_suffix') : ''}
                     </td>
-                    <td className="py-1.5 pr-3 text-stone-400">{item.categoryLabel || '—'}</td>
+                    <td className="py-1.5 pr-3 text-content-subtle">{item.categoryLabel || '—'}</td>
                     <td
-                      className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-green-700' : 'text-stone-800'}`}
+                      className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-success' : 'text-content'}`}
                     >
                       {item.type === 'expense' ? '-' : '+'}
                       {item.amount.toFixed(2)} €

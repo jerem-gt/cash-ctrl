@@ -16,7 +16,7 @@ interface AccountHeaderProps {
 const LoanHeader = ({ value }: { value: number }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-line-subtle md:min-w-50">
       <StatItem label={t('header.loan_due')} value={value} isMain forceRed />
     </div>
   );
@@ -25,11 +25,11 @@ const LoanHeader = ({ value }: { value: number }) => {
 const InvestmentHeader = ({ account }: { account: Account }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] gap-4 md:gap-5">
+    <div className="flex flex-col md:flex-row items-stretch w-full md:w-auto bg-canvas p-6 rounded-2xl border border-line-subtle gap-4 md:gap-5">
       <StatItem label={t('header.cash')} value={account.balance} valueAll={account.balance_all} />
-      <div className="hidden md:block self-stretch w-px bg-black/[0.08]" />
+      <div className="hidden md:block self-stretch w-px bg-surface-emphasis" />
       <StatItem label={t('header.portfolio')} value={account.balance_stocks} />
-      <div className="hidden md:block self-stretch w-px bg-black/[0.08]" />
+      <div className="hidden md:block self-stretch w-px bg-surface-emphasis" />
       <StatItem label={t('header.total')} value={account.balance + account.balance_stocks} isMain />
     </div>
   );
@@ -51,18 +51,18 @@ const StatItem = ({
   const { t } = useTranslation('accounts');
   return (
     <div className="flex-1 flex flex-col justify-between">
-      <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-stone-400 mb-4 whitespace-nowrap">
+      <span className="block text-[10px] uppercase tracking-[0.15em] font-bold text-content-subtle mb-4 whitespace-nowrap">
         {label}
       </span>
       <p
-        className={`font-display ${isMain ? 'text-4xl text-stone-900' : 'text-2xl text-stone-700'} leading-none ${forceRed || value < 0 ? 'text-red-700' : ''}`}
+        className={`font-display ${isMain ? 'text-4xl text-content' : 'text-2xl text-content-secondary'} leading-none ${forceRed || value < 0 ? 'text-danger' : ''}`}
       >
         {fmtDec(value)}
       </p>
       {valueAll !== undefined && valueAll !== value ? (
-        <p className="text-[11px] text-stone-400 mt-1.5">
+        <p className="text-[11px] text-content-subtle mt-1.5">
           <span>{t('header.forecasted')}&nbsp;</span>
-          <span className={valueAll < 0 ? 'text-red-400' : 'text-stone-500'}>
+          <span className={valueAll < 0 ? 'text-danger' : 'text-content-muted'}>
             {fmtDec(valueAll)}
           </span>
         </p>
@@ -78,7 +78,7 @@ const StatItem = ({
 const InsuranceHeader = ({ account }: { account: Account }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-line-subtle md:min-w-50">
       <StatItem label={t('header.insurance')} value={account.balance_insurance} isMain />
     </div>
   );
@@ -87,7 +87,7 @@ const InsuranceHeader = ({ account }: { account: Account }) => {
 const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }) => {
   const { t } = useTranslation('accounts');
   return (
-    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-black/[0.05] md:min-w-50">
+    <div className="flex w-full md:w-auto bg-canvas p-6 rounded-2xl border border-line-subtle md:min-w-50">
       <StatItem label={t('header.balance')} value={value} valueAll={valueAll} isMain />
     </div>
   );
@@ -104,12 +104,12 @@ export function AccountHeader({
   const { t } = useTranslation('accounts');
   return (
     <div>
-      <div className="p-4 md:p-8 bg-white rounded-2xl border border-black/[0.07] shadow-sm">
+      <div className="p-4 md:p-8 bg-surface rounded-2xl border border-line-subtle shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
           <div className="flex gap-5 items-start">
             {/* Conteneur Logo */}
             {account.bank && logoMap[account.bank] && (
-              <div className="shrink-0 w-14 h-14 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0,04)] border border-stone-200 flex items-center justify-center p-2.5">
+              <div className="shrink-0 w-14 h-14 bg-surface rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0,04)] border border-line flex items-center justify-center p-2.5">
                 <img
                   src={logoMap[account.bank] ?? undefined}
                   alt={`Logo ${account.bank}`}
@@ -120,43 +120,43 @@ export function AccountHeader({
             )}
 
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-stone-500 font-medium text-xs tracking-wide">
+              <div className="flex items-center gap-2 text-content-muted font-medium text-xs tracking-wide">
                 <span className="uppercase">{account.bank}</span>
-                <span className="text-stone-300">•</span>
+                <span className="text-content-faint">•</span>
                 <span>{account.type}</span>
                 {isInvestment && (
                   <>
-                    <span className="text-stone-300">•</span>
-                    <span className="bg-indigo-50 text-indigo-500 border border-indigo-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                    <span className="text-content-faint">•</span>
+                    <span className="bg-info-surface text-info border border-info/30 text-[10px] rounded px-1.5 py-0.5 font-medium">
                       {t('header.investment_badge')}
                     </span>
                   </>
                 )}
                 {isLoan && (
                   <>
-                    <span className="text-stone-300">•</span>
-                    <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                    <span className="text-content-faint">•</span>
+                    <span className="bg-warning-surface text-warning border border-warning/30 text-[10px] rounded px-1.5 py-0.5 font-medium">
                       {t('header.loan_badge')}
                     </span>
                   </>
                 )}
                 {account.closed_at && (
                   <>
-                    <span className="text-stone-300">•</span>
-                    <span className="bg-stone-100 text-stone-500 border border-stone-200 text-[10px] rounded px-1.5 py-0.5 font-medium">
+                    <span className="text-content-faint">•</span>
+                    <span className="bg-surface-emphasis text-content-muted border border-line text-[10px] rounded px-1.5 py-0.5 font-medium">
                       {t('header.closed_badge')}
                     </span>
                   </>
                 )}
               </div>
 
-              <h2 className="font-display text-4xl text-stone-900 tracking-tight">
+              <h2 className="font-display text-4xl text-content tracking-tight">
                 {account.name ?? 'Compte'}
               </h2>
 
               {account.opening_date && (
-                <p className="text-sm text-stone-500 font-medium">
-                  <span className="text-stone-400">{t('header.opened_on')}</span>{' '}
+                <p className="text-sm text-content-muted font-medium">
+                  <span className="text-content-subtle">{t('header.opened_on')}</span>{' '}
                   {new Date(account.opening_date + 'T00:00:00').toLocaleDateString(
                     currentLocale(),
                     {
@@ -165,8 +165,8 @@ export function AccountHeader({
                       year: 'numeric',
                     },
                   )}
-                  <span className="mx-2 text-stone-300">—</span>
-                  <span className="bg-stone-200/50 text-stone-600 px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
+                  <span className="mx-2 text-content-faint">—</span>
+                  <span className="bg-surface-strong/50 text-content-secondary px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
                     {accountSeniority(account.opening_date)}
                   </span>
                 </p>

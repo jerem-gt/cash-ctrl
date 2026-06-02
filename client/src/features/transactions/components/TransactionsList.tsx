@@ -54,7 +54,7 @@ export function TransactionsList({
         showAccountSelect={!account}
         rightSlot={
           <>
-            <span className="text-xs text-stone-400">
+            <span className="text-xs text-content-subtle">
               {t('list.count', { count: state.total })}
             </span>
             {!readOnly && (
@@ -71,7 +71,7 @@ export function TransactionsList({
           Array.from({ length: 6 }, (_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 px-4 py-3 border rounded-xl border-black/[0.07] bg-white"
+              className="flex items-center gap-3 px-4 py-3 border rounded-xl border-line-subtle bg-surface"
             >
               <Skeleton className="w-4 h-4 shrink-0" />
               <div className="flex-1 flex flex-col gap-2">

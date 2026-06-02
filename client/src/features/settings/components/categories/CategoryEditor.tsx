@@ -49,11 +49,11 @@ export function CategoryEditor({
   return (
     <div className="flex items-center gap-2 w-full animate-in fade-in zoom-in-95 duration-200">
       {/* SÉLECTEUR EMOJI */}
-      <div className="relative flex items-center shrink-0 gap-1 bg-stone-100/50 rounded-lg border border-black/3">
+      <div className="relative flex items-center shrink-0 gap-1 bg-surface-emphasis/50 rounded-lg border border-line-subtle">
         <button
           type="button"
           onClick={() => setShowPicker(!showPicker)}
-          className="w-7 h-7 flex items-center justify-center text-base hover:bg-white rounded-md transition-all shadow-sm"
+          className="w-7 h-7 flex items-center justify-center text-base hover:bg-surface rounded-md transition-all shadow-sm"
         >
           {form.icon}
         </button>
@@ -65,10 +65,10 @@ export function CategoryEditor({
               className="fixed inset-0 z-40 bg-transparent"
               onClick={() => setShowPicker(false)}
             />
-            <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl border border-black/5 rounded-2xl overflow-hidden animate-in slide-in-from-top-2">
+            <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl border border-line-subtle rounded-2xl overflow-hidden animate-in slide-in-from-top-2">
               <Suspense
                 fallback={
-                  <div className="p-8 text-xs text-stone-400 bg-white">
+                  <div className="p-8 text-xs text-content-subtle bg-surface">
                     {t('categories.loading_emoji')}
                   </div>
                 }

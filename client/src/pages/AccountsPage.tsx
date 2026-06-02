@@ -155,7 +155,7 @@ export default function AccountsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
-          <p className="text-sm text-stone-400 mt-0.5">{t('page.subtitle')}</p>
+          <p className="text-sm text-content-subtle mt-0.5">{t('page.subtitle')}</p>
         </div>
         <div className="relative shrink-0">
           <Button
@@ -175,14 +175,14 @@ export default function AccountsPage() {
                 aria-hidden="true"
                 onClick={() => setAddMenuOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-1.5 z-20 min-w-40 bg-white border border-stone-200 rounded-xl shadow-lg py-1 text-sm">
+              <div className="absolute right-0 top-full mt-1.5 z-20 min-w-40 bg-surface border border-line rounded-xl shadow-lg py-1 text-sm">
                 <button
                   type="button"
                   onClick={() => {
                     setAddOpen(true);
                     setAddMenuOpen(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 transition-colors"
+                  className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
                 >
                   {t('page.add_account_menu')}
                 </button>
@@ -192,7 +192,7 @@ export default function AccountsPage() {
                     setAddLoanOpen(true);
                     setAddMenuOpen(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-stone-700 hover:bg-stone-50 transition-colors"
+                  className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
                 >
                   {t('page.add_loan_menu')}
                 </button>
@@ -235,11 +235,11 @@ export default function AccountsPage() {
             return (
               <div key={label}>
                 <div className="flex items-baseline justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-stone-400">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-content-subtle">
                     {label}
                   </span>
                   <span
-                    className={`font-display text-lg ${subtotal < 0 ? 'text-red-700' : 'text-stone-700'}`}
+                    className={`font-display text-lg ${subtotal < 0 ? 'text-danger' : 'text-content-secondary'}`}
                   >
                     {fmtDec(subtotal)}
                   </span>
@@ -269,7 +269,7 @@ export default function AccountsPage() {
               <button
                 type="button"
                 onClick={() => setShowClosed((v) => !v)}
-                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-stone-300 hover:text-stone-500 transition-colors mb-3"
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-content-faint hover:text-content-muted transition-colors mb-3"
               >
                 <Archive size={13} strokeWidth={2} />
                 {t('page.closed_section', { count: closedAccounts.length })}
@@ -375,23 +375,23 @@ function AccountCard({
   }
 
   const cardClass = isClosed
-    ? 'bg-stone-50 border-stone-200 opacity-60 hover:opacity-80 hover:shadow-sm'
-    : 'bg-white border-black/[0.07] shadow-sm hover:shadow-md';
+    ? 'bg-surface-muted border-line opacity-60 hover:opacity-80 hover:shadow-sm'
+    : 'bg-surface border-line-subtle shadow-sm hover:shadow-md';
 
   let balanceClass: string;
   if (isClosed) {
-    balanceClass = 'text-stone-400';
+    balanceClass = 'text-content-subtle';
   } else if (acc.envelope_type === 'loan' || displayBal < 0) {
-    balanceClass = 'text-red-700';
+    balanceClass = 'text-danger';
   } else {
-    balanceClass = 'text-stone-900';
+    balanceClass = 'text-content';
   }
 
   return (
     <div className={`relative border rounded-2xl p-5 transition-all group ${cardClass}`}>
       <Link
         to={`/accounts/${acc.id}`}
-        className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="absolute inset-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-info"
         aria-label={t('page.view_transactions', { name: acc.name })}
       />
       <div className="relative z-10 flex justify-between items-start gap-2 mb-3">
@@ -404,12 +404,14 @@ function AccountCard({
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
           ) : (
-            acc.bank && <span className="w-5 h-5 rounded bg-stone-100 inline-block shrink-0" />
+            acc.bank && (
+              <span className="w-5 h-5 rounded bg-surface-emphasis inline-block shrink-0" />
+            )
           )}
           <div className="min-w-0">
-            <p className="truncate font-medium text-stone-800 leading-tight">{acc.name}</p>
+            <p className="truncate font-medium text-content leading-tight">{acc.name}</p>
             {showBank && acc.bank && (
-              <p className="truncate text-[11px] text-stone-400 leading-tight">{acc.bank}</p>
+              <p className="truncate text-[11px] text-content-subtle leading-tight">{acc.bank}</p>
             )}
           </div>
         </div>
@@ -460,12 +462,12 @@ function AccountCard({
       <p className={`font-display text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
       <div className="mt-4">
         {isClosed && acc.closed_at ? (
-          <p className="text-[11px] text-stone-400 uppercase tracking-wider font-medium">
+          <p className="text-[11px] text-content-subtle uppercase tracking-wider font-medium">
             {t('page.closed_on', { date: fmtDate(acc.closed_at) })}
           </p>
         ) : (
           acc.opening_date && (
-            <p className="text-[11px] text-stone-300 uppercase tracking-wider font-medium">
+            <p className="text-[11px] text-content-faint uppercase tracking-wider font-medium">
               {accountSeniority(acc.opening_date)}
             </p>
           )

@@ -33,11 +33,11 @@ interface Props {
 function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['type']) {
   const stateClass =
     isFuture && !validated
-      ? 'bg-indigo-50 border-indigo-200 hover:border-indigo-300'
-      : 'bg-white border-black/[0.07] hover:border-black/[0.13]';
-  const rowClass = validated ? 'bg-white border-green-200 hover:border-green-300' : stateClass;
-  const typeColor = type === 'income' ? 'text-green-800' : 'text-red-700';
-  const dimmedColor = type === 'income' ? 'text-green-600/50' : 'text-red-500/50';
+      ? 'bg-info-surface border-info/30 hover:border-info/30'
+      : 'bg-surface border-line-subtle hover:border-line';
+  const rowClass = validated ? 'bg-surface border-success/30 hover:border-success/30' : stateClass;
+  const typeColor = type === 'income' ? 'text-success' : 'text-danger';
+  const dimmedColor = type === 'income' ? 'text-success/50' : 'text-danger/50';
   const amountColor = validated ? typeColor : dimmedColor;
   return { rowClass, amountColor };
 }
@@ -46,15 +46,17 @@ function TxDateBlock({ date }: Readonly<{ date: string }>) {
   const d = new Date(date);
   const isCurrentYear = d.getFullYear() === CURRENT_YEAR;
   return (
-    <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-stone-100 pr-3">
-      <span className="text-[9px] uppercase font-bold text-stone-400 leading-none tracking-tighter">
+    <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-line-subtle pr-3">
+      <span className="text-[9px] uppercase font-bold text-content-subtle leading-none tracking-tighter">
         {new Intl.DateTimeFormat(currentLocale(), { month: 'short' }).format(d).replace('.', '')}
       </span>
-      <span className="text-sm font-bold text-stone-700 leading-none mt-0.5">
+      <span className="text-sm font-bold text-content-secondary leading-none mt-0.5">
         {new Intl.DateTimeFormat(currentLocale(), { day: '2-digit' }).format(d)}
       </span>
       {!isCurrentYear && (
-        <span className="text-[8px] text-stone-400 leading-none mt-0.5">{d.getFullYear()}</span>
+        <span className="text-[8px] text-content-subtle leading-none mt-0.5">
+          {d.getFullYear()}
+        </span>
       )}
     </div>
   );
@@ -74,7 +76,7 @@ function TxMobileMenu({
       <button
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
-        className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+        className="p-1.5 text-content-faint hover:text-content-secondary hover:bg-surface-emphasis rounded-md transition-colors"
         aria-label={t('tx_item.actions')}
       >
         <MoreHorizontal size={15} />
@@ -89,7 +91,7 @@ function TxMobileMenu({
               if (e.key === 'Escape') setMenuOpen(false);
             }}
           />
-          <div className="absolute right-0 top-8 z-20 bg-white border border-stone-200 rounded-xl shadow-lg py-1 min-w-32 text-sm">
+          <div className="absolute right-0 top-8 z-20 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-32 text-sm">
             {onEdit && (
               <button
                 type="button"
@@ -97,7 +99,7 @@ function TxMobileMenu({
                   onEdit(tx);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+                className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
               >
                 {t('tx_item.edit')}
               </button>
@@ -109,7 +111,7 @@ function TxMobileMenu({
                   onDuplicate(tx);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+                className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
               >
                 {t('tx_item.duplicate')}
               </button>
@@ -121,7 +123,7 @@ function TxMobileMenu({
                   onDelete(tx);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 transition-colors"
+                className="w-full text-left px-3 py-2 hover:bg-danger-surface text-danger transition-colors"
               >
                 {t('tx_item.delete')}
               </button>
@@ -155,7 +157,7 @@ function TxItemBody({
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
         <p
-          className={`text-sm truncate font-semibold ${validated ? 'text-stone-700' : 'text-stone-400'}`}
+          className={`text-sm truncate font-semibold ${validated ? 'text-content-secondary' : 'text-content-subtle'}`}
         >
           {tx.description}
         </p>
@@ -177,7 +179,7 @@ function TxIndicators({
   const { t } = useTranslation('transactions');
   if (!isScheduled && !isTransfer && !tx.notes) return null;
   return (
-    <span className="flex items-center gap-1 shrink-0 text-stone-400">
+    <span className="flex items-center gap-1 shrink-0 text-content-subtle">
       {isScheduled && (
         <span title={t('tx_item.scheduled_title')}>
           <RefreshCw size={12} />
@@ -224,8 +226,8 @@ function TxMeta({
 }: Readonly<Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null }>) {
   const { t } = useTranslation('transactions');
   return (
-    <p className="text-[11px] text-stone-400 flex items-center gap-1.5 flex-wrap">
-      <span className="truncate text-stone-500 font-medium">
+    <p className="text-[11px] text-content-subtle flex items-center gap-1.5 flex-wrap">
+      <span className="truncate text-content-muted font-medium">
         {tx.splits?.length ? t('tx_item.ventilated', { count: tx.splits.length }) : tx.subcategory}
       </span>
       {accounts && logoMap && (
@@ -275,14 +277,14 @@ function TxItemTrailing({
         {!readOnly && <ValidateButton tx={tx} validated={validated} />}
       </div>
 
-      <div className="text-right min-w-18.75 border-l border-stone-100 pl-2 sm:pl-3">
+      <div className="text-right min-w-18.75 border-l border-line-subtle pl-2 sm:pl-3">
         <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
           {sign}
           {fmtDec(tx.amount)}
         </div>
         {runningBalance != null && (
           <div
-            className="text-[10px] text-stone-400 tabular-nums leading-tight"
+            className="text-[10px] text-content-subtle tabular-nums leading-tight"
             title={t('tx_item.running_balance_title')}
           >
             {fmtDec(runningBalance)}
@@ -296,7 +298,7 @@ function TxItemTrailing({
 function ValidateButton({ tx, validated }: Readonly<Pick<Props, 'tx'> & { validated: boolean }>) {
   const { t } = useTranslation('transactions');
   const validate = useValidateTransaction();
-  const colorClass = validated ? 'text-green-500' : 'text-stone-300 hover:bg-stone-100';
+  const colorClass = validated ? 'text-success' : 'text-content-faint hover:bg-surface-emphasis';
   return (
     <button
       onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
@@ -337,13 +339,13 @@ function TxItemBase({
   return (
     <div
       title={tx.notes || undefined}
-      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 border-b border-stone-100 transition-colors ${rowClass}`}
+      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 border-b border-line-subtle transition-colors ${rowClass}`}
     >
       <TxDateBlock date={tx.date} />
 
       <span
         title={category?.name || undefined}
-        className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-stone-50 border border-black/[0.05] text-base leading-none cursor-default select-none"
+        className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-surface-muted border border-line-subtle text-base leading-none cursor-default select-none"
       >
         {category?.icon ?? ''}
       </span>
