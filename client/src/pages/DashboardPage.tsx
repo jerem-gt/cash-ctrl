@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
   // monthly[] est ordonné ancien→récent ; l'avant-dernier élément = mois précédent.
   const monthly = stats?.monthly ?? [];
-  const prevMonth = monthly.length >= 2 ? monthly[monthly.length - 2] : undefined;
+  const prevMonth = monthly.length >= 2 ? monthly.at(-2) : undefined;
   const incomeTrend = prevMonth ? pctTrend(monthIncome, prevMonth.income, true) : undefined;
   const expenseTrend = prevMonth ? pctTrend(monthExpense, prevMonth.expense, false) : undefined;
   const bilanTrend = prevMonth
