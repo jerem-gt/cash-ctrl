@@ -8,6 +8,8 @@ let AccountSelect: typeof import('./AccountSelect').AccountSelect;
 
 beforeAll(async () => {
   vi.doMock('@/hooks/useBanks', () => ({
+    // Mock du hook : doit garder le nom `useBanks` pour que vi.doMock intercepte le module.
+    // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
     useBanks: () => ({ data: BANKS }),
   }));
   vi.resetModules();
