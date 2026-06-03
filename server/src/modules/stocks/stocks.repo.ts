@@ -18,10 +18,6 @@ import {
   TransferInput,
 } from './stocks.types';
 
-function mapPosition(row: StockPosition): StockPosition {
-  return { ...row };
-}
-
 function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
 }
@@ -205,8 +201,7 @@ export function createStocksRepo(db: Database) {
            WHERE sp.account_id = ?
            ORDER BY sp.ticker`,
         )
-        .all(accountId)
-        .map(mapPosition),
+        .all(accountId),
 
     getOperations: (accountId: number): StockOperation[] =>
       db

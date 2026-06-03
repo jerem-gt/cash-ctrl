@@ -41,7 +41,9 @@ export function userBackupDir(baseDir: string, userId: number): string {
   return path.join(baseDir, String(userId));
 }
 
-export function listBackups(backupDir = BACKUP_DIR): BackupFile[] {
+// backupDir est le dossier par utilisateur (`<BACKUP_DIR>/<userId>`), pas la racine :
+// les fichiers de sauvegarde vivent dans des sous-dossiers, jamais directement dans BACKUP_DIR.
+export function listBackups(backupDir: string): BackupFile[] {
   if (!fs.existsSync(backupDir)) return [];
 
   return fs
@@ -58,7 +60,7 @@ export function listBackups(backupDir = BACKUP_DIR): BackupFile[] {
     .sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
-export function rotateBackups(maxFiles: number, backupDir = BACKUP_DIR): void {
+export function rotateBackups(maxFiles: number, backupDir: string): void {
   const files = listBackups(backupDir);
   if (files.length <= maxFiles) return;
 

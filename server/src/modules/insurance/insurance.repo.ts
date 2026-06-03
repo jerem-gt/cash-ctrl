@@ -593,7 +593,7 @@ export function createInsuranceRepo(db: Database) {
     // ─── Revalorisation ──────────────────────────────────────────────────────
 
     revaloriser(userId: number, input: RevaloriserInput): InsuranceOperation {
-      const amountCents = Math.round(input.amount * 100);
+      const amountCents = toCents(input.amount);
 
       const opResult = db
         .prepare(
