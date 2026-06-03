@@ -254,6 +254,43 @@ describe('useTransactionsManager', () => {
       );
     });
 
+    it('handleUpdate transmet le validated du formulaire pour un transfert (pas celui d’origine)', () => {
+      const mockUpdateTransfer = vi.fn();
+      vi.mocked(useUpdateTransfer).mockReturnValue({
+        mutate: mockUpdateTransfer,
+        isPending: false,
+      } as unknown as ReturnType<typeof useUpdateTransfer>);
+
+      const { result } = renderHook(() => useTransactionsManager());
+      const tx = { id: 20, transfer_peer_id: 21, validated: 0 } as Transaction;
+
+      act(() => {
+        result.current.actions.openEdit(tx);
+      });
+      act(() => {
+        result.current.actions.handleUpdate({
+          type: 'expense',
+          amount: '150',
+          description: 'Virement',
+          subcategory_id: '',
+          account_id: '1',
+          to_account_id: '2',
+          date: '2026-01-01',
+          payment_method_id: '',
+          notes: '',
+          validated: true,
+          isVentilated: false,
+          splits: [],
+          scheduled_id: null,
+        });
+      });
+
+      expect(mockUpdateTransfer).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 20, validated: true }),
+        expect.any(Object),
+      );
+    });
+
     it('ne devrait rien faire si handleDelete est appelé sans modale delete ouverte', () => {
       const mockDelete = vi.fn();
       vi.mocked(useDeleteTransaction).mockReturnValue({
