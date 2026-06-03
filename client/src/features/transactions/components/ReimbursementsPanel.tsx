@@ -118,7 +118,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
   const totalReimbursed = reimbursements.reduce((s, r) => s + r.amount, 0);
   const remaining = tx.amount - totalReimbursed;
 
-  const selectedTx = incomeTransactions.find((t) => t.id === Number.parseInt(selectedTxId));
+  const selectedTx = incomeTransactions.find((inc) => inc.id === Number.parseInt(selectedTxId));
 
   const handleToggle = () => {
     const newStatus: 'en_attente' | null = localStatus === null ? 'en_attente' : null;
@@ -136,7 +136,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
 
   const handleTxSelect = (txId: string) => {
     setSelectedTxId(txId);
-    const found = incomeTransactions.find((t) => t.id === Number.parseInt(txId));
+    const found = incomeTransactions.find((inc) => inc.id === Number.parseInt(txId));
     if (found) {
       const defaultAmount = found.remaining_reimbursable ?? found.amount;
       setAttributedAmount(defaultAmount.toFixed(2));
@@ -282,15 +282,15 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
               <FormGroup label={t('reimbursements_panel.income_tx')}>
                 <Select value={selectedTxId} onChange={(e) => handleTxSelect(e.target.value)}>
                   <option value="">{t('reimbursements_panel.choose')}</option>
-                  {incomeTransactions.map((t) => {
-                    const remaining = t.remaining_reimbursable ?? t.amount;
-                    const isPartial = remaining < t.amount - 0.001;
+                  {incomeTransactions.map((inc) => {
+                    const remaining = inc.remaining_reimbursable ?? inc.amount;
+                    const isPartial = remaining < inc.amount - 0.001;
                     return (
-                      <option key={t.id} value={t.id}>
-                        {t.description} · {fmtDate(t.date)} ·{' '}
+                      <option key={inc.id} value={inc.id}>
+                        {inc.description} · {fmtDate(inc.date)} ·{' '}
                         {isPartial
-                          ? `+${fmtDec(remaining)} / ${fmtDec(t.amount)}`
-                          : `+${fmtDec(t.amount)}`}
+                          ? `+${fmtDec(remaining)} / ${fmtDec(inc.amount)}`
+                          : `+${fmtDec(inc.amount)}`}
                       </option>
                     );
                   })}
