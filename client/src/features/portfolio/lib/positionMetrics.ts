@@ -32,11 +32,13 @@ export function getPositionMetrics(pos: StockPosition): PositionMetrics {
 }
 
 export function getTotalMetrics(positions: StockPosition[]): TotalMetrics {
-  const totalMarketValue = positions.reduce(
-    (sum, p) => sum + (p.current_price == null ? 0 : p.current_price * p.quantity),
-    0,
+  // Les positions sans cote (prix non encore récupéré, échec Yahoo) sont exclues
+  // des DEUX côtés : sinon leur coût plomberait le P&L total d'une perte fantôme.
+  const priced = positions.filter(
+    (p): p is StockPosition & { current_price: number } => p.current_price != null,
   );
-  const totalCostBasis = positions.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
+  const totalMarketValue = priced.reduce((sum, p) => sum + p.current_price * p.quantity, 0);
+  const totalCostBasis = priced.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
   const totalPnl = totalMarketValue - totalCostBasis;
   const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
   return {
