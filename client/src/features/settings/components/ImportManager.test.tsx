@@ -317,6 +317,38 @@ describe("ImportManager — exécution de l'import", () => {
     expect(await screen.findByText(/erreur lors de l'importation/i)).toBeInTheDocument();
   });
 
+  it('affiche les erreurs de validation par ligne + le compteur', async () => {
+    server.use(
+      http.post('/api/import/qif', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'validation.invalid',
+              message: 'Données invalides',
+              fields: [
+                {
+                  path: 'transactions.1.amount',
+                  code: 'validation.too_small',
+                  params: { minimum: 1 },
+                  message: 'x',
+                },
+              ],
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderImportManager();
+    await goToPreview(user);
+    await user.click(await screen.findByRole('button', { name: /importer/i }));
+    // motif d'erreur traduit affiché sur la ligne fautive
+    expect(await screen.findByText('La valeur doit être au moins 1')).toBeInTheDocument();
+    // compteur d'erreurs en bas
+    expect(screen.getByText(/1 erreur/i)).toBeInTheDocument();
+  });
+
   it(`le bouton "Nouvelle importation" réinitialise la page`, async () => {
     server.use(
       http.post('/api/import/qif', () =>

@@ -76,6 +76,7 @@
     "import_btn": "Importer",
     "importing": "Importation…",
     "import_n": "Importer {{count}} éléments",
+    "errors_summary": "{{count}} erreur(s) à corriger avant d'importer",
     "preview_transactions": "Transactions ({{importable}} importables, {{skipped}} ignorées)",
     "done_title": "Importation terminée",
     "imported_transactions": "transactions importées",

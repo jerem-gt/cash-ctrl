@@ -1,9 +1,10 @@
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@/components/ui';
 import { ImportErrorMessage } from '@/features/settings/components/import/Shared';
 import { fmtDate } from '@/lib/format.ts';
-import type { PreviewItem, SkipReason } from '@/pages/import.helpers.ts';
+import type { ImportErrors, PreviewItem, SkipReason } from '@/pages/import.helpers.ts';
 
 interface PreviewStepProps {
   previewItems: PreviewItem[];
@@ -16,6 +17,7 @@ interface PreviewStepProps {
   selectAll: () => void;
   deselectAll: () => void;
   isPending: boolean;
+  importErrors: ImportErrors;
   errorMessage: string | null;
   onBack: () => void;
   onImport: () => void;
@@ -32,6 +34,7 @@ export function PreviewStep({
   selectAll,
   deselectAll,
   isPending,
+  importErrors,
   errorMessage,
   onBack,
   onImport,
@@ -40,6 +43,31 @@ export function PreviewStep({
   const { t: tc } = useTranslation('common');
 
   const skipReasonLabel = (reason: SkipReason) => t(`import.skip_reason.${reason}`);
+
+  const errorCount = importErrors.rows.size + importErrors.global.length;
+  const hasStructuredErrors = errorCount > 0;
+
+  // Encadré rouge listant les motifs d'erreur d'une ligne (colonne pleine largeur).
+  const renderRowErrors = (rowIndex: number) => {
+    const messages = importErrors.rows.get(rowIndex);
+    if (!messages) return null;
+    return (
+      <tr>
+        <td colSpan={6} className="pb-2">
+          <div className="text-danger bg-danger-surface border border-danger/40 rounded-lg px-3 py-1.5">
+            <ul className="list-disc list-inside space-y-0.5">
+              {messages.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  const rowAccent = (rowIndex: number) =>
+    importErrors.rows.has(rowIndex) ? 'bg-danger-surface/40' : '';
 
   const categoryText = (item: Extract<PreviewItem, { kind: 'transaction' }>) => {
     if (!item.categoryLabel) return '—';
@@ -119,9 +147,43 @@ export function PreviewStep({
                 const isChecked = selected.has(i);
                 if (item.kind === 'transfer') {
                   return (
+                    <Fragment key={`transfer-${item.idxPrimary}`}>
+                      <tr
+                        className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'} ${rowAccent(i)}`}
+                      >
+                        <td className="py-1.5 w-6">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleItem(i)}
+                            className="rounded"
+                          />
+                        </td>
+                        <td className="py-1.5 pr-3">{fmtDate(item.date)}</td>
+                        <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
+                          {item.description}
+                        </td>
+                        <td className="py-1.5 pr-3 text-info">
+                          {item.fromAccountName}
+                          {item.fromAccountQifName ? t('import.new_account_suffix') : ''} →{' '}
+                          {item.toAccountName}
+                          {item.toAccountQifName ? t('import.new_account_suffix') : ''}
+                        </td>
+                        <td className="py-1.5 pr-3 text-content-subtle italic">
+                          {t('import.transfer_label')}
+                        </td>
+                        <td className="py-1.5 text-right tabular-nums text-info">
+                          {item.amount.toFixed(2)} €
+                        </td>
+                      </tr>
+                      {renderRowErrors(i)}
+                    </Fragment>
+                  );
+                }
+                return (
+                  <Fragment key={`tx-${item.idx}`}>
                     <tr
-                      key={`transfer-${item.idxPrimary}`}
-                      className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'}`}
+                      className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'} ${rowAccent(i)}`}
                     >
                       <td className="py-1.5 w-6">
                         <input
@@ -133,52 +195,22 @@ export function PreviewStep({
                       </td>
                       <td className="py-1.5 pr-3">{fmtDate(item.date)}</td>
                       <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
-                        {item.description}
+                        {item.description || t('import.no_description')}
                       </td>
-                      <td className="py-1.5 pr-3 text-info">
-                        {item.fromAccountName}
-                        {item.fromAccountQifName ? t('import.new_account_suffix') : ''} →{' '}
-                        {item.toAccountName}
-                        {item.toAccountQifName ? t('import.new_account_suffix') : ''}
+                      <td className="py-1.5 pr-3 text-content-secondary">
+                        {item.accountName}
+                        {item.newAccountQifName ? t('import.new_account_suffix') : ''}
                       </td>
-                      <td className="py-1.5 pr-3 text-content-subtle italic">
-                        {t('import.transfer_label')}
-                      </td>
-                      <td className="py-1.5 text-right tabular-nums text-info">
+                      <td className="py-1.5 pr-3 text-content-subtle">{categoryText(item)}</td>
+                      <td
+                        className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-success' : 'text-content'}`}
+                      >
+                        {item.type === 'expense' ? '-' : '+'}
                         {item.amount.toFixed(2)} €
                       </td>
                     </tr>
-                  );
-                }
-                return (
-                  <tr
-                    key={`tx-${item.idx}`}
-                    className={`border-b border-line-subtle ${isChecked ? '' : 'opacity-40'}`}
-                  >
-                    <td className="py-1.5 w-6">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleItem(i)}
-                        className="rounded"
-                      />
-                    </td>
-                    <td className="py-1.5 pr-3">{fmtDate(item.date)}</td>
-                    <td className="py-1.5 pr-3 max-w-40 truncate" title={item.description}>
-                      {item.description || t('import.no_description')}
-                    </td>
-                    <td className="py-1.5 pr-3 text-content-secondary">
-                      {item.accountName}
-                      {item.newAccountQifName ? t('import.new_account_suffix') : ''}
-                    </td>
-                    <td className="py-1.5 pr-3 text-content-subtle">{categoryText(item)}</td>
-                    <td
-                      className={`py-1.5 text-right tabular-nums ${item.type === 'income' ? 'text-success' : 'text-content'}`}
-                    >
-                      {item.type === 'expense' ? '-' : '+'}
-                      {item.amount.toFixed(2)} €
-                    </td>
-                  </tr>
+                    {renderRowErrors(i)}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -186,7 +218,20 @@ export function PreviewStep({
         </div>
       </Card>
 
-      {errorMessage && <ImportErrorMessage message={errorMessage} />}
+      {hasStructuredErrors && (
+        <div className="text-sm text-danger bg-danger-surface border border-danger/30 rounded-lg px-3 py-2">
+          <p className="font-medium">{t('import.errors_summary', { count: errorCount })}</p>
+          {importErrors.global.length > 0 && (
+            <ul className="list-disc list-inside space-y-0.5 mt-1">
+              {importErrors.global.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {!hasStructuredErrors && errorMessage && <ImportErrorMessage message={errorMessage} />}
 
       <div className="flex justify-between">
         <Button onClick={onBack}>{tc('back')}</Button>

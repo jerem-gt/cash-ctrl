@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { importApi } from '@/api/client.ts';
+import { ApiError, type ApiErrorField, importApi, translateErrorField } from '@/api/client.ts';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
 import { useBanks } from '@/hooks/useBanks.ts';
@@ -13,9 +13,11 @@ import { parseXhb } from '@/lib/xhb-parser.ts';
 import {
   type AccountChoice,
   buildExecuteBody,
+  buildRowIndex,
   type CategoryChoice,
   findAutoCategory,
   findAutoPaymentMethod,
+  type ImportErrors,
   resolvePreview,
   resolveXhbPreview,
 } from '@/pages/import.helpers.ts';
@@ -28,6 +30,34 @@ import { PaymodesStep } from './import/PaymodesStep';
 import { PreviewStep } from './import/PreviewStep';
 import { findBankByName, type ParsedFile, type Step, StepIndicator } from './import/Shared';
 import { UploadStep } from './import/UploadStep';
+
+const NO_IMPORT_ERRORS: ImportErrors = { rows: new Map(), global: [] };
+
+/** Remonte les erreurs de validation serveur (par champ) sur les lignes de l'aperçu. */
+function mapImportErrors(
+  fields: ApiErrorField[],
+  txRows: number[],
+  tfRows: number[],
+): ImportErrors {
+  const rows = new Map<number, string[]>();
+  const global: string[] = [];
+  for (const f of fields) {
+    const [head, idxStr] = f.path.split('.');
+    const msg = translateErrorField(f);
+    let rowList: number[] | null = null;
+    if (head === 'transactions') rowList = txRows;
+    else if (head === 'transfers') rowList = tfRows;
+    const row = rowList ? rowList[Number(idxStr)] : undefined;
+    if (row === undefined) {
+      global.push(msg);
+    } else {
+      const existing = rows.get(row);
+      if (existing) existing.push(msg);
+      else rows.set(row, [msg]);
+    }
+  }
+  return { rows, global };
+}
 
 export default function ImportManager() {
   const { t } = useTranslation('settings');
@@ -52,6 +82,7 @@ export default function ImportManager() {
   );
   const [paymodeChoices, setPaymodeChoices] = useState<Map<number, number | null>>(() => new Map());
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const [importErrors, setImportErrors] = useState<ImportErrors>(NO_IMPORT_ERRORS);
 
   const importMutation = useMutation({ mutationFn: importApi.executeQif });
   const jsonImportMutation = useMutation({ mutationFn: importApi.executeJsonFull });
@@ -245,6 +276,7 @@ export default function ImportManager() {
       if (it.kind !== 'skip') initialSelected.add(i);
     });
     setSelected(initialSelected);
+    setImportErrors(NO_IMPORT_ERRORS);
     setStep('preview');
   };
 
@@ -256,31 +288,45 @@ export default function ImportManager() {
       categoryChoices,
       t('import.no_description'),
     );
+    const { txRows, tfRows } = buildRowIndex(previewItems, selected);
+    setImportErrors(NO_IMPORT_ERRORS);
     try {
       await importMutation.mutateAsync(body);
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setStep('done');
-    } catch {
-      /* error shown inline */
+    } catch (err) {
+      // Erreurs de validation par champ → remontées sur les lignes de l'aperçu.
+      if (err instanceof ApiError && err.body?.fields) {
+        setImportErrors(mapImportErrors(err.body.fields, txRows, tfRows));
+      }
     }
   };
 
-  const toggleItem = (i: number) =>
+  // Les index de ligne changent avec la sélection : on invalide les erreurs affichées.
+  const clearImportErrors = () => setImportErrors(NO_IMPORT_ERRORS);
+
+  const toggleItem = (i: number) => {
+    clearImportErrors();
     setSelected((prev) => {
       const n = new Set(prev);
       if (n.has(i)) n.delete(i);
       else n.add(i);
       return n;
     });
+  };
 
   const selectAll = () => {
+    clearImportErrors();
     const all = new Set<number>();
     previewItems.forEach((it, i) => {
       if (it.kind !== 'skip') all.add(i);
     });
     setSelected(all);
   };
-  const deselectAll = () => setSelected(new Set());
+  const deselectAll = () => {
+    clearImportErrors();
+    setSelected(new Set());
+  };
 
   // Listes dérivées du parsedFile
   const accountsToMap: string[] = (() => {
@@ -427,6 +473,7 @@ export default function ImportManager() {
           selectAll={selectAll}
           deselectAll={deselectAll}
           isPending={importMutation.isPending}
+          importErrors={importErrors}
           errorMessage={importMutation.isError ? importMutation.error.message : null}
           onBack={() => setStep(isXhb ? 'paymethods' : 'categories')}
           onImport={() => void handleImport()}

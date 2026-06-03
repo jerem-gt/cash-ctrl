@@ -76,10 +76,11 @@ describe('POST /api/import/qif', () => {
     expect(res.status).toBe(400);
   });
 
-  it('retourne 400 avec le message brut si le body est un tableau (issue.path vide)', async () => {
+  it('retourne 400 structuré si le body est un tableau', async () => {
     const res = await ctx.agent.post('/api/import/qif').send([1, 2, 3]);
     expect(res.status).toBe(400);
-    expect(typeof res.body.error).toBe('string');
+    expect(res.body.error.code).toBe('validation.invalid');
+    expect(Array.isArray(res.body.error.fields)).toBe(true);
   });
 
   it('retourne 400 si transactions manque account_id ET new_account_qif_name', async () => {
