@@ -361,6 +361,48 @@ describe('/api/stocks', () => {
       expect(toTicker.avg_price).toBe(100);
     });
 
+    it('recalcule les positions des deux comptes après suppression du transfert', async () => {
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'DELTRF.PA',
+        quantity: 10,
+        price_per_share: 100,
+        fees: 0,
+        date: TODAY,
+      });
+
+      const transferRes = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
+        to_account_id: bourseAccountId2,
+        ticker: 'DELTRF.PA',
+        quantity: 4,
+        date: TODAY,
+      });
+      expect(transferRes.status).toBe(201);
+
+      // État après transfert : source 6, destination 4
+      const fromMid = await ctx.agent.get(`/api/stocks/${bourseAccountId}/positions`);
+      const toMid = await ctx.agent.get(`/api/stocks/${bourseAccountId2}/positions`);
+      expect(fromMid.body.find((p: { ticker: string }) => p.ticker === 'DELTRF.PA').quantity).toBe(
+        6,
+      );
+      expect(toMid.body.find((p: { ticker: string }) => p.ticker === 'DELTRF.PA').quantity).toBe(4);
+
+      // Suppression via le endpoint transfert (la cascade efface les stock_operations)
+      const delRes = await ctx.agent.delete(
+        `/api/transfers/${transferRes.body.outOperation.transaction_id}`,
+      );
+      expect(delRes.status).toBe(200);
+
+      // Positions recalculées : source revient à 10, destination n'a plus le titre
+      const fromAfter = await ctx.agent.get(`/api/stocks/${bourseAccountId}/positions`);
+      const toAfter = await ctx.agent.get(`/api/stocks/${bourseAccountId2}/positions`);
+      expect(
+        fromAfter.body.find((p: { ticker: string }) => p.ticker === 'DELTRF.PA').quantity,
+      ).toBe(10);
+      expect(
+        toAfter.body.find((p: { ticker: string }) => p.ticker === 'DELTRF.PA'),
+      ).toBeUndefined();
+    });
+
     it('retourne 400 si position insuffisante', async () => {
       const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}/transfer`).send({
         to_account_id: bourseAccountId2,
