@@ -94,7 +94,7 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
           {t('split_editor.add')}
         </button>
         <span
-          className={`text-[11px] font-mono tabular-nums ${Math.abs(remaining) < 0.005 ? 'text-success' : 'text-danger'}`}
+          className={`text-[11px] font-mono tabular-nums ${Math.abs(remaining) <= 0.01 ? 'text-success' : 'text-danger'}`}
         >
           {t('split_editor.remaining', { amount: remaining.toFixed(2) })}
         </span>
