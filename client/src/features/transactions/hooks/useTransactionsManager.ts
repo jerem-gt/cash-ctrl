@@ -124,7 +124,7 @@ export function useTransactionsManager(initialAccountId?: number) {
           amount: Number.parseFloat(data.amount),
           description: data.description,
           date: data.date,
-          validated: !!modal.tx.validated,
+          validated: data.validated,
           from_account_id: Number.parseInt(data.account_id) || undefined,
           to_account_id: Number.parseInt(data.to_account_id) || undefined,
         },
