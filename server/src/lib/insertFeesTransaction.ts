@@ -1,9 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import {
-  getBankFeesSubcategoryId,
-  getPrelevementPaymentMethodId,
-} from './administrationDataConstants';
+import { getSystemRefs } from './administrationDataConstants';
 
 export function insertFeesTransaction(
   db: Database,
@@ -15,8 +12,9 @@ export function insertFeesTransaction(
   subcategoryIdOverride?: number | null,
 ): number | null {
   if (feesCents <= 0 || accountId == null) return null;
-  const subcategoryId = subcategoryIdOverride ?? getBankFeesSubcategoryId(db, userId) ?? null;
-  const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+  const refs = getSystemRefs(db, userId);
+  const subcategoryId = subcategoryIdOverride ?? refs.bankFeesSubcategoryId ?? null;
+  const paymentMethodId = refs.prelevementPaymentMethodId ?? null;
   const result = db
     .prepare(
       `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)

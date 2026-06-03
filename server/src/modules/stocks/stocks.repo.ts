@@ -1,11 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
-import {
-  getBankFeesSubcategoryId,
-  getPrelevementPaymentMethodId,
-  getTransferIds,
-} from '../../lib/administrationDataConstants';
+import { getSystemRefs, getTransferIds } from '../../lib/administrationDataConstants';
 import { BadRequestError, NotFoundError } from '../../lib/errors';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
@@ -438,8 +434,9 @@ export function createStocksRepo(db: Database) {
               'UPDATE transactions SET amount = ?, description = ?, date = ? WHERE id = ?',
             ).run(feesCents, `Frais — ${description}`, input.date, op.fees_transaction_id);
           } else {
-            const subcategoryId = getBankFeesSubcategoryId(db, userId) ?? null;
-            const paymentMethodId = getPrelevementPaymentMethodId(db, userId) ?? null;
+            const refs = getSystemRefs(db, userId);
+            const subcategoryId = refs.bankFeesSubcategoryId ?? null;
+            const paymentMethodId = refs.prelevementPaymentMethodId ?? null;
             const feesTxResult = db
               .prepare(
                 'INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
