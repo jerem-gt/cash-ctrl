@@ -173,6 +173,85 @@ function buildFlowsByAccountYear(
   return map;
 }
 
+interface AccountCashRow {
+  account_id: number;
+  envelope_type: string | null;
+  initial_balance: number;
+}
+
+/** Delta cash signé (centimes) par compte et par année, validées uniquement. */
+function buildYearlyDeltaByAccount(db: Database, userId: number): Map<number, Map<string, number>> {
+  const map = new Map<number, Map<string, number>>();
+  for (const r of db
+    .prepare<[number], { account_id: number; year: string; delta: number }>(
+      `SELECT account_id, strftime('%Y', date) AS year,
+              SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS delta
+       FROM transactions
+       WHERE user_id = ? AND validated = 1
+       GROUP BY account_id, year`,
+    )
+    .all(userId)) {
+    let byYear = map.get(r.account_id);
+    if (!byYear) {
+      byYear = new Map();
+      map.set(r.account_id, byYear);
+    }
+    byYear.set(r.year, r.delta);
+  }
+  return map;
+}
+
+/** Somme des deltas annuels strictement antérieurs à `startYear`. */
+function sumDeltasBefore(byYear: Map<string, number> | undefined, startYear: number): number {
+  if (!byYear) return 0;
+  let sum = 0;
+  for (const [y, d] of byYear) {
+    if (Number.parseInt(y, 10) < startYear) sum += d;
+  }
+  return sum;
+}
+
+/**
+ * Solde cash cumulé (en centimes) par compte à la fin de chaque année affichée.
+ * Deux requêtes (comptes + deltas annuels) puis cumul en JS, en amorçant chaque
+ * compte avec son solde initial + les deltas antérieurs à la 1re année affichée.
+ */
+function buildCashByYear(
+  db: Database,
+  userId: number,
+  years: string[],
+  startYear: number,
+): { accountRows: AccountCashRow[]; cashByYear: Map<string, Map<number, number>> } {
+  const accountRows = db
+    .prepare<[number], AccountCashRow>(
+      `SELECT a.id AS account_id, at.envelope_type, a.initial_balance
+       FROM accounts a
+       LEFT JOIN account_types at ON a.account_type_id = at.id
+       WHERE a.user_id = ?`,
+    )
+    .all(userId);
+
+  const deltaByAccount = buildYearlyDeltaByAccount(db, userId);
+
+  const runningCash = new Map<number, number>();
+  for (const acc of accountRows) {
+    const seed =
+      acc.initial_balance + sumDeltasBefore(deltaByAccount.get(acc.account_id), startYear);
+    runningCash.set(acc.account_id, seed);
+  }
+
+  const cashByYear = new Map<string, Map<number, number>>();
+  for (const year of years) {
+    for (const acc of accountRows) {
+      const delta = deltaByAccount.get(acc.account_id)?.get(year) ?? 0;
+      runningCash.set(acc.account_id, runningCash.get(acc.account_id)! + delta);
+    }
+    cashByYear.set(year, new Map(runningCash));
+  }
+
+  return { accountRows, cashByYear };
+}
+
 /** Valeur de marché courante (positions × cote) par compte, en euros. */
 function marketValueByAccount(db: Database, userId: number): Map<number, number> {
   const rows = db
@@ -883,23 +962,9 @@ export function createStatsRepo(db: Database) {
       ] as const;
       type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
-      // Cash balance per account at year-end (amounts in cents)
-      const cashStmt = db.prepare<
-        { userId: number; yearEnd: string },
-        { account_id: number; envelope_type: string | null; cash_cents: number }
-      >(
-        `SELECT
-           a.id AS account_id,
-           at.envelope_type,
-           a.initial_balance + COALESCE((
-             SELECT SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END)
-             FROM transactions
-             WHERE account_id = a.id AND validated = 1 AND date <= :yearEnd
-           ), 0) AS cash_cents
-         FROM accounts a
-         LEFT JOIN account_types at ON a.account_type_id = at.id
-         WHERE a.user_id = :userId`,
-      );
+      // Cash balance per account at year-end (amounts in cents). Calculé en deux
+      // passes + cumul JS plutôt qu'une sous-requête corrélée par année × compte.
+      const { accountRows, cashByYear } = buildCashByYear(db, userId, years, startYear);
 
       // Current market values (stock_positions × stock_prices) — used for current year only
       // price in stock_prices is in euros, same unit as price_per_share in stock_operations
@@ -1021,7 +1086,7 @@ export function createStatsRepo(db: Database) {
       const data = years.map((year) => {
         const yearEnd = `${year}-12-31`;
         const isCurrentYear = Number.parseInt(year, 10) === currentYear;
-        const cashRows = cashStmt.all({ userId, yearEnd });
+        const cashAtYear = cashByYear.get(year)!;
         // Current year: use market value (matches dashboard "Solde total").
         // Past years: use book value (cost basis) since historical prices aren't stored.
         const stockValues = isCurrentYear ? currentMarketValues : bookValuesAt(yearEnd);
@@ -1036,19 +1101,20 @@ export function createStatsRepo(db: Database) {
           actions_uc: 0,
         };
 
-        for (const row of cashRows) {
-          if (row.envelope_type === 'loan') {
-            point.prets -= capitalRestant.get(row.account_id) ?? 0;
-          } else if (row.envelope_type === 'investment') {
-            point.liquidites += toEuros(row.cash_cents);
-            point.actions_uc += stockValues.get(row.account_id) ?? 0;
-          } else if (row.envelope_type === 'life_insurance' || row.envelope_type === 'per') {
-            point.fonds_euros += toEuros(euroValues.get(row.account_id) ?? 0);
-            point.actions_uc += toEuros(ucValues.get(row.account_id) ?? 0);
-          } else if (row.envelope_type === 'savings') {
-            point.epargne += toEuros(row.cash_cents);
+        for (const acc of accountRows) {
+          const cashCents = cashAtYear.get(acc.account_id) ?? 0;
+          if (acc.envelope_type === 'loan') {
+            point.prets -= capitalRestant.get(acc.account_id) ?? 0;
+          } else if (acc.envelope_type === 'investment') {
+            point.liquidites += toEuros(cashCents);
+            point.actions_uc += stockValues.get(acc.account_id) ?? 0;
+          } else if (acc.envelope_type === 'life_insurance' || acc.envelope_type === 'per') {
+            point.fonds_euros += toEuros(euroValues.get(acc.account_id) ?? 0);
+            point.actions_uc += toEuros(ucValues.get(acc.account_id) ?? 0);
+          } else if (acc.envelope_type === 'savings') {
+            point.epargne += toEuros(cashCents);
           } else {
-            point.liquidites += toEuros(row.cash_cents);
+            point.liquidites += toEuros(cashCents);
           }
         }
 
