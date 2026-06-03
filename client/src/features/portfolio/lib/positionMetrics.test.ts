@@ -85,16 +85,26 @@ describe('getTotalMetrics', () => {
     expect(t.totalPnlColor).toBe('text-success');
   });
 
-  it('ignore les positions sans current_price dans le market mais pas dans le cost', () => {
+  it('exclut les positions sans current_price des deux côtés (pas de perte fantôme)', () => {
     const positions = [
       makePos({ quantity: 10, avg_price: 100, current_price: null }),
       makePos({ quantity: 5, avg_price: 50, current_price: 60 }),
     ];
     const t = getTotalMetrics(positions);
     expect(t.totalMarketValue).toBe(300);
-    expect(t.totalCostBasis).toBe(1250);
-    expect(t.totalPnl).toBe(-950);
-    expect(t.totalPnlColor).toBe('text-danger');
+    expect(t.totalCostBasis).toBe(250);
+    expect(t.totalPnl).toBe(50);
+    expect(t.totalPnlPct).toBe(20);
+    expect(t.totalPnlColor).toBe('text-success');
+  });
+
+  it('renvoie un total nul quand aucune position n’est cotée', () => {
+    const positions = [makePos({ current_price: null }), makePos({ current_price: null })];
+    const t = getTotalMetrics(positions);
+    expect(t.totalMarketValue).toBe(0);
+    expect(t.totalCostBasis).toBe(0);
+    expect(t.totalPnl).toBe(0);
+    expect(t.totalPnlPct).toBe(0);
   });
 
   it('renvoie totalPnlPct 0 quand costBasis = 0', () => {
