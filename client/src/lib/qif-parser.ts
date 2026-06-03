@@ -28,7 +28,8 @@ function applyTxField(tx: PartialTx, code: string, value: string): void {
       tx.date = value;
       break;
     case 'T':
-      tx.amount = Number.parseFloat(value.replace(',', '').replace(' ', ''));
+      // Séparateurs de milliers (virgule façon US, espace) — tous retirés ; le point reste décimal.
+      tx.amount = Number.parseFloat(value.replace(/[,\s]/g, ''));
       break;
     case 'P':
       tx.description = value;
