@@ -56,21 +56,21 @@ export function createReimbursementsRouter(db: Database): Router {
 
     const tx = txRepo.getById(transactionId, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
     if (tx.type !== 'expense') {
-      res.status(400).json({ error: 'Only expense transactions can have reimbursements' });
+      res.status(400).json({ error: 'Seules les dépenses peuvent avoir des remboursements' });
       return;
     }
 
     const linkedTx = txRepo.getById(data.linked_transaction_id, userId);
     if (!linkedTx) {
-      res.status(404).json({ error: 'Linked transaction not found' });
+      res.status(404).json({ error: 'Transaction liée introuvable' });
       return;
     }
     if (linkedTx.type !== 'income') {
-      res.status(400).json({ error: 'Linked transaction must be an income transaction' });
+      res.status(400).json({ error: 'La transaction liée doit être un revenu' });
       return;
     }
 
@@ -89,7 +89,7 @@ export function createReimbursementsRouter(db: Database): Router {
     if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
 
@@ -108,7 +108,7 @@ export function createReimbursementsRouter(db: Database): Router {
     if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
 
@@ -126,7 +126,7 @@ export function createReimbursementsRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
 

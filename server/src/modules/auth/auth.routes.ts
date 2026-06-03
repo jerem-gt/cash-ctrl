@@ -35,7 +35,7 @@ export function createAuthRouter(db: Database): Router {
 
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid payload' });
+      res.status(400).json({ error: 'Requête invalide' });
       return;
     }
 
@@ -46,7 +46,7 @@ export function createAuthRouter(db: Database): Router {
 
     if (!user || !passwordOk) {
       loginLimiter.recordFailure(key);
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Identifiants invalides' });
       return;
     }
 
@@ -66,20 +66,20 @@ export function createAuthRouter(db: Database): Router {
       res.json({ username: req.session.username, isAdmin: req.session.isAdmin ?? false });
       return;
     }
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Non authentifié' });
   });
 
   router.post('/change-password', requireAuth, async (req, res) => {
     const parsed = changePasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Password must be at least 8 characters' });
+      res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' });
       return;
     }
 
     const userId = sessionUserId(req);
     const user = authRepo.getById(userId);
     if (!user || !(await bcrypt.compare(parsed.data.current, user.password_hash))) {
-      res.status(401).json({ error: 'Current password is incorrect' });
+      res.status(401).json({ error: 'Mot de passe actuel incorrect' });
       return;
     }
 

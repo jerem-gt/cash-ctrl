@@ -93,7 +93,7 @@ export function createSettingsRouter(db: Database): Router {
       }
       const table = COLUMN_TABLE[col];
       if (!settingsRepo.entityBelongsToUser(table, val, userId)) {
-        res.status(400).json({ error: `${col}: id ${val} does not belong to this user` });
+        res.status(400).json({ error: `${col} : l'id ${val} n'appartient pas à cet utilisateur` });
         return;
       }
       refs[col] = val;

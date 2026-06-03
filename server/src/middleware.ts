@@ -13,7 +13,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     next();
     return;
   }
-  res.status(401).json({ error: 'Unauthorized' });
+  res.status(401).json({ error: 'Non authentifié' });
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
@@ -21,7 +21,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     next();
     return;
   }
-  res.status(403).json({ error: 'Forbidden' });
+  res.status(403).json({ error: 'Accès refusé' });
 }
 
 export function sessionUserId(req: Request): number {

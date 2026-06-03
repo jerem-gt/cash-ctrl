@@ -81,7 +81,7 @@ function resolveWritableAccount(
 ) {
   const account = accountsRepo.getById(accountId, userId);
   if (!account) {
-    res.status(403).json({ error: 'Account not found or does not belong to user' });
+    res.status(403).json({ error: "Compte introuvable ou n'appartenant pas à l'utilisateur" });
     return null;
   }
   if (account.envelope_type === 'life_insurance' || account.envelope_type === 'per') {
@@ -134,11 +134,11 @@ export function createTransactionsRouter(db: Database): Router {
 
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
     if (tx.transfer_peer_id) {
-      res.status(400).json({ error: 'Use PUT /api/transfers/:id to update a transfer' });
+      res.status(400).json({ error: 'Utilisez PUT /api/transfers/:id pour modifier un transfert' });
       return;
     }
 
@@ -148,7 +148,7 @@ export function createTransactionsRouter(db: Database): Router {
 
     if (data.scheduled_id !== null) {
       if (!scheduledRepo.getById(data.scheduled_id, userId)) {
-        res.status(404).json({ error: 'Scheduled transaction not found' });
+        res.status(404).json({ error: 'Planification introuvable' });
         return;
       }
     }
@@ -169,7 +169,7 @@ export function createTransactionsRouter(db: Database): Router {
     if (!data) return;
 
     if (!transactionsRepo.getById(id, userId)) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
 
@@ -183,11 +183,13 @@ export function createTransactionsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transaction introuvable' });
       return;
     }
     if (tx.transfer_peer_id) {
-      res.status(400).json({ error: 'Use DELETE /api/transfers/:id to delete a transfer' });
+      res
+        .status(400)
+        .json({ error: 'Utilisez DELETE /api/transfers/:id pour supprimer un transfert' });
       return;
     }
     if (stocksRepo.isFeesTransaction(id)) {
