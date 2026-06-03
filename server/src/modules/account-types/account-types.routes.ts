@@ -3,7 +3,7 @@ import { Request, Router } from 'express';
 import { z } from 'zod';
 
 import { ENVELOPE_TYPES } from '../../constants.js';
-import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
@@ -36,7 +36,7 @@ export function createAccountTypesRouter(db: Database): Router {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Account type not found')) return;
+    if (!requireById(res, repo, id, 'account_type.not_found')) return;
     const data = parseBody(res, schema, req.body);
     if (!data) return;
     repo.update(id, data.name.trim(), data.envelope_type);
@@ -47,10 +47,10 @@ export function createAccountTypesRouter(db: Database): Router {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Account type not found')) return;
+    if (!requireById(res, repo, id, 'account_type.not_found')) return;
     const cnt = accountsRepo.countByAccountTypeId(id);
     if (cnt > 0) {
-      res.status(409).json({ error: `Ce type est utilisé par ${cnt} compte(s).` });
+      sendError(res, 409, 'account_type.in_use', { count: cnt });
       return;
     }
     repo.delete(id);

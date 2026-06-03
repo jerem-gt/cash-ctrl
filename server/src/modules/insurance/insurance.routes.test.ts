@@ -656,7 +656,7 @@ describe('/api/insurance', () => {
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Ce support a des opérations enregistrées');
+      expect(res.body.error.code).toBe('insurance.support_has_operations');
     });
 
     it('retourne 403 pour un compte inconnu', async () => {

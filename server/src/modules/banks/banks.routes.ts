@@ -3,7 +3,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
@@ -55,7 +55,7 @@ export function createBanksRouter(db: Database): Router {
     if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
-      res.status(404).json({ error: 'Banque introuvable' });
+      sendError(res, 404, 'bank.not_found');
       return;
     }
     const data = parseBody(res, bankSchema, req.body);
@@ -70,11 +70,11 @@ export function createBanksRouter(db: Database): Router {
     if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
-      res.status(404).json({ error: 'Banque introuvable' });
+      sendError(res, 404, 'bank.not_found');
       return;
     }
     if (!req.file) {
-      res.status(400).json({ error: 'Aucun fichier fourni' });
+      sendError(res, 400, 'bank.no_file');
       return;
     }
     banksRepo.update(id, bank.name, `/logos/${req.file.filename}`, bank.domain);
@@ -84,10 +84,10 @@ export function createBanksRouter(db: Database): Router {
   router.delete('/:id', (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    if (!requireById(res, banksRepo, id, 'Bank not found')) return;
+    if (!requireById(res, banksRepo, id, 'bank.not_found')) return;
     const cnt = accountsRepo.countByBankId(id);
     if (cnt > 0) {
-      res.status(409).json({ error: `Cette banque est utilisée par ${cnt} compte(s).` });
+      sendError(res, 409, 'bank.in_use', { count: cnt });
       return;
     }
     banksRepo.delete(id);

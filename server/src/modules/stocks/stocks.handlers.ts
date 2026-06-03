@@ -19,7 +19,7 @@ export function handleStockAction<T>(
     res,
     (id, uid) => repo.accountBelongsToUser(id, uid),
     (id) => repo.isInvestmentAccount(id),
-    "Ce compte n'est pas un compte d'investissement",
+    'stock.account_not_investment',
     schema,
     handler,
   );

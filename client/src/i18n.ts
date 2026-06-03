@@ -6,6 +6,7 @@ import accountsEn from './locales/en/accounts.json';
 import adminEn from './locales/en/admin.json';
 import commonEn from './locales/en/common.json';
 import dashboardEn from './locales/en/dashboard.json';
+import errorsEn from './locales/en/errors.json';
 import insuranceEn from './locales/en/insurance.json';
 import loansEn from './locales/en/loans.json';
 import portfolioEn from './locales/en/portfolio.json';
@@ -17,6 +18,7 @@ import accountsFr from './locales/fr/accounts.json';
 import adminFr from './locales/fr/admin.json';
 import commonFr from './locales/fr/common.json';
 import dashboardFr from './locales/fr/dashboard.json';
+import errorsFr from './locales/fr/errors.json';
 import insuranceFr from './locales/fr/insurance.json';
 import loansFr from './locales/fr/loans.json';
 import portfolioFr from './locales/fr/portfolio.json';
@@ -48,6 +50,7 @@ void i18n
         dashboard: dashboardFr,
         sidebar: sidebarFr,
         scheduled: scheduledFr,
+        errors: errorsFr,
       },
       en: {
         common: commonEn,
@@ -61,6 +64,7 @@ void i18n
         dashboard: dashboardEn,
         sidebar: sidebarEn,
         scheduled: scheduledEn,
+        errors: errorsEn,
       },
     },
     interpolation: {

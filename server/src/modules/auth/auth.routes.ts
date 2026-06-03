@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
+import { sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAuthRepo } from './auth.repo';
 
@@ -29,13 +30,13 @@ export function createAuthRouter(db: Database): Router {
   router.post('/login', async (req, res) => {
     const key = req.ip ?? 'unknown';
     if (!loginLimiter.isAllowed(key)) {
-      res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' });
+      sendError(res, 429, 'auth.too_many_attempts');
       return;
     }
 
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Requête invalide' });
+      sendError(res, 400, 'common.invalid_request');
       return;
     }
 
@@ -46,7 +47,7 @@ export function createAuthRouter(db: Database): Router {
 
     if (!user || !passwordOk) {
       loginLimiter.recordFailure(key);
-      res.status(401).json({ error: 'Identifiants invalides' });
+      sendError(res, 401, 'auth.invalid_credentials');
       return;
     }
 
@@ -66,20 +67,20 @@ export function createAuthRouter(db: Database): Router {
       res.json({ username: req.session.username, isAdmin: req.session.isAdmin ?? false });
       return;
     }
-    res.status(401).json({ error: 'Non authentifié' });
+    sendError(res, 401, 'common.unauthorized');
   });
 
   router.post('/change-password', requireAuth, async (req, res) => {
     const parsed = changePasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' });
+      sendError(res, 400, 'auth.password_too_short');
       return;
     }
 
     const userId = sessionUserId(req);
     const user = authRepo.getById(userId);
     if (!user || !(await bcrypt.compare(parsed.data.current, user.password_hash))) {
-      res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+      sendError(res, 401, 'auth.current_password_incorrect');
       return;
     }
 

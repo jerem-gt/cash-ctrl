@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import type {
   Account,
   AccountProfitability,
@@ -31,6 +32,34 @@ import type {
   UserSettings,
 } from '@/types';
 
+/** Corps d'erreur structuré renvoyé par l'API (cf. server/src/lib/errorCodes.ts). */
+interface ApiErrorField {
+  path: string;
+  code: string;
+  params?: Record<string, string | number>;
+  message: string;
+}
+interface ApiErrorBody {
+  code: string;
+  message: string;
+  params?: Record<string, string | number>;
+  fields?: ApiErrorField[];
+}
+
+function isApiErrorBody(value: unknown): value is ApiErrorBody {
+  return typeof value === 'object' && value !== null && 'code' in value && 'message' in value;
+}
+
+/** Traduit un code via le namespace i18n `errors`, avec repli sur le message FR du serveur. */
+function translateCode(
+  code: string,
+  message: string,
+  params?: Record<string, string | number>,
+): string {
+  return i18n.t(`errors:${code}`, { ...params, defaultValue: message });
+}
+
+/** Repli legacy pour les erreurs encore renvoyées en chaîne/arbre (ex. import QIF). */
 function extractError(value: unknown): string {
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) return value.filter(Boolean).join(', ');
@@ -49,10 +78,22 @@ function extractError(value: unknown): string {
   return '';
 }
 
+function formatError(error: unknown): string {
+  if (isApiErrorBody(error)) {
+    if (error.fields && error.fields.length > 0) {
+      return error.fields.map((f) => translateCode(f.code, f.message, f.params)).join(' · ');
+    }
+    return translateCode(error.code, error.message, error.params);
+  }
+  return extractError(error);
+}
+
 async function parseResponse<T>(res: Response): Promise<T> {
   const data: unknown = await res.json().catch(() => ({}));
   if (!res.ok)
-    throw new Error(extractError((data as { error?: unknown }).error) || 'Échec de la requête');
+    throw new Error(
+      formatError((data as { error?: unknown }).error) || i18n.t('errors:common.internal'),
+    );
   return data as T;
 }
 

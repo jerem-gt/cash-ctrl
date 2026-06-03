@@ -1,11 +1,17 @@
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import i18n from '@/i18n';
 import { server } from '@/tests/msw/server';
 
 import { transactionsApi } from './client';
 
 describe('parseResponse / extractError', () => {
+  // i18n est un singleton partagé (isolate: false) : toujours revenir au FR.
+  afterEach(async () => {
+    await i18n.changeLanguage('fr');
+  });
+
   it('résout avec les données si la réponse est ok', async () => {
     const result = await transactionsApi.list();
     expect(result.data).toBeDefined();
@@ -42,8 +48,75 @@ describe('parseResponse / extractError', () => {
     await expect(transactionsApi.list()).rejects.toThrow(/champ A.*champ B/);
   });
 
-  it(`utilise "Request failed" si le corps d'erreur est vide`, async () => {
+  it('utilise un message générique si le corps est vide', async () => {
     server.use(http.get('/api/transactions', () => HttpResponse.json({}, { status: 500 })));
-    await expect(transactionsApi.list()).rejects.toThrow('Request failed');
+    await expect(transactionsApi.list()).rejects.toThrow('Erreur interne du serveur.');
+  });
+
+  it('traduit un code métier structuré + params (FR)', async () => {
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json(
+          { error: { code: 'bank.in_use', message: 'fallback', params: { count: 2 } } },
+          { status: 409 },
+        ),
+      ),
+    );
+    await expect(transactionsApi.list()).rejects.toThrow(
+      'Cette banque est utilisée par 2 compte(s).',
+    );
+  });
+
+  it('traduit le code selon la langue active (EN)', async () => {
+    await i18n.changeLanguage('en');
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json(
+          { error: { code: 'bank.in_use', message: 'fallback', params: { count: 2 } } },
+          { status: 409 },
+        ),
+      ),
+    );
+    await expect(transactionsApi.list()).rejects.toThrow('This bank is used by 2 account(s).');
+  });
+
+  it('joint les erreurs de validation par champ', async () => {
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'validation.invalid',
+              message: 'Données invalides',
+              fields: [
+                { path: 'amount', code: 'validation.required', message: 'r' },
+                {
+                  path: 'name',
+                  code: 'validation.too_short',
+                  params: { minimum: 2 },
+                  message: 's',
+                },
+              ],
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    await expect(transactionsApi.list()).rejects.toThrow(
+      /Ce champ est requis.*Doit contenir au moins 2/,
+    );
+  });
+
+  it('se replie sur le message serveur si le code est inconnu', async () => {
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json(
+          { error: { code: 'totally.unknown', message: 'Repli serveur' } },
+          { status: 400 },
+        ),
+      ),
+    );
+    await expect(transactionsApi.list()).rejects.toThrow('Repli serveur');
   });
 });

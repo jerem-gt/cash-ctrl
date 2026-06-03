@@ -17,7 +17,7 @@ export function handleInsuranceAction<T>(
     res,
     (id, uid) => repo.accountBelongsToUser(id, uid),
     (id) => repo.isInsuranceAccount(id),
-    "Ce compte n'est pas une enveloppe assurance",
+    'insurance.account_not_insurance',
     schema,
     handler,
   );

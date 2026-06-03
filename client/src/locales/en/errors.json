@@ -1,0 +1,125 @@
+{
+  "common": {
+    "unauthorized": "Not authenticated",
+    "forbidden": "Access denied",
+    "invalid_request": "Invalid request",
+    "invalid_param": "Invalid parameter {{param}}",
+    "internal": "Internal server error."
+  },
+  "validation": {
+    "invalid": "Invalid data",
+    "required": "This field is required",
+    "too_small": "Value must be at least {{minimum}}",
+    "too_big": "Value must not exceed {{maximum}}",
+    "too_short": "Must be at least {{minimum}} character(s)",
+    "too_long": "Must be at most {{maximum}} character(s)",
+    "invalid_format": "Invalid format",
+    "invalid_value": "Value not allowed"
+  },
+  "account": {
+    "not_found": "Account not found",
+    "not_found_or_not_owned": "Account not found or does not belong to the user",
+    "already_closed": "This account is already closed",
+    "not_closed": "This account is not closed",
+    "close_requires_zero_or_target": "The balance must be zero or a destination account is required"
+  },
+  "account_type": {
+    "not_found": "Account type not found",
+    "in_use": "This type is used by {{count}} account(s)."
+  },
+  "transaction": {
+    "not_found": "Transaction not found",
+    "no_direct_on_av_per": "Cannot create a transaction directly on a life-insurance/PER account",
+    "use_transfers_update": "Use PUT /api/transfers/:id to update a transfer",
+    "use_transfers_delete": "Use DELETE /api/transfers/:id to delete a transfer",
+    "is_stock_fees": "This transaction is the fee of a stock operation. Edit the operation to change the fee."
+  },
+  "transfer": {
+    "same_account": "The two accounts must be different",
+    "not_a_transfer_update": "Not a transfer — use PUT /api/transactions/:id",
+    "not_a_transfer_delete": "Not a transfer — use DELETE /api/transactions/:id"
+  },
+  "bank": {
+    "not_found": "Bank not found",
+    "in_use": "This bank is used by {{count}} account(s).",
+    "no_file": "No file provided"
+  },
+  "category": {
+    "not_found": "Category not found",
+    "in_use": "This category is used by {{count}} transaction(s) and cannot be deleted."
+  },
+  "subcategory": {
+    "not_found": "Subcategory not found",
+    "in_use": "This subcategory is used by {{count}} transaction(s) and cannot be deleted."
+  },
+  "payment_method": {
+    "not_found": "Payment method not found",
+    "in_use": "This payment method is used by {{count}} transaction(s) and cannot be deleted."
+  },
+  "user": {
+    "not_found": "User not found",
+    "username_taken": "Username already taken",
+    "cannot_modify_admin": "Cannot modify the administrator account",
+    "cannot_delete_admin": "Cannot delete the administrator account"
+  },
+  "auth": {
+    "invalid_credentials": "Invalid credentials",
+    "too_many_attempts": "Too many attempts. Try again later.",
+    "password_too_short": "Password must be at least 8 characters",
+    "current_password_incorrect": "Current password is incorrect"
+  },
+  "reimbursement": {
+    "only_expense": "Only expenses can have reimbursements",
+    "linked_not_found": "Linked transaction not found",
+    "linked_must_be_income": "The linked transaction must be an income"
+  },
+  "scheduled": {
+    "not_found": "Scheduled transaction not found",
+    "destination_required": "A destination account is required for a transfer",
+    "account_must_be_av_per": "The account must be a life insurance or PER",
+    "source_required_versement": "A source account is required for a scheduled contribution"
+  },
+  "insurance": {
+    "account_not_insurance": "This account is not an insurance envelope",
+    "support_not_found": "Support not found",
+    "support_source_not_found": "Source support not found",
+    "support_dest_not_found": "Destination support not found",
+    "support_has_operations": "This support has recorded operations",
+    "operation_not_found": "Operation not found",
+    "supports_must_differ": "Source and destination supports must be different",
+    "interets_euro_only": "Interest only applies to euro funds",
+    "revalorisation_uc_only": "Revaluation only applies to unit-linked supports",
+    "arbitrage_not_editable": "Arbitrages cannot be edited",
+    "amount_positive": "The amount must be positive",
+    "net_amount_positive": "The net amount after fees and social charges must be positive",
+    "insufficient_balance": "Insufficient balance: {{balance}} € available",
+    "insufficient_balance_support": "Insufficient balance on {{support}}: {{balance}} €"
+  },
+  "stock": {
+    "operation_not_found": "Operation not found",
+    "account_not_investment": "This account is not an investment account",
+    "source_account_not_found": "Source account not found",
+    "dest_account_not_found": "Destination account not found",
+    "source_not_investment": "The source account is not an investment account",
+    "dest_not_investment": "The destination account is not an investment account",
+    "accounts_must_differ": "Source and destination accounts must be different",
+    "price_not_found": "No quote found for {{ticker}}",
+    "insufficient_position": "Insufficient position: {{available}} share(s) available",
+    "net_amount_after_fees_positive": "The net amount after fees must be positive",
+    "net_amount_positive": "The net amount must be positive"
+  },
+  "loan": {
+    "not_found": "Loan not found",
+    "installment_not_found": "Installment not found"
+  },
+  "backup": {
+    "invalid_filename": "Invalid filename",
+    "not_found": "Backup not found"
+  },
+  "tax": {
+    "bracket_not_found": "Tax scale {{year}} not found"
+  },
+  "settings": {
+    "ref_not_owned": "{{col}}: id {{id}} does not belong to this user"
+  }
+}

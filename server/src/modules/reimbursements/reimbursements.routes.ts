@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES } from '../../constants';
 import { toCents } from '../../lib/money';
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo';
@@ -56,21 +56,21 @@ export function createReimbursementsRouter(db: Database): Router {
 
     const tx = txRepo.getById(transactionId, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
     if (tx.type !== 'expense') {
-      res.status(400).json({ error: 'Seules les dépenses peuvent avoir des remboursements' });
+      sendError(res, 400, 'reimbursement.only_expense');
       return;
     }
 
     const linkedTx = txRepo.getById(data.linked_transaction_id, userId);
     if (!linkedTx) {
-      res.status(404).json({ error: 'Transaction liée introuvable' });
+      sendError(res, 404, 'reimbursement.linked_not_found');
       return;
     }
     if (linkedTx.type !== 'income') {
-      res.status(400).json({ error: 'La transaction liée doit être un revenu' });
+      sendError(res, 400, 'reimbursement.linked_must_be_income');
       return;
     }
 
@@ -89,7 +89,7 @@ export function createReimbursementsRouter(db: Database): Router {
     if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
 
@@ -108,7 +108,7 @@ export function createReimbursementsRouter(db: Database): Router {
     if (!data) return;
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
 
@@ -126,7 +126,7 @@ export function createReimbursementsRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (!txRepo.getById(transactionId, userId)) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
 

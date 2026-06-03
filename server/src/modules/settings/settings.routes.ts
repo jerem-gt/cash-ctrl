@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody } from '../../lib/routeHelpers';
+import { parseBody, sendError } from '../../lib/routeHelpers';
 import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntities';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
@@ -93,7 +93,7 @@ export function createSettingsRouter(db: Database): Router {
       }
       const table = COLUMN_TABLE[col];
       if (!settingsRepo.entityBelongsToUser(table, val, userId)) {
-        res.status(400).json({ error: `${col} : l'id ${val} n'appartient pas à cet utilisateur` });
+        sendError(res, 400, 'settings.ref_not_owned', { col, id: val });
         return;
       }
       refs[col] = val;

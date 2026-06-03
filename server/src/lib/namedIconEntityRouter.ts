@@ -3,7 +3,8 @@ import { type Request, Router } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, sessionUserId } from '../middleware';
-import { parseBody, parseNumberParam, requireById } from './routeHelpers';
+import type { ErrorCode } from './errorCodes';
+import { parseBody, parseNumberParam, requireById, sendError } from './routeHelpers';
 
 /** Payload partagé des entités « nom + icône » (catégories, moyens de paiement). */
 export interface NamedIconEntityInput {
@@ -24,10 +25,10 @@ export interface NamedIconEntityRouterConfig {
   schema: z.ZodType<NamedIconEntityInput>;
   /** Construit le repo scopé à l'utilisateur de la requête. */
   repoFactory: (db: Database, userId: number) => NamedIconEntityRepo;
-  notFoundMsg: string;
+  notFoundCode: ErrorCode;
   /** Nombre d'usages bloquant la suppression (ex. transactions liées). */
   countUsage: (id: number) => number;
-  usageConflictMsg: (count: number) => string;
+  usageConflictCode: ErrorCode;
 }
 
 /**
@@ -60,7 +61,7 @@ export function createNamedIconEntityRouter(
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, config.notFoundMsg)) return;
+    if (!requireById(res, repo, id, config.notFoundCode)) return;
     const data = parseBody(res, config.schema, req.body);
     if (!data) return;
     repo.update(id, { name: data.name.trim(), icon: data.icon });
@@ -71,10 +72,10 @@ export function createNamedIconEntityRouter(
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, config.notFoundMsg)) return;
+    if (!requireById(res, repo, id, config.notFoundCode)) return;
     const n = config.countUsage(id);
     if (n > 0) {
-      res.status(409).json({ error: config.usageConflictMsg(n) });
+      sendError(res, 409, config.usageConflictCode, { count: n });
       return;
     }
     repo.delete(id);

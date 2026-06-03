@@ -235,7 +235,9 @@ describe('globalErrorHandler', () => {
     const { res, statusMock, jsonMock } = makeRes(false);
     globalErrorHandler(new Error('oops'), mockReq(), res, vi.fn());
     expect(statusMock).toHaveBeenCalledWith(500);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Erreur interne du serveur.' });
+    expect(jsonMock).toHaveBeenCalledWith({
+      error: { code: 'common.internal', message: 'Erreur interne du serveur.' },
+    });
   });
 
   it('ne répond pas quand headersSent=true', () => {
@@ -254,9 +256,11 @@ describe('globalErrorHandler', () => {
   it('mappe une HttpError sur son statut et son message (warn, pas error)', () => {
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const { res, statusMock, jsonMock } = makeRes(false);
-    globalErrorHandler(new NotFoundError('Compte introuvable'), mockReq('GET', '/x'), res, vi.fn());
+    globalErrorHandler(new NotFoundError('account.not_found'), mockReq('GET', '/x'), res, vi.fn());
     expect(statusMock).toHaveBeenCalledWith(404);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Compte introuvable' });
+    expect(jsonMock).toHaveBeenCalledWith({
+      error: { code: 'account.not_found', message: 'Compte introuvable' },
+    });
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(errorSpy).not.toHaveBeenCalled();
   });
@@ -264,7 +268,7 @@ describe('globalErrorHandler', () => {
   it('ne répond pas pour une HttpError quand headersSent=true', () => {
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const { res, statusMock } = makeRes(true);
-    globalErrorHandler(new BadRequestError('nope'), mockReq(), res, vi.fn());
+    globalErrorHandler(new BadRequestError('common.invalid_request'), mockReq(), res, vi.fn());
     expect(statusMock).not.toHaveBeenCalled();
   });
 });

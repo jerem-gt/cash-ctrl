@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { buildError } from './lib/errorCodes';
+
 declare module 'express-session' {
   interface SessionData {
     userId?: number;
@@ -13,7 +15,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     next();
     return;
   }
-  res.status(401).json({ error: 'Non authentifié' });
+  res.status(401).json({ error: buildError('common.unauthorized') });
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
@@ -21,7 +23,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     next();
     return;
   }
-  res.status(403).json({ error: 'Accès refusé' });
+  res.status(403).json({ error: buildError('common.forbidden') });
 }
 
 export function sessionUserId(req: Request): number {

@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
@@ -33,7 +33,7 @@ export function createSubcategoriesRouter(db: Database): Router {
     const data = parseBody(res, createSchema, req.body);
     if (!data) return;
     if (!getCatsRepo(req).getById(data.category_id)) {
-      res.status(404).json({ error: 'Catégorie introuvable' });
+      sendError(res, 404, 'category.not_found');
       return;
     }
     const repo = getRepo(req);
@@ -48,7 +48,7 @@ export function createSubcategoriesRouter(db: Database): Router {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
+    if (!requireById(res, repo, id, 'subcategory.not_found')) return;
     const data = parseBody(res, updateSchema, req.body);
     if (!data) return;
     repo.update(id, data.name.trim());
@@ -59,12 +59,10 @@ export function createSubcategoriesRouter(db: Database): Router {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
     const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'Sous-catégorie introuvable')) return;
+    if (!requireById(res, repo, id, 'subcategory.not_found')) return;
     const n = txRepo.getCountBySubcategoryId(id);
     if (n > 0) {
-      res.status(409).json({
-        error: `Cette sous-catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
-      });
+      sendError(res, 409, 'subcategory.in_use', { count: n });
       return;
     }
     repo.delete(id);

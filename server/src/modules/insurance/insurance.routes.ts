@@ -2,8 +2,14 @@ import type { Database } from 'better-sqlite3';
 import { type Response, Router } from 'express';
 import { z } from 'zod';
 
+import type { ErrorCode } from '../../lib/errorCodes';
 import { HttpError } from '../../lib/errors';
-import { makeCheckAccount, parseNumberParam } from '../../lib/routeHelpers';
+import {
+  makeCheckAccount,
+  parseNumberParam,
+  sendError,
+  zodToApiError,
+} from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth } from '../../middleware.js';
 import { handleInsuranceAction } from './insurance.handlers.js';
@@ -19,11 +25,11 @@ function requireSupport(
   repo: ReturnType<typeof createInsuranceRepo>,
   supportId: number,
   accountId: number,
-  errorMsg = 'Support introuvable',
+  errorCode: ErrorCode = 'insurance.support_not_found',
 ): InsuranceSupport | null {
   const support = repo.getSupportById(supportId);
   if (support?.account_id !== accountId) {
-    res.status(404).json({ error: errorMsg });
+    sendError(res, 404, errorCode);
     return null;
   }
   return support;
@@ -124,12 +130,12 @@ export function createInsuranceRouter(db: Database): Router {
 
     const support = repo.getSupportById(supportId);
     if (support?.account_id !== accountId) {
-      res.status(404).json({ error: 'Support introuvable' });
+      sendError(res, 404, 'insurance.support_not_found');
       return;
     }
 
     if (repo.hasOperations(supportId)) {
-      res.status(400).json({ error: 'Ce support a des opérations enregistrées' });
+      sendError(res, 400, 'insurance.support_has_operations');
       return;
     }
 
@@ -156,7 +162,7 @@ export function createInsuranceRouter(db: Database): Router {
 
     const parsed = updateOperationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
 
@@ -164,8 +170,11 @@ export function createInsuranceRouter(db: Database): Router {
       const operation = repo.updateOperation(operationId, userId, parsed.data);
       res.json(operation);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 400;
-      res.status(status).json({ error: err instanceof Error ? err.message : 'Erreur inconnue' });
+      if (err instanceof HttpError) {
+        sendError(res, err.status, err.code, err.params);
+      } else {
+        sendError(res, 400, 'common.invalid_request');
+      }
     }
   });
 
@@ -176,8 +185,12 @@ export function createInsuranceRouter(db: Database): Router {
     try {
       repo.deleteOperation(operationId, userId);
       res.json({ ok: true });
-    } catch {
-      res.status(404).json({ error: 'Opération introuvable' });
+    } catch (err) {
+      if (err instanceof HttpError) {
+        sendError(res, err.status, err.code, err.params);
+      } else {
+        sendError(res, 404, 'insurance.operation_not_found');
+      }
     }
   });
 
@@ -200,9 +213,7 @@ export function createInsuranceRouter(db: Database): Router {
   router.post('/:accountId/arbitrage', (req, res) => {
     handleInsuranceAction(req, res, repo, arbitrageSchema, ({ userId, data }) => {
       if (data.from_support_id === data.to_support_id) {
-        res
-          .status(400)
-          .json({ error: 'Les supports source et destination doivent être différents' });
+        sendError(res, 400, 'insurance.supports_must_differ');
         return;
       }
       if (
@@ -211,7 +222,7 @@ export function createInsuranceRouter(db: Database): Router {
           repo,
           data.from_support_id,
           data.account_id,
-          'Support source introuvable',
+          'insurance.support_source_not_found',
         )
       )
         return;
@@ -221,7 +232,7 @@ export function createInsuranceRouter(db: Database): Router {
           repo,
           data.to_support_id,
           data.account_id,
-          'Support destination introuvable',
+          'insurance.support_dest_not_found',
         )
       )
         return;
@@ -235,7 +246,7 @@ export function createInsuranceRouter(db: Database): Router {
       const support = requireSupport(res, repo, data.support_id, data.account_id);
       if (!support) return;
       if (support.type !== 'euro') {
-        res.status(400).json({ error: 'Les intérêts ne concernent que les fonds euro' });
+        sendError(res, 400, 'insurance.interets_euro_only');
         return;
       }
       const result = repo.interets(userId, data);
@@ -248,7 +259,7 @@ export function createInsuranceRouter(db: Database): Router {
       const support = requireSupport(res, repo, data.support_id, data.account_id);
       if (!support) return;
       if (support.type !== 'uc') {
-        res.status(400).json({ error: 'La revalorisation ne concerne que les UC' });
+        sendError(res, 400, 'insurance.revalorisation_uc_only');
         return;
       }
       const operation = repo.revaloriser(userId, data);

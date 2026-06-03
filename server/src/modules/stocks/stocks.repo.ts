@@ -170,15 +170,15 @@ export function createStocksRepo(db: Database) {
         .get(input.account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {
-        throw new BadRequestError(
-          `Position insuffisante : ${position?.quantity ?? 0} action(s) disponible(s)`,
-        );
+        throw new BadRequestError('stock.insufficient_position', {
+          available: position?.quantity ?? 0,
+        });
       }
 
       const feesCents = toCents(input.fees);
       const mainCents = toCents(input.quantity * input.price_per_share);
       if (mainCents - feesCents <= 0) {
-        throw new BadRequestError('Le montant net après frais doit être positif');
+        throw new BadRequestError('stock.net_amount_after_fees_positive');
       }
 
       return db.transaction(() =>
@@ -223,9 +223,9 @@ export function createStocksRepo(db: Database) {
         .get(input.from_account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {
-        throw new BadRequestError(
-          `Position insuffisante : ${position?.quantity ?? 0} action(s) disponible(s)`,
-        );
+        throw new BadRequestError('stock.insufficient_position', {
+          available: position?.quantity ?? 0,
+        });
       }
 
       const avgPrice = position.avg_price;
@@ -402,13 +402,13 @@ export function createStocksRepo(db: Database) {
     ): StockOperation {
       return db.transaction(() => {
         const op = getOpByIdStmt.get(operationId);
-        if (!op) throw new NotFoundError('Opération introuvable');
+        if (!op) throw new NotFoundError('stock.operation_not_found');
 
         const feesCents = toCents(input.fees);
         const mainCents = toCents(input.quantity * input.price_per_share);
 
         if (op.type === 'sell' && mainCents - feesCents <= 0)
-          throw new BadRequestError('Le montant net doit être positif');
+          throw new BadRequestError('stock.net_amount_positive');
 
         const description =
           input.description ??
