@@ -174,6 +174,10 @@ function insertInsuranceTxAndOp(
 }
 
 export function createInsuranceRepo(db: Database) {
+  const getOpByIdStmt = db.prepare<[number], RawInsuranceOperation>(
+    `${OPERATION_SELECT} WHERE io.id = ?`,
+  );
+
   return {
     accountBelongsToUser: (accountId: number, userId: number): boolean =>
       checkAccountOwnership(db, accountId, userId),
@@ -392,9 +396,7 @@ export function createInsuranceRepo(db: Database) {
           operationId,
         );
 
-        const updated = db
-          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(operationId)!;
+        const updated = getOpByIdStmt.get(operationId)!;
         return mapOperation(updated);
       })();
     },
@@ -543,12 +545,8 @@ export function createInsuranceRepo(db: Database) {
           outId,
         );
 
-        const outOp = db
-          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(outId)!;
-        const inOp = db
-          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(inId)!;
+        const outOp = getOpByIdStmt.get(outId)!;
+        const inOp = getOpByIdStmt.get(inId)!;
 
         return { outOperation: mapOperation(outOp), inOperation: mapOperation(inOp) };
       })();
@@ -582,9 +580,7 @@ export function createInsuranceRepo(db: Database) {
           )
           .run(userId, input.account_id, input.support_id, transactionId, amountCents, input.date);
 
-        const op = db
-          .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-          .get(Number(opResult.lastInsertRowid))!;
+        const op = getOpByIdStmt.get(Number(opResult.lastInsertRowid))!;
 
         return { operation: mapOperation(op), transaction_id: transactionId };
       })();
@@ -604,9 +600,7 @@ export function createInsuranceRepo(db: Database) {
         )
         .run(userId, input.account_id, input.support_id, amountCents, input.date);
 
-      const op = db
-        .prepare<[number], RawInsuranceOperation>(`${OPERATION_SELECT} WHERE io.id = ?`)
-        .get(Number(opResult.lastInsertRowid))!;
+      const op = getOpByIdStmt.get(Number(opResult.lastInsertRowid))!;
 
       return mapOperation(op);
     },

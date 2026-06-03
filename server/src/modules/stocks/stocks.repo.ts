@@ -141,6 +141,9 @@ export function createStocksRepo(db: Database) {
   const getOpByTransactionIdStmt = db.prepare<[number], { account_id: number; ticker: string }>(
     'SELECT account_id, ticker FROM stock_operations WHERE transaction_id = ?',
   );
+  const getOpByIdStmt = db.prepare<[number], StockOperation>(
+    'SELECT * FROM stock_operations WHERE id = ?',
+  );
 
   return {
     accountBelongsToUser: (accountId: number, userId: number): boolean =>
@@ -312,12 +315,8 @@ export function createStocksRepo(db: Database) {
           outId,
         );
 
-        const outOp = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(outId)!;
-        const inOp = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(inId)!;
+        const outOp = getOpByIdStmt.get(outId)!;
+        const inOp = getOpByIdStmt.get(inId)!;
 
         return { outOperation: mapOperation(outOp), inOperation: mapOperation(inOp) };
       })();
@@ -352,10 +351,7 @@ export function createStocksRepo(db: Database) {
     getTickersForUser: (userId: number): string[] => getTickersForUserStmt.all(userId),
 
     getOperationById(operationId: number): StockOperation | undefined {
-      const row =
-        db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId) ?? undefined;
+      const row = getOpByIdStmt.get(operationId) ?? undefined;
       return row ? mapOperation(row) : undefined;
     },
 
@@ -405,9 +401,7 @@ export function createStocksRepo(db: Database) {
       },
     ): StockOperation {
       return db.transaction(() => {
-        const op = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId);
+        const op = getOpByIdStmt.get(operationId);
         if (!op) throw new NotFoundError('Opération introuvable');
 
         const feesCents = toCents(input.fees);
@@ -469,9 +463,7 @@ export function createStocksRepo(db: Database) {
           operationId,
         );
 
-        const updatedOp = db
-          .prepare<[number], StockOperation>('SELECT * FROM stock_operations WHERE id = ?')
-          .get(operationId);
+        const updatedOp = getOpByIdStmt.get(operationId);
         if (!updatedOp) throw new Error('Opération introuvable après mise à jour');
         return mapOperation(updatedOp);
       })();
