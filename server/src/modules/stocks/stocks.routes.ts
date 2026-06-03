@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { HttpError } from '../../lib/errors';
-import { makeCheckAccount, parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { makeCheckAccount, parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
@@ -74,11 +74,11 @@ export function createStocksRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (!repo.accountBelongsToUser(fromAccountId, userId)) {
-      res.status(403).json({ error: 'Compte source introuvable' });
+      sendError(res, 403, 'stock.source_account_not_found');
       return;
     }
     if (!repo.isInvestmentAccount(fromAccountId)) {
-      res.status(400).json({ error: "Le compte source n'est pas un compte d'investissement" });
+      sendError(res, 400, 'stock.source_not_investment');
       return;
     }
 
@@ -87,15 +87,15 @@ export function createStocksRouter(db: Database): Router {
 
     const { to_account_id } = data;
     if (!repo.accountBelongsToUser(to_account_id, userId)) {
-      res.status(403).json({ error: 'Compte destination introuvable' });
+      sendError(res, 403, 'stock.dest_account_not_found');
       return;
     }
     if (!repo.isInvestmentAccount(to_account_id)) {
-      res.status(400).json({ error: "Le compte destination n'est pas un compte d'investissement" });
+      sendError(res, 400, 'stock.dest_not_investment');
       return;
     }
     if (to_account_id === fromAccountId) {
-      res.status(400).json({ error: 'Les comptes source et destination doivent être différents' });
+      sendError(res, 400, 'stock.accounts_must_differ');
       return;
     }
 
@@ -105,8 +105,11 @@ export function createStocksRouter(db: Database): Router {
       repo.recalcPosition(data.to_account_id, data.ticker, userId);
       res.status(201).json(result);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 400;
-      res.status(status).json({ error: (err as Error).message });
+      if (err instanceof HttpError) {
+        sendError(res, err.status, err.code, err.params);
+      } else {
+        sendError(res, 400, 'common.invalid_request');
+      }
     }
   });
 
@@ -118,7 +121,7 @@ export function createStocksRouter(db: Database): Router {
 
     const op = repo.getOperationById(operationId);
     if (op?.account_id !== accountId) {
-      res.status(404).json({ error: 'Opération introuvable' });
+      sendError(res, 404, 'stock.operation_not_found');
       return;
     }
 
@@ -133,8 +136,11 @@ export function createStocksRouter(db: Database): Router {
       repo.recalcPosition(accountId, op.ticker, userId);
       res.json(operation);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 400;
-      res.status(status).json({ error: (err as Error).message });
+      if (err instanceof HttpError) {
+        sendError(res, err.status, err.code, err.params);
+      } else {
+        sendError(res, 400, 'common.invalid_request');
+      }
     }
   });
 
@@ -152,7 +158,7 @@ export function createStocksRouter(db: Database): Router {
     const { ticker } = req.params;
     const price = await getOrRefreshPrice(repo, ticker);
     if (!price) {
-      res.status(404).json({ error: `Cotation introuvable pour ${ticker}` });
+      sendError(res, 404, 'stock.price_not_found', { ticker });
       return;
     }
     res.json(price);

@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 
+import { buildError } from './lib/errorCodes';
 import { HttpError } from './lib/errors';
 
 const COLORS = {
@@ -69,15 +70,15 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof HttpError) {
-    logger.warn(`${req.method} ${req.originalUrl} ${err.status} — ${err.message}`);
+    logger.warn(`${req.method} ${req.originalUrl} ${err.status} — ${err.code}`);
     if (!res.headersSent) {
-      res.status(err.status).json({ error: err.message });
+      res.status(err.status).json({ error: buildError(err.code, err.params) });
     }
     return;
   }
   const message = err instanceof Error ? err.message : String(err);
   logger.error(`${req.method} ${req.originalUrl} 500 — ${message}`);
   if (!res.headersSent) {
-    res.status(500).json({ error: 'Erreur interne du serveur.' });
+    res.status(500).json({ error: buildError('common.internal') });
   }
 };

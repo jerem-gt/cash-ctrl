@@ -3,7 +3,7 @@ import { type Response, Router } from 'express';
 import { z } from 'zod';
 
 import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
@@ -81,13 +81,11 @@ function resolveWritableAccount(
 ) {
   const account = accountsRepo.getById(accountId, userId);
   if (!account) {
-    res.status(403).json({ error: "Compte introuvable ou n'appartenant pas à l'utilisateur" });
+    sendError(res, 403, 'account.not_found_or_not_owned');
     return null;
   }
   if (account.envelope_type === 'life_insurance' || account.envelope_type === 'per') {
-    res
-      .status(400)
-      .json({ error: 'Impossible de créer une transaction directement sur un compte AV/PER' });
+    sendError(res, 400, 'transaction.no_direct_on_av_per');
     return null;
   }
   return account;
@@ -106,7 +104,7 @@ export function createTransactionsRouter(db: Database): Router {
 
     const parsed = querySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: z.treeifyError(parsed.error) });
+      res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
 
@@ -134,11 +132,11 @@ export function createTransactionsRouter(db: Database): Router {
 
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
     if (tx.transfer_peer_id) {
-      res.status(400).json({ error: 'Utilisez PUT /api/transfers/:id pour modifier un transfert' });
+      sendError(res, 400, 'transaction.use_transfers_update');
       return;
     }
 
@@ -148,7 +146,7 @@ export function createTransactionsRouter(db: Database): Router {
 
     if (data.scheduled_id !== null) {
       if (!scheduledRepo.getById(data.scheduled_id, userId)) {
-        res.status(404).json({ error: 'Planification introuvable' });
+        sendError(res, 404, 'scheduled.not_found');
         return;
       }
     }
@@ -169,7 +167,7 @@ export function createTransactionsRouter(db: Database): Router {
     if (!data) return;
 
     if (!transactionsRepo.getById(id, userId)) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
 
@@ -183,20 +181,15 @@ export function createTransactionsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
     if (tx.transfer_peer_id) {
-      res
-        .status(400)
-        .json({ error: 'Utilisez DELETE /api/transfers/:id pour supprimer un transfert' });
+      sendError(res, 400, 'transaction.use_transfers_delete');
       return;
     }
     if (stocksRepo.isFeesTransaction(id)) {
-      res.status(400).json({
-        error:
-          "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
-      });
+      sendError(res, 400, 'transaction.is_stock_fees');
       return;
     }
     const op = stocksRepo.getOperationByTransactionId(id);

@@ -16,9 +16,8 @@ export function createCategoriesRouter(db: Database): Router {
   return createNamedIconEntityRouter(db, {
     schema: categorySchema,
     repoFactory: createCategoriesRepo,
-    notFoundMsg: 'Category not found',
+    notFoundCode: 'category.not_found',
     countUsage: (id) => txRepo.getCountByCategoryId(id),
-    usageConflictMsg: (n) =>
-      `Cette catégorie est utilisée par ${n} transaction(s) et ne peut pas être supprimée.`,
+    usageConflictCode: 'category.in_use',
   });
 }

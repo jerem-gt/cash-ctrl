@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createExportRepo } from './export.repo';
 
@@ -13,7 +14,7 @@ export function createExportRouter(db: Database): Router {
   router.get('/json-full', (req, res) => {
     const parsed = z.object({ accountIds: z.string().optional() }).safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Paramètres invalides' });
+      sendError(res, 400, 'common.invalid_request');
       return;
     }
     const accountIds = parsed.data.accountIds

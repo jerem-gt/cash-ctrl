@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from '../loans/loans.repo.js';
@@ -46,7 +46,7 @@ export function createAccountsRouter(db: Database): Router {
     if (id === null) return;
     const userId = sessionUserId(req);
     if (!accountsRepo.getById(id, userId)) {
-      res.status(404).json({ error: 'Compte introuvable' });
+      sendError(res, 404, 'account.not_found');
       return;
     }
     const data = parseBody(res, accountSchema, req.body);
@@ -61,7 +61,7 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Compte introuvable' });
+      sendError(res, 404, 'account.not_found');
       return;
     }
     if (account.envelope_type === 'loan') {
@@ -77,11 +77,11 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Compte introuvable' });
+      sendError(res, 404, 'account.not_found');
       return;
     }
     if (account.closed_at) {
-      res.status(400).json({ error: 'Ce compte est déjà clôturé' });
+      sendError(res, 400, 'account.already_closed');
       return;
     }
     const data = parseBody(res, closeSchema, req.body);
@@ -91,9 +91,7 @@ export function createAccountsRouter(db: Database): Router {
     const balance =
       Math.round((isInsurance ? account.balance_insurance : account.balance) * 100) / 100;
     if (balance !== 0 && !data.transfer_to_account_id) {
-      res
-        .status(400)
-        .json({ error: 'Le solde doit être nul ou un compte de destination est requis' });
+      sendError(res, 400, 'account.close_requires_zero_or_target');
       return;
     }
 
@@ -124,11 +122,11 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Compte introuvable' });
+      sendError(res, 404, 'account.not_found');
       return;
     }
     if (!account.closed_at) {
-      res.status(400).json({ error: "Ce compte n'est pas clôturé" });
+      sendError(res, 400, 'account.not_closed');
       return;
     }
     accountsRepo.reopen(userId, id);

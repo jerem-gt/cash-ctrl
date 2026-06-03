@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
-import { parseNumberParam } from '../../lib/routeHelpers.js';
+import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
 import { requireAdmin } from '../../middleware.js';
 import { createUsersRepo } from './users.repo';
 
@@ -34,14 +34,11 @@ export function createUsersRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const parsed = createUserSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: 'Requête invalide' });
-      return;
-    }
-    const { username, password, lang } = parsed.data;
+    const data = parseBody(res, createUserSchema, req.body);
+    if (!data) return;
+    const { username, password, lang } = data;
     if (repo.getByUsername(username)) {
-      res.status(409).json({ error: "Nom d'utilisateur déjà utilisé" });
+      sendError(res, 409, 'user.username_taken');
       return;
     }
     const hash = bcrypt.hashSync(password, 12);
@@ -55,21 +52,21 @@ export function createUsersRouter(db: Database): Router {
     if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
-      res.status(404).json({ error: 'Utilisateur introuvable' });
+      sendError(res, 404, 'user.not_found');
       return;
     }
     if (user.is_admin === 1) {
-      res.status(403).json({ error: 'Impossible de modifier le compte administrateur' });
+      sendError(res, 403, 'user.cannot_modify_admin');
       return;
     }
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' });
+      res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
     if (parsed.data.username !== undefined) {
       if (repo.getByUsername(parsed.data.username)) {
-        res.status(409).json({ error: "Nom d'utilisateur déjà utilisé" });
+        sendError(res, 409, 'user.username_taken');
         return;
       }
       repo.updateUsername(id, parsed.data.username);
@@ -85,11 +82,11 @@ export function createUsersRouter(db: Database): Router {
     if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
-      res.status(404).json({ error: 'Utilisateur introuvable' });
+      sendError(res, 404, 'user.not_found');
       return;
     }
     if (user.is_admin === 1) {
-      res.status(403).json({ error: 'Impossible de supprimer le compte administrateur' });
+      sendError(res, 403, 'user.cannot_delete_admin');
       return;
     }
     repo.remove(id);

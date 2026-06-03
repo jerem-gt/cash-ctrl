@@ -194,7 +194,7 @@ describe('POST /api/accounts/:id/close', () => {
     await ctx.agent.post(`/api/accounts/${id}/close`).send({ closed_at: '2025-01-01' });
     const res = await ctx.agent.post(`/api/accounts/${id}/close`).send({ closed_at: '2025-01-01' });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/déjà clôturé/i);
+    expect(res.body.error.code).toBe('account.already_closed');
   });
 
   it('retourne 400 si solde non nul sans compte de destination', async () => {
@@ -305,7 +305,7 @@ describe('POST /api/accounts/:id/reopen', () => {
     });
     const res = await ctx.agent.post(`/api/accounts/${create.body.id}/reopen`);
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/pas clôturé/i);
+    expect(res.body.error.code).toBe('account.not_closed');
   });
 
   it('rouvre le compte et supprime closed_at', async () => {

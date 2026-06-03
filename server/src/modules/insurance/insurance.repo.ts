@@ -239,7 +239,7 @@ export function createInsuranceRepo(db: Database) {
           { transaction_id: number | null; arbitrage_peer_id: number | null }
         >('SELECT transaction_id, arbitrage_peer_id FROM insurance_operations WHERE id = ? AND user_id = ?')
         .get(operationId, userId);
-      if (!op) throw new NotFoundError('Opération introuvable');
+      if (!op) throw new NotFoundError('insurance.operation_not_found');
       const peerId = op.arbitrage_peer_id;
       db.transaction(() => {
         db.prepare('DELETE FROM insurance_operations WHERE id = ?').run(operationId);
@@ -321,12 +321,12 @@ export function createInsuranceRepo(db: Database) {
           )
           .get(operationId, userId);
 
-        if (!op) throw new NotFoundError('Opération introuvable');
+        if (!op) throw new NotFoundError('insurance.operation_not_found');
         if (op.type === 'arbitrage_in' || op.type === 'arbitrage_out') {
-          throw new BadRequestError('Les arbitrages ne peuvent pas être modifiés');
+          throw new BadRequestError('insurance.arbitrage_not_editable');
         }
         if (op.type !== 'revalorisation' && input.amount <= 0) {
-          throw new BadRequestError('Le montant doit être positif');
+          throw new BadRequestError('insurance.amount_positive');
         }
 
         const amountCents = toCents(input.amount);
@@ -445,16 +445,14 @@ export function createInsuranceRepo(db: Database) {
       const socialFeesCents = toCents(input.social_fees);
 
       if (amountCents - feesCents - socialFeesCents <= 0) {
-        throw new BadRequestError(
-          'Le montant net après frais et prélèvements sociaux doit être positif',
-        );
+        throw new BadRequestError('insurance.net_amount_positive');
       }
 
       const balanceCents = this.getBalanceCents(input.account_id, input.support_id);
       if (amountCents > balanceCents) {
-        throw new BadRequestError(
-          `Solde insuffisant : ${toEuros(balanceCents).toFixed(2)} € disponible(s)`,
-        );
+        throw new BadRequestError('insurance.insufficient_balance', {
+          balance: toEuros(balanceCents).toFixed(2),
+        });
       }
 
       const support = this.getSupportById(input.support_id)!;
@@ -497,9 +495,10 @@ export function createInsuranceRepo(db: Database) {
 
       const balanceCents = this.getBalanceCents(input.account_id, input.from_support_id);
       if (fromAmountCents > balanceCents) {
-        throw new BadRequestError(
-          `Solde insuffisant sur ${fromSupport.name} : ${toEuros(balanceCents).toFixed(2)} €`,
-        );
+        throw new BadRequestError('insurance.insufficient_balance_support', {
+          support: fromSupport.name,
+          balance: toEuros(balanceCents).toFixed(2),
+        });
       }
 
       return db.transaction(() => {

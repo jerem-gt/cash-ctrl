@@ -44,7 +44,7 @@ describe('/api/subcategories', () => {
       .send({ category_id: 99999, name: 'Invalide' });
 
     expect(res.status).toBe(404);
-    expect(res.body.error).toBe('Catégorie introuvable');
+    expect(res.body.error.code).toBe('category.not_found');
   });
 
   it('POST / returns 400 when name is missing or too long', async () => {
@@ -115,6 +115,7 @@ describe('/api/subcategories', () => {
 
     // 4. Vérifier que le serveur bloque la suppression
     expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/Cette sous-catégorie est utilisée/);
+    expect(res.body.error.code).toBe('subcategory.in_use');
+    expect(res.body.error.params).toEqual({ count: 1 });
   });
 });

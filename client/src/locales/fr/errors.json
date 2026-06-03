@@ -1,0 +1,125 @@
+{
+  "common": {
+    "unauthorized": "Non authentifié",
+    "forbidden": "Accès refusé",
+    "invalid_request": "Requête invalide",
+    "invalid_param": "Paramètre {{param}} invalide",
+    "internal": "Erreur interne du serveur."
+  },
+  "validation": {
+    "invalid": "Données invalides",
+    "required": "Ce champ est requis",
+    "too_small": "La valeur doit être au moins {{minimum}}",
+    "too_big": "La valeur ne doit pas dépasser {{maximum}}",
+    "too_short": "Doit contenir au moins {{minimum}} caractère(s)",
+    "too_long": "Doit contenir au plus {{maximum}} caractère(s)",
+    "invalid_format": "Format invalide",
+    "invalid_value": "Valeur non autorisée"
+  },
+  "account": {
+    "not_found": "Compte introuvable",
+    "not_found_or_not_owned": "Compte introuvable ou n'appartenant pas à l'utilisateur",
+    "already_closed": "Ce compte est déjà clôturé",
+    "not_closed": "Ce compte n'est pas clôturé",
+    "close_requires_zero_or_target": "Le solde doit être nul ou un compte de destination est requis"
+  },
+  "account_type": {
+    "not_found": "Type de compte introuvable",
+    "in_use": "Ce type est utilisé par {{count}} compte(s)."
+  },
+  "transaction": {
+    "not_found": "Transaction introuvable",
+    "no_direct_on_av_per": "Impossible de créer une transaction directement sur un compte AV/PER",
+    "use_transfers_update": "Utilisez PUT /api/transfers/:id pour modifier un transfert",
+    "use_transfers_delete": "Utilisez DELETE /api/transfers/:id pour supprimer un transfert",
+    "is_stock_fees": "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais."
+  },
+  "transfer": {
+    "same_account": "Les deux comptes doivent être différents",
+    "not_a_transfer_update": "Ce n'est pas un transfert — utilisez PUT /api/transactions/:id",
+    "not_a_transfer_delete": "Ce n'est pas un transfert — utilisez DELETE /api/transactions/:id"
+  },
+  "bank": {
+    "not_found": "Banque introuvable",
+    "in_use": "Cette banque est utilisée par {{count}} compte(s).",
+    "no_file": "Aucun fichier fourni"
+  },
+  "category": {
+    "not_found": "Catégorie introuvable",
+    "in_use": "Cette catégorie est utilisée par {{count}} transaction(s) et ne peut pas être supprimée."
+  },
+  "subcategory": {
+    "not_found": "Sous-catégorie introuvable",
+    "in_use": "Cette sous-catégorie est utilisée par {{count}} transaction(s) et ne peut pas être supprimée."
+  },
+  "payment_method": {
+    "not_found": "Moyen de paiement introuvable",
+    "in_use": "Ce moyen de paiement est utilisé par {{count}} transaction(s) et ne peut pas être supprimé."
+  },
+  "user": {
+    "not_found": "Utilisateur introuvable",
+    "username_taken": "Nom d'utilisateur déjà utilisé",
+    "cannot_modify_admin": "Impossible de modifier le compte administrateur",
+    "cannot_delete_admin": "Impossible de supprimer le compte administrateur"
+  },
+  "auth": {
+    "invalid_credentials": "Identifiants invalides",
+    "too_many_attempts": "Trop de tentatives. Réessayez plus tard.",
+    "password_too_short": "Le mot de passe doit contenir au moins 8 caractères",
+    "current_password_incorrect": "Mot de passe actuel incorrect"
+  },
+  "reimbursement": {
+    "only_expense": "Seules les dépenses peuvent avoir des remboursements",
+    "linked_not_found": "Transaction liée introuvable",
+    "linked_must_be_income": "La transaction liée doit être un revenu"
+  },
+  "scheduled": {
+    "not_found": "Planification introuvable",
+    "destination_required": "Un compte destination est requis pour un transfert",
+    "account_must_be_av_per": "Le compte doit être une assurance vie ou un PER",
+    "source_required_versement": "Un compte source est requis pour un versement planifié"
+  },
+  "insurance": {
+    "account_not_insurance": "Ce compte n'est pas une enveloppe assurance",
+    "support_not_found": "Support introuvable",
+    "support_source_not_found": "Support source introuvable",
+    "support_dest_not_found": "Support destination introuvable",
+    "support_has_operations": "Ce support a des opérations enregistrées",
+    "operation_not_found": "Opération introuvable",
+    "supports_must_differ": "Les supports source et destination doivent être différents",
+    "interets_euro_only": "Les intérêts ne concernent que les fonds euro",
+    "revalorisation_uc_only": "La revalorisation ne concerne que les UC",
+    "arbitrage_not_editable": "Les arbitrages ne peuvent pas être modifiés",
+    "amount_positive": "Le montant doit être positif",
+    "net_amount_positive": "Le montant net après frais et prélèvements sociaux doit être positif",
+    "insufficient_balance": "Solde insuffisant : {{balance}} € disponible(s)",
+    "insufficient_balance_support": "Solde insuffisant sur {{support}} : {{balance}} €"
+  },
+  "stock": {
+    "operation_not_found": "Opération introuvable",
+    "account_not_investment": "Ce compte n'est pas un compte d'investissement",
+    "source_account_not_found": "Compte source introuvable",
+    "dest_account_not_found": "Compte destination introuvable",
+    "source_not_investment": "Le compte source n'est pas un compte d'investissement",
+    "dest_not_investment": "Le compte destination n'est pas un compte d'investissement",
+    "accounts_must_differ": "Les comptes source et destination doivent être différents",
+    "price_not_found": "Cotation introuvable pour {{ticker}}",
+    "insufficient_position": "Position insuffisante : {{available}} action(s) disponible(s)",
+    "net_amount_after_fees_positive": "Le montant net après frais doit être positif",
+    "net_amount_positive": "Le montant net doit être positif"
+  },
+  "loan": {
+    "not_found": "Prêt introuvable",
+    "installment_not_found": "Mensualité introuvable"
+  },
+  "backup": {
+    "invalid_filename": "Nom de fichier invalide",
+    "not_found": "Backup introuvable"
+  },
+  "tax": {
+    "bracket_not_found": "Barème {{year}} introuvable"
+  },
+  "settings": {
+    "ref_not_owned": "{{col}} : l'id {{id}} n'appartient pas à cet utilisateur"
+  }
+}

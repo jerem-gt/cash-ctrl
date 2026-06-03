@@ -2,8 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { HttpError } from '../../lib/errors';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
@@ -46,7 +47,11 @@ export function createLoansRouter(db: Database): Router {
       generateScheduledTransactions(userId, db);
       res.status(201).json(loan);
     } catch (e) {
-      res.status(400).json({ error: e instanceof Error ? e.message : 'Erreur' });
+      if (e instanceof HttpError) {
+        sendError(res, e.status, e.code, e.params);
+      } else {
+        sendError(res, 400, 'common.invalid_request');
+      }
     }
   });
 
@@ -58,7 +63,7 @@ export function createLoansRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const result = loansRepo.updateLoan(userId, loanId, data);
     if (!result) {
-      res.status(404).json({ error: 'Prêt introuvable' });
+      sendError(res, 404, 'loan.not_found');
       return;
     }
     generateScheduledTransactions(userId, db);
@@ -70,7 +75,7 @@ export function createLoansRouter(db: Database): Router {
     if (accountId === null) return;
     const loan = loansRepo.getByAccountId(accountId, sessionUserId(req));
     if (!loan) {
-      res.status(404).json({ error: 'Prêt introuvable' });
+      sendError(res, 404, 'loan.not_found');
       return;
     }
     res.json(loan);
@@ -91,7 +96,7 @@ export function createLoansRouter(db: Database): Router {
     if (!data) return;
     const result = loansRepo.updateInstallment(sessionUserId(req), loanId, installmentId, data);
     if (!result) {
-      res.status(404).json({ error: 'Mensualité introuvable' });
+      sendError(res, 404, 'loan.installment_not_found');
       return;
     }
     res.json(result);

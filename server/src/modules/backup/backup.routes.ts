@@ -11,6 +11,7 @@ import {
   runBackup,
   userBackupDir,
 } from '../../lib/backup.js';
+import { sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from '../settings/settings.repo.js';
 
@@ -42,12 +43,12 @@ export function createBackupRouter(db: Database, backupDir = BACKUP_DIR): Router
     const userId = sessionUserId(req);
     const { filename } = req.params;
     if (!FILENAME_RE.test(filename)) {
-      res.status(400).json({ error: 'Nom de fichier invalide' });
+      sendError(res, 400, 'backup.invalid_filename');
       return;
     }
     const filePath = path.join(userBackupDir(backupDir, userId), filename);
     if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: 'Backup introuvable' });
+      sendError(res, 404, 'backup.not_found');
       return;
     }
     res.download(filePath, filename);

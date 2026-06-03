@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
@@ -56,7 +56,7 @@ export function createTransfersRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (from_account_id === to_account_id) {
-      res.status(400).json({ error: 'Les deux comptes doivent être différents' });
+      sendError(res, 400, 'transfer.same_account');
       return;
     }
 
@@ -64,7 +64,7 @@ export function createTransfersRouter(db: Database): Router {
       !accountsRepo.exists(from_account_id, userId) ||
       !accountsRepo.exists(to_account_id, userId)
     ) {
-      res.status(403).json({ error: 'Compte introuvable' });
+      sendError(res, 403, 'account.not_found');
       return;
     }
 
@@ -88,13 +88,11 @@ export function createTransfersRouter(db: Database): Router {
 
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
     if (!tx.transfer_peer_id) {
-      res
-        .status(400)
-        .json({ error: "Ce n'est pas un transfert — utilisez PUT /api/transactions/:id" });
+      sendError(res, 400, 'transfer.not_a_transfer_update');
       return;
     }
 
@@ -103,11 +101,11 @@ export function createTransfersRouter(db: Database): Router {
 
     const { from_account_id, to_account_id } = data;
     if (from_account_id && !accountsRepo.exists(from_account_id, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
+      sendError(res, 403, 'account.not_found');
       return;
     }
     if (to_account_id && !accountsRepo.exists(to_account_id, userId)) {
-      res.status(403).json({ error: 'Compte introuvable' });
+      sendError(res, 403, 'account.not_found');
       return;
     }
 
@@ -136,13 +134,11 @@ export function createTransfersRouter(db: Database): Router {
 
     const tx = transactionsRepo.getById(id, userId);
     if (!tx) {
-      res.status(404).json({ error: 'Transaction introuvable' });
+      sendError(res, 404, 'transaction.not_found');
       return;
     }
     if (!tx.transfer_peer_id) {
-      res
-        .status(400)
-        .json({ error: "Ce n'est pas un transfert — utilisez DELETE /api/transactions/:id" });
+      sendError(res, 400, 'transfer.not_a_transfer_delete');
       return;
     }
 

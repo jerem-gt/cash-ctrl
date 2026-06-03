@@ -6,7 +6,7 @@ import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../con
 import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import { getTransferIds } from '../../lib/administrationDataConstants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
@@ -41,11 +41,11 @@ function checkTransferConstraints(
 ): boolean {
   if (d.payment_method_id != transferPmId) return true;
   if (!d.to_account_id) {
-    res.status(400).json({ error: 'Un compte destination est requis pour un transfert' });
+    sendError(res, 400, 'scheduled.destination_required');
     return false;
   }
   if (d.to_account_id === d.account_id) {
-    res.status(400).json({ error: 'Les deux comptes doivent être différents' });
+    sendError(res, 400, 'transfer.same_account');
     return false;
   }
   return true;
@@ -55,18 +55,18 @@ function checkVersementConstraints(db: Database, d: ScheduledData, res: Response
   if (d.insurance_support_id == null) return true;
   const envelopeType = getAccountEnvelopeType(db, d.account_id);
   if (envelopeType !== 'life_insurance' && envelopeType !== 'per') {
-    res.status(400).json({ error: 'Le compte doit être une assurance vie ou un PER' });
+    sendError(res, 400, 'scheduled.account_must_be_av_per');
     return false;
   }
   if (!d.to_account_id) {
-    res.status(400).json({ error: 'Un compte source est requis pour un versement planifié' });
+    sendError(res, 400, 'scheduled.source_required_versement');
     return false;
   }
   const support = db
     .prepare('SELECT id FROM insurance_supports WHERE id = ? AND account_id = ?')
     .get(d.insurance_support_id, d.account_id);
   if (!support) {
-    res.status(400).json({ error: 'Support introuvable' });
+    sendError(res, 400, 'insurance.support_not_found');
     return false;
   }
   return true;
@@ -101,7 +101,7 @@ export function createScheduledRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (!scheduledRepo.exists(id, userId)) {
-      res.status(404).json({ error: 'Planification introuvable' });
+      sendError(res, 404, 'scheduled.not_found');
       return;
     }
 
@@ -123,7 +123,7 @@ export function createScheduledRouter(db: Database): Router {
     const userId = sessionUserId(req);
 
     if (!scheduledRepo.exists(id, userId)) {
-      res.status(404).json({ error: 'Planification introuvable' });
+      sendError(res, 404, 'scheduled.not_found');
       return;
     }
 

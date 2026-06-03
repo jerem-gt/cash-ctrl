@@ -16,9 +16,8 @@ export function createPaymentMethodsRouter(db: Database): Router {
   return createNamedIconEntityRouter(db, {
     schema,
     repoFactory: createPaymentMethodsRepo,
-    notFoundMsg: 'Payment method not found',
+    notFoundCode: 'payment_method.not_found',
     countUsage: (id) => txRepo.getCountByPaymentMethodId(id),
-    usageConflictMsg: (n) =>
-      `Ce moyen de paiement est utilisé par ${n} transaction(s) et ne peut pas être supprimé.`,
+    usageConflictCode: 'payment_method.in_use',
   });
 }
