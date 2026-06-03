@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
+import { zodToApiError } from '../../lib/routeHelpers.js';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import type { FullExport } from '../export/export.types.js';
@@ -252,17 +253,9 @@ export function createImportRouter(db: Database): Router {
   router.post('/qif', (req, res) => {
     const parsed = executeSchema.safeParse(req.body);
     if (!parsed.success) {
-      const errors = parsed.error.issues.map((issue) => {
-        if (issue.path.length === 0) return issue.message;
-        const [type, index, ...rest] = issue.path;
-        if ((type === 'transactions' || type === 'transfers') && typeof index === 'number') {
-          const label = type === 'transactions' ? 'Transaction' : 'Virement';
-          const field = rest.length > 0 ? ` (${rest.join('.')})` : '';
-          return `${label} ${index + 1}${field} : ${issue.message}`;
-        }
-        return `${issue.path.join('.')} : ${issue.message}`;
-      });
-      res.status(400).json({ error: errors.join('\n') });
+      // Forme structurée : les `path` (transactions.K.field / transfers.K.field)
+      // permettent au client de remonter l'erreur sur la bonne ligne de l'aperçu.
+      res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
     const result = repo.execute(sessionUserId(req), parsed.data);

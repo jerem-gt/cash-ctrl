@@ -5,6 +5,7 @@ import type { Account, Category } from '@/types';
 import {
   type AccountChoice,
   buildExecuteBody,
+  buildRowIndex,
   type CategoryChoice,
   findAutoCategory,
   type PreviewItem,
@@ -679,5 +680,73 @@ describe('buildExecuteBody', () => {
     expect(body.transfers).toHaveLength(0);
     expect(body.newAccounts).toHaveLength(0);
     expect(body.newSubcategories).toHaveLength(0);
+  });
+});
+
+// ─── buildRowIndex ────────────────────────────────────────────────────────────
+
+describe('buildRowIndex', () => {
+  const tx = (idx: number): PreviewItem => ({
+    kind: 'transaction',
+    idx,
+    date: '2024-01-15',
+    type: 'expense',
+    amount: 10,
+    description: 'T',
+    accountId: 1,
+    newAccountQifName: null,
+    accountName: 'C',
+    subcategoryId: null,
+    newSubcategoryKey: null,
+    categoryLabel: '',
+    categoryIsNew: false,
+    notes: null,
+    validated: false,
+    paymentMethodId: null,
+  });
+  const tf = (idxPrimary: number): PreviewItem => ({
+    kind: 'transfer',
+    idxPrimary,
+    date: '2024-01-15',
+    amount: 100,
+    description: 'V',
+    fromAccountId: 1,
+    fromAccountQifName: null,
+    fromAccountName: 'C',
+    toAccountId: 2,
+    toAccountQifName: null,
+    toAccountName: 'E',
+    notes: null,
+    validated: false,
+  });
+  const skip: PreviewItem = {
+    kind: 'skip',
+    idx: 99,
+    date: '2024-01-01',
+    amount: 0,
+    description: 'X',
+    reason: 'unmapped_account',
+  };
+
+  it('mappe les index body → ligne en sautant skip et non-sélectionnés', () => {
+    // aperçu : [tx, transfer, skip, tx] ; non sélectionné : index 3
+    const items = [tx(0), tf(0), skip, tx(3)];
+    const { txRows, tfRows } = buildRowIndex(items, new Set([0, 1, 2]));
+    // transactions[] = [item 0] → ligne 0 ; item 3 non sélectionné, exclu
+    expect(txRows).toEqual([0]);
+    // transfers[] = [item 1] → ligne 1
+    expect(tfRows).toEqual([1]);
+  });
+
+  it('préserve l ordre et l alignement avec buildExecuteBody', () => {
+    const items = [tf(0), tx(1), tx(2)];
+    const selected = new Set([0, 1, 2]);
+    const { txRows, tfRows } = buildRowIndex(items, selected);
+    const body = buildExecuteBody(items, selected, new Map(), new Map(), '(no desc)');
+    expect(body.transactions).toHaveLength(txRows.length);
+    expect(body.transfers).toHaveLength(tfRows.length);
+    // transactions[0] correspond à la ligne txRows[0]
+    expect(txRows).toEqual([1, 2]);
+    expect(tfRows).toEqual([0]);
   });
 });

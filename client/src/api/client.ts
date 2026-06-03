@@ -33,17 +33,29 @@ import type {
 } from '@/types';
 
 /** Corps d'erreur structuré renvoyé par l'API (cf. server/src/lib/errorCodes.ts). */
-interface ApiErrorField {
+export interface ApiErrorField {
   path: string;
   code: string;
   params?: Record<string, string | number>;
   message: string;
 }
-interface ApiErrorBody {
+export interface ApiErrorBody {
   code: string;
   message: string;
   params?: Record<string, string | number>;
   fields?: ApiErrorField[];
+}
+
+/** Erreur API : `message` est déjà traduit ; `body` porte la forme structurée (fields, etc.). */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body?: ApiErrorBody;
+  constructor(message: string, status: number, body?: ApiErrorBody) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
 }
 
 function isApiErrorBody(value: unknown): value is ApiErrorBody {
@@ -57,6 +69,11 @@ function translateCode(
   params?: Record<string, string | number>,
 ): string {
   return i18n.t(`errors:${code}`, { ...params, defaultValue: message });
+}
+
+/** Traduit un champ d'erreur de validation (utilisé pour l'affichage par ligne, ex. import). */
+export function translateErrorField(field: ApiErrorField): string {
+  return translateCode(field.code, field.message, field.params);
 }
 
 /** Repli legacy pour les erreurs encore renvoyées en chaîne/arbre (ex. import QIF). */
@@ -90,10 +107,11 @@ function formatError(error: unknown): string {
 
 async function parseResponse<T>(res: Response): Promise<T> {
   const data: unknown = await res.json().catch(() => ({}));
-  if (!res.ok)
-    throw new Error(
-      formatError((data as { error?: unknown }).error) || i18n.t('errors:common.internal'),
-    );
+  if (!res.ok) {
+    const raw = (data as { error?: unknown }).error;
+    const message = formatError(raw) || i18n.t('errors:common.internal');
+    throw new ApiError(message, res.status, isApiErrorBody(raw) ? raw : undefined);
+  }
   return data as T;
 }
 

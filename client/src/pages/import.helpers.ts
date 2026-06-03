@@ -414,6 +414,33 @@ export function buildExecuteBody(
   };
 }
 
+/** Erreurs d'import : messages par index de ligne d'aperçu + erreurs globales (sans ligne). */
+export interface ImportErrors {
+  rows: Map<number, string[]>;
+  global: string[];
+}
+
+/**
+ * Correspondance entre les index des tableaux envoyés au serveur
+ * (`transactions[K]` / `transfers[K]`) et l'index de la ligne d'aperçu.
+ * Rejoue **exactement** l'itération de `buildExecuteBody` (mêmes filtres :
+ * non sélectionné et `skip` ignorés) pour rester aligné.
+ */
+export function buildRowIndex(
+  items: PreviewItem[],
+  selected: Set<number>,
+): { txRows: number[]; tfRows: number[] } {
+  const txRows: number[] = [];
+  const tfRows: number[] = [];
+  for (let i = 0; i < items.length; i++) {
+    if (!selected.has(i)) continue;
+    const item = items[i];
+    if (item.kind === 'transfer') tfRows.push(i);
+    else if (item.kind === 'transaction') txRows.push(i);
+  }
+  return { txRows, tfRows };
+}
+
 // ─── XHB-specific helpers ─────────────────────────────────────────────────────
 
 export const XHB_PAYMODE_NAMES: Record<number, string> = {
