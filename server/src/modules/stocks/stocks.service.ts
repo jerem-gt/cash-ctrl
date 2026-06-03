@@ -170,16 +170,28 @@ export async function getOrRefreshPrice(
   return fetched ?? cached ?? null;
 }
 
-export async function refreshAllPrices(db: Database): Promise<void> {
-  const stocksRepo = createStocksRepo(db);
-  const tickers = stocksRepo.getAllTickers();
-
+async function refreshTickers(
+  stocksRepo: ReturnType<typeof createStocksRepo>,
+  tickers: string[],
+): Promise<void> {
   for (const ticker of tickers) {
     const result = await refreshPrice(stocksRepo, ticker);
     if (!result) {
       logger.warn(`Failed to fetch price for ${ticker}`);
     }
   }
+}
+
+/** Rafraîchit toutes les cotes détenues, tous utilisateurs confondus (job de fond). */
+export async function refreshAllPrices(db: Database): Promise<void> {
+  const stocksRepo = createStocksRepo(db);
+  await refreshTickers(stocksRepo, stocksRepo.getAllTickers());
+}
+
+/** Rafraîchit uniquement les cotes des comptes d'un utilisateur (déclenché à la demande). */
+export async function refreshUserPrices(db: Database, userId: number): Promise<void> {
+  const stocksRepo = createStocksRepo(db);
+  await refreshTickers(stocksRepo, stocksRepo.getTickersForUser(userId));
 }
 
 export function startPriceRefreshInterval(

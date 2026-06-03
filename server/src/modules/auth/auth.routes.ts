@@ -3,6 +3,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAuthRepo } from './auth.repo';
 
@@ -16,11 +17,22 @@ const changePasswordSchema = z.object({
   next: z.string().min(8),
 });
 
+// Hash factice (même coût que les vrais) comparé quand l'utilisateur est inconnu,
+// pour égaliser le temps de réponse et éviter l'énumération de comptes par timing.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('cashctrl-nonexistent-user', 12);
+
 export function createAuthRouter(db: Database): Router {
   const authRepo = createAuthRepo(db);
   const router = Router();
+  const loginLimiter = new FailureRateLimiter();
 
-  router.post('/login', (req, res) => {
+  router.post('/login', async (req, res) => {
+    const key = req.ip ?? 'unknown';
+    if (!loginLimiter.isAllowed(key)) {
+      res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' });
+      return;
+    }
+
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid payload' });
@@ -29,12 +41,16 @@ export function createAuthRouter(db: Database): Router {
 
     const { username, password } = parsed.data;
     const user = authRepo.getByUsername(username);
+    // Toujours comparer (hash factice si user absent) pour un temps constant.
+    const passwordOk = await bcrypt.compare(password, user?.password_hash ?? DUMMY_PASSWORD_HASH);
 
-    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    if (!user || !passwordOk) {
+      loginLimiter.recordFailure(key);
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
+    loginLimiter.reset(key);
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.isAdmin = user.is_admin === 1;
@@ -53,7 +69,7 @@ export function createAuthRouter(db: Database): Router {
     res.status(401).json({ error: 'Unauthorized' });
   });
 
-  router.post('/change-password', requireAuth, (req, res) => {
+  router.post('/change-password', requireAuth, async (req, res) => {
     const parsed = changePasswordSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Password must be at least 8 characters' });
@@ -62,12 +78,12 @@ export function createAuthRouter(db: Database): Router {
 
     const userId = sessionUserId(req);
     const user = authRepo.getById(userId);
-    if (!user || !bcrypt.compareSync(parsed.data.current, user.password_hash)) {
+    if (!user || !(await bcrypt.compare(parsed.data.current, user.password_hash))) {
       res.status(401).json({ error: 'Current password is incorrect' });
       return;
     }
 
-    authRepo.updatePassword(userId, bcrypt.hashSync(parsed.data.next, 12));
+    authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
     res.json({ ok: true });
   });
 

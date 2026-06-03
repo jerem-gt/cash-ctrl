@@ -8,7 +8,7 @@ import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { handleStockAction } from './stocks.handlers';
 import { createStocksRepo } from './stocks.repo.js';
-import { getOrRefreshPrice, refreshAllPrices, searchByQuery } from './stocks.service.js';
+import { getOrRefreshPrice, refreshUserPrices, searchByQuery } from './stocks.service.js';
 
 const buySchema = z.object({
   account_id: z.number().int().positive(),
@@ -158,8 +158,8 @@ export function createStocksRouter(db: Database): Router {
     res.json(price);
   });
 
-  router.post('/prices/refresh', async (_req, res) => {
-    await refreshAllPrices(db);
+  router.post('/prices/refresh', async (req, res) => {
+    await refreshUserPrices(db, sessionUserId(req));
     res.json({ ok: true });
   });
 

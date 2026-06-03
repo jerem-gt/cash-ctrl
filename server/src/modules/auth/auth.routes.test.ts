@@ -45,6 +45,19 @@ describe('POST /api/auth/login', () => {
     const res = await supertest(app).post('/api/auth/login').send({});
     expect(res.status).toBe(400);
   });
+
+  it('retourne 429 après trop de tentatives échouées', async () => {
+    const { app } = setup();
+    const agent = supertest.agent(app);
+    for (let i = 0; i < 10; i++) {
+      await agent.post('/api/auth/login').send({ username: 'alice', password: 'wrong' });
+    }
+    // 11e tentative bloquée, même avec les bons identifiants
+    const res = await agent
+      .post('/api/auth/login')
+      .send({ username: 'alice', password: 'password123' });
+    expect(res.status).toBe(429);
+  });
 });
 
 describe('GET /api/auth/me', () => {
