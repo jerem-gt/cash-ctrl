@@ -46,7 +46,7 @@ export function createAccountsRouter(db: Database): Router {
     if (id === null) return;
     const userId = sessionUserId(req);
     if (!accountsRepo.getById(id, userId)) {
-      res.status(404).json({ error: 'Account not found' });
+      res.status(404).json({ error: 'Compte introuvable' });
       return;
     }
     const data = parseBody(res, accountSchema, req.body);
@@ -61,7 +61,7 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Account not found' });
+      res.status(404).json({ error: 'Compte introuvable' });
       return;
     }
     if (account.envelope_type === 'loan') {
@@ -77,7 +77,7 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Account not found' });
+      res.status(404).json({ error: 'Compte introuvable' });
       return;
     }
     if (account.closed_at) {
@@ -124,7 +124,7 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const account = accountsRepo.getById(id, userId);
     if (!account) {
-      res.status(404).json({ error: 'Account not found' });
+      res.status(404).json({ error: 'Compte introuvable' });
       return;
     }
     if (!account.closed_at) {

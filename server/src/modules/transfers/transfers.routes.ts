@@ -92,7 +92,9 @@ export function createTransfersRouter(db: Database): Router {
       return;
     }
     if (!tx.transfer_peer_id) {
-      res.status(400).json({ error: 'Not a transfer — use PUT /api/transactions/:id' });
+      res
+        .status(400)
+        .json({ error: "Ce n'est pas un transfert — utilisez PUT /api/transactions/:id" });
       return;
     }
 
@@ -138,7 +140,9 @@ export function createTransfersRouter(db: Database): Router {
       return;
     }
     if (!tx.transfer_peer_id) {
-      res.status(400).json({ error: 'Not a transfer — use DELETE /api/transactions/:id' });
+      res
+        .status(400)
+        .json({ error: "Ce n'est pas un transfert — utilisez DELETE /api/transactions/:id" });
       return;
     }
 

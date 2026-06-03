@@ -36,12 +36,12 @@ export function createUsersRouter(db: Database): Router {
   router.post('/', (req, res) => {
     const parsed = createUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid payload' });
+      res.status(400).json({ error: 'Requête invalide' });
       return;
     }
     const { username, password, lang } = parsed.data;
     if (repo.getByUsername(username)) {
-      res.status(409).json({ error: 'Username already taken' });
+      res.status(409).json({ error: "Nom d'utilisateur déjà utilisé" });
       return;
     }
     const hash = bcrypt.hashSync(password, 12);
@@ -55,21 +55,21 @@ export function createUsersRouter(db: Database): Router {
     if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'Utilisateur introuvable' });
       return;
     }
     if (user.is_admin === 1) {
-      res.status(403).json({ error: 'Cannot modify admin account' });
+      res.status(403).json({ error: 'Impossible de modifier le compte administrateur' });
       return;
     }
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid payload' });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Requête invalide' });
       return;
     }
     if (parsed.data.username !== undefined) {
       if (repo.getByUsername(parsed.data.username)) {
-        res.status(409).json({ error: 'Username already taken' });
+        res.status(409).json({ error: "Nom d'utilisateur déjà utilisé" });
         return;
       }
       repo.updateUsername(id, parsed.data.username);
@@ -85,11 +85,11 @@ export function createUsersRouter(db: Database): Router {
     if (id === null) return;
     const user = repo.getById(id);
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'Utilisateur introuvable' });
       return;
     }
     if (user.is_admin === 1) {
-      res.status(403).json({ error: 'Cannot delete admin account' });
+      res.status(403).json({ error: 'Impossible de supprimer le compte administrateur' });
       return;
     }
     repo.remove(id);

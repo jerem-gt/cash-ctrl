@@ -52,7 +52,7 @@ function extractError(value: unknown): string {
 async function parseResponse<T>(res: Response): Promise<T> {
   const data: unknown = await res.json().catch(() => ({}));
   if (!res.ok)
-    throw new Error(extractError((data as { error?: unknown }).error) || 'Request failed');
+    throw new Error(extractError((data as { error?: unknown }).error) || 'Échec de la requête');
   return data as T;
 }
 

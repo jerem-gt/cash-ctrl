@@ -55,7 +55,7 @@ export function createBanksRouter(db: Database): Router {
     if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
-      res.status(404).json({ error: 'Bank not found' });
+      res.status(404).json({ error: 'Banque introuvable' });
       return;
     }
     const data = parseBody(res, bankSchema, req.body);
@@ -70,11 +70,11 @@ export function createBanksRouter(db: Database): Router {
     if (id === null) return;
     const bank = banksRepo.getById(id);
     if (!bank) {
-      res.status(404).json({ error: 'Bank not found' });
+      res.status(404).json({ error: 'Banque introuvable' });
       return;
     }
     if (!req.file) {
-      res.status(400).json({ error: 'No file uploaded' });
+      res.status(400).json({ error: 'Aucun fichier fourni' });
       return;
     }
     banksRepo.update(id, bank.name, `/logos/${req.file.filename}`, bank.domain);
