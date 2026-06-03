@@ -150,6 +150,45 @@ function addToFlowMap(
   byYear.get(year)!.push({ date, signed_cents });
 }
 
+/** Regroupe des lignes annuelles par account_id en préservant leur ordre. */
+function groupByAccount<T extends { account_id: number }>(rows: T[]): Map<number, T[]> {
+  const map = new Map<number, T[]>();
+  for (const row of rows) {
+    const list = map.get(row.account_id);
+    if (list) {
+      list.push(row);
+    } else {
+      map.set(row.account_id, [row]);
+    }
+  }
+  return map;
+}
+
+/** Construit la map account → année → flux datés à partir de lignes (date, montant signé). */
+function buildFlowsByAccountYear(
+  rows: Array<{ account_id: number; date: string; signed_cents: number }>,
+): Map<number, Map<string, DatedFlow[]>> {
+  const map = new Map<number, Map<string, DatedFlow[]>>();
+  for (const row of rows) addToFlowMap(map, row.account_id, row.date, row.signed_cents);
+  return map;
+}
+
+/** Valeur de marché courante (positions × cote) par compte, en euros. */
+function marketValueByAccount(db: Database, userId: number): Map<number, number> {
+  const rows = db
+    .prepare<[number], { account_id: number; market_value: number }>(
+      `SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS market_value
+       FROM stock_positions sp
+       LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+       WHERE sp.user_id = ?
+       GROUP BY sp.account_id`,
+    )
+    .all(userId);
+  const map = new Map<number, number>();
+  for (const r of rows) map.set(r.account_id, r.market_value);
+  return map;
+}
+
 function buildYearlyReturn(
   year: string,
   start_value: number,
@@ -224,18 +263,7 @@ function computeInvestmentProfitability(
     )
     .all({ userId, finCatId: financialIncomeCategoryId });
 
-  const currentStockValues = new Map(
-    db
-      .prepare<[number], { account_id: number; market_value: number }>(
-        `SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS market_value
-         FROM stock_positions sp
-         LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
-         WHERE sp.user_id = ?
-         GROUP BY sp.account_id`,
-      )
-      .all(userId)
-      .map((r) => [r.account_id, r.market_value]),
-  );
+  const currentStockValues = marketValueByAccount(db, userId);
 
   const allStockOps = db
     .prepare<[number], StockOp>(
@@ -276,10 +304,10 @@ function computeInvestmentProfitability(
     return total;
   };
 
-  const invYearlyByAccount = new Map<number, TxYearRow[]>();
-  for (const row of db
-    .prepare<{ userId: number; finCatId: number }, TxYearRow>(
-      `SELECT
+  const invYearlyByAccount = groupByAccount(
+    db
+      .prepare<{ userId: number; finCatId: number }, TxYearRow>(
+        `SELECT
          t.account_id,
          strftime('%Y', t.date) AS year,
          COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND NOT EXISTS (SELECT 1 FROM stock_operations sox WHERE sox.transaction_id = t.id) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
@@ -293,19 +321,17 @@ function computeInvestmentProfitability(
        WHERE a.user_id = :userId AND at.envelope_type = 'investment' AND a.closed_at IS NULL
        GROUP BY t.account_id, year
        ORDER BY t.account_id, year`,
-    )
-    .all({ userId, finCatId: financialIncomeCategoryId })) {
-    if (!invYearlyByAccount.has(row.account_id)) invYearlyByAccount.set(row.account_id, []);
-    invYearlyByAccount.get(row.account_id)!.push(row);
-  }
+      )
+      .all({ userId, finCatId: financialIncomeCategoryId }),
+  );
 
-  const invFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
-  for (const row of db
-    .prepare<
-      { userId: number; finCatId: number },
-      { account_id: number; date: string; signed_cents: number }
-    >(
-      `SELECT t.account_id, t.date,
+  const invFlowsByAccountYear = buildFlowsByAccountYear(
+    db
+      .prepare<
+        { userId: number; finCatId: number },
+        { account_id: number; date: string; signed_cents: number }
+      >(
+        `SELECT t.account_id, t.date,
          CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
        FROM transactions t
        JOIN accounts a ON a.id = t.account_id
@@ -319,10 +345,9 @@ function computeInvestmentProfitability(
            OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
          )
        ORDER BY t.account_id, t.date`,
-    )
-    .all({ userId, finCatId: financialIncomeCategoryId })) {
-    addToFlowMap(invFlowsByAccountYear, row.account_id, row.date, row.signed_cents);
-  }
+      )
+      .all({ userId, finCatId: financialIncomeCategoryId }),
+  );
 
   const stockTransferTotals = new Map<number, { in: number; out: number }>();
   for (const row of db
@@ -471,10 +496,10 @@ function computeInsuranceProfitability(
     )
     .all(userId);
 
-  const insYearlyByAccount = new Map<number, InsYearRow[]>();
-  for (const row of db
-    .prepare<[number], InsYearRow>(
-      `SELECT
+  const insYearlyByAccount = groupByAccount(
+    db
+      .prepare<[number], InsYearRow>(
+        `SELECT
          io.account_id,
          strftime('%Y', io.date) AS year,
          COALESCE(SUM(CASE WHEN io.type='versement' THEN io.amount ELSE 0 END),0) AS versements_cents,
@@ -488,26 +513,23 @@ function computeInsuranceProfitability(
        WHERE a.user_id = ? AND a.closed_at IS NULL
        GROUP BY io.account_id, year
        ORDER BY io.account_id, year`,
-    )
-    .all(userId)) {
-    if (!insYearlyByAccount.has(row.account_id)) insYearlyByAccount.set(row.account_id, []);
-    insYearlyByAccount.get(row.account_id)!.push(row);
-  }
+      )
+      .all(userId),
+  );
 
-  const insFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
-  for (const row of db
-    .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
-      `SELECT io.account_id, io.date,
+  const insFlowsByAccountYear = buildFlowsByAccountYear(
+    db
+      .prepare<[number], { account_id: number; date: string; signed_cents: number }>(
+        `SELECT io.account_id, io.date,
          CASE WHEN io.type='versement' THEN io.amount ELSE -io.amount END AS signed_cents
        FROM insurance_operations io
        JOIN accounts a ON a.id = io.account_id
        WHERE a.user_id = ? AND a.closed_at IS NULL
          AND io.type IN ('versement','rachat')
        ORDER BY io.account_id, io.date`,
-    )
-    .all(userId)) {
-    addToFlowMap(insFlowsByAccountYear, row.account_id, row.date, row.signed_cents);
-  }
+      )
+      .all(userId),
+  );
 
   return insAccounts
     .filter((acc) => acc.opening_date != null)
@@ -611,10 +633,10 @@ function computeSavingsProfitability(
     )
     .all({ userId, finCatId: financialIncomeCategoryId });
 
-  const savYearlyByAccount = new Map<number, SavYearRow[]>();
-  for (const row of db
-    .prepare<{ userId: number; finCatId: number }, SavYearRow>(
-      `SELECT
+  const savYearlyByAccount = groupByAccount(
+    db
+      .prepare<{ userId: number; finCatId: number }, SavYearRow>(
+        `SELECT
          t.account_id,
          strftime('%Y', t.date) AS year,
          COALESCE(SUM(CASE WHEN t.type='income' AND (c.id IS NULL OR c.id != :finCatId) AND t.validated=1 THEN t.amount ELSE 0 END),0) AS deposits_cents,
@@ -628,19 +650,17 @@ function computeSavingsProfitability(
        WHERE a.user_id = :userId AND at.envelope_type = 'savings' AND a.closed_at IS NULL
        GROUP BY t.account_id, year
        ORDER BY t.account_id, year`,
-    )
-    .all({ userId, finCatId: financialIncomeCategoryId })) {
-    if (!savYearlyByAccount.has(row.account_id)) savYearlyByAccount.set(row.account_id, []);
-    savYearlyByAccount.get(row.account_id)!.push(row);
-  }
+      )
+      .all({ userId, finCatId: financialIncomeCategoryId }),
+  );
 
-  const savFlowsByAccountYear = new Map<number, Map<string, DatedFlow[]>>();
-  for (const row of db
-    .prepare<
-      { userId: number; finCatId: number },
-      { account_id: number; date: string; signed_cents: number }
-    >(
-      `SELECT t.account_id, t.date,
+  const savFlowsByAccountYear = buildFlowsByAccountYear(
+    db
+      .prepare<
+        { userId: number; finCatId: number },
+        { account_id: number; date: string; signed_cents: number }
+      >(
+        `SELECT t.account_id, t.date,
          CASE WHEN t.type='income' THEN t.amount ELSE -t.amount END AS signed_cents
        FROM transactions t
        JOIN accounts a ON a.id = t.account_id
@@ -654,10 +674,9 @@ function computeSavingsProfitability(
            OR (t.type = 'expense' AND t.transfer_peer_id IS NOT NULL)
          )
        ORDER BY t.account_id, t.date`,
-    )
-    .all({ userId, finCatId: financialIncomeCategoryId })) {
-    addToFlowMap(savFlowsByAccountYear, row.account_id, row.date, row.signed_cents);
-  }
+      )
+      .all({ userId, finCatId: financialIncomeCategoryId }),
+  );
 
   return savAccounts
     .filter((acc) => acc.opening_date != null)
@@ -884,18 +903,7 @@ export function createStatsRepo(db: Database) {
 
       // Current market values (stock_positions × stock_prices) — used for current year only
       // price in stock_prices is in euros, same unit as price_per_share in stock_operations
-      const marketValueRows = db
-        .prepare<[number], { account_id: number; market_value: number }>(
-          `SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS market_value
-           FROM stock_positions sp
-           LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
-           WHERE sp.user_id = ?
-           GROUP BY sp.account_id`,
-        )
-        .all(userId);
-      const currentMarketValues = new Map<number, number>(
-        marketValueRows.map((r) => [r.account_id, r.market_value]),
-      );
+      const currentMarketValues = marketValueByAccount(db, userId);
 
       // All stock operations sorted chronologically — fetched once for all years
       // price_per_share is stored in euros (not cents)
