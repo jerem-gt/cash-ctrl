@@ -6,6 +6,7 @@ import { parseBody, parseNumberParam } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
+import { createStocksRepo } from '../stocks/stocks.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createTransfersRepo } from './transfers.repo';
 
@@ -43,6 +44,7 @@ export function createTransfersRouter(db: Database): Router {
   const transfersRepo = createTransfersRepo(db);
   const transactionsRepo = createTransactionsRepo(db);
   const accountsRepo = createAccountsRepo(db);
+  const stocksRepo = createStocksRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -140,7 +142,17 @@ export function createTransfersRouter(db: Database): Router {
       return;
     }
 
+    // Si le transfert porte des titres, recalculer les positions des deux comptes
+    // après suppression (la cascade efface les stock_operations liées aux 2 jambes).
+    const opThis = stocksRepo.getOperationByTransactionId(id);
+    const opPeer = stocksRepo.getOperationByTransactionId(tx.transfer_peer_id);
+
     transfersRepo.deleteWithPeer(userId, id, tx.transfer_peer_id);
+
+    for (const op of [opThis, opPeer]) {
+      if (op) stocksRepo.recalcPosition(op.account_id, op.ticker, userId);
+    }
+
     res.json({ ok: true });
   });
 
