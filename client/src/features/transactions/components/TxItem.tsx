@@ -1,11 +1,4 @@
-import {
-  ArrowLeftRight,
-  Check,
-  Loader2,
-  MoreHorizontal,
-  RefreshCw,
-  StickyNote,
-} from 'lucide-react';
+import { ArrowLeftRight, Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -148,12 +141,14 @@ function TxItemBody({
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
-        <p
-          className={`text-sm truncate font-semibold flex-1 min-w-0 ${validated ? 'text-content-secondary' : 'text-content-subtle'}`}
-        >
-          {tx.description}
-        </p>
-        <TxIndicators tx={tx} isScheduled={isScheduled} isTransfer={isTransfer} />
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <p
+            className={`text-sm truncate font-semibold min-w-0 ${validated ? 'text-content-secondary' : 'text-content-subtle'}`}
+          >
+            {tx.description}
+          </p>
+          <TxIndicators tx={tx} isScheduled={isScheduled} isTransfer={isTransfer} />
+        </div>
         {/* Desktop : badges sur la ligne du titre */}
         <div className="hidden sm:flex shrink-0">
           <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
@@ -182,9 +177,10 @@ function TxIndicators({
   return (
     <span className="flex items-center gap-1 shrink-0 text-content-subtle">
       {isScheduled && (
-        <span title={t('tx_item.scheduled_title')}>
-          <RefreshCw size={12} />
-        </span>
+        <span
+          title={t('tx_item.scheduled_title')}
+          className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"
+        />
       )}
       {isTransfer && (
         <span title={t('tx_item.transfer_title')}>
@@ -278,7 +274,7 @@ function TxItemTrailing({
         {!readOnly && <ValidateButton tx={tx} validated={validated} />}
       </div>
 
-      <div className="text-right min-w-18.75 border-l border-line-subtle pl-2 sm:pl-3">
+      <div className="text-right w-28 shrink-0 border-l border-line-subtle pl-2 sm:pl-3">
         <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
           {sign}
           {fmtDec(tx.amount)}
