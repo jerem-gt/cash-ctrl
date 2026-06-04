@@ -87,7 +87,6 @@ export function useUpdateTransfer() {
             }
           : old,
       );
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['accounts'] });
     },
   });

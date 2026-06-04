@@ -171,7 +171,7 @@ export function ScheduledModal({
         </div>
 
         {/* Champs selon le mode */}
-        {form.mode === 'transaction' && (
+        {(form.mode === 'transaction' || form.mode === 'transfer') && (
           <TxCoreFields
             value={coreValue}
             onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
@@ -179,19 +179,7 @@ export function ScheduledModal({
             logoMap={logoMap}
             categories={categories}
             paymentMethods={paymentMethods}
-            isTransfer={false}
-          />
-        )}
-
-        {form.mode === 'transfer' && (
-          <TxCoreFields
-            value={coreValue}
-            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-            accounts={accounts}
-            logoMap={logoMap}
-            categories={categories}
-            paymentMethods={paymentMethods}
-            isTransfer={true}
+            isTransfer={form.mode === 'transfer'}
           />
         )}
 

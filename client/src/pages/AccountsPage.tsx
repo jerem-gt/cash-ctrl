@@ -365,14 +365,10 @@ function AccountCard({
   const isClosed = acc.closed_at !== null;
   const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
 
-  let displayBal: number;
-  if (isClosed) {
-    displayBal = accountDisplayBalance(acc);
-  } else if (acc.envelope_type === 'loan') {
-    displayBal = Math.max(0, acc.capital_restant_du ?? 0);
-  } else {
-    displayBal = accountDisplayBalance(acc);
-  }
+  const displayBal =
+    acc.envelope_type === 'loan' && !isClosed
+      ? Math.max(0, acc.capital_restant_du ?? 0)
+      : accountDisplayBalance(acc);
 
   const cardClass = isClosed
     ? 'bg-surface-muted border-line opacity-60 hover:opacity-80 hover:shadow-sm'

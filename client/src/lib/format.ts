@@ -5,35 +5,55 @@ export function currentLocale(): string {
   return 'fr-FR';
 }
 
+const nfCache = new Map<string, Intl.NumberFormat>();
+const dfCache = new Map<string, Intl.DateTimeFormat>();
+
+function nf(opts: Intl.NumberFormatOptions): Intl.NumberFormat {
+  const locale = currentLocale();
+  const key = `${locale}${JSON.stringify(opts)}`;
+  let f = nfCache.get(key);
+  if (f === undefined) {
+    f = new Intl.NumberFormat(locale, opts);
+    nfCache.set(key, f);
+  }
+  return f;
+}
+
+function df(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const locale = currentLocale();
+  const key = `${locale}${JSON.stringify(opts)}`;
+  let f = dfCache.get(key);
+  if (f === undefined) {
+    f = new Intl.DateTimeFormat(locale, opts);
+    dfCache.set(key, f);
+  }
+  return f;
+}
+
 export const fmtStockPrice = (n: number, currency = 'EUR') =>
-  new Intl.NumberFormat(currentLocale(), {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(n);
+  nf({ style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(n);
 
 export const fmt = (n: number) =>
-  new Intl.NumberFormat(currentLocale(), {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n);
+  nf({ style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 export const fmtCurrency = (n: number, currency = 'EUR') =>
-  new Intl.NumberFormat(currentLocale(), { style: 'currency', currency }).format(n);
+  nf({ style: 'currency', currency }).format(n);
 
 export const fmtDec = (n: number) => fmtCurrency(n);
 
 export const fmtDate = (s: string) =>
-  new Date(s + 'T00:00:00').toLocaleDateString(currentLocale(), {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  df({ day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(s + 'T00:00:00'));
 
 export const fmtDateShort = (s: string) =>
-  new Date(s + 'T00:00:00').toLocaleDateString(currentLocale(), { day: '2-digit', month: 'short' });
+  df({ day: '2-digit', month: 'short' }).format(new Date(s + 'T00:00:00'));
+
+export function fmtMonthShort(d: Date): string {
+  return df({ month: 'short' }).format(d).replace('.', '');
+}
+
+export function fmtDayNum(d: Date): string {
+  return df({ day: '2-digit' }).format(d);
+}
 
 export const today = () => new Date().toISOString().split('T')[0];
 
@@ -46,7 +66,7 @@ export function isThisMonth(dateStr: string): boolean {
 export function monthLabel(offset: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() - offset);
-  return d.toLocaleDateString(currentLocale(), { month: 'short' });
+  return df({ month: 'short' }).format(d);
 }
 
 export function isSameMonth(dateStr: string, offset: number): boolean {

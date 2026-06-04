@@ -67,8 +67,8 @@ const StatItem = ({
           </span>
         </p>
       ) : (
-        <p className="text-[11px] mt-1.5 opacity-0 select-none" aria-hidden="true">
-          <span>Alignement</span>
+        <p className="text-[11px] mt-1.5 invisible" aria-hidden="true">
+          &nbsp;
         </p>
       )}
     </div>
