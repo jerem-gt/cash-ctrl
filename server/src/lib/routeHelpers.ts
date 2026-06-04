@@ -24,7 +24,7 @@ export function sendError(
 function classifyIssue(issue: z.core.$ZodIssue): { code: ErrorCode; params?: ErrorParams } {
   switch (issue.code) {
     case 'invalid_type':
-      return 'received' in issue && issue.received === 'undefined'
+      return issue.message.includes('undefined')
         ? { code: 'validation.required' }
         : { code: 'validation.invalid_type' };
     case 'too_small': {
