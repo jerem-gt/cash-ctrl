@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
-import { getSocialFeesSubcategoryId } from '../../lib/administrationDataConstants';
+import { getSocialFeesSubcategoryId, getTransferIds } from '../../lib/administrationDataConstants';
 import { BadRequestError, NotFoundError } from '../../lib/errors';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
@@ -113,12 +113,23 @@ function insertInsuranceTxAndOp(
 
   let transactionId: number | null = null;
   if (txAccountId != null) {
+    const { subcategoryId, paymentMethodId } = getTransferIds(db, userId);
     const txResult = db
       .prepare(
-        `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-         VALUES (?, ?, ?, ?, ?, ?, 1)`,
+        `INSERT INTO transactions
+           (user_id, account_id, type, amount, description, subcategory_id, payment_method_id, date, validated)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       )
-      .run(userId, txAccountId, txType, amountCents, description, date);
+      .run(
+        userId,
+        txAccountId,
+        txType,
+        amountCents,
+        description,
+        subcategoryId ?? null,
+        paymentMethodId ?? null,
+        date,
+      );
     transactionId = Number(txResult.lastInsertRowid);
   }
 
