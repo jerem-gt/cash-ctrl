@@ -1,8 +1,6 @@
 import { WeekendHandling } from '../constants';
 import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
-import { dateStr, parseDate } from './dateUtils';
-
-export { dateStr, parseDate };
+import { parseDate } from './dateUtils';
 
 export function applyWeekend(d: Date, handling: WeekendHandling): Date {
   if (handling === 'allow') return d;

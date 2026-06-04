@@ -73,7 +73,7 @@ const querySchema = z.object({
 
 const validateSchema = z.object({ validated: z.boolean() });
 
-const NO_DIRECT_WRITE_ENVELOPES: ReadonlyArray<EnvelopeType> = ['life_insurance', 'per'];
+const NO_DIRECT_WRITE_ENVELOPES = new Set<EnvelopeType>(['life_insurance', 'per']);
 
 /**
  * Récupère le compte cible d'une écriture et vérifie qu'il appartient à
@@ -91,7 +91,7 @@ function resolveWritableAccount(
     sendError(res, 403, 'account.not_found_or_not_owned');
     return null;
   }
-  if (NO_DIRECT_WRITE_ENVELOPES.includes(account.envelope_type as EnvelopeType)) {
+  if (NO_DIRECT_WRITE_ENVELOPES.has(account.envelope_type as EnvelopeType)) {
     sendError(res, 400, 'transaction.no_direct_on_av_per');
     return null;
   }
