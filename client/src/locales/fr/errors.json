@@ -9,6 +9,7 @@
   "validation": {
     "invalid": "Données invalides",
     "required": "Ce champ est requis",
+    "invalid_type": "Type de valeur incorrect",
     "too_small": "La valeur doit être au moins {{minimum}}",
     "too_big": "La valeur ne doit pas dépasser {{maximum}}",
     "too_short": "Doit contenir au moins {{minimum}} caractère(s)",

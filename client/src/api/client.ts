@@ -98,7 +98,7 @@ function extractError(value: unknown): string {
 function formatError(error: unknown): string {
   if (isApiErrorBody(error)) {
     if (error.fields && error.fields.length > 0) {
-      return error.fields.map((f) => translateCode(f.code, f.message, f.params)).join(' · ');
+      return error.fields.map(translateErrorField).join(' · ');
     }
     return translateCode(error.code, error.message, error.params);
   }
