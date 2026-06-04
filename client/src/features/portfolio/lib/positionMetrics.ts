@@ -37,8 +37,12 @@ export function getTotalMetrics(positions: StockPosition[]): TotalMetrics {
   const priced = positions.filter(
     (p): p is StockPosition & { current_price: number } => p.current_price != null,
   );
-  const totalMarketValue = priced.reduce((sum, p) => sum + p.current_price * p.quantity, 0);
-  const totalCostBasis = priced.reduce((sum, p) => sum + p.avg_price * p.quantity, 0);
+  let totalMarketValue = 0;
+  let totalCostBasis = 0;
+  for (const p of priced) {
+    totalMarketValue += p.current_price * p.quantity;
+    totalCostBasis += p.avg_price * p.quantity;
+  }
   const totalPnl = totalMarketValue - totalCostBasis;
   const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
   return {

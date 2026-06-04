@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, ConfirmModal, IconButton, showToast, Spinner } from '@/components/ui';
@@ -208,13 +208,13 @@ const OP_BADGE_CLASSES: Record<InsuranceOperation['type'], string> = {
   revalorisation: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
 };
 
-const OP_SIGN: Record<InsuranceOperation['type'], (op: InsuranceOperation) => number> = {
-  versement: (op) => op.amount,
-  rachat: (op) => -op.amount,
-  arbitrage_in: (op) => op.amount,
-  arbitrage_out: (op) => -op.amount,
-  interets: (op) => op.amount,
-  revalorisation: (op) => op.amount,
+const OP_MULTIPLIER: Record<InsuranceOperation['type'], 1 | -1> = {
+  versement: 1,
+  rachat: -1,
+  arbitrage_in: 1,
+  arbitrage_out: -1,
+  interets: 1,
+  revalorisation: 1,
 };
 
 function OperationRow({
@@ -223,15 +223,18 @@ function OperationRow({
   onDelete,
 }: Readonly<{ op: InsuranceOperation; onEdit?: () => void; onDelete?: () => void }>) {
   const { t } = useTranslation('insurance');
-  const opLabels: Record<InsuranceOperation['type'], string> = {
-    versement: t('section.op_versement'),
-    rachat: t('section.op_rachat'),
-    arbitrage_in: t('section.op_arbitrage_in'),
-    arbitrage_out: t('section.op_arbitrage_out'),
-    interets: t('section.op_interets'),
-    revalorisation: t('section.op_revalorisation'),
-  };
-  const signed = OP_SIGN[op.type](op);
+  const opLabels = useMemo(
+    () => ({
+      versement: t('section.op_versement'),
+      rachat: t('section.op_rachat'),
+      arbitrage_in: t('section.op_arbitrage_in'),
+      arbitrage_out: t('section.op_arbitrage_out'),
+      interets: t('section.op_interets'),
+      revalorisation: t('section.op_revalorisation'),
+    }),
+    [t],
+  );
+  const signed = OP_MULTIPLIER[op.type] * op.amount;
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors">
