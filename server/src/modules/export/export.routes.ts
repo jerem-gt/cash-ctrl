@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { dateStr } from '../../lib/dateUtils';
 import { sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createExportRepo } from './export.repo';
@@ -25,7 +26,7 @@ export function createExportRouter(db: Database): Router {
       : undefined;
 
     const userId = sessionUserId(req);
-    const date = new Date().toISOString().split('T')[0];
+    const date = dateStr(new Date());
     res.setHeader('Content-Disposition', `attachment; filename="cashctrl-full-${date}.json"`);
     res.json(exportRepo.getFullExport(userId, accountIds));
   });

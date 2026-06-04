@@ -265,11 +265,7 @@ export function createImportRouter(db: Database): Router {
   router.post('/json-full', (req, res) => {
     const parsed = jsonFullSchema.safeParse(req.body);
     if (!parsed.success) {
-      const msg = parsed.error.issues
-        .slice(0, 5)
-        .map((i) => `${i.path.join('.')}: ${i.message}`)
-        .join('\n');
-      res.status(400).json({ error: msg });
+      res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
     const result = repo.executeJsonFull(sessionUserId(req), parsed.data as FullExport);

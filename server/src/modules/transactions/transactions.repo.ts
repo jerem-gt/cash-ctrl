@@ -100,8 +100,6 @@ export const TX_WITH_DETAILS = `
   LEFT JOIN stock_operations so ON so.transaction_id = t.id
 `;
 
-const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
-
 function buildFilterConditions(
   userId: number,
   filters: TransactionFilters,
@@ -255,14 +253,11 @@ export function createTransactionsRepo(db: Database) {
 
   // Cache pour les requêtes dynamiques
   const getStatementCache = new Map<string, Statement>();
-  const getDynamicStmt = (baseSql: string, filterKeys: string[]) => {
-    const sortedKeys = [...filterKeys].sort((a, b) => collator.compare(a, b));
-    const cacheKey = baseSql + sortedKeys.join(',');
-
-    let stmt = getStatementCache.get(cacheKey);
+  const getDynamicStmt = (baseSql: string) => {
+    let stmt = getStatementCache.get(baseSql);
     if (!stmt) {
       stmt = db.prepare(baseSql);
-      getStatementCache.set(cacheKey, stmt);
+      getStatementCache.set(baseSql, stmt);
     }
     return stmt;
   };
@@ -296,8 +291,7 @@ export function createTransactionsRepo(db: Database) {
       const countSql = `SELECT COUNT(*) AS count FROM transactions t
                         LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
                         ${whereClause}`;
-      const total = (getDynamicStmt(countSql, Object.keys(params)).get(params) as { count: number })
-        .count;
+      const total = (getDynamicStmt(countSql).get(params) as { count: number }).count;
 
       if (total === 0) {
         return {
@@ -309,7 +303,7 @@ export function createTransactionsRepo(db: Database) {
       const offset = (page - 1) * limit;
       const dataSql = `${TX_WITH_DETAILS} ${whereClause} GROUP BY t.id ORDER BY t.date DESC, t.id DESC LIMIT :limit OFFSET :offset`;
       const data = (
-        getDynamicStmt(dataSql, [...Object.keys(params), 'limit', 'offset']).all({
+        getDynamicStmt(dataSql).all({
           ...params,
           limit,
           offset,

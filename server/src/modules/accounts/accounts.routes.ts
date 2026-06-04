@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { toCents, toEuros } from '../../lib/money';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -88,8 +89,7 @@ export function createAccountsRouter(db: Database): Router {
     if (!data) return;
     const isInsurance =
       account.envelope_type === 'life_insurance' || account.envelope_type === 'per';
-    const balance =
-      Math.round((isInsurance ? account.balance_insurance : account.balance) * 100) / 100;
+    const balance = toEuros(toCents(isInsurance ? account.balance_insurance : account.balance));
     if (balance !== 0 && !data.transfer_to_account_id) {
       sendError(res, 400, 'account.close_requires_zero_or_target');
       return;

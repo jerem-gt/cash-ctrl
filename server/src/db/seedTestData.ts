@@ -10,8 +10,8 @@ import {
   TransactionType,
   WeekendHandling,
 } from '../constants';
+import { dateStr } from '../lib/dateUtils';
 import { toCents } from '../lib/money';
-import { dateStr } from '../lib/scheduledLogic';
 import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
 import { createLoansRepo } from '../modules/loans/loans.repo';
 import { createStocksRepo } from '../modules/stocks/stocks.repo';

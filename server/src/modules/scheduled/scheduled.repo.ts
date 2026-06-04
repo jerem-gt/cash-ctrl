@@ -1,5 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
+import { dateStr } from '../../lib/dateUtils';
 import { toCents, toEuros } from '../../lib/money';
 import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
 
@@ -122,7 +123,7 @@ export function createScheduledRepo(db: Database) {
     },
 
     update(id: number, userId: number, data: CreateScheduledInput) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = dateStr(new Date());
       const lastPreserved = getLastPreservedDateStmt.get({ id, today });
       const last_generated_until = lastPreserved?.last_date ?? null;
       const runUpdate = db.transaction(() => {
@@ -145,7 +146,7 @@ export function createScheduledRepo(db: Database) {
     },
 
     delete(userId: number, id: number) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = dateStr(new Date());
       const runDelete = db.transaction(() => {
         deleteFutureTransactionsStmt.run({ id, userId, today });
         deleteScheduledStmt.run({ id, userId });

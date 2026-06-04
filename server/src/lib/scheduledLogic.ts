@@ -1,16 +1,8 @@
 import { WeekendHandling } from '../constants';
 import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
+import { dateStr, parseDate } from './dateUtils';
 
-export function dateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-export function parseDate(s: string): Date {
-  return new Date(s + 'T00:00:00');
-}
+export { dateStr, parseDate };
 
 export function applyWeekend(d: Date, handling: WeekendHandling): Date {
   if (handling === 'allow') return d;
