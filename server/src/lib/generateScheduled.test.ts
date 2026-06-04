@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { RecurrenceUnit, TransactionType, WeekendHandling } from '../constants';
 import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
+import { dateStr } from './dateUtils';
 import {
   generateScheduledTransactions,
   startScheduledGenerationInterval,
 } from './generateScheduled.js';
-import { dateStr } from './scheduledLogic.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { RecurrenceUnit } from '../constants';
-import { applyWeekend, dateStr, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
+import { dateStr } from './dateUtils';
+import { applyWeekend, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
 
 // Helper: build a minimal ScheduledTransaction-like object
 function sched(
