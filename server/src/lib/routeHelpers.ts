@@ -24,7 +24,9 @@ export function sendError(
 function classifyIssue(issue: z.core.$ZodIssue): { code: ErrorCode; params?: ErrorParams } {
   switch (issue.code) {
     case 'invalid_type':
-      return { code: 'validation.required' };
+      return 'received' in issue && issue.received === 'undefined'
+        ? { code: 'validation.required' }
+        : { code: 'validation.invalid_type' };
     case 'too_small': {
       const minimum = Number(issue.minimum);
       return issue.origin === 'string' || issue.origin === 'array'

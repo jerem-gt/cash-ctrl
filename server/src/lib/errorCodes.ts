@@ -17,6 +17,7 @@ export const ERROR_MESSAGES = {
   // ── Validation (par champ) ────────────────────────────────────────────────
   'validation.invalid': 'Données invalides',
   'validation.required': 'Ce champ est requis',
+  'validation.invalid_type': 'Type de valeur incorrect',
   'validation.too_small': 'La valeur doit être au moins {{minimum}}',
   'validation.too_big': 'La valeur ne doit pas dépasser {{maximum}}',
   'validation.too_short': 'Doit contenir au moins {{minimum}} caractère(s)',
