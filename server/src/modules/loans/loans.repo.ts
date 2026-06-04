@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { getAccountTypeIds, getSystemRefs } from '../../lib/administrationDataConstants';
+import { dateStr } from '../../lib/dateUtils';
 import { toCents, toEuros } from '../../lib/money';
 import { createTransfersRepo } from '../transfers/transfers.repo.js';
 import type {
@@ -28,19 +29,19 @@ function mapInstallment<T extends LoanInstallment>(row: T): T {
   };
 }
 
-function addMonths(dateStr: string, n: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
+function addMonths(s: string, n: number): string {
+  const [y, m, d] = s.split('-').map(Number);
   const target = new Date(y, m - 1 + n, 1);
   const maxDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
   const day = Math.min(d, maxDay);
-  return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return dateStr(new Date(target.getFullYear(), target.getMonth(), day));
 }
 
 function calcMonthlyPayment(principal: number, annualRate: number, months: number): number {
-  if (annualRate === 0) return Math.round((principal / months) * 100) / 100;
+  if (annualRate === 0) return toEuros(toCents(principal / months));
   const r = annualRate / 12;
   const payment = (principal * r * (1 + r) ** months) / ((1 + r) ** months - 1);
-  return Math.round(payment * 100) / 100;
+  return toEuros(toCents(payment));
 }
 
 function buildSchedule(
@@ -54,13 +55,11 @@ function buildSchedule(
   let remaining = principal;
   return Array.from({ length: months }, (_, i) => {
     const n = i + 1;
-    const interestAmt = Math.round(remaining * r * 100) / 100;
+    const interestAmt = toEuros(toCents(remaining * r));
     const isLast = n === months;
-    const principalAmt = isLast
-      ? remaining
-      : Math.round((monthlyPayment - interestAmt) * 100) / 100;
-    const totalAmt = isLast ? Math.round((remaining + interestAmt) * 100) / 100 : monthlyPayment;
-    remaining = Math.round((remaining - principalAmt) * 100) / 100;
+    const principalAmt = isLast ? remaining : toEuros(toCents(monthlyPayment - interestAmt));
+    const totalAmt = isLast ? toEuros(toCents(remaining + interestAmt)) : monthlyPayment;
+    remaining = toEuros(toCents(remaining - principalAmt));
     return {
       installment_number: n,
       due_date: addMonths(startDate, i),

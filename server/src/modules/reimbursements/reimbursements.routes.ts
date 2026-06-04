@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES } from '../../constants';
+import { dateStr } from '../../lib/dateUtils';
 import { toCents } from '../../lib/money';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -35,7 +36,7 @@ export function createReimbursementsRouter(db: Database): Router {
 
   router.get('/recent', (req, res) => {
     const userId = sessionUserId(req);
-    const since = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const since = dateStr(new Date(Date.now() - 180 * 24 * 60 * 60 * 1000));
     res.json(repo.getRecentCompleted(userId, since));
   });
 

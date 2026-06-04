@@ -128,11 +128,7 @@ export function createInsuranceRouter(db: Database): Router {
     const supportId = parseNumberParam(req, res, 'supportId');
     if (supportId === null) return;
 
-    const support = repo.getSupportById(supportId);
-    if (support?.account_id !== accountId) {
-      sendError(res, 404, 'insurance.support_not_found');
-      return;
-    }
+    if (!requireSupport(res, repo, supportId, accountId)) return;
 
     if (repo.hasOperations(supportId)) {
       sendError(res, 400, 'insurance.support_has_operations');

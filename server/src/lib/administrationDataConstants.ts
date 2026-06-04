@@ -37,16 +37,8 @@ export function getTransferIds(db: Database, userId: number) {
   };
 }
 
-export function getBankFeesSubcategoryId(db: Database, userId: number): number | undefined {
-  return getSystemRefs(db, userId).bankFeesSubcategoryId ?? undefined;
-}
-
 export function getSocialFeesSubcategoryId(db: Database, userId: number): number | undefined {
   return getSystemRefs(db, userId).socialFeesSubcategoryId ?? undefined;
-}
-
-export function getPrelevementPaymentMethodId(db: Database, userId: number): number | undefined {
-  return getSystemRefs(db, userId).prelevementPaymentMethodId ?? undefined;
 }
 
 export function getAccountTypeIds(db: Database, userId: number) {

@@ -2,7 +2,12 @@ import type { Database } from 'better-sqlite3';
 import { type Response, Router } from 'express';
 import { z } from 'zod';
 
-import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
+import {
+  type EnvelopeType,
+  MAX_PAGE_SIZE,
+  REIMBURSEMENT_STATUSES,
+  TRANSACTION_TYPES,
+} from '../../constants';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
 import { dateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -68,6 +73,8 @@ const querySchema = z.object({
 
 const validateSchema = z.object({ validated: z.boolean() });
 
+const NO_DIRECT_WRITE_ENVELOPES: ReadonlyArray<EnvelopeType> = ['life_insurance', 'per'];
+
 /**
  * Récupère le compte cible d'une écriture et vérifie qu'il appartient à
  * l'utilisateur et qu'il n'est pas une enveloppe AV/PER (écriture interdite en
@@ -84,7 +91,7 @@ function resolveWritableAccount(
     sendError(res, 403, 'account.not_found_or_not_owned');
     return null;
   }
-  if (account.envelope_type === 'life_insurance' || account.envelope_type === 'per') {
+  if (NO_DIRECT_WRITE_ENVELOPES.includes(account.envelope_type as EnvelopeType)) {
     sendError(res, 400, 'transaction.no_direct_on_av_per');
     return null;
   }
