@@ -1,137 +1,97 @@
 import { Scale, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
-import type { MetricTrend } from '@/components/ui/layout';
+import { DashboardNav } from '@/features/dashboard/components/DashboardNav';
 import { DashboardSkeleton } from '@/features/dashboard/components/DashboardSkeleton';
-import { PatrimonyCard } from '@/features/dashboard/components/PatrimonyCard';
 import { ProfitabilityTable } from '@/features/dashboard/components/ProfitabilityTable';
 import { ReimbursementsCard } from '@/features/dashboard/components/ReimbursementsCard';
+import { WealthCard } from '@/features/dashboard/components/WealthCard';
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { TxItem } from '@/features/transactions/components/TxItem';
-import {
-  usePendingReimbursements,
-  useRecentReimbursements,
-} from '@/features/transactions/hooks/useReimbursements';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useCategories } from '@/hooks/useCategories';
-import { useLogoMap } from '@/hooks/useLogoMap';
-import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/useStats';
-import { accountDisplayBalance } from '@/lib/account';
-import { generateColor } from '@/lib/colors.ts';
-import { fmt, monthLabel } from '@/lib/format';
+import { fmt } from '@/lib/format';
 
-// Graphiques recharts chargés à la demande : ils représentent l'essentiel du
-// poids JS de la page mais ne sont pas nécessaires au premier rendu (KPI, listes).
 const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
 
+const INCOME_COLOR = '#7DBB4A';
+const EXPENSE_COLOR = '#D46060';
 const NOW = Date.now();
 
-const FLAT_PCT: MetricTrend = { direction: 'flat', value: '0 %', positive: true };
-
-// Variation en % du mois courant vs mois précédent. `higherIsBetter` détermine la
-// couleur : pour les revenus une hausse est favorable, pour les dépenses non.
-function pctTrend(current: number, prev: number, higherIsBetter: boolean): MetricTrend | undefined {
-  if (prev === 0) {
-    // Pas de base de comparaison : état neutre seulement si le mois courant est
-    // lui aussi nul (stable à 0). Sinon le % n'aurait pas de sens.
-    if (current === 0) return FLAT_PCT;
-    return undefined;
-  }
-  const pct = ((current - prev) / Math.abs(prev)) * 100;
-  const rounded = Math.round(pct);
-  if (rounded === 0) return FLAT_PCT;
-  return {
-    direction: rounded > 0 ? 'up' : 'down',
-    value: `${Math.abs(rounded)} %`,
-    positive: pct > 0 === higherIsBetter,
-  };
-}
-
-// Pour un solde net (bilan), un % serait trompeur si la base est négative : on
-// compare en valeur absolue (écart en euros). Une hausse est toujours favorable.
-function deltaTrend(current: number, prev: number): MetricTrend {
-  const diff = current - prev;
-  if (Math.round(diff) === 0) return { direction: 'flat', value: fmt(0), positive: true };
-  return {
-    direction: diff > 0 ? 'up' : 'down',
-    value: fmt(Math.abs(diff)),
-    positive: diff > 0,
-  };
+function SectionLabel({ label, id }: Readonly<{ label: string; id?: string }>) {
+  return (
+    <div id={id} className="flex items-center gap-3 mt-2">
+      <span className="text-[10px] font-medium uppercase tracking-widest text-content-faint whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-line-subtle" />
+    </div>
+  );
 }
 
 export default function DashboardPage() {
   const { t } = useTranslation('dashboard');
-  const { data: accounts = [] } = useAccounts();
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: balanceHistory } = useBalanceHistory();
-  const { data: profitabilityList = [] } = useProfitability();
-  const { data: categories = [] } = useCategories();
-  const logoMap = useLogoMap();
+  const {
+    isLoading,
+    accounts,
+    logoMap,
+    colorMap,
+    totalBalance,
+    monthIncome,
+    monthExpense,
+    bilan,
+    incomeTrend,
+    expenseTrend,
+    bilanTrend,
+    catData,
+    barData,
+    recent,
+    toValidate,
+    upcoming,
+    pendingReimbursements,
+    recentReimbursements,
+    balanceHistory,
+    profitabilityList,
+    hasReimbursements,
+  } = useDashboardData();
 
-  const colorMap = useMemo(
-    () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
-    [categories],
-  );
+  if (isLoading) return <DashboardSkeleton />;
 
-  const totalBalance = accounts.reduce((s, a) => s + accountDisplayBalance(a), 0);
-  const monthIncome = stats?.month_income ?? 0;
-  const monthExpense = stats?.month_expense ?? 0;
-  const bilan = monthIncome - monthExpense;
-
-  // monthly[] est ordonné ancien→récent ; l'avant-dernier élément = mois précédent.
-  const monthly = stats?.monthly ?? [];
-  const prevMonth = monthly.length >= 2 ? monthly.at(-2) : undefined;
-  const incomeTrend = prevMonth ? pctTrend(monthIncome, prevMonth.income, true) : undefined;
-  const expenseTrend = prevMonth ? pctTrend(monthExpense, prevMonth.expense, false) : undefined;
-  const bilanTrend = prevMonth
-    ? deltaTrend(bilan, prevMonth.income - prevMonth.expense)
-    : undefined;
   const trendLabel = t('metric_trend_vs_last_month');
-
-  const catData = useMemo(
-    () =>
-      (stats?.expenses_by_category ?? []).map((d) => ({
-        name: d.category,
-        value: d.amount,
-        fill: colorMap[d.category],
-      })),
-    [stats, colorMap],
-  );
-
-  const barData = useMemo(
-    () =>
-      (stats?.monthly ?? []).map((m, i) => ({
-        month: monthLabel(5 - i),
-        Revenus: m.income,
-        Depenses: m.expense,
-      })),
-    [stats],
-  );
-
-  const recent = stats?.recent ?? [];
-  const toValidate = stats?.to_validate ?? [];
-  const upcoming = stats?.upcoming ?? [];
-
-  const { data: pendingReimbursements = [] } = usePendingReimbursements();
-  const { data: recentReimbursements = [] } = useRecentReimbursements();
-
   const txItemProps = { accounts, logoMap };
 
-  if (statsLoading) return <DashboardSkeleton />;
+  const hasPendingSection = toValidate.length > 0 || upcoming.length > 0 || hasReimbursements;
+  const hasWealthSection =
+    (balanceHistory && balanceHistory.data.length > 0) || profitabilityList.length > 0;
 
-  const hasReimbursements = pendingReimbursements.length > 0 || recentReimbursements.length > 0;
-  const hasPatrimony = balanceHistory && balanceHistory.data.length > 0;
+  const pendingCount = toValidate.length + upcoming.length + pendingReimbursements.length;
+
+  const navSections = [
+    { id: 'section-this-month', label: t('section_this_month'), show: true },
+    {
+      id: 'section-pending',
+      label: t('section_pending'),
+      badge: pendingCount,
+      show: hasPendingSection,
+    },
+    { id: 'section-wealth', label: t('section_wealth'), show: !!hasWealthSection },
+    { id: 'section-recent', label: t('section_recent'), show: recent.length > 0 },
+  ];
 
   return (
     <div className="space-y-5">
+      {/* En-tête */}
       <div>
         <h2 className="font-display text-2xl tracking-tight">{t('title')}</h2>
         <p className="text-sm text-content-subtle mt-0.5">{t('subtitle')}</p>
       </div>
 
-      {/* Metrics */}
+      <DashboardNav sections={navSections} />
+
+      {/* ── Ce mois-ci ── */}
+      <SectionLabel id="section-this-month" label={t('section_this_month')} />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Metric
           label={t('metric_total_balance')}
@@ -165,7 +125,6 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
         <Card className="md:col-span-2">
           <CardTitle>{t('chart_expenses_by_cat')}</CardTitle>
@@ -197,10 +156,12 @@ export default function DashboardPage() {
         <Card className="md:col-span-3">
           <CardTitle>{t('chart_income_vs_expenses')}</CardTitle>
           <div className="flex gap-4 mb-3">
-            {[
-              ['#7DBB4A', t('chart_income')],
-              ['#D46060', t('chart_expenses')],
-            ].map(([color, label]) => (
+            {(
+              [
+                [INCOME_COLOR, t('chart_income')],
+                [EXPENSE_COLOR, t('chart_expenses')],
+              ] as [string, string][]
+            ).map(([color, label]) => (
               <div
                 key={label}
                 className="flex items-center gap-1.5 text-[11px] text-content-subtle"
@@ -215,58 +176,79 @@ export default function DashboardPage() {
               data={barData}
               incomeLabel={t('chart_income')}
               expenseLabel={t('chart_expenses')}
+              incomeColor={INCOME_COLOR}
+              expenseColor={EXPENSE_COLOR}
             />
           </Suspense>
         </Card>
       </div>
 
-      {/* Transactions — À valider + À venir */}
-      {(toValidate.length > 0 || upcoming.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {toValidate.length > 0 && (
-            <Card>
-              <CardTitle>{t('to_validate')}</CardTitle>
-              <div className="flex flex-col gap-2 mt-1">
-                {toValidate.map((tx) => (
-                  <TxItem key={tx.id} tx={tx} {...txItemProps} />
-                ))}
-              </div>
-            </Card>
+      {/* ── À traiter ── */}
+      {hasPendingSection && (
+        <>
+          <SectionLabel id="section-pending" label={t('section_pending')} />
+
+          {(toValidate.length > 0 || upcoming.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {toValidate.length > 0 && (
+                <Card>
+                  <CardTitle>{t('to_validate')}</CardTitle>
+                  <div className="flex flex-col gap-2 mt-1">
+                    {toValidate.map((tx) => (
+                      <TxItem key={tx.id} tx={tx} {...txItemProps} />
+                    ))}
+                  </div>
+                </Card>
+              )}
+              {upcoming.length > 0 && (
+                <Card>
+                  <CardTitle>{t('upcoming')}</CardTitle>
+                  <div className="flex flex-col gap-2 mt-1">
+                    {upcoming.map((tx) => (
+                      <TxItem key={tx.id} tx={tx} {...txItemProps} />
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
           )}
-          {upcoming.length > 0 && (
-            <Card>
-              <CardTitle>{t('upcoming')}</CardTitle>
-              <div className="flex flex-col gap-2 mt-1">
-                {upcoming.map((tx) => (
-                  <TxItem key={tx.id} tx={tx} {...txItemProps} />
-                ))}
-              </div>
-            </Card>
+
+          {hasReimbursements && (
+            <ReimbursementsCard pending={pendingReimbursements} recent={recentReimbursements} />
           )}
-        </div>
+        </>
       )}
 
-      {hasReimbursements && (
-        <ReimbursementsCard pending={pendingReimbursements} recent={recentReimbursements} />
+      {/* ── Patrimoine ── */}
+      {hasWealthSection && (
+        <>
+          <SectionLabel id="section-wealth" label={t('section_wealth')} />
+
+          {balanceHistory && balanceHistory.data.length > 0 && (
+            <WealthCard history={balanceHistory} />
+          )}
+
+          {profitabilityList.length > 0 && (
+            <ProfitabilityTable list={profitabilityList} now={NOW} />
+          )}
+        </>
       )}
 
-      {/* Dernières transactions */}
-      <Card>
-        <CardTitle>{t('recent_transactions')}</CardTitle>
-        {recent.length === 0 ? (
-          <Empty>{t('no_transactions')}</Empty>
-        ) : (
-          <div className="flex flex-col gap-2 mt-1">
-            {recent.map((tx) => (
-              <TxItem key={tx.id} tx={tx} {...txItemProps} />
-            ))}
-          </div>
-        )}
-      </Card>
+      {/* ── Récent ── */}
+      {recent.length > 0 && (
+        <>
+          <SectionLabel id="section-recent" label={t('section_recent')} />
 
-      {hasPatrimony && <PatrimonyCard history={balanceHistory} />}
-
-      {profitabilityList.length > 0 && <ProfitabilityTable list={profitabilityList} now={NOW} />}
+          <Card>
+            <CardTitle>{t('recent_transactions')}</CardTitle>
+            <div className="flex flex-col gap-2 mt-1">
+              {recent.map((tx) => (
+                <TxItem key={tx.id} tx={tx} {...txItemProps} />
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

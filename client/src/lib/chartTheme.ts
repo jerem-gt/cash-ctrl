@@ -16,6 +16,24 @@ export interface ChartTheme {
   tooltipLabelStyle: CSSProperties;
 }
 
+/** Props communs XAxis / YAxis — évite la répétition dans chaque chart. */
+export function axisTickProps(theme: ChartTheme) {
+  return {
+    tick: { fontSize: 11, fill: theme.axisTick },
+    axisLine: false,
+    tickLine: false,
+  };
+}
+
+/** Props de style communs pour Tooltip — évite la répétition dans chaque chart. */
+export function tooltipStyleProps(theme: ChartTheme) {
+  return {
+    contentStyle: theme.tooltipContentStyle,
+    itemStyle: theme.tooltipItemStyle,
+    labelStyle: theme.tooltipLabelStyle,
+  };
+}
+
 export function chartTheme(isDark: boolean): ChartTheme {
   return {
     axisTick: isDark ? '#94a3b8' : '#78716c',

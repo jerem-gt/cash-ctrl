@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import ExpensesPieChart from './ExpensesPieChart';
 import IncomeExpenseBarChart from './IncomeExpenseBarChart';
+import NetBalanceLineChart from './NetBalanceLineChart';
 import PatrimonyBarChart from './PatrimonyBarChart';
 
 // recharts ne dessine rien sans dimensions dans jsdom : on vérifie surtout que
@@ -23,6 +24,21 @@ describe('charts', () => {
         expenseLabel="Dépenses"
       />,
     );
+    expect(container).toBeInTheDocument();
+  });
+
+  it('monte NetBalanceLineChart sans planter', () => {
+    const data = [
+      { year: '2024', liquidites: 1000, epargne: 500, _total: 1500 },
+      { year: '2025', liquidites: 1200, epargne: 800, _total: 2000 },
+    ];
+    const { container } = render(<NetBalanceLineChart data={data} label="Solde net" />);
+    expect(container).toBeInTheDocument();
+  });
+
+  it('monte NetBalanceLineChart sans planter avec total négatif', () => {
+    const data = [{ year: '2025', liquidites: 300, prets: -800, _total: -500 }];
+    const { container } = render(<NetBalanceLineChart data={data} label="Solde net" />);
     expect(container).toBeInTheDocument();
   });
 

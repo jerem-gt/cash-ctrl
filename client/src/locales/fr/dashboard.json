@@ -1,6 +1,10 @@
 {
   "title": "Tableau de bord",
   "subtitle": "Vue d'ensemble de vos finances",
+  "section_this_month": "Ce mois-ci",
+  "section_pending": "À traiter",
+  "section_wealth": "Patrimoine",
+  "section_recent": "Récent",
   "metric_total_balance": "Solde total",
   "metric_accounts": "{{count}} compte(s)",
   "metric_income": "Revenus ce mois",
@@ -32,7 +36,9 @@
     "fonds_euros": "Fonds euros",
     "actions_uc": "Actions & UC"
   },
-  "patrimony_title": "Répartition du patrimoine",
+  "wealth_title": "Mon patrimoine",
+  "wealth_view_net": "Solde net",
+  "wealth_view_breakdown": "Répartition",
   "profitability_title": "Rendement de mes placements",
   "prof_col_account": "Compte",
   "prof_col_capital": "Capital investi",

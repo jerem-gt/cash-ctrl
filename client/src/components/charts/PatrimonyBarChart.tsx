@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 
 import { useIsDark } from '@/hooks/useTheme';
-import { chartTheme } from '@/lib/chartTheme';
+import { axisTickProps, chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
 import { generateColor } from '@/lib/colors.ts';
 import { fmt, fmtDec } from '@/lib/format';
 
@@ -32,6 +32,7 @@ export default function PatrimonyBarChart({
   labelFor,
 }: Readonly<Props>) {
   const theme = chartTheme(useIsDark());
+  const axisTick = axisTickProps(theme);
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart
@@ -40,19 +41,8 @@ export default function PatrimonyBarChart({
         barGap={2}
         margin={{ top: 18, right: 8, left: 0, bottom: 0 }}
       >
-        <XAxis
-          dataKey="year"
-          tick={{ fontSize: 11, fill: theme.axisTick }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          tick={{ fontSize: 11, fill: theme.axisTick }}
-          axisLine={false}
-          tickLine={false}
-          tickFormatter={(v) => fmt(Number(v))}
-          width={70}
-        />
+        <XAxis dataKey="year" {...axisTick} />
+        <YAxis {...axisTick} tickFormatter={(v) => fmt(Number(v))} width={70} />
         <Tooltip
           formatter={(v, name, entry) => {
             if (name === '_total') return null;
@@ -60,9 +50,7 @@ export default function PatrimonyBarChart({
             const pct = total === 0 ? 0 : (Number(v) / total) * 100;
             return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, labelFor(String(name))];
           }}
-          contentStyle={theme.tooltipContentStyle}
-          itemStyle={theme.tooltipItemStyle}
-          labelStyle={theme.tooltipLabelStyle}
+          {...tooltipStyleProps(theme)}
           cursor={{ fill: theme.cursor }}
         />
         {hasLoans && <ReferenceLine y={0} stroke={theme.refLine} strokeWidth={1} />}
