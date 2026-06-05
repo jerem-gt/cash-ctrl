@@ -26,9 +26,44 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('3 compte(s)')).toBeInTheDocument();
   });
 
-  it('affiche le titre de la section des dernières transactions', async () => {
+  it('affiche la section "Récent" quand des transactions récentes existent', async () => {
+    server.use(
+      http.get('/api/stats', () =>
+        HttpResponse.json({
+          month_income: 0,
+          month_expense: 0,
+          monthly: [],
+          expenses_by_category: [],
+          recent: [
+            {
+              id: 10,
+              account_id: 1,
+              type: 'expense',
+              amount: 24.5,
+              description: 'Courses',
+              category_id: 1,
+              subcategory_id: 1,
+              category: 'Alimentation',
+              subcategory: 'Supermarché',
+              date: '2026-04-20',
+              transfer_peer_id: null,
+              scheduled_id: null,
+              validated: 1,
+              payment_method_id: 1,
+              payment_method: 'CB',
+              notes: null,
+              reimbursement_status: null,
+              loan_principal: null,
+            },
+          ],
+          to_validate: [],
+          upcoming: [],
+        }),
+      ),
+    );
     renderWithProviders(<DashboardPage />);
     expect(await screen.findByText('Dernières transactions validées')).toBeInTheDocument();
+    expect(screen.getByText('Courses')).toBeInTheDocument();
   });
 
   it(`affiche "Aucune dépense ce mois" dans le graphe camembert si vide`, async () => {
@@ -41,14 +76,10 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('Aucune dépense ce mois')).toBeInTheDocument();
   });
 
-  it(`affiche "Aucune transaction" dans la section validées si vide`, async () => {
-    server.use(
-      http.get('/api/transactions', () =>
-        HttpResponse.json({ data: [], total: 0, page: 1, totalPages: 1 }),
-      ),
-    );
+  it('masque la section "Récent" quand il n\'y a aucune transaction récente', async () => {
     renderWithProviders(<DashboardPage />);
-    expect(await screen.findByText('Aucune transaction')).toBeInTheDocument();
+    await screen.findByText('Tableau de bord');
+    expect(screen.queryByText('Dernières transactions validées')).toBeNull();
   });
 
   it(`affiche la section "À venir" quand des transactions upcoming existent`, async () => {
@@ -91,7 +122,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Loyer à venir')).toBeInTheDocument();
   });
 
-  it(`affiche le graphique "Répartition du patrimoine" quand balanceHistory a des données`, async () => {
+  it('affiche la WealthCard avec les boutons de vue quand balanceHistory a des données', async () => {
     server.use(
       http.get('/api/stats/balance-history', () =>
         HttpResponse.json({
@@ -104,8 +135,8 @@ describe('DashboardPage', () => {
       ),
     );
     renderWithProviders(<DashboardPage />);
-    expect(await screen.findByText('Répartition du patrimoine')).toBeInTheDocument();
-    expect(screen.getByText('Liquidités')).toBeInTheDocument();
-    expect(screen.getByText('Épargne')).toBeInTheDocument();
+    expect(await screen.findByText('Mon patrimoine')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Solde net' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Répartition' })).toBeInTheDocument();
   });
 });

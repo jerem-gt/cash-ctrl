@@ -1,7 +1,7 @@
 import { Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { useIsDark } from '@/hooks/useTheme';
-import { chartTheme } from '@/lib/chartTheme';
+import { chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
 import { fmtDec } from '@/lib/format';
 
 export interface ExpensesPieDatum {
@@ -26,9 +26,7 @@ export default function ExpensesPieChart({ data }: Readonly<{ data: ExpensesPieD
         />
         <Tooltip
           formatter={(v) => (v == null ? '' : fmtDec(Number(v)))}
-          contentStyle={theme.tooltipContentStyle}
-          itemStyle={theme.tooltipItemStyle}
-          labelStyle={theme.tooltipLabelStyle}
+          {...tooltipStyleProps(theme)}
         />
       </PieChart>
     </ResponsiveContainer>

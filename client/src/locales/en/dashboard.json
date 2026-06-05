@@ -1,6 +1,10 @@
 {
   "title": "Dashboard",
   "subtitle": "Overview of your finances",
+  "section_this_month": "This month",
+  "section_pending": "To do",
+  "section_wealth": "Wealth",
+  "section_recent": "Recent",
   "metric_total_balance": "Total balance",
   "metric_accounts": "{{count}} account(s)",
   "metric_income": "Income this month",
@@ -32,7 +36,9 @@
     "fonds_euros": "Euro funds",
     "actions_uc": "Equities & unit-linked"
   },
-  "patrimony_title": "Wealth breakdown",
+  "wealth_title": "My wealth",
+  "wealth_view_net": "Net balance",
+  "wealth_view_breakdown": "Breakdown",
   "profitability_title": "Return on my investments",
   "prof_col_account": "Account",
   "prof_col_capital": "Invested capital",
