@@ -25,7 +25,7 @@ export default function NetBalanceLineChart({ data, label }: Readonly<Props>) {
   const axisTick = axisTickProps(theme);
   const hasNegative = data.some((d) => Number(d._total) < 0);
   const elementId = useId();
-  const gradId = `nbg${elementId.replace(/:/g, '')}`;
+  const gradId = `nbg${elementId.replaceAll(':', '')}`;
 
   return (
     <ResponsiveContainer width="100%" height={180}>

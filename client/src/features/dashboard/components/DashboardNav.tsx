@@ -11,6 +11,13 @@ interface Props {
   sections: NavSection[];
 }
 
+function scrollToSection(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - 56;
+  window.scrollTo({ top, behavior: 'smooth' });
+}
+
 export function DashboardNav({ sections }: Readonly<Props>) {
   const visible = sections.filter((s) => s.show);
   const visibleIds = visible.map((s) => s.id);
@@ -18,20 +25,13 @@ export function DashboardNav({ sections }: Readonly<Props>) {
 
   if (visible.length < 2) return null;
 
-  function scrollTo(id: string) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 56;
-    window.scrollTo({ top, behavior: 'smooth' });
-  }
-
   return (
     <div className="sticky top-0 z-10 -mx-4 md:-mx-9 px-4 md:px-9 py-2 bg-canvas/90 backdrop-blur-sm border-b border-line-subtle">
       <nav className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {visible.map(({ id, label, badge }) => (
           <button
             key={id}
-            onClick={() => scrollTo(id)}
+            onClick={() => scrollToSection(id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors ${
               active === id
                 ? 'bg-surface text-content shadow-sm'
