@@ -393,3 +393,11 @@ export interface AccountProfitability {
   rendement_annualise_pct: number | null;
   yearly_returns: YearlyReturn[];
 }
+
+export interface ReportData {
+  income_total: number;
+  expense_total: number;
+  monthly: MonthlyStat[];
+  expense_by_category: Array<{ category: string; amount: number }>;
+  income_by_category: Array<{ category: string; amount: number }>;
+}

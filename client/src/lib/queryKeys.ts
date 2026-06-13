@@ -14,6 +14,8 @@ export const queryKeys = {
   dashboardStats: () => ['dashboard-stats'] as const,
   balanceHistory: () => ['balance-history'] as const,
   profitability: () => ['profitability'] as const,
+  reportYears: () => ['report-years'] as const,
+  report: (year: number, accountId?: number) => ['report', year, accountId] as const,
 
   transactions: {
     all: () => ['transactions'] as const,

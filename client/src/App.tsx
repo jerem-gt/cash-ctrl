@@ -30,6 +30,7 @@ const AccountsPage = lazyLoad(routeChunk['/accounts']);
 const AccountDetailPage = lazyLoad(routeChunk['/accounts/:id']);
 const SettingsPage = lazyLoad(routeChunk['/settings']);
 const ScheduledPage = lazyLoad(routeChunk['/scheduled']);
+const ReportsPage = lazyLoad(routeChunk['/reports']);
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -141,6 +142,7 @@ function AppShell() {
               <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/accounts/:id" element={<AccountDetailPage />} />
               <Route path="/scheduled" element={<ScheduledPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -15,6 +15,8 @@ import {
   PROFITABILITY_DATA,
   RECENT_REIMBURSEMENTS,
   REIMBURSEMENTS,
+  REPORT_DATA,
+  REPORT_YEARS,
   SCHEDULED,
   STOCK_OPERATIONS,
   STOCK_POSITIONS,
@@ -302,6 +304,8 @@ export const handlers = [
   ),
   http.get('/api/stats/balance-history', () => HttpResponse.json({ account_types: [], data: [] })),
   http.get('/api/stats/profitability', () => HttpResponse.json(PROFITABILITY_DATA)),
+  http.get('/api/stats/report-years', () => HttpResponse.json(REPORT_YEARS)),
+  http.get('/api/stats/report', () => HttpResponse.json(REPORT_DATA)),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

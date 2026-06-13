@@ -13,6 +13,7 @@ export const routeChunk = {
   '/accounts/:id': () => import('@/pages/AccountDetailPage'),
   '/scheduled': () => import('@/pages/ScheduledPage'),
   '/settings': () => import('@/pages/SettingsPage'),
+  '/reports': () => import('@/pages/ReportsPage'),
 } satisfies Record<string, () => Promise<LazyComponentModule>>;
 
 export type RouteChunkKey = keyof typeof routeChunk;
