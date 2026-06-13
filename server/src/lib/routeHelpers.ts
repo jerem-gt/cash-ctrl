@@ -1,6 +1,13 @@
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 
+declare module 'express-serve-static-core' {
+  interface Locals {
+    accountId: number;
+    userId: number;
+  }
+}
+
 import { sessionUserId } from '../middleware';
 import {
   type ApiErrorField,

@@ -643,7 +643,7 @@ export function createImportRepo(db: Database) {
       executeQifImport(qifDeps, userId, body),
     ),
 
-    executeJsonFull(userId: number, data: FullExport): JsonFullImportResult {
+    executeJsonFull(userId: number, data: Omit<FullExport, 'exported_at'>): JsonFullImportResult {
       return db.transaction(() => {
         const accountTypeMap = buildAccountTypeMap(userId, data.account_types);
         const bankMap = buildBankMap(data.banks);

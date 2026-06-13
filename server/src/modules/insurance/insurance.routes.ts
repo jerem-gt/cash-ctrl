@@ -113,7 +113,7 @@ export function createInsuranceRouter(db: Database): Router {
   // ─── Supports ──────────────────────────────────────────────────────────────
 
   router.get('/:accountId/supports', checkAccount, (_req, res) => {
-    res.json(repo.getSupports(res.locals.accountId as number));
+    res.json(repo.getSupports(res.locals.accountId));
   });
 
   router.post('/:accountId/supports', (req, res) => {
@@ -124,7 +124,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.delete('/:accountId/supports/:supportId', checkAccount, (req, res) => {
-    const accountId = res.locals.accountId as number;
+    const accountId = res.locals.accountId;
     const supportId = parseNumberParam(req, res, 'supportId');
     if (supportId === null) return;
 
@@ -142,19 +142,19 @@ export function createInsuranceRouter(db: Database): Router {
   // ─── Positions ─────────────────────────────────────────────────────────────
 
   router.get('/:accountId/positions', checkAccount, (_req, res) => {
-    res.json(repo.getPositions(res.locals.accountId as number));
+    res.json(repo.getPositions(res.locals.accountId));
   });
 
   // ─── Opérations ────────────────────────────────────────────────────────────
 
   router.get('/:accountId/operations', checkAccount, (_req, res) => {
-    res.json(repo.getOperations(res.locals.accountId as number));
+    res.json(repo.getOperations(res.locals.accountId));
   });
 
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
     const operationId = parseNumberParam(req, res, 'operationId');
     if (operationId === null) return;
-    const userId = res.locals.userId as number;
+    const userId = res.locals.userId;
 
     const parsed = updateOperationSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -177,7 +177,7 @@ export function createInsuranceRouter(db: Database): Router {
   router.delete('/:accountId/operations/:operationId', checkAccount, (req, res) => {
     const operationId = parseNumberParam(req, res, 'operationId');
     if (operationId === null) return;
-    const userId = res.locals.userId as number;
+    const userId = res.locals.userId;
     try {
       repo.deleteOperation(operationId, userId);
       res.json({ ok: true });
