@@ -1,9 +1,178 @@
-import type { Database } from 'better-sqlite3';
+import type { Database, Statement } from 'better-sqlite3';
 
 import { getTransferIds } from '../../lib/administrationDataConstants.js';
 import { toCents } from '../../lib/money.js';
 import type { FullExport } from '../export/export.types.js';
-import type { ImportExecuteBody, ImportResult, JsonFullImportResult } from './import.types.js';
+import type {
+  ImportExecuteBody,
+  ImportResult,
+  ImportTransactionInput,
+  ImportTransferInput,
+  JsonFullImportResult,
+  NewSubcategoryInput,
+} from './import.types.js';
+
+function resolveAccount(
+  accountMap: Map<string, number>,
+  id: number | null,
+  qifName: string | null,
+): number | null {
+  if (id !== null) return id;
+  if (qifName !== null) return accountMap.get(qifName) ?? null;
+  return null;
+}
+
+type QifImportDeps = {
+  db: Database;
+  insertAccountStmt: Statement;
+  insertCategoryStmt: Statement;
+  insertSubcategoryStmt: Statement;
+  insertTxStmt: Statement;
+  setPeerStmt: Statement;
+};
+
+function buildSubcategoryMap(
+  deps: QifImportDeps,
+  userId: number,
+  newSubcategories: NewSubcategoryInput[],
+): Map<string, number> {
+  const subcategoryMap = new Map<string, number>();
+  for (const ns of newSubcategories) {
+    let categoryId = ns.category_id;
+    if (!categoryId) {
+      const res = deps.insertCategoryStmt.run({
+        userId,
+        name: ns.new_category_name,
+        icon: ns.new_category_icon ?? '📁',
+      });
+      categoryId = Number(res.lastInsertRowid);
+    }
+    const res = deps.insertSubcategoryStmt.run({ userId, categoryId, name: ns.subcategory_name });
+    subcategoryMap.set(ns.qif_key, Number(res.lastInsertRowid));
+  }
+  return subcategoryMap;
+}
+
+function insertQifTransactions(
+  deps: QifImportDeps,
+  userId: number,
+  transactions: ImportTransactionInput[],
+  accountMap: Map<string, number>,
+  subcategoryMap: Map<string, number>,
+): number {
+  let count = 0;
+  for (const tx of transactions) {
+    const accountId = resolveAccount(accountMap, tx.account_id, tx.new_account_qif_name);
+    if (accountId === null) continue;
+    const subcategoryId =
+      tx.new_subcategory_key === null
+        ? tx.subcategory_id
+        : (subcategoryMap.get(tx.new_subcategory_key) ?? null);
+    deps.insertTxStmt.run({
+      userId,
+      accountId,
+      type: tx.type,
+      amount: toCents(tx.amount),
+      description: tx.description,
+      subcategoryId,
+      date: tx.date,
+      paymentMethodId: tx.payment_method_id ?? null,
+      notes: tx.notes,
+      validated: tx.validated ? 1 : 0,
+    });
+    count++;
+  }
+  return count;
+}
+
+function insertQifTransfers(
+  deps: QifImportDeps,
+  userId: number,
+  transfers: ImportTransferInput[],
+  accountMap: Map<string, number>,
+  transferSubcatId: number | null,
+  paymentMethodId: number | null,
+): number {
+  let count = 0;
+  for (const tf of transfers) {
+    const fromId = resolveAccount(accountMap, tf.from_account_id, tf.from_account_qif_name);
+    const toId = resolveAccount(accountMap, tf.to_account_id, tf.to_account_qif_name);
+    if (fromId === null || toId === null) continue;
+    const tfCents = toCents(tf.amount);
+    const expenseId = Number(
+      deps.insertTxStmt.run({
+        userId,
+        accountId: fromId,
+        type: 'expense',
+        amount: tfCents,
+        description: tf.description,
+        subcategoryId: transferSubcatId ?? null,
+        date: tf.date,
+        paymentMethodId: paymentMethodId ?? null,
+        notes: tf.notes,
+        validated: tf.validated ? 1 : 0,
+      }).lastInsertRowid,
+    );
+    const incomeId = Number(
+      deps.insertTxStmt.run({
+        userId,
+        accountId: toId,
+        type: 'income',
+        amount: tfCents,
+        description: tf.description,
+        subcategoryId: transferSubcatId ?? null,
+        date: tf.date,
+        paymentMethodId: paymentMethodId ?? null,
+        notes: tf.notes,
+        validated: tf.validated ? 1 : 0,
+      }).lastInsertRowid,
+    );
+    deps.setPeerStmt.run({ peerId: incomeId, id: expenseId });
+    deps.setPeerStmt.run({ peerId: expenseId, id: incomeId });
+    count++;
+  }
+  return count;
+}
+
+function executeQifImport(
+  deps: QifImportDeps,
+  userId: number,
+  body: ImportExecuteBody,
+): ImportResult {
+  const { subcategoryId: transferSubcatId, paymentMethodId } = getTransferIds(deps.db, userId);
+
+  const accountMap = new Map<string, number>();
+  for (const na of body.newAccounts) {
+    const res = deps.insertAccountStmt.run({
+      user_id: userId,
+      name: na.name,
+      bank_id: na.bank_id,
+      account_type_id: na.account_type_id,
+      initial_balance: toCents(na.initial_balance),
+      opening_date: na.opening_date,
+    });
+    accountMap.set(na.qif_name, Number(res.lastInsertRowid));
+  }
+
+  const subcategoryMap = buildSubcategoryMap(deps, userId, body.newSubcategories);
+  const transactions = insertQifTransactions(
+    deps,
+    userId,
+    body.transactions,
+    accountMap,
+    subcategoryMap,
+  );
+  const transfers = insertQifTransfers(
+    deps,
+    userId,
+    body.transfers,
+    accountMap,
+    transferSubcatId,
+    paymentMethodId,
+  );
+
+  return { transactions, transfers };
+}
 
 export function createImportRepo(db: Database) {
   // ── JSON full import prepared statements ──────────────────────────────────
@@ -460,112 +629,19 @@ export function createImportRepo(db: Database) {
     `UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id`,
   );
 
+  const qifDeps: QifImportDeps = {
+    db,
+    insertAccountStmt,
+    insertCategoryStmt,
+    insertSubcategoryStmt,
+    insertTxStmt,
+    setPeerStmt,
+  };
+
   return {
-    execute(userId: number, body: ImportExecuteBody): ImportResult {
-      return db.transaction(() => {
-        const { subcategoryId: transferSubcatId, paymentMethodId } = getTransferIds(db, userId);
-
-        // 1. Create new accounts, build qif_name → account_id map
-        const accountMap = new Map<string, number>();
-        for (const na of body.newAccounts) {
-          const res = insertAccountStmt.run({
-            user_id: userId,
-            name: na.name,
-            bank_id: na.bank_id,
-            account_type_id: na.account_type_id,
-            initial_balance: toCents(na.initial_balance),
-            opening_date: na.opening_date,
-          });
-          accountMap.set(na.qif_name, Number(res.lastInsertRowid));
-        }
-
-        const resolveAccount = (id: number | null, qifName: string | null): number => {
-          if (id !== null) return id;
-          if (qifName !== null) return accountMap.get(qifName) ?? 0;
-          return 0;
-        };
-
-        // 2. Create new subcategories, build qif_key → subcategory_id map
-        const subcategoryMap = new Map<string, number>();
-        for (const ns of body.newSubcategories) {
-          let categoryId = ns.category_id;
-          if (!categoryId) {
-            const res = insertCategoryStmt.run({
-              userId,
-              name: ns.new_category_name,
-              icon: ns.new_category_icon ?? '📁',
-            });
-            categoryId = Number(res.lastInsertRowid);
-          }
-          const res = insertSubcategoryStmt.run({ userId, categoryId, name: ns.subcategory_name });
-          subcategoryMap.set(ns.qif_key, Number(res.lastInsertRowid));
-        }
-
-        // 3. Insert regular transactions
-        let txCount = 0;
-        for (const tx of body.transactions) {
-          const accountId = resolveAccount(tx.account_id, tx.new_account_qif_name);
-          const subcategoryId =
-            tx.new_subcategory_key === null
-              ? tx.subcategory_id
-              : (subcategoryMap.get(tx.new_subcategory_key) ?? null);
-          insertTxStmt.run({
-            userId,
-            accountId,
-            type: tx.type,
-            amount: toCents(tx.amount),
-            description: tx.description,
-            subcategoryId,
-            date: tx.date,
-            paymentMethodId: tx.payment_method_id ?? null,
-            notes: tx.notes,
-            validated: tx.validated ? 1 : 0,
-          });
-          txCount++;
-        }
-
-        // 4. Insert transfers (two linked transactions each)
-        let transferCount = 0;
-        for (const tf of body.transfers) {
-          const fromId = resolveAccount(tf.from_account_id, tf.from_account_qif_name);
-          const toId = resolveAccount(tf.to_account_id, tf.to_account_qif_name);
-          const tfCents = toCents(tf.amount);
-          const expenseId = Number(
-            insertTxStmt.run({
-              userId,
-              accountId: fromId,
-              type: 'expense',
-              amount: tfCents,
-              description: tf.description,
-              subcategoryId: transferSubcatId ?? null,
-              date: tf.date,
-              paymentMethodId: paymentMethodId ?? null,
-              notes: tf.notes,
-              validated: tf.validated ? 1 : 0,
-            }).lastInsertRowid,
-          );
-          const incomeId = Number(
-            insertTxStmt.run({
-              userId,
-              accountId: toId,
-              type: 'income',
-              amount: tfCents,
-              description: tf.description,
-              subcategoryId: transferSubcatId ?? null,
-              date: tf.date,
-              paymentMethodId: paymentMethodId ?? null,
-              notes: tf.notes,
-              validated: tf.validated ? 1 : 0,
-            }).lastInsertRowid,
-          );
-          setPeerStmt.run({ peerId: incomeId, id: expenseId });
-          setPeerStmt.run({ peerId: expenseId, id: incomeId });
-          transferCount++;
-        }
-
-        return { transactions: txCount, transfers: transferCount };
-      })();
-    },
+    execute: db.transaction((userId: number, body: ImportExecuteBody) =>
+      executeQifImport(qifDeps, userId, body),
+    ),
 
     executeJsonFull(userId: number, data: FullExport): JsonFullImportResult {
       return db.transaction(() => {

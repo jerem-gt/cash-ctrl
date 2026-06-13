@@ -356,11 +356,15 @@ function computeInvestmentProfitability(
 
   const priceHistoryMap = new Map<string, Map<string, number>>();
   for (const row of db
-    .prepare<
-      [],
-      { ticker: string; date: string; price: number }
-    >(`SELECT ticker, date, price FROM stock_price_history`)
-    .all()) {
+    .prepare<[number], { ticker: string; date: string; price: number }>(
+      `SELECT ticker, date, price FROM stock_price_history
+       WHERE ticker IN (
+         SELECT DISTINCT so.ticker FROM stock_operations so
+         JOIN accounts a ON a.id = so.account_id
+         WHERE a.user_id = ?
+       )`,
+    )
+    .all(userId)) {
     if (!priceHistoryMap.has(row.ticker)) priceHistoryMap.set(row.ticker, new Map());
     priceHistoryMap.get(row.ticker)!.set(row.date, row.price);
   }

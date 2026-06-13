@@ -1,28 +1,10 @@
 import type { Database } from 'better-sqlite3';
 
 import { getTransferIds } from '../../lib/administrationDataConstants';
-import { toCents, toEuros } from '../../lib/money';
+import { toCents } from '../../lib/money';
+import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
 import type { Transaction, UpdateSharedTransactionInput } from '../transactions/transactions.types';
 import type { TransferInput } from './transfers.types';
-
-function mapTx(row: Transaction | null | undefined): Transaction | undefined {
-  if (!row) return undefined;
-  return { ...row, amount: toEuros(row.amount) };
-}
-
-const TX_WITH_DETAILS = `
-  SELECT t.id, t.user_id, t.account_id, t.type, t.amount, t.description,
-         t.subcategory_id, t.payment_method_id,
-         t.date, t.transfer_peer_id, t.scheduled_id, t.validated, t.notes, t.created_at,
-         sc.category_id,
-         a.name as account_name,
-         COALESCE(pm.name, '') as payment_method
-  FROM transactions t
-  JOIN accounts a ON t.account_id = a.id
-  LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
-  LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
-  WHERE t.id = :id
-`;
 
 export function createTransfersRepo(db: Database) {
   const insertTxStmt = db.prepare(`
@@ -34,7 +16,9 @@ export function createTransfersRepo(db: Database) {
   const setPeerStmt = db.prepare(
     'UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id',
   );
-  const getByIdStmt = db.prepare<{ id: number }, Transaction>(TX_WITH_DETAILS);
+  const getByIdStmt = db.prepare<{ id: number }, TransactionRow>(
+    `${TX_WITH_DETAILS} WHERE t.id = :id GROUP BY t.id`,
+  );
   const updateSharedStmt = db.prepare(
     `UPDATE transactions SET amount=:amount, description=:description, date=:date, validated=:validated,
      account_id=COALESCE(:accountId, account_id) WHERE id=:id AND user_id=:userId`,
@@ -81,8 +65,8 @@ export function createTransfersRepo(db: Database) {
         setPeerStmt.run({ peerId: incomeId, id: expenseId });
         setPeerStmt.run({ peerId: expenseId, id: incomeId });
         return {
-          expense: mapTx(getByIdStmt.get({ id: expenseId }))!,
-          income: mapTx(getByIdStmt.get({ id: incomeId }))!,
+          expense: parseSplits(getByIdStmt.get({ id: expenseId })!),
+          income: parseSplits(getByIdStmt.get({ id: incomeId })!),
         };
       })();
     },

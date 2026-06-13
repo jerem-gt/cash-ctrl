@@ -22,60 +22,6 @@ function mapAccount(row: Account): Account {
   };
 }
 
-const BALANCE_SUBQUERY = `
-  a.initial_balance + COALESCE(
-    (SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
-     FROM transactions t WHERE t.account_id = a.id AND t.validated = 1),
-    0
-  ) AS balance`;
-
-const BALANCE_ALL_SUBQUERY = `
-  a.initial_balance + COALESCE(
-    (SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
-     FROM transactions t WHERE t.account_id = a.id),
-    0
-  ) AS balance_all`;
-
-const BALANCE_STOCKS_SUBQUERY = `
-  COALESCE(
-    (SELECT SUM(sp.quantity * COALESCE(sprice.price, 0))
-     FROM stock_positions sp
-     LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
-     WHERE sp.account_id = a.id),
-    0
-  ) AS balance_stocks`;
-
-const BALANCE_INSURANCE_SUBQUERY = `
-  COALESCE(
-    (SELECT SUM(
-       (CASE WHEN io.type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation')
-             THEN io.amount ELSE -io.amount END) - io.fees - io.social_fees
-     ) * 1.0 / 100
-     FROM insurance_operations io
-     WHERE io.account_id = a.id),
-    0
-  ) AS balance_insurance`;
-
-const CAPITAL_RESTANT_DU_SUBQUERY = `
-  (SELECT l.principal_amount - COALESCE(
-      (SELECT SUM(li.principal_amount)
-       FROM loan_installments li
-       INNER JOIN transactions t ON t.id = li.transaction_id
-       WHERE li.loan_id = l.id AND t.validated = 1),
-      0
-   )
-   FROM loans l WHERE l.account_id = a.id) AS capital_restant_du`;
-
-const CAPITAL_RESTANT_DU_ALL_SUBQUERY = `
-  (SELECT l.principal_amount - COALESCE(
-      (SELECT SUM(li.principal_amount)
-       FROM loan_installments li
-       INNER JOIN transactions t ON t.id = li.transaction_id
-       WHERE li.loan_id = l.id),
-      0
-   )
-   FROM loans l WHERE l.account_id = a.id) AS capital_restant_du_all`;
-
 const ACCOUNT_SELECT = `
   SELECT a.id,
          a.user_id,
@@ -89,15 +35,48 @@ const ACCOUNT_SELECT = `
          COALESCE(b.name, '')           AS bank,
          COALESCE(at.name, '')          AS type,
          at.envelope_type               AS envelope_type,
-         ${BALANCE_SUBQUERY},
-         ${BALANCE_ALL_SUBQUERY},
-         ${BALANCE_STOCKS_SUBQUERY},
-         ${BALANCE_INSURANCE_SUBQUERY},
-         ${CAPITAL_RESTANT_DU_SUBQUERY},
-         ${CAPITAL_RESTANT_DU_ALL_SUBQUERY}
+         a.initial_balance + COALESCE(bal.s, 0)     AS balance,
+         a.initial_balance + COALESCE(bal_all.s, 0) AS balance_all,
+         COALESCE(stocks.s, 0)                      AS balance_stocks,
+         COALESCE(ins.s, 0)                         AS balance_insurance,
+         l.principal_amount - COALESCE(inst_val.s, 0)  AS capital_restant_du,
+         l.principal_amount - COALESCE(inst_all.s, 0)  AS capital_restant_du_all
   FROM accounts a
-       LEFT JOIN banks b ON a.bank_id = b.id
-       LEFT JOIN account_types at ON a.account_type_id = at.id`;
+  LEFT JOIN banks b ON a.bank_id = b.id
+  LEFT JOIN account_types at ON a.account_type_id = at.id
+  LEFT JOIN (
+    SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
+    FROM transactions WHERE validated = 1 GROUP BY account_id
+  ) bal ON bal.account_id = a.id
+  LEFT JOIN (
+    SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
+    FROM transactions GROUP BY account_id
+  ) bal_all ON bal_all.account_id = a.id
+  LEFT JOIN (
+    SELECT sp.account_id, SUM(sp.quantity * COALESCE(sprice.price, 0)) AS s
+    FROM stock_positions sp
+    LEFT JOIN stock_prices sprice ON sp.ticker = sprice.ticker
+    GROUP BY sp.account_id
+  ) stocks ON stocks.account_id = a.id
+  LEFT JOIN (
+    SELECT account_id,
+           SUM((CASE WHEN type IN ('versement', 'arbitrage_in', 'interets', 'revalorisation')
+                     THEN amount ELSE -amount END) - fees - social_fees) * 1.0 / 100 AS s
+    FROM insurance_operations GROUP BY account_id
+  ) ins ON ins.account_id = a.id
+  LEFT JOIN loans l ON l.account_id = a.id
+  LEFT JOIN (
+    SELECT li.loan_id, SUM(li.principal_amount) AS s
+    FROM loan_installments li
+    INNER JOIN transactions t ON t.id = li.transaction_id AND t.validated = 1
+    GROUP BY li.loan_id
+  ) inst_val ON inst_val.loan_id = l.id
+  LEFT JOIN (
+    SELECT li.loan_id, SUM(li.principal_amount) AS s
+    FROM loan_installments li
+    INNER JOIN transactions t ON t.id = li.transaction_id
+    GROUP BY li.loan_id
+  ) inst_all ON inst_all.loan_id = l.id`;
 
 export function createAccountsRepo(db: Database) {
   const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
