@@ -9,7 +9,7 @@ import {
   TRANSACTION_TYPES,
 } from '../../constants';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
-import { dateSchema } from '../../lib/validators';
+import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createScheduledRepo } from '../scheduled/scheduled.repo';
@@ -20,14 +20,14 @@ const transactionSchema = z
   .object({
     account_id: z.number().int().positive(),
     type: z.enum(TRANSACTION_TYPES),
-    amount: z.number().positive(),
-    description: z.string().min(1).max(200),
+    amount: positiveAmountSchema,
+    description: descriptionSchema,
     subcategory_id: z.number().int().positive().nullable().default(null),
     splits: z
       .array(
         z.object({
           subcategory_id: z.number().int().positive(),
-          amount: z.number().positive(),
+          amount: positiveAmountSchema,
         }),
       )
       .optional(),
