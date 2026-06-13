@@ -5,84 +5,59 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORIES } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
-import { CategoryCard } from './CategoriesManager';
+import { CategoryDetails } from './CategoryDetails';
 
-const cat = CATEGORIES[0];
+const selectedCat = CATEGORIES[0]; // Alimentation, icon: 🍴
 
-describe('CategoryCard', () => {
-  it('affiche les informations de la catégorie', () => {
-    renderWithProviders(<CategoryCard cat={cat} />);
-    expect(screen.getByText(cat.name)).toBeInTheDocument();
-    expect(screen.getByText(cat.icon)).toBeInTheDocument();
+describe('CategoryDetails', () => {
+  it("affiche le prompt de sélection quand aucune catégorie n'est fournie", () => {
+    renderWithProviders(<CategoryDetails />);
+    expect(
+      screen.getByText('Sélectionnez une catégorie pour gérer ses détails'),
+    ).toBeInTheDocument();
+  });
+
+  it("affiche le nom, l'icône et le label de la catégorie sélectionnée", () => {
+    renderWithProviders(<CategoryDetails selectedCategory={selectedCat} />);
+    expect(screen.getByText(selectedCat.name)).toBeInTheDocument();
+    expect(screen.getByText(selectedCat.icon)).toBeInTheDocument();
+    expect(screen.getByText('Catégorie principale')).toBeInTheDocument();
   });
 
   it('bascule en mode édition au clic sur le bouton Modifier', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoryCard cat={cat} />);
-    await user.click(screen.getByRole('button', { name: /Modifier/i }));
-    expect(screen.getByDisplayValue(cat.name)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Annuler/i })).toBeInTheDocument();
+    renderWithProviders(<CategoryDetails selectedCategory={selectedCat} />);
+    await user.click(screen.getByText('Modifier', { selector: 'button' }));
+    expect(screen.getByDisplayValue(selectedCat.name)).toBeInTheDocument();
   });
 
-  it("annule l'édition au clic sur Annuler", async () => {
+  it("revient en visualisation au clic sur Annuler dans l'éditeur", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CategoryCard cat={cat} />);
-    await user.click(screen.getByRole('button', { name: /Modifier/i }));
-    await user.click(screen.getByRole('button', { name: /Annuler/i }));
-    expect(screen.queryByDisplayValue(cat.name)).not.toBeInTheDocument();
-    expect(screen.getByText(cat.name)).toBeInTheDocument();
+    renderWithProviders(<CategoryDetails selectedCategory={selectedCat} />);
+    await user.click(screen.getByText('Modifier', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: /annuler/i }));
+    expect(screen.queryByDisplayValue(selectedCat.name)).not.toBeInTheDocument();
+    expect(screen.getByText(selectedCat.name)).toBeInTheDocument();
   });
 
-  it('masque le bouton Supprimer si la catégorie a des sous-catégories', () => {
-    renderWithProviders(<CategoryCard cat={cat} />);
-    expect(screen.queryByRole('button', { name: /Supprimer/i })).not.toBeInTheDocument();
-  });
-
-  it('affiche le bouton Supprimer et ouvre le modal si la catégorie est vide', async () => {
+  it('enregistre la modification et affiche le toast de succès', async () => {
     const user = userEvent.setup();
-    const emptycat = { ...cat, subcategories: [] };
-    renderWithProviders(<CategoryCard cat={emptycat} />);
-    await user.click(screen.getByRole('button', { name: /Supprimer/i }));
-    expect(screen.getByText(/Supprimer la catégorie/i)).toBeInTheDocument();
-    expect(screen.getByText(/Confirmer la suppression/i)).toBeInTheDocument();
-  });
-
-  it('masque les sous-catégories par défaut', () => {
-    renderWithProviders(<CategoryCard cat={cat} />);
-    const toggle = screen.getByRole('button', { name: cat.name });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('button', { name: /Ajouter/i })).not.toBeInTheDocument();
-  });
-
-  it('affiche les sous-catégories au clic sur le bouton de toggle', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<CategoryCard cat={cat} />);
-    const toggle = screen.getByRole('button', { name: cat.name });
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('button', { name: /Ajouter/i })).toBeInTheDocument();
-  });
-
-  it('masque de nouveau les sous-catégories au second clic', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<CategoryCard cat={cat} />);
-    const toggle = screen.getByRole('button', { name: cat.name });
-    await user.click(toggle);
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('button', { name: /Ajouter/i })).not.toBeInTheDocument();
-  });
-
-  it('soumet la mise à jour et affiche le toast', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<CategoryCard cat={cat} />);
-    await user.click(screen.getByRole('button', { name: /Modifier/i }));
-    const input = screen.getByDisplayValue(cat.name);
+    renderWithProviders(<CategoryDetails selectedCategory={selectedCat} />);
+    await user.click(screen.getByText('Modifier', { selector: 'button' }));
+    const input = screen.getByDisplayValue(selectedCat.name);
     await user.clear(input);
-    await user.type(input, 'Alimentation modifiée');
-    await user.click(screen.getByRole('button', { name: /Modifier/i }));
+    await user.type(input, 'Courses');
+    await user.click(screen.getAllByRole('button', { name: /^Modifier$/i })[0]);
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('mise à jour'),
     );
+  });
+
+  it('ouvre la modale de confirmation au clic sur Supprimer', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CategoryDetails selectedCategory={selectedCat} />);
+    await user.click(screen.getByText('Supprimer', { selector: 'button' }));
+    expect(screen.getByText('Supprimer la catégorie')).toBeInTheDocument();
+    expect(screen.getByText('Confirmer la suppression ?')).toBeInTheDocument();
   });
 });
