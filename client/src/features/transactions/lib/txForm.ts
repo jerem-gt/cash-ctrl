@@ -82,7 +82,7 @@ export function initCore(
     account_id:
       fixedAccountId && !(isTransfer && tx !== null) ? String(fixedAccountId) : account_id,
     to_account_id,
-    payment_method_id: String(source.payment_method_id),
+    payment_method_id: source.payment_method_id == null ? '' : String(source.payment_method_id),
   };
 }
 

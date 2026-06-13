@@ -185,7 +185,10 @@ function SupportRow({
           body={t('section.delete_support_body', { name: support.name })}
           onConfirm={() => {
             deleteSupport.mutate(support.id, {
-              onSuccess: () => showToast(t('section.support_deleted')),
+              onSuccess: () => {
+                setActiveModal(null);
+                showToast(t('section.support_deleted'));
+              },
               onError: (err) => showToast(err.message),
             });
           }}

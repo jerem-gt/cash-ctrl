@@ -23,6 +23,7 @@ import type {
   StockOperation,
   StockPosition,
   StockPrice,
+  Subcategory,
   SystemRefsPayload,
   TaxYearData,
   Transaction,
@@ -209,9 +210,9 @@ export const categoriesApi = {
 export const subcategoriesApi = {
   list: () => request<Category[]>('GET', '/api/subcategories'),
   create: (payload: { name: string; category_id: number }) =>
-    request<Category>('POST', '/api/subcategories', payload),
+    request<Subcategory>('POST', '/api/subcategories', payload),
   update: (id: number, payload: { name: string }) =>
-    request<Category>('PUT', `/api/subcategories/${id}`, payload),
+    request<Subcategory>('PUT', `/api/subcategories/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/subcategories/${id}`),
 };
 
@@ -579,6 +580,8 @@ export interface JsonFullImportResult {
   scheduled: number;
   stockOperations: number;
   loans: number;
+  insuranceSupports: number;
+  insuranceOperations: number;
 }
 
 export const importApi = {
