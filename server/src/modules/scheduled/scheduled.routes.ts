@@ -7,7 +7,13 @@ import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import { getTransferIds } from '../../lib/administrationDataConstants';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { dateSchema, optionalDateSchema } from '../../lib/validators';
+import {
+  dateSchema,
+  descriptionSchema,
+  feesSchema,
+  optionalDateSchema,
+  positiveAmountSchema,
+} from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
 
@@ -15,12 +21,12 @@ const scheduledSchema = z.object({
   account_id: z.number().int().positive(),
   to_account_id: z.number().int().positive().nullable().default(null),
   type: z.enum(TRANSACTION_TYPES),
-  amount: z.number().positive(),
-  description: z.string().min(1).max(200),
+  amount: positiveAmountSchema,
+  description: descriptionSchema,
   subcategory_id: z.number().int().positive().nullable().default(null),
   payment_method_id: z.number().int().positive().nullable().default(null),
   insurance_support_id: z.number().int().positive().nullable().default(null),
-  insurance_fees: z.number().min(0).default(0),
+  insurance_fees: feesSchema,
   notes: z.string().max(1000).nullable().default(null),
   recurrence_unit: z.enum(RECURRENCE_UNITS),
   recurrence_interval: z.number().int().min(1).default(1),

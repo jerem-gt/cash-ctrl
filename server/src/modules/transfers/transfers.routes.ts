@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { dateSchema } from '../../lib/validators';
+import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createStocksRepo } from '../stocks/stocks.repo';
@@ -13,16 +13,16 @@ import { createTransfersRepo } from './transfers.repo';
 const transferSchema = z.object({
   from_account_id: z.number().int().positive(),
   to_account_id: z.number().int().positive(),
-  amount: z.number().positive(),
-  description: z.string().min(1).max(200).default('Transfert'),
+  amount: positiveAmountSchema,
+  description: descriptionSchema.default('Transfert'),
   date: dateSchema,
   notes: z.string().max(1000).nullish().default(null),
   validated: z.boolean().default(false),
 });
 
 const transferUpdateSchema = z.object({
-  amount: z.number().positive(),
-  description: z.string().min(1).max(200),
+  amount: positiveAmountSchema,
+  description: descriptionSchema,
   date: dateSchema,
   validated: z.boolean().default(false),
   from_account_id: z.number().int().positive().optional(),

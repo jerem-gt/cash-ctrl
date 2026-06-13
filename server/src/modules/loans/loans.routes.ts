@@ -2,18 +2,22 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { HttpError } from '../../lib/errors';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { dateSchema, optionalDateSchema } from '../../lib/validators';
+import { handleHttpErrors, parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
+import {
+  dateSchema,
+  nameSchema,
+  optionalDateSchema,
+  positiveAmountSchema,
+} from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
 
 const createLoanSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   opening_date: optionalDateSchema,
-  principal_amount: z.number().positive(),
+  principal_amount: positiveAmountSchema,
   interest_rate: z.number().min(0).max(1),
   duration_months: z.number().int().min(1).max(600),
   start_date: dateSchema,
@@ -22,7 +26,7 @@ const createLoanSchema = z.object({
 });
 
 const updateLoanSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   opening_date: optionalDateSchema,
   source_account_id: z.number().int().positive(),
@@ -30,7 +34,7 @@ const updateLoanSchema = z.object({
 
 const updateInstallmentSchema = z.object({
   due_date: dateSchema,
-  total_amount: z.number().positive(),
+  total_amount: positiveAmountSchema,
 });
 
 export function createLoansRouter(db: Database): Router {
@@ -41,18 +45,12 @@ export function createLoansRouter(db: Database): Router {
   router.post('/', (req, res) => {
     const data = parseBody(res, createLoanSchema, req.body);
     if (!data) return;
-    try {
-      const userId = sessionUserId(req);
+    const userId = sessionUserId(req);
+    handleHttpErrors(res, () => {
       const loan = loansRepo.create(userId, data);
       generateScheduledTransactions(userId, db);
       res.status(201).json(loan);
-    } catch (e) {
-      if (e instanceof HttpError) {
-        sendError(res, e.status, e.code, e.params);
-      } else {
-        sendError(res, 400, 'common.invalid_request');
-      }
-    }
+    });
   });
 
   router.patch('/:loanId', (req, res) => {

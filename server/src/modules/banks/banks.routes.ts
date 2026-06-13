@@ -4,13 +4,14 @@ import multer from 'multer';
 import { z } from 'zod';
 
 import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
+import { nameSchema } from '../../lib/validators';
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createBanksRepo } from './banks.repo';
 
 const bankSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: nameSchema,
   domain: z.string().max(253).nullable().optional(),
 });
 

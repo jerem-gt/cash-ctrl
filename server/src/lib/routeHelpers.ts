@@ -1,6 +1,8 @@
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 
+import { HttpError } from './errors';
+
 declare module 'express-serve-static-core' {
   interface Locals {
     accountId: number;
@@ -110,6 +112,18 @@ export function requireById<T>(
     return false;
   }
   return true;
+}
+
+export function handleHttpErrors(res: Response, fn: () => void): void {
+  try {
+    fn();
+  } catch (err) {
+    if (err instanceof HttpError) {
+      sendError(res, err.status, err.code, err.params);
+    } else {
+      sendError(res, 400, 'common.invalid_request');
+    }
+  }
 }
 
 export function parseBody<T>(res: Response, schema: z.ZodType<T>, body: unknown): T | null {

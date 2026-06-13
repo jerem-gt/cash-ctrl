@@ -4,14 +4,14 @@ import { z } from 'zod';
 
 import { toCents, toEuros } from '../../lib/money';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { dateSchema, optionalDateSchema } from '../../lib/validators';
+import { dateSchema, nameSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from '../loans/loans.repo.js';
 import { createTransfersRepo } from '../transfers/transfers.repo';
 import { createAccountsRepo } from './accounts.repo';
 
 const accountSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   account_type_id: z.number().int().positive().nullable().default(null),
   initial_balance: z.coerce.number().default(0),

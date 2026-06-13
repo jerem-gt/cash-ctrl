@@ -3,16 +3,16 @@ import { type Response, Router } from 'express';
 import { z } from 'zod';
 
 import type { ErrorCode } from '../../lib/errorCodes';
-import { HttpError } from '../../lib/errors';
+import { createAccountActionHandler } from '../../lib/handleAccountAction';
 import {
+  handleHttpErrors,
   makeCheckAccount,
   parseNumberParam,
   sendError,
   zodToApiError,
 } from '../../lib/routeHelpers';
-import { dateSchema } from '../../lib/validators';
+import { dateSchema, feesSchema, nameSchema, positiveAmountSchema } from '../../lib/validators';
 import { requireAuth } from '../../middleware.js';
-import { handleInsuranceAction } from './insurance.handlers.js';
 import { createInsuranceRepo } from './insurance.repo.js';
 import type { InsuranceSupport } from './insurance.types';
 
@@ -37,7 +37,7 @@ function requireSupport(
 
 const createSupportSchema = z.object({
   account_id: z.number().int().positive(),
-  name: z.string().min(1).max(100),
+  name: nameSchema,
   type: z.enum(['uc', 'euro']),
   ticker: z.string().min(1).max(20).nullable().optional(),
 });
@@ -45,8 +45,8 @@ const createSupportSchema = z.object({
 const versementSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
-  amount: z.number().positive(),
-  fees: z.number().min(0).default(0),
+  amount: positiveAmountSchema,
+  fees: feesSchema,
   date: dateSchema,
   source_account_id: z
     .number()
@@ -60,9 +60,9 @@ const versementSchema = z.object({
 const rachatSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
-  amount: z.number().positive(),
-  fees: z.number().min(0).default(0),
-  social_fees: z.number().min(0).default(0),
+  amount: positiveAmountSchema,
+  fees: feesSchema,
+  social_fees: feesSchema,
   date: dateSchema,
   dest_account_id: z
     .number()
@@ -77,15 +77,15 @@ const arbitrageSchema = z.object({
   account_id: z.number().int().positive(),
   from_support_id: z.number().int().positive(),
   to_support_id: z.number().int().positive(),
-  from_amount: z.number().positive(),
-  fees: z.number().min(0).default(0),
+  from_amount: positiveAmountSchema,
+  fees: feesSchema,
   date: dateSchema,
 });
 
 const interetsSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
-  amount: z.number().positive(),
+  amount: positiveAmountSchema,
   date: dateSchema,
 });
 
@@ -98,8 +98,8 @@ const revaloriserSchema = z.object({
 
 const updateOperationSchema = z.object({
   amount: z.number(),
-  fees: z.number().min(0).default(0),
-  social_fees: z.number().min(0).default(0),
+  fees: feesSchema,
+  social_fees: feesSchema,
   date: dateSchema,
 });
 
@@ -107,6 +107,12 @@ export function createInsuranceRouter(db: Database): Router {
   const repo = createInsuranceRepo(db);
   const router = Router();
   router.use(requireAuth);
+
+  const handleInsuranceAction = createAccountActionHandler(
+    repo,
+    (id) => repo.isInsuranceAccount(id),
+    'insurance.account_not_insurance',
+  );
 
   const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
 
@@ -117,7 +123,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.post('/:accountId/supports', (req, res) => {
-    handleInsuranceAction(req, res, repo, createSupportSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, createSupportSchema, ({ userId, data }) => {
       const support = repo.createSupport(userId, data);
       res.status(201).json(support);
     });
@@ -162,36 +168,24 @@ export function createInsuranceRouter(db: Database): Router {
       return;
     }
 
-    try {
+    handleHttpErrors(res, () => {
       const operation = repo.updateOperation(operationId, userId, parsed.data);
       res.json(operation);
-    } catch (err) {
-      if (err instanceof HttpError) {
-        sendError(res, err.status, err.code, err.params);
-      } else {
-        sendError(res, 400, 'common.invalid_request');
-      }
-    }
+    });
   });
 
   router.delete('/:accountId/operations/:operationId', checkAccount, (req, res) => {
     const operationId = parseNumberParam(req, res, 'operationId');
     if (operationId === null) return;
     const userId = res.locals.userId;
-    try {
+    handleHttpErrors(res, () => {
       repo.deleteOperation(operationId, userId);
       res.json({ ok: true });
-    } catch (err) {
-      if (err instanceof HttpError) {
-        sendError(res, err.status, err.code, err.params);
-      } else {
-        sendError(res, 404, 'insurance.operation_not_found');
-      }
-    }
+    });
   });
 
   router.post('/:accountId/versement', (req, res) => {
-    handleInsuranceAction(req, res, repo, versementSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, versementSchema, ({ userId, data }) => {
       if (!requireSupport(res, repo, data.support_id, data.account_id)) return;
       const result = repo.versement(userId, data);
       res.status(201).json(result);
@@ -199,7 +193,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.post('/:accountId/rachat', (req, res) => {
-    handleInsuranceAction(req, res, repo, rachatSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, rachatSchema, ({ userId, data }) => {
       if (!requireSupport(res, repo, data.support_id, data.account_id)) return;
       const result = repo.rachat(userId, data);
       res.status(201).json(result);
@@ -207,7 +201,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.post('/:accountId/arbitrage', (req, res) => {
-    handleInsuranceAction(req, res, repo, arbitrageSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, arbitrageSchema, ({ userId, data }) => {
       if (data.from_support_id === data.to_support_id) {
         sendError(res, 400, 'insurance.supports_must_differ');
         return;
@@ -238,7 +232,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.post('/:accountId/interets', (req, res) => {
-    handleInsuranceAction(req, res, repo, interetsSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, interetsSchema, ({ userId, data }) => {
       const support = requireSupport(res, repo, data.support_id, data.account_id);
       if (!support) return;
       if (support.type !== 'euro') {
@@ -251,7 +245,7 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.post('/:accountId/revalorisation', (req, res) => {
-    handleInsuranceAction(req, res, repo, revaloriserSchema, ({ userId, data }) => {
+    handleInsuranceAction(req, res, revaloriserSchema, ({ userId, data }) => {
       const support = requireSupport(res, repo, data.support_id, data.account_id);
       if (!support) return;
       if (support.type !== 'uc') {

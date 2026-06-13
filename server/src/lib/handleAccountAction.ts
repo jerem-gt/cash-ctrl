@@ -3,8 +3,7 @@ import { z } from 'zod';
 
 import { sessionUserId } from '../middleware';
 import { type ErrorCode } from './errorCodes';
-import { HttpError } from './errors';
-import { sendError, zodToApiError } from './routeHelpers';
+import { handleHttpErrors, sendError, zodToApiError } from './routeHelpers';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
@@ -39,13 +38,27 @@ export function handleAccountAction<T>(
     return res.status(400).json({ error: zodToApiError(parsed.error) });
   }
 
-  try {
+  handleHttpErrors(res, () => {
     handler({ userId, data: parsed.data }, req, res);
-  } catch (err) {
-    if (err instanceof HttpError) {
-      sendError(res, err.status, err.code, err.params);
-    } else {
-      sendError(res, 400, 'common.invalid_request');
-    }
-  }
+  });
+}
+
+export function createAccountActionHandler<
+  TRepo extends { accountBelongsToUser: (id: number, uid: number) => boolean },
+>(repo: TRepo, isValidType: (id: number) => boolean, typeErrorCode: ErrorCode) {
+  return <T>(
+    req: Request<{ accountId: string }>,
+    res: Response,
+    schema: z.ZodType<T>,
+    handler: Handler<T>,
+  ) =>
+    handleAccountAction(
+      req,
+      res,
+      (id, uid) => repo.accountBelongsToUser(id, uid),
+      isValidType,
+      typeErrorCode,
+      schema,
+      handler,
+    );
 }
