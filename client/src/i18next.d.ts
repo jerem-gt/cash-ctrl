@@ -8,6 +8,7 @@ import type errorsFr from './locales/fr/errors.json';
 import type insuranceFr from './locales/fr/insurance.json';
 import type loansFr from './locales/fr/loans.json';
 import type portfolioFr from './locales/fr/portfolio.json';
+import type reportsFr from './locales/fr/reports.json';
 import type scheduledFr from './locales/fr/scheduled.json';
 import type settingsFr from './locales/fr/settings.json';
 import type sidebarFr from './locales/fr/sidebar.json';
@@ -28,6 +29,7 @@ declare module 'i18next' {
       dashboard: typeof dashboardFr;
       sidebar: typeof sidebarFr;
       scheduled: typeof scheduledFr;
+      reports: typeof reportsFr;
       errors: typeof errorsFr;
     };
   }

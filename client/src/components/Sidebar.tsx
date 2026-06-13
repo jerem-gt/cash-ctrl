@@ -1,5 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Calendar, ChevronDown, ChevronRight, LayoutGrid, Power, Settings, X } from 'lucide-react';
+import {
+  BarChart2,
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  LayoutGrid,
+  Power,
+  Settings,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
@@ -21,6 +30,7 @@ import type { Account } from '@/types';
 const NAV_BOTTOM_ITEMS = [
   { to: '/transactions', key: 'all_transactions' as const, icon: LayoutGrid, end: true },
   { to: '/scheduled', key: 'scheduled' as const, icon: Calendar },
+  { to: '/reports', key: 'reports' as const, icon: BarChart2 },
   { to: '/settings', key: 'settings' as const, icon: Settings },
 ];
 

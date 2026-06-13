@@ -1,0 +1,18 @@
+{
+  "title": "Rapports",
+  "subtitle": "Analyse de vos revenus et dépenses",
+  "filter_year": "Année",
+  "filter_account": "Compte",
+  "filter_all_accounts": "Tous les comptes",
+  "metric_income": "Revenus",
+  "metric_expense": "Dépenses",
+  "metric_balance": "Bilan",
+  "section_monthly": "Revenus vs dépenses",
+  "section_expenses_cat": "Répartition des dépenses",
+  "section_income_cat": "Répartition des revenus",
+  "chart_income": "Revenus",
+  "chart_expenses": "Dépenses",
+  "no_expenses": "Aucune dépense sur cette période",
+  "no_income": "Aucun revenu sur cette période",
+  "no_data": "Aucune donnée pour cette période"
+}

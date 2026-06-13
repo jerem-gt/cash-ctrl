@@ -18,6 +18,7 @@ import type {
   PaymentMethod,
   PendingReimbursement,
   Reimbursement,
+  ReportData,
   ScheduledTransaction,
   SettingsUpdate,
   StockOperation,
@@ -421,6 +422,12 @@ export const statsApi = {
   dashboard: () => request<DashboardStats>('GET', '/api/stats'),
   balanceHistory: () => request<BalanceHistoryData>('GET', '/api/stats/balance-history'),
   profitability: () => request<AccountProfitability[]>('GET', '/api/stats/profitability'),
+  reportYears: () => request<number[]>('GET', '/api/stats/report-years'),
+  report: (params: { year: number; account_id?: number }) => {
+    const qs = new URLSearchParams({ year: String(params.year) });
+    if (params.account_id != null) qs.set('account_id', String(params.account_id));
+    return request<ReportData>('GET', `/api/stats/report?${qs.toString()}`);
+  },
 };
 
 // Loans

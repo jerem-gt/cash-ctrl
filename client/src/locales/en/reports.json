@@ -1,0 +1,18 @@
+{
+  "title": "Reports",
+  "subtitle": "Analysis of your income and expenses",
+  "filter_year": "Year",
+  "filter_account": "Account",
+  "filter_all_accounts": "All accounts",
+  "metric_income": "Income",
+  "metric_expense": "Expenses",
+  "metric_balance": "Balance",
+  "section_monthly": "Income vs expenses",
+  "section_expenses_cat": "Expenses breakdown",
+  "section_income_cat": "Income breakdown",
+  "chart_income": "Income",
+  "chart_expenses": "Expenses",
+  "no_expenses": "No expenses for this period",
+  "no_income": "No income for this period",
+  "no_data": "No data for this period"
+}

@@ -10,6 +10,7 @@ import errorsEn from './locales/en/errors.json';
 import insuranceEn from './locales/en/insurance.json';
 import loansEn from './locales/en/loans.json';
 import portfolioEn from './locales/en/portfolio.json';
+import reportsEn from './locales/en/reports.json';
 import scheduledEn from './locales/en/scheduled.json';
 import settingsEn from './locales/en/settings.json';
 import sidebarEn from './locales/en/sidebar.json';
@@ -22,6 +23,7 @@ import errorsFr from './locales/fr/errors.json';
 import insuranceFr from './locales/fr/insurance.json';
 import loansFr from './locales/fr/loans.json';
 import portfolioFr from './locales/fr/portfolio.json';
+import reportsFr from './locales/fr/reports.json';
 import scheduledFr from './locales/fr/scheduled.json';
 import settingsFr from './locales/fr/settings.json';
 import sidebarFr from './locales/fr/sidebar.json';
@@ -50,6 +52,7 @@ void i18n
         dashboard: dashboardFr,
         sidebar: sidebarFr,
         scheduled: scheduledFr,
+        reports: reportsFr,
         errors: errorsFr,
       },
       en: {
@@ -64,6 +67,7 @@ void i18n
         dashboard: dashboardEn,
         sidebar: sidebarEn,
         scheduled: scheduledEn,
+        reports: reportsEn,
         errors: errorsEn,
       },
     },

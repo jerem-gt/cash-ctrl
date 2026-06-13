@@ -13,6 +13,7 @@ import type {
   PaymentMethod,
   PendingReimbursement,
   Reimbursement,
+  ReportData,
   ScheduledTransaction,
   StockOperation,
   StockPosition,
@@ -565,3 +566,20 @@ export const PROFITABILITY_DATA: AccountProfitability[] = [
     yearly_returns: [],
   },
 ];
+
+export const REPORT_YEARS: number[] = [2026, 2025, 2024];
+
+export const REPORT_DATA: ReportData = {
+  income_total: 3000,
+  expense_total: 1200,
+  monthly: Array.from({ length: 12 }, (_, i) => ({
+    month: `2026-${String(i + 1).padStart(2, '0')}`,
+    income: i === 0 ? 3000 : 0,
+    expense: i === 0 ? 1200 : 0,
+  })),
+  expense_by_category: [
+    { category: 'Alimentation', amount: 700 },
+    { category: 'Transport', amount: 500 },
+  ],
+  income_by_category: [{ category: 'Revenus du travail', amount: 3000 }],
+};
