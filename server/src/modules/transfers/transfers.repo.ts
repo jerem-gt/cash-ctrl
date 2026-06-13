@@ -64,9 +64,12 @@ export function createTransfersRepo(db: Database) {
         );
         setPeerStmt.run({ peerId: incomeId, id: expenseId });
         setPeerStmt.run({ peerId: expenseId, id: incomeId });
+        const expenseRow = getByIdStmt.get({ id: expenseId });
+        const incomeRow = getByIdStmt.get({ id: incomeId });
+        if (!expenseRow || !incomeRow) throw new Error('Transfer rows not found after insert');
         return {
-          expense: parseSplits(getByIdStmt.get({ id: expenseId })!),
-          income: parseSplits(getByIdStmt.get({ id: incomeId })!),
+          expense: parseSplits(expenseRow),
+          income: parseSplits(incomeRow),
         };
       })();
     },
