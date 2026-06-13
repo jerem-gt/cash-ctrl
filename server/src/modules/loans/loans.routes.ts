@@ -2,7 +2,6 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
 import { handleHttpErrors, parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import {
   dateSchema,
@@ -12,6 +11,7 @@ import {
 } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
+import { loanCreate, loanUpdate } from './loans.service.js';
 
 const createLoanSchema = z.object({
   name: nameSchema,
@@ -45,11 +45,8 @@ export function createLoansRouter(db: Database): Router {
   router.post('/', (req, res) => {
     const data = parseBody(res, createLoanSchema, req.body);
     if (!data) return;
-    const userId = sessionUserId(req);
     handleHttpErrors(res, () => {
-      const loan = loansRepo.create(userId, data);
-      generateScheduledTransactions(userId, db);
-      res.status(201).json(loan);
+      res.status(201).json(loanCreate(db, sessionUserId(req), data));
     });
   });
 
@@ -58,14 +55,9 @@ export function createLoansRouter(db: Database): Router {
     if (loanId === null) return;
     const data = parseBody(res, updateLoanSchema, req.body);
     if (!data) return;
-    const userId = sessionUserId(req);
-    const result = loansRepo.updateLoan(userId, loanId, data);
-    if (!result) {
-      sendError(res, 404, 'loan.not_found');
-      return;
-    }
-    generateScheduledTransactions(userId, db);
-    res.json(result);
+    handleHttpErrors(res, () => {
+      res.json(loanUpdate(db, sessionUserId(req), loanId, data));
+    });
   });
 
   router.get('/account/:accountId', (req, res) => {

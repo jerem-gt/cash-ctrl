@@ -1,20 +1,19 @@
 import type { Database } from 'better-sqlite3';
-import { type Response, Router } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 
+import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
 import {
-  type EnvelopeType,
-  MAX_PAGE_SIZE,
-  REIMBURSEMENT_STATUSES,
-  TRANSACTION_TYPES,
-} from '../../constants';
-import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
+  handleHttpErrors,
+  parseBody,
+  parseNumberParam,
+  sendError,
+  zodToApiError,
+} from '../../lib/routeHelpers';
 import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createAccountsRepo } from '../accounts/accounts.repo';
-import { createScheduledRepo } from '../scheduled/scheduled.repo';
-import { createStocksRepo } from '../stocks/stocks.repo';
 import { createTransactionsRepo } from './transactions.repo';
+import { transactionCreate, transactionDelete, transactionUpdate } from './transactions.service';
 
 const transactionSchema = z
   .object({
@@ -73,97 +72,37 @@ const querySchema = z.object({
 
 const validateSchema = z.object({ validated: z.boolean() });
 
-const NO_DIRECT_WRITE_ENVELOPES = new Set<EnvelopeType>(['life_insurance', 'per']);
-
-/**
- * Récupère le compte cible d'une écriture et vérifie qu'il appartient à
- * l'utilisateur et qu'il n'est pas une enveloppe AV/PER (écriture interdite en
- * direct). Répond directement (403/400) et renvoie null si la condition échoue.
- */
-function resolveWritableAccount(
-  res: Response,
-  accountsRepo: ReturnType<typeof createAccountsRepo>,
-  accountId: number,
-  userId: number,
-) {
-  const account = accountsRepo.getById(accountId, userId);
-  if (!account) {
-    sendError(res, 403, 'account.not_found_or_not_owned');
-    return null;
-  }
-  if (NO_DIRECT_WRITE_ENVELOPES.has(account.envelope_type as EnvelopeType)) {
-    sendError(res, 400, 'transaction.no_direct_on_av_per');
-    return null;
-  }
-  return account;
-}
-
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);
-  const accountsRepo = createAccountsRepo(db);
-  const scheduledRepo = createScheduledRepo(db);
-  const stocksRepo = createStocksRepo(db);
   const router = Router();
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
     const userId = sessionUserId(req);
-
     const parsed = querySchema.safeParse(req.query);
     if (!parsed.success) {
       res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
-
     res.json(transactionsRepo.getByUserId(userId, parsed.data));
   });
 
   router.post('/', (req, res) => {
     const data = parseBody(res, transactionSchema, req.body);
     if (!data) return;
-    const userId = sessionUserId(req);
-
-    if (!resolveWritableAccount(res, accountsRepo, data.account_id, userId)) return;
-
-    const result = transactionsRepo.create(userId, {
-      ...data,
-      description: data.description.trim(),
+    handleHttpErrors(res, () => {
+      res.status(201).json(transactionCreate(db, sessionUserId(req), data));
     });
-    res.status(201).json(transactionsRepo.getWithDetails(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    const userId = sessionUserId(req);
-
-    const tx = transactionsRepo.getById(id, userId);
-    if (!tx) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
-    }
-    if (tx.transfer_peer_id) {
-      sendError(res, 400, 'transaction.use_transfers_update');
-      return;
-    }
-
     const data = parseBody(res, transactionSchema, req.body);
     if (!data) return;
-    if (!resolveWritableAccount(res, accountsRepo, data.account_id, userId)) return;
-
-    if (data.scheduled_id !== null) {
-      if (!scheduledRepo.getById(data.scheduled_id, userId)) {
-        sendError(res, 404, 'scheduled.not_found');
-        return;
-      }
-    }
-
-    transactionsRepo.update(userId, id, {
-      ...data,
-      description: data.description.trim(),
+    handleHttpErrors(res, () => {
+      res.json(transactionUpdate(db, sessionUserId(req), id, data));
     });
-
-    res.json(transactionsRepo.getWithDetails(id));
   });
 
   router.patch('/:id/validate', (req, res) => {
@@ -185,28 +124,10 @@ export function createTransactionsRouter(db: Database): Router {
   router.delete('/:id', (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    const userId = sessionUserId(req);
-    const tx = transactionsRepo.getById(id, userId);
-    if (!tx) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
-    }
-    if (tx.transfer_peer_id) {
-      sendError(res, 400, 'transaction.use_transfers_delete');
-      return;
-    }
-    if (stocksRepo.isFeesTransaction(id)) {
-      sendError(res, 400, 'transaction.is_stock_fees');
-      return;
-    }
-    const op = stocksRepo.getOperationByTransactionId(id);
-
-    transactionsRepo.delete(userId, id);
-    if (op) {
-      stocksRepo.recalcPosition(op.account_id, op.ticker, userId);
-    }
-
-    res.json({ ok: true });
+    handleHttpErrors(res, () => {
+      transactionDelete(db, sessionUserId(req), id);
+      res.json({ ok: true });
+    });
   });
 
   return router;
