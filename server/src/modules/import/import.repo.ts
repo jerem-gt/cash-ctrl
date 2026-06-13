@@ -90,8 +90,8 @@ function insertQifTransfers(
   userId: number,
   transfers: ImportTransferInput[],
   accountMap: Map<string, number>,
-  transferSubcatId: number | null,
-  paymentMethodId: number | null,
+  transferSubcatId: number | null | undefined,
+  paymentMethodId: number | null | undefined,
 ): number {
   let count = 0;
   for (const tf of transfers) {
