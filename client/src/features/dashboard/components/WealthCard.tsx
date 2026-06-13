@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +18,8 @@ const PATRIMONY_LABEL_KEYS = {
   actions_uc: 'patrimony_categories.actions_uc',
 } as const;
 
+const PAGE_SIZE = 10;
+
 type View = 'net' | 'breakdown';
 
 interface Props {
@@ -26,10 +29,28 @@ interface Props {
 export function WealthCard({ history }: Readonly<Props>) {
   const { t } = useTranslation('dashboard');
   const [view, setView] = useState<View>('breakdown');
-  const { types, dataWithTotal, negativeTypes, lastPositiveType, hasLoans } =
-    enrichBalanceHistory(history);
+  const [offset, setOffset] = useState(0);
+
   const labelFor = (type: string) =>
     t(PATRIMONY_LABEL_KEYS[type as keyof typeof PATRIMONY_LABEL_KEYS]);
+
+  const total = history.data.length;
+  const endIdx = Math.max(0, total - offset);
+  const startIdx = Math.max(0, endIdx - PAGE_SIZE);
+  const canGoBack = startIdx > 0;
+  const canGoForward = offset > 0;
+
+  const pageHistory = {
+    account_types: history.account_types,
+    data: history.data.slice(startIdx, endIdx),
+  };
+  const {
+    types,
+    dataWithTotal: pageData,
+    negativeTypes,
+    lastPositiveType,
+    hasLoans,
+  } = enrichBalanceHistory(pageHistory);
 
   return (
     <Card>
@@ -37,20 +58,42 @@ export function WealthCard({ history }: Readonly<Props>) {
         <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle">
           {t('wealth_title')}
         </p>
-        <div className="flex text-[11px] rounded-lg overflow-hidden border border-line-subtle">
-          {(['net', 'breakdown'] as View[]).map((v, i) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`px-2.5 py-1 transition-colors ${i > 0 ? 'border-l border-line-subtle' : ''} ${
-                view === v
-                  ? 'bg-surface-emphasis text-content font-medium'
-                  : 'text-content-muted hover:text-content hover:bg-surface-muted'
-              }`}
-            >
-              {t(v === 'net' ? 'wealth_view_net' : 'wealth_view_breakdown')}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          {total > PAGE_SIZE && (
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => setOffset((o) => o + PAGE_SIZE)}
+                disabled={!canGoBack}
+                className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
+                aria-label="Années précédentes"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+                disabled={!canGoForward}
+                className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
+                aria-label="Années suivantes"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+          <div className="flex text-[11px] rounded-lg overflow-hidden border border-line-subtle">
+            {(['net', 'breakdown'] as View[]).map((v, i) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-2.5 py-1 transition-colors ${i > 0 ? 'border-l border-line-subtle' : ''} ${
+                  view === v
+                    ? 'bg-surface-emphasis text-content font-medium'
+                    : 'text-content-muted hover:text-content hover:bg-surface-muted'
+                }`}
+              >
+                {t(v === 'net' ? 'wealth_view_net' : 'wealth_view_breakdown')}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -70,10 +113,10 @@ export function WealthCard({ history }: Readonly<Props>) {
 
       <Suspense fallback={<Skeleton className="h-52" />}>
         {view === 'net' ? (
-          <NetBalanceLineChart data={dataWithTotal} label={t('metric_total_balance')} />
+          <NetBalanceLineChart data={pageData} label={t('metric_total_balance')} />
         ) : (
           <PatrimonyBarChart
-            data={dataWithTotal}
+            data={pageData}
             types={types}
             negativeTypes={negativeTypes}
             lastPositiveType={lastPositiveType}

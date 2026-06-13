@@ -27,6 +27,8 @@
   "reimb_pending_section": "Pending",
   "reimb_done_section": "Completed — last 6 months",
   "reimb_mark_done_title": "Mark reimbursement as done",
+  "reimb_prev_page": "Previous page",
+  "reimb_next_page": "Next page",
   "recent_transactions": "Latest validated transactions",
   "no_transactions": "No transactions",
   "patrimony_categories": {

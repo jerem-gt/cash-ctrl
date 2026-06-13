@@ -27,6 +27,8 @@
   "reimb_pending_section": "En attente",
   "reimb_done_section": "Terminés — 6 derniers mois",
   "reimb_mark_done_title": "Marquer remboursement terminé",
+  "reimb_prev_page": "Page précédente",
+  "reimb_next_page": "Page suivante",
   "recent_transactions": "Dernières transactions validées",
   "no_transactions": "Aucune transaction",
   "patrimony_categories": {

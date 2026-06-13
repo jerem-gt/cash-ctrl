@@ -94,6 +94,43 @@ describe('useTransactionsManager', () => {
     } as unknown as ReturnType<typeof useDeleteTransfer>);
   });
 
+  describe(`Persistance du limit en localStorage`, () => {
+    beforeEach(() => {
+      localStorage.removeItem(`cashctrl.txLimit`);
+    });
+
+    it(`utilise 25 par defaut sans valeur en localStorage`, () => {
+      const { result } = renderHook(() => useTransactionsManager());
+      expect(result.current.state.limit).toBe(25);
+    });
+
+    it(`lit la valeur initiale depuis localStorage`, () => {
+      localStorage.setItem(`cashctrl.txLimit`, `50`);
+      const { result } = renderHook(() => useTransactionsManager());
+      expect(result.current.state.limit).toBe(50);
+    });
+
+    it(`persiste le nouveau limit dans localStorage lors du changement`, () => {
+      const { result } = renderHook(() => useTransactionsManager());
+      act(() => {
+        result.current.actions.handleLimitChange(100);
+      });
+      expect(result.current.state.limit).toBe(100);
+      expect(localStorage.getItem(`cashctrl.txLimit`)).toBe(`100`);
+    });
+
+    it(`reinitialise la page a 1 lors du changement de limit`, () => {
+      const { result } = renderHook(() => useTransactionsManager());
+      act(() => {
+        result.current.actions.setPage(3);
+      });
+      act(() => {
+        result.current.actions.handleLimitChange(50);
+      });
+      expect(result.current.state.page).toBe(1);
+    });
+  });
+
   describe('Initialisation et Filtres', () => {
     it('devrait initialiser les filtres avec l’ID de compte fourni', () => {
       const { result } = renderHook(() => useTransactionsManager(42));
