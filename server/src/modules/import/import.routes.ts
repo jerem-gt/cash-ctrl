@@ -6,7 +6,6 @@ import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../consta
 import { zodToApiError } from '../../lib/routeHelpers.js';
 import { dateSchema, optionalDateSchema } from '../../lib/validators';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import type { FullExport } from '../export/export.types.js';
 import { createImportRepo } from './import.repo.js';
 
 const newAccountSchema = z.object({
@@ -268,7 +267,7 @@ export function createImportRouter(db: Database): Router {
       res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
-    const result = repo.executeJsonFull(sessionUserId(req), parsed.data as FullExport);
+    const result = repo.executeJsonFull(sessionUserId(req), parsed.data);
     res.status(201).json(result);
   });
 

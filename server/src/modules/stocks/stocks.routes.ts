@@ -45,11 +45,11 @@ export function createStocksRouter(db: Database): Router {
   const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
 
   router.get('/:accountId/positions', checkAccount, (_req, res) => {
-    res.json(repo.getPositions(res.locals.accountId as number));
+    res.json(repo.getPositions(res.locals.accountId));
   });
 
   router.get('/:accountId/operations', checkAccount, (_req, res) => {
-    res.json(repo.getOperations(res.locals.accountId as number));
+    res.json(repo.getOperations(res.locals.accountId));
   });
 
   router.post('/:accountId/buy', (req, res) => {
@@ -114,8 +114,8 @@ export function createStocksRouter(db: Database): Router {
   });
 
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
-    const accountId = res.locals.accountId as number;
-    const userId = res.locals.userId as number;
+    const accountId = res.locals.accountId;
+    const userId = res.locals.userId;
     const operationId = parseNumberParam(req, res, 'operationId');
     if (operationId === null) return;
 
