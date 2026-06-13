@@ -55,4 +55,41 @@ describe('WealthCard', () => {
     const { container } = renderWithProviders(<WealthCard history={withLoans} />);
     expect(container).toBeInTheDocument();
   });
+
+  it("n'affiche pas les boutons de pagination quand ≤ 10 années", () => {
+    renderWithProviders(<WealthCard history={history} />);
+    expect(screen.queryByLabelText('Années précédentes')).toBeNull();
+    expect(screen.queryByLabelText('Années suivantes')).toBeNull();
+  });
+
+  it('affiche les boutons de pagination quand > 10 années', () => {
+    const longHistory: BalanceHistoryData = {
+      account_types: ['liquidites'],
+      data: Array.from({ length: 12 }, (_, i) => ({ year: String(2014 + i), liquidites: 1000 })),
+    };
+    renderWithProviders(<WealthCard history={longHistory} />);
+    expect(screen.getByLabelText('Années précédentes')).toBeInTheDocument();
+    expect(screen.getByLabelText('Années suivantes')).toBeInTheDocument();
+  });
+
+  it('navigue vers les années précédentes puis revient', async () => {
+    const longHistory: BalanceHistoryData = {
+      account_types: ['liquidites'],
+      data: Array.from({ length: 12 }, (_, i) => ({ year: String(2014 + i), liquidites: 1000 })),
+    };
+    renderWithProviders(<WealthCard history={longHistory} />);
+
+    const prevBtn = screen.getByLabelText('Années précédentes');
+    const nextBtn = screen.getByLabelText('Années suivantes');
+
+    expect(prevBtn).not.toBeDisabled();
+    expect(nextBtn).toBeDisabled();
+
+    await userEvent.click(prevBtn);
+    expect(nextBtn).not.toBeDisabled();
+    expect(prevBtn).toBeDisabled();
+
+    await userEvent.click(nextBtn);
+    expect(nextBtn).toBeDisabled();
+  });
 });

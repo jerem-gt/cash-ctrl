@@ -93,7 +93,7 @@ export function createAccountsRepo(db: Database) {
     >('SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = :bankId')
     .pluck();
   const getByUserIdStmt = db.prepare<{ userId: number }, Account>(
-    `${ACCOUNT_SELECT} WHERE a.user_id = :userId ORDER BY a.created_at`,
+    `${ACCOUNT_SELECT} WHERE a.user_id = :userId ORDER BY a.name COLLATE NOCASE`,
   );
   const getByIdStmt = db.prepare<{ id: number; userId: number }, Account>(
     `${ACCOUNT_SELECT} WHERE a.id = :id AND a.user_id = :userId`,

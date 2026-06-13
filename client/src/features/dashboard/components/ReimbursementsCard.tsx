@@ -1,9 +1,13 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle } from '@/components/ui';
 import { useSetReimbursementStatus } from '@/features/transactions/hooks/useReimbursements';
 import { fmtDate, fmtDec } from '@/lib/format';
 import type { PendingReimbursement } from '@/types';
+
+const PAGE_SIZE = 5;
 
 interface RowProps {
   item: PendingReimbursement;
@@ -63,10 +67,64 @@ interface Props {
   recent: PendingReimbursement[];
 }
 
+function PageNav({
+  page,
+  totalPages,
+  onPrev,
+  onNext,
+  prevLabel,
+  nextLabel,
+}: Readonly<{
+  page: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+  prevLabel: string;
+  nextLabel: string;
+}>) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center gap-0.5">
+      <button
+        onClick={onPrev}
+        disabled={page === 0}
+        aria-label={prevLabel}
+        className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
+      >
+        <ChevronLeft size={12} />
+      </button>
+      <span className="text-[10px] text-content-muted tabular-nums px-0.5">
+        {page + 1}/{totalPages}
+      </span>
+      <button
+        onClick={onNext}
+        disabled={page === totalPages - 1}
+        aria-label={nextLabel}
+        className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
+      >
+        <ChevronRight size={12} />
+      </button>
+    </div>
+  );
+}
+
 export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
   const { t } = useTranslation('dashboard');
   const setStatus = useSetReimbursementStatus();
   const handleMarkDone = (id: number) => setStatus.mutate({ id, status: 'rembourse' });
+
+  const [pendingPage, setPendingPage] = useState(0);
+  const [recentPage, setRecentPage] = useState(0);
+
+  const pendingPages = Math.ceil(pending.length / PAGE_SIZE);
+  const recentPages = Math.ceil(recent.length / PAGE_SIZE);
+  const safePendingPage = Math.min(pendingPage, Math.max(0, pendingPages - 1));
+  const safeRecentPage = Math.min(recentPage, Math.max(0, recentPages - 1));
+  const pendingSlice = pending.slice(
+    safePendingPage * PAGE_SIZE,
+    (safePendingPage + 1) * PAGE_SIZE,
+  );
+  const recentSlice = recent.slice(safeRecentPage * PAGE_SIZE, (safeRecentPage + 1) * PAGE_SIZE);
 
   return (
     <Card>
@@ -90,15 +148,24 @@ export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
           <tbody className="divide-y divide-line-subtle">
             {pending.length > 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="pt-1 pb-1 text-[10px] font-medium uppercase tracking-widest text-warning"
-                >
-                  {t('reimb_pending_section')}
+                <td colSpan={6} className="pt-1 pb-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium uppercase tracking-widest text-warning">
+                      {t('reimb_pending_section')}
+                    </span>
+                    <PageNav
+                      page={safePendingPage}
+                      totalPages={pendingPages}
+                      onPrev={() => setPendingPage((p) => Math.max(0, p - 1))}
+                      onNext={() => setPendingPage((p) => Math.min(pendingPages - 1, p + 1))}
+                      prevLabel={t('reimb_prev_page')}
+                      nextLabel={t('reimb_next_page')}
+                    />
+                  </div>
                 </td>
               </tr>
             )}
-            {pending.map((item) => (
+            {pendingSlice.map((item) => (
               <Row
                 key={item.id}
                 item={item}
@@ -109,15 +176,24 @@ export function ReimbursementsCard({ pending, recent }: Readonly<Props>) {
             ))}
             {recent.length > 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="pt-4 pb-1 text-[10px] font-medium uppercase tracking-widest text-success"
-                >
-                  {t('reimb_done_section')}
+                <td colSpan={6} className="pt-4 pb-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium uppercase tracking-widest text-success">
+                      {t('reimb_done_section')}
+                    </span>
+                    <PageNav
+                      page={safeRecentPage}
+                      totalPages={recentPages}
+                      onPrev={() => setRecentPage((p) => Math.max(0, p - 1))}
+                      onNext={() => setRecentPage((p) => Math.min(recentPages - 1, p + 1))}
+                      prevLabel={t('reimb_prev_page')}
+                      nextLabel={t('reimb_next_page')}
+                    />
+                  </div>
                 </td>
               </tr>
             )}
-            {recent.map((item) => (
+            {recentSlice.map((item) => (
               <Row key={item.id} item={item} faded />
             ))}
           </tbody>

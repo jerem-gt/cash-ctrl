@@ -779,8 +779,7 @@ export function createStatsRepo(db: Database) {
         .get(userId);
 
       const currentYear = new Date().getUTCFullYear();
-      const rawStart = firstYearRow?.year ? Number.parseInt(firstYearRow.year, 10) : currentYear;
-      const startYear = Math.max(rawStart, currentYear - 9);
+      const startYear = firstYearRow?.year ? Number.parseInt(firstYearRow.year, 10) : currentYear;
 
       const years: string[] = [];
       for (let y = startYear; y <= currentYear; y++) years.push(y.toString());
@@ -890,8 +889,11 @@ export function createStatsRepo(db: Database) {
 
       // Loan data: principal (in cents) and paid installment principals (in cents)
       const loanData = db
-        .prepare<[number], { account_id: number; principal_cents: number; loan_id: number }>(
-          `SELECT account_id, principal_amount AS principal_cents, id AS loan_id
+        .prepare<
+          [number],
+          { account_id: number; principal_cents: number; loan_id: number; start_date: string }
+        >(
+          `SELECT account_id, principal_amount AS principal_cents, id AS loan_id, start_date
            FROM loans WHERE user_id = ?`,
         )
         .all(userId);
@@ -919,6 +921,7 @@ export function createStatsRepo(db: Database) {
         }
         const result = new Map<number, number>();
         for (const loan of loanData) {
+          if (loan.start_date > yearEnd) continue;
           const repaid = repaidMap.get(loan.loan_id) ?? 0;
           result.set(loan.account_id, toEuros(Math.max(0, loan.principal_cents - repaid)));
         }

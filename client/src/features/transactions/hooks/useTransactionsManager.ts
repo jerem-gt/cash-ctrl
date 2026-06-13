@@ -30,7 +30,7 @@ export function useTransactionsManager(initialAccountId?: number) {
   // --- ÉTATS DE NAVIGATION / DONNÉES ---
   const [filters, setFilters] = useState<Filters>({ account_id: initialAccountId });
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = useState(() => Number(localStorage.getItem('cashctrl.txLimit')) || 25);
 
   // --- ÉTATS DES MODALES (Interface) ---
   const [modal, setModal] = useState<ModalState>(initialModalsState);
@@ -71,6 +71,7 @@ export function useTransactionsManager(initialAccountId?: number) {
     setPage(1); // On reset toujours la page lors d'un filtre
   };
   const handleLimitChange = (newLimit: number) => {
+    localStorage.setItem('cashctrl.txLimit', String(newLimit));
     setLimit(newLimit);
     setPage(1);
   };
