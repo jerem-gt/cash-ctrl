@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { versionApi } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useAppVersion() {
   const query = useQuery({
-    queryKey: ['version'],
+    queryKey: queryKeys.version(),
     queryFn: versionApi.get,
     // Optionnel : on peut réduire le retry pour que le point passe au rouge plus vite
     retry: 1,

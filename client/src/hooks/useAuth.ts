@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useMe() {
   return useQuery({
-    queryKey: ['me'],
+    queryKey: queryKeys.me(),
     queryFn: authApi.me,
     retry: false,
   });
@@ -17,7 +18,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
       authApi.login(username, password),
-    onSuccess: (data) => qc.setQueryData(['me'], data),
+    onSuccess: (data) => qc.setQueryData(queryKeys.me(), data),
   });
 }
 
@@ -28,7 +29,7 @@ export function useLogout() {
     mutationFn: authApi.logout,
     onSuccess: () => {
       showToast(t('logout_success'));
-      qc.setQueryData(['me'], null);
+      qc.setQueryData(queryKeys.me(), null);
       qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
     },
   });
