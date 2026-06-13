@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { settingsApi } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 import type { SystemRefsPayload } from '@/types';
 
 export function useSettings() {
   return useQuery({
-    queryKey: ['settings'],
+    queryKey: queryKeys.settings(),
     queryFn: settingsApi.get,
   });
 }
@@ -15,7 +16,7 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: settingsApi.update,
     onSuccess: (data) => {
-      qc.setQueryData(['settings'], data);
+      qc.setQueryData(queryKeys.settings(), data);
     },
   });
 }
@@ -25,7 +26,7 @@ export function useUpdateSystemRefs() {
   return useMutation({
     mutationFn: (payload: SystemRefsPayload) => settingsApi.updateSystemRefs(payload),
     onSuccess: (data) => {
-      qc.setQueryData(['settings'], data);
+      qc.setQueryData(queryKeys.settings(), data);
     },
   });
 }

@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 import type { PaginatedTransactions, TransactionFilters, TransactionSplit } from '@/types';
 
 type UpdatePayload = {
@@ -30,7 +31,7 @@ type UpdateTransferPayload = {
 
 export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
-    queryKey: ['transactions', filters],
+    queryKey: queryKeys.transactions.list(filters),
     queryFn: () => transactionsApi.list(filters),
     // Garde l'ancienne page affichée pendant le chargement de la suivante
     // (pagination/filtres fluides, sans flash de spinner).
@@ -43,8 +44,9 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: transactionsApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
@@ -54,11 +56,11 @@ export function useUpdateTransaction() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
+      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
         old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
       );
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
@@ -68,7 +70,7 @@ export function useUpdateTransfer() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdateTransferPayload) => transfersApi.update(id, data),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
+      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
         old
           ? {
               ...old,
@@ -87,7 +89,7 @@ export function useUpdateTransfer() {
             }
           : old,
       );
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }
@@ -97,9 +99,10 @@ export function useDeleteTransaction() {
   return useMutation({
     mutationFn: transactionsApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['stock-positions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
@@ -109,8 +112,8 @@ export function useDeleteTransfer() {
   return useMutation({
     mutationFn: transfersApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }
@@ -121,11 +124,11 @@ export function useValidateTransaction() {
     mutationFn: ({ id, validated }: { id: number; validated: boolean }) =>
       transactionsApi.validate(id, validated),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: ['transactions'] }, (old) =>
+      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
         old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
       );
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
@@ -135,8 +138,8 @@ export function useCreateTransfer() {
   return useMutation({
     mutationFn: transfersApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }

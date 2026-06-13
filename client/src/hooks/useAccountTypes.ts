@@ -1,16 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { accountTypesApi } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useAccountTypes() {
-  return useQuery({ queryKey: ['account-types'], queryFn: accountTypesApi.list });
+  return useQuery({ queryKey: queryKeys.accountTypes(), queryFn: accountTypesApi.list });
 }
 
 export function useCreateAccountType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountTypesApi.create,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['account-types'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.accountTypes() }),
   });
 }
 
@@ -20,8 +21,8 @@ export function useUpdateAccountType() {
     mutationFn: ({ id, ...payload }: { id: number; name: string; envelope_type: string | null }) =>
       accountTypesApi.update(id, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['account-types'] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountTypes() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }
@@ -30,6 +31,6 @@ export function useDeleteAccountType() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountTypesApi.remove,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['account-types'] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.accountTypes() }),
   });
 }

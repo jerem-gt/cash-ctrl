@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { type CreateLoanPayload, loansApi, type UpdateLoanPayload } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useLoan(accountId: number) {
   return useQuery({
-    queryKey: ['loans', 'account', accountId],
+    queryKey: queryKeys.loanByAccount(accountId),
     queryFn: () => loansApi.getByAccount(accountId),
     enabled: accountId > 0,
     retry: false,
@@ -13,7 +14,7 @@ export function useLoan(accountId: number) {
 
 export function useLoanInstallments(loanId: number | undefined) {
   return useQuery({
-    queryKey: ['loans', 'installments', loanId],
+    queryKey: queryKeys.loanInstallments(loanId),
     queryFn: () => loansApi.getInstallments(loanId!),
     enabled: loanId != null && loanId > 0,
   });
@@ -24,8 +25,8 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (payload: CreateLoanPayload) => loansApi.create(payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -35,9 +36,9 @@ export function useUpdateLoan(loanId: number) {
   return useMutation({
     mutationFn: (payload: UpdateLoanPayload) => loansApi.update(loanId, payload),
     onSuccess: (loan) => {
-      void qc.invalidateQueries({ queryKey: ['loans', 'account', loan.account_id] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.loanByAccount(loan.account_id) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -54,8 +55,8 @@ export function useUpdateInstallment(loanId: number) {
       total_amount: number;
     }) => loansApi.updateInstallment(loanId, installmentId, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['loans', 'installments', loanId] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.loanInstallments(loanId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }

@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { subcategoriesApi } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useCreateSubcategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: subcategoriesApi.create,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categories() }),
   });
 }
 
@@ -15,7 +16,7 @@ export function useUpdateSubcategory() {
   return useMutation({
     mutationFn: ({ id, ...payload }: { id: number; name: string }) =>
       subcategoriesApi.update(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categories() }),
   });
 }
 
@@ -23,6 +24,6 @@ export function useDeleteSubcategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: subcategoriesApi.remove,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categories() }),
   });
 }

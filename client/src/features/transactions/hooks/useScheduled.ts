@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { scheduledApi, type ScheduledPayload } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useScheduled() {
   return useQuery({
-    queryKey: ['scheduled'],
+    queryKey: queryKeys.scheduled(),
     queryFn: scheduledApi.list,
   });
 }
@@ -14,8 +15,8 @@ export function useCreateScheduled() {
   return useMutation({
     mutationFn: scheduledApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['scheduled'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -26,8 +27,8 @@ export function useUpdateScheduled() {
     mutationFn: ({ id, ...data }: { id: number } & ScheduledPayload) =>
       scheduledApi.update(id, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['scheduled'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -37,8 +38,8 @@ export function useDeleteScheduled() {
   return useMutation({
     mutationFn: scheduledApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['scheduled'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }

@@ -7,12 +7,13 @@ import {
   type TransferStockPayload,
   type UpdateOperationPayload,
 } from '@/api/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/i;
 
 export function useStockSearch(query: string) {
   return useQuery<StockSearchResult[]>({
-    queryKey: ['stock-search', query.toUpperCase()],
+    queryKey: queryKeys.stockSearch(query.toUpperCase()),
     queryFn: () => stocksApi.search(query),
     enabled: ISIN_REGEX.test(query.trim()),
     staleTime: 5 * 60 * 1000,
@@ -21,7 +22,7 @@ export function useStockSearch(query: string) {
 
 export function useStockPositions(accountId: number) {
   return useQuery({
-    queryKey: ['stock-positions', accountId],
+    queryKey: queryKeys.stockPositions.byAccount(accountId),
     queryFn: () => stocksApi.positions(accountId),
     enabled: accountId > 0,
   });
@@ -29,7 +30,7 @@ export function useStockPositions(accountId: number) {
 
 export function useStockOperations(accountId: number) {
   return useQuery({
-    queryKey: ['stock-operations', accountId],
+    queryKey: queryKeys.stockOperations(accountId),
     queryFn: () => stocksApi.operations(accountId),
     enabled: accountId > 0,
   });
@@ -40,10 +41,10 @@ export function useBuyStock(accountId: number) {
   return useMutation({
     mutationFn: (payload: StockOperationPayload) => stocksApi.buy(accountId, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['stock-positions', accountId] });
-      void qc.invalidateQueries({ queryKey: ['stock-operations', accountId] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.byAccount(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockOperations(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -53,10 +54,10 @@ export function useSellStock(accountId: number) {
   return useMutation({
     mutationFn: (payload: StockOperationPayload) => stocksApi.sell(accountId, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['stock-positions', accountId] });
-      void qc.invalidateQueries({ queryKey: ['stock-operations', accountId] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.byAccount(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockOperations(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
@@ -66,8 +67,8 @@ export function useRefreshPrices(accountId: number) {
   return useMutation({
     mutationFn: () => stocksApi.refreshPrices(),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['stock-positions', accountId] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.byAccount(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }
@@ -77,11 +78,13 @@ export function useTransferStock(fromAccountId: number) {
   return useMutation({
     mutationFn: (payload: TransferStockPayload) => stocksApi.transfer(fromAccountId, payload),
     onSuccess: ({ inOperation }) => {
-      void qc.invalidateQueries({ queryKey: ['stock-positions', fromAccountId] });
-      void qc.invalidateQueries({ queryKey: ['stock-operations', fromAccountId] });
-      void qc.invalidateQueries({ queryKey: ['stock-positions', inOperation.account_id] });
-      void qc.invalidateQueries({ queryKey: ['stock-operations', inOperation.account_id] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.byAccount(fromAccountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockOperations(fromAccountId) });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.stockPositions.byAccount(inOperation.account_id),
+      });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockOperations(inOperation.account_id) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
     },
   });
 }
@@ -92,10 +95,10 @@ export function useUpdateStockOperation(accountId: number) {
     mutationFn: ({ operationId, ...data }: { operationId: number } & UpdateOperationPayload) =>
       stocksApi.updateOperation(accountId, operationId, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['stock-positions', accountId] });
-      void qc.invalidateQueries({ queryKey: ['stock-operations', accountId] });
-      void qc.invalidateQueries({ queryKey: ['accounts'] });
-      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.byAccount(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.stockOperations(accountId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
 }
