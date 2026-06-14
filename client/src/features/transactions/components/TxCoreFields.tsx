@@ -29,6 +29,7 @@ interface Props {
   fixedAccountId?: number;
   /** Masque les sélecteurs catégorie/sous-catégorie (mode ventilation). */
   hideCategories?: boolean;
+  fieldErrors?: Set<string>;
 }
 
 export function TxCoreFields({
@@ -41,6 +42,7 @@ export function TxCoreFields({
   isTransfer,
   fixedAccountId,
   hideCategories,
+  fieldErrors,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
   const { data: matchedRule } = useMatchCategorizationRule(isTransfer ? '' : value.description);
@@ -116,6 +118,7 @@ export function TxCoreFields({
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"
+            error={fieldErrors?.has('amount')}
           />
         </FormGroup>
         <FormGroup label={t('tx_core.description')} className="min-w-48">
@@ -124,6 +127,7 @@ export function TxCoreFields({
             value={value.description}
             onChange={(e) => onChange({ description: e.target.value })}
             placeholder={isTransfer ? `${sourceAccount?.name ?? ''} → …` : 'Ex : Courses Leclerc'}
+            error={fieldErrors?.has('description')}
           />
         </FormGroup>
       </div>
@@ -137,6 +141,7 @@ export function TxCoreFields({
                 id="category-select"
                 value={value.category_id}
                 onChange={(e) => onChange({ category_id: e.target.value, subcategory_id: '' })}
+                error={fieldErrors?.has('category_id')}
               >
                 <option value="">{t('tx_core.choose')}</option>
                 {categories.map((c) => (
@@ -153,6 +158,7 @@ export function TxCoreFields({
                 className="disabled:opacity-50 disabled:cursor-not-allowed"
                 value={value.subcategory_id}
                 onChange={(e) => onChange({ subcategory_id: e.target.value })}
+                error={fieldErrors?.has('subcategory_id')}
               >
                 <option value="">{t('tx_core.choose')}</option>
                 {categories
@@ -187,6 +193,7 @@ export function TxCoreFields({
               onChange={handleSourceChange}
               accounts={accounts}
               logoMap={logoMap}
+              error={fieldErrors?.has('account_id')}
             />
           </FormGroup>
         )}
@@ -199,6 +206,7 @@ export function TxCoreFields({
               accounts={destAccounts}
               logoMap={logoMap}
               placeholder="— Choisir —"
+              error={fieldErrors?.has('to_account_id')}
             />
           </FormGroup>
         )}
@@ -208,6 +216,7 @@ export function TxCoreFields({
               id="payment-method-select"
               value={value.payment_method_id}
               onChange={(e) => onChange({ payment_method_id: e.target.value })}
+              error={fieldErrors?.has('payment_method_id')}
             >
               <option value="">{t('tx_core.choose')}</option>
               {paymentMethods

@@ -22,12 +22,17 @@ function PaymentMethodEditForm({
   const { t: tc } = useTranslation('common');
   const updatePm = useUpdatePaymentMethod();
   const [form, setForm] = useState({ name: pm.name, icon: pm.icon });
+  const [nameError, setNameError] = useState(false);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!form.name.trim()) return;
+        if (!form.name.trim()) {
+          setNameError(true);
+          return;
+        }
+        setNameError(false);
         updatePm.mutate(
           { id: pm.id, name: form.name.trim(), icon: form.icon },
           {
@@ -57,10 +62,14 @@ function PaymentMethodEditForm({
         <Input
           type="text"
           value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          onChange={(e) => {
+            setNameError(false);
+            setForm((f) => ({ ...f, name: e.target.value }));
+          }}
           className="flex-1"
           placeholder={t('payment_methods.name_placeholder')}
           autoFocus
+          error={nameError}
         />
       </div>
       <div className="flex gap-2">
@@ -115,15 +124,18 @@ export function PaymentMethodsManager() {
   const { data: paymentMethods = [], isLoading: pmsLoading } = usePaymentMethods();
   const createPaymentMethod = useCreatePaymentMethod();
   const [newPm, setNewPm] = useState({ name: '', icon: '' });
+  const [nameError, setNameError] = useState(false);
 
   if (pmsLoading) return <SettingsManagerSkeleton />;
 
   const handleAddPaymentMethod = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newPm.name.trim()) {
+      setNameError(true);
       showToast(t('payment_methods.err_no_name'));
       return;
     }
+    setNameError(false);
     createPaymentMethod.mutate(
       { name: newPm.name.trim(), icon: newPm.icon },
       {
@@ -155,9 +167,13 @@ export function PaymentMethodsManager() {
           <Input
             type="text"
             value={newPm.name}
-            onChange={(e) => setNewPm((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => {
+              setNameError(false);
+              setNewPm((f) => ({ ...f, name: e.target.value }));
+            }}
             className="flex-1 min-w-0"
             placeholder={t('payment_methods.name_placeholder')}
+            error={nameError}
           />
           <Button
             type="submit"

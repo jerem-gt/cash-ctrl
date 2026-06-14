@@ -1,7 +1,7 @@
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, ModalFrame } from '@/components/ui';
+import { Button, ModalFrame, showToast } from '@/components/ui';
 import { ReimbursementsPanel } from '@/features/transactions/components/ReimbursementsPanel';
 import { ReimbursementStatusPicker } from '@/features/transactions/components/ReimbursementStatusPicker';
 import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
@@ -21,12 +21,58 @@ import {
   runSubmitTransfer,
   runSubmitTx,
   type TxFormState,
+  validateSplits,
 } from '@/features/transactions/lib/txForm';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
 
 export type { TxFormState };
+
+function addCategoryErrors(core: TxCoreState, errs: Set<string>): void {
+  if (!Number.parseInt(core.category_id)) errs.add('category_id');
+  else if (!Number.parseInt(core.subcategory_id)) errs.add('subcategory_id');
+}
+
+function buildEditErrors(
+  core: TxCoreState,
+  isTransferEdit: boolean,
+  isVentilated: boolean,
+): Set<string> {
+  const errs = new Set<string>();
+  if (!core.amount) errs.add('amount');
+  if (!core.description) errs.add('description');
+  if (isTransferEdit) {
+    if (!core.account_id) errs.add('account_id');
+    if (!core.to_account_id) errs.add('to_account_id');
+  } else {
+    if (!core.account_id) errs.add('account_id');
+    if (!isVentilated) addCategoryErrors(core, errs);
+    if (!core.payment_method_id) errs.add('payment_method_id');
+  }
+  return errs;
+}
+
+function buildTransferCreateErrors(core: TxCoreState): Set<string> {
+  const errs = new Set<string>();
+  if (!core.amount) errs.add('amount');
+  if (!core.to_account_id) errs.add('to_account_id');
+  return errs;
+}
+
+function buildTxCreateErrors(
+  core: TxCoreState,
+  fixedAccountId: number | undefined,
+  isVentilated: boolean,
+): Set<string> {
+  const errs = new Set<string>();
+  if (!core.amount) errs.add('amount');
+  if (!core.description) errs.add('description');
+  if (!Number.parseInt(core.payment_method_id)) errs.add('payment_method_id');
+  if (fixedAccountId == null && !core.account_id) errs.add('account_id');
+  if (!isVentilated) addCategoryErrors(core, errs);
+  return errs;
+}
 
 type BaseProps = {
   accounts: Account[];
@@ -77,6 +123,7 @@ export function TxModal(props: Readonly<Props>) {
   const [splits, setSplits] = useState<SplitInput[]>(() =>
     initSplits(tx ?? duplicateFrom, categories),
   );
+  const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
@@ -85,6 +132,7 @@ export function TxModal(props: Readonly<Props>) {
   const noOtherAccounts = fixedAccountId != null && accounts.every((a) => a.id === fixedAccountId);
 
   const handleModeToggle = (toTransfer: boolean) => {
+    setFieldErrors(new Set());
     setIsTransfer(toTransfer);
     if (toTransfer) {
       setIsVentilated(false);
@@ -94,13 +142,33 @@ export function TxModal(props: Readonly<Props>) {
   };
 
   const handleToggleVentilation = () => {
+    setFieldErrors(new Set());
     setIsVentilated((v) => !v);
     setSplits([]);
     setCore((c) => ({ ...c, category_id: '', subcategory_id: '' }));
   };
 
+  const buildErrors = (): Set<string> => {
+    if (isEdit) return buildEditErrors(core, isTransferEdit, isVentilated);
+    if (isTransferCreate) return buildTransferCreateErrors(core);
+    return buildTxCreateErrors(core, fixedAccountId, isVentilated);
+  };
+
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
+    if (isVentilated && !isTransferCreate) {
+      const err = validateSplits(splits, Number.parseFloat(core.amount) || 0, t);
+      if (err) {
+        showToast(err);
+        return;
+      }
+    }
+    const errs = buildErrors();
+    setFieldErrors(errs);
+    if (errs.size > 0) {
+      showToast(t('modal.err_required'));
+      return;
+    }
     if (isEdit) {
       runSubmitEdit({
         isVentilated,
@@ -203,12 +271,20 @@ export function TxModal(props: Readonly<Props>) {
           splits={splits}
           onSplitsChange={setSplits}
           core={core}
-          onCorePatch={(patch) => setCore((c) => ({ ...c, ...patch }))}
+          onCorePatch={(patch) => {
+            setFieldErrors((prev) => {
+              const s = new Set(prev);
+              Object.keys(patch).forEach((k) => s.delete(k));
+              return s;
+            });
+            setCore((c) => ({ ...c, ...patch }));
+          }}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}
           paymentMethods={paymentMethods}
           fixedAccountId={fixedAccountId}
+          fieldErrors={fieldErrors}
         />
 
         <TxMetaFields

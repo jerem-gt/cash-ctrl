@@ -35,16 +35,19 @@ function RuleRow({ rule, subcategoryLabel }: Readonly<RuleRowProps>) {
   const { data: categories = [] } = useCategories();
   const update = useUpdateCategorizationRule();
   const remove = useDeleteCategorizationRule();
+  const [errors, setErrors] = useState<Set<string>>(new Set());
 
   const handleSave = () => {
-    if (!pattern.trim()) {
-      showToast(t('categorization_rules.err_pattern'));
+    const errs = new Set<string>();
+    if (!pattern.trim()) errs.add('pattern');
+    if (!subcategoryId) errs.add('subcategoryId');
+    if (errs.size > 0) {
+      setErrors(errs);
+      if (errs.has('pattern')) showToast(t('categorization_rules.err_pattern'));
+      else showToast(t('categorization_rules.err_subcategory'));
       return;
     }
-    if (!subcategoryId) {
-      showToast(t('categorization_rules.err_subcategory'));
-      return;
-    }
+    setErrors(new Set());
     update.mutate(
       { id: rule.id, pattern: pattern.trim(), subcategoryId: Number(subcategoryId) },
       {
@@ -71,12 +74,31 @@ function RuleRow({ rule, subcategoryLabel }: Readonly<RuleRowProps>) {
           <Input
             type="text"
             value={pattern}
-            onChange={(e) => setPattern(e.target.value)}
+            onChange={(e) => {
+              setErrors((p) => {
+                const s = new Set(p);
+                s.delete('pattern');
+                return s;
+              });
+              setPattern(e.target.value);
+            }}
             autoFocus
+            error={errors.has('pattern')}
           />
         </FormGroup>
         <FormGroup label={t('categorization_rules.subcategory_label')} className="min-w-40 flex-1">
-          <Select value={subcategoryId} onChange={(e) => setSubcategoryId(e.target.value)}>
+          <Select
+            value={subcategoryId}
+            onChange={(e) => {
+              setErrors((p) => {
+                const s = new Set(p);
+                s.delete('subcategoryId');
+                return s;
+              });
+              setSubcategoryId(e.target.value);
+            }}
+            error={errors.has('subcategoryId')}
+          >
             <option value="">—</option>
             {categories.map((cat) =>
               cat.subcategories.map((sub) => (
@@ -129,6 +151,7 @@ export function CategorizationRulesCard() {
   const [newSubcategoryId, setNewSubcategoryId] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [createErrors, setCreateErrors] = useState<Set<string>>(new Set());
 
   const subcategoryLabel = (subcategoryId: number): string => {
     for (const cat of categories) {
@@ -139,14 +162,16 @@ export function CategorizationRulesCard() {
   };
 
   const handleCreate = () => {
-    if (!newPattern.trim()) {
-      showToast(t('categorization_rules.err_pattern'));
+    const errs = new Set<string>();
+    if (!newPattern.trim()) errs.add('pattern');
+    if (!newSubcategoryId) errs.add('subcategoryId');
+    if (errs.size > 0) {
+      setCreateErrors(errs);
+      if (errs.has('pattern')) showToast(t('categorization_rules.err_pattern'));
+      else showToast(t('categorization_rules.err_subcategory'));
       return;
     }
-    if (!newSubcategoryId) {
-      showToast(t('categorization_rules.err_subcategory'));
-      return;
-    }
+    setCreateErrors(new Set());
     create.mutate(
       { pattern: newPattern.trim(), subcategoryId: Number(newSubcategoryId) },
       {
@@ -220,16 +245,35 @@ export function CategorizationRulesCard() {
             <Input
               type="text"
               value={newPattern}
-              onChange={(e) => setNewPattern(e.target.value)}
+              onChange={(e) => {
+                setCreateErrors((p) => {
+                  const s = new Set(p);
+                  s.delete('pattern');
+                  return s;
+                });
+                setNewPattern(e.target.value);
+              }}
               placeholder="%leclerc%"
               autoFocus
+              error={createErrors.has('pattern')}
             />
           </FormGroup>
           <FormGroup
             label={t('categorization_rules.subcategory_label')}
             className="min-w-40 flex-1"
           >
-            <Select value={newSubcategoryId} onChange={(e) => setNewSubcategoryId(e.target.value)}>
+            <Select
+              value={newSubcategoryId}
+              onChange={(e) => {
+                setCreateErrors((p) => {
+                  const s = new Set(p);
+                  s.delete('subcategoryId');
+                  return s;
+                });
+                setNewSubcategoryId(e.target.value);
+              }}
+              error={createErrors.has('subcategoryId')}
+            >
               <option value="">—</option>
               {categories.map((cat) =>
                 cat.subcategories.map((sub) => (

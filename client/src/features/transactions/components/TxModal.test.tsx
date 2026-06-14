@@ -256,6 +256,61 @@ describe('TxModal — champ Planification', () => {
   });
 });
 
+describe('TxModal — mise en évidence des champs invalides', () => {
+  it('passe le champ montant en border-danger si soumis vide', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(screen.getByPlaceholderText('0,00')).toHaveClass('border-danger'));
+  });
+
+  it('passe le select catégorie en border-danger si soumis sans catégorie', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(document.getElementById('category-select')).toHaveClass('border-danger'),
+    );
+  });
+
+  it('ne passe pas le select sous-catégorie en rouge si la catégorie est vide', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(document.getElementById('subcategory-select')).not.toHaveClass('border-danger'),
+    );
+  });
+
+  it('passe le select sous-catégorie en border-danger si catégorie choisie mais sous-catégorie vide', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.selectOptions(document.getElementById('category-select')!, String(CATEGORIES[0].id));
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(document.getElementById('subcategory-select')).toHaveClass('border-danger'),
+    );
+  });
+
+  it("efface le border-danger du montant dès que l'utilisateur saisit une valeur", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(screen.getByPlaceholderText('0,00')).toHaveClass('border-danger'));
+    await user.type(screen.getByPlaceholderText('0,00'), '10');
+    expect(screen.getByPlaceholderText('0,00')).not.toHaveClass('border-danger');
+  });
+
+  it('efface toutes les erreurs au basculement de mode Transaction → Transfert', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(screen.getByPlaceholderText('0,00')).toHaveClass('border-danger'));
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    expect(screen.getByPlaceholderText('0,00')).not.toHaveClass('border-danger');
+  });
+});
+
 describe('TxModal — mode édition', () => {
   it(`affiche le titre "Modifier la transaction"`, () => {
     renderWithProviders(<TxModal {...editProps} />);

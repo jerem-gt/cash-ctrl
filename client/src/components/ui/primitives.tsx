@@ -85,11 +85,15 @@ export function IconButton({
 // ─── Input ────────────────────────────────────────────────────────────────────
 export function Input({
   className = '',
+  error = false,
   ...props
-}: Readonly<InputHTMLAttributes<HTMLInputElement>>) {
+}: Readonly<InputHTMLAttributes<HTMLInputElement> & { error?: boolean }>) {
+  const borderClass = error
+    ? 'border-danger focus:border-danger focus:ring-danger/20'
+    : 'border-line focus:border-brand-500 focus:ring-brand-500/20';
   return (
     <input
-      className={`w-full px-3 py-2 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      className={`w-full px-3 py-2 text-sm bg-surface-muted border rounded-lg outline-none focus:ring-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${borderClass} ${className}`}
       {...props}
     />
   );
@@ -107,6 +111,7 @@ function isDecimalInProgress(value: string, allowNegative: boolean): boolean {
 
 interface DecimalInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   allowNegative?: boolean;
+  error?: boolean;
 }
 
 export function DecimalInput({
@@ -123,11 +128,15 @@ export function DecimalInput({
 // ─── Select ───────────────────────────────────────────────────────────────────
 export function Select({
   className = '',
+  error = false,
   ...props
-}: Readonly<SelectHTMLAttributes<HTMLSelectElement>>) {
+}: Readonly<SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean }>) {
+  const borderClass = error
+    ? 'border-danger focus:border-danger focus:ring-danger/20'
+    : 'border-line focus:border-brand-500 focus:ring-brand-500/20';
   return (
     <select
-      className={`w-full h-9 px-3 py-2 text-sm text-content-secondary bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all ${className}`}
+      className={`w-full h-9 px-3 py-2 text-sm text-content-secondary bg-surface border rounded-lg outline-none focus:ring-1 transition-all ${borderClass} ${className}`}
       {...props}
     />
   );

@@ -44,6 +44,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
   const [domain, setDomain] = useState(bank.domain ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [nameError, setNameError] = useState(false);
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
@@ -58,7 +59,11 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setNameError(true);
+      return;
+    }
+    setNameError(false);
     try {
       if (file) await uploadLogo.mutateAsync({ id: bank.id, file });
       await updateBank.mutateAsync({
@@ -86,9 +91,13 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
       <Input
         type="text"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setNameError(false);
+          setName(e.target.value);
+        }}
         placeholder={t('banks.name_placeholder')}
         autoFocus
+        error={nameError}
       />
       <Input
         type="text"
@@ -228,6 +237,7 @@ export function BanksManager() {
   const reorderBanks = useReorderBanks();
   const qc = useQueryClient();
   const [newBank, setNewBank] = useState({ name: '', domain: '' });
+  const [nameError, setNameError] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -239,9 +249,11 @@ export function BanksManager() {
   const handleAddBank = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newBank.name.trim()) {
+      setNameError(true);
       showToast(t('banks.err_no_name'));
       return;
     }
+    setNameError(false);
     createBank.mutate(
       { name: newBank.name.trim(), domain: newBank.domain.trim() || null },
       {
@@ -279,8 +291,12 @@ export function BanksManager() {
           <Input
             type="text"
             value={newBank.name}
-            onChange={(e) => setNewBank((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => {
+              setNameError(false);
+              setNewBank((f) => ({ ...f, name: e.target.value }));
+            }}
             placeholder={t('banks.name_placeholder')}
+            error={nameError}
           />
           <Input
             type="text"

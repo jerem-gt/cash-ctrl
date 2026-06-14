@@ -27,6 +27,7 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
   const updateAt = useUpdateAccountType();
   const [name, setName] = useState(at.name);
   const [envelopeType, setEnvelopeType] = useState(at.envelope_type ?? '');
+  const [nameError, setNameError] = useState(false);
 
   const envelopeOptions = [
     { value: '', label: t('account_types.none_envelope') },
@@ -41,7 +42,11 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!name.trim()) {
+          setNameError(true);
+          return;
+        }
+        setNameError(false);
         updateAt.mutate(
           { id: at.id, name: name.trim(), envelope_type: envelopeType || null },
           {
@@ -61,9 +66,13 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
       <Input
         type="text"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setNameError(false);
+          setName(e.target.value);
+        }}
         placeholder={t('account_types.name_placeholder')}
         autoFocus
+        error={nameError}
       />
       <div>
         <label
@@ -159,6 +168,7 @@ export function AccountTypesManager() {
   const createAccountType = useCreateAccountType();
   const [newAtName, setNewAtName] = useState('');
   const [newAtEnvelopeType, setNewAtEnvelopeType] = useState('');
+  const [nameError, setNameError] = useState(false);
 
   if (atsLoading) return <SettingsManagerSkeleton />;
 
@@ -174,9 +184,11 @@ export function AccountTypesManager() {
   const handleAddAccountType = (e: SubmitEvent) => {
     e.preventDefault();
     if (!newAtName.trim()) {
+      setNameError(true);
       showToast(t('account_types.err_no_name'));
       return;
     }
+    setNameError(false);
     createAccountType.mutate(
       { name: newAtName.trim(), envelope_type: newAtEnvelopeType || null },
       {
@@ -200,9 +212,13 @@ export function AccountTypesManager() {
           <Input
             type="text"
             value={newAtName}
-            onChange={(e) => setNewAtName(e.target.value)}
+            onChange={(e) => {
+              setNameError(false);
+              setNewAtName(e.target.value);
+            }}
             className="flex-1 min-w-0"
             placeholder={t('account_types.name_placeholder')}
+            error={nameError}
           />
           <Button
             type="submit"

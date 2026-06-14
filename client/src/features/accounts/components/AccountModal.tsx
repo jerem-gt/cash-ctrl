@@ -60,17 +60,20 @@ export function AccountModal(props: Readonly<Props>) {
 
   const effectiveAccountTypeId = form.account_type_id || String(accountTypes[0]?.id ?? '');
   const createAccount = useCreateAccount();
+  const [errors, setErrors] = useState<Set<string>>(new Set());
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      showToast(t('modal.err_no_name'));
+    const errs = new Set<string>();
+    if (!form.name.trim()) errs.add('name');
+    if (!isEdit && !form.bank_id) errs.add('bank_id');
+    if (errs.size > 0) {
+      setErrors(errs);
+      if (errs.has('name')) showToast(t('modal.err_no_name'));
+      else showToast(t('modal.err_no_bank'));
       return;
     }
-    if (!isEdit && !form.bank_id) {
-      showToast(t('modal.err_no_bank'));
-      return;
-    }
+    setErrors(new Set());
     if (isEdit) {
       (props as EditProps).onSave({ ...form, account_type_id: effectiveAccountTypeId });
       return;
@@ -125,15 +128,31 @@ export function AccountModal(props: Readonly<Props>) {
           <Input
             type="text"
             value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => {
+              setErrors((p) => {
+                const s = new Set(p);
+                s.delete('name');
+                return s;
+              });
+              setForm((f) => ({ ...f, name: e.target.value }));
+            }}
             placeholder={t('modal.name_placeholder')}
+            error={errors.has('name')}
           />
         </FormGroup>
         <FormGroup label={t('modal.bank')}>
           <BankSelect
             value={form.bank_id}
-            onChange={(v) => setForm((f) => ({ ...f, bank_id: v }))}
+            onChange={(v) => {
+              setErrors((p) => {
+                const s = new Set(p);
+                s.delete('bank_id');
+                return s;
+              });
+              setForm((f) => ({ ...f, bank_id: v }));
+            }}
             banks={banks}
+            error={errors.has('bank_id')}
           />
         </FormGroup>
         <FormGroup label={t('modal.type')}>
