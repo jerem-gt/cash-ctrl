@@ -96,6 +96,16 @@ Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 - `client/src/` : Code source React.
 - `server/src/` : Code source de l'API.
 
+## Mise à jour de la documentation (README + screenshots)
+
+Modifier `README.md` directement pour les features et compteurs. Pour les screenshots, lancer les deux serveurs + `npm run db:seed:test` (server), puis :
+
+```bash
+node docs/take-screenshots.mjs
+```
+
+Captures dans `docs/screenshots/` (clair + `-dark`). Pour une nouvelle page : ajouter `page.goto` + `shot(...)` dans `captureAll` et une ligne dans le tableau `## Aperçu` du README.
+
 ## Environnement
 - Utiliser l'outil **Bash** (pas PowerShell) pour les commandes shell.
 - Les chemins Windows doivent utiliser des slashes et être entre guillemets : `cd "C:/Users/jerem/WebstormProjects/cash-ctrl"`

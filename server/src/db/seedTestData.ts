@@ -631,6 +631,101 @@ export function seedTestData(db: Database) {
     monthDay(-3, 20),
   );
 
+  // ── Historique 2025 — données pour la page Rapports ─────────────────────────
+  // Salaire légèrement inférieur (2 650 € vs 2 800 €), loyer identique, EDF plus
+  // élevé (hiver), quelques loisirs variables → comparaison 2026 vs 2025 lisible.
+  const expenses2025: Array<[number, string, string, number]> = [
+    // [mois (1-12), subcat, description, montant]
+    [1, 'Loyer', 'Loyer', 820],
+    [2, 'Loyer', 'Loyer', 820],
+    [3, 'Loyer', 'Loyer', 820],
+    [4, 'Loyer', 'Loyer', 820],
+    [5, 'Loyer', 'Loyer', 820],
+    [6, 'Loyer', 'Loyer', 820],
+    [7, 'Loyer', 'Loyer', 820],
+    [8, 'Loyer', 'Loyer', 820],
+    [9, 'Loyer', 'Loyer', 820],
+    [10, 'Loyer', 'Loyer', 820],
+    [11, 'Loyer', 'Loyer', 820],
+    [12, 'Loyer', 'Loyer', 820],
+    [1, 'Électricité', 'EDF', 110],
+    [2, 'Électricité', 'EDF', 98],
+    [3, 'Électricité', 'EDF', 80],
+    [4, 'Électricité', 'EDF', 55],
+    [5, 'Électricité', 'EDF', 45],
+    [6, 'Électricité', 'EDF', 42],
+    [7, 'Électricité', 'EDF', 40],
+    [8, 'Électricité', 'EDF', 38],
+    [9, 'Électricité', 'EDF', 50],
+    [10, 'Électricité', 'EDF', 70],
+    [11, 'Électricité', 'EDF', 90],
+    [12, 'Électricité', 'EDF', 108],
+    [1, 'Supermarché', 'Carrefour', 95],
+    [2, 'Supermarché', 'Lidl', 72],
+    [3, 'Supermarché', 'Leclerc', 88],
+    [4, 'Supermarché', 'Carrefour', 80],
+    [5, 'Supermarché', 'Lidl', 65],
+    [6, 'Supermarché', 'Leclerc', 91],
+    [7, 'Supermarché', 'Carrefour', 78],
+    [8, 'Supermarché', 'Lidl', 84],
+    [9, 'Supermarché', 'Leclerc', 76],
+    [10, 'Supermarché', 'Carrefour', 90],
+    [11, 'Supermarché', 'Lidl', 68],
+    [12, 'Supermarché', 'Leclerc', 110],
+    [2, 'Restaurant', 'Restaurant', 35],
+    [4, 'Restaurant', 'Brasserie', 48],
+    [6, 'Restaurant', 'Restaurant', 42],
+    [8, 'Restaurant', 'Resto vacances', 65],
+    [10, 'Restaurant', 'Restaurant', 38],
+    [12, 'Restaurant', 'Réveillon', 95],
+    [3, 'Streaming', 'Netflix', 15.99],
+    [6, 'Streaming', 'Netflix', 15.99],
+    [9, 'Streaming', 'Netflix', 15.99],
+    [12, 'Streaming', 'Netflix', 15.99],
+    [4, 'Vêtements', 'Zara', 89],
+    [9, 'Vêtements', 'Uniqlo', 65],
+    [7, 'Vacances', 'Airbnb été', 450],
+    [8, 'Vacances', 'Activités vacances', 120],
+  ];
+
+  const subcatMap: Record<string, number> = {
+    Loyer: subcatLoyer,
+    Électricité: subcatElec,
+    Supermarché: subcatSupermarche,
+    Restaurant: subcatRestaurant,
+    Streaming: subcatStreaming,
+    Vêtements: subcatVetements,
+    Vacances: subcatVacances,
+  };
+
+  for (let m = 1; m <= 12; m++) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    insertTx({
+      account_id: accBNPCourant,
+      type: 'income',
+      amount: 2650,
+      description: 'Salaire',
+      subcategory_id: subcatSalaire,
+      date: `2025-${pad(m)}-01`,
+      payment_method_id: pmVirement,
+      validated: 1,
+    });
+  }
+
+  for (const [m, subcatName, desc, amount] of expenses2025) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    insertTx({
+      account_id: accBNPCourant,
+      type: 'expense',
+      amount,
+      description: desc,
+      subcategory_id: subcatMap[subcatName],
+      date: `2025-${pad(m)}-05`,
+      payment_method_id: subcatName === 'Loyer' ? pmVirement : pmCB,
+      validated: 1,
+    });
+  }
+
   // ── Remboursements ───────────────────────────────────────────────────────────
   const secuRembId = insertTx({
     account_id: accBNPCourant,
@@ -1006,7 +1101,7 @@ export function seedTestData(db: Database) {
     '  Comptes       : 10 (BNP x2, BoursoBank x2, Crédit Agricole, Revolut, PEA, AV Linxea, PER Linxea, Prêt voiture) + 1 clôturé',
   );
   console.log(
-    `  Transactions  : ~${40 + paidInstallments.length * 2} (dont 8 virements liés, Bourse achats/ventes + frais séparés, 1 ventilée, ${paidInstallments.length} mensualités payées, 1 remboursement partiel Sécu)`,
+    `  Transactions  : ~${40 + paidInstallments.length * 2 + 12 + expenses2025.length} (dont historique 2025 complet, ${paidInstallments.length} mensualités prêt, 8 virements liés, 1 ventilée)`,
   );
   console.log(
     '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€) — frais en tx séparées',
