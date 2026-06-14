@@ -47,7 +47,7 @@ function makeTx(
     date: string;
     amount: number;
     description: string;
-    qifAccountName: string;
+    accountName: string;
     category: string;
     memo: string | null;
     cleared: boolean;
@@ -59,7 +59,7 @@ function makeTx(
     date: '15/01/2024',
     amount: -50,
     description: 'Test',
-    qifAccountName: 'ACC1',
+    accountName: 'ACC1',
     category: '',
     memo: null,
     cleared: false,
@@ -127,10 +127,10 @@ describe('resolveAccountInfo', () => {
     expect(r.resolved).toBe(true);
     expect(r.accountId).toBe(1);
     expect(r.accountName).toBe('Courant');
-    expect(r.newAccountQifName).toBeNull();
+    expect(r.newAccountSourceName).toBeNull();
   });
 
-  it('résolu avec qifName si action create', () => {
+  it('résolu avec sourceName si action create', () => {
     const choice: AccountChoice = {
       action: 'create',
       name: 'Nouveau',
@@ -143,7 +143,7 @@ describe('resolveAccountInfo', () => {
     const r = resolveAccountInfo('QIF_ACC', choice, []);
     expect(r.resolved).toBe(true);
     expect(r.accountId).toBeNull();
-    expect(r.newAccountQifName).toBe('QIF_ACC');
+    expect(r.newAccountSourceName).toBe('QIF_ACC');
     expect(r.accountName).toBe('Nouveau');
     expect(r.bankName).toBe('BNP');
   });
@@ -370,13 +370,13 @@ describe('resolvePreview', () => {
   it('produit un transfer quand la contrepartie est trouvée et les deux comptes mappés', () => {
     const acc2: Account = { ...ACCOUNT, id: 2, name: 'Épargne' };
     const tx1 = makeTx({
-      qifAccountName: 'ACC1',
+      accountName: 'ACC1',
       amount: -500,
       isTransfer: true,
       transferTarget: 'ACC2',
     });
     const tx2 = makeTx({
-      qifAccountName: 'ACC2',
+      accountName: 'ACC2',
       amount: 500,
       isTransfer: true,
       transferTarget: 'ACC1',
@@ -398,13 +398,13 @@ describe('resolvePreview', () => {
 
   it("skip un virement si un compte n'est pas mappé", () => {
     const tx1 = makeTx({
-      qifAccountName: 'ACC1',
+      accountName: 'ACC1',
       amount: -500,
       isTransfer: true,
       transferTarget: 'ACC2',
     });
     const tx2 = makeTx({
-      qifAccountName: 'ACC2',
+      accountName: 'ACC2',
       amount: 500,
       isTransfer: true,
       transferTarget: 'ACC1',
@@ -425,13 +425,13 @@ describe('resolvePreview', () => {
   it("n'inclut pas la transaction côté crédit d'un virement dans les items", () => {
     const acc2: Account = { ...ACCOUNT, id: 2, name: 'Épargne' };
     const tx1 = makeTx({
-      qifAccountName: 'ACC1',
+      accountName: 'ACC1',
       amount: -500,
       isTransfer: true,
       transferTarget: 'ACC2',
     });
     const tx2 = makeTx({
-      qifAccountName: 'ACC2',
+      accountName: 'ACC2',
       amount: 500,
       isTransfer: true,
       transferTarget: 'ACC1',
@@ -487,7 +487,7 @@ describe('buildExecuteBody', () => {
     amount: 50,
     description: 'Test',
     accountId: 1,
-    newAccountQifName: null,
+    newAccountSourceName: null,
     accountName: 'Courant',
     subcategoryId: 10,
     newSubcategoryKey: null,
@@ -504,10 +504,10 @@ describe('buildExecuteBody', () => {
     amount: 500,
     description: 'Virement',
     fromAccountId: 1,
-    fromAccountQifName: null,
+    fromAccountSourceName: null,
     fromAccountName: 'Courant',
     toAccountId: 2,
-    toAccountQifName: null,
+    toAccountSourceName: null,
     toAccountName: 'Épargne',
     notes: null,
     validated: false,
@@ -566,7 +566,7 @@ describe('buildExecuteBody', () => {
   });
 
   it('collecte un nouveau compte pour une transaction liée à un compte à créer', () => {
-    const item: PreviewItem = { ...txItem, accountId: null, newAccountQifName: 'QIF_NEW' };
+    const item: PreviewItem = { ...txItem, accountId: null, newAccountSourceName: 'QIF_NEW' };
     const accChoices = new Map<string, AccountChoice>([
       [
         'QIF_NEW',
@@ -583,13 +583,13 @@ describe('buildExecuteBody', () => {
     ]);
     const body = buildExecuteBody([item], new Set([0]), accChoices, new Map(), '(no description)');
     expect(body.newAccounts).toHaveLength(1);
-    expect(body.newAccounts[0].qif_name).toBe('QIF_NEW');
+    expect(body.newAccounts[0].source_name).toBe('QIF_NEW');
     expect(body.newAccounts[0].name).toBe('Nouveau');
   });
 
   it('déduplique les nouveaux comptes référencés plusieurs fois', () => {
-    const item1: PreviewItem = { ...txItem, accountId: null, newAccountQifName: 'SAME' };
-    const item2: PreviewItem = { ...txItem, idx: 1, accountId: null, newAccountQifName: 'SAME' };
+    const item1: PreviewItem = { ...txItem, accountId: null, newAccountSourceName: 'SAME' };
+    const item2: PreviewItem = { ...txItem, idx: 1, accountId: null, newAccountSourceName: 'SAME' };
     const accChoices = new Map<string, AccountChoice>([
       [
         'SAME',
@@ -630,7 +630,7 @@ describe('buildExecuteBody', () => {
     ]);
     const body = buildExecuteBody([item], new Set([0]), new Map(), catChoices, '(no description)');
     expect(body.newSubcategories).toHaveLength(1);
-    expect(body.newSubcategories[0].qif_key).toBe('Food:New');
+    expect(body.newSubcategories[0].source_key).toBe('Food:New');
     expect(body.newSubcategories[0].subcategory_name).toBe('Épicerie');
     expect(body.newSubcategories[0].category_id).toBe(1);
   });
@@ -639,9 +639,9 @@ describe('buildExecuteBody', () => {
     const item: PreviewItem = {
       ...transferItem,
       fromAccountId: null,
-      fromAccountQifName: 'QIF_FROM',
+      fromAccountSourceName: 'QIF_FROM',
       toAccountId: null,
-      toAccountQifName: 'QIF_TO',
+      toAccountSourceName: 'QIF_TO',
     };
     const accChoices = new Map<string, AccountChoice>([
       [
@@ -671,8 +671,8 @@ describe('buildExecuteBody', () => {
     ]);
     const body = buildExecuteBody([item], new Set([0]), accChoices, new Map(), '(no description)');
     expect(body.newAccounts).toHaveLength(2);
-    expect(body.transfers[0].from_account_qif_name).toBe('QIF_FROM');
-    expect(body.transfers[0].to_account_qif_name).toBe('QIF_TO');
+    expect(body.transfers[0].from_account_source_name).toBe('QIF_FROM');
+    expect(body.transfers[0].to_account_source_name).toBe('QIF_TO');
   });
 
   it('retourne des tableaux vides pour un body vide', () => {
@@ -695,7 +695,7 @@ describe('buildRowIndex', () => {
     amount: 10,
     description: 'T',
     accountId: 1,
-    newAccountQifName: null,
+    newAccountSourceName: null,
     accountName: 'C',
     subcategoryId: null,
     newSubcategoryKey: null,
@@ -712,10 +712,10 @@ describe('buildRowIndex', () => {
     amount: 100,
     description: 'V',
     fromAccountId: 1,
-    fromAccountQifName: null,
+    fromAccountSourceName: null,
     fromAccountName: 'C',
     toAccountId: 2,
-    toAccountQifName: null,
+    toAccountSourceName: null,
     toAccountName: 'E',
     notes: null,
     validated: false,
@@ -820,7 +820,7 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
           date: '15/01/2024',
           amount: -50,
           description,
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category,
           memo: null,
           cleared: false,

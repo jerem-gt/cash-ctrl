@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { detectDateFormat } from './import-model';
 import { findTransferPeer, parseQif, parseQifDate } from './qif-parser';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -60,7 +61,7 @@ describe('parseQif', () => {
     it('expose un compte vide pour les transactions sans section', () => {
       const result = parseQif(SIMPLE_QIF);
       expect(result.accounts).toEqual(['']);
-      expect(result.transactions[0].qifAccountName).toBe('');
+      expect(result.transactions[0].accountName).toBe('');
     });
 
     it('parse le montant négatif en dépense', () => {
@@ -103,8 +104,8 @@ describe('parseQif', () => {
 
     it('associe chaque transaction à son compte', () => {
       const result = parseQif(MULTI_ACCOUNT_QIF);
-      const checking = result.transactions.filter((t) => t.qifAccountName === 'Checking');
-      const savings = result.transactions.filter((t) => t.qifAccountName === 'Savings');
+      const checking = result.transactions.filter((t) => t.accountName === 'Checking');
+      const savings = result.transactions.filter((t) => t.accountName === 'Savings');
       expect(checking).toHaveLength(2);
       expect(savings).toHaveLength(1);
     });
@@ -219,18 +220,59 @@ describe('parseQifDate', () => {
   it('lève une erreur pour une date malformée', () => {
     expect(() => parseQifDate('invalide', 'DD/MM')).toThrow();
   });
+
+  it('convertit YYYY/MM/DD correctement avec le format YYYY-MM-DD', () => {
+    expect(parseQifDate('2024/01/15', 'YYYY-MM-DD')).toBe('2024-01-15');
+  });
+
+  it('retourne la date ISO telle quelle même avec format YYYY-MM-DD', () => {
+    expect(parseQifDate('2024-01-15', 'YYYY-MM-DD')).toBe('2024-01-15');
+  });
+
+  it('lève une erreur pour un jour invalide (> 31)', () => {
+    expect(() => parseQifDate('32/01/2024', 'DD/MM')).toThrow();
+  });
+
+  it('lève une erreur pour un mois invalide (> 12)', () => {
+    // En MM/DD : premier segment = mois ; 13 est invalide
+    expect(() => parseQifDate('13/01/2024', 'MM/DD')).toThrow();
+  });
+});
+
+// ─── detectDateFormat ─────────────────────────────────────────────────────────
+
+describe('detectDateFormat', () => {
+  it('détecte DD/MM quand le premier segment est > 12', () => {
+    expect(detectDateFormat(['15/01/2024'])).toBe('DD/MM');
+  });
+
+  it('détecte MM/DD quand le deuxième segment est > 12', () => {
+    expect(detectDateFormat(['01/15/2024'])).toBe('MM/DD');
+  });
+
+  it('détecte YYYY-MM-DD quand le premier segment est > 31 (année)', () => {
+    expect(detectDateFormat(['2024-01-15', '2024-01-20'])).toBe('YYYY-MM-DD');
+  });
+
+  it("retourne 'ambiguous' quand les deux premiers segments sont ≤ 12", () => {
+    expect(detectDateFormat(['01/02/2024'])).toBe('ambiguous');
+  });
+
+  it("retourne 'ambiguous' pour un tableau vide", () => {
+    expect(detectDateFormat([])).toBe('ambiguous');
+  });
 });
 
 // ─── findTransferPeer ─────────────────────────────────────────────────────────
 
 describe('findTransferPeer', () => {
   const makeTx = (
-    qifAccountName: string,
+    accountName: string,
     amount: number,
     transferTarget: string | null,
     date = '15/01/2024',
   ) => ({
-    qifAccountName,
+    accountName,
     date,
     amount,
     description: '',

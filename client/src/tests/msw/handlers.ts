@@ -247,7 +247,7 @@ export const handlers = [
   ),
 
   // Import
-  http.post('/api/import/qif', () => HttpResponse.json(IMPORT_RESULT, { status: 201 })),
+  http.post('/api/import/structured', () => HttpResponse.json(IMPORT_RESULT, { status: 201 })),
   http.post('/api/import/json-full', () =>
     HttpResponse.json(
       { accounts: 1, transactions: 5, transfers: 2, scheduled: 0, stockOperations: 0, loans: 0 },

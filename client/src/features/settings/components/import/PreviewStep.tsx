@@ -165,9 +165,9 @@ export function PreviewStep({
                         </td>
                         <td className="py-1.5 pr-3 text-info">
                           {item.fromAccountName}
-                          {item.fromAccountQifName ? t('import.new_account_suffix') : ''} →{' '}
+                          {item.fromAccountSourceName ? t('import.new_account_suffix') : ''} →{' '}
                           {item.toAccountName}
-                          {item.toAccountQifName ? t('import.new_account_suffix') : ''}
+                          {item.toAccountSourceName ? t('import.new_account_suffix') : ''}
                         </td>
                         <td className="py-1.5 pr-3 text-content-subtle italic">
                           {t('import.transfer_label')}
@@ -199,7 +199,7 @@ export function PreviewStep({
                       </td>
                       <td className="py-1.5 pr-3 text-content-secondary">
                         {item.accountName}
-                        {item.newAccountQifName ? t('import.new_account_suffix') : ''}
+                        {item.newAccountSourceName ? t('import.new_account_suffix') : ''}
                       </td>
                       <td className="py-1.5 pr-3 text-content-subtle">{categoryText(item)}</td>
                       <td

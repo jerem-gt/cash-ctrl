@@ -8,9 +8,12 @@ import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
 import { useBanks } from '@/hooks/useBanks.ts';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { useCategorizationRules } from '@/hooks/useCategorizationRules';
+import { useLogoMap } from '@/hooks/useLogoMap.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';
+import { type CsvParseResult, detectDecimalSeparator, parseCsvRaw } from '@/lib/csv-parser.ts';
 import { parseQif } from '@/lib/qif-parser.ts';
 import { parseXhb } from '@/lib/xhb-parser.ts';
+import { buildLedgerFromCsv, type CsvMapping } from '@/pages/csv-import.helpers.ts';
 import {
   type AccountChoice,
   buildExecuteBody,
@@ -26,6 +29,7 @@ import {
 
 import { AccountsStep } from './import/AccountsStep';
 import { CategoriesStep } from './import/CategoriesStep';
+import { ColumnsStep } from './import/ColumnsStep';
 import { DoneStep } from './import/DoneStep';
 import { type JsonConfirmData, JsonConfirmStep } from './import/JsonConfirmStep';
 import { PaymodesStep } from './import/PaymodesStep';
@@ -74,11 +78,16 @@ export default function ImportManager() {
   const { data: banks = [] } = useBanks();
   const { data: paymentMethods = [] } = usePaymentMethods();
   const activeAccounts = accounts.filter((a) => !a.closed_at);
+  const logoMap = useLogoMap();
 
   const { data: categorizationRules = [] } = useCategorizationRules();
 
   const [step, setStep] = useState<Step>('upload');
   const [parsedFile, setParsedFile] = useState<ParsedFile | null>(null);
+  const [sourceFormat, setSourceFormat] = useState<'qif' | 'xhb' | 'json' | 'csv' | null>(null);
+  const [csvRaw, setCsvRaw] = useState<CsvParseResult | null>(null);
+  const [csvRawText, setCsvRawText] = useState('');
+  const [csvMapping, setCsvMapping] = useState<Partial<CsvMapping>>({});
   const [categoryMode, setCategoryMode] = useState<'file' | 'rules' | 'none'>('file');
   const [fileName, setFileName] = useState('');
   const [parseError, setParseError] = useState('');
@@ -93,10 +102,23 @@ export default function ImportManager() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [importErrors, setImportErrors] = useState<ImportErrors>(NO_IMPORT_ERRORS);
 
-  const importMutation = useMutation({ mutationFn: importApi.executeQif });
+  const importMutation = useMutation({ mutationFn: importApi.executeStructured });
   const jsonImportMutation = useMutation({ mutationFn: importApi.executeJsonFull });
 
   const isXhb = parsedFile?.format === 'xhb';
+
+  const makeDefaultAccChoice = useCallback(
+    (name: string, initialBalance = 0): AccountChoice => ({
+      action: 'create',
+      name: name || t('import.new_account_default'),
+      bank_id: banks[0]?.id ?? null,
+      bank_name: banks[0]?.name ?? null,
+      account_type_id: accountTypes[0]?.id ?? null,
+      initial_balance: initialBalance,
+      opening_date: null,
+    }),
+    [banks, accountTypes, t],
+  );
 
   const handleFile = useCallback(
     (file: File) => {
@@ -104,22 +126,13 @@ export default function ImportManager() {
       const isQifFile = nameLower.endsWith('.qif');
       const isXhbFile = nameLower.endsWith('.xhb');
       const isJsonFile = nameLower.endsWith('.json');
+      const isCsvFile = nameLower.endsWith('.csv');
 
-      if (!isQifFile && !isXhbFile && !isJsonFile) {
+      if (!isQifFile && !isXhbFile && !isJsonFile && !isCsvFile) {
         setParseError(t('import.err_extension'));
         return;
       }
       setParseError('');
-
-      const makeDefaultAccChoice = (name: string, initialBalance = 0): AccountChoice => ({
-        action: 'create',
-        name: name || t('import.new_account_default'),
-        bank_id: banks[0]?.id ?? null,
-        bank_name: banks[0]?.name ?? null,
-        account_type_id: accountTypes[0]?.id ?? null,
-        initial_balance: initialBalance,
-        opening_date: null,
-      });
 
       const handleJsonFile = (text: string): boolean => {
         const data = JSON.parse(text) as { version?: unknown; amounts_in_cents?: unknown };
@@ -128,6 +141,7 @@ export default function ImportManager() {
           return false;
         }
         setParsedFile({ format: 'json', data });
+        setSourceFormat('json');
         setFileName(file.name);
         setStep('confirm');
         return true;
@@ -140,6 +154,7 @@ export default function ImportManager() {
           return false;
         }
         setParsedFile({ format: 'qif', data: result });
+        setSourceFormat('qif');
         setFileName(file.name);
         setDateFormat(result.detectedDateFormat === 'MM/DD' ? 'MM/DD' : 'DD/MM');
 
@@ -166,6 +181,7 @@ export default function ImportManager() {
           return false;
         }
         setParsedFile({ format: 'xhb', data: result });
+        setSourceFormat('xhb');
         setFileName(file.name);
 
         const accChoices = new Map<string, AccountChoice>();
@@ -199,12 +215,38 @@ export default function ImportManager() {
         return true;
       };
 
+      const handleCsvFile = (text: string): boolean => {
+        const result = parseCsvRaw(text);
+        if (result.rows.length === 0) {
+          setParseError(t('import.err_csv_no_rows'));
+          return false;
+        }
+        const allValues = result.rows.flatMap((row) => row);
+        const numericValues = allValues.filter(
+          (v) => /^-?[\d\s.,]+$/.test(v.trim()) && v.trim().length > 0,
+        );
+        const decimalSep = detectDecimalSeparator(numericValues);
+        const hasIsoDates = allValues.some((v) => /^\d{4}[-/]\d{2}[-/]\d{2}$/.test(v.trim()));
+        const dateFormat = hasIsoDates ? 'YYYY-MM-DD' : 'DD/MM';
+        setCsvRaw(result);
+        setCsvRawText(text);
+        setCsvMapping({ decimalSep, dateFormat });
+        setSourceFormat('csv');
+        setFileName(file.name);
+        return true;
+      };
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
         try {
           if (isJsonFile) {
             handleJsonFile(text);
+            return;
+          }
+          if (isCsvFile) {
+            const ok = handleCsvFile(text);
+            if (ok) setStep('columns');
             return;
           }
           const ok = isQifFile ? handleQifFile(text) : handleXhbFile(text);
@@ -215,7 +257,7 @@ export default function ImportManager() {
       };
       reader.readAsText(file, 'UTF-8');
     },
-    [categories, banks, accountTypes, paymentMethods, t],
+    [categories, banks, accountTypes, paymentMethods, makeDefaultAccChoice, t],
   );
 
   const handleDrop = useCallback(
@@ -225,6 +267,40 @@ export default function ImportManager() {
       if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     },
     [handleFile],
+  );
+
+  const handleDelimiterChange = useCallback(
+    (delimiter: string) => {
+      setCsvRaw(parseCsvRaw(csvRawText, delimiter));
+    },
+    [csvRawText],
+  );
+
+  const handleColumnsNext = useCallback(
+    (mapping: CsvMapping) => {
+      if (!csvRaw) return;
+      const accountName = fileName.replace(/\.[^.]+$/, '') || t('import.new_account_default');
+      const ledger = buildLedgerFromCsv(csvRaw, mapping, accountName);
+      if (ledger.transactions.length === 0) {
+        setParseError(t('import.err_csv_no_rows'));
+        return;
+      }
+      setParsedFile({ format: 'qif', data: ledger });
+      setDateFormat(ledger.detectedDateFormat === 'MM/DD' ? 'MM/DD' : 'DD/MM');
+
+      const accChoices = new Map<string, AccountChoice>();
+      accChoices.set(accountName, makeDefaultAccChoice(accountName));
+      setAccountChoices(accChoices);
+
+      const catChoices = new Map<string, CategoryChoice>();
+      for (const cat of ledger.uniqueCategories) {
+        catChoices.set(cat, findAutoCategory(cat, categories) ?? { action: 'skip' });
+      }
+      setCategoryChoices(catChoices);
+      setPaymodeChoices(new Map());
+      setStep('accounts');
+    },
+    [csvRaw, fileName, categories, makeDefaultAccChoice, t],
   );
 
   const setAccountChoice = useCallback((name: string, c: AccountChoice) => {
@@ -414,6 +490,10 @@ export default function ImportManager() {
   const resetAll = () => {
     setStep('upload');
     setParsedFile(null);
+    setSourceFormat(null);
+    setCsvRaw(null);
+    setCsvRawText('');
+    setCsvMapping({});
     setFileName('');
     importMutation.reset();
     jsonImportMutation.reset();
@@ -423,7 +503,7 @@ export default function ImportManager() {
     <div className="max-w-4xl">
       <p className="text-sm text-content-subtle mb-8">{t('import.description')}</p>
 
-      <StepIndicator step={step} format={parsedFile?.format ?? null} />
+      <StepIndicator step={step} format={sourceFormat} />
 
       {step === 'upload' && (
         <UploadStep
@@ -436,10 +516,22 @@ export default function ImportManager() {
         />
       )}
 
+      {step === 'columns' && csvRaw && (
+        <ColumnsStep
+          csvRaw={csvRaw}
+          mapping={csvMapping}
+          onMappingChange={setCsvMapping}
+          onDelimiterChange={handleDelimiterChange}
+          onBack={() => setStep('upload')}
+          onNext={handleColumnsNext}
+        />
+      )}
+
       {step === 'accounts' && parsedFile && (
         <AccountsStep
           parsedFile={parsedFile}
           fileName={fileName}
+          sourceFormat={sourceFormat}
           dateFormat={dateFormat}
           onDateFormatChange={setDateFormat}
           accountsToMap={accountsToMap}
@@ -449,6 +541,7 @@ export default function ImportManager() {
           activeAccounts={activeAccounts}
           accountTypes={accountTypes}
           banks={banks}
+          logoMap={logoMap}
           onBack={() => setStep('upload')}
           onNext={() => setStep('categories')}
         />

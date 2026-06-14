@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, DecimalInput, Select } from '@/components/ui';
+import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import type { AccountChoice } from '@/pages/import.helpers.ts';
 import type { Account, AccountType, Bank } from '@/types.ts';
 
@@ -14,6 +15,7 @@ interface RowProps {
   accounts: Account[];
   accountTypes: AccountType[];
   banks: Bank[];
+  logoMap: Record<string, string | null>;
   onChange: (c: AccountChoice) => void;
 }
 
@@ -23,6 +25,7 @@ function AccountMappingRow({
   accounts,
   accountTypes,
   banks,
+  logoMap,
   onChange,
 }: Readonly<RowProps>) {
   const { t } = useTranslation('settings');
@@ -69,18 +72,15 @@ function AccountMappingRow({
           </Select>
 
           {action === 'map' && (
-            <Select
-              aria-label={t('import.aria_target_account', { name: qifName })}
-              className="w-56"
-              value={choice?.action === 'map' ? choice.account_id : ''}
-              onChange={(e) => onChange({ action: 'map', account_id: Number(e.target.value) })}
-            >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
+            <div className="w-64">
+              <AccountSelect
+                id={`map-account-${qifName}`}
+                value={choice?.action === 'map' ? String(choice.account_id) : ''}
+                onChange={(v) => onChange({ action: 'map', account_id: Number(v) })}
+                accounts={accounts}
+                logoMap={logoMap}
+              />
+            </div>
           )}
 
           {action === 'create' && choice?.action === 'create' && (
@@ -180,6 +180,7 @@ function AccountMappingRow({
 interface AccountsStepProps {
   parsedFile: ParsedFile;
   fileName: string;
+  sourceFormat: 'qif' | 'xhb' | 'json' | 'csv' | null;
   dateFormat: 'MM/DD' | 'DD/MM';
   onDateFormatChange: (fmt: 'MM/DD' | 'DD/MM') => void;
   accountsToMap: string[];
@@ -189,6 +190,7 @@ interface AccountsStepProps {
   activeAccounts: Account[];
   accountTypes: AccountType[];
   banks: Bank[];
+  logoMap: Record<string, string | null>;
   onBack: () => void;
   onNext: () => void;
 }
@@ -196,6 +198,7 @@ interface AccountsStepProps {
 export function AccountsStep({
   parsedFile,
   fileName,
+  sourceFormat,
   dateFormat,
   onDateFormatChange,
   accountsToMap,
@@ -205,6 +208,7 @@ export function AccountsStep({
   activeAccounts,
   accountTypes,
   banks,
+  logoMap,
   onBack,
   onNext,
 }: Readonly<AccountsStepProps>) {
@@ -226,7 +230,7 @@ export function AccountsStep({
         </div>
       </Card>
 
-      {parsedFile.format === 'qif' && (
+      {parsedFile.format === 'qif' && sourceFormat !== 'csv' && (
         <Card>
           <p className="text-[10px] font-medium uppercase tracking-widest text-content-subtle mb-1">
             {t('import.date_format_title')}
@@ -266,6 +270,7 @@ export function AccountsStep({
             accounts={activeAccounts}
             accountTypes={accountTypes}
             banks={banks}
+            logoMap={logoMap}
             onChange={(c) => setAccountChoice(name, c)}
           />
         ))}
@@ -282,6 +287,7 @@ export function AccountsStep({
                 accounts={activeAccounts}
                 accountTypes={accountTypes}
                 banks={banks}
+                logoMap={logoMap}
                 onChange={(c) => setAccountChoice(name, c)}
               />
             ))}

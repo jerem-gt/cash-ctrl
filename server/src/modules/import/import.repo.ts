@@ -15,14 +15,14 @@ import type {
 function resolveAccount(
   accountMap: Map<string, number>,
   id: number | null,
-  qifName: string | null,
+  sourceName: string | null,
 ): number | null {
   if (id !== null) return id;
-  if (qifName !== null) return accountMap.get(qifName) ?? null;
+  if (sourceName !== null) return accountMap.get(sourceName) ?? null;
   return null;
 }
 
-type QifImportDeps = {
+type ImportDeps = {
   db: Database;
   insertAccountStmt: Statement;
   insertCategoryStmt: Statement;
@@ -32,7 +32,7 @@ type QifImportDeps = {
 };
 
 function buildSubcategoryMap(
-  deps: QifImportDeps,
+  deps: ImportDeps,
   userId: number,
   newSubcategories: NewSubcategoryInput[],
 ): Map<string, number> {
@@ -48,13 +48,13 @@ function buildSubcategoryMap(
       categoryId = Number(res.lastInsertRowid);
     }
     const res = deps.insertSubcategoryStmt.run({ userId, categoryId, name: ns.subcategory_name });
-    subcategoryMap.set(ns.qif_key, Number(res.lastInsertRowid));
+    subcategoryMap.set(ns.source_key, Number(res.lastInsertRowid));
   }
   return subcategoryMap;
 }
 
-function insertQifTransactions(
-  deps: QifImportDeps,
+function insertImportTransactions(
+  deps: ImportDeps,
   userId: number,
   transactions: ImportTransactionInput[],
   accountMap: Map<string, number>,
@@ -62,7 +62,7 @@ function insertQifTransactions(
 ): number {
   let count = 0;
   for (const tx of transactions) {
-    const accountId = resolveAccount(accountMap, tx.account_id, tx.new_account_qif_name);
+    const accountId = resolveAccount(accountMap, tx.account_id, tx.new_account_source_name);
     if (accountId === null) continue;
     const subcategoryId =
       tx.new_subcategory_key === null
@@ -85,8 +85,8 @@ function insertQifTransactions(
   return count;
 }
 
-function insertQifTransfers(
-  deps: QifImportDeps,
+function insertImportTransfers(
+  deps: ImportDeps,
   userId: number,
   transfers: ImportTransferInput[],
   accountMap: Map<string, number>,
@@ -95,8 +95,8 @@ function insertQifTransfers(
 ): number {
   let count = 0;
   for (const tf of transfers) {
-    const fromId = resolveAccount(accountMap, tf.from_account_id, tf.from_account_qif_name);
-    const toId = resolveAccount(accountMap, tf.to_account_id, tf.to_account_qif_name);
+    const fromId = resolveAccount(accountMap, tf.from_account_id, tf.from_account_source_name);
+    const toId = resolveAccount(accountMap, tf.to_account_id, tf.to_account_source_name);
     if (fromId === null || toId === null) continue;
     const tfCents = toCents(tf.amount);
     const expenseId = Number(
@@ -134,8 +134,8 @@ function insertQifTransfers(
   return count;
 }
 
-function executeQifImport(
-  deps: QifImportDeps,
+function executeStructuredImport(
+  deps: ImportDeps,
   userId: number,
   body: ImportExecuteBody,
 ): ImportResult {
@@ -151,18 +151,18 @@ function executeQifImport(
       initial_balance: toCents(na.initial_balance),
       opening_date: na.opening_date,
     });
-    accountMap.set(na.qif_name, Number(res.lastInsertRowid));
+    accountMap.set(na.source_name, Number(res.lastInsertRowid));
   }
 
   const subcategoryMap = buildSubcategoryMap(deps, userId, body.newSubcategories);
-  const transactions = insertQifTransactions(
+  const transactions = insertImportTransactions(
     deps,
     userId,
     body.transactions,
     accountMap,
     subcategoryMap,
   );
-  const transfers = insertQifTransfers(
+  const transfers = insertImportTransfers(
     deps,
     userId,
     body.transfers,
@@ -629,7 +629,7 @@ export function createImportRepo(db: Database) {
     `UPDATE transactions SET transfer_peer_id = :peerId WHERE id = :id`,
   );
 
-  const qifDeps: QifImportDeps = {
+  const importDeps: ImportDeps = {
     db,
     insertAccountStmt,
     insertCategoryStmt,
@@ -640,7 +640,7 @@ export function createImportRepo(db: Database) {
 
   return {
     execute: db.transaction((userId: number, body: ImportExecuteBody) =>
-      executeQifImport(qifDeps, userId, body),
+      executeStructuredImport(importDeps, userId, body),
     ),
 
     executeJsonFull(userId: number, data: Omit<FullExport, 'exported_at'>): JsonFullImportResult {

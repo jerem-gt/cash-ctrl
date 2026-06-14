@@ -19,7 +19,7 @@ beforeAll(async () => {
           date: '15/01/2024',
           amount: -50,
           description: 'Courses',
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category: 'Alimentation',
           memo: null,
           cleared: true,
@@ -30,7 +30,7 @@ beforeAll(async () => {
           date: '20/01/2024',
           amount: 2000,
           description: 'Salaire',
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category: '',
           memo: null,
           cleared: false,
@@ -110,7 +110,7 @@ function renderImportManager() {
 
 async function uploadQif(user: ReturnType<typeof userEvent.setup>) {
   const file = new File(['!Type:Bank'], 'test.qif', { type: 'text/plain' });
-  await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
+  await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
 }
 
 async function goToCategories(user: ReturnType<typeof userEvent.setup>) {
@@ -130,14 +130,14 @@ async function uploadJson(user: ReturnType<typeof userEvent.setup>) {
   const file = new File([JSON.stringify(validJsonData)], 'export.json', {
     type: 'application/json',
   });
-  await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
+  await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
 }
 
 async function uploadXhb(user: ReturnType<typeof userEvent.setup>) {
   const file = new File(['<homebank version="1.0"></homebank>'], 'test.xhb', {
     type: 'text/plain',
   });
-  await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
+  await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
 }
 
 async function goToPreviewNoMapping(user: ReturnType<typeof userEvent.setup>) {
@@ -158,13 +158,13 @@ describe('ImportManager — étape Upload', () => {
     expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
   });
 
-  it('refuse un fichier non .qif/.xhb', () => {
+  it('refuse un fichier non supporté (.pdf)', () => {
     renderImportManager();
-    const badFile = new File(['data'], 'export.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i);
+    const badFile = new File(['data'], 'export.pdf', { type: 'application/pdf' });
+    const input = screen.getByLabelText(/sélectionner un fichier qif/i);
     fireEvent.change(input, { target: { files: [badFile] } });
     expect(
-      screen.getByText(/le fichier doit avoir l'extension .qif, .xhb ou .json/i),
+      screen.getByText(/le fichier doit avoir l'extension .qif, .xhb, .json ou .csv/i),
     ).toBeInTheDocument();
   });
 
@@ -292,7 +292,7 @@ describe("ImportManager — exécution de l'import", () => {
 
   it("appelle POST /api/import/qif et affiche l'écran de succès", async () => {
     server.use(
-      http.post('/api/import/qif', () =>
+      http.post('/api/import/structured', () =>
         HttpResponse.json({ transactions: 2, transfers: 0 }, { status: 201 }),
       ),
     );
@@ -306,7 +306,7 @@ describe("ImportManager — exécution de l'import", () => {
 
   it("affiche une erreur si l'API échoue", async () => {
     server.use(
-      http.post('/api/import/qif', () =>
+      http.post('/api/import/structured', () =>
         HttpResponse.json({ error: 'Erreur serveur' }, { status: 500 }),
       ),
     );
@@ -319,7 +319,7 @@ describe("ImportManager — exécution de l'import", () => {
 
   it('affiche les erreurs de validation par ligne + le compteur', async () => {
     server.use(
-      http.post('/api/import/qif', () =>
+      http.post('/api/import/structured', () =>
         HttpResponse.json(
           {
             error: {
@@ -351,7 +351,7 @@ describe("ImportManager — exécution de l'import", () => {
 
   it(`le bouton "Nouvelle importation" réinitialise la page`, async () => {
     server.use(
-      http.post('/api/import/qif', () =>
+      http.post('/api/import/structured', () =>
         HttpResponse.json({ transactions: 1, transfers: 0 }, { status: 201 }),
       ),
     );
@@ -383,7 +383,7 @@ describe('ImportManager — format JSON', () => {
     renderImportManager();
     const badJson = JSON.stringify({ version: '2.0', amounts_in_cents: true });
     const file = new File([badJson], 'bad.json', { type: 'application/json' });
-    await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
+    await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
     expect(await screen.findByText(/format json invalide/i)).toBeInTheDocument();
   });
 
@@ -391,7 +391,7 @@ describe('ImportManager — format JSON', () => {
     const user = userEvent.setup();
     renderImportManager();
     const file = new File(['this is not json'], 'bad.json', { type: 'application/json' });
-    await user.upload(screen.getByLabelText(/sélectionner un fichier qif, xhb ou json/i), file);
+    await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
     expect(await screen.findByText(/erreur lors de la lecture du fichier/i)).toBeInTheDocument();
   });
 
@@ -518,9 +518,11 @@ describe('ImportManager — AccountMappingRow', () => {
     await uploadQif(user);
     const actionSelect = await screen.findByRole('combobox', { name: /action pour ACC1/i });
     await user.selectOptions(actionSelect, 'map');
-    const targetSelect = await screen.findByRole('combobox', { name: /compte cible pour ACC1/i });
-    await user.selectOptions(targetSelect, '2');
-    expect(targetSelect).toHaveValue('2');
+    // AccountSelect affiche le premier compte par défaut ("Compte test")
+    const trigger = await screen.findByRole('button', { name: /compte test/i });
+    await user.click(trigger);
+    await user.click(await screen.findByRole('option', { name: /livret a/i }));
+    expect(screen.getByRole('button', { name: /livret a/i })).toBeInTheDocument();
   });
 
   it('modifier les champs du formulaire de création de compte', async () => {
@@ -625,7 +627,7 @@ describe('ImportManager — navigation et interactions QIF supplémentaires', ()
           date: '15/01/2024',
           amount: -100,
           description: 'Virement',
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category: '',
           memo: null,
           cleared: true,
@@ -669,7 +671,7 @@ describe('ImportManager — navigation et interactions QIF supplémentaires', ()
           date: '15/01/2024',
           amount: -100,
           description: 'Virement vers épargne',
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category: '',
           memo: null,
           cleared: true,
@@ -765,7 +767,7 @@ describe('ImportManager — navigation et interactions QIF supplémentaires', ()
           date: '15/01/2024',
           amount: -100,
           description: 'Virement',
-          qifAccountName: 'ACC1',
+          accountName: 'ACC1',
           category: '',
           memo: null,
           cleared: true,
@@ -801,7 +803,7 @@ describe("ImportManager — 'Voir les transactions'", () => {
 
   it('navigue vers /transactions au clic', async () => {
     server.use(
-      http.post('/api/import/qif', () =>
+      http.post('/api/import/structured', () =>
         HttpResponse.json({ transactions: 1, transfers: 0 }, { status: 201 }),
       ),
     );
@@ -817,5 +819,96 @@ describe("ImportManager — 'Voir les transactions'", () => {
 
     await user.click(screen.getByRole('button', { name: /voir les transactions/i }));
     expect(fakeLocation.href).toBe('/transactions');
+  });
+});
+
+// ─── Format CSV ───────────────────────────────────────────────────────────────
+
+// CSV Bourso-style : séparateur ';', dates YYYY-MM-DD, décimales ','
+const BOURSO_CSV = 'Date;Libellé;Montant\n2024-01-15;Courses;-50,00\n2024-01-20;Salaire;2000,00';
+
+async function uploadCsv(user: ReturnType<typeof userEvent.setup>) {
+  const file = new File([BOURSO_CSV], 'bourso.csv', { type: 'text/csv' });
+  await user.upload(screen.getByLabelText(/sélectionner un fichier qif/i), file);
+}
+
+async function goToCsvAccounts(user: ReturnType<typeof userEvent.setup>) {
+  await uploadCsv(user);
+  // Attendre l'étape colonnes
+  await screen.findByText(/mapping des colonnes csv/i);
+  // Les selects de colonnes dans l'ordre : Date, Libellé, Montant, Catégorie, Notes,
+  // Délimiteur, Séparateur décimal, Format de date
+  const selects = screen.getAllByRole('combobox');
+  await user.selectOptions(selects[0], '0'); // Date → colonne 0
+  await user.selectOptions(selects[1], '1'); // Libellé → colonne 1
+  await user.selectOptions(selects[2], '2'); // Montant → colonne 2
+  await user.click(screen.getByRole('button', { name: /associer les comptes/i }));
+}
+
+describe('ImportManager — format CSV', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("passe à l'étape Colonnes après un upload CSV", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadCsv(user);
+    expect(await screen.findByText(/mapping des colonnes csv/i)).toBeInTheDocument();
+  });
+
+  it("affiche un aperçu des données dans l'étape Colonnes", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadCsv(user);
+    await screen.findByText(/mapping des colonnes csv/i);
+    expect(screen.getByText('Courses')).toBeInTheDocument();
+  });
+
+  it("affiche l'indicateur de progression avec l'étape Colonnes en surbrillance", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadCsv(user);
+    await screen.findByText(/mapping des colonnes csv/i);
+    expect(screen.getByText('Colonnes')).toBeInTheDocument();
+  });
+
+  it('le bouton Suivant est désactivé tant que les colonnes requises ne sont pas mappées', async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadCsv(user);
+    await screen.findByText(/mapping des colonnes csv/i);
+    expect(screen.getByRole('button', { name: /associer les comptes/i })).toBeDisabled();
+  });
+
+  it("progresse vers l'étape Comptes après le mapping des colonnes", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await goToCsvAccounts(user);
+    expect(await screen.findByText(/mapping des comptes/i)).toBeInTheDocument();
+  });
+
+  it("le bouton Retour de l'étape Colonnes revient à l'upload", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadCsv(user);
+    await screen.findByText(/mapping des colonnes csv/i);
+    await user.click(screen.getByRole('button', { name: /← fichier/i }));
+    expect(screen.getByText(/déposez votre fichier ici/i)).toBeInTheDocument();
+  });
+
+  it("import CSV complet jusqu'au succès", async () => {
+    server.use(
+      http.post('/api/import/structured', () =>
+        HttpResponse.json({ transactions: 2, transfers: 0 }, { status: 201 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderImportManager();
+    await goToCsvAccounts(user);
+    await user.click(await screen.findByRole('button', { name: /catégories →/i }));
+    await user.click(await screen.findByRole('button', { name: /aperçu →/i }));
+    await user.click(await screen.findByRole('button', { name: /importer/i }));
+    expect(await screen.findByText(/importation terminée/i)).toBeInTheDocument();
   });
 });
