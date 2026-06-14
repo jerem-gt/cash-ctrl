@@ -1,4 +1,4 @@
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { useIsDark } from '@/hooks/useTheme';
 import { axisTickProps, chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
@@ -15,6 +15,8 @@ export interface IncomeExpenseDatum {
 
 interface Props {
   data: IncomeExpenseDatum[];
+  compareData?: IncomeExpenseDatum[];
+  compareLabel?: string;
   incomeLabel: string;
   expenseLabel: string;
   incomeColor?: string;
@@ -23,6 +25,8 @@ interface Props {
 
 export default function IncomeExpenseBarChart({
   data,
+  compareData,
+  compareLabel,
   incomeLabel,
   expenseLabel,
   incomeColor = INCOME_COLOR,
@@ -30,9 +34,20 @@ export default function IncomeExpenseBarChart({
 }: Readonly<Props>) {
   const theme = chartTheme(useIsDark());
   const axisTick = axisTickProps(theme);
+
+  const chartData = compareData
+    ? data.map((d, i) => ({
+        ...d,
+        RevenusComp: compareData[i]?.Revenus ?? 0,
+        DepensesComp: compareData[i]?.Depenses ?? 0,
+      }))
+    : data;
+
+  const suffix = compareLabel ? ` (${compareLabel})` : '';
+
   return (
     <ResponsiveContainer width="100%" height={180}>
-      <BarChart data={data} barGap={4}>
+      <ComposedChart data={chartData} barGap={4}>
         <XAxis dataKey="month" {...axisTick} />
         <YAxis {...axisTick} tickFormatter={(v) => fmt(Number(v))} width={70} />
         <Tooltip
@@ -42,7 +57,29 @@ export default function IncomeExpenseBarChart({
         />
         <Bar dataKey="Revenus" name={incomeLabel} fill={incomeColor} radius={[3, 3, 0, 0]} />
         <Bar dataKey="Depenses" name={expenseLabel} fill={expenseColor} radius={[3, 3, 0, 0]} />
-      </BarChart>
+        {compareData && (
+          <>
+            <Line
+              dataKey="RevenusComp"
+              name={`${incomeLabel}${suffix}`}
+              stroke={incomeColor}
+              strokeDasharray="5 3"
+              strokeOpacity={0.6}
+              dot={false}
+              type="monotone"
+            />
+            <Line
+              dataKey="DepensesComp"
+              name={`${expenseLabel}${suffix}`}
+              stroke={expenseColor}
+              strokeDasharray="5 3"
+              strokeOpacity={0.6}
+              dot={false}
+              type="monotone"
+            />
+          </>
+        )}
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

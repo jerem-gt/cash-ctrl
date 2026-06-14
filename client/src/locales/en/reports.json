@@ -20,5 +20,16 @@
   "stock_start": "Start",
   "stock_end": "End",
   "stock_flows": "Net flows",
-  "stock_gain": "Performance"
+  "stock_gain": "Performance",
+  "compare_with": "Compare with",
+  "compare_none": "None",
+  "compare_legend": "{{year}}",
+  "section_summary": "Summary",
+  "summary_income": "Income",
+  "summary_expense": "Expenses",
+  "summary_balance": "Balance",
+  "col_delta": "Change",
+  "section_cat_comparison": "Category comparison",
+  "tab_expenses": "Expenses",
+  "tab_income": "Income"
 }
