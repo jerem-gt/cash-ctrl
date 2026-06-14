@@ -33,17 +33,17 @@ function resolveAmount(row: string[], mapping: CsvMapping): number {
   }
   // Mode split : Débit = négatif, Crédit = positif
   const debit =
-    mapping.debitCol !== undefined
-      ? parseCsvAmount(row[mapping.debitCol] ?? '', mapping.decimalSep)
-      : NaN;
+    mapping.debitCol === undefined
+      ? Number.NaN
+      : parseCsvAmount(row[mapping.debitCol] ?? '', mapping.decimalSep);
   const credit =
-    mapping.creditCol !== undefined
-      ? parseCsvAmount(row[mapping.creditCol] ?? '', mapping.decimalSep)
-      : NaN;
+    mapping.creditCol === undefined
+      ? Number.NaN
+      : parseCsvAmount(row[mapping.creditCol] ?? '', mapping.decimalSep);
 
-  if (!isNaN(credit) && credit !== 0) return credit;
-  if (!isNaN(debit) && debit !== 0) return -Math.abs(debit);
-  return NaN;
+  if (!Number.isNaN(credit) && credit !== 0) return credit;
+  if (!Number.isNaN(debit) && debit !== 0) return -Math.abs(debit);
+  return Number.NaN;
 }
 
 /**
@@ -61,10 +61,10 @@ export function buildLedgerFromCsv(
       const description = row[mapping.descriptionCol]?.trim() ?? '';
       const amount = resolveAmount(row, mapping);
       const category =
-        mapping.categoryCol !== undefined ? (row[mapping.categoryCol]?.trim() ?? '') : '';
-      const memo = mapping.notesCol !== undefined ? row[mapping.notesCol]?.trim() || null : null;
+        mapping.categoryCol === undefined ? '' : (row[mapping.categoryCol]?.trim() ?? '');
+      const memo = mapping.notesCol === undefined ? null : row[mapping.notesCol]?.trim() || null;
 
-      if (!rawDate || isNaN(amount)) return null;
+      if (!rawDate || Number.isNaN(amount)) return null;
 
       let date: string;
       try {

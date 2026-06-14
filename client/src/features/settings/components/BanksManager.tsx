@@ -176,9 +176,7 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
   const accCount = bank.acc_count ?? 0;
 
   let loginSubtitle: ReactNode;
-  if (!bank.login_url) {
-    loginSubtitle = <p className="text-[10px] text-content-subtle">{t('banks.no_login_url')}</p>;
-  } else {
+  if (bank.login_url) {
     const hostname = getBankHostname(bank.login_url);
     if (hostname === null) {
       loginSubtitle = (
@@ -201,6 +199,8 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
         </a>
       );
     }
+  } else {
+    loginSubtitle = <p className="text-[10px] text-content-subtle">{t('banks.no_login_url')}</p>;
   }
 
   return (

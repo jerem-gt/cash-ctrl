@@ -41,7 +41,7 @@ function ColSelect({
       >
         <option value="">{notMappedLabel}</option>
         {headers.map((h, i) => (
-          <option key={i} value={i}>
+          <option key={`col-${i}`} value={i}>
             {h || `Col. ${i + 1}`}
           </option>
         ))}
@@ -245,7 +245,7 @@ export function ColumnsStep({
                 <tr className="bg-surface-muted">
                   {csvRaw.headers.map((h, i) => (
                     <th
-                      key={i}
+                      key={`th-${i}`}
                       className="px-2 py-1.5 text-left text-content-subtle font-medium border-b border-line-subtle"
                     >
                       {h || `Col. ${i + 1}`}
@@ -255,9 +255,12 @@ export function ColumnsStep({
               </thead>
               <tbody>
                 {csvRaw.sample.map((row, ri) => (
-                  <tr key={ri} className="even:bg-surface-muted">
+                  <tr key={`tr-${ri}`} className="even:bg-surface-muted">
                     {row.map((cell, ci) => (
-                      <td key={ci} className="px-2 py-1 text-content truncate max-w-[12rem]">
+                      <td
+                        key={`td-${ri}-${ci}`}
+                        className="px-2 py-1 text-content truncate max-w-[12rem]"
+                      >
                         {cell}
                       </td>
                     ))}

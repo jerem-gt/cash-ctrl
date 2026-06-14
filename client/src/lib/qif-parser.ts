@@ -1,13 +1,8 @@
-import {
-  detectDateFormat,
-  type ParsedLedger,
-  type ParsedTransaction,
-  parseLedgerDate,
-} from './import-model';
+import { detectDateFormat, type ParsedLedger, type ParsedTransaction } from './import-model';
 
 // Re-exports pour la compatibilité (les types pivots vivent maintenant dans import-model)
 export type { ParsedLedger as QifParseResult, ParsedTransaction as QifTransaction };
-export { parseLedgerDate as parseQifDate };
+export { parseLedgerDate as parseQifDate } from './import-model';
 
 type PartialTx = Partial<Omit<ParsedTransaction, 'isTransfer' | 'transferTarget'>>;
 
