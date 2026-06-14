@@ -21,20 +21,32 @@ describe('seedBanks', () => {
   it('inserts 18 banks with name coherent with the schema', () => {
     const db = createFreshDb();
     seedBanks(db);
-    const rows = db.prepare('SELECT name, domain FROM banks ORDER BY name').all() as {
+    const rows = db.prepare('SELECT name, login_url FROM banks ORDER BY name').all() as {
       name: string;
-      domain: string;
+      login_url: string | null;
     }[];
     expect(rows).toHaveLength(18);
     expect(rows.every((r) => r.name)).toBe(true);
   });
 
-  it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
+  it('is idempotent – upsert prevents duplicates', () => {
     const db = createFreshDb();
     seedBanks(db);
     seedBanks(db);
     const count = (db.prepare('SELECT COUNT(*) as c FROM banks').get() as { c: number }).c;
     expect(count).toBe(18);
+  });
+
+  it('patches login_url for existing banks', () => {
+    const db = createFreshDb();
+    db.prepare(
+      `INSERT INTO banks (name, logo, login_url) VALUES ('BoursoBank', NULL, 'https://old-url.com')`,
+    ).run();
+    seedBanks(db);
+    const row = db.prepare('SELECT login_url FROM banks WHERE name = ?').get('BoursoBank') as {
+      login_url: string;
+    };
+    expect(row.login_url).toBe('https://clients.boursobank.com/connexion');
   });
 });
 

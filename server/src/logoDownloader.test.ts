@@ -43,20 +43,20 @@ describe('downloadDefaultBankLogos', () => {
 
   it('skips banks that already have a logo', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
       'BankWithLogo',
       '/logos/x.png',
-      'example.com',
+      'https://www.example.com/login',
     );
     vi.stubGlobal('fetch', vi.fn());
     await downloadDefaultBankLogos(db);
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
 
-  it('skips banks without a domain', async () => {
+  it('skips banks without a login_url', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
-      'BankNoDomain',
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
+      'BankNoUrl',
       null,
       null,
     );
@@ -67,10 +67,10 @@ describe('downloadDefaultBankLogos', () => {
 
   it('updates logo path when logo file already exists on disk', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
       'BankFileExists',
       null,
-      'example.com',
+      'https://www.example.com/login',
     );
     const bank = db.prepare('SELECT id FROM banks WHERE name = ?').get('BankFileExists') as {
       id: number;
@@ -89,10 +89,10 @@ describe('downloadDefaultBankLogos', () => {
 
   it('fetches and saves logo when file does not exist on disk', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
       'BankToFetch',
       null,
-      'example.com',
+      'https://www.example.com/login',
     );
     vi.mocked(fs.existsSync)
       .mockReturnValueOnce(true) // LOGOS_DIR exists
@@ -111,10 +111,10 @@ describe('downloadDefaultBankLogos', () => {
 
   it('logs a warning when fetch returns an HTTP error', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
       'BankHttpErr',
       null,
-      'example.com',
+      'https://www.example.com/login',
     );
     vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
@@ -122,12 +122,25 @@ describe('downloadDefaultBankLogos', () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
+  it('logs a warning and skips when login_url is not a valid URL', async () => {
+    const db = setupDb();
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
+      'BankBadUrl',
+      null,
+      'pas-une-url',
+    );
+    vi.stubGlobal('fetch', vi.fn());
+    await downloadDefaultBankLogos(db);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
   it('logs a warning when fetch throws', async () => {
     const db = setupDb();
-    db.prepare('INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)').run(
       'BankThrows',
       null,
-      'example.com',
+      'https://www.example.com/login',
     );
     vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));

@@ -12,7 +12,7 @@ import { createBanksRepo } from './banks.repo';
 
 const bankSchema = z.object({
   name: nameSchema,
-  domain: z.string().max(253).nullable().optional(),
+  login_url: z.url().nullable().optional(),
 });
 
 const reorderSchema = z.array(z.object({ id: z.number().int(), sort_order: z.number().int() }));
@@ -46,8 +46,8 @@ export function createBanksRouter(db: Database): Router {
   router.post('/', (req, res) => {
     const data = parseBody(res, bankSchema, req.body);
     if (!data) return;
-    const domain = data.domain?.trim() || null;
-    const result = banksRepo.create(data.name.trim(), domain);
+    const login_url = data.login_url?.trim() || null;
+    const result = banksRepo.create(data.name.trim(), login_url);
     res.status(201).json(banksRepo.getById(Number(result.lastInsertRowid)));
   });
 
@@ -61,8 +61,9 @@ export function createBanksRouter(db: Database): Router {
     }
     const data = parseBody(res, bankSchema, req.body);
     if (!data) return;
-    const domain = data.domain === undefined ? bank.domain : data.domain?.trim() || null;
-    banksRepo.update(id, data.name.trim(), bank.logo, domain);
+    const login_url =
+      data.login_url === undefined ? bank.login_url : data.login_url?.trim() || null;
+    banksRepo.update(id, data.name.trim(), bank.logo, login_url);
     res.json(banksRepo.getById(id));
   });
 
@@ -78,7 +79,7 @@ export function createBanksRouter(db: Database): Router {
       sendError(res, 400, 'bank.no_file');
       return;
     }
-    banksRepo.update(id, bank.name, `/logos/${req.file.filename}`, bank.domain);
+    banksRepo.update(id, bank.name, `/logos/${req.file.filename}`, bank.login_url);
     res.json(banksRepo.getById(id));
   });
 

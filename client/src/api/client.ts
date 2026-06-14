@@ -207,9 +207,9 @@ export const usersApi = {
 // Banks
 export const banksApi = {
   list: () => request<Bank[]>('GET', '/api/banks'),
-  create: (payload: { name: string; domain?: string | null }) =>
+  create: (payload: { name: string; login_url?: string | null }) =>
     request<Bank>('POST', '/api/banks', payload),
-  update: (id: number, payload: { name: string; domain?: string | null }) =>
+  update: (id: number, payload: { name: string; login_url?: string | null }) =>
     request<Bank>('PUT', `/api/banks/${id}`, payload),
   reorder: (items: { id: number; sort_order: number }[]) =>
     request<{ ok: boolean }>('PUT', '/api/banks/reorder', items),

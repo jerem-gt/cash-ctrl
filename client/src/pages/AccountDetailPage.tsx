@@ -12,6 +12,7 @@ import { useLoan, useLoanInstallments } from '@/features/loans/hooks/useLoans';
 import { PortfolioSection } from '@/features/portfolio/components/PortfolioSection';
 import { TransactionsList } from '@/features/transactions/components/TransactionsList';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useProfitability } from '@/hooks/useStats';
 
@@ -58,9 +59,11 @@ export default function AccountDetailPage() {
   const navigate = useNavigate();
 
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const { data: banks = [] } = useBanks();
   const logoMap = useLogoMap();
 
   const account = accounts.find((a) => a.id === accountId);
+  const bankLoginUrl = banks.find((b) => b.name === account?.bank)?.login_url ?? null;
   const isInvestment = account?.envelope_type === 'investment';
   const isInsurance =
     account?.envelope_type === 'life_insurance' || account?.envelope_type === 'per';
@@ -106,6 +109,7 @@ export default function AccountDetailPage() {
       <AccountHeader
         account={account}
         logoMap={logoMap}
+        bankLoginUrl={bankLoginUrl}
         isInvestment={isInvestment}
         isInsurance={isInsurance}
         isLoan={isLoan}

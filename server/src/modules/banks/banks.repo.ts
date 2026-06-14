@@ -12,10 +12,10 @@ export function createBanksRepo(db: Database) {
   `);
   const getByIdStmt = db.prepare<{ id: number }, Bank>('SELECT * FROM banks WHERE id = :id');
   const createStmt = db.prepare(
-    'INSERT INTO banks (name, logo, domain, sort_order) VALUES (:name, :logo, :domain, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM banks))',
+    'INSERT INTO banks (name, logo, login_url, sort_order) VALUES (:name, :logo, :login_url, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM banks))',
   );
   const updateStmt = db.prepare(
-    'UPDATE banks SET name = :name, logo = :logo, domain = :domain WHERE id = :id',
+    'UPDATE banks SET name = :name, logo = :logo, login_url = :login_url WHERE id = :id',
   );
   const updateLogoStmt = db.prepare('UPDATE banks SET logo = :logo WHERE id = :id');
   const updateSortOrderStmt = db.prepare(
@@ -28,19 +28,19 @@ export function createBanksRepo(db: Database) {
 
     getById: (id: number) => getByIdStmt.get({ id }),
 
-    create: (name: string, domain: string | null) =>
+    create: (name: string, login_url: string | null) =>
       createStmt.run({
         name,
-        domain,
+        login_url,
         logo: null,
       }),
 
-    update: (id: number, name: string, logo: string | null, domain: string | null) =>
+    update: (id: number, name: string, logo: string | null, login_url: string | null) =>
       updateStmt.run({
         id,
         name,
         logo,
-        domain,
+        login_url,
       }),
 
     updateLogo: (id: number, logo: string) => updateLogoStmt.run({ id, logo }),

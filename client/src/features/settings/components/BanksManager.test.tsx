@@ -198,6 +198,32 @@ describe('BanksManager', () => {
     );
   });
 
+  // ─── BankCard — subtitle login_url ────────────────────────────────────────
+
+  it('affiche un lien cliquable quand login_url est une URL valide', async () => {
+    renderWithProviders(<BanksManager />);
+    await screen.findByText('BNP');
+    const link = screen.getByRole('link', { name: /mabanque\.bnpparibas\.com/i });
+    expect(link).toHaveAttribute('href', 'https://mabanque.bnpparibas.com/fr/connexion');
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
+  it("affiche le texte d'absence quand login_url est null", async () => {
+    server.use(http.get('/api/banks', () => HttpResponse.json([{ ...BANKS[0], login_url: null }])));
+    renderWithProviders(<BanksManager />);
+    await screen.findByText('BNP');
+    expect(screen.getByText('Aucune URL de connexion')).toBeInTheDocument();
+  });
+
+  it("affiche le badge d'erreur quand login_url n'est pas une URL valide", async () => {
+    server.use(
+      http.get('/api/banks', () => HttpResponse.json([{ ...BANKS[0], login_url: 'pas-une-url' }])),
+    );
+    renderWithProviders(<BanksManager />);
+    await screen.findByText('BNP');
+    expect(screen.getByText(/URL invalide/i)).toBeInTheDocument();
+  });
+
   // ─── Drag-and-drop ─────────────────────────────────────────────────────────
 
   it('affiche une poignée de déplacement pour chaque banque', async () => {
@@ -211,7 +237,7 @@ describe('BanksManager', () => {
       http.get('/api/banks', () =>
         HttpResponse.json([
           { ...BANKS[0], id: 1, sort_order: 0 },
-          { id: 2, name: 'Société Générale', logo: null, domain: null, sort_order: 1 },
+          { id: 2, name: 'Société Générale', logo: null, login_url: null, sort_order: 1 },
         ]),
       ),
     );

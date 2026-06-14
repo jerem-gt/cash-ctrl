@@ -16,8 +16,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
-import { GripVertical } from 'lucide-react';
-import { type ChangeEvent, type SubmitEvent, useState } from 'react';
+import { AlertTriangle, ExternalLink, GripVertical } from 'lucide-react';
+import { type ChangeEvent, type ReactNode, type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Input, showToast } from '@/components/ui';
@@ -41,7 +41,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
   const updateBank = useUpdateBank();
   const uploadLogo = useUploadBankLogo();
   const [name, setName] = useState(bank.name);
-  const [domain, setDomain] = useState(bank.domain ?? '');
+  const [loginUrl, setLoginUrl] = useState(bank.login_url ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [nameError, setNameError] = useState(false);
@@ -69,7 +69,7 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
       await updateBank.mutateAsync({
         id: bank.id,
         name: name.trim(),
-        domain: domain.trim() || null,
+        login_url: loginUrl.trim() || null,
       });
       onClose();
       setFile(null);
@@ -100,10 +100,10 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
         error={nameError}
       />
       <Input
-        type="text"
-        value={domain}
-        onChange={(e) => setDomain(e.target.value)}
-        placeholder={t('banks.domain_edit_placeholder')}
+        type="url"
+        value={loginUrl}
+        onChange={(e) => setLoginUrl(e.target.value)}
+        placeholder={t('banks.login_url_placeholder')}
       />
       <div className="flex items-center gap-2">
         {logoSrc && (
@@ -150,6 +150,14 @@ function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => v
   );
 }
 
+function getBankHostname(loginUrl: string): string | null {
+  try {
+    return new URL(loginUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
 function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
   const { t } = useTranslation('settings');
   const [editing, setEditing] = useState(false);
@@ -166,6 +174,34 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
   };
 
   const accCount = bank.acc_count ?? 0;
+
+  let loginSubtitle: ReactNode;
+  if (!bank.login_url) {
+    loginSubtitle = <p className="text-[10px] text-content-subtle">{t('banks.no_login_url')}</p>;
+  } else {
+    const hostname = getBankHostname(bank.login_url);
+    if (hostname === null) {
+      loginSubtitle = (
+        <p className="flex items-center gap-1 text-[10px] text-red-500">
+          <AlertTriangle size={10} />
+          {t('banks.invalid_url')}
+        </p>
+      );
+    } else {
+      loginSubtitle = (
+        <a
+          href={bank.login_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[10px] text-brand-500 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink size={10} />
+          {hostname}
+        </a>
+      );
+    }
+  }
 
   return (
     <>
@@ -200,9 +236,7 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
             '🏦'
           )
         }
-        subtitle={
-          <p className="text-[10px] text-content-subtle">{bank.domain ?? t('banks.no_domain')}</p>
-        }
+        subtitle={loginSubtitle}
         badge={
           accCount > 0 ? (
             <span className="text-[10px] font-bold text-content-faint tabular-nums shrink-0">
@@ -236,7 +270,7 @@ export function BanksManager() {
   const createBank = useCreateBank();
   const reorderBanks = useReorderBanks();
   const qc = useQueryClient();
-  const [newBank, setNewBank] = useState({ name: '', domain: '' });
+  const [newBank, setNewBank] = useState({ name: '', login_url: '' });
   const [nameError, setNameError] = useState(false);
 
   const sensors = useSensors(
@@ -255,10 +289,10 @@ export function BanksManager() {
     }
     setNameError(false);
     createBank.mutate(
-      { name: newBank.name.trim(), domain: newBank.domain.trim() || null },
+      { name: newBank.name.trim(), login_url: newBank.login_url.trim() || null },
       {
         onSuccess: () => {
-          setNewBank({ name: '', domain: '' });
+          setNewBank({ name: '', login_url: '' });
           showToast(t('banks.success_add'));
         },
         onError: (err) => showToast(err.message),
@@ -299,10 +333,10 @@ export function BanksManager() {
             error={nameError}
           />
           <Input
-            type="text"
-            value={newBank.domain}
-            onChange={(e) => setNewBank((f) => ({ ...f, domain: e.target.value }))}
-            placeholder={t('banks.domain_placeholder')}
+            type="url"
+            value={newBank.login_url}
+            onChange={(e) => setNewBank((f) => ({ ...f, login_url: e.target.value }))}
+            placeholder={t('banks.login_url_placeholder')}
           />
           <div className="flex justify-end mt-1">
             <Button type="submit" variant="primary" size="sm" disabled={createBank.isPending}>

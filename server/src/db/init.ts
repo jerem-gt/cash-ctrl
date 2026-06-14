@@ -36,6 +36,10 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       );
       CREATE INDEX IF NOT EXISTS idx_cat_rules_user ON categorization_rules(user_id, sort_order);
     `),
+  (db) =>
+    db.exec(`
+      ALTER TABLE banks RENAME COLUMN domain TO login_url;
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {

@@ -223,7 +223,7 @@ export function initSchema(db: Database) {
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             name       TEXT UNIQUE NOT NULL,
             logo       TEXT,
-            domain     TEXT,
+            login_url  TEXT,
             sort_order INTEGER NOT NULL DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now'))
         );

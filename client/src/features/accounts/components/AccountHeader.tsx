@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { accountSeniority } from '@/lib/account.ts';
@@ -7,6 +8,7 @@ import { Account } from '@/types.ts';
 interface AccountHeaderProps {
   account: Account;
   logoMap: Record<string, string | null>;
+  bankLoginUrl: string | null;
   isInvestment: boolean;
   isInsurance: boolean;
   isLoan: boolean;
@@ -96,6 +98,7 @@ const DefaultHeader = ({ value, valueAll }: { value: number; valueAll?: number }
 export function AccountHeader({
   account,
   logoMap,
+  bankLoginUrl,
   isInvestment,
   isInsurance,
   isLoan,
@@ -121,7 +124,19 @@ export function AccountHeader({
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-content-muted font-medium text-xs tracking-wide">
-                <span className="uppercase">{account.bank}</span>
+                {bankLoginUrl ? (
+                  <a
+                    href={bankLoginUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 uppercase hover:text-brand-500 transition-colors"
+                  >
+                    {account.bank}
+                    <ExternalLink size={11} />
+                  </a>
+                ) : (
+                  <span className="uppercase">{account.bank}</span>
+                )}
                 <span className="text-content-faint">•</span>
                 <span>{account.type}</span>
                 {isInvestment && (

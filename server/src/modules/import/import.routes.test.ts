@@ -431,7 +431,7 @@ const EMPTY_EXPORT = {
   version: '1.0' as const,
   amounts_in_cents: true as const,
   account_types: [] as Array<{ id: number; name: string; is_investment: number; is_loan: number }>,
-  banks: [] as Array<{ id: number; name: string; logo: string | null; domain: string | null }>,
+  banks: [] as Array<{ id: number; name: string; logo: string | null; login_url: string | null }>,
   accounts: [] as Array<{
     id: number;
     name: string;
@@ -531,7 +531,7 @@ const EX_INS_SUPPORT1 = 50,
 const EX_INS_OP1 = 60,
   EX_INS_OP2 = 61;
 
-const defaultBankExport = { id: EX_BANK1, name: 'DefaultBank', logo: null, domain: null };
+const defaultBankExport = { id: EX_BANK1, name: 'DefaultBank', logo: null, login_url: null };
 const courantAtExport = { id: EX_AT1, name: 'Courant', is_investment: 0, is_loan: 0 };
 
 const makeExportAccount = (id: number, name: string, bankId = EX_BANK1, atId = EX_AT1) => ({
@@ -638,7 +638,7 @@ describe('POST /api/import/json-full', () => {
       account_types: [courantAtExport],
       banks: [
         defaultBankExport,
-        { id: EX_BANK2, name: 'Banque Nouvelle', logo: null, domain: null },
+        { id: EX_BANK2, name: 'Banque Nouvelle', logo: null, login_url: null },
       ],
       accounts: [
         makeExportAccount(EX_ACC1, 'Compte Banque A'),

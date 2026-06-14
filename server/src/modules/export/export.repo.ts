@@ -44,7 +44,7 @@ export function createExportRepo(db: Database) {
 
       const banks = db
         .prepare<[number], FullExportBank>(
-          `SELECT DISTINCT b.id, b.name, b.logo, b.domain
+          `SELECT DISTINCT b.id, b.name, b.logo, b.login_url
            FROM banks b
            JOIN accounts a ON a.bank_id = b.id
            WHERE a.user_id = ? ${acctIn}`,

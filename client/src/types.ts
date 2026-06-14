@@ -12,7 +12,7 @@ export interface Bank {
   id: number;
   name: string;
   logo: string | null;
-  domain: string | null;
+  login_url: string | null;
   sort_order: number;
   acc_count?: number;
 }

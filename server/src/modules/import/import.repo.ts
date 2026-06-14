@@ -185,7 +185,7 @@ export function createImportRepo(db: Database) {
   const findBankByName = db.prepare<[string], { id: number }>(
     `SELECT id FROM banks WHERE name = ?`,
   );
-  const insertBank = db.prepare(`INSERT INTO banks (name, logo, domain) VALUES (?, ?, ?)`);
+  const insertBank = db.prepare(`INSERT INTO banks (name, logo, login_url) VALUES (?, ?, ?)`);
   const findAccountByName = db.prepare<[number, string, number | null], { id: number }>(
     `SELECT id FROM accounts WHERE user_id = ? AND name = ? AND bank_id IS ?`,
   );
@@ -291,7 +291,7 @@ export function createImportRepo(db: Database) {
       const existing = findBankByName.get(b.name);
       const id = existing
         ? existing.id
-        : Number(insertBank.run(b.name, b.logo, b.domain).lastInsertRowid);
+        : Number(insertBank.run(b.name, b.logo, b.login_url).lastInsertRowid);
       map.set(b.id, id);
     }
     return map;

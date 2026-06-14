@@ -110,7 +110,7 @@ const jsonFullSchema = z.object({
       id: z.number().int().positive(),
       name: z.string().min(1).max(100),
       logo: z.string().nullable(),
-      domain: z.string().nullable(),
+      login_url: z.string().nullable(),
     }),
   ),
   accounts: z.array(

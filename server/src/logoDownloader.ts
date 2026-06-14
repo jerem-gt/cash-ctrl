@@ -16,7 +16,15 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
   const banksRepo = createBanksRepo(db);
 
   for (const bank of banksRepo.getAll()) {
-    if (bank.logo || !bank.domain) continue;
+    if (bank.logo || !bank.login_url) continue;
+
+    let hostname: string;
+    try {
+      hostname = new URL(bank.login_url).hostname;
+    } catch {
+      logger.warn(`logos: ${bank.name} — URL invalide : ${bank.login_url}`);
+      continue;
+    }
 
     const filename = `${toFileName(bank.name)}-${bank.id}.png`;
     const filepath = path.join(LOGOS_DIR, filename);
@@ -26,7 +34,7 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
     }
 
     try {
-      const res = await fetch(`https://www.google.com/s2/favicons?domain=${bank.domain}&sz=64`);
+      const res = await fetch(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
       if (!res.ok) {
         logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
         continue;
