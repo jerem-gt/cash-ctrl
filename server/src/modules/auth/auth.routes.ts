@@ -125,7 +125,7 @@ export function createAuthRouter(db: Database): Router {
     }
 
     const user = authRepo.getById(payload.userId);
-    if (!user || user.totp_enabled !== 1 || !user.totp_secret) {
+    if (user?.totp_enabled !== 1 || !user?.totp_secret) {
       sendError(res, 401, 'auth.totp_token_invalid');
       return;
     }

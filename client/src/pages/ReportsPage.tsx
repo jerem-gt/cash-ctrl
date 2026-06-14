@@ -99,7 +99,7 @@ function GainCell({ gain, returnPct }: Readonly<{ gain: number; returnPct: numbe
 function StockGainCompareColumns({ g }: Readonly<{ g: StockGainEntry }>) {
   const cmpGain = g.compare?.gain;
   const cmpGainPos = cmpGain !== undefined && cmpGain >= 0;
-  const delta = cmpGain !== undefined ? g.gain - cmpGain : undefined;
+  const delta = cmpGain === undefined ? undefined : g.gain - cmpGain;
   const deltaPos = delta !== undefined && delta >= 0;
 
   let cmpGainColor = 'text-content-faint';
@@ -115,20 +115,20 @@ function StockGainCompareColumns({ g }: Readonly<{ g: StockGainEntry }>) {
   return (
     <>
       <td className={`py-2 text-right tabular-nums pl-4 ${cmpGainColor}`}>
-        {cmpGain !== undefined ? (
-          <GainCell gain={cmpGain} returnPct={g.compare?.return_pct ?? null} />
-        ) : (
+        {cmpGain === undefined ? (
           '—'
+        ) : (
+          <GainCell gain={cmpGain} returnPct={g.compare?.return_pct ?? null} />
         )}
       </td>
       <td className={`py-2 text-right tabular-nums font-medium ${deltaColor}`}>
-        {delta !== undefined ? (
+        {delta === undefined ? (
+          '—'
+        ) : (
           <>
             {deltaPos ? '+' : ''}
             {fmt(delta)}
           </>
-        ) : (
-          '—'
         )}
       </td>
     </>
@@ -253,16 +253,16 @@ function MonthlyChartCard({
   const legendItems: [string, string, boolean][] = [
     [INCOME_COLOR, t('chart_income'), false],
     [EXPENSE_COLOR, t('chart_expenses'), false],
-    ...(compareYear !== undefined
-      ? [
+    ...(compareYear === undefined
+      ? []
+      : [
           [INCOME_COLOR, `${t('chart_income')} ${compareYear}`, true] as [string, string, boolean],
           [EXPENSE_COLOR, `${t('chart_expenses')} ${compareYear}`, true] as [
             string,
             string,
             boolean,
           ],
-        ]
-      : []),
+        ]),
   ];
   return (
     <Card>
@@ -292,8 +292,8 @@ function MonthlyChartCard({
       <Suspense fallback={<Skeleton className="h-44" />}>
         <IncomeExpenseBarChart
           data={barData}
-          compareData={compareYear !== undefined ? compareBarData : undefined}
-          compareLabel={compareYear !== undefined ? String(compareYear) : undefined}
+          compareData={compareYear === undefined ? undefined : compareBarData}
+          compareLabel={compareYear === undefined ? undefined : String(compareYear)}
           incomeLabel={t('chart_income')}
           expenseLabel={t('chart_expenses')}
           incomeColor={INCOME_COLOR}
@@ -389,7 +389,7 @@ export default function ReportsPage() {
   const { data: profitabilityData = [] } = useProfitability();
 
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.closed_at), [accounts]);
-  const accountId = accountValue !== '' ? Number(accountValue) : undefined;
+  const accountId = accountValue === '' ? undefined : Number(accountValue);
   const { data: report, isLoading } = useReport(year, accountId);
   const { data: compareReport } = useReport(
     compareYear ?? year - 1,
@@ -464,14 +464,14 @@ export default function ReportsPage() {
   const stockGains = useMemo(() => {
     const investment = profitabilityData.filter((p) => p.envelope_type === 'investment');
     const filtered =
-      accountId != null ? investment.filter((p) => p.account_id === accountId) : investment;
+      accountId === undefined ? investment : investment.filter((p) => p.account_id === accountId);
     return filtered.flatMap((p) => {
       const yr = p.yearly_returns.find((r) => r.year === String(year));
       if (!yr) return [];
       const cmpYr =
-        compareYear !== undefined
-          ? p.yearly_returns.find((r) => r.year === String(compareYear))
-          : undefined;
+        compareYear === undefined
+          ? undefined
+          : p.yearly_returns.find((r) => r.year === String(compareYear));
       return [{ account_id: p.account_id, account_name: p.account_name, ...yr, compare: cmpYr }];
     });
   }, [profitabilityData, year, compareYear, accountId]);
@@ -525,7 +525,7 @@ export default function ReportsPage() {
           <select
             value={compareYear ?? ''}
             onChange={(e) =>
-              setCompareYear(e.target.value !== '' ? Number(e.target.value) : undefined)
+              setCompareYear(e.target.value === '' ? undefined : Number(e.target.value))
             }
             className="h-8 px-2 text-sm text-content-secondary bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all"
           >
