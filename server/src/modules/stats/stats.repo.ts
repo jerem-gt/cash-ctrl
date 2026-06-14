@@ -207,7 +207,10 @@ function computeInvestmentProfitability(
     )
     .all(userId);
 
-  const priceHistoryMap = new Map<string, Map<string, number>>();
+  // Sorted ASC by date so we can find the closest price on or before a target date.
+  // December 31 is often a non-trading day (weekend/holiday), so exact lookups would
+  // silently fall back to avgPrice and hide any unrealized gain/loss.
+  const priceHistoryMap = new Map<string, Array<{ date: string; price: number }>>();
   for (const row of db
     .prepare<[number], { ticker: string; date: string; price: number }>(
       `SELECT ticker, date, price FROM stock_price_history
@@ -215,12 +218,24 @@ function computeInvestmentProfitability(
          SELECT DISTINCT so.ticker FROM stock_operations so
          JOIN accounts a ON a.id = so.account_id
          WHERE a.user_id = ?
-       )`,
+       )
+       ORDER BY ticker, date`,
     )
     .all(userId)) {
-    if (!priceHistoryMap.has(row.ticker)) priceHistoryMap.set(row.ticker, new Map());
-    priceHistoryMap.get(row.ticker)!.set(row.date, row.price);
+    if (!priceHistoryMap.has(row.ticker)) priceHistoryMap.set(row.ticker, []);
+    priceHistoryMap.get(row.ticker)!.push({ date: row.date, price: row.price });
   }
+
+  const closestPriceAt = (ticker: string, targetDate: string): number | undefined => {
+    const history = priceHistoryMap.get(ticker);
+    if (!history) return undefined;
+    let best: number | undefined;
+    for (const entry of history) {
+      if (entry.date > targetDate) break;
+      best = entry.price;
+    }
+    return best;
+  };
 
   const positionsAt = (yearEnd: string) => buildPositionsAt(allStockOps, yearEnd);
 
@@ -234,7 +249,7 @@ function computeInvestmentProfitability(
       if (!key.startsWith(`${accountId}:`)) continue;
       if (p.qty <= 0) continue;
       const ticker = key.split(':')[1];
-      const price = priceHistoryMap.get(ticker)?.get(yearEnd) ?? p.avgPrice;
+      const price = closestPriceAt(ticker, yearEnd) ?? p.avgPrice;
       total += p.qty * price;
     }
     return total;

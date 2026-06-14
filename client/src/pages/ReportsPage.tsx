@@ -8,6 +8,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useReport, useReportYears } from '@/hooks/useReport';
+import { useProfitability } from '@/hooks/useStats';
 import { generateColor } from '@/lib/colors';
 import { fmt, fmtMonthShort } from '@/lib/format';
 
@@ -63,6 +64,7 @@ export default function ReportsPage() {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const logoMap = useLogoMap();
+  const { data: profitabilityData = [] } = useProfitability();
 
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.closed_at), [accounts]);
   const accountId = accountValue !== '' ? Number(accountValue) : undefined;
@@ -102,6 +104,17 @@ export default function ReportsPage() {
       })),
     [report, colorMap],
   );
+
+  const stockGains = useMemo(() => {
+    const investment = profitabilityData.filter((p) => p.envelope_type === 'investment');
+    const filtered =
+      accountId != null ? investment.filter((p) => p.account_id === accountId) : investment;
+    return filtered.flatMap((p) => {
+      const yr = p.yearly_returns.find((r) => r.year === String(year));
+      if (!yr) return [];
+      return [{ account_id: p.account_id, account_name: p.account_name, ...yr }];
+    });
+  }, [profitabilityData, year, accountId]);
 
   const incomeTotal = report?.income_total ?? 0;
   const expenseTotal = report?.expense_total ?? 0;
@@ -262,6 +275,64 @@ export default function ReportsPage() {
               </Card>
             </div>
           </div>
+          {/* Performance boursière */}
+          {stockGains.length > 0 && (
+            <>
+              <SectionLabel label={t('section_stock_gains')} />
+              <Card className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-content-faint border-b border-line-subtle">
+                      <th className="font-medium pb-2">{t('stock_account')}</th>
+                      <th className="font-medium pb-2 text-right">{t('stock_start')}</th>
+                      <th className="font-medium pb-2 text-right">{t('stock_end')}</th>
+                      <th className="font-medium pb-2 text-right">{t('stock_flows')}</th>
+                      <th className="font-medium pb-2 text-right">{t('stock_gain')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockGains.map((g) => {
+                      const gainPos = g.gain >= 0;
+                      return (
+                        <tr
+                          key={g.account_id}
+                          className="border-b border-line-subtle last:border-0"
+                        >
+                          <td className="py-2 text-content-secondary">
+                            {g.account_name}
+                            {g.is_ytd && (
+                              <span className="ml-1.5 text-[10px] text-content-faint">YTD</span>
+                            )}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-content-muted">
+                            {fmt(g.start_value)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-content-muted">
+                            {fmt(g.end_value)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-content-muted">
+                            {fmt(g.net_flows)}
+                          </td>
+                          <td
+                            className={`py-2 text-right tabular-nums font-medium ${gainPos ? 'text-success' : 'text-danger'}`}
+                          >
+                            {gainPos ? '+' : ''}
+                            {fmt(g.gain)}
+                            {g.return_pct !== null && (
+                              <span className="ml-1 text-[10px] font-normal text-content-muted">
+                                ({gainPos ? '+' : ''}
+                                {g.return_pct.toFixed(1)} %)
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </Card>
+            </>
+          )}
         </>
       )}
     </div>
