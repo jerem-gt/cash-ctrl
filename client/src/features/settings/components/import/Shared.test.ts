@@ -5,7 +5,7 @@ import type { Bank } from '@/types';
 import { findBankByName } from './Shared';
 
 function makeBank(id: number, name: string): Bank {
-  return { id, name, logo: null, domain: null, sort_order: id };
+  return { id, name, logo: null, login_url: null, sort_order: id };
 }
 
 describe('findBankByName', () => {

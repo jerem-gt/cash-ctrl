@@ -110,7 +110,13 @@ export const handlers = [
   // Banks
   http.get('/api/banks', () => HttpResponse.json(BANKS)),
   http.post('/api/banks', () =>
-    HttpResponse.json({ id: 99, name: 'Nouvelle banque', logo: null, domain: null, sort_order: 1 }),
+    HttpResponse.json({
+      id: 99,
+      name: 'Nouvelle banque',
+      logo: null,
+      login_url: null,
+      sort_order: 1,
+    }),
   ),
   http.put('/api/banks/reorder', () => HttpResponse.json({ ok: true })),
   http.put('/api/banks/:id', () => HttpResponse.json(BANKS[0])),

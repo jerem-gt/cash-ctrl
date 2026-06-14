@@ -28,7 +28,11 @@ describe('useUpdateBank', () => {
   it('met à jour une banque avec succès', async () => {
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateBank(), { wrapper: Wrapper });
-    result.current.mutate({ id: 1, name: 'BNP Paribas', domain: 'bnpparibas.fr' });
+    result.current.mutate({
+      id: 1,
+      name: 'BNP Paribas',
+      login_url: 'https://mabanque.bnpparibas.com/fr/connexion',
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

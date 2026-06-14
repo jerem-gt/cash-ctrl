@@ -8,7 +8,7 @@ export interface FullExportBank {
   id: number;
   name: string;
   logo: string | null;
-  domain: string | null;
+  login_url: string | null;
 }
 
 export interface FullExportAccount {

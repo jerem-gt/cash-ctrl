@@ -282,7 +282,13 @@ export const STOCK_OPERATIONS: StockOperation[] = [
 ];
 
 export const BANKS: Bank[] = [
-  { id: 1, name: 'BNP', logo: 'image-qui-n-existe-pas.png', domain: 'bnp.fr', sort_order: 0 },
+  {
+    id: 1,
+    name: 'BNP',
+    logo: 'image-qui-n-existe-pas.png',
+    login_url: 'https://mabanque.bnpparibas.com/fr/connexion',
+    sort_order: 0,
+  },
 ];
 
 export const CATEGORIES: Category[] = [
