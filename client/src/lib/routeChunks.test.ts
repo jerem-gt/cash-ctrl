@@ -9,6 +9,7 @@ describe('routeChunk', () => {
       '/transactions',
       '/accounts',
       '/accounts/:id',
+      '/reports',
       '/scheduled',
       '/settings',
     ];
