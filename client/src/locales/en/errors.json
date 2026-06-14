@@ -67,7 +67,12 @@
     "invalid_credentials": "Invalid credentials",
     "too_many_attempts": "Too many attempts. Try again later.",
     "password_too_short": "Password must be at least 8 characters",
-    "current_password_incorrect": "Current password is incorrect"
+    "current_password_incorrect": "Current password is incorrect",
+    "totp_required": "Authentication code required",
+    "totp_invalid": "Invalid or expired code",
+    "totp_token_invalid": "Authentication session expired, please log in again",
+    "totp_already_enabled": "Two-factor authentication is already enabled",
+    "totp_not_enabled": "Two-factor authentication is not enabled"
   },
   "reimbursement": {
     "only_expense": "Only expenses can have reimbursements",

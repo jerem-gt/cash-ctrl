@@ -67,7 +67,12 @@
     "invalid_credentials": "Identifiants invalides",
     "too_many_attempts": "Trop de tentatives. Réessayez plus tard.",
     "password_too_short": "Le mot de passe doit contenir au moins 8 caractères",
-    "current_password_incorrect": "Mot de passe actuel incorrect"
+    "current_password_incorrect": "Mot de passe actuel incorrect",
+    "totp_required": "Code d'authentification requis",
+    "totp_invalid": "Code invalide ou expiré",
+    "totp_token_invalid": "Session d'authentification expirée, reconnectez-vous",
+    "totp_already_enabled": "La double authentification est déjà activée",
+    "totp_not_enabled": "La double authentification n'est pas activée"
   },
   "reimbursement": {
     "only_expense": "Seules les dépenses peuvent avoir des remboursements",

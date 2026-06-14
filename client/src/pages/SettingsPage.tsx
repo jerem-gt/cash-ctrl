@@ -11,6 +11,7 @@ import { PasswordChangeCard } from '@/features/settings/components/PasswordChang
 import { PaymentMethodsManager } from '@/features/settings/components/PaymentMethodsManager';
 import { SettingsManager, type SettingsTab } from '@/features/settings/components/SettingsManager';
 import { SystemRefsManager } from '@/features/settings/components/SystemRefsManager';
+import { TwoFactorCard } from '@/features/settings/components/TwoFactorCard';
 
 import ImportManager from '../features/settings/components/ImportManager.tsx';
 
@@ -52,6 +53,7 @@ export default function SettingsPage() {
           {activeTab === 'import' && <ImportManager />}
           {activeTab === 'backup' && <BackupManager />}
           {activeTab === 'password' && <PasswordChangeCard />}
+          {activeTab === 'totp' && <TwoFactorCard />}
           {activeTab === 'systemRefs' && <SystemRefsManager />}
         </div>
       </div>

@@ -19,6 +19,11 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       WHERE id IN (SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL)
         AND (subcategory_id IS NULL OR payment_method_id IS NULL);
     `),
+  (db) =>
+    db.exec(`
+      ALTER TABLE users ADD COLUMN totp_secret TEXT;
+      ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0;
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {

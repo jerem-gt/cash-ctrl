@@ -31,10 +31,25 @@ import {
 
 export const handlers = [
   // Auth
-  http.get('/api/auth/me', () => HttpResponse.json({ username: 'test', isAdmin: false })),
-  http.post('/api/auth/login', () => HttpResponse.json({ username: 'test', isAdmin: false })),
+  http.get('/api/auth/me', () =>
+    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: false }),
+  ),
+  http.post('/api/auth/login', () =>
+    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: false }),
+  ),
   http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/2fa/setup', () =>
+    HttpResponse.json({
+      uri: 'otpauth://totp/CashCtrl:test?secret=BASE32SECRET&issuer=CashCtrl',
+      secret: 'BASE32SECRET',
+    }),
+  ),
+  http.post('/api/auth/2fa/enable', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/2fa/disable', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/2fa/verify', () =>
+    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: true }),
+  ),
 
   // Users (admin)
   http.get('/api/users', () => HttpResponse.json(USERS)),

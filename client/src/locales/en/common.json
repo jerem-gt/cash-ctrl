@@ -29,7 +29,11 @@
     "username": "Username",
     "password": "Password",
     "submit": "Sign in",
-    "submitting": "Signing in…"
+    "submitting": "Signing in…",
+    "totp_subtitle": "Enter the code shown in your authenticator app",
+    "totp_code": "6-digit code",
+    "totp_submit": "Verify",
+    "totp_back": "← Back"
   },
   "pagination": {
     "first": "First page",

@@ -167,17 +167,31 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   return parseResponse<T>(res);
 }
 
+export interface MeData {
+  username: string;
+  isAdmin: boolean;
+  totpEnabled: boolean;
+}
+
+export type LoginResponse =
+  | (MeData & { totp_required?: never })
+  | { totp_required: true; pending_token: string };
+
 // Auth
 export const authApi = {
-  me: () => request<{ username: string; isAdmin: boolean }>('GET', '/api/auth/me'),
+  me: () => request<MeData>('GET', '/api/auth/me'),
   login: (username: string, password: string) =>
-    request<{ username: string; isAdmin: boolean }>('POST', '/api/auth/login', {
-      username,
-      password,
-    }),
+    request<LoginResponse>('POST', '/api/auth/login', { username, password }),
   logout: () => request<{ ok: boolean }>('POST', '/api/auth/logout'),
   changePassword: (current: string, next: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/change-password', { current, next }),
+  setup2fa: () => request<{ uri: string; secret: string }>('POST', '/api/auth/2fa/setup'),
+  enable2fa: (secret: string, code: string) =>
+    request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { secret, code }),
+  disable2fa: (password: string) =>
+    request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
+  verifyTotp: (pendingToken: string, code: string) =>
+    request<MeData>('POST', '/api/auth/2fa/verify', { pending_token: pendingToken, code }),
 };
 
 // Users (admin only)
