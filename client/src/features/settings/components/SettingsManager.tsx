@@ -37,6 +37,7 @@ export const tabs = [
   },
   { section: 'security', items: [{ key: 'password' }, { key: 'totp' }] },
   { section: 'system', items: [{ key: 'systemRefs' }] },
+  { section: 'automation', items: [{ key: 'categorizationRules' }] },
 ] as const;
 
 export type SettingsTab = (typeof tabs)[number]['items'][number]['key'];
@@ -54,6 +55,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     data: t('nav.data_section'),
     security: t('nav.security_section'),
     system: t('nav.system_section'),
+    automation: t('nav.automation_section'),
   };
 
   const itemLabels: Record<string, string> = {
@@ -67,6 +69,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     password: t('nav.password'),
     totp: t('nav.totp'),
     systemRefs: t('nav.system_refs'),
+    categorizationRules: t('nav.categorization_rules'),
   };
 
   return (

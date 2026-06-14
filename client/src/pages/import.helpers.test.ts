@@ -8,6 +8,7 @@ import {
   buildRowIndex,
   type CategoryChoice,
   findAutoCategory,
+  likeMatch,
   type PreviewItem,
   resolveAccountInfo,
   resolveCategoryInfo,
@@ -748,5 +749,142 @@ describe('buildRowIndex', () => {
     // transactions[0] correspond à la ligne txRows[0]
     expect(txRows).toEqual([1, 2]);
     expect(tfRows).toEqual([0]);
+  });
+});
+
+// ─── likeMatch ────────────────────────────────────────────────────────────────
+
+describe('likeMatch', () => {
+  it('match exact (sans %)', () => {
+    expect(likeMatch('courses leclerc', 'courses leclerc')).toBe(true);
+  });
+
+  it('% en préfixe et suffixe', () => {
+    expect(likeMatch('Courses Leclerc', '%leclerc%')).toBe(true);
+  });
+
+  it('insensible à la casse', () => {
+    expect(likeMatch('LECLERC DRIVE', '%leclerc%')).toBe(true);
+  });
+
+  it('retourne false si le texte ne contient pas le segment', () => {
+    expect(likeMatch('LOYER JANVIER', '%leclerc%')).toBe(false);
+  });
+
+  it('% uniquement en suffixe (ancrage préfixe)', () => {
+    expect(likeMatch('courses leclerc extra', 'courses%')).toBe(true);
+    expect(likeMatch('paiement courses', 'courses%')).toBe(false);
+  });
+
+  it('pattern sans joker doit correspondre exactement', () => {
+    expect(likeMatch('leclerc', 'leclerc')).toBe(true);
+    expect(likeMatch('leclerc drive', 'leclerc')).toBe(false);
+  });
+});
+
+// ─── resolvePreview avec descriptionRuleMatcher ───────────────────────────────
+
+describe('resolvePreview — descriptionRuleMatcher', () => {
+  const account: Account = {
+    id: 1,
+    name: 'Courant',
+    bank_id: 1,
+    bank: 'BNP',
+    account_type_id: 1,
+    type: 'Courant',
+    envelope_type: null,
+    initial_balance: 0,
+    opening_date: '2024-01-01',
+    closed_at: null,
+    balance: 0,
+    balance_stocks: 0,
+    balance_insurance: 0,
+    balance_all: 0,
+    capital_restant_du: null,
+    capital_restant_du_all: null,
+  };
+
+  const categories: Category[] = [
+    {
+      id: 1,
+      name: 'Alimentation',
+      icon: '🍴',
+      subcategories: [{ id: 10, name: 'Supermarché' }],
+    },
+  ];
+
+  function makeParsed(description: string, category = '') {
+    return {
+      transactions: [
+        {
+          date: '15/01/2024',
+          amount: -50,
+          description,
+          qifAccountName: 'ACC1',
+          category,
+          memo: null,
+          cleared: false,
+          isTransfer: false,
+          transferTarget: null,
+        },
+      ],
+      accounts: new Set(['ACC1']),
+    };
+  }
+
+  const accountChoices = new Map<string, AccountChoice>([
+    ['ACC1', { action: 'map', account_id: 1 }],
+  ]);
+
+  it('utilise le matcher pour assigner la sous-catégorie', () => {
+    const matcher = () => 10;
+    const items = resolvePreview(
+      makeParsed('Courses Leclerc'),
+      'DD/MM',
+      accountChoices,
+      new Map(),
+      [account],
+      categories,
+      matcher,
+    );
+    expect(items[0].kind).toBe('transaction');
+    if (items[0].kind === 'transaction') {
+      expect(items[0].subcategoryId).toBe(10);
+    }
+  });
+
+  it('retourne null pour subcategoryId quand le matcher retourne null (mode sans catégorie)', () => {
+    const matcher = () => null;
+    const items = resolvePreview(
+      makeParsed('Courses Leclerc', 'Alimentation:Supermarché'),
+      'DD/MM',
+      accountChoices,
+      new Map(),
+      [account],
+      categories,
+      matcher,
+    );
+    expect(items[0].kind).toBe('transaction');
+    if (items[0].kind === 'transaction') {
+      expect(items[0].subcategoryId).toBeNull();
+    }
+  });
+
+  it('utilise les categoryChoices QIF quand aucun matcher fourni', () => {
+    const catChoices = new Map<string, CategoryChoice>([
+      ['Alimentation:Supermarché', { action: 'map', subcategory_id: 10 }],
+    ]);
+    const items = resolvePreview(
+      makeParsed('Courses', 'Alimentation:Supermarché'),
+      'DD/MM',
+      accountChoices,
+      catChoices,
+      [account],
+      categories,
+    );
+    expect(items[0].kind).toBe('transaction');
+    if (items[0].kind === 'transaction') {
+      expect(items[0].subcategoryId).toBe(10);
+    }
   });
 });

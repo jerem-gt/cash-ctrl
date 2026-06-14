@@ -141,6 +141,9 @@ export const ERROR_MESSAGES = {
 
   // ── Réglages ──────────────────────────────────────────────────────────────
   'settings.ref_not_owned': "{{col}} : l'id {{id}} n'appartient pas à cet utilisateur",
+
+  // ── Règles de catégorisation ──────────────────────────────────────────────
+  'categorization_rule.not_found': 'Règle introuvable',
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES;

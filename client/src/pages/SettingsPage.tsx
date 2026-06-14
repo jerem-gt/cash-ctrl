@@ -6,6 +6,7 @@ import { AccountTypesManager } from '@/features/settings/components/AccountTypes
 import { BackupManager } from '@/features/settings/components/BackupManager';
 import { BanksManager } from '@/features/settings/components/BanksManager';
 import { CategoriesManager } from '@/features/settings/components/categories/CategoriesManager';
+import { CategorizationRulesCard } from '@/features/settings/components/CategorizationRulesCard';
 import ExportManager from '@/features/settings/components/ExportManager';
 import { PasswordChangeCard } from '@/features/settings/components/PasswordChangeCard';
 import { PaymentMethodsManager } from '@/features/settings/components/PaymentMethodsManager';
@@ -55,6 +56,7 @@ export default function SettingsPage() {
           {activeTab === 'password' && <PasswordChangeCard />}
           {activeTab === 'totp' && <TwoFactorCard />}
           {activeTab === 'systemRefs' && <SystemRefsManager />}
+          {activeTab === 'categorizationRules' && <CategorizationRulesCard />}
         </div>
       </div>
     </div>

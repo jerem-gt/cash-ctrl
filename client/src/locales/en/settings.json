@@ -112,7 +112,11 @@
       "unmapped_account": "Unmapped account",
       "skipped_category": "Skipped category",
       "transfer_no_peer": "Transfer without counterpart"
-    }
+    },
+    "category_mode_title": "Category source",
+    "category_mode_file": "Use categories from the QIF file",
+    "category_mode_rules": "Detect with my categorization rules",
+    "category_mode_none": "Do not categorize"
   },
   "totp": {
     "title": "Two-factor authentication (2FA)",
@@ -198,7 +202,31 @@
     "password": "Password",
     "totp": "Two-factor authentication",
     "system_refs": "System entities",
-    "system_section": "System"
+    "system_section": "System",
+    "automation_section": "Automation",
+    "categorization_rules": "Categorization rules"
+  },
+  "categorization_rules": {
+    "title": "Categorization rules",
+    "description": "Define rules to automatically suggest a subcategory based on the transaction description. The pattern follows SQL LIKE syntax — use % to match any sequence of characters.",
+    "pattern_label": "Pattern (e.g. %leclerc%)",
+    "subcategory_label": "Subcategory",
+    "add_btn": "Add a rule",
+    "init_btn": "Initialize from history",
+    "init_success": "{{count}} rule(s) added from history ✓",
+    "init_success_one": "1 rule added from history ✓",
+    "init_none": "No new rules to create from history",
+    "empty": "No rules yet. Add one or initialize from history.",
+    "save_btn": "Save",
+    "delete_title": "Delete this rule?",
+    "err_pattern": "Enter a pattern.",
+    "err_subcategory": "Choose a subcategory.",
+    "success_create": "Rule added ✓",
+    "success_update": "Rule updated ✓",
+    "success_delete": "Rule deleted",
+    "delete_all_btn": "Delete all",
+    "delete_all_confirm": "Delete all rules?",
+    "success_delete_all": "All rules deleted"
   },
   "card": {
     "edit_label": "Edit",

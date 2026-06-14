@@ -524,3 +524,35 @@ export const transactionsApi = {
     request<Transaction>('PATCH', `/api/transactions/${id}/validate`, { validated }),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transactions/${id}`),
 };
+
+// Categorization rules
+export interface CategorizationRule {
+  id: number;
+  user_id: number;
+  pattern: string;
+  subcategory_id: number;
+  sort_order: number;
+}
+
+export const categorizationRulesApi = {
+  list: () => request<CategorizationRule[]>('GET', '/api/categorization-rules'),
+  match: (description: string) =>
+    request<CategorizationRule | null>(
+      'GET',
+      `/api/categorization-rules/match?description=${encodeURIComponent(description)}`,
+    ),
+  create: (pattern: string, subcategoryId: number) =>
+    request<CategorizationRule>('POST', '/api/categorization-rules', {
+      pattern,
+      subcategory_id: subcategoryId,
+    }),
+  update: (id: number, pattern: string, subcategoryId: number) =>
+    request<CategorizationRule>('PUT', `/api/categorization-rules/${id}`, {
+      pattern,
+      subcategory_id: subcategoryId,
+    }),
+  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categorization-rules/${id}`),
+  removeAll: () => request<{ deleted: number }>('DELETE', '/api/categorization-rules'),
+  initFromHistory: () =>
+    request<{ inserted: number }>('POST', '/api/categorization-rules/init-from-history'),
+};

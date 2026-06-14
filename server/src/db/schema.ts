@@ -342,5 +342,16 @@ export function initSchema(db: Database) {
             pass_cents           INTEGER NOT NULL,
             created_at           TEXT    DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS categorization_rules
+        (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            pattern        TEXT    NOT NULL,
+            subcategory_id INTEGER NOT NULL REFERENCES subcategories (id) ON DELETE CASCADE,
+            sort_order     INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_cat_rules_user ON categorization_rules(user_id, sort_order);
     `);
 }

@@ -1,9 +1,11 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 
 import type { TxCoreState } from './TxCoreFields';
 import { TxCoreFields } from './TxCoreFields';
@@ -136,6 +138,51 @@ describe('TxCoreFields', () => {
     await user.click(await screen.findByRole('option', { name: /Livret A/i }));
     // ACCOUNTS[0].bank = 'BNP', ACCOUNT_B.bank = 'LCL' → description = 'BNP → LCL'
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ description: 'BNP → LCL' }));
+  });
+
+  it('affiche le badge suggestion quand une règle correspond à la description', async () => {
+    server.use(
+      http.get('/api/categorization-rules/match', () =>
+        HttpResponse.json({
+          id: 1,
+          user_id: 1,
+          pattern: '%courses%',
+          subcategory_id: 1,
+          sort_order: 0,
+        }),
+      ),
+    );
+    renderWithProviders(
+      <TxCoreFields
+        {...defaultProps}
+        value={{ ...defaultValue, description: 'Courses Leclerc' }}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Alimentation › Supermarché')).toBeInTheDocument());
+  });
+
+  it('masque le badge suggestion si la sous-catégorie est déjà appliquée', async () => {
+    server.use(
+      http.get('/api/categorization-rules/match', () =>
+        HttpResponse.json({
+          id: 1,
+          user_id: 1,
+          pattern: '%courses%',
+          subcategory_id: 1,
+          sort_order: 0,
+        }),
+      ),
+    );
+    renderWithProviders(
+      <TxCoreFields
+        {...defaultProps}
+        value={{ ...defaultValue, description: 'Courses Leclerc', subcategory_id: '1' }}
+      />,
+    );
+    // Attendre que le hook soit résolu puis vérifier que le badge n'est pas affiché
+    await waitFor(() =>
+      expect(screen.queryByText('Alimentation › Supermarché')).not.toBeInTheDocument(),
+    );
   });
 
   it('handleSourceChange en mode transfert met à jour account_id', async () => {
