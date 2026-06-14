@@ -298,11 +298,11 @@ function resolveQifTxCategory(
   if (descriptionRuleMatcher !== undefined) {
     const matchedId = descriptionRuleMatcher(description);
     const found =
-      matchedId !== null
-        ? categories
+      matchedId === null
+        ? undefined
+        : categories
             .flatMap((c) => c.subcategories.map((s) => ({ cat: c, sub: s })))
-            .find(({ sub }) => sub.id === matchedId)
-        : undefined;
+            .find(({ sub }) => sub.id === matchedId);
     return {
       subcategoryId: matchedId,
       newSubcategoryKey: null,

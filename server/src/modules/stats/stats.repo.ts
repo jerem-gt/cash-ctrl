@@ -1039,7 +1039,7 @@ export function createStatsRepo(db: Database) {
       const dateFrom = `${year}-01-01`;
       const dateTo = `${year}-12-31`;
       // accountCond placed AFTER date params so params order is always [userId, dateFrom, dateTo, (accountId?)]
-      const accountCond = accountId != null ? 'AND t.account_id = ?' : '';
+      const accountCond = accountId == null ? '' : 'AND t.account_id = ?';
       const insExcl = `AND t.id NOT IN (
         SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL
       )`;
@@ -1047,7 +1047,7 @@ export function createStatsRepo(db: Database) {
         SELECT transaction_id FROM stock_operations WHERE transaction_id IS NOT NULL
       )`;
       const baseParams: unknown[] = [userId, dateFrom, dateTo];
-      const filterParams: unknown[] = accountId != null ? [...baseParams, accountId] : baseParams;
+      const filterParams: unknown[] = accountId == null ? baseParams : [...baseParams, accountId];
 
       const totals = db
         .prepare<unknown[], { income: number; expense: number }>(
