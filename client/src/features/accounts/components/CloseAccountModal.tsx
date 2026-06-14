@@ -22,20 +22,23 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
 
   const [closedAt, setClosedAt] = useState(today);
   const [transferToId, setTransferToId] = useState('');
+  const [errors, setErrors] = useState<Set<string>>(new Set());
 
   const closeAccount = useCloseAccount();
 
   const transferTargets = activeAccounts.filter((a) => a.id !== account.id);
 
   const handleSubmit = () => {
-    if (needsTransfer && !transferToId) {
-      showToast(t('close_modal.err_no_destination'));
+    const errs = new Set<string>();
+    if (needsTransfer && !transferToId) errs.add('transfer_to');
+    if (!closedAt) errs.add('closed_at');
+    if (errs.size > 0) {
+      setErrors(errs);
+      if (errs.has('transfer_to')) showToast(t('close_modal.err_no_destination'));
+      else showToast(t('close_modal.err_no_date'));
       return;
     }
-    if (!closedAt) {
-      showToast(t('close_modal.err_no_date'));
-      return;
-    }
+    setErrors(new Set());
     closeAccount.mutate(
       {
         id: account.id,
@@ -91,7 +94,18 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
       <div className="space-y-3">
         {needsTransfer && (
           <FormGroup label={t('close_modal.transfer_to')}>
-            <Select value={transferToId} onChange={(e) => setTransferToId(e.target.value)}>
+            <Select
+              value={transferToId}
+              onChange={(e) => {
+                setErrors((p) => {
+                  const s = new Set(p);
+                  s.delete('transfer_to');
+                  return s;
+                });
+                setTransferToId(e.target.value);
+              }}
+              error={errors.has('transfer_to')}
+            >
               <option value="">{t('close_modal.choose_account')}</option>
               {transferTargets.map((a) => (
                 <option key={a.id} value={String(a.id)}>
@@ -103,7 +117,19 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
           </FormGroup>
         )}
         <FormGroup label={t('close_modal.closing_date')}>
-          <Input type="date" value={closedAt} onChange={(e) => setClosedAt(e.target.value)} />
+          <Input
+            type="date"
+            value={closedAt}
+            onChange={(e) => {
+              setErrors((p) => {
+                const s = new Set(p);
+                s.delete('closed_at');
+                return s;
+              });
+              setClosedAt(e.target.value);
+            }}
+            error={errors.has('closed_at')}
+          />
         </FormGroup>
       </div>
     </ModalFrame>

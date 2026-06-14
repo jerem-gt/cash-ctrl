@@ -19,6 +19,7 @@ interface Props {
   categories: Pick<Category, 'id' | 'name' | 'subcategories'>[];
   paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
   fixedAccountId: number | undefined;
+  fieldErrors?: Set<string>;
 }
 
 export function TxFormBody({
@@ -35,6 +36,7 @@ export function TxFormBody({
   categories,
   paymentMethods,
   fixedAccountId,
+  fieldErrors,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
 
@@ -61,6 +63,7 @@ export function TxFormBody({
         isTransfer={isTransferCreate}
         fixedAccountId={fixedAccountId}
         hideCategories={isVentilated}
+        fieldErrors={fieldErrors}
       />
       {!isTransferCreate && (
         <>

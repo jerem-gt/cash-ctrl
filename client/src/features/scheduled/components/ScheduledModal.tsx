@@ -22,6 +22,41 @@ import { TxCoreFields, type TxCoreState } from '@/features/transactions/componen
 import { useAccounts } from '@/hooks/useAccounts';
 import type { Account, RecurrenceUnit, Subcategory, WeekendHandling } from '@/types';
 
+type ScheduledT = ReturnType<typeof import('react-i18next').useTranslation<'scheduled'>>['t'];
+
+function transferFieldErrors(form: FormState): Set<string> {
+  const errors = new Set<string>();
+  if (!form.account_id) errors.add('account_id');
+  if (!form.to_account_id) errors.add('to_account_id');
+  return errors;
+}
+
+function versementFieldErrors(form: FormState): Set<string> {
+  const errors = new Set<string>();
+  if (!form.account_id) errors.add('account_id');
+  if (!form.insurance_support_id) errors.add('insurance_support_id');
+  if (!form.to_account_id) errors.add('to_account_id');
+  return errors;
+}
+
+function validateModeFields(
+  form: FormState,
+  t: ScheduledT,
+): { errors: Set<string>; message: string } | null {
+  if (form.mode === 'transaction' && !form.account_id) {
+    return { errors: new Set(['account_id']), message: t('modal.err_account') };
+  }
+  if (form.mode === 'transfer') {
+    const errors = transferFieldErrors(form);
+    if (errors.size > 0) return { errors, message: t('modal.err_transfer_accounts') };
+  }
+  if (form.mode === 'versement') {
+    const errors = versementFieldErrors(form);
+    if (errors.size > 0) return { errors, message: t('modal.err_versement_fields') };
+  }
+  return null;
+}
+
 interface ModalProps {
   initial: FormState;
   accounts: ReturnType<typeof useAccounts>['data'];
@@ -48,6 +83,7 @@ export function ScheduledModal({
   const { t } = useTranslation('scheduled');
   const { t: tc } = useTranslation('common');
   const [form, setForm] = useState<FormState>(initial);
+  const [errors, setErrors] = useState<Set<string>>(new Set());
 
   const modeLabels: Record<ScheduledMode, string> = {
     transaction: t('modal.mode_transaction'),
@@ -75,8 +111,15 @@ export function ScheduledModal({
     before: t('modal.weekend_before'),
     after: t('modal.weekend_after'),
   };
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => {
+    setErrors((prev) => {
+      const s = new Set(prev);
+      s.delete(k);
+      return s;
+    });
     setForm((f) => ({ ...f, [k]: v }));
+  };
 
   const insuranceAccounts = accounts.filter(isInsuranceAccount);
   const regularAccounts = accounts.filter((a) => !isInsuranceAccount(a));
@@ -86,6 +129,7 @@ export function ScheduledModal({
   );
 
   const handleModeChange = (mode: ScheduledMode) => {
+    setErrors(new Set());
     setForm((f) => ({
       ...f,
       mode,
@@ -108,30 +152,27 @@ export function ScheduledModal({
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!form.amount || !form.description || !form.start_date) {
+    const errs = new Set<string>();
+    if (!form.amount) errs.add('amount');
+    if (!form.description) errs.add('description');
+    if (!form.start_date) errs.add('start_date');
+    if (errs.size > 0) {
+      setErrors(errs);
       showToast(t('modal.err_required'));
       return;
     }
     if (Number.parseFloat(form.amount) <= 0) {
+      setErrors(new Set(['amount']));
       showToast(t('modal.err_amount'));
       return;
     }
-    if (form.mode === 'transaction' && !form.account_id) {
-      showToast(t('modal.err_account'));
+    const modeErr = validateModeFields(form, t);
+    if (modeErr) {
+      setErrors(modeErr.errors);
+      showToast(modeErr.message);
       return;
     }
-    if (form.mode === 'transfer') {
-      if (!form.account_id || !form.to_account_id) {
-        showToast(t('modal.err_transfer_accounts'));
-        return;
-      }
-    }
-    if (form.mode === 'versement') {
-      if (!form.account_id || !form.insurance_support_id || !form.to_account_id) {
-        showToast(t('modal.err_versement_fields'));
-        return;
-      }
-    }
+    setErrors(new Set());
     onSave(form);
   };
 
@@ -174,23 +215,39 @@ export function ScheduledModal({
         {(form.mode === 'transaction' || form.mode === 'transfer') && (
           <TxCoreFields
             value={coreValue}
-            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            onChange={(patch) => {
+              setErrors((prev) => {
+                const s = new Set(prev);
+                Object.keys(patch).forEach((k) => s.delete(k));
+                return s;
+              });
+              setForm((f) => ({ ...f, ...patch }));
+            }}
             accounts={accounts}
             logoMap={logoMap}
             categories={categories}
             paymentMethods={paymentMethods}
             isTransfer={form.mode === 'transfer'}
+            fieldErrors={errors}
           />
         )}
 
         {form.mode === 'versement' && (
           <VersementFields
             form={form}
-            patch={(updates) => setForm((f) => ({ ...f, ...updates }))}
+            patch={(updates) => {
+              setErrors((prev) => {
+                const s = new Set(prev);
+                Object.keys(updates).forEach((k) => s.delete(k));
+                return s;
+              });
+              setForm((f) => ({ ...f, ...updates }));
+            }}
             insuranceAccounts={insuranceAccounts}
             regularAccounts={regularAccounts}
             logoMap={logoMap}
             supports={supports}
+            fieldErrors={errors}
           />
         )}
 
@@ -276,6 +333,7 @@ export function ScheduledModal({
               type="date"
               value={form.start_date}
               onChange={(e) => set('start_date', e.target.value)}
+              error={errors.has('start_date')}
             />
           </FormGroup>
           <FormGroup label={t('modal.end_date')}>
@@ -320,6 +378,7 @@ interface VersementFieldsProps {
   regularAccounts: Account[];
   logoMap: Record<string, string | null>;
   supports: { id: number; name: string; type: string }[];
+  fieldErrors?: Set<string>;
 }
 
 function VersementFields({
@@ -329,6 +388,7 @@ function VersementFields({
   regularAccounts,
   logoMap,
   supports,
+  fieldErrors,
 }: Readonly<VersementFieldsProps>) {
   const { t } = useTranslation('scheduled');
   const { t: tc } = useTranslation('common');
@@ -356,6 +416,7 @@ function VersementFields({
             accounts={insuranceAccounts}
             logoMap={logoMap}
             placeholder={t('versement.choose')}
+            error={fieldErrors?.has('account_id')}
           />
         </FormGroup>
         <FormGroup label={t('versement.support_label')}>
@@ -363,6 +424,7 @@ function VersementFields({
             value={form.insurance_support_id}
             onChange={handleSupportChange}
             disabled={!form.account_id || supports.length === 0}
+            error={fieldErrors?.has('insurance_support_id')}
           >
             <option value="">{t('versement.choose')}</option>
             {supports.map((s) => (
@@ -383,6 +445,7 @@ function VersementFields({
             accounts={regularAccounts}
             logoMap={logoMap}
             placeholder={t('versement.choose')}
+            error={fieldErrors?.has('to_account_id')}
           />
         </FormGroup>
         <div className="flex gap-3">
@@ -391,6 +454,7 @@ function VersementFields({
               value={form.amount}
               onChange={(e) => patch({ amount: e.target.value })}
               placeholder="0,00"
+              error={fieldErrors?.has('amount')}
             />
           </FormGroup>
           <FormGroup label={tc('fees')} className="w-28">
@@ -408,6 +472,7 @@ function VersementFields({
           value={form.description}
           onChange={(e) => patch({ description: e.target.value })}
           placeholder={t('versement.description_placeholder')}
+          error={fieldErrors?.has('description')}
         />
       </FormGroup>
     </div>

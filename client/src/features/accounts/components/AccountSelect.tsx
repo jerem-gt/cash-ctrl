@@ -14,6 +14,7 @@ interface Props {
   accounts: Account[];
   logoMap: Record<string, string | null>;
   placeholder?: string;
+  error?: boolean;
 }
 
 function Logo({
@@ -41,6 +42,7 @@ export function AccountSelect({
   accounts,
   logoMap,
   placeholder,
+  error = false,
 }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
   const resolvedPlaceholder = placeholder ?? t('bank_select.choose');
@@ -152,7 +154,7 @@ export function AccountSelect({
         onBlur={handleBlur}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all text-left"
+        className={`w-full h-9 flex items-center gap-2 px-3 py-2 text-sm bg-surface border rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all text-left ${error ? 'border-danger' : 'border-line'}`}
       >
         {selected ? (
           <>

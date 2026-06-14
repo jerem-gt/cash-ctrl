@@ -33,6 +33,18 @@ type FormState = {
   deposit_account_id: string;
 };
 
+type LoanT = ReturnType<typeof import('react-i18next').useTranslation<'loans'>>['t'];
+
+function firstLoanErrorToast(errs: Set<string>, t: LoanT): string {
+  if (errs.has('name')) return t('form_modal.err_no_name');
+  if (errs.has('start_date')) return t('form_modal.err_no_start_date');
+  if (errs.has('principal_amount')) return t('form_modal.err_invalid_amount');
+  if (errs.has('interest_rate')) return t('form_modal.err_invalid_rate');
+  if (errs.has('duration_months')) return t('form_modal.err_invalid_duration');
+  if (errs.has('source_account_id')) return t('form_modal.err_no_source');
+  return t('form_modal.err_no_deposit');
+}
+
 function addMonths(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   const target = new Date(y, m - 1 + n, 1);
@@ -88,6 +100,8 @@ export function LoanFormModal(props: Readonly<Props>) {
     return EMPTY_FORM(today());
   });
 
+  const [errors, setErrors] = useState<Set<string>>(new Set());
+
   const createLoan = useCreateLoan();
   const updateLoan = useUpdateLoan(loan?.id ?? 0);
   const isPending = createLoan.isPending || updateLoan.isPending;
@@ -100,11 +114,23 @@ export function LoanFormModal(props: Readonly<Props>) {
   }, [form.principal_amount, form.interest_rate, form.duration_months]);
 
   const set =
-    (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setErrors((prev) => {
+        const s = new Set(prev);
+        s.delete(key);
+        return s;
+      });
       setForm((f) => ({ ...f, [key]: e.target.value }));
+    };
 
   const handleOpeningDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    if (val)
+      setErrors((prev) => {
+        const s = new Set(prev);
+        s.delete('start_date');
+        return s;
+      });
     setForm((f) => ({
       ...f,
       opening_date: val,
@@ -113,37 +139,23 @@ export function LoanFormModal(props: Readonly<Props>) {
   };
 
   const validate = (): boolean => {
-    if (!form.name.trim()) {
-      showToast(t('form_modal.err_no_name'));
-      return false;
-    }
-    if (!form.start_date) {
-      showToast(t('form_modal.err_no_start_date'));
-      return false;
-    }
+    const errs = new Set<string>();
+    if (!form.name.trim()) errs.add('name');
+    if (!form.start_date) errs.add('start_date');
     const principal = Number.parseFloat(form.principal_amount);
-    if (!principal || principal <= 0) {
-      showToast(t('form_modal.err_invalid_amount'));
-      return false;
-    }
+    if (!principal || principal <= 0) errs.add('principal_amount');
     const rate = Number.parseFloat(form.interest_rate);
-    if (Number.isNaN(rate) || rate < 0) {
-      showToast(t('form_modal.err_invalid_rate'));
-      return false;
-    }
+    if (Number.isNaN(rate) || rate < 0) errs.add('interest_rate');
     const months = Number.parseInt(form.duration_months);
-    if (!months || months <= 0) {
-      showToast(t('form_modal.err_invalid_duration'));
+    if (!months || months <= 0) errs.add('duration_months');
+    if (!form.source_account_id) errs.add('source_account_id');
+    if (!isEdit && !form.deposit_account_id) errs.add('deposit_account_id');
+    if (errs.size > 0) {
+      setErrors(errs);
+      showToast(firstLoanErrorToast(errs, t));
       return false;
     }
-    if (!form.source_account_id) {
-      showToast(t('form_modal.err_no_source'));
-      return false;
-    }
-    if (!isEdit && !form.deposit_account_id) {
-      showToast(t('form_modal.err_no_deposit'));
-      return false;
-    }
+    setErrors(new Set());
     return true;
   };
 
@@ -222,6 +234,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             value={form.name}
             onChange={set('name')}
             placeholder={t('form_modal.name_placeholder')}
+            error={errors.has('name')}
           />
         </FormGroup>
         <FormGroup label={t('form_modal.bank_label')}>
@@ -242,6 +255,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               onChange={set('start_date')}
               disabled={isEdit}
               title={isEdit ? t('form_modal.first_installment_readonly') : undefined}
+              error={errors.has('start_date')}
             />
           </FormGroup>
         </div>
@@ -252,6 +266,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             placeholder="Ex : 200000"
             disabled={isEdit}
             title={isEdit ? t('form_modal.amount_readonly') : undefined}
+            error={errors.has('principal_amount')}
           />
         </FormGroup>
         <div className="grid grid-cols-2 gap-3">
@@ -265,6 +280,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               step="0.001"
               disabled={isEdit}
               title={isEdit ? t('form_modal.rate_readonly') : undefined}
+              error={errors.has('interest_rate')}
             />
           </FormGroup>
           <FormGroup label={t('form_modal.duration_label')}>
@@ -277,6 +293,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               step="1"
               disabled={isEdit}
               title={isEdit ? t('form_modal.duration_readonly') : undefined}
+              error={errors.has('duration_months')}
             />
           </FormGroup>
         </div>
@@ -294,6 +311,7 @@ export function LoanFormModal(props: Readonly<Props>) {
               aria-label={t('form_modal.deposit_account_aria')}
               value={form.deposit_account_id}
               onChange={set('deposit_account_id')}
+              error={errors.has('deposit_account_id')}
             >
               <option value="">{t('form_modal.choose_account')}</option>
               {nonLoanAccounts.map((a) => (
@@ -310,6 +328,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             aria-label={t('form_modal.source_account_aria')}
             value={form.source_account_id}
             onChange={set('source_account_id')}
+            error={errors.has('source_account_id')}
           >
             <option value="">{t('form_modal.choose_account')}</option>
             {nonLoanAccounts.map((a) => (

@@ -8,9 +8,10 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   banks: Bank[];
+  error?: boolean;
 }
 
-export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
+export function BankSelect({ value, onChange, banks, error = false }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(() => setOpen(false));
@@ -23,7 +24,7 @@ export function BankSelect({ value, onChange, banks }: Readonly<Props>) {
         type="button"
         aria-label={t('bank_select.aria_label')}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-surface-muted border border-line rounded-lg outline-none focus:border-brand-500 transition-all text-left"
+        className={`w-full flex items-center gap-2 px-3 py-2 text-sm bg-surface-muted border rounded-lg outline-none focus:border-brand-500 transition-all text-left ${error ? 'border-danger' : 'border-line'}`}
       >
         {selected ? (
           <>
