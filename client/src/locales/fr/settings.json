@@ -125,6 +125,27 @@
     "err_too_short": "Minimum 8 caractères.",
     "success": "Mot de passe mis à jour ✓"
   },
+  "totp": {
+    "title": "Double authentification (2FA)",
+    "status_enabled": "Activée",
+    "status_disabled": "Désactivée",
+    "description_enabled": "Un code TOTP est demandé à chaque connexion.",
+    "description_disabled": "Protégez votre compte avec une application d'authentification (Google Authenticator, Authy…).",
+    "enable_btn": "Activer",
+    "disable_btn": "Désactiver",
+    "setup_title": "Configuration de la 2FA",
+    "setup_step1": "Scannez ce QR code avec votre application d'authentification.",
+    "setup_secret_label": "Ou entrez le code manuellement :",
+    "setup_step2": "Entrez le code à 6 chiffres affiché pour confirmer.",
+    "code_placeholder": "000000",
+    "confirm_btn": "Confirmer et activer",
+    "disable_title": "Désactiver la 2FA",
+    "disable_desc": "Entrez votre mot de passe pour confirmer la désactivation.",
+    "password_label": "Mot de passe actuel",
+    "success_enabled": "Double authentification activée ✓",
+    "success_disabled": "Double authentification désactivée",
+    "cancel": "Annuler"
+  },
   "backup": {
     "config_title": "Backup automatique",
     "files_title": "Fichiers de backup",
@@ -175,6 +196,7 @@
     "import": "Import",
     "backup": "Backup",
     "password": "Mot de passe",
+    "totp": "Double authentification",
     "system_refs": "Entités système",
     "system_section": "Système"
   },

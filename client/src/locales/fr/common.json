@@ -29,7 +29,11 @@
     "username": "Identifiant",
     "password": "Mot de passe",
     "submit": "Se connecter",
-    "submitting": "Connexion…"
+    "submitting": "Connexion…",
+    "totp_subtitle": "Entrez le code affiché dans votre application d'authentification",
+    "totp_code": "Code à 6 chiffres",
+    "totp_submit": "Vérifier",
+    "totp_back": "← Retour"
   },
   "pagination": {
     "first": "Première page",

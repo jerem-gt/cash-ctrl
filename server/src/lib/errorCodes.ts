@@ -81,6 +81,11 @@ export const ERROR_MESSAGES = {
   'auth.too_many_attempts': 'Trop de tentatives. Réessayez plus tard.',
   'auth.password_too_short': 'Le mot de passe doit contenir au moins 8 caractères',
   'auth.current_password_incorrect': 'Mot de passe actuel incorrect',
+  'auth.totp_required': "Code d'authentification requis",
+  'auth.totp_invalid': 'Code invalide ou expiré',
+  'auth.totp_token_invalid': "Session d'authentification expirée, reconnectez-vous",
+  'auth.totp_already_enabled': 'La double authentification est déjà activée',
+  'auth.totp_not_enabled': "La double authentification n'est pas activée",
 
   // ── Remboursements ────────────────────────────────────────────────────────
   'reimbursement.only_expense': 'Seules les dépenses peuvent avoir des remboursements',

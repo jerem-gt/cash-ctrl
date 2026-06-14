@@ -32,7 +32,11 @@ describe('useLogin', () => {
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
     result.current.mutate({ username: 'test', password: 'pass' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(qc.getQueryData(['me'])).toEqual({ username: 'test', isAdmin: false });
+    expect(qc.getQueryData(['me'])).toEqual({
+      username: 'test',
+      isAdmin: false,
+      totpEnabled: false,
+    });
   });
 
   it('passe en erreur si identifiants incorrects', async () => {

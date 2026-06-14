@@ -114,6 +114,27 @@
       "transfer_no_peer": "Transfer without counterpart"
     }
   },
+  "totp": {
+    "title": "Two-factor authentication (2FA)",
+    "status_enabled": "Enabled",
+    "status_disabled": "Disabled",
+    "description_enabled": "A TOTP code is required at each login.",
+    "description_disabled": "Protect your account with an authenticator app (Google Authenticator, Authy…).",
+    "enable_btn": "Enable",
+    "disable_btn": "Disable",
+    "setup_title": "Set up 2FA",
+    "setup_step1": "Scan this QR code with your authenticator app.",
+    "setup_secret_label": "Or enter the code manually:",
+    "setup_step2": "Enter the 6-digit code shown to confirm.",
+    "code_placeholder": "000000",
+    "confirm_btn": "Confirm and enable",
+    "disable_title": "Disable 2FA",
+    "disable_desc": "Enter your password to confirm deactivation.",
+    "password_label": "Current password",
+    "success_enabled": "Two-factor authentication enabled ✓",
+    "success_disabled": "Two-factor authentication disabled",
+    "cancel": "Cancel"
+  },
   "password": {
     "title": "Change password",
     "current": "Current password",
@@ -175,6 +196,7 @@
     "import": "Import",
     "backup": "Backup",
     "password": "Password",
+    "totp": "Two-factor authentication",
     "system_refs": "System entities",
     "system_section": "System"
   },

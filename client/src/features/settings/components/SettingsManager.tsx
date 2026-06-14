@@ -35,7 +35,7 @@ export const tabs = [
     section: 'data',
     items: [{ key: 'export' }, { key: 'import' }, { key: 'backup' }],
   },
-  { section: 'security', items: [{ key: 'password' }] },
+  { section: 'security', items: [{ key: 'password' }, { key: 'totp' }] },
   { section: 'system', items: [{ key: 'systemRefs' }] },
 ] as const;
 
@@ -65,6 +65,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
     import: t('nav.import'),
     backup: t('nav.backup'),
     password: t('nav.password'),
+    totp: t('nav.totp'),
     systemRefs: t('nav.system_refs'),
   };
 
