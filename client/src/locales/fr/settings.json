@@ -112,7 +112,11 @@
       "unmapped_account": "Compte non mappé",
       "skipped_category": "Catégorie ignorée",
       "transfer_no_peer": "Virement sans contrepartie"
-    }
+    },
+    "category_mode_title": "Source des catégories",
+    "category_mode_file": "Utiliser les catégories du fichier QIF",
+    "category_mode_rules": "Détecter avec mes règles de catégorisation",
+    "category_mode_none": "Ne pas catégoriser"
   },
   "password": {
     "title": "Changer le mot de passe",
@@ -198,7 +202,31 @@
     "password": "Mot de passe",
     "totp": "Double authentification",
     "system_refs": "Entités système",
-    "system_section": "Système"
+    "system_section": "Système",
+    "automation_section": "Automatisation",
+    "categorization_rules": "Règles de catégorisation"
+  },
+  "categorization_rules": {
+    "title": "Règles de catégorisation",
+    "description": "Définissez des règles pour suggérer automatiquement une sous-catégorie selon le libellé de la transaction. Le motif suit la syntaxe SQL LIKE — utilisez % pour n'importe quelle suite de caractères.",
+    "pattern_label": "Motif (ex : %leclerc%)",
+    "subcategory_label": "Sous-catégorie",
+    "add_btn": "Ajouter une règle",
+    "init_btn": "Initialiser depuis l'historique",
+    "init_success": "{{count}} règle(s) ajoutée(s) depuis l'historique ✓",
+    "init_success_one": "1 règle ajoutée depuis l'historique ✓",
+    "init_none": "Aucune nouvelle règle à créer depuis l'historique",
+    "empty": "Aucune règle. Ajoutez-en une ou initialisez depuis l'historique.",
+    "save_btn": "Enregistrer",
+    "delete_title": "Supprimer cette règle ?",
+    "err_pattern": "Saisissez un motif.",
+    "err_subcategory": "Choisissez une sous-catégorie.",
+    "success_create": "Règle ajoutée ✓",
+    "success_update": "Règle mise à jour ✓",
+    "success_delete": "Règle supprimée",
+    "delete_all_btn": "Tout supprimer",
+    "delete_all_confirm": "Supprimer toutes les règles ?",
+    "success_delete_all": "Toutes les règles supprimées"
   },
   "card": {
     "edit_label": "Modifier",

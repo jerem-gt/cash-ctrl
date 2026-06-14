@@ -39,6 +39,30 @@ export const handlers = [
   ),
   http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
+  // Categorization rules — before parametric auth routes to avoid masking
+  http.get('/api/categorization-rules/match', () => HttpResponse.json(null)),
+  http.post('/api/categorization-rules/init-from-history', () =>
+    HttpResponse.json({ inserted: 0 }, { status: 201 }),
+  ),
+  http.get('/api/categorization-rules', () => HttpResponse.json([])),
+  http.post('/api/categorization-rules', () =>
+    HttpResponse.json(
+      { id: 1, user_id: 1, pattern: '%leclerc%', subcategory_id: 1, sort_order: 0 },
+      { status: 201 },
+    ),
+  ),
+  http.put('/api/categorization-rules/:id', () =>
+    HttpResponse.json({
+      id: 1,
+      user_id: 1,
+      pattern: '%carrefour%',
+      subcategory_id: 1,
+      sort_order: 0,
+    }),
+  ),
+  http.delete('/api/categorization-rules', () => HttpResponse.json({ deleted: 0 })),
+  http.delete('/api/categorization-rules/:id', () => HttpResponse.json({ ok: true })),
+
   http.post('/api/auth/2fa/setup', () =>
     HttpResponse.json({
       uri: 'otpauth://totp/CashCtrl:test?secret=BASE32SECRET&issuer=CashCtrl',

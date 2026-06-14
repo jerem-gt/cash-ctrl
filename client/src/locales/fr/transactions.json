@@ -142,5 +142,9 @@
     "deleted_transfer": "Transfert supprimé",
     "updated_tx": "Transaction modifiée ✓",
     "updated_transfer": "Transfert modifié ✓"
+  },
+  "categorization_suggestion": {
+    "label": "Suggestion :",
+    "apply": "Appliquer"
   }
 }

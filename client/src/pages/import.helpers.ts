@@ -250,6 +250,69 @@ export function resolveTransferItem(
   };
 }
 
+/** Évalue un pattern SQL LIKE (avec % comme joker) contre un texte. */
+function likeMatchSegment(
+  t: string,
+  seg: string,
+  i: number,
+  last: number,
+  pos: { value: number },
+): boolean {
+  if (i === 0 && last === 0) return t === seg;
+  if (i === 0) {
+    if (!t.startsWith(seg)) return false;
+    pos.value = seg.length;
+    return true;
+  }
+  if (i === last) return t.endsWith(seg);
+  const idx = t.indexOf(seg, pos.value);
+  if (idx === -1) return false;
+  pos.value = idx + seg.length;
+  return true;
+}
+
+export function likeMatch(text: string, pattern: string): boolean {
+  const segments = pattern.toLowerCase().split('%');
+  const t = text.toLowerCase();
+  const pos = { value: 0 };
+  for (let i = 0; i < segments.length; i++) {
+    if (!likeMatchSegment(t, segments[i], i, segments.length - 1, pos)) return false;
+  }
+  return true;
+}
+
+type ResolvedCategory = {
+  subcategoryId: number | null;
+  newSubcategoryKey: string | null;
+  categoryLabel: string;
+  isNew: boolean;
+};
+
+function resolveQifTxCategory(
+  description: string,
+  qifCategory: string,
+  descriptionRuleMatcher: ((description: string) => number | null) | undefined,
+  categoryChoices: Map<string, CategoryChoice>,
+  categories: Category[],
+): ResolvedCategory | null {
+  if (descriptionRuleMatcher !== undefined) {
+    const matchedId = descriptionRuleMatcher(description);
+    const found =
+      matchedId !== null
+        ? categories
+            .flatMap((c) => c.subcategories.map((s) => ({ cat: c, sub: s })))
+            .find(({ sub }) => sub.id === matchedId)
+        : undefined;
+    return {
+      subcategoryId: matchedId,
+      newSubcategoryKey: null,
+      categoryLabel: found ? `${found.cat.name} / ${found.sub.name}` : '',
+      isNew: false,
+    };
+  }
+  return resolveCategoryInfo(qifCategory, categoryChoices, categories);
+}
+
 export function resolvePreview(
   parsed: QifParseResult,
   dateFormat: 'MM/DD' | 'DD/MM',
@@ -257,6 +320,7 @@ export function resolvePreview(
   categoryChoices: Map<string, CategoryChoice>,
   accounts: Account[],
   categories: Category[],
+  descriptionRuleMatcher?: (description: string) => number | null,
 ): PreviewItem[] {
   const items: PreviewItem[] = [];
   const processed = new Set<number>();
@@ -289,7 +353,13 @@ export function resolvePreview(
       continue;
     }
 
-    const catInfo = resolveCategoryInfo(tx.category, categoryChoices, categories);
+    const catInfo = resolveQifTxCategory(
+      tx.description,
+      tx.category,
+      descriptionRuleMatcher,
+      categoryChoices,
+      categories,
+    );
     if (catInfo === null) {
       items.push({
         kind: 'skip',
@@ -301,7 +371,6 @@ export function resolvePreview(
       });
       continue;
     }
-    const { subcategoryId, newSubcategoryKey, categoryLabel, isNew } = catInfo;
 
     items.push({
       kind: 'transaction',
@@ -313,10 +382,10 @@ export function resolvePreview(
       accountId: accInfo.accountId,
       newAccountQifName: accInfo.newAccountQifName,
       accountName: accInfo.accountName,
-      subcategoryId,
-      newSubcategoryKey,
-      categoryLabel,
-      categoryIsNew: isNew,
+      subcategoryId: catInfo.subcategoryId,
+      newSubcategoryKey: catInfo.newSubcategoryKey,
+      categoryLabel: catInfo.categoryLabel,
+      categoryIsNew: catInfo.isNew,
       notes: tx.memo,
       validated: true,
       paymentMethodId: null,

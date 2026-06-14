@@ -7,6 +7,7 @@ import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useAccountTypes } from '@/hooks/useAccountTypes.ts';
 import { useBanks } from '@/hooks/useBanks.ts';
 import { useCategories } from '@/hooks/useCategories.ts';
+import { useCategorizationRules } from '@/hooks/useCategorizationRules';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';
 import { parseQif } from '@/lib/qif-parser.ts';
 import { parseXhb } from '@/lib/xhb-parser.ts';
@@ -18,6 +19,7 @@ import {
   findAutoCategory,
   findAutoPaymentMethod,
   type ImportErrors,
+  likeMatch,
   resolvePreview,
   resolveXhbPreview,
 } from '@/pages/import.helpers.ts';
@@ -32,6 +34,10 @@ import { findBankByName, type ParsedFile, type Step, StepIndicator } from './imp
 import { UploadStep } from './import/UploadStep';
 
 const NO_IMPORT_ERRORS: ImportErrors = { rows: new Map(), global: [] };
+
+function noMatcher(): null {
+  return null;
+}
 
 /** Remonte les erreurs de validation serveur (par champ) sur les lignes de l'aperçu. */
 function mapImportErrors(
@@ -69,8 +75,11 @@ export default function ImportManager() {
   const { data: paymentMethods = [] } = usePaymentMethods();
   const activeAccounts = accounts.filter((a) => !a.closed_at);
 
+  const { data: categorizationRules = [] } = useCategorizationRules();
+
   const [step, setStep] = useState<Step>('upload');
   const [parsedFile, setParsedFile] = useState<ParsedFile | null>(null);
+  const [categoryMode, setCategoryMode] = useState<'file' | 'rules' | 'none'>('file');
   const [fileName, setFileName] = useState('');
   const [parseError, setParseError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -230,6 +239,21 @@ export default function ImportManager() {
     setPaymodeChoices((prev) => new Map(prev).set(paymode, id));
   }, []);
 
+  const rulesModeMatcher = useCallback(
+    (description: string): number | null => {
+      const rule = categorizationRules.find((r) => likeMatch(description, r.pattern));
+      return rule ? rule.subcategory_id : null;
+    },
+    [categorizationRules],
+  );
+
+  let descriptionRuleMatcher: ((description: string) => number | null) | undefined;
+  if (categoryMode === 'none') {
+    descriptionRuleMatcher = noMatcher;
+  } else if (categoryMode === 'rules') {
+    descriptionRuleMatcher = rulesModeMatcher;
+  }
+
   const previewItems = useMemo(() => {
     if (!parsedFile) return [];
     if (parsedFile.format === 'qif') {
@@ -240,6 +264,7 @@ export default function ImportManager() {
         categoryChoices,
         activeAccounts,
         categories,
+        descriptionRuleMatcher,
       );
     }
     if (parsedFile.format === 'json') return [];
@@ -259,6 +284,7 @@ export default function ImportManager() {
     paymodeChoices,
     activeAccounts,
     categories,
+    descriptionRuleMatcher,
   ]);
 
   const importableCount = previewItems.filter((it) => it.kind !== 'skip').length;
@@ -429,15 +455,59 @@ export default function ImportManager() {
       )}
 
       {step === 'categories' && parsedFile && (
-        <CategoriesStep
-          uniqueCategories={uniqueCategories}
-          categoryChoices={categoryChoices}
-          setCategoryChoice={setCategoryChoice}
-          categories={categories}
-          isXhb={isXhb}
-          onBack={() => setStep('accounts')}
-          onNext={() => (isXhb ? setStep('paymethods') : goToPreview())}
-        />
+        <>
+          {!isXhb && (
+            <div className="mb-6 p-4 rounded-xl border border-line-subtle bg-surface-muted">
+              <p className="text-xs font-medium uppercase tracking-widest text-content-subtle mb-3">
+                {t('import.category_mode_title')}
+              </p>
+              <div className="flex flex-col gap-2">
+                {(['file', 'rules', 'none'] as const).map((mode) => (
+                  <label
+                    key={mode}
+                    className="flex items-center gap-3 cursor-pointer text-sm text-content"
+                  >
+                    <input
+                      type="radio"
+                      name="categoryMode"
+                      value={mode}
+                      checked={categoryMode === mode}
+                      onChange={() => setCategoryMode(mode)}
+                      className="accent-brand-500"
+                    />
+                    {t(`import.category_mode_${mode}`)}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          {categoryMode === 'file' || isXhb ? (
+            <CategoriesStep
+              uniqueCategories={uniqueCategories}
+              categoryChoices={categoryChoices}
+              setCategoryChoice={setCategoryChoice}
+              categories={categories}
+              isXhb={isXhb}
+              onBack={() => setStep('accounts')}
+              onNext={() => (isXhb ? setStep('paymethods') : goToPreview())}
+            />
+          ) : (
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setStep('accounts')}
+                className="text-sm text-content-muted hover:text-content transition-colors"
+              >
+                ← {t('import.step_accounts')}
+              </button>
+              <button
+                onClick={goToPreview}
+                className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+              >
+                {t('import.step_preview')} →
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {step === 'paymethods' && parsedFile?.format === 'xhb' && (

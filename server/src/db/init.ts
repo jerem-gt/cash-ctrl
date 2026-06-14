@@ -24,6 +24,18 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       ALTER TABLE users ADD COLUMN totp_secret TEXT;
       ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0;
     `),
+  (db) =>
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS categorization_rules
+      (
+          id             INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+          pattern        TEXT    NOT NULL,
+          subcategory_id INTEGER NOT NULL REFERENCES subcategories (id) ON DELETE CASCADE,
+          sort_order     INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_cat_rules_user ON categorization_rules(user_id, sort_order);
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {

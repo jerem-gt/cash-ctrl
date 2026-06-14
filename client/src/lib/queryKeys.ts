@@ -42,4 +42,8 @@ export const queryKeys = {
 
   taxYears: () => ['tax', 'years'] as const,
   taxYear: (year: number | undefined) => ['tax', 'year', year] as const,
+
+  categorizationRules: () => ['categorization-rules'] as const,
+  categorizationRuleMatch: (description: string) =>
+    ['categorization-rules', 'match', description] as const,
 };

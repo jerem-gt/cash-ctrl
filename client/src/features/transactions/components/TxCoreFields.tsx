@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, FormGroup, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { useMatchCategorizationRule } from '@/hooks/useCategorizationRules';
 import { transferLabel } from '@/lib/transfer-label';
 import type { Account, Subcategory } from '@/types';
 
@@ -42,6 +43,27 @@ export function TxCoreFields({
   hideCategories,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
+  const { data: matchedRule } = useMatchCategorizationRule(isTransfer ? '' : value.description);
+
+  const matchedSubcategory = matchedRule
+    ? categories
+        .flatMap((c) => c.subcategories.map((s) => ({ cat: c, sub: s })))
+        .find(({ sub }) => sub.id === matchedRule.subcategory_id)
+    : undefined;
+
+  const suggestionAlreadyApplied =
+    matchedRule !== null &&
+    matchedRule !== undefined &&
+    value.subcategory_id === String(matchedRule.subcategory_id);
+
+  const applyRule = () => {
+    if (!matchedSubcategory) return;
+    onChange({
+      category_id: String(matchedSubcategory.cat.id),
+      subcategory_id: String(matchedSubcategory.sub.id),
+    });
+  };
+
   const sourceAccount =
     fixedAccountId == null
       ? accounts.find((a) => String(a.id) === value.account_id)
@@ -143,6 +165,19 @@ export function TxCoreFields({
               </Select>
             </FormGroup>
           </>
+        )}
+        {!isTransfer && !hideCategories && matchedSubcategory && !suggestionAlreadyApplied && (
+          <div className="col-span-2 flex items-center gap-2 text-xs text-content-muted">
+            <span>{t('categorization_suggestion.label')}</span>
+            <button
+              type="button"
+              onClick={applyRule}
+              className="text-brand-500 hover:text-brand-600 font-medium hover:underline transition-colors"
+            >
+              {matchedSubcategory.cat.name} › {matchedSubcategory.sub.name}
+            </button>
+            <span className="text-content-faint">— {t('categorization_suggestion.apply')}</span>
+          </div>
         )}
         {fixedAccountId == null && (
           <FormGroup label={isTransfer ? t('tx_core.account_source') : t('tx_core.account')}>

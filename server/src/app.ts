@@ -9,6 +9,7 @@ import { createAuthRouter } from './modules/auth/auth.routes';
 import { createBackupRouter } from './modules/backup/backup.routes';
 import { createBanksRouter } from './modules/banks/banks.routes';
 import { createCategoriesRouter } from './modules/categories/categories.routes';
+import { createCategorizationRulesRouter } from './modules/categorization-rules/categorization-rules.routes';
 import { createExportRouter } from './modules/export/export.routes';
 import { createImportRouter } from './modules/import/import.routes';
 import { createInsuranceRouter } from './modules/insurance/insurance.routes';
@@ -90,6 +91,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/loans', createLoansRouter(db));
   app.use('/api/stats', createStatsRouter(db));
   app.use('/api/tax', createTaxRouter(db));
+  app.use('/api/categorization-rules', createCategorizationRulesRouter(db));
 
   app.use(globalErrorHandler);
 
