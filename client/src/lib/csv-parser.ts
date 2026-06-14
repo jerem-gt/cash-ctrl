@@ -94,7 +94,7 @@ export function detectDecimalSeparator(values: string[]): ',' | '.' {
   let commaScore = 0;
   let dotScore = 0;
   for (const v of values) {
-    const clean = v.replace(/\s/g, '');
+    const clean = v.replaceAll(/\s/g, '');
     // Virgule en position décimale : 1234,56 ou -12,00
     if (/\d,\d{1,2}$/.test(clean)) commaScore++;
     // Point en position décimale : 1234.56 ou -12.00

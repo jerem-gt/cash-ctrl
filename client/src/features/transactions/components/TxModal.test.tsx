@@ -3,12 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
+import { TxFormState } from '@/features/transactions/lib/txForm.ts';
 import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, SCHEDULED, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 import type { Transaction } from '@/types';
 
-import type { TxFormState } from './TxModal';
 import { TxModal } from './TxModal';
 
 const logoMap: Record<string, string | null> = { BNP: null };

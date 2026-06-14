@@ -1,8 +1,12 @@
 import { detectDateFormat, type ParsedLedger, type ParsedTransaction } from './import-model';
 
 // Re-exports pour la compatibilité (les types pivots vivent maintenant dans import-model)
-export type { ParsedLedger as QifParseResult, ParsedTransaction as QifTransaction };
-export { parseLedgerDate as parseQifDate } from './import-model';
+
+export {
+  parseLedgerDate as parseQifDate,
+  type ParsedLedger as QifParseResult,
+  type ParsedTransaction as QifTransaction,
+} from './import-model';
 
 type PartialTx = Partial<Omit<ParsedTransaction, 'isTransfer' | 'transferTarget'>>;
 
@@ -15,7 +19,7 @@ function applyTxField(tx: PartialTx, code: string, value: string): void {
       break;
     case 'T':
       // Séparateurs de milliers (virgule façon US, espace) — tous retirés ; le point reste décimal.
-      tx.amount = Number.parseFloat(value.replace(/[,\s]/g, ''));
+      tx.amount = Number.parseFloat(value.replaceAll(/[,\s]/g, ''));
       break;
     case 'P':
       tx.description = value;
@@ -109,9 +113,8 @@ export function findTransferPeer(
   processed: Set<number>,
 ): number {
   const tx = transactions[idx];
-  for (let i = 0; i < transactions.length; i++) {
+  for (const [i, other] of transactions.entries()) {
     if (i === idx || processed.has(i)) continue;
-    const other = transactions[i];
     if (
       other.isTransfer &&
       Math.abs(tx.amount + other.amount) <= 0.005 &&

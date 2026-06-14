@@ -76,7 +76,7 @@ export function LoginPage() {
                 inputMode="numeric"
                 maxLength={6}
                 value={totpCode}
-                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setTotpCode(e.target.value.replaceAll(/\D/g, ''))}
                 placeholder="000000"
                 autoComplete="one-time-code"
                 autoFocus

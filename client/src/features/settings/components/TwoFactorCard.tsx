@@ -88,7 +88,7 @@ export function TwoFactorCard() {
             inputMode="numeric"
             maxLength={6}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setCode(e.target.value.replaceAll(/\D/g, ''))}
             placeholder={t('totp.code_placeholder')}
             autoFocus
             autoComplete="one-time-code"

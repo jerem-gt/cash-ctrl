@@ -84,7 +84,7 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     expect(
       screen.getByText(
         (_, el) =>
-          el?.tagName === 'SPAN' && (el?.textContent?.replace(/\s/g, '') ?? '') === '+45,00€',
+          el?.tagName === 'SPAN' && (el?.textContent?.replaceAll(/\s/g, '') ?? '') === '+45,00€',
       ),
     ).toBeInTheDocument();
   });
@@ -100,7 +100,7 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     expect(
       screen.getByText((_, el) => {
         if (el?.tagName !== 'SPAN' || !el?.className?.includes('text-sm')) return false;
-        return (el?.textContent?.replace(/\s/g, '') ?? '').startsWith('0,00');
+        return (el?.textContent?.replaceAll(/\s/g, '') ?? '').startsWith('0,00');
       }),
     ).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe('ReimbursementsPanel — montant partiel (AmountCell)', () => {
     expect(
       screen.getByText(
         (_, el) =>
-          el?.tagName === 'SPAN' && (el?.textContent?.replace(/\s/g, '') ?? '') === '+45,00€',
+          el?.tagName === 'SPAN' && (el?.textContent?.replaceAll(/\s/g, '') ?? '') === '+45,00€',
       ),
     ).toBeInTheDocument();
     // total de la transaction

@@ -27,8 +27,6 @@ import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions
 import { today } from '@/lib/format';
 import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
 
-export type { TxFormState };
-
 function addCategoryErrors(core: TxCoreState, errs: Set<string>): void {
   if (!Number.parseInt(core.category_id)) errs.add('category_id');
   else if (!Number.parseInt(core.subcategory_id)) errs.add('subcategory_id');

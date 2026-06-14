@@ -11,8 +11,8 @@ function longestCommonWordPrefix(descriptions: string[]): string {
   const wordLists = descriptions.map((d) => d.split(/\s+/).filter(Boolean));
   const shortest = wordLists.reduce((a, b) => (a.length <= b.length ? a : b), wordLists[0]);
   let commonLen = 0;
-  for (let i = 0; i < shortest.length; i++) {
-    if (wordLists.every((words) => words[i] === shortest[i])) {
+  for (const [i, element] of shortest.entries()) {
+    if (wordLists.every((words) => words[i] === element)) {
       commonLen = i + 1;
     } else {
       break;
