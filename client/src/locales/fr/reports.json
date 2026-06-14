@@ -20,5 +20,16 @@
   "stock_start": "Début",
   "stock_end": "Fin",
   "stock_flows": "Flux nets",
-  "stock_gain": "Performance"
+  "stock_gain": "Performance",
+  "compare_with": "Comparer avec",
+  "compare_none": "Aucune",
+  "compare_legend": "{{year}}",
+  "section_summary": "Récapitulatif",
+  "summary_income": "Revenus",
+  "summary_expense": "Dépenses",
+  "summary_balance": "Bilan",
+  "col_delta": "Évolution",
+  "section_cat_comparison": "Comparaison des catégories",
+  "tab_expenses": "Dépenses",
+  "tab_income": "Revenus"
 }

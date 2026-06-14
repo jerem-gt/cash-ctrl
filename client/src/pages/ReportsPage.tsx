@@ -2,6 +2,7 @@ import { Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { IncomeExpenseDatum } from '@/components/charts/IncomeExpenseBarChart';
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -11,6 +12,7 @@ import { useReport, useReportYears } from '@/hooks/useReport';
 import { useProfitability } from '@/hooks/useStats';
 import { generateColor } from '@/lib/colors';
 import { fmt, fmtMonthShort } from '@/lib/format';
+import type { YearlyReturn } from '@/types';
 
 const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
@@ -55,9 +57,329 @@ function CategoryList({ data, total }: Readonly<CategoryListProps>) {
   );
 }
 
+type CatRow = { category: string; current: number; compare: number; delta: number };
+
+function buildCatComparison(
+  current: Array<{ category: string; amount: number }>,
+  compare: Array<{ category: string; amount: number }> | undefined,
+): CatRow[] {
+  const compareMap = new Map((compare ?? []).map((c) => [c.category, c.amount]));
+  const allCats = new Set([...current.map((c) => c.category), ...compareMap.keys()]);
+  return Array.from(allCats)
+    .map((cat) => {
+      const cur = current.find((c) => c.category === cat)?.amount ?? 0;
+      const cmp = compareMap.get(cat) ?? 0;
+      return { category: cat, current: cur, compare: cmp, delta: cur - cmp };
+    })
+    .sort((a, b) => b.current - a.current);
+}
+
+interface StockGainEntry extends YearlyReturn {
+  account_id: number;
+  account_name: string;
+  compare?: YearlyReturn;
+}
+
+function GainCell({ gain, returnPct }: Readonly<{ gain: number; returnPct: number | null }>) {
+  const pos = gain >= 0;
+  return (
+    <>
+      {pos ? '+' : ''}
+      {fmt(gain)}
+      {returnPct !== null && (
+        <span className="ml-1 text-[10px] font-normal text-content-muted">
+          ({pos ? '+' : ''}
+          {returnPct.toFixed(1)} %)
+        </span>
+      )}
+    </>
+  );
+}
+
+function StockGainCompareColumns({ g }: Readonly<{ g: StockGainEntry }>) {
+  const cmpGain = g.compare?.gain;
+  const cmpGainPos = cmpGain !== undefined && cmpGain >= 0;
+  const delta = cmpGain !== undefined ? g.gain - cmpGain : undefined;
+  const deltaPos = delta !== undefined && delta >= 0;
+
+  let cmpGainColor = 'text-content-faint';
+  if (cmpGain !== undefined) {
+    cmpGainColor = cmpGainPos ? 'text-success' : 'text-danger';
+  }
+
+  let deltaColor = 'text-content-faint';
+  if (delta !== undefined) {
+    deltaColor = deltaPos ? 'text-success' : 'text-danger';
+  }
+
+  return (
+    <>
+      <td className={`py-2 text-right tabular-nums pl-4 ${cmpGainColor}`}>
+        {cmpGain !== undefined ? (
+          <GainCell gain={cmpGain} returnPct={g.compare?.return_pct ?? null} />
+        ) : (
+          '—'
+        )}
+      </td>
+      <td className={`py-2 text-right tabular-nums font-medium ${deltaColor}`}>
+        {delta !== undefined ? (
+          <>
+            {deltaPos ? '+' : ''}
+            {fmt(delta)}
+          </>
+        ) : (
+          '—'
+        )}
+      </td>
+    </>
+  );
+}
+
+interface StockGainRowProps {
+  g: StockGainEntry;
+  showCompare: boolean;
+}
+
+function StockGainRow({ g, showCompare }: Readonly<StockGainRowProps>) {
+  const gainPos = g.gain >= 0;
+  return (
+    <tr className="border-b border-line-subtle last:border-0">
+      <td className="py-2 text-content-secondary">
+        {g.account_name}
+        {g.is_ytd && <span className="ml-1.5 text-[10px] text-content-faint">YTD</span>}
+      </td>
+      <td className="py-2 text-right tabular-nums text-content-muted">{fmt(g.start_value)}</td>
+      <td className="py-2 text-right tabular-nums text-content-muted">{fmt(g.end_value)}</td>
+      <td className="py-2 text-right tabular-nums text-content-muted">{fmt(g.net_flows)}</td>
+      <td
+        className={`py-2 text-right tabular-nums font-medium ${gainPos ? 'text-success' : 'text-danger'}`}
+      >
+        <GainCell gain={g.gain} returnPct={g.return_pct} />
+      </td>
+      {showCompare && <StockGainCompareColumns g={g} />}
+    </tr>
+  );
+}
+
+interface ComparisonSummaryCardProps {
+  year: number;
+  compareYear: number;
+  incomeTotal: number;
+  expenseTotal: number;
+  bilan: number;
+  compareReport: { income_total: number; expense_total: number };
+}
+
+function ComparisonSummaryCard({
+  year,
+  compareYear,
+  incomeTotal,
+  expenseTotal,
+  bilan,
+  compareReport,
+}: Readonly<ComparisonSummaryCardProps>) {
+  const { t } = useTranslation('reports');
+  const compareBilan = compareReport.income_total - compareReport.expense_total;
+  return (
+    <Card className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-left text-content-faint border-b border-line-subtle">
+            <th className="font-medium pb-2" />
+            <th className="font-medium pb-2 text-right">{year}</th>
+            <th className="font-medium pb-2 text-right">{compareYear}</th>
+            <th className="font-medium pb-2 text-right">{t('col_delta')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(
+            [
+              {
+                label: t('summary_income'),
+                cur: incomeTotal,
+                cmp: compareReport.income_total,
+                positiveIsGood: true,
+              },
+              {
+                label: t('summary_expense'),
+                cur: expenseTotal,
+                cmp: compareReport.expense_total,
+                positiveIsGood: false,
+              },
+              {
+                label: t('summary_balance'),
+                cur: bilan,
+                cmp: compareBilan,
+                positiveIsGood: true,
+              },
+            ] as const
+          ).map(({ label, cur, cmp, positiveIsGood }) => {
+            const delta = cur - cmp;
+            const isGood = positiveIsGood ? delta >= 0 : delta <= 0;
+            return (
+              <tr key={label} className="border-b border-line-subtle last:border-0">
+                <td className="py-2 text-content-muted font-medium">{label}</td>
+                <td className="py-2 text-right tabular-nums text-content-secondary font-medium">
+                  {fmt(cur)}
+                </td>
+                <td className="py-2 text-right tabular-nums text-content-muted">{fmt(cmp)}</td>
+                <td
+                  className={`py-2 text-right tabular-nums font-medium ${isGood ? 'text-success' : 'text-danger'}`}
+                >
+                  {delta >= 0 ? '+' : ''}
+                  {fmt(delta)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
+interface MonthlyChartCardProps {
+  barData: IncomeExpenseDatum[];
+  compareBarData: IncomeExpenseDatum[];
+  compareYear: number | undefined;
+}
+
+function MonthlyChartCard({
+  barData,
+  compareBarData,
+  compareYear,
+}: Readonly<MonthlyChartCardProps>) {
+  const { t } = useTranslation('reports');
+  const legendItems: [string, string, boolean][] = [
+    [INCOME_COLOR, t('chart_income'), false],
+    [EXPENSE_COLOR, t('chart_expenses'), false],
+    ...(compareYear !== undefined
+      ? [
+          [INCOME_COLOR, `${t('chart_income')} ${compareYear}`, true] as [string, string, boolean],
+          [EXPENSE_COLOR, `${t('chart_expenses')} ${compareYear}`, true] as [
+            string,
+            string,
+            boolean,
+          ],
+        ]
+      : []),
+  ];
+  return (
+    <Card>
+      <div className="flex flex-wrap gap-4 mb-3">
+        {legendItems.map(([color, label, dashed]) => (
+          <div key={label} className="flex items-center gap-1.5 text-[11px] text-content-subtle">
+            {dashed ? (
+              <svg width="16" height="8">
+                <line
+                  x1="0"
+                  y1="4"
+                  x2="16"
+                  y2="4"
+                  stroke={color}
+                  strokeWidth="2"
+                  strokeDasharray="4 2"
+                  strokeOpacity="0.6"
+                />
+              </svg>
+            ) : (
+              <div className="w-2 h-2 rounded-sm" style={{ background: color }} />
+            )}
+            {label}
+          </div>
+        ))}
+      </div>
+      <Suspense fallback={<Skeleton className="h-44" />}>
+        <IncomeExpenseBarChart
+          data={barData}
+          compareData={compareYear !== undefined ? compareBarData : undefined}
+          compareLabel={compareYear !== undefined ? String(compareYear) : undefined}
+          incomeLabel={t('chart_income')}
+          expenseLabel={t('chart_expenses')}
+          incomeColor={INCOME_COLOR}
+          expenseColor={EXPENSE_COLOR}
+        />
+      </Suspense>
+    </Card>
+  );
+}
+
+interface CategoryComparisonCardProps {
+  catTab: 'expense' | 'income';
+  setCatTab: (tab: 'expense' | 'income') => void;
+  mergedCatData: { expense: CatRow[]; income: CatRow[] };
+  year: number;
+  compareYear: number;
+}
+
+function CategoryComparisonCard({
+  catTab,
+  setCatTab,
+  mergedCatData,
+  year,
+  compareYear,
+}: Readonly<CategoryComparisonCardProps>) {
+  const { t } = useTranslation('reports');
+  return (
+    <Card>
+      <div className="flex gap-1 mb-4">
+        {(['expense', 'income'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setCatTab(tab)}
+            className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+              catTab === tab
+                ? 'bg-brand-100 text-brand-700 font-medium'
+                : 'text-content-muted hover:text-content-secondary hover:bg-canvas'
+            }`}
+          >
+            {tab === 'expense' ? t('tab_expenses') : t('tab_income')}
+          </button>
+        ))}
+      </div>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-left text-content-faint border-b border-line-subtle">
+            <th className="font-medium pb-2">Catégorie</th>
+            <th className="font-medium pb-2 text-right">{year}</th>
+            <th className="font-medium pb-2 text-right">{compareYear}</th>
+            <th className="font-medium pb-2 text-right">{t('col_delta')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mergedCatData[catTab].map(({ category, current, compare, delta }) => {
+            const isGood = catTab === 'expense' ? delta <= 0 : delta >= 0;
+            let catDeltaColor = 'text-content-muted';
+            if (delta !== 0) {
+              catDeltaColor = isGood ? 'text-success' : 'text-danger';
+            }
+            return (
+              <tr key={category} className="border-b border-line-subtle last:border-0">
+                <td className="py-2 text-content-secondary truncate max-w-[8rem]">
+                  {category || '—'}
+                </td>
+                <td className="py-2 text-right tabular-nums text-content-secondary font-medium">
+                  {fmt(current)}
+                </td>
+                <td className="py-2 text-right tabular-nums text-content-muted">{fmt(compare)}</td>
+                <td className={`py-2 text-right tabular-nums font-medium ${catDeltaColor}`}>
+                  {delta >= 0 ? '+' : ''}
+                  {fmt(delta)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
 export default function ReportsPage() {
   const { t } = useTranslation('reports');
   const [year, setYear] = useState(CURRENT_YEAR);
+  const [compareYear, setCompareYear] = useState<number | undefined>(undefined);
+  const [catTab, setCatTab] = useState<'expense' | 'income'>('expense');
   const [accountValue, setAccountValue] = useState('');
 
   const { data: yearOptions = [CURRENT_YEAR] } = useReportYears();
@@ -69,6 +391,16 @@ export default function ReportsPage() {
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.closed_at), [accounts]);
   const accountId = accountValue !== '' ? Number(accountValue) : undefined;
   const { data: report, isLoading } = useReport(year, accountId);
+  const { data: compareReport } = useReport(
+    compareYear ?? year - 1,
+    accountId,
+    compareYear !== undefined,
+  );
+
+  const handleYearChange = (newYear: number) => {
+    setYear(newYear);
+    if (compareYear === newYear) setCompareYear(undefined);
+  };
 
   const colorMap = useMemo(
     () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
@@ -105,6 +437,30 @@ export default function ReportsPage() {
     [report, colorMap],
   );
 
+  const compareBarData = useMemo(
+    () =>
+      (compareReport?.monthly ?? []).map((m) => ({
+        month: fmtMonthShort(new Date(`${m.month}-01T00:00:00`)),
+        Revenus: m.income,
+        Depenses: m.expense,
+      })),
+    [compareReport],
+  );
+
+  const mergedCatData = useMemo(
+    () => ({
+      expense: buildCatComparison(
+        report?.expense_by_category ?? [],
+        compareReport?.expense_by_category,
+      ),
+      income: buildCatComparison(
+        report?.income_by_category ?? [],
+        compareReport?.income_by_category,
+      ),
+    }),
+    [report, compareReport],
+  );
+
   const stockGains = useMemo(() => {
     const investment = profitabilityData.filter((p) => p.envelope_type === 'investment');
     const filtered =
@@ -112,9 +468,13 @@ export default function ReportsPage() {
     return filtered.flatMap((p) => {
       const yr = p.yearly_returns.find((r) => r.year === String(year));
       if (!yr) return [];
-      return [{ account_id: p.account_id, account_name: p.account_name, ...yr }];
+      const cmpYr =
+        compareYear !== undefined
+          ? p.yearly_returns.find((r) => r.year === String(compareYear))
+          : undefined;
+      return [{ account_id: p.account_id, account_name: p.account_name, ...yr, compare: cmpYr }];
     });
-  }, [profitabilityData, year, accountId]);
+  }, [profitabilityData, year, compareYear, accountId]);
 
   const incomeTotal = report?.income_total ?? 0;
   const expenseTotal = report?.expense_total ?? 0;
@@ -133,7 +493,7 @@ export default function ReportsPage() {
           <label className="text-xs text-content-muted whitespace-nowrap">{t('filter_year')}</label>
           <select
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
+            onChange={(e) => handleYearChange(Number(e.target.value))}
             className="h-8 px-2 text-sm text-content-secondary bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all"
           >
             {yearOptions.map((y) => (
@@ -157,6 +517,27 @@ export default function ReportsPage() {
               placeholder={t('filter_all_accounts')}
             />
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-content-muted whitespace-nowrap">
+            {t('compare_with')}
+          </label>
+          <select
+            value={compareYear ?? ''}
+            onChange={(e) =>
+              setCompareYear(e.target.value !== '' ? Number(e.target.value) : undefined)
+            }
+            className="h-8 px-2 text-sm text-content-secondary bg-surface border border-line rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all"
+          >
+            <option value="">{t('compare_none')}</option>
+            {yearOptions
+              .filter((y) => y !== year)
+              .map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+          </select>
         </div>
       </div>
 
@@ -199,37 +580,30 @@ export default function ReportsPage() {
             />
           </div>
 
+          {/* Récapitulatif de comparaison */}
+          {compareYear !== undefined && compareReport && (
+            <>
+              <SectionLabel label={t('section_summary')} />
+              <ComparisonSummaryCard
+                year={year}
+                compareYear={compareYear}
+                incomeTotal={incomeTotal}
+                expenseTotal={expenseTotal}
+                bilan={bilan}
+                compareReport={compareReport}
+              />
+            </>
+          )}
+
           {/* Revenus vs Dépenses par mois */}
           {barData.some((d) => d.Revenus > 0 || d.Depenses > 0) ? (
             <>
               <SectionLabel label={t('section_monthly')} />
-              <Card>
-                <div className="flex gap-4 mb-3">
-                  {(
-                    [
-                      [INCOME_COLOR, t('chart_income')],
-                      [EXPENSE_COLOR, t('chart_expenses')],
-                    ] as [string, string][]
-                  ).map(([color, label]) => (
-                    <div
-                      key={label}
-                      className="flex items-center gap-1.5 text-[11px] text-content-subtle"
-                    >
-                      <div className="w-2 h-2 rounded-sm" style={{ background: color }} />
-                      {label}
-                    </div>
-                  ))}
-                </div>
-                <Suspense fallback={<Skeleton className="h-44" />}>
-                  <IncomeExpenseBarChart
-                    data={barData}
-                    incomeLabel={t('chart_income')}
-                    expenseLabel={t('chart_expenses')}
-                    incomeColor={INCOME_COLOR}
-                    expenseColor={EXPENSE_COLOR}
-                  />
-                </Suspense>
-              </Card>
+              <MonthlyChartCard
+                barData={barData}
+                compareBarData={compareBarData}
+                compareYear={compareYear}
+              />
             </>
           ) : (
             <Card>
@@ -275,6 +649,20 @@ export default function ReportsPage() {
               </Card>
             </div>
           </div>
+          {/* Comparaison des catégories */}
+          {compareYear !== undefined && compareReport && (
+            <>
+              <SectionLabel label={t('section_cat_comparison')} />
+              <CategoryComparisonCard
+                catTab={catTab}
+                setCatTab={setCatTab}
+                mergedCatData={mergedCatData}
+                year={year}
+                compareYear={compareYear}
+              />
+            </>
+          )}
+
           {/* Performance boursière */}
           {stockGains.length > 0 && (
             <>
@@ -287,47 +675,27 @@ export default function ReportsPage() {
                       <th className="font-medium pb-2 text-right">{t('stock_start')}</th>
                       <th className="font-medium pb-2 text-right">{t('stock_end')}</th>
                       <th className="font-medium pb-2 text-right">{t('stock_flows')}</th>
-                      <th className="font-medium pb-2 text-right">{t('stock_gain')}</th>
+                      <th className="font-medium pb-2 text-right">
+                        {t('stock_gain')} {year}
+                      </th>
+                      {compareYear !== undefined && (
+                        <>
+                          <th className="font-medium pb-2 text-right pl-4">
+                            {t('stock_gain')} {compareYear}
+                          </th>
+                          <th className="font-medium pb-2 text-right">{t('col_delta')}</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
-                    {stockGains.map((g) => {
-                      const gainPos = g.gain >= 0;
-                      return (
-                        <tr
-                          key={g.account_id}
-                          className="border-b border-line-subtle last:border-0"
-                        >
-                          <td className="py-2 text-content-secondary">
-                            {g.account_name}
-                            {g.is_ytd && (
-                              <span className="ml-1.5 text-[10px] text-content-faint">YTD</span>
-                            )}
-                          </td>
-                          <td className="py-2 text-right tabular-nums text-content-muted">
-                            {fmt(g.start_value)}
-                          </td>
-                          <td className="py-2 text-right tabular-nums text-content-muted">
-                            {fmt(g.end_value)}
-                          </td>
-                          <td className="py-2 text-right tabular-nums text-content-muted">
-                            {fmt(g.net_flows)}
-                          </td>
-                          <td
-                            className={`py-2 text-right tabular-nums font-medium ${gainPos ? 'text-success' : 'text-danger'}`}
-                          >
-                            {gainPos ? '+' : ''}
-                            {fmt(g.gain)}
-                            {g.return_pct !== null && (
-                              <span className="ml-1 text-[10px] font-normal text-content-muted">
-                                ({gainPos ? '+' : ''}
-                                {g.return_pct.toFixed(1)} %)
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {stockGains.map((g) => (
+                      <StockGainRow
+                        key={g.account_id}
+                        g={g}
+                        showCompare={compareYear !== undefined}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </Card>

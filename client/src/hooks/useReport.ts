@@ -11,10 +11,11 @@ export function useReportYears() {
   });
 }
 
-export function useReport(year: number, accountId?: number) {
+export function useReport(year: number, accountId?: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.report(year, accountId),
     queryFn: () => statsApi.report({ year, account_id: accountId }),
     staleTime: 60_000,
+    enabled,
   });
 }
