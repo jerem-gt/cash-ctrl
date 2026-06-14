@@ -3,6 +3,7 @@ import reactPlugin from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import sonarjs from 'eslint-plugin-sonarjs';
+import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -50,6 +51,19 @@ export default [
     ...sonarjs.configs.recommended,
   },
 
+  // Unicorn — règles alignées sur SonarCloud
+  {
+    files: ['**/*.{ts,js,tsx,jsx}'],
+    plugins: { unicorn },
+    rules: {
+      'unicorn/prefer-number-properties': 'error', // Number.NaN, Number.isNaN, Number.parseInt…
+      'unicorn/prefer-string-replace-all': 'error', // replaceAll() plutôt que replace(/x/g, …)
+      'unicorn/no-for-loop': 'error', // for…of plutôt que for(let i…)
+      'unicorn/prefer-array-flat': 'error', // flat() plutôt que flatMap(x => x)
+      'unicorn/prefer-export-from': 'error', // export…from plutôt que import + re-export
+    },
+  },
+
   // SERVER
   {
     files: ['server/**/*.{ts,js}'],
@@ -74,6 +88,7 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       'no-console': 'warn',
+      '@eslint-react/no-array-index-key': 'error',
     },
   },
 

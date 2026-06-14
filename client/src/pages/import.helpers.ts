@@ -436,9 +436,8 @@ export function buildExecuteBody(
     }
   };
 
-  for (let i = 0; i < items.length; i++) {
+  for (const [i, item] of items.entries()) {
     if (!selected.has(i)) continue;
-    const item = items[i];
     if (item.kind === 'skip') continue;
 
     if (item.kind === 'transfer') {
@@ -500,9 +499,8 @@ export function buildRowIndex(
 ): { txRows: number[]; tfRows: number[] } {
   const txRows: number[] = [];
   const tfRows: number[] = [];
-  for (let i = 0; i < items.length; i++) {
+  for (const [i, item] of items.entries()) {
     if (!selected.has(i)) continue;
-    const item = items[i];
     if (item.kind === 'transfer') tfRows.push(i);
     else if (item.kind === 'transaction') txRows.push(i);
   }

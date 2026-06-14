@@ -90,10 +90,10 @@ export async function fetchAndStorePriceHistory(
 
     // Keep last available monthly close per calendar year (skip current year — use live prices)
     const yearData = new Map<number, number>();
-    for (let i = 0; i < timestamps.length; i++) {
+    for (const [i, timestamp] of timestamps.entries()) {
       const close = closes[i];
       if (close == null || !Number.isFinite(close)) continue;
-      const year = new Date(timestamps[i] * 1000).getUTCFullYear();
+      const year = new Date(timestamp * 1000).getUTCFullYear();
       if (year >= currentYear) continue;
       yearData.set(year, close); // later iterations overwrite → last close of the year
     }

@@ -40,7 +40,7 @@ function ColSelect({
         onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
       >
         <option value="">{notMappedLabel}</option>
-        {headers.map((h, i) => (
+        {Array.from(headers.entries()).map(([i, h]) => (
           <option key={`col-${i}`} value={i}>
             {h || `Col. ${i + 1}`}
           </option>
@@ -243,7 +243,7 @@ export function ColumnsStep({
             <table className="text-xs w-full">
               <thead>
                 <tr className="bg-surface-muted">
-                  {csvRaw.headers.map((h, i) => (
+                  {Array.from(csvRaw.headers.entries()).map(([i, h]) => (
                     <th
                       key={`th-${i}`}
                       className="px-2 py-1.5 text-left text-content-subtle font-medium border-b border-line-subtle"
@@ -254,9 +254,9 @@ export function ColumnsStep({
                 </tr>
               </thead>
               <tbody>
-                {csvRaw.sample.map((row, ri) => (
+                {Array.from(csvRaw.sample.entries()).map(([ri, row]) => (
                   <tr key={`tr-${ri}`} className="even:bg-surface-muted">
-                    {row.map((cell, ci) => (
+                    {Array.from(row.entries()).map(([ci, cell]) => (
                       <td
                         key={`td-${ri}-${ci}`}
                         className="px-2 py-1 text-content truncate max-w-[12rem]"

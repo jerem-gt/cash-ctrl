@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { showToast } from '@/components/ui';
-import { TxFormState } from '@/features/transactions/components/TxModal';
+import type { TxFormState } from '@/features/transactions/lib/txForm';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';

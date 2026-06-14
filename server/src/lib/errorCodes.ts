@@ -167,7 +167,7 @@ export interface ApiErrorBody {
 export function renderMessage(code: ErrorCode, params?: ErrorParams): string {
   const template = ERROR_MESSAGES[code];
   if (!params) return template;
-  return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
+  return template.replaceAll(/\{\{(\w+)\}\}/g, (_match, key: string) =>
     key in params ? String(params[key]) : `{{${key}}}`,
   );
 }
