@@ -18,6 +18,10 @@ Application de gestion de finances personnelles — multi-comptes, transactions 
 |---|---|
 | ![Planifications](./docs/screenshots/scheduled.png) | ![Paramètres](./docs/screenshots/settings.png) |
 
+| Rapports |  |
+|---|---|
+| ![Rapports](./docs/screenshots/reports.png) |  |
+
 ### 🌗 Thème clair / sombre
 
 L'interface suit la préférence système et se bascule manuellement (Clair / Sombre / Système) depuis les Réglages.
@@ -41,8 +45,11 @@ L'interface suit la préférence système et se bascule manuellement (Clair / So
 | **Prêts** | Tableau d'amortissement, remboursements anticipés |
 | **Remboursements** | Suivi des dépenses à se faire rembourser |
 | **Simulateur PER** | Calcul de la déductibilité fiscale (barèmes IR en base) |
-| **Import / Export** | Import QIF / XHB (Homebank) ; export JSON toutes entités |
+| **Rapports** | Comparaison annuelle revenus/dépenses et performances boursières par année |
+| **Catégorisation auto** | Règles LIKE pour affecter automatiquement une catégorie aux transactions |
+| **Import / Export** | Import QIF / XHB (Homebank) / CSV (wizard de mapping colonnes) ; export JSON toutes entités |
 | **Sauvegarde** | Sauvegardes incrémentales automatiques |
+| **2FA** | Double authentification TOTP (Google Authenticator, Authy…) |
 | **i18n** | Interface disponible en français et en anglais via react-i18next — détection automatique de la langue du navigateur, sélecteur dans les Réglages, persistance localStorage ; namespaces par feature |
 
 ---
@@ -85,7 +92,7 @@ npm run dev
 
 ```
 client/src/
-  pages/          → 8 pages (Dashboard, Transactions, Accounts, Scheduled, Settings…)
+  pages/          → 9 pages (Dashboard, Transactions, Accounts, Reports, Scheduled, Settings…)
   components/     → Composants UI réutilisables
   features/       → Modules autonomes (settings…)
   hooks/          → Logique métier + data fetching (TanStack Query)
@@ -93,8 +100,8 @@ client/src/
   api/            → Client fetch
 
 server/src/
-  modules/        → 21 modules (accounts, transactions, stocks, insurance, loans…)
-  db/             → Schéma, seeds, 24 tables SQLite
+  modules/        → 22 modules (accounts, transactions, stocks, insurance, loans, categorization-rules…)
+  db/             → Schéma, seeds, migrations SQLite
   lib/            → Helpers métier (money, scheduled, backup…)
 ```
 

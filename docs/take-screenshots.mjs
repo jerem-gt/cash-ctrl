@@ -77,6 +77,15 @@ async function captureAll(suffix) {
     await shot(`account-av${suffix}`);
   }
 
+  await page.goto(`${BASE}/reports`);
+  await page.waitForTimeout(1000);
+  // Sélectionner 2025 + comparer avec 2024 pour montrer la comparaison annuelle
+  const selects = await page.locator('select').all();
+  await selects[0].selectOption('2026');
+  await page.waitForTimeout(500);
+  await selects[1].selectOption('2025');
+  await shot(`reports${suffix}`);
+
   await page.goto(`${BASE}/scheduled`);
   await shot(`scheduled${suffix}`);
 
