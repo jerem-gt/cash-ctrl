@@ -221,7 +221,7 @@ export default function ImportManager() {
           setParseError(t('import.err_csv_no_rows'));
           return false;
         }
-        const allValues = result.rows.flatMap((row) => row);
+        const allValues = result.rows.flat();
         const numericValues = allValues.filter(
           (v) => /^-?[\d\s.,]+$/.test(v.trim()) && v.trim().length > 0,
         );

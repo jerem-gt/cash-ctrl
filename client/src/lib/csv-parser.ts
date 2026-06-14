@@ -11,10 +11,10 @@ export interface CsvParseResult {
 function countDelimiter(line: string, char: string): number {
   let count = 0;
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
+  for (const ch of line) {
+    if (ch === '"') {
       inQuotes = !inQuotes;
-    } else if (!inQuotes && line[i] === char) {
+    } else if (!inQuotes && ch === char) {
       count++;
     }
   }
@@ -106,14 +106,14 @@ export function detectDecimalSeparator(values: string[]): ',' | '.' {
 // ─── Conversion montant ────────────────────────────────────────────────────────
 
 export function parseCsvAmount(raw: string, decimalSep: ',' | '.'): number {
-  if (!raw || raw.trim() === '') return NaN;
+  if (!raw || raw.trim() === '') return Number.NaN;
   let s = raw.trim();
   if (decimalSep === ',') {
     // Retirer séparateurs de milliers (point ou espace) puis normaliser la virgule
-    s = s.replace(/\./g, '').replace(/\s/g, '').replace(',', '.');
+    s = s.replaceAll('.', '').replaceAll(/\s/g, '').replace(',', '.');
   } else {
     // Retirer séparateurs de milliers (virgule ou espace)
-    s = s.replace(/,/g, '').replace(/\s/g, '');
+    s = s.replaceAll(',', '').replaceAll(/\s/g, '');
   }
   return Number.parseFloat(s);
 }

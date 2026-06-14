@@ -46,7 +46,15 @@ export function parseLedgerDate(raw: string, format: 'MM/DD' | 'DD/MM' | 'YYYY-M
     [day, month, year] = parts.map(Number);
   }
   if (year < 100) year += year < 30 ? 2000 : 1900;
-  if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 1 || month > 12) {
+  if (
+    Number.isNaN(day) ||
+    Number.isNaN(month) ||
+    Number.isNaN(year) ||
+    day < 1 ||
+    day > 31 ||
+    month < 1 ||
+    month > 12
+  ) {
     throw new Error(`Date invalide: ${raw}`);
   }
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
