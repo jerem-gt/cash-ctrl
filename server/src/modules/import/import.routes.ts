@@ -9,7 +9,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createImportRepo } from './import.repo.js';
 
 const newAccountSchema = z.object({
-  qif_name: z.string().min(1),
+  source_name: z.string().min(1),
   name: z.string().min(1).max(100),
   bank_id: z.number().int().positive().nullable(),
   account_type_id: z.number().int().positive().nullable(),
@@ -19,7 +19,7 @@ const newAccountSchema = z.object({
 
 const newSubcategorySchema = z
   .object({
-    qif_key: z.string().min(1),
+    source_key: z.string().min(1),
     category_id: z.number().int().positive().optional(),
     new_category_name: z.string().min(1).max(50).optional(),
     new_category_icon: z.string().max(64).optional(),
@@ -32,7 +32,7 @@ const newSubcategorySchema = z
 const transactionSchema = z
   .object({
     account_id: z.number().int().positive().nullable(),
-    new_account_qif_name: z.string().nullable(),
+    new_account_source_name: z.string().nullable(),
     type: z.enum(['income', 'expense']),
     amount: z.number().positive(),
     description: z.string().min(1).max(200),
@@ -43,27 +43,27 @@ const transactionSchema = z
     validated: z.boolean(),
     payment_method_id: z.number().int().positive().nullable().default(null),
   })
-  .refine((d) => d.account_id !== null || d.new_account_qif_name !== null, {
-    message: 'account_id ou new_account_qif_name requis',
+  .refine((d) => d.account_id !== null || d.new_account_source_name !== null, {
+    message: 'account_id ou new_account_source_name requis',
   });
 
 const transferSchema = z
   .object({
     from_account_id: z.number().int().positive().nullable(),
-    from_account_qif_name: z.string().nullable(),
+    from_account_source_name: z.string().nullable(),
     to_account_id: z.number().int().positive().nullable(),
-    to_account_qif_name: z.string().nullable(),
+    to_account_source_name: z.string().nullable(),
     amount: z.number().positive(),
     description: z.string().min(1).max(200),
     date: dateSchema,
     notes: z.string().max(1000).nullable(),
     validated: z.boolean(),
   })
-  .refine((d) => d.from_account_id !== null || d.from_account_qif_name !== null, {
-    message: 'from_account_id ou from_account_qif_name requis',
+  .refine((d) => d.from_account_id !== null || d.from_account_source_name !== null, {
+    message: 'from_account_id ou from_account_source_name requis',
   })
-  .refine((d) => d.to_account_id !== null || d.to_account_qif_name !== null, {
-    message: 'to_account_id ou to_account_qif_name requis',
+  .refine((d) => d.to_account_id !== null || d.to_account_source_name !== null, {
+    message: 'to_account_id ou to_account_source_name requis',
   });
 
 const executeSchema = z.object({
@@ -249,7 +249,7 @@ export function createImportRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.post('/qif', (req, res) => {
+  router.post('/structured', (req, res) => {
     const parsed = executeSchema.safeParse(req.body);
     if (!parsed.success) {
       // Forme structurée : les `path` (transactions.K.field / transfers.K.field)

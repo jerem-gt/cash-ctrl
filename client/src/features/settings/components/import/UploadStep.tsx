@@ -42,7 +42,7 @@ export function UploadStep({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".qif,.xhb,.json"
+          accept=".qif,.xhb,.json,.csv"
           className="sr-only"
           aria-label={t('import.file_input_label')}
           onChange={(e) => {

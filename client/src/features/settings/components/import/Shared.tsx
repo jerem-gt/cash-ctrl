@@ -8,6 +8,7 @@ import type { Bank } from '@/types.ts';
 
 export type Step =
   | 'upload'
+  | 'columns'
   | 'accounts'
   | 'categories'
   | 'paymethods'
@@ -122,25 +123,36 @@ export function ImportErrorMessage({ message }: Readonly<{ message: string }>) {
 export function StepIndicator({
   step,
   format,
-}: Readonly<{ step: Step; format: 'qif' | 'xhb' | 'json' | null }>) {
+}: Readonly<{ step: Step; format: 'qif' | 'xhb' | 'json' | 'csv' | null }>) {
   const { t } = useTranslation('settings');
-  const steps: { id: Step; label: string }[] =
-    format === 'json'
-      ? [
-          { id: 'upload', label: t('import.step_file') },
-          { id: 'confirm', label: t('import.step_confirm') },
-          { id: 'done', label: t('import.step_done') },
-        ]
-      : [
-          { id: 'upload', label: t('import.step_file') },
-          { id: 'accounts', label: t('import.step_accounts') },
-          { id: 'categories', label: t('import.step_categories') },
-          ...(format === 'xhb'
-            ? [{ id: 'paymethods' as Step, label: t('import.step_paymethods') }]
-            : []),
-          { id: 'preview', label: t('import.step_preview') },
-          { id: 'done', label: t('import.step_done') },
-        ];
+  let steps: { id: Step; label: string }[];
+  if (format === 'json') {
+    steps = [
+      { id: 'upload', label: t('import.step_file') },
+      { id: 'confirm', label: t('import.step_confirm') },
+      { id: 'done', label: t('import.step_done') },
+    ];
+  } else if (format === 'csv') {
+    steps = [
+      { id: 'upload', label: t('import.step_file') },
+      { id: 'columns', label: t('import.step_columns') },
+      { id: 'accounts', label: t('import.step_accounts') },
+      { id: 'categories', label: t('import.step_categories') },
+      { id: 'preview', label: t('import.step_preview') },
+      { id: 'done', label: t('import.step_done') },
+    ];
+  } else {
+    steps = [
+      { id: 'upload', label: t('import.step_file') },
+      { id: 'accounts', label: t('import.step_accounts') },
+      { id: 'categories', label: t('import.step_categories') },
+      ...(format === 'xhb'
+        ? [{ id: 'paymethods' as Step, label: t('import.step_paymethods') }]
+        : []),
+      { id: 'preview', label: t('import.step_preview') },
+      { id: 'done', label: t('import.step_done') },
+    ];
+  }
   const current = steps.findIndex((s) => s.id === step);
 
   return (

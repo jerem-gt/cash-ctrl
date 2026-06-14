@@ -149,7 +149,7 @@ export type UpdateLoanPayload = {
 
 export interface ImportExecuteBody {
   newAccounts: {
-    qif_name: string;
+    source_name: string;
     name: string;
     bank_id: number | null;
     account_type_id: number | null;
@@ -157,7 +157,7 @@ export interface ImportExecuteBody {
     opening_date: string | null;
   }[];
   newSubcategories: {
-    qif_key: string;
+    source_key: string;
     category_id?: number;
     new_category_name?: string;
     new_category_icon?: string;
@@ -165,7 +165,7 @@ export interface ImportExecuteBody {
   }[];
   transactions: {
     account_id: number | null;
-    new_account_qif_name: string | null;
+    new_account_source_name: string | null;
     type: 'income' | 'expense';
     amount: number;
     description: string;
@@ -178,9 +178,9 @@ export interface ImportExecuteBody {
   }[];
   transfers: {
     from_account_id: number | null;
-    from_account_qif_name: string | null;
+    from_account_source_name: string | null;
     to_account_id: number | null;
-    to_account_qif_name: string | null;
+    to_account_source_name: string | null;
     amount: number;
     description: string;
     date: string;

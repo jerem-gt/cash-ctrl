@@ -485,7 +485,8 @@ export const reimbursementsApi = {
 
 // Import
 export const importApi = {
-  executeQif: (body: ImportExecuteBody) => request<ImportResult>('POST', '/api/import/qif', body),
+  executeStructured: (body: ImportExecuteBody) =>
+    request<ImportResult>('POST', '/api/import/structured', body),
   executeJsonFull: (body: unknown) =>
     request<JsonFullImportResult>('POST', '/api/import/json-full', body),
 };

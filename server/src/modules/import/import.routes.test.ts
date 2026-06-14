@@ -8,7 +8,7 @@ import { SEED } from '../../tests/helpers/testDb.js';
 
 const VALID_TX = {
   account_id: null as number | null,
-  new_account_qif_name: null as string | null,
+  new_account_source_name: null as string | null,
   type: 'expense' as const,
   amount: 150,
   description: 'Supermarché',
@@ -21,9 +21,9 @@ const VALID_TX = {
 
 const VALID_TRANSFER = {
   from_account_id: null as number | null,
-  from_account_qif_name: null as string | null,
+  from_account_source_name: null as string | null,
   to_account_id: null as number | null,
-  to_account_qif_name: null as string | null,
+  to_account_source_name: null as string | null,
   amount: 500,
   description: 'Virement',
   date: '2024-01-15',
@@ -35,7 +35,7 @@ const EMPTY_BODY = { newAccounts: [], newSubcategories: [], transactions: [], tr
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('POST /api/import/qif', () => {
+describe('POST /api/import/structured', () => {
   let ctx: TestContext;
   let accountId: number;
   let account2Id: number;
@@ -65,81 +65,93 @@ describe('POST /api/import/qif', () => {
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
   it('retourne 401 sans authentification', async () => {
-    const res = await supertest(ctx.app).post('/api/import/qif').send(EMPTY_BODY);
+    const res = await supertest(ctx.app).post('/api/import/structured').send(EMPTY_BODY);
     expect(res.status).toBe(401);
   });
 
   // ─── Validation Zod ────────────────────────────────────────────────────────
 
   it('retourne 400 si le body est vide', async () => {
-    const res = await ctx.agent.post('/api/import/qif').send({});
+    const res = await ctx.agent.post('/api/import/structured').send({});
     expect(res.status).toBe(400);
   });
 
   it('retourne 400 structuré si le body est un tableau', async () => {
-    const res = await ctx.agent.post('/api/import/qif').send([1, 2, 3]);
+    const res = await ctx.agent.post('/api/import/structured').send([1, 2, 3]);
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('validation.invalid');
     expect(Array.isArray(res.body.error.fields)).toBe(true);
   });
 
-  it('retourne 400 si transactions manque account_id ET new_account_qif_name', async () => {
-    const tx = { ...VALID_TX, account_id: null, new_account_qif_name: null };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+  it('retourne 400 si transactions manque account_id ET new_account_source_name', async () => {
+    const tx = { ...VALID_TX, account_id: null, new_account_source_name: null };
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: [tx] });
     expect(res.status).toBe(400);
   });
 
   it('retourne 400 si transaction a un montant négatif', async () => {
     const tx = { ...VALID_TX, account_id: accountId, amount: -50 };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: [tx] });
     expect(res.status).toBe(400);
   });
 
   it('retourne 400 si transaction a une date mal formatée', async () => {
     const tx = { ...VALID_TX, account_id: accountId, date: '15/01/2024' };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: [tx] });
     expect(res.status).toBe(400);
   });
 
-  it('retourne 400 si transfer manque from_account_id ET from_account_qif_name', async () => {
+  it('retourne 400 si transfer manque from_account_id ET from_account_source_name', async () => {
     const tf = {
       ...VALID_TRANSFER,
       from_account_id: null,
-      from_account_qif_name: null,
+      from_account_source_name: null,
       to_account_id: account2Id,
     };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transfers: [tf] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transfers: [tf] });
     expect(res.status).toBe(400);
   });
 
-  it('retourne 400 si transfer manque to_account_id ET to_account_qif_name', async () => {
+  it('retourne 400 si transfer manque to_account_id ET to_account_source_name', async () => {
     const tf = {
       ...VALID_TRANSFER,
       from_account_id: accountId,
       to_account_id: null,
-      to_account_qif_name: null,
+      to_account_source_name: null,
     };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transfers: [tf] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transfers: [tf] });
     expect(res.status).toBe(400);
   });
 
   it('retourne 400 si newSubcategory manque category_id ET new_category_name', async () => {
-    const ns = { qif_key: 'Food:Out', subcategory_name: 'Restaurant' };
+    const ns = { source_key: 'Food:Out', subcategory_name: 'Restaurant' };
     const res = await ctx.agent
-      .post('/api/import/qif')
+      .post('/api/import/structured')
       .send({ ...EMPTY_BODY, newSubcategories: [ns] });
     expect(res.status).toBe(400);
   });
 
   it('retourne 400 si newAccount a une date mal formatée', async () => {
     const na = {
-      qif_name: 'NewAcc',
+      source_name: 'NewAcc',
       name: 'Nouveau',
       account_type_id: SEED.AT_COURANT,
       initial_balance: 0,
       opening_date: 'not-a-date',
     };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, newAccounts: [na] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, newAccounts: [na] });
     expect(res.status).toBe(400);
   });
 
@@ -147,7 +159,9 @@ describe('POST /api/import/qif', () => {
 
   it('importe une transaction de dépense sur un compte existant', async () => {
     const tx = { ...VALID_TX, account_id: accountId };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: [tx] });
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ transactions: 1, transfers: 0 });
   });
@@ -159,14 +173,16 @@ describe('POST /api/import/qif', () => {
       type: 'income' as const,
       subcategory_id: SEED.SUBCAT_SALAIRE,
     };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: [tx] });
     expect(res.status).toBe(201);
     expect(res.body.transactions).toBe(1);
   });
 
   it('persiste la transaction dans la DB', async () => {
     const tx = { ...VALID_TX, account_id: accountId, validated: true, notes: 'note test' };
-    await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: [tx] });
+    await ctx.agent.post('/api/import/structured').send({ ...EMPTY_BODY, transactions: [tx] });
 
     const row = ctx.db.prepare('SELECT * FROM transactions WHERE account_id = ?').get(accountId) as
       | { amount: number; validated: number; notes: string }
@@ -181,7 +197,9 @@ describe('POST /api/import/qif', () => {
       { ...VALID_TX, account_id: accountId },
       { ...VALID_TX, account_id: accountId, type: 'income' as const, amount: 2000 },
     ];
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transactions: txs });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transactions: txs });
     expect(res.status).toBe(201);
     expect(res.body.transactions).toBe(2);
   });
@@ -194,7 +212,9 @@ describe('POST /api/import/qif', () => {
       from_account_id: accountId,
       to_account_id: account2Id,
     };
-    const res = await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transfers: [tf] });
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, transfers: [tf] });
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ transactions: 0, transfers: 1 });
   });
@@ -205,7 +225,7 @@ describe('POST /api/import/qif', () => {
       from_account_id: accountId,
       to_account_id: account2Id,
     };
-    await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transfers: [tf] });
+    await ctx.agent.post('/api/import/structured').send({ ...EMPTY_BODY, transfers: [tf] });
 
     const txs = ctx.db
       .prepare('SELECT id, transfer_peer_id FROM transactions ORDER BY id')
@@ -221,7 +241,7 @@ describe('POST /api/import/qif', () => {
       from_account_id: accountId,
       to_account_id: account2Id,
     };
-    await ctx.agent.post('/api/import/qif').send({ ...EMPTY_BODY, transfers: [tf] });
+    await ctx.agent.post('/api/import/structured').send({ ...EMPTY_BODY, transfers: [tf] });
 
     const expense = ctx.db
       .prepare('SELECT type FROM transactions WHERE account_id = ?')
@@ -237,15 +257,15 @@ describe('POST /api/import/qif', () => {
 
   it('crée un nouveau compte via newAccounts et y rattache la transaction', async () => {
     const newAccount = {
-      qif_name: 'NewChecking',
+      source_name: 'NewChecking',
       name: 'Nouveau Courant',
       bank_id: SEED.BANK_ID,
       account_type_id: SEED.AT_COURANT,
       initial_balance: 0,
       opening_date: '2024-01-01',
     };
-    const tx = { ...VALID_TX, account_id: null, new_account_qif_name: 'NewChecking' };
-    const res = await ctx.agent.post('/api/import/qif').send({
+    const tx = { ...VALID_TX, account_id: null, new_account_source_name: 'NewChecking' };
+    const res = await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       newAccounts: [newAccount],
       transactions: [tx],
@@ -266,14 +286,14 @@ describe('POST /api/import/qif', () => {
 
   it('crée un nouveau compte avec un solde initial', async () => {
     const newAccount = {
-      qif_name: 'Savings',
+      source_name: 'Savings',
       name: 'Épargne import',
       bank_id: SEED.BANK_ID,
       account_type_id: SEED.AT_EPARGNE,
       initial_balance: 1000,
       opening_date: '2022-06-01',
     };
-    await ctx.agent.post('/api/import/qif').send({
+    await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       newAccounts: [newAccount],
     });
@@ -288,7 +308,7 @@ describe('POST /api/import/qif', () => {
   it('résout un virement dont les deux comptes sont nouveaux', async () => {
     const newAccounts = [
       {
-        qif_name: 'QifFrom',
+        source_name: 'QifFrom',
         name: 'From Account',
         bank_id: SEED.BANK_ID,
         account_type_id: SEED.AT_COURANT,
@@ -296,7 +316,7 @@ describe('POST /api/import/qif', () => {
         opening_date: '2024-01-01',
       },
       {
-        qif_name: 'QifTo',
+        source_name: 'QifTo',
         name: 'To Account',
         bank_id: SEED.BANK_ID,
         account_type_id: SEED.AT_EPARGNE,
@@ -307,11 +327,11 @@ describe('POST /api/import/qif', () => {
     const tf = {
       ...VALID_TRANSFER,
       from_account_id: null,
-      from_account_qif_name: 'QifFrom',
+      from_account_source_name: 'QifFrom',
       to_account_id: null,
-      to_account_qif_name: 'QifTo',
+      to_account_source_name: 'QifTo',
     };
-    const res = await ctx.agent.post('/api/import/qif').send({
+    const res = await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       newAccounts,
       transfers: [tf],
@@ -324,7 +344,7 @@ describe('POST /api/import/qif', () => {
 
   it('crée une nouvelle sous-catégorie dans une catégorie existante', async () => {
     const ns = {
-      qif_key: 'Food:Out',
+      source_key: 'Food:Out',
       category_id: 3,
       subcategory_name: 'Restaurant',
     };
@@ -334,7 +354,7 @@ describe('POST /api/import/qif', () => {
       subcategory_id: null,
       new_subcategory_key: 'Food:Out',
     };
-    const res = await ctx.agent.post('/api/import/qif').send({
+    const res = await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       newSubcategories: [ns],
       transactions: [tx],
@@ -354,7 +374,7 @@ describe('POST /api/import/qif', () => {
 
   it('crée une nouvelle catégorie et sous-catégorie depuis new_category_name', async () => {
     const ns = {
-      qif_key: 'Pets:Food',
+      source_key: 'Pets:Food',
       new_category_name: 'Animaux',
       new_category_icon: '🐾',
       subcategory_name: 'Nourriture animaux',
@@ -365,7 +385,7 @@ describe('POST /api/import/qif', () => {
       subcategory_id: null,
       new_subcategory_key: 'Pets:Food',
     };
-    const res = await ctx.agent.post('/api/import/qif').send({
+    const res = await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       newSubcategories: [ns],
       transactions: [tx],
@@ -392,7 +412,7 @@ describe('POST /api/import/qif', () => {
       from_account_id: accountId,
       to_account_id: account2Id,
     };
-    const res = await ctx.agent.post('/api/import/qif').send({
+    const res = await ctx.agent.post('/api/import/structured').send({
       ...EMPTY_BODY,
       transactions: [tx],
       transfers: [tf],
@@ -402,7 +422,7 @@ describe('POST /api/import/qif', () => {
   });
 
   it('body vide retourne 201 avec zéros', async () => {
-    const res = await ctx.agent.post('/api/import/qif').send(EMPTY_BODY);
+    const res = await ctx.agent.post('/api/import/structured').send(EMPTY_BODY);
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ transactions: 0, transfers: 0 });
   });

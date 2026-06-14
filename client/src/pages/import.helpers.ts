@@ -1,10 +1,6 @@
 import type { ImportExecuteBody } from '@/api/client';
-import {
-  findTransferPeer,
-  parseQifDate,
-  type QifParseResult,
-  type QifTransaction,
-} from '@/lib/qif-parser';
+import { type ParsedLedger, type ParsedTransaction, parseLedgerDate } from '@/lib/import-model';
+import { findTransferPeer } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';
 import type { XhbParseResult } from '@/lib/xhb-parser';
 import type { Account, Category, PaymentMethod } from '@/types';
@@ -47,7 +43,7 @@ export type PreviewItem =
       amount: number;
       description: string;
       accountId: number | null;
-      newAccountQifName: string | null;
+      newAccountSourceName: string | null;
       accountName: string;
       subcategoryId: number | null;
       newSubcategoryKey: string | null;
@@ -64,10 +60,10 @@ export type PreviewItem =
       amount: number;
       description: string;
       fromAccountId: number | null;
-      fromAccountQifName: string | null;
+      fromAccountSourceName: string | null;
       fromAccountName: string;
       toAccountId: number | null;
-      toAccountQifName: string | null;
+      toAccountSourceName: string | null;
       toAccountName: string;
       notes: string | null;
       validated: boolean;
@@ -90,8 +86,11 @@ export type CategoryInfo = {
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
-export function findAutoCategory(qifCat: string, categories: Category[]): CategoryChoice | null {
-  const parts = qifCat.split(':').map((p) => p.trim().toLowerCase());
+export function findAutoCategory(
+  categoryPath: string,
+  categories: Category[],
+): CategoryChoice | null {
+  const parts = categoryPath.split(':').map((p) => p.trim().toLowerCase());
   const [subcatName = ''] = parts.slice(-1);
   const catName = parts.length > 1 ? parts[0] : null;
 
@@ -104,12 +103,12 @@ export function findAutoCategory(qifCat: string, categories: Category[]): Catego
 }
 
 export function resolveAccountInfo(
-  qifName: string,
+  sourceName: string,
   choice: AccountChoice | undefined,
   accounts: Account[],
 ): {
   accountId: number | null;
-  newAccountQifName: string | null;
+  newAccountSourceName: string | null;
   accountName: string;
   bankName: string | null;
   resolved: boolean;
@@ -117,8 +116,8 @@ export function resolveAccountInfo(
   if (!choice || choice.action === 'skip') {
     return {
       accountId: null,
-      newAccountQifName: null,
-      accountName: qifName,
+      newAccountSourceName: null,
+      accountName: sourceName,
       bankName: null,
       resolved: false,
     };
@@ -127,7 +126,7 @@ export function resolveAccountInfo(
     const acc = accounts.find((a) => a.id === choice.account_id);
     return {
       accountId: choice.account_id,
-      newAccountQifName: null,
+      newAccountSourceName: null,
       accountName: acc?.name ?? '',
       bankName: acc?.bank ?? null,
       resolved: true,
@@ -135,7 +134,7 @@ export function resolveAccountInfo(
   }
   return {
     accountId: null,
-    newAccountQifName: qifName,
+    newAccountSourceName: sourceName,
     accountName: choice.name,
     bankName: choice.bank_name,
     resolved: true,
@@ -178,16 +177,16 @@ export function resolveCategoryInfo(
 
 export function safeParseDate(raw: string, format: 'MM/DD' | 'DD/MM'): string {
   try {
-    return parseQifDate(raw, format);
+    return parseLedgerDate(raw, format);
   } catch {
     return '2000-01-01';
   }
 }
 
 export function resolveTransferItem(
-  tx: QifTransaction,
+  tx: ParsedTransaction,
   i: number,
-  parsed: QifParseResult,
+  parsed: ParsedLedger,
   processed: Set<number>,
   accountChoices: Map<string, AccountChoice>,
   accounts: Account[],
@@ -205,27 +204,27 @@ export function resolveTransferItem(
   const peerIdx = findTransferPeer(parsed.transactions, i, processed);
   processed.add(i);
 
-  let fromQifName: string;
-  let toQifName: string;
+  let fromSourceName: string;
+  let toSourceName: string;
   let notes: string | null;
 
   if (peerIdx === -1) {
     if (!tx.transferTarget) return skip('transfer_no_peer');
-    fromQifName = tx.amount < 0 ? tx.qifAccountName : tx.transferTarget;
-    toQifName = tx.amount < 0 ? tx.transferTarget : tx.qifAccountName;
+    fromSourceName = tx.amount < 0 ? tx.accountName : tx.transferTarget;
+    toSourceName = tx.amount < 0 ? tx.transferTarget : tx.accountName;
     notes = tx.memo;
   } else {
     processed.add(peerIdx);
     const peer = parsed.transactions[peerIdx];
     const fromTx = tx.amount < 0 ? tx : peer;
     const toTx = tx.amount < 0 ? peer : tx;
-    fromQifName = fromTx.qifAccountName;
-    toQifName = toTx.qifAccountName;
+    fromSourceName = fromTx.accountName;
+    toSourceName = toTx.accountName;
     notes = tx.memo ?? peer.memo ?? null;
   }
 
-  const fromInfo = resolveAccountInfo(fromQifName, accountChoices.get(fromQifName), accounts);
-  const toInfo = resolveAccountInfo(toQifName, accountChoices.get(toQifName), accounts);
+  const fromInfo = resolveAccountInfo(fromSourceName, accountChoices.get(fromSourceName), accounts);
+  const toInfo = resolveAccountInfo(toSourceName, accountChoices.get(toSourceName), accounts);
   if (!fromInfo.resolved || !toInfo.resolved) return skip('unmapped_account');
 
   const description = transferLabel(
@@ -240,10 +239,10 @@ export function resolveTransferItem(
     amount: Math.abs(tx.amount),
     description,
     fromAccountId: fromInfo.accountId,
-    fromAccountQifName: fromInfo.newAccountQifName,
+    fromAccountSourceName: fromInfo.newAccountSourceName,
     fromAccountName: fromInfo.accountName,
     toAccountId: toInfo.accountId,
-    toAccountQifName: toInfo.newAccountQifName,
+    toAccountSourceName: toInfo.newAccountSourceName,
     toAccountName: toInfo.accountName,
     notes,
     validated: true,
@@ -288,9 +287,9 @@ type ResolvedCategory = {
   isNew: boolean;
 };
 
-function resolveQifTxCategory(
+function resolveTxCategory(
   description: string,
-  qifCategory: string,
+  categoryPath: string,
   descriptionRuleMatcher: ((description: string) => number | null) | undefined,
   categoryChoices: Map<string, CategoryChoice>,
   categories: Category[],
@@ -310,11 +309,11 @@ function resolveQifTxCategory(
       isNew: false,
     };
   }
-  return resolveCategoryInfo(qifCategory, categoryChoices, categories);
+  return resolveCategoryInfo(categoryPath, categoryChoices, categories);
 }
 
 export function resolvePreview(
-  parsed: QifParseResult,
+  parsed: ParsedLedger,
   dateFormat: 'MM/DD' | 'DD/MM',
   accountChoices: Map<string, AccountChoice>,
   categoryChoices: Map<string, CategoryChoice>,
@@ -337,8 +336,8 @@ export function resolvePreview(
 
     processed.add(i);
     const accInfo = resolveAccountInfo(
-      tx.qifAccountName,
-      accountChoices.get(tx.qifAccountName),
+      tx.accountName,
+      accountChoices.get(tx.accountName),
       accounts,
     );
     if (!accInfo.resolved) {
@@ -353,7 +352,7 @@ export function resolvePreview(
       continue;
     }
 
-    const catInfo = resolveQifTxCategory(
+    const catInfo = resolveTxCategory(
       tx.description,
       tx.category,
       descriptionRuleMatcher,
@@ -380,7 +379,7 @@ export function resolvePreview(
       amount: Math.abs(tx.amount),
       description: tx.description,
       accountId: accInfo.accountId,
-      newAccountQifName: accInfo.newAccountQifName,
+      newAccountSourceName: accInfo.newAccountSourceName,
       accountName: accInfo.accountName,
       subcategoryId: catInfo.subcategoryId,
       newSubcategoryKey: catInfo.newSubcategoryKey,
@@ -408,12 +407,12 @@ export function buildExecuteBody(
   const transactions: ImportExecuteBody['transactions'] = [];
   const transfers: ImportExecuteBody['transfers'] = [];
 
-  const ensureNewAccount = (qifName: string | null) => {
-    if (!qifName || newAccountsMap.has(qifName)) return;
-    const choice = accountChoices.get(qifName);
+  const ensureNewAccount = (sourceName: string | null) => {
+    if (!sourceName || newAccountsMap.has(sourceName)) return;
+    const choice = accountChoices.get(sourceName);
     if (choice?.action === 'create') {
-      newAccountsMap.set(qifName, {
-        qif_name: qifName,
+      newAccountsMap.set(sourceName, {
+        source_name: sourceName,
         name: choice.name,
         bank_id: choice.bank_id,
         account_type_id: choice.account_type_id,
@@ -428,7 +427,7 @@ export function buildExecuteBody(
     const choice = categoryChoices.get(key);
     if (choice?.action === 'create') {
       newSubcategoriesMap.set(key, {
-        qif_key: key,
+        source_key: key,
         category_id: choice.existing_category_id ?? undefined,
         new_category_name: choice.new_category_name || undefined,
         new_category_icon: choice.new_category_icon || undefined,
@@ -443,13 +442,13 @@ export function buildExecuteBody(
     if (item.kind === 'skip') continue;
 
     if (item.kind === 'transfer') {
-      ensureNewAccount(item.fromAccountQifName);
-      ensureNewAccount(item.toAccountQifName);
+      ensureNewAccount(item.fromAccountSourceName);
+      ensureNewAccount(item.toAccountSourceName);
       transfers.push({
         from_account_id: item.fromAccountId,
-        from_account_qif_name: item.fromAccountQifName,
+        from_account_source_name: item.fromAccountSourceName,
         to_account_id: item.toAccountId,
-        to_account_qif_name: item.toAccountQifName,
+        to_account_source_name: item.toAccountSourceName,
         amount: item.amount,
         description: item.description,
         date: item.date,
@@ -457,11 +456,11 @@ export function buildExecuteBody(
         validated: item.validated,
       });
     } else {
-      ensureNewAccount(item.newAccountQifName);
+      ensureNewAccount(item.newAccountSourceName);
       ensureNewSubcategory(item.newSubcategoryKey);
       transactions.push({
         account_id: item.accountId,
-        new_account_qif_name: item.newAccountQifName,
+        new_account_source_name: item.newAccountSourceName,
         type: item.type,
         amount: item.amount,
         description: item.description || noDescriptionLabel,
@@ -585,10 +584,10 @@ export function resolveXhbPreview(
       amount: tf.amount,
       description,
       fromAccountId: fromInfo.accountId,
-      fromAccountQifName: fromInfo.newAccountQifName,
+      fromAccountSourceName: fromInfo.newAccountSourceName,
       fromAccountName: fromInfo.accountName,
       toAccountId: toInfo.accountId,
-      toAccountQifName: toInfo.newAccountQifName,
+      toAccountSourceName: toInfo.newAccountSourceName,
       toAccountName: toInfo.accountName,
       notes: tf.notes,
       validated: tf.validated,
@@ -640,7 +639,7 @@ export function resolveXhbPreview(
       amount: Math.abs(tx.amount),
       description: tx.description,
       accountId: accInfo.accountId,
-      newAccountQifName: accInfo.newAccountQifName,
+      newAccountSourceName: accInfo.newAccountSourceName,
       accountName: accInfo.accountName,
       subcategoryId,
       newSubcategoryKey,

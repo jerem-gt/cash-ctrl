@@ -4,12 +4,13 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 const NODE_GLOBS = [
-  'src/lib/{account,balance,colors,format,parse,qif-parser,routeChunks,stock,taxCalculator}.test.ts',
+  'src/lib/{account,balance,colors,format,parse,csv-parser,import-model,qif-parser,routeChunks,stock,taxCalculator}.test.ts',
   'src/features/dashboard/lib/*.test.ts',
   'src/features/portfolio/lib/*.test.ts',
   'src/features/scheduled/lib/*.test.ts',
   'src/features/transactions/lib/*.test.ts',
   'src/pages/import.helpers.test.ts',
+  'src/pages/csv-import.helpers.test.ts',
   'src/features/settings/components/import/Shared.test.ts',
 ];
 
