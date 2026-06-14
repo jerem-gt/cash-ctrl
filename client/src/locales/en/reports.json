@@ -14,5 +14,11 @@
   "chart_expenses": "Expenses",
   "no_expenses": "No expenses for this period",
   "no_income": "No income for this period",
-  "no_data": "No data for this period"
+  "no_data": "No data for this period",
+  "section_stock_gains": "Stock performance",
+  "stock_account": "Account",
+  "stock_start": "Start",
+  "stock_end": "End",
+  "stock_flows": "Net flows",
+  "stock_gain": "Performance"
 }

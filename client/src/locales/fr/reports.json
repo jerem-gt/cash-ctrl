@@ -14,5 +14,11 @@
   "chart_expenses": "Dépenses",
   "no_expenses": "Aucune dépense sur cette période",
   "no_income": "Aucun revenu sur cette période",
-  "no_data": "Aucune donnée pour cette période"
+  "no_data": "Aucune donnée pour cette période",
+  "section_stock_gains": "Performance boursière",
+  "stock_account": "Compte",
+  "stock_start": "Début",
+  "stock_end": "Fin",
+  "stock_flows": "Flux nets",
+  "stock_gain": "Performance"
 }

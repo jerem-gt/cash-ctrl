@@ -535,6 +535,15 @@ export const PROFITABILITY_DATA: AccountProfitability[] = [
         return_pct: 20.77,
         is_ytd: false,
       },
+      {
+        year: '2026',
+        start_value: 12500,
+        end_value: 13500,
+        net_flows: 0,
+        gain: 1000,
+        return_pct: 8.0,
+        is_ytd: true,
+      },
     ],
   },
   {
