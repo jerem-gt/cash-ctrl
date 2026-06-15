@@ -24,6 +24,7 @@
   "error_import": "Import error:",
   "all_select": "Select all",
   "loading_text": "Loading…",
+  "offline_banner": "Offline — showing cached data",
   "login": {
     "subtitle": "Sign in to access your accounts",
     "username": "Username",

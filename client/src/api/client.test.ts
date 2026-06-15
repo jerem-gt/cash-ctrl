@@ -119,4 +119,12 @@ describe('parseResponse / extractError', () => {
     );
     await expect(transactionsApi.list()).rejects.toThrow('Repli serveur');
   });
+
+  it('lance une ApiError traduite quand fetch échoue (réseau indisponible)', async () => {
+    server.use(http.get('/api/transactions', () => HttpResponse.error()));
+    const err = await transactionsApi.list().catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe('Serveur inaccessible. Vérifiez votre connexion.');
+    expect((err as { status: number }).status).toBe(0);
+  });
 });

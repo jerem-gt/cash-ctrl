@@ -1,15 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, useIsRestoring } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Menu } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { Sidebar } from '@/components/Sidebar';
 import { Card, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
+import { queryPersister } from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
 import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -78,11 +81,12 @@ function AppShell() {
     document.title = APP_CONFIG.name + (isDev ? ' (dev)' : '');
   }, [isDev]);
 
+  const isRestoring = useIsRestoring();
   const { data: me, isLoading } = useMe();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  if (isLoading) {
+  if (isLoading || isRestoring) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
         <p className="text-sm text-content-subtle">{tc('loading_text')}</p>
@@ -97,6 +101,7 @@ function AppShell() {
   return (
     <div className="flex min-h-screen bg-canvas overflow-x-hidden">
       <ScrollToTop />
+      <OfflineBanner />
       <Sidebar username={me.username} mobileOpen={sidebarOpen} onMobileClose={closeSidebar} />
       <main className="md:ml-72 flex-1 min-w-0 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">
         <div className="flex items-center gap-3 mb-4 md:hidden">
@@ -160,17 +165,24 @@ export default function App() {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
+            gcTime: 24 * 60 * 60_000,
             retry: false,
+          },
+          mutations: {
+            networkMode: 'always',
           },
         },
       }),
   );
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60_000 }}
+    >
       <BrowserRouter>
         <AppShell />
         <Toast />
       </BrowserRouter>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
