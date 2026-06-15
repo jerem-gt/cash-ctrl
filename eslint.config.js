@@ -61,6 +61,7 @@ export default [
       'unicorn/no-for-loop': 'error', // for…of plutôt que for(let i…)
       'unicorn/prefer-array-flat': 'error', // flat() plutôt que flatMap(x => x)
       'unicorn/prefer-export-from': 'error', // export…from plutôt que import + re-export
+      'unicorn/prefer-global-this': 'error', // globalThis plutôt que window (es2020portability)
     },
   },
 
