@@ -24,6 +24,7 @@
   "error_import": "Erreur lors de l'importation :",
   "all_select": "Tout sélectionner",
   "loading_text": "Chargement…",
+  "offline_banner": "Hors ligne — données en cache",
   "login": {
     "subtitle": "Connectez-vous pour accéder à vos comptes",
     "username": "Identifiant",

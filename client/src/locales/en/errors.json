@@ -4,7 +4,8 @@
     "forbidden": "Access denied",
     "invalid_request": "Invalid request",
     "invalid_param": "Invalid parameter {{param}}",
-    "internal": "Internal server error."
+    "internal": "Internal server error.",
+    "network": "Server unreachable. Check your connection."
   },
   "validation": {
     "invalid": "Invalid data",

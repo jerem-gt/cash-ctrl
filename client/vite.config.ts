@@ -10,6 +10,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      workbox: {
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/logos/],
+      },
       manifest: {
         name: 'CashCtrl',
         short_name: 'CashCtrl',
