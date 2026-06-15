@@ -84,7 +84,6 @@ export function initDatabase(db: DatabaseType) {
     .get();
 
   initSchema(db);
-  seedDatabase(db);
 
   if (isFresh) {
     // Fresh DB: schema already includes all columns — skip migrations
@@ -92,4 +91,6 @@ export function initDatabase(db: DatabaseType) {
   } else {
     runMigrations(db);
   }
+
+  seedDatabase(db);
 }
