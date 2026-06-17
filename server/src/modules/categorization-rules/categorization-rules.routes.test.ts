@@ -58,6 +58,12 @@ describe('/api/categorization-rules', () => {
     expect(res.body).toBeNull();
   });
 
+  it('GET /match retourne null si description absente', async () => {
+    const res = await ctx.agent.get('/api/categorization-rules/match');
+    expect(res.status).toBe(200);
+    expect(res.body).toBeNull();
+  });
+
   it('PUT /:id met à jour une règle', async () => {
     const list = await ctx.agent.get('/api/categorization-rules');
     const id = list.body[0].id;
