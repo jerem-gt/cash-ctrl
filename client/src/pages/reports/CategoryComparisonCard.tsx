@@ -3,22 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui';
 import { fmt } from '@/lib/format';
 
-export type CatRow = { category: string; current: number; compare: number; delta: number };
+import type { CatRow } from './catComparison';
 
-export function buildCatComparison(
-  current: Array<{ category: string; amount: number }>,
-  compare: Array<{ category: string; amount: number }> | undefined,
-): CatRow[] {
-  const compareMap = new Map((compare ?? []).map((c) => [c.category, c.amount]));
-  const allCats = new Set([...current.map((c) => c.category), ...compareMap.keys()]);
-  return Array.from(allCats)
-    .map((cat) => {
-      const cur = current.find((c) => c.category === cat)?.amount ?? 0;
-      const cmp = compareMap.get(cat) ?? 0;
-      return { category: cat, current: cur, compare: cmp, delta: cur - cmp };
-    })
-    .sort((a, b) => b.current - a.current);
-}
+export { buildCatComparison, type CatRow } from './catComparison';
 
 interface CategoryComparisonCardProps {
   catTab: 'expense' | 'income';
@@ -56,7 +43,7 @@ export function CategoryComparisonCard({
       <table className="w-full text-xs">
         <thead>
           <tr className="text-left text-content-faint border-b border-line-subtle">
-            <th className="font-medium pb-2">Catégorie</th>
+            <th className="font-medium pb-2">{t('col_category')}</th>
             <th className="font-medium pb-2 text-right">{year}</th>
             <th className="font-medium pb-2 text-right">{compareYear}</th>
             <th className="font-medium pb-2 text-right">{t('col_delta')}</th>

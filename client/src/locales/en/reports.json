@@ -28,6 +28,7 @@
   "summary_income": "Income",
   "summary_expense": "Expenses",
   "summary_balance": "Balance",
+  "col_category": "Category",
   "col_delta": "Change",
   "section_cat_comparison": "Category comparison",
   "tab_expenses": "Expenses",

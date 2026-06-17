@@ -28,13 +28,12 @@ function GainCell({ gain, returnPct }: Readonly<{ gain: number; returnPct: numbe
 
 function StockGainCompareColumns({ g }: Readonly<{ g: StockGainEntry }>) {
   const cmpGain = g.compare?.gain;
-  const cmpGainPos = cmpGain !== undefined && cmpGain >= 0;
   const delta = cmpGain === undefined ? undefined : g.gain - cmpGain;
   const deltaPos = delta !== undefined && delta >= 0;
 
   let cmpGainColor = 'text-content-faint';
   if (cmpGain !== undefined) {
-    cmpGainColor = cmpGainPos ? 'text-success' : 'text-danger';
+    cmpGainColor = cmpGain >= 0 ? 'text-success' : 'text-danger';
   }
 
   let deltaColor = 'text-content-faint';

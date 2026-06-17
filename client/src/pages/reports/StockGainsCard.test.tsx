@@ -19,7 +19,7 @@ describe('StockGainsCard', () => {
   it("affiche le badge YTD pour une position en cours d'année", () => {
     render(<StockGainsCard stockGains={[BASE_ENTRY]} year={2026} compareYear={undefined} />);
     expect(screen.getByText('YTD')).toBeInTheDocument();
-    expect(screen.getByText('PEA')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: /PEA/ })).toBeInTheDocument();
   });
 
   it("n'affiche pas les colonnes de comparaison si compareYear est undefined", () => {
