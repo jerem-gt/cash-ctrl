@@ -1,6 +1,8 @@
 import type { Database } from 'better-sqlite3';
+import compression from 'compression';
 import express from 'express';
 import session from 'express-session';
+import helmet from 'helmet';
 
 import { globalErrorHandler, requestLogger } from './logger';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes';
@@ -36,6 +38,8 @@ export interface AppOptions {
 export function createApp(db: Database, options?: AppOptions): express.Application {
   const app = express();
 
+  app.use(helmet());
+  app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
