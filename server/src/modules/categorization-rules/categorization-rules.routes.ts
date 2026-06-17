@@ -11,6 +11,10 @@ const ruleSchema = z.object({
   subcategory_id: z.number().int().positive(),
 });
 
+const matchQuerySchema = z.object({
+  description: z.string().min(1),
+});
+
 export function createCategorizationRulesRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
@@ -21,14 +25,13 @@ export function createCategorizationRulesRouter(db: Database): Router {
   });
 
   router.get('/match', (req, res) => {
-    const raw = req.query.description;
-    const description = typeof raw === 'string' ? raw : '';
-    if (!description) {
+    const parsed = matchQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
       res.json(null);
       return;
     }
     const repo = createCategorizationRulesRepo(db, sessionUserId(req));
-    res.json(repo.match(description) ?? null);
+    res.json(repo.match(parsed.data.description) ?? null);
   });
 
   router.delete('/', (req, res) => {
