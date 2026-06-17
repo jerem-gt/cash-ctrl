@@ -260,6 +260,7 @@ export function initSchema(db: Database) {
         CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, date DESC, created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_tx_user_account_date ON transactions(user_id, account_id, date DESC);
         CREATE INDEX IF NOT EXISTS idx_tx_user_reimbursement_date ON transactions(user_id, reimbursement_status, date DESC);
+        CREATE INDEX IF NOT EXISTS idx_tx_scheduled_id ON transactions(scheduled_id);
 
         CREATE TRIGGER IF NOT EXISTS tx_insurance_op_cleanup
         BEFORE DELETE ON transactions

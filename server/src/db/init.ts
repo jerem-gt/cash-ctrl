@@ -40,6 +40,10 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
     db.exec(`
       ALTER TABLE banks RENAME COLUMN domain TO login_url;
     `),
+  (db) =>
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tx_scheduled_id ON transactions(scheduled_id);
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {
