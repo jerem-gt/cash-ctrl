@@ -84,11 +84,10 @@ export const TX_WITH_DETAILS = `
          li.principal_amount AS loan_principal,
          ${SPLITS_SUBQUERY},
          ${STOCK_OPERATION_SUBQUERY},
-         t.amount - COALESCE((
-           SELECT SUM(COALESCE(r.attributed_amount, t.amount))
-           FROM reimbursements r
-           WHERE r.linked_transaction_id = t.id
-         ), 0) AS remaining_reimbursable
+         t.amount - COALESCE(
+           SUM(COALESCE(r.attributed_amount, t.amount)) FILTER (WHERE r.linked_transaction_id IS NOT NULL),
+           0
+         ) AS remaining_reimbursable
   FROM transactions t
   JOIN accounts a ON t.account_id = a.id
   LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
@@ -98,6 +97,7 @@ export const TX_WITH_DETAILS = `
   LEFT JOIN loan_installments li ON li.transaction_id = t.id
   LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
   LEFT JOIN stock_operations so ON so.transaction_id = t.id
+  LEFT JOIN reimbursements r ON r.linked_transaction_id = t.id
 `;
 
 function buildFilterConditions(
