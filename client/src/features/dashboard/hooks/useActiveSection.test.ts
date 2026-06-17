@@ -19,20 +19,31 @@ describe('useActiveSection', () => {
   });
 
   it("n'attache pas de listener scroll quand ids est vide", () => {
-    const spy = vi.spyOn(window, 'addEventListener');
+    const spy = vi.spyOn(globalThis, 'addEventListener');
     renderHook(() => useActiveSection([]));
     expect(spy).not.toHaveBeenCalledWith('scroll', expect.any(Function), expect.anything());
   });
 
   it('attache un listener scroll passif et le détache au démontage', () => {
-    const addSpy = vi.spyOn(window, 'addEventListener');
-    const removeSpy = vi.spyOn(window, 'removeEventListener');
+    const addSpy = vi.spyOn(globalThis, 'addEventListener');
+    const removeSpy = vi.spyOn(globalThis, 'removeEventListener');
 
     const { unmount } = renderHook(() => useActiveSection(['section-a']));
 
     expect(addSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true });
     unmount();
     expect(removeSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+  });
+
+  it('ne ré-enregistre pas le listener si le contenu des ids est inchangé', () => {
+    const addSpy = vi.spyOn(globalThis, 'addEventListener');
+    let ids = ['a', 'b'];
+    const { rerender } = renderHook(() => useActiveSection(ids));
+    const callCount = addSpy.mock.calls.filter(([e]) => e === 'scroll').length;
+    // Nouveau tableau, même contenu → pas de ré-abonnement
+    ids = ['a', 'b'];
+    rerender();
+    expect(addSpy.mock.calls.filter(([e]) => e === 'scroll').length).toBe(callCount);
   });
 
   it('met à jour la section active lors du scroll', () => {
@@ -43,7 +54,7 @@ describe('useActiveSection', () => {
     const { result } = renderHook(() => useActiveSection(['target'], 0));
 
     act(() => {
-      window.dispatchEvent(new Event('scroll'));
+      globalThis.dispatchEvent(new Event('scroll'));
     });
 
     // jsdom: getBoundingClientRect().top = 0, window.scrollY = 0, offset = 0 → top(0) <= threshold(0)
