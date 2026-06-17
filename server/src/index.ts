@@ -17,9 +17,6 @@ const PORT = Number.parseInt(process.env.PORT ?? '3000');
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-if (IS_PROD && !process.env.TOTP_JWT_SECRET) {
-  throw new Error('TOTP_JWT_SECRET must be set in production');
-}
 if (IS_PROD && !process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET must be set in production');
 }

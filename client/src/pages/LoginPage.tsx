@@ -12,7 +12,7 @@ export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
-  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [totpRequired, setTotpRequired] = useState(false);
   const login = useLogin();
   const verifyTotp = useVerifyTotp();
   const { isDev } = useAppVersion();
@@ -25,7 +25,7 @@ export function LoginPage() {
       {
         onSuccess: (data) => {
           if (data.totp_required) {
-            setPendingToken(data.pending_token);
+            setTotpRequired(true);
           }
         },
       },
@@ -34,13 +34,12 @@ export function LoginPage() {
 
   const handleTotpSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    if (!pendingToken) return;
     verifyTotp.reset();
-    verifyTotp.mutate({ pendingToken, code: totpCode });
+    verifyTotp.mutate({ code: totpCode });
   };
 
   const handleBackToCredentials = () => {
-    setPendingToken(null);
+    setTotpRequired(false);
     setTotpCode('');
     login.reset();
     verifyTotp.reset();
@@ -49,7 +48,7 @@ export function LoginPage() {
   const loginError = login.error?.message ?? null;
   const totpError = verifyTotp.error?.message ?? null;
 
-  if (pendingToken !== null) {
+  if (totpRequired) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center p-6">
         <div className="bg-surface border border-line-subtle rounded-2xl p-8 w-full max-w-sm shadow-lg">

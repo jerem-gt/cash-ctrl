@@ -178,9 +178,7 @@ export interface MeData {
   totpEnabled: boolean;
 }
 
-export type LoginResponse =
-  | (MeData & { totp_required?: never })
-  | { totp_required: true; pending_token: string };
+export type LoginResponse = (MeData & { totp_required?: never }) | { totp_required: true };
 
 // Auth
 export const authApi = {
@@ -195,8 +193,7 @@ export const authApi = {
     request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { secret, code }),
   disable2fa: (password: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
-  verifyTotp: (pendingToken: string, code: string) =>
-    request<MeData>('POST', '/api/auth/2fa/verify', { pending_token: pendingToken, code }),
+  verifyTotp: (code: string) => request<MeData>('POST', '/api/auth/2fa/verify', { code }),
 };
 
 // Users (admin only)

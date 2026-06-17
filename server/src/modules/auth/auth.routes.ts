@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import * as OTPAuth from 'otpauth';
 import { z } from 'zod';
 
@@ -30,7 +29,6 @@ const disableTotpSchema = z.object({
 });
 
 const verifyTotpSchema = z.object({
-  pending_token: z.string().min(1),
   code: z.string().length(6),
 });
 
@@ -38,12 +36,7 @@ const verifyTotpSchema = z.object({
 // pour égaliser le temps de réponse et éviter l'énumération de comptes par timing.
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('cashctrl-nonexistent-user', 12);
 
-const TOTP_JWT_SECRET = process.env.TOTP_JWT_SECRET ?? 'dev-totp-secret-change-in-production';
-
-interface PendingTokenPayload {
-  userId: number;
-  type: 'totp_pending';
-}
+const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
 
 function verifyTotpCode(secret: string, code: string): boolean {
   const totp = new OTPAuth.TOTP({
@@ -87,12 +80,9 @@ export function createAuthRouter(db: Database): Router {
     loginLimiter.reset(key);
 
     if (user.totp_enabled === 1) {
-      const pendingToken = jwt.sign(
-        { userId: user.id, type: 'totp_pending' } satisfies PendingTokenPayload,
-        TOTP_JWT_SECRET,
-        { expiresIn: '5m' },
-      );
-      res.json({ totp_required: true, pending_token: pendingToken });
+      req.session.pendingUserId = user.id;
+      req.session.pendingTotpAt = Date.now();
+      req.session.save(() => res.json({ totp_required: true }));
       return;
     }
 
@@ -111,20 +101,17 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
-    let payload: PendingTokenPayload;
-    try {
-      payload = jwt.verify(parsed.data.pending_token, TOTP_JWT_SECRET) as PendingTokenPayload;
-    } catch {
+    const { pendingUserId, pendingTotpAt } = req.session;
+    if (
+      pendingUserId == null ||
+      pendingTotpAt == null ||
+      Date.now() - pendingTotpAt > TOTP_PENDING_TTL_MS
+    ) {
       sendError(res, 401, 'auth.totp_token_invalid');
       return;
     }
 
-    if (payload.type !== 'totp_pending') {
-      sendError(res, 401, 'auth.totp_token_invalid');
-      return;
-    }
-
-    const user = authRepo.getById(payload.userId);
+    const user = authRepo.getById(pendingUserId);
     if (user?.totp_enabled !== 1 || !user?.totp_secret) {
       sendError(res, 401, 'auth.totp_token_invalid');
       return;
@@ -135,6 +122,8 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
+    delete req.session.pendingUserId;
+    delete req.session.pendingTotpAt;
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.isAdmin = user.is_admin === 1;
