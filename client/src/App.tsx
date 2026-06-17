@@ -14,8 +14,6 @@ import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
 import { queryPersister } from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
-import { AdminPage } from '@/pages/AdminPage';
-import { LoginPage } from '@/pages/LoginPage';
 
 // Recharge la page si un chunk hashé n'existe plus (déploiement PWA)
 function lazyLoad<T extends { default: React.ComponentType }>(factory: () => Promise<T>) {
@@ -34,6 +32,10 @@ const AccountDetailPage = lazyLoad(routeChunk['/accounts/:id']);
 const SettingsPage = lazyLoad(routeChunk['/settings']);
 const ScheduledPage = lazyLoad(routeChunk['/scheduled']);
 const ReportsPage = lazyLoad(routeChunk['/reports']);
+const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const LoginPage = lazyLoad(() =>
+  import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -94,9 +96,19 @@ function AppShell() {
     );
   }
 
-  if (!me) return <LoginPage />;
+  if (!me)
+    return (
+      <Suspense fallback={null}>
+        <LoginPage />
+      </Suspense>
+    );
 
-  if (me.isAdmin) return <AdminPage username={me.username} />;
+  if (me.isAdmin)
+    return (
+      <Suspense fallback={null}>
+        <AdminPage username={me.username} />
+      </Suspense>
+    );
 
   return (
     <div className="flex min-h-screen bg-canvas overflow-x-hidden">
