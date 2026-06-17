@@ -23,6 +23,21 @@ function makeTotp(secret: string) {
   });
 }
 
+/** Active la 2FA sur alice et retourne un agent avec session TOTP en attente. */
+async function setupTotpAgent(
+  app: ReturnType<typeof createApp>,
+  db: ReturnType<typeof createTestDb>,
+) {
+  const secret = new OTPAuth.Secret();
+  db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
+    secret.base32,
+    'alice',
+  );
+  const agent = supertest.agent(app);
+  await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+  return { agent, secret };
+}
+
 describe('POST /api/auth/login', () => {
   it('retourne 200, le nom utilisateur et isAdmin si les identifiants sont valides', async () => {
     const { app } = setup();
@@ -70,19 +85,15 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(429);
   });
 
-  it('retourne totp_required et pending_token si la 2FA est activée', async () => {
+  it('retourne totp_required si la 2FA est activée', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const res = await supertest(app)
+    const { agent } = await setupTotpAgent(app, db);
+    const res = await agent
       .post('/api/auth/login')
       .send({ username: 'alice', password: 'password123' });
     expect(res.status).toBe(200);
     expect(res.body.totp_required).toBe(true);
-    expect(typeof res.body.pending_token).toBe('string');
+    expect(res.body.pending_token).toBeUndefined();
   });
 });
 
@@ -172,20 +183,9 @@ describe('POST /api/auth/2fa/setup', () => {
 
   it('retourne 409 si la 2FA est déjà activée', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const agent = supertest.agent(app);
-    // login via verifyTotp car 2FA activée
-    const loginRes = await supertest(app)
-      .post('/api/auth/login')
-      .send({ username: 'alice', password: 'password123' });
+    const { agent, secret } = await setupTotpAgent(app, db);
     const code = makeTotp(secret.base32).generate();
-    await agent
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: loginRes.body.pending_token, code });
+    await agent.post('/api/auth/2fa/verify').send({ code });
     const res = await agent.post('/api/auth/2fa/setup');
     expect(res.status).toBe(409);
   });
@@ -224,19 +224,9 @@ describe('POST /api/auth/2fa/enable', () => {
 describe('POST /api/auth/2fa/disable', () => {
   it('désactive la 2FA si le mot de passe est correct', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const agent = supertest.agent(app);
-    const loginRes = await supertest(app)
-      .post('/api/auth/login')
-      .send({ username: 'alice', password: 'password123' });
+    const { agent, secret } = await setupTotpAgent(app, db);
     const code = makeTotp(secret.base32).generate();
-    await agent
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: loginRes.body.pending_token, code });
+    await agent.post('/api/auth/2fa/verify').send({ code });
     const res = await agent.post('/api/auth/2fa/disable').send({ password: 'password123' });
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
@@ -244,19 +234,9 @@ describe('POST /api/auth/2fa/disable', () => {
 
   it('retourne 401 si le mot de passe est incorrect', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const agent = supertest.agent(app);
-    const loginRes = await supertest(app)
-      .post('/api/auth/login')
-      .send({ username: 'alice', password: 'password123' });
+    const { agent, secret } = await setupTotpAgent(app, db);
     const code = makeTotp(secret.base32).generate();
-    await agent
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: loginRes.body.pending_token, code });
+    await agent.post('/api/auth/2fa/verify').send({ code });
     const res = await agent.post('/api/auth/2fa/disable').send({ password: 'wrong' });
     expect(res.status).toBe(401);
   });
@@ -265,47 +245,25 @@ describe('POST /api/auth/2fa/disable', () => {
 describe('POST /api/auth/2fa/verify', () => {
   it('crée la session si le code est valide', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const loginRes = await supertest(app)
-      .post('/api/auth/login')
-      .send({ username: 'alice', password: 'password123' });
+    const { agent, secret } = await setupTotpAgent(app, db);
     const code = makeTotp(secret.base32).generate();
-    const agent = supertest.agent(app);
-    const res = await agent
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: loginRes.body.pending_token, code });
+    const res = await agent.post('/api/auth/2fa/verify').send({ code });
     expect(res.status).toBe(200);
     expect(res.body.username).toBe('alice');
-    // La session est bien créée
     const me = await agent.get('/api/auth/me');
     expect(me.status).toBe(200);
   });
 
   it('retourne 401 si le code est invalide', async () => {
     const { app, db } = setup();
-    const secret = new OTPAuth.Secret();
-    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
-      secret.base32,
-      'alice',
-    );
-    const loginRes = await supertest(app)
-      .post('/api/auth/login')
-      .send({ username: 'alice', password: 'password123' });
-    const res = await supertest(app)
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: loginRes.body.pending_token, code: '000000' });
+    const { agent } = await setupTotpAgent(app, db);
+    const res = await agent.post('/api/auth/2fa/verify').send({ code: '000000' });
     expect(res.status).toBe(401);
   });
 
-  it('retourne 401 si le token est invalide', async () => {
+  it('retourne 401 sans session TOTP en attente', async () => {
     const { app } = setup();
-    const res = await supertest(app)
-      .post('/api/auth/2fa/verify')
-      .send({ pending_token: 'bad-token', code: '123456' });
+    const res = await supertest(app).post('/api/auth/2fa/verify').send({ code: '123456' });
     expect(res.status).toBe(401);
   });
 });

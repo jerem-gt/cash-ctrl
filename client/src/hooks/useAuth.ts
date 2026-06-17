@@ -30,8 +30,7 @@ export function useLogin() {
 export function useVerifyTotp() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ pendingToken, code }: { pendingToken: string; code: string }) =>
-      authApi.verifyTotp(pendingToken, code),
+    mutationFn: ({ code }: { code: string }) => authApi.verifyTotp(code),
     onSuccess: (data) => qc.setQueryData(queryKeys.me(), data),
   });
 }

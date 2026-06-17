@@ -7,6 +7,8 @@ declare module 'express-session' {
     userId?: number;
     username?: string;
     isAdmin?: boolean;
+    pendingUserId?: number;
+    pendingTotpAt?: number;
   }
 }
 
