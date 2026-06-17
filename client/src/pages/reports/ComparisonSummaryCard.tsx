@@ -57,7 +57,11 @@ export function ComparisonSummaryCard({
             ] as const
           ).map(({ label, cur, cmp, positiveIsGood }) => {
             const delta = cur - cmp;
-            const isGood = positiveIsGood ? delta >= 0 : delta <= 0;
+            let deltaColor = 'text-content-muted';
+            if (delta !== 0) {
+              const isGood = positiveIsGood ? delta > 0 : delta < 0;
+              deltaColor = isGood ? 'text-success' : 'text-danger';
+            }
             return (
               <tr key={label} className="border-b border-line-subtle last:border-0">
                 <td className="py-2 text-content-muted font-medium">{label}</td>
@@ -65,10 +69,8 @@ export function ComparisonSummaryCard({
                   {fmt(cur)}
                 </td>
                 <td className="py-2 text-right tabular-nums text-content-muted">{fmt(cmp)}</td>
-                <td
-                  className={`py-2 text-right tabular-nums font-medium ${isGood ? 'text-success' : 'text-danger'}`}
-                >
-                  {delta >= 0 ? '+' : ''}
+                <td className={`py-2 text-right tabular-nums font-medium ${deltaColor}`}>
+                  {delta > 0 ? '+' : ''}
                   {fmt(delta)}
                 </td>
               </tr>
