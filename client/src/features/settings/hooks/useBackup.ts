@@ -1,6 +1,7 @@
+import type { BackupRunResult } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { backupApi, type BackupRunResult } from '@/api/client';
+import { backupApi } from '@/api/client';
 
 export function useBackupList() {
   return useQuery({

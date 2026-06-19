@@ -1,6 +1,7 @@
+import type { ScheduledPayload } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { scheduledApi, type ScheduledPayload } from '@/api/client';
+import { scheduledApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useScheduled() {

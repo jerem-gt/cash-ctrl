@@ -1,13 +1,13 @@
+import type {
+  ArbitragePayload,
+  CreateSupportPayload,
+  InsuranceFlowPayload,
+  InteretsPayload,
+  RevaloriserPayload,
+} from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  type ArbitragePayload,
-  type CreateSupportPayload,
-  insuranceApi,
-  type InsuranceFlowPayload,
-  type InteretsPayload,
-  type RevaloriserPayload,
-} from '@/api/client';
+import { insuranceApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useInsurancePositions(accountId: number) {

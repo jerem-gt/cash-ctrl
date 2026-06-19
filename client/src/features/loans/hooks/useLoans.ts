@@ -1,6 +1,7 @@
+import type { CreateLoanPayload, UpdateLoanPayload } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { type CreateLoanPayload, loansApi, type UpdateLoanPayload } from '@/api/client';
+import { loansApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useLoan(accountId: number) {
