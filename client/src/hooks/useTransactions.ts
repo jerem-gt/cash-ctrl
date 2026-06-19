@@ -114,6 +114,7 @@ export function useDeleteTransfer() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
