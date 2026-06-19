@@ -5,7 +5,7 @@ import { queryKeys } from '@/lib/queryKeys';
 
 export function useTaxYears() {
   return useQuery({
-    queryKey: queryKeys.taxYears(),
+    queryKey: queryKeys.tax.years(),
     queryFn: taxApi.years,
     staleTime: 24 * 60 * 60 * 1000,
   });
@@ -13,7 +13,7 @@ export function useTaxYears() {
 
 export function useTaxYearData(year: number | undefined) {
   return useQuery({
-    queryKey: queryKeys.taxYear(year),
+    queryKey: queryKeys.tax.year(year),
     queryFn: () => taxApi.yearData(year!),
     enabled: year != null,
     staleTime: 24 * 60 * 60 * 1000,

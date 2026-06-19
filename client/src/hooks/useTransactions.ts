@@ -84,7 +84,7 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.stockPositions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
