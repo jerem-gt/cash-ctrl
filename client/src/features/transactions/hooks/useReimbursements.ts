@@ -5,21 +5,21 @@ import { queryKeys } from '@/lib/queryKeys';
 
 export function usePendingReimbursements() {
   return useQuery({
-    queryKey: queryKeys.reimbursementsPending(),
+    queryKey: queryKeys.reimbursements.pending(),
     queryFn: reimbursementsApi.pending,
   });
 }
 
 export function useRecentReimbursements() {
   return useQuery({
-    queryKey: queryKeys.reimbursementsRecent(),
+    queryKey: queryKeys.reimbursements.recent(),
     queryFn: reimbursementsApi.recent,
   });
 }
 
 export function useReimbursements(transactionId: number) {
   return useQuery({
-    queryKey: queryKeys.reimbursements(transactionId),
+    queryKey: queryKeys.reimbursements.byTransaction(transactionId),
     queryFn: () => reimbursementsApi.list(transactionId),
     enabled: transactionId > 0,
   });
@@ -36,8 +36,10 @@ export function useLinkReimbursement(transactionId: number) {
       attributedAmount?: number;
     }) => reimbursementsApi.link(transactionId, linkedTxId, attributedAmount),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements(transactionId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursementsPending() });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+      });
+      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
@@ -49,8 +51,10 @@ export function useUpdateReimbursementAmount(transactionId: number) {
     mutationFn: ({ linkedId, amount }: { linkedId: number; amount: number | null }) =>
       reimbursementsApi.updateAmount(transactionId, linkedId, amount),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements(transactionId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursementsPending() });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+      });
+      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
     },
   });
 }
@@ -60,8 +64,10 @@ export function useUnlinkReimbursement(transactionId: number) {
   return useMutation({
     mutationFn: (linkedId: number) => reimbursementsApi.unlink(transactionId, linkedId),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements(transactionId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursementsPending() });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+      });
+      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
     },
   });
@@ -74,8 +80,8 @@ export function useSetReimbursementStatus() {
       reimbursementsApi.setStatus(id, status),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursementsPending() });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursementsRecent() });
+      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
+      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() });
     },
   });
 }

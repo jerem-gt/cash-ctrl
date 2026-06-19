@@ -5,14 +5,14 @@ import { queryKeys } from '@/lib/queryKeys';
 
 export function useCategorizationRules() {
   return useQuery({
-    queryKey: queryKeys.categorizationRules(),
+    queryKey: queryKeys.categorizationRules.all(),
     queryFn: categorizationRulesApi.list,
   });
 }
 
 export function useMatchCategorizationRule(description: string) {
   return useQuery({
-    queryKey: queryKeys.categorizationRuleMatch(description),
+    queryKey: queryKeys.categorizationRules.match(description),
     queryFn: () => categorizationRulesApi.match(description),
     enabled: description.trim().length >= 2,
     staleTime: 30_000,
@@ -24,7 +24,7 @@ export function useCreateCategorizationRule() {
   return useMutation({
     mutationFn: ({ pattern, subcategoryId }: { pattern: string; subcategoryId: number }) =>
       categorizationRulesApi.create(pattern, subcategoryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
   });
 }
 
@@ -40,7 +40,7 @@ export function useUpdateCategorizationRule() {
       pattern: string;
       subcategoryId: number;
     }) => categorizationRulesApi.update(id, pattern, subcategoryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
   });
 }
 
@@ -48,7 +48,7 @@ export function useDeleteCategorizationRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => categorizationRulesApi.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
   });
 }
 
@@ -56,7 +56,7 @@ export function useDeleteAllCategorizationRules() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: categorizationRulesApi.removeAll,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
   });
 }
 
@@ -64,6 +64,6 @@ export function useInitCategorizationRulesFromHistory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: categorizationRulesApi.initFromHistory,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
   });
 }

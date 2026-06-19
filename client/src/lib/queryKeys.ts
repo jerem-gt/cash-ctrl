@@ -22,28 +22,43 @@ export const queryKeys = {
     list: (filters?: TransactionFilters) => ['transactions', filters] as const,
   },
 
-  stockPositions: {
-    all: () => ['stock-positions'] as const,
-    byAccount: (accountId: number) => ['stock-positions', accountId] as const,
+  stocks: {
+    positions: {
+      all: () => ['stock-positions'] as const,
+      byAccount: (accountId: number) => ['stock-positions', accountId] as const,
+    },
+    operations: (accountId: number) => ['stock-operations', accountId] as const,
+    search: (query: string) => ['stock-search', query] as const,
   },
-  stockOperations: (accountId: number) => ['stock-operations', accountId] as const,
-  stockSearch: (query: string) => ['stock-search', query] as const,
 
-  insurancePositions: (accountId: number) => ['insurance-positions', accountId] as const,
-  insuranceOperations: (accountId: number) => ['insurance-operations', accountId] as const,
-  insuranceSupports: (accountId: number) => ['insurance-supports', accountId] as const,
+  insurance: {
+    all: () => ['insurance'] as const,
+    positions: (accountId: number) => ['insurance', 'positions', accountId] as const,
+    operations: (accountId: number) => ['insurance', 'operations', accountId] as const,
+    supports: (accountId: number) => ['insurance', 'supports', accountId] as const,
+  },
 
-  loanByAccount: (accountId: number) => ['loans', 'account', accountId] as const,
-  loanInstallments: (loanId: number | undefined) => ['loans', 'installments', loanId] as const,
+  loans: {
+    all: () => ['loans'] as const,
+    byAccount: (accountId: number) => ['loans', 'account', accountId] as const,
+    installments: (loanId: number | undefined) => ['loans', 'installments', loanId] as const,
+  },
 
-  reimbursements: (transactionId: number) => ['reimbursements', transactionId] as const,
-  reimbursementsPending: () => ['reimbursements', 'pending'] as const,
-  reimbursementsRecent: () => ['reimbursements', 'recent'] as const,
+  reimbursements: {
+    all: () => ['reimbursements'] as const,
+    byTransaction: (transactionId: number) => ['reimbursements', transactionId] as const,
+    pending: () => ['reimbursements', 'pending'] as const,
+    recent: () => ['reimbursements', 'recent'] as const,
+  },
 
-  taxYears: () => ['tax', 'years'] as const,
-  taxYear: (year: number | undefined) => ['tax', 'year', year] as const,
+  tax: {
+    all: () => ['tax'] as const,
+    years: () => ['tax', 'years'] as const,
+    year: (year: number | undefined) => ['tax', 'year', year] as const,
+  },
 
-  categorizationRules: () => ['categorization-rules'] as const,
-  categorizationRuleMatch: (description: string) =>
-    ['categorization-rules', 'match', description] as const,
+  categorizationRules: {
+    all: () => ['categorization-rules'] as const,
+    match: (description: string) => ['categorization-rules', 'match', description] as const,
+  },
 };
