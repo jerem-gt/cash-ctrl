@@ -1,8 +1,8 @@
+import type { StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { logger } from '../../logger.js';
 import { createStocksRepo } from './stocks.repo';
-import { StockPrice } from './stocks.types';
 
 const PRICE_TTL_MS = 15 * 60 * 1000;
 

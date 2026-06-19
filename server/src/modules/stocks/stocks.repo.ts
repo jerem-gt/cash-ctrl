@@ -1,3 +1,4 @@
+import type { StockOperation, StockPosition, StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
@@ -5,14 +6,7 @@ import { getSystemRefs, getTransferIds } from '../../lib/administrationDataConst
 import { BadRequestError, NotFoundError } from '../../lib/errors';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
 import { toCents, toEuros } from '../../lib/money';
-import {
-  BuyInput,
-  SellInput,
-  StockOperation,
-  StockPosition,
-  StockPrice,
-  TransferInput,
-} from './stocks.types';
+import { BuyInput, SellInput, TransferInput } from './stocks.types';
 
 function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
