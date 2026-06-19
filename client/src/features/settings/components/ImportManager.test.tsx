@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
@@ -78,6 +79,7 @@ beforeAll(async () => {
   ImportManager = (await import('./ImportManager')).default;
   ({ parseQif, findTransferPeer } = await import('@/lib/qif-parser.ts'));
   ({ parseXhb } = await import('@/lib/xhb-parser.ts'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

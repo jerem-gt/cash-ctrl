@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, BANKS } from '@/tests/fixtures';
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
 
 let AccountSelect: typeof import('./AccountSelect').AccountSelect;
 
@@ -14,6 +15,7 @@ beforeAll(async () => {
   }));
   vi.resetModules();
   ({ AccountSelect } = await import('./AccountSelect'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

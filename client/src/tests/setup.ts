@@ -3,11 +3,9 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
-import i18n from '../i18n';
+import i18n, { initPromise } from '../i18n';
+import { LAZY_NAMESPACES } from './helpers/i18nTestUtils';
 import { server } from './msw/server';
-
-// Pin language to French so jsdom's navigator (en-US) doesn't flip the locale in tests
-void i18n.changeLanguage('fr');
 
 // jsdom doesn't implement scrollTo
 window.scrollTo = () => undefined;
@@ -25,7 +23,12 @@ globalThis.ResizeObserver = class {
   }
 };
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+beforeAll(async () => {
+  await initPromise;
+  await i18n.changeLanguage('fr');
+  await i18n.loadNamespaces([...LAZY_NAMESPACES]);
+  server.listen({ onUnhandledRequest: 'warn' });
+});
 afterEach(() => {
   cleanup();
   server.resetHandlers();

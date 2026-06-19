@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -28,7 +28,7 @@ describe('LanguageSwitcher', () => {
 
     await user.click(screen.getByRole('button', { name: /english/i }));
 
-    expect(i18n.language).toBe('en');
+    await waitFor(() => expect(i18n.language).toBe('en'));
   });
 
   it('persists language choice to localStorage', async () => {

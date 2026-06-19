@@ -14,8 +14,7 @@ interface AttemptRow {
  */
 export class FailureRateLimiter {
   private readonly stmtGet: Statement<[string]>;
-  private readonly stmtInsert: Statement<[string, number, number]>;
-  private readonly stmtIncrement: Statement<[string]>;
+  private readonly stmtUpsert: Statement<[string, number, number, number]>;
   private readonly stmtDelete: Statement<[string]>;
 
   constructor(
@@ -23,18 +22,13 @@ export class FailureRateLimiter {
     private readonly maxAttempts = 10,
     private readonly windowMs = 15 * 60 * 1000,
   ) {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS login_attempts (
-        key      TEXT    PRIMARY KEY,
-        count    INTEGER NOT NULL,
-        reset_at INTEGER NOT NULL
-      )
-    `);
     this.stmtGet = db.prepare('SELECT count, reset_at FROM login_attempts WHERE key = ?');
-    this.stmtInsert = db.prepare(
-      'INSERT OR REPLACE INTO login_attempts (key, count, reset_at) VALUES (?, ?, ?)',
-    );
-    this.stmtIncrement = db.prepare('UPDATE login_attempts SET count = count + 1 WHERE key = ?');
+    this.stmtUpsert = db.prepare(`
+      INSERT INTO login_attempts (key, count, reset_at) VALUES (?, 1, ?)
+      ON CONFLICT(key) DO UPDATE SET
+        count    = CASE WHEN reset_at <= ? THEN 1 ELSE count + 1 END,
+        reset_at = CASE WHEN reset_at <= ? THEN excluded.reset_at ELSE reset_at END
+    `);
     this.stmtDelete = db.prepare('DELETE FROM login_attempts WHERE key = ?');
   }
 
@@ -52,12 +46,7 @@ export class FailureRateLimiter {
   /** Enregistre un échec et (re)démarre la fenêtre si nécessaire. */
   recordFailure(key: string): void {
     const now = Date.now();
-    const entry = this.stmtGet.get(key) as AttemptRow | undefined;
-    if (!entry || entry.reset_at <= now) {
-      this.stmtInsert.run(key, 1, now + this.windowMs);
-    } else {
-      this.stmtIncrement.run(key);
-    }
+    this.stmtUpsert.run(key, now + this.windowMs, now, now);
   }
 
   /** Réinitialise le compteur d'une clé (succès). */
