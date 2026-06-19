@@ -13,6 +13,9 @@
     <title>CashCtrl</title>
     <script>
       // Anti-FOUC : applique le thème avant le premier paint.
+      // En dev la CSS arrive via JS (non render-blocking), donc on pose aussi
+      // le background-color directement sur <html> — les valeurs doivent rester
+      // en sync avec --c-canvas dans index.css.
       (function () {
         try {
           const stored = localStorage.getItem('cashctrl.theme');
@@ -22,6 +25,7 @@
             (mode === 'system' &&
               globalThis.matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.backgroundColor = dark ? '#0c1a21' : '#eaeef2';
         } catch {
           // localStorage indisponible ou bloqué : repli explicite en mode clair.
           document.documentElement.classList.remove('dark');
