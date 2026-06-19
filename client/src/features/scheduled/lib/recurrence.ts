@@ -1,6 +1,5 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import type { useTranslation } from 'react-i18next';
-
-import type { ScheduledTransaction } from '@/types';
 
 export type TScheduled = ReturnType<typeof useTranslation<'scheduled'>>['t'];
 

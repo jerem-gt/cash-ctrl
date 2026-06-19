@@ -1,3 +1,4 @@
+import type { Account, Loan } from '@cashctrl/types';
 import { type SubmitEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,7 +16,6 @@ import { useCreateLoan, useUpdateLoan } from '@/features/loans/hooks/useLoans';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { fmtDec, today } from '@/lib/format';
-import type { Account, Loan } from '@/types';
 
 type Props =
   | { mode: 'create'; onClose: () => void }

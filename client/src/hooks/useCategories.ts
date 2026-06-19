@@ -1,8 +1,8 @@
+import type { Category } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { categoriesApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
-import type { Category } from '@/types';
 
 const byName = (a: { name: string }, b: { name: string }) =>
   a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });

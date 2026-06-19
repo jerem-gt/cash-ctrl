@@ -1,8 +1,8 @@
+import type { PaginatedTransactions, TransactionFilters, TransactionSplit } from '@cashctrl/types';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
-import type { PaginatedTransactions, TransactionFilters, TransactionSplit } from '@/types';
 
 type UpdatePayload = {
   id: number;

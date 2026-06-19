@@ -1,9 +1,9 @@
+import { Transaction } from '@cashctrl/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, LOAN_ACCOUNT, TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
-import { Transaction } from '@/types.ts';
 
 let useTransactionsManager: typeof import('@/features/transactions/hooks/useTransactionsManager').useTransactionsManager;
 let TransactionsList: typeof import('./TransactionsList').TransactionsList;

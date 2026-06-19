@@ -1,9 +1,10 @@
+import type { Account, Category, PaymentMethod } from '@cashctrl/types';
+
 import type { ImportExecuteBody } from '@/api/client';
 import { type ParsedLedger, type ParsedTransaction, parseLedgerDate } from '@/lib/import-model';
 import { findTransferPeer } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';
 import type { XhbParseResult } from '@/lib/xhb-parser';
-import type { Account, Category, PaymentMethod } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,3 +1,4 @@
+import type { Account, Transaction } from '@cashctrl/types';
 import { ArrowLeftRight, Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,6 @@ import { useCategories } from '@/hooks/useCategories.ts';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { fmtDayNum, fmtDec, fmtMonthShort, today } from '@/lib/format';
-import type { Account, Transaction } from '@/types';
 
 const CURRENT_YEAR = new Date().getFullYear();
 

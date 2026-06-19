@@ -1,3 +1,4 @@
+import { Category } from '@cashctrl/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,7 +8,6 @@ import { SubcategoryEditor } from '@/features/settings/components/categories/Sub
 import { SubcategoryRow } from '@/features/settings/components/categories/SubcategoryRow.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
 import { useCreateSubcategory, useDeleteSubcategory } from '@/hooks/useSubcategories.ts';
-import { Category } from '@/types.ts';
 
 export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCategory: Category }>) {
   const { t } = useTranslation('settings');

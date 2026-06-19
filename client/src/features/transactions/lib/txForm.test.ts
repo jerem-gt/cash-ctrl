@@ -1,11 +1,11 @@
 import '@/i18n';
 
+import type { Category, ScheduledTransaction, Transaction } from '@cashctrl/types';
 import i18n from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
 import { type SplitInput } from '@/features/transactions/components/TxSplitEditor';
-import type { Category, ScheduledTransaction, Transaction } from '@/types';
 
 import {
   buildSplitPayload,

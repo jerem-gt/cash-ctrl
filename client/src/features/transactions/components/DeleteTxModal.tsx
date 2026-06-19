@@ -1,7 +1,7 @@
+import type { Transaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { ConfirmModal } from '@/components/ui';
-import type { Transaction } from '@/types';
 
 interface Props {
   tx: Transaction;

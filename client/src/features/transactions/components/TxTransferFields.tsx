@@ -1,9 +1,9 @@
+import type { Account } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, FormGroup, Input } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
-import type { Account } from '@/types';
 
 interface Props {
   core: TxCoreState;

@@ -1,4 +1,4 @@
-import type { TaxBracket, TaxYearData, TaxYearParams } from '@/types';
+import type { TaxBracket, TaxYearData, TaxYearParams } from '@cashctrl/types';
 
 export interface BracketDetail {
   rate: number;

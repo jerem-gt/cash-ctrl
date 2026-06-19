@@ -1,10 +1,10 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ScheduledRow } from '@/features/scheduled/components/ScheduledRow';
 import { SCHEDULED } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-import type { ScheduledTransaction } from '@/types';
 
 const baseSched = SCHEDULED[0];
 const accounts = [

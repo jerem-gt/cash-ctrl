@@ -1,3 +1,4 @@
+import type { StockPosition } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -6,7 +7,6 @@ import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput
 import { useBuyStock, useSellStock } from '@/features/portfolio/hooks/useStocks';
 import { fmtDec, today } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
-import type { StockPosition } from '@/types';
 
 interface BuyProps {
   mode: 'buy';

@@ -1,3 +1,4 @@
+import type { Account } from '@cashctrl/types';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -5,7 +6,6 @@ import { Button, FormGroup, Input, ModalFrame, Select, showToast } from '@/compo
 import { useCloseAccount } from '@/hooks/useAccounts';
 import { accountDisplayBalance } from '@/lib/account';
 import { fmtDec, today } from '@/lib/format';
-import type { Account } from '@/types';
 
 interface Props {
   account: Account;

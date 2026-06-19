@@ -1,6 +1,5 @@
+import type { Account, Category } from '@cashctrl/types';
 import { describe, expect, it } from 'vitest';
-
-import type { Account, Category } from '@/types';
 
 import {
   type AccountChoice,

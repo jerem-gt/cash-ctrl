@@ -1,8 +1,8 @@
+import type { YearlyReturn } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui';
 import { fmt } from '@/lib/format';
-import type { YearlyReturn } from '@/types';
 
 interface StockGainEntry extends YearlyReturn {
   account_id: number;

@@ -1,3 +1,4 @@
+import { AccountType } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,6 @@ import {
   useDeleteAccountType,
   useUpdateAccountType,
 } from '@/hooks/useAccountTypes.ts';
-import { AccountType } from '@/types.ts';
 
 const ENVELOPE_BADGE_CLASSES: Record<string, string> = {
   investment: 'bg-info-surface text-info border border-info/30',

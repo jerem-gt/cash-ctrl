@@ -1,7 +1,7 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { FormGroup, Input } from '@/components/ui';
-import type { ScheduledTransaction } from '@/types';
 
 interface Props {
   date: string;

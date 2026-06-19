@@ -1,7 +1,7 @@
+import type { Account, Bank } from '@cashctrl/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import i18n from '@/i18n';
-import type { Account, Bank } from '@/types';
 
 import { accountSeniority, bankSortOrderMap, groupAccountsByBank } from './account';
 

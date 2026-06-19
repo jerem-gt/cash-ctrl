@@ -1,10 +1,10 @@
+import type { SystemRefsPayload } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Select, showToast } from '@/components/ui';
 import { useCategories } from '@/hooks/useCategories';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useSettings, useUpdateSystemRefs } from '@/hooks/useSettings';
-import type { SystemRefsPayload } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

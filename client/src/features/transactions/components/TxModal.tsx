@@ -1,3 +1,10 @@
+import type {
+  Account,
+  Category,
+  PaymentMethod,
+  ReimbursementStatus,
+  Transaction,
+} from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,7 +32,6 @@ import {
 } from '@/features/transactions/lib/txForm';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import { today } from '@/lib/format';
-import type { Account, Category, PaymentMethod, ReimbursementStatus, Transaction } from '@/types';
 
 function addCategoryErrors(core: TxCoreState, errs: Set<string>): void {
   if (!Number.parseInt(core.category_id)) errs.add('category_id');

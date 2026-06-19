@@ -1,4 +1,4 @@
-import type { BalanceHistoryData } from '@/types';
+import type { BalanceHistoryData } from '@cashctrl/types';
 
 export interface EnrichedBalance {
   types: string[];

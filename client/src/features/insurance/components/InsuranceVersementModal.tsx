@@ -1,3 +1,4 @@
+import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +10,6 @@ import { useLogoMap } from '@/hooks/useLogoMap';
 import { liquidAccounts } from '@/lib/account';
 import { today } from '@/lib/format';
 import { parseIdOrNull } from '@/lib/parse';
-import type { InsuranceSupportView } from '@/types';
 
 interface Props {
   accountId: number;

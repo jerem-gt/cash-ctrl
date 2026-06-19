@@ -1,3 +1,4 @@
+import type { InsuranceOperation } from '@cashctrl/types';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -6,7 +7,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { InsuranceEditOperationModal } from '@/features/insurance/components/InsuranceEditOperationModal';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-import type { InsuranceOperation } from '@/types';
 
 const VERSEMENT_OP: InsuranceOperation = {
   id: 1,

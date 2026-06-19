@@ -1,3 +1,4 @@
+import type { InsuranceOperation } from '@cashctrl/types';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -7,7 +8,6 @@ import { InsuranceSection } from '@/features/insurance/components/InsuranceSecti
 import { INSURANCE_OPERATIONS, INSURANCE_POSITIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-import type { InsuranceOperation } from '@/types';
 
 function renderSection(accountId = 10, isPer = false) {
   return renderWithProviders(<InsuranceSection accountId={accountId} isPer={isPer} />);

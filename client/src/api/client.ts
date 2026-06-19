@@ -1,4 +1,3 @@
-import i18n from '@/i18n';
 import type {
   Account,
   AccountProfitability,
@@ -31,8 +30,7 @@ import type {
   TransactionFilters,
   UserPublic,
   UserSettings,
-} from '@/types';
-
+} from '@cashctrl/types';
 import type {
   ArbitragePayload,
   BackupRunResult,
@@ -52,7 +50,9 @@ import type {
   UpdateLoanPayload,
   UpdateOperationPayload,
   UpdateTransactionPayload,
-} from './api.types';
+} from '@cashctrl/types';
+
+import i18n from '@/i18n';
 
 export type {
   ArbitragePayload,
@@ -73,7 +73,7 @@ export type {
   UpdateLoanPayload,
   UpdateOperationPayload,
   UpdateTransactionPayload,
-} from './api.types';
+} from '@cashctrl/types';
 
 /** Corps d'erreur structuré renvoyé par l'API (cf. server/src/lib/errorCodes.ts). */
 export interface ApiErrorField {

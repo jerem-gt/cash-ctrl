@@ -1,9 +1,9 @@
+import type { Account, AccountType, Bank } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, DecimalInput, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import type { AccountChoice } from '@/pages/import.helpers.ts';
-import type { Account, AccountType, Bank } from '@/types.ts';
 
 import { type ParsedFile, ParsedFileStats } from './Shared';
 

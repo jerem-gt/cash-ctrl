@@ -1,4 +1,4 @@
-import type { Transaction } from '@/types';
+import type { Transaction } from '@cashctrl/types';
 
 // Calcule le solde après chaque transaction pour une liste triée du plus récent
 // au plus ancien (ordre DESC). runningBalances[i] = solde après transactions[i].

@@ -1,7 +1,6 @@
+import { Transaction } from '@cashctrl/types';
 import { act, renderHook } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { Transaction } from '@/types.ts';
 
 let useAccounts: typeof import('@/hooks/useAccounts').useAccounts;
 let useCategories: typeof import('@/hooks/useCategories').useCategories;

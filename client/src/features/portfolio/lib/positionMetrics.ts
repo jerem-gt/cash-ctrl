@@ -1,4 +1,4 @@
-import type { StockPosition } from '@/types';
+import type { StockPosition } from '@cashctrl/types';
 
 export interface PositionMetrics {
   marketValue: number | null;

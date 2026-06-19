@@ -1,8 +1,8 @@
+import type { SystemRefsPayload } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { settingsApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
-import type { SystemRefsPayload } from '@/types';
 
 export function useSettings() {
   return useQuery({

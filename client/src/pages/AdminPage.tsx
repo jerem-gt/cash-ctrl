@@ -1,3 +1,4 @@
+import type { UserPublic } from '@cashctrl/types';
 import { Loader2, LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import { APP_CONFIG } from '@/constants';
 import { useLogout } from '@/hooks/useAuth';
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/useUsers';
 import { fmtDate } from '@/lib/format';
-import type { UserPublic } from '@/types';
 
 // ─── Add user form ─────────────────────────────────────────────────────────────
 

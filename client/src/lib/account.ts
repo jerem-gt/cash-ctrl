@@ -1,6 +1,5 @@
+import type { Account, Bank } from '@cashctrl/types';
 import { type TFunction } from 'i18next';
-
-import type { Account, Bank } from '@/types';
 
 type TAccounts = TFunction<'accounts'>;
 

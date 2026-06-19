@@ -1,3 +1,4 @@
+import { Bank } from '@cashctrl/types';
 import {
   closestCenter,
   DndContext,
@@ -33,7 +34,6 @@ import {
   useUpdateBank,
   useUploadBankLogo,
 } from '@/hooks/useBanks.ts';
-import { Bank } from '@/types.ts';
 
 function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => void }>) {
   const { t } = useTranslation('settings');

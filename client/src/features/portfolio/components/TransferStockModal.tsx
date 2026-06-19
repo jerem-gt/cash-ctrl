@@ -1,3 +1,4 @@
+import type { StockPosition } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -5,7 +6,6 @@ import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui
 import { useTransferStock } from '@/features/portfolio/hooks/useStocks';
 import { useAccounts } from '@/hooks/useAccounts';
 import { fmtCurrency, today } from '@/lib/format';
-import type { StockPosition } from '@/types';
 
 interface Props {
   accountId: number;

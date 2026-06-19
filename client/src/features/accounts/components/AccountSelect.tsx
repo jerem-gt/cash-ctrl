@@ -1,3 +1,4 @@
+import type { Account } from '@cashctrl/types';
 import { ChevronDown } from 'lucide-react';
 import { type FocusEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { useBanks } from '@/hooks/useBanks';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { bankSortOrderMap, groupAccountsByBank } from '@/lib/account';
-import type { Account } from '@/types';
 
 interface Props {
   id: string;

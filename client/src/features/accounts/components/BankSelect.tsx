@@ -1,8 +1,8 @@
+import type { Bank } from '@cashctrl/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useClickOutside } from '@/hooks/useClickOutside';
-import type { Bank } from '@/types';
 
 interface Props {
   value: string;

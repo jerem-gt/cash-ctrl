@@ -1,10 +1,10 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, ModalFrame, Skeleton } from '@/components/ui';
 import { useTransactions } from '@/hooks/useTransactions';
 import { fmtDate, fmtDec } from '@/lib/format';
-import type { ScheduledTransaction } from '@/types';
 
 interface ScheduledTxModalProps {
   sched: ScheduledTransaction;

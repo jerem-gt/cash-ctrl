@@ -1,3 +1,4 @@
+import type { Reimbursement, Transaction } from '@cashctrl/types';
 import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +12,6 @@ import {
 } from '@/features/transactions/hooks/useReimbursements';
 import { useTransactions } from '@/hooks/useTransactions';
 import { fmtDate, fmtDec } from '@/lib/format';
-import type { Reimbursement, Transaction } from '@/types';
 
 interface Props {
   tx: Transaction;

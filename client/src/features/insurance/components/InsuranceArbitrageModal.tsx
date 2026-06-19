@@ -1,3 +1,4 @@
+import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui';
 import { useArbitrage } from '@/features/insurance/hooks/useInsurance';
 import { fmtDec, today } from '@/lib/format';
-import type { InsuranceSupportView } from '@/types';
 
 interface Props {
   accountId: number;

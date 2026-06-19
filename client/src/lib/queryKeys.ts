@@ -1,4 +1,4 @@
-import type { TransactionFilters } from '@/types';
+import type { TransactionFilters } from '@cashctrl/types';
 
 export const queryKeys = {
   accounts: () => ['accounts'] as const,

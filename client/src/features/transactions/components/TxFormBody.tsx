@@ -1,9 +1,9 @@
+import type { Account, Category, PaymentMethod } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
 import { type SplitInput, TxSplitEditor } from '@/features/transactions/components/TxSplitEditor';
 import { TxTransferFields } from '@/features/transactions/components/TxTransferFields';
-import type { Account, Category, PaymentMethod } from '@/types';
 
 interface Props {
   isTransferEdit: boolean;

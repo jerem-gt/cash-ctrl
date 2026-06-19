@@ -1,3 +1,4 @@
+import { type Filters, Transaction } from '@cashctrl/types';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +14,6 @@ import {
   useUpdateTransaction,
   useUpdateTransfer,
 } from '@/hooks/useTransactions.ts';
-import { type Filters, Transaction } from '@/types.ts';
 
 type ModalState =
   | { type: 'none' }

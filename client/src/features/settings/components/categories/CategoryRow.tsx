@@ -1,4 +1,4 @@
-import { Category } from '@/types.ts';
+import { Category } from '@cashctrl/types';
 
 export function CategoryRow({
   cat,
