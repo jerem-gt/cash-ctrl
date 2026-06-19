@@ -440,6 +440,25 @@ export interface ReportData {
 
 // ─── API Payloads ─────────────────────────────────────────────────────────────
 
+export type CreateTransferPayload = {
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  description: string;
+  date: string;
+  notes?: string | null;
+  validated?: boolean;
+};
+
+export type UpdateTransferPayload = {
+  amount: number;
+  description: string;
+  date: string;
+  validated: boolean;
+  from_account_id?: number;
+  to_account_id?: number;
+};
+
 export type ScheduledPayload = {
   account_id: number;
   to_account_id: number | null;
