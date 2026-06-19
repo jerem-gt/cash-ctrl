@@ -29,6 +29,9 @@ function applyTheme() {
   document.documentElement.classList.toggle('dark', resolveDark(current));
 }
 
+// Sync DOM to stored preference on module load (reinforces the anti-FOUC inline script).
+applyTheme();
+
 // En mode système, suivre les changements de préférence de l'OS en direct.
 media?.addEventListener('change', () => {
   if (current === 'system') {
