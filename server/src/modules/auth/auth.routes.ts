@@ -51,7 +51,7 @@ function verifyTotpCode(secret: string, code: string): boolean {
 export function createAuthRouter(db: Database): Router {
   const authRepo = createAuthRepo(db);
   const router = Router();
-  const loginLimiter = new FailureRateLimiter();
+  const loginLimiter = new FailureRateLimiter(db);
 
   router.post('/login', async (req, res) => {
     const key = req.ip ?? 'unknown';

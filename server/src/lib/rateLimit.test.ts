@@ -1,6 +1,11 @@
+import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FailureRateLimiter } from './rateLimit';
+
+function createLimiter(maxAttempts = 3, windowMs = 1000) {
+  return new FailureRateLimiter(new Database(':memory:'), maxAttempts, windowMs);
+}
 
 describe('FailureRateLimiter', () => {
   beforeEach(() => {
@@ -11,7 +16,7 @@ describe('FailureRateLimiter', () => {
   });
 
   it('autorise tant que le seuil n est pas atteint', () => {
-    const limiter = new FailureRateLimiter(3, 1000);
+    const limiter = createLimiter();
     expect(limiter.isAllowed('ip')).toBe(true);
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
@@ -19,7 +24,7 @@ describe('FailureRateLimiter', () => {
   });
 
   it('bloque une fois le seuil atteint', () => {
-    const limiter = new FailureRateLimiter(3, 1000);
+    const limiter = createLimiter();
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
@@ -27,7 +32,7 @@ describe('FailureRateLimiter', () => {
   });
 
   it('réautorise après expiration de la fenêtre', () => {
-    const limiter = new FailureRateLimiter(2, 1000);
+    const limiter = createLimiter(2);
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
     expect(limiter.isAllowed('ip')).toBe(false);
@@ -36,7 +41,7 @@ describe('FailureRateLimiter', () => {
   });
 
   it('reset remet le compteur à zéro', () => {
-    const limiter = new FailureRateLimiter(2, 1000);
+    const limiter = createLimiter(2);
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
     expect(limiter.isAllowed('ip')).toBe(false);
@@ -45,9 +50,20 @@ describe('FailureRateLimiter', () => {
   });
 
   it('isole les clés entre elles', () => {
-    const limiter = new FailureRateLimiter(1, 1000);
+    const limiter = createLimiter(1);
     limiter.recordFailure('ip-a');
     expect(limiter.isAllowed('ip-a')).toBe(false);
     expect(limiter.isAllowed('ip-b')).toBe(true);
+  });
+
+  it('survit à un redémarrage (compteurs persistés)', () => {
+    const db = new Database(':memory:');
+    const limiter = new FailureRateLimiter(db, 3, 1000);
+    limiter.recordFailure('ip');
+    limiter.recordFailure('ip');
+    limiter.recordFailure('ip');
+
+    const limiter2 = new FailureRateLimiter(db, 3, 1000);
+    expect(limiter2.isAllowed('ip')).toBe(false);
   });
 });
