@@ -66,7 +66,7 @@ const transferSchema = z
     message: 'to_account_id ou to_account_source_name requis',
   });
 
-const executeSchema = z.object({
+export const executeSchema = z.object({
   newAccounts: z.array(newAccountSchema),
   newSubcategories: z.array(newSubcategorySchema),
   transactions: z.array(transactionSchema),
@@ -95,7 +95,7 @@ const fullTransactionSchema = z.object({
   splits: z.array(splitSchema),
 });
 
-const jsonFullSchema = z.object({
+export const jsonFullSchema = z.object({
   version: z.literal('1.0'),
   amounts_in_cents: z.literal(true),
   account_types: z.array(

@@ -10,16 +10,16 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo';
 
-const linkSchema = z.object({
+export const linkSchema = z.object({
   linked_transaction_id: z.number().int().positive(),
   attributed_amount: z.number().positive().optional(),
 });
 
-const statusSchema = z.object({
+export const statusSchema = z.object({
   reimbursement_status: z.enum(REIMBURSEMENT_STATUSES).nullable(),
 });
 
-const attributedAmountSchema = z.object({
+export const attributedAmountSchema = z.object({
   attributed_amount: z.number().positive().nullable(),
 });
 

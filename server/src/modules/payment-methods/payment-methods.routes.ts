@@ -6,7 +6,7 @@ import { createNamedIconEntityRouter } from '../../lib/namedIconEntityRouter';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createPaymentMethodsRepo } from './payment-methods.repo';
 
-const schema = z.object({
+export const paymentMethodSchema = z.object({
   name: z.string().min(1).max(50),
   icon: z.string().max(10).default(''),
 });
@@ -14,7 +14,7 @@ const schema = z.object({
 export function createPaymentMethodsRouter(db: Database): Router {
   const txRepo = createTransactionsRepo(db);
   return createNamedIconEntityRouter(db, {
-    schema,
+    schema: paymentMethodSchema,
     repoFactory: createPaymentMethodsRepo,
     notFoundCode: 'payment_method.not_found',
     countUsage: (id) => txRepo.getCountByPaymentMethodId(id),

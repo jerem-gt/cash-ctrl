@@ -20,7 +20,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createStocksRepo } from './stocks.repo.js';
 import { getOrRefreshPrice, refreshUserPrices, searchByQuery } from './stocks.service.js';
 
-const buySchema = z.object({
+export const buySchema = z.object({
   account_id: z.number().int().positive(),
   ticker: z.string().min(1).max(20),
   quantity: positiveAmountSchema,
@@ -30,16 +30,16 @@ const buySchema = z.object({
   description: descriptionSchema.optional(),
 });
 
-const sellSchema = buySchema;
+export const sellSchema = buySchema;
 
-const transferSchema = z.object({
+export const stockTransferSchema = z.object({
   to_account_id: z.number().int().positive(),
   ticker: z.string().min(1).max(20),
   quantity: positiveAmountSchema,
   date: dateSchema,
 });
 
-const editOperationSchema = z.object({
+export const editOperationSchema = z.object({
   quantity: positiveAmountSchema,
   price_per_share: positiveAmountSchema,
   fees: feesSchema,
@@ -97,7 +97,7 @@ export function createStocksRouter(db: Database): Router {
       return;
     }
 
-    const data = parseBody(res, transferSchema, req.body);
+    const data = parseBody(res, stockTransferSchema, req.body);
     if (!data) return;
 
     const { to_account_id } = data;

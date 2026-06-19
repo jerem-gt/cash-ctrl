@@ -7,7 +7,7 @@ import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntiti
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo';
 
-const settingsSchema = z.object({
+export const settingsSchema = z.object({
   lead_days: z.number().int().min(0).max(365),
   backup_enabled: z.boolean(),
   backup_frequency_h: z.number().int().min(1).max(8760),
@@ -15,7 +15,7 @@ const settingsSchema = z.object({
 });
 
 // Schema for updating system entity references
-const systemRefsSchema = z
+export const systemRefsSchema = z
   .object({
     financial_income_category_id: z.number().int().positive().nullable().optional(),
     transfer_subcategory_id: z.number().int().positive().nullable().optional(),

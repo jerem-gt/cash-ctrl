@@ -8,12 +8,12 @@ import { createCategoriesRepo } from '../categories/categories.repo';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createSubcategoriesRepo } from './subcategories.repo';
 
-const createSchema = z.object({
+export const createSubcategorySchema = z.object({
   category_id: z.number().int().positive(),
   name: z.string().min(1).max(50),
 });
 
-const updateSchema = z.object({
+export const updateSubcategorySchema = z.object({
   name: z.string().min(1).max(50),
 });
 
@@ -30,7 +30,7 @@ export function createSubcategoriesRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, createSchema, req.body);
+    const data = parseBody(res, createSubcategorySchema, req.body);
     if (!data) return;
     if (!getCatsRepo(req).getById(data.category_id)) {
       sendError(res, 404, 'category.not_found');
@@ -49,7 +49,7 @@ export function createSubcategoriesRouter(db: Database): Router {
     if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'subcategory.not_found')) return;
-    const data = parseBody(res, updateSchema, req.body);
+    const data = parseBody(res, updateSubcategorySchema, req.body);
     if (!data) return;
     repo.update(id, data.name.trim());
     res.json(repo.getById(id));

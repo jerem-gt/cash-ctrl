@@ -13,7 +13,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
 import { loanCreate, loanUpdate } from './loans.service.js';
 
-const createLoanSchema = z.object({
+export const createLoanSchema = z.object({
   name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   opening_date: optionalDateSchema,
@@ -25,14 +25,14 @@ const createLoanSchema = z.object({
   deposit_account_id: z.number().int().positive(),
 });
 
-const updateLoanSchema = z.object({
+export const updateLoanSchema = z.object({
   name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   opening_date: optionalDateSchema,
   source_account_id: z.number().int().positive(),
 });
 
-const updateInstallmentSchema = z.object({
+export const updateInstallmentSchema = z.object({
   due_date: dateSchema,
   total_amount: positiveAmountSchema,
 });

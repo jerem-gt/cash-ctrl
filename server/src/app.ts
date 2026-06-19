@@ -27,6 +27,7 @@ import { createTaxRouter } from './modules/tax/tax.routes';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes';
 import { createTransfersRouter } from './modules/transfers/transfers.routes';
 import { createUsersRouter } from './modules/users/users.routes';
+import { createDocsRouter } from './openapi/router';
 import { SQLiteSessionStore } from './session-store.js';
 
 export interface AppOptions {
@@ -96,6 +97,8 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/stats', createStatsRouter(db));
   app.use('/api/tax', createTaxRouter(db));
   app.use('/api/categorization-rules', createCategorizationRulesRouter(db));
+
+  app.use('/api/docs', createDocsRouter());
 
   app.use(globalErrorHandler);
 

@@ -9,26 +9,26 @@ import { sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAuthRepo } from './auth.repo';
 
-const loginSchema = z.object({
+export const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 });
 
-const changePasswordSchema = z.object({
+export const changePasswordSchema = z.object({
   current: z.string().min(1),
   next: z.string().min(8),
 });
 
-const enableTotpSchema = z.object({
+export const enableTotpSchema = z.object({
   secret: z.string().min(1),
   code: z.string().length(6),
 });
 
-const disableTotpSchema = z.object({
+export const disableTotpSchema = z.object({
   password: z.string().min(1),
 });
 
-const verifyTotpSchema = z.object({
+export const verifyTotpSchema = z.object({
   code: z.string().length(6),
 });
 

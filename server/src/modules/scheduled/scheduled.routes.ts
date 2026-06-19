@@ -15,7 +15,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo';
 import { scheduledCreate, scheduledUpdate } from './scheduled.service';
 
-const scheduledSchema = z.object({
+export const scheduledSchema = z.object({
   account_id: z.number().int().positive(),
   to_account_id: z.number().int().positive().nullable().default(null),
   type: z.enum(TRANSACTION_TYPES),
