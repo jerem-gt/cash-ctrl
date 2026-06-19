@@ -14,10 +14,13 @@ globalThis.addEventListener('vite:preloadError', () => {
 });
 
 // Await i18n before mounting to avoid a Suspense null-render (FOUC) on first paint.
-void initPromise.finally(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-});
+try {
+  await initPromise;
+} catch {
+  // Locale files bundled with app — failure unlikely; render anyway with missing translations.
+}
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
