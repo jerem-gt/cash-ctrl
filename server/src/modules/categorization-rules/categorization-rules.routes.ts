@@ -6,12 +6,12 @@ import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware';
 import { createCategorizationRulesRepo } from './categorization-rules.repo';
 
-const ruleSchema = z.object({
+export const ruleSchema = z.object({
   pattern: z.string().min(1).max(200),
   subcategory_id: z.number().int().positive(),
 });
 
-const matchQuerySchema = z.object({
+export const matchQuerySchema = z.object({
   description: z.string().min(1),
 });
 

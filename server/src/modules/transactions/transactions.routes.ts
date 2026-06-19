@@ -15,7 +15,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo';
 import { transactionCreate, transactionDelete, transactionUpdate } from './transactions.service';
 
-const transactionSchema = z
+export const transactionSchema = z
   .object({
     account_id: z.number().int().positive(),
     type: z.enum(TRANSACTION_TYPES),
@@ -46,7 +46,7 @@ const transactionSchema = z
     { message: 'Exactly one of subcategory_id or splits must be provided' },
   );
 
-const querySchema = z.object({
+export const querySchema = z.object({
   account_id: z.coerce.number().int().optional(),
   type: z.enum(TRANSACTION_TYPES).optional(),
   category_id: z.coerce.number().int().optional(),
@@ -70,7 +70,7 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(25),
 });
 
-const validateSchema = z.object({ validated: z.boolean() });
+export const validateSchema = z.object({ validated: z.boolean() });
 
 export function createTransactionsRouter(db: Database): Router {
   const transactionsRepo = createTransactionsRepo(db);

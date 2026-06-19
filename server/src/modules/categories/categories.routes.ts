@@ -6,7 +6,7 @@ import { createNamedIconEntityRouter } from '../../lib/namedIconEntityRouter';
 import { createTransactionsRepo } from '../transactions/transactions.repo';
 import { createCategoriesRepo } from './categories.repo';
 
-const categorySchema = z.object({
+export const categorySchema = z.object({
   name: z.string().min(1).max(50),
   icon: z.string().min(1).max(64),
 });

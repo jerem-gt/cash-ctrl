@@ -10,7 +10,7 @@ import { createLoansRepo } from '../loans/loans.repo.js';
 import { createTransfersRepo } from '../transfers/transfers.repo';
 import { createAccountsRepo } from './accounts.repo';
 
-const accountSchema = z.object({
+export const accountSchema = z.object({
   name: nameSchema,
   bank_id: z.number().int().positive().nullable().default(null),
   account_type_id: z.number().int().positive().nullable().default(null),
@@ -18,7 +18,7 @@ const accountSchema = z.object({
   opening_date: optionalDateSchema,
 });
 
-const closeSchema = z.object({
+export const closeSchema = z.object({
   closed_at: dateSchema,
   transfer_to_account_id: z.number().int().positive().optional(),
 });

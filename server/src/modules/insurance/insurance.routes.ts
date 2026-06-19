@@ -35,14 +35,14 @@ function requireSupport(
   return support;
 }
 
-const createSupportSchema = z.object({
+export const createSupportSchema = z.object({
   account_id: z.number().int().positive(),
   name: nameSchema,
   type: z.enum(['uc', 'euro']),
   ticker: z.string().min(1).max(20).nullable().optional(),
 });
 
-const versementSchema = z.object({
+export const versementSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: positiveAmountSchema,
@@ -57,7 +57,7 @@ const versementSchema = z.object({
     .transform((v) => v ?? null),
 });
 
-const rachatSchema = z.object({
+export const rachatSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: positiveAmountSchema,
@@ -73,7 +73,7 @@ const rachatSchema = z.object({
     .transform((v) => v ?? null),
 });
 
-const arbitrageSchema = z.object({
+export const arbitrageSchema = z.object({
   account_id: z.number().int().positive(),
   from_support_id: z.number().int().positive(),
   to_support_id: z.number().int().positive(),
@@ -82,21 +82,21 @@ const arbitrageSchema = z.object({
   date: dateSchema,
 });
 
-const interetsSchema = z.object({
+export const interetsSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: positiveAmountSchema,
   date: dateSchema,
 });
 
-const revaloriserSchema = z.object({
+export const revaloriserSchema = z.object({
   account_id: z.number().int().positive(),
   support_id: z.number().int().positive(),
   amount: z.number(),
   date: dateSchema,
 });
 
-const updateOperationSchema = z.object({
+export const updateOperationSchema = z.object({
   amount: z.number(),
   fees: feesSchema,
   social_fees: feesSchema,

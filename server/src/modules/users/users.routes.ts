@@ -8,13 +8,13 @@ import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib
 import { requireAdmin } from '../../middleware.js';
 import { createUsersRepo } from './users.repo';
 
-const createUserSchema = z.object({
+export const createUserSchema = z.object({
   username: z.string().min(1).max(64),
   password: z.string().min(8),
   lang: z.enum(['fr', 'en']).default('fr'),
 });
 
-const updateUserSchema = z
+export const updateUserSchema = z
   .object({
     username: z.string().min(1).max(64).optional(),
     password: z.string().min(8).optional(),

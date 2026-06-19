@@ -8,7 +8,7 @@ import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createAccountTypesRepo } from './account-types.repo';
 
-const schema = z.object({
+export const accountTypeSchema = z.object({
   name: z.string().min(1).max(50),
   envelope_type: z.enum(ENVELOPE_TYPES).nullable().default(null),
 });
@@ -25,7 +25,7 @@ export function createAccountTypesRouter(db: Database): Router {
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, schema, req.body);
+    const data = parseBody(res, accountTypeSchema, req.body);
     if (!data) return;
     const repo = getRepo(req);
     const result = repo.create(data.name.trim(), data.envelope_type);
@@ -37,7 +37,7 @@ export function createAccountTypesRouter(db: Database): Router {
     if (id === null) return;
     const repo = getRepo(req);
     if (!requireById(res, repo, id, 'account_type.not_found')) return;
-    const data = parseBody(res, schema, req.body);
+    const data = parseBody(res, accountTypeSchema, req.body);
     if (!data) return;
     repo.update(id, data.name.trim(), data.envelope_type);
     res.json(repo.getById(id));

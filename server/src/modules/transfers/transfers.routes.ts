@@ -7,7 +7,7 @@ import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/v
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { transferCreate, transferDelete, transferUpdate } from './transfers.service';
 
-const transferSchema = z.object({
+export const transferSchema = z.object({
   from_account_id: z.number().int().positive(),
   to_account_id: z.number().int().positive(),
   amount: positiveAmountSchema,
@@ -17,7 +17,7 @@ const transferSchema = z.object({
   validated: z.boolean().default(false),
 });
 
-const transferUpdateSchema = z.object({
+export const transferUpdateSchema = z.object({
   amount: positiveAmountSchema,
   description: descriptionSchema,
   date: dateSchema,

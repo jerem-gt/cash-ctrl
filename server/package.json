@@ -23,6 +23,7 @@
     "helmet": "^8.2.0",
     "multer": "^2.2.0",
     "otpauth": "^9.5.1",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^25.9.3",
     "@types/supertest": "^7.2.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "@vitest/coverage-v8": "^4.1.9",
     "supertest": "^7.2.2",
     "tsup": "^8.5.1",

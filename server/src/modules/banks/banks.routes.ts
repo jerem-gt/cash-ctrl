@@ -10,12 +10,14 @@ import { requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo';
 import { createBanksRepo } from './banks.repo';
 
-const bankSchema = z.object({
+export const bankSchema = z.object({
   name: nameSchema,
   login_url: z.url().nullable().optional(),
 });
 
-const reorderSchema = z.array(z.object({ id: z.number().int(), sort_order: z.number().int() }));
+export const reorderSchema = z.array(
+  z.object({ id: z.number().int(), sort_order: z.number().int() }),
+);
 
 const upload = multer({
   storage: multer.diskStorage({
