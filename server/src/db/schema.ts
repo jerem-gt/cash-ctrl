@@ -354,5 +354,12 @@ export function initSchema(db: Database) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_cat_rules_user ON categorization_rules(user_id, sort_order);
+
+        CREATE TABLE IF NOT EXISTS login_attempts
+        (
+            key      TEXT    PRIMARY KEY,
+            count    INTEGER NOT NULL,
+            reset_at INTEGER NOT NULL
+        );
     `);
 }
