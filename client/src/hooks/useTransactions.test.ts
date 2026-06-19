@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TRANSACTIONS } from '@/tests/fixtures';
 import { server } from '@/tests/msw/server';
@@ -240,6 +240,17 @@ describe('useDeleteTransfer', () => {
       result.current.mutate(10);
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('invalide dashboardStats après suppression', async () => {
+    const wrapper = createWrapper();
+    const invalidateSpy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    const { result } = renderHook(() => useDeleteTransfer(), { wrapper });
+    act(() => {
+      result.current.mutate(10);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
   });
 });
 
