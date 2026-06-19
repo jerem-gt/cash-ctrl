@@ -266,4 +266,26 @@ describe('POST /api/auth/2fa/verify', () => {
     const res = await supertest(app).post('/api/auth/2fa/verify').send({ code: '123456' });
     expect(res.status).toBe(401);
   });
+
+  it('retourne 429 après trop de codes TOTP invalides', async () => {
+    const { app, db } = setup();
+    const { agent } = await setupTotpAgent(app, db);
+    for (let i = 0; i < 10; i++) {
+      await agent.post('/api/auth/2fa/verify').send({ code: '000000' });
+    }
+    const res = await agent.post('/api/auth/2fa/verify').send({ code: '000000' });
+    expect(res.status).toBe(429);
+  });
+
+  it('les échecs TOTP épuisent aussi le quota de /login', async () => {
+    const { app, db } = setup();
+    const { agent } = await setupTotpAgent(app, db);
+    for (let i = 0; i < 10; i++) {
+      await agent.post('/api/auth/2fa/verify').send({ code: '000000' });
+    }
+    const res = await agent
+      .post('/api/auth/login')
+      .send({ username: 'alice', password: 'password123' });
+    expect(res.status).toBe(429);
+  });
 });

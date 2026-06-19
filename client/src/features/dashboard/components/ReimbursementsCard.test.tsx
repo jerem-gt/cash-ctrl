@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 const makePR = (id: number, description: string): PendingReimbursement => ({
@@ -27,6 +28,7 @@ beforeAll(async () => {
   }));
   vi.resetModules();
   ({ ReimbursementsCard } = await import('./ReimbursementsCard'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

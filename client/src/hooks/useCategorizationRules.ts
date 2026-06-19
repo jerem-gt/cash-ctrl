@@ -5,7 +5,7 @@ import { queryKeys } from '@/lib/queryKeys';
 
 export function useCategorizationRules() {
   return useQuery({
-    queryKey: queryKeys.categorizationRules.all(),
+    queryKey: queryKeys.categorizationRules.list(),
     queryFn: categorizationRulesApi.list,
   });
 }
@@ -24,7 +24,7 @@ export function useCreateCategorizationRule() {
   return useMutation({
     mutationFn: ({ pattern, subcategoryId }: { pattern: string; subcategoryId: number }) =>
       categorizationRulesApi.create(pattern, subcategoryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.list() }),
   });
 }
 
@@ -40,7 +40,7 @@ export function useUpdateCategorizationRule() {
       pattern: string;
       subcategoryId: number;
     }) => categorizationRulesApi.update(id, pattern, subcategoryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.list() }),
   });
 }
 
@@ -48,7 +48,7 @@ export function useDeleteCategorizationRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => categorizationRulesApi.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.list() }),
   });
 }
 
@@ -56,7 +56,7 @@ export function useDeleteAllCategorizationRules() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: categorizationRulesApi.removeAll,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.list() }),
   });
 }
 
@@ -64,6 +64,6 @@ export function useInitCategorizationRulesFromHistory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: categorizationRulesApi.initFromHistory,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.all() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categorizationRules.list() }),
   });
 }

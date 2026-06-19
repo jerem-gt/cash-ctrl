@@ -77,8 +77,6 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
-    loginLimiter.reset(key);
-
     if (user.totp_enabled === 1) {
       req.session.pendingUserId = user.id;
       req.session.pendingTotpAt = Date.now();
@@ -86,6 +84,7 @@ export function createAuthRouter(db: Database): Router {
       return;
     }
 
+    loginLimiter.reset(key);
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.isAdmin = user.is_admin === 1;
@@ -95,6 +94,12 @@ export function createAuthRouter(db: Database): Router {
   });
 
   router.post('/2fa/verify', (req, res) => {
+    const key = req.ip ?? 'unknown';
+    if (!loginLimiter.isAllowed(key)) {
+      sendError(res, 429, 'auth.too_many_attempts');
+      return;
+    }
+
     const parsed = verifyTotpSchema.safeParse(req.body);
     if (!parsed.success) {
       sendError(res, 400, 'common.invalid_request');
@@ -118,10 +123,12 @@ export function createAuthRouter(db: Database): Router {
     }
 
     if (!verifyTotpCode(user.totp_secret, parsed.data.code)) {
+      loginLimiter.recordFailure(key);
       sendError(res, 401, 'auth.totp_invalid');
       return;
     }
 
+    loginLimiter.reset(key);
     delete req.session.pendingUserId;
     delete req.session.pendingTotpAt;
     req.session.userId = user.id;

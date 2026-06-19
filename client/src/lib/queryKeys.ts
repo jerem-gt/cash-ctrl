@@ -32,33 +32,29 @@ export const queryKeys = {
   },
 
   insurance: {
-    all: () => ['insurance'] as const,
     positions: (accountId: number) => ['insurance', 'positions', accountId] as const,
     operations: (accountId: number) => ['insurance', 'operations', accountId] as const,
     supports: (accountId: number) => ['insurance', 'supports', accountId] as const,
   },
 
   loans: {
-    all: () => ['loans'] as const,
     byAccount: (accountId: number) => ['loans', 'account', accountId] as const,
     installments: (loanId: number | undefined) => ['loans', 'installments', loanId] as const,
   },
 
   reimbursements: {
-    all: () => ['reimbursements'] as const,
     byTransaction: (transactionId: number) => ['reimbursements', transactionId] as const,
     pending: () => ['reimbursements', 'pending'] as const,
     recent: () => ['reimbursements', 'recent'] as const,
   },
 
   tax: {
-    all: () => ['tax'] as const,
     years: () => ['tax', 'years'] as const,
     year: (year: number | undefined) => ['tax', 'year', year] as const,
   },
 
   categorizationRules: {
-    all: () => ['categorization-rules'] as const,
+    list: () => ['categorization-rules', 'list'] as const,
     match: (description: string) => ['categorization-rules', 'match', description] as const,
   },
 };

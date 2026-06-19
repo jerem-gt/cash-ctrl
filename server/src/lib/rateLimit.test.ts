@@ -1,10 +1,13 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { initSchema } from '../db/schema';
 import { FailureRateLimiter } from './rateLimit';
 
 function createLimiter(maxAttempts = 3, windowMs = 1000) {
-  return new FailureRateLimiter(new Database(':memory:'), maxAttempts, windowMs);
+  const db = new Database(':memory:');
+  initSchema(db);
+  return new FailureRateLimiter(db, maxAttempts, windowMs);
 }
 
 describe('FailureRateLimiter', () => {
@@ -58,6 +61,7 @@ describe('FailureRateLimiter', () => {
 
   it('survit à un redémarrage (compteurs persistés)', () => {
     const db = new Database(':memory:');
+    initSchema(db);
     const limiter = new FailureRateLimiter(db, 3, 1000);
     limiter.recordFailure('ip');
     limiter.recordFailure('ip');
@@ -65,5 +69,21 @@ describe('FailureRateLimiter', () => {
 
     const limiter2 = new FailureRateLimiter(db, 3, 1000);
     expect(limiter2.isAllowed('ip')).toBe(false);
+  });
+
+  it('reset efface le compteur pour toute instance partageant la même DB', () => {
+    const db = new Database(':memory:');
+    initSchema(db);
+    const limiter = new FailureRateLimiter(db, 3, 1000);
+    limiter.recordFailure('ip');
+    limiter.recordFailure('ip');
+    limiter.recordFailure('ip');
+
+    const limiter2 = new FailureRateLimiter(db, 3, 1000);
+    expect(limiter2.isAllowed('ip')).toBe(false);
+    limiter2.reset('ip');
+
+    const limiter3 = new FailureRateLimiter(db, 3, 1000);
+    expect(limiter3.isAllowed('ip')).toBe(true);
   });
 });

@@ -2,6 +2,8 @@ import { Transaction } from '@cashctrl/types';
 import { act, renderHook } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
+
 let useAccounts: typeof import('@/hooks/useAccounts').useAccounts;
 let useCategories: typeof import('@/hooks/useCategories').useCategories;
 let usePaymentMethods: typeof import('@/hooks/usePaymentMethods').usePaymentMethods;
@@ -40,6 +42,7 @@ beforeAll(async () => {
     useDeleteTransfer,
   } = await import('@/hooks/useTransactions'));
   ({ useTransactionsManager } = await import('./useTransactionsManager'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

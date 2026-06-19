@@ -28,6 +28,7 @@ import type {
   PaymentMethod,
   PendingReimbursement,
   Reimbursement,
+  ReimbursementStatus,
   ReportData,
   RevaloriserPayload,
   ScheduledPayload,
@@ -442,7 +443,7 @@ export const reimbursementsApi = {
     }),
   unlink: (transactionId: number, linkedId: number) =>
     request<{ ok: boolean }>('DELETE', `/api/reimbursements/${transactionId}/${linkedId}`),
-  setStatus: (transactionId: number, reimbursement_status: 'en_attente' | 'rembourse' | null) =>
+  setStatus: (transactionId: number, reimbursement_status: ReimbursementStatus) =>
     request<Transaction>('PATCH', `/api/reimbursements/${transactionId}/status`, {
       reimbursement_status,
     }),

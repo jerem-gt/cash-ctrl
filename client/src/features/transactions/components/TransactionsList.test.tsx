@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, LOAN_ACCOUNT, TRANSACTIONS } from '@/tests/fixtures.ts';
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 
 let useTransactionsManager: typeof import('@/features/transactions/hooks/useTransactionsManager').useTransactionsManager;
@@ -14,6 +15,7 @@ beforeAll(async () => {
   ({ useTransactionsManager } =
     await import('@/features/transactions/hooks/useTransactionsManager'));
   ({ TransactionsList } = await import('./TransactionsList'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

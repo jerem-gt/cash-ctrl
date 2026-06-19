@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { EmojiClickData } from 'emoji-picker-react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
+
 let CategoryEditor: typeof import('./CategoryEditor').CategoryEditor;
 
 beforeAll(async () => {
@@ -20,6 +22,7 @@ beforeAll(async () => {
   }));
   vi.resetModules();
   ({ CategoryEditor } = await import('./CategoryEditor'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {
@@ -79,7 +82,7 @@ describe('CategoryEditor', () => {
     await user.click(screen.getByRole('button', { name: '🛒' }));
 
     // Simuler Échap
-    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(globalThis, { key: 'Escape' });
 
     // Le picker ne devrait plus être visible (il faut attendre la fin de l'effet)
     await waitFor(() => {
