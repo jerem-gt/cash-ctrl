@@ -1,3 +1,4 @@
+import type { InsuranceOperation, InsuranceSupportView } from '@cashctrl/types';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +10,6 @@ import {
   useInsurancePositions,
 } from '@/features/insurance/hooks/useInsurance';
 import { fmtDate, fmtDec } from '@/lib/format';
-import type { InsuranceOperation, InsuranceSupportView } from '@/types';
 
 import { AddInsuranceSupportModal } from './AddInsuranceSupportModal';
 import { InsuranceArbitrageModal } from './InsuranceArbitrageModal';

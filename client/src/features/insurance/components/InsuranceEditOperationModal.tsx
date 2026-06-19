@@ -1,9 +1,9 @@
+import type { InsuranceOperation } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateInsuranceOperation } from '@/features/insurance/hooks/useInsurance';
-import type { InsuranceOperation } from '@/types';
 
 interface Props {
   accountId: number;

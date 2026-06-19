@@ -1,3 +1,4 @@
+import type { Account, RecurrenceUnit, Subcategory, WeekendHandling } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -20,7 +21,6 @@ import {
 } from '@/features/scheduled/lib/form';
 import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
 import { useAccounts } from '@/hooks/useAccounts';
-import type { Account, RecurrenceUnit, Subcategory, WeekendHandling } from '@/types';
 
 type ScheduledT = ReturnType<typeof import('react-i18next').useTranslation<'scheduled'>>['t'];
 

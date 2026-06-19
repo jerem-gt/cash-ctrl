@@ -1,3 +1,4 @@
+import { Account, Category, Filters, PaymentMethod, Subcategory } from '@cashctrl/types';
 import { ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
@@ -7,7 +8,6 @@ import { DecimalInput, Input, Select, Switch } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { parseIdOrUndefined } from '@/lib/parse';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
-import { Account, Category, Filters, PaymentMethod, Subcategory } from '@/types.ts';
 
 // Champ libellé du panneau de filtres avancés : libellé court au-dessus du contrôle.
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {

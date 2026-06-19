@@ -1,10 +1,10 @@
+import type { BalanceHistoryData } from '@cashctrl/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { WealthCard } from '@/features/dashboard/components/WealthCard';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-import type { BalanceHistoryData } from '@/types';
 
 const history: BalanceHistoryData = {
   account_types: ['liquidites', 'epargne'],

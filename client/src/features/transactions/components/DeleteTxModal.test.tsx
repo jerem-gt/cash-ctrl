@@ -1,8 +1,8 @@
+import type { Transaction } from '@cashctrl/types';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TRANSACTIONS } from '@/tests/fixtures';
-import type { Transaction } from '@/types';
 
 import { DeleteTxModal } from './DeleteTxModal';
 

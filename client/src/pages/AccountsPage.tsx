@@ -1,3 +1,4 @@
+import type { Account } from '@cashctrl/types';
 import {
   Archive,
   ArchiveRestore,
@@ -43,7 +44,6 @@ import {
 } from '@/lib/account';
 import { fmtDate, fmtDec } from '@/lib/format';
 import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
-import type { Account } from '@/types.ts';
 
 function AccountsPageSkeleton() {
   return (

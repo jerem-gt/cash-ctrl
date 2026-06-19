@@ -1,3 +1,4 @@
+import type { Transaction } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -5,7 +6,6 @@ import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@
 import { useUpdateStockOperation } from '@/features/portfolio/hooks/useStocks';
 import { fmtDec } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
-import type { Transaction } from '@/types';
 
 interface Props {
   tx: Transaction;

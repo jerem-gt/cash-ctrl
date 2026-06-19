@@ -1,7 +1,7 @@
+import type { StockPosition } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { fmtCurrency, fmtStockPrice } from '@/lib/format';
-import type { StockPosition } from '@/types';
 
 import type { PositionMetrics } from '../lib/positionMetrics';
 

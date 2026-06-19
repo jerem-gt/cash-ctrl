@@ -1,3 +1,4 @@
+import type { Transaction } from '@cashctrl/types';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -6,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import { REIMBURSEMENTS, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
-import type { Transaction } from '@/types';
 
 import { ReimbursementsPanel } from './ReimbursementsPanel';
 

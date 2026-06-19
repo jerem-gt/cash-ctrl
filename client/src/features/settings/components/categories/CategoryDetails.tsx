@@ -1,3 +1,4 @@
+import { Category } from '@cashctrl/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +10,6 @@ import {
 import { SubCategoriesManager } from '@/features/settings/components/categories/SubcategoriesManager.tsx';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
 import { useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories.ts';
-import { Category } from '@/types.ts';
 
 export function CategoryDetails({
   selectedCategory,

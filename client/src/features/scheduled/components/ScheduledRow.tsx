@@ -1,9 +1,9 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
 import { recurrenceLabel } from '@/features/scheduled/lib/recurrence';
 import { fmtDec } from '@/lib/format';
-import type { ScheduledTransaction } from '@/types';
 
 interface RowProps {
   sched: ScheduledTransaction;

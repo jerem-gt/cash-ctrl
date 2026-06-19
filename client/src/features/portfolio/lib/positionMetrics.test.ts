@@ -1,6 +1,5 @@
+import type { StockPosition } from '@cashctrl/types';
 import { describe, expect, it } from 'vitest';
-
-import type { StockPosition } from '@/types';
 
 import { getPnlColor, getPositionMetrics, getTotalMetrics } from './positionMetrics';
 

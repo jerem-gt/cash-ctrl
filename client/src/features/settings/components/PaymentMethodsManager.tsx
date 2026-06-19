@@ -1,3 +1,4 @@
+import { PaymentMethod } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,6 @@ import {
   usePaymentMethods,
   useUpdatePaymentMethod,
 } from '@/hooks/usePaymentMethods.ts';
-import { PaymentMethod } from '@/types.ts';
 
 function PaymentMethodEditForm({
   pm,

@@ -1,16 +1,16 @@
-import { type TFunction } from 'i18next';
-
-import { showToast } from '@/components/ui';
-import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
-import { type SplitInput } from '@/features/transactions/components/TxSplitEditor';
-import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 import type {
   Account,
   Category,
   ReimbursementStatus,
   ScheduledTransaction,
   Transaction,
-} from '@/types';
+} from '@cashctrl/types';
+import { type TFunction } from 'i18next';
+
+import { showToast } from '@/components/ui';
+import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
+import { type SplitInput } from '@/features/transactions/components/TxSplitEditor';
+import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
 
 export type TTx = TFunction<'transactions'>;
 export type TCommon = TFunction<'common'>;

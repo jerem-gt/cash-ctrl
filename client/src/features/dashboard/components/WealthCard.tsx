@@ -1,3 +1,4 @@
+import type { BalanceHistoryData } from '@cashctrl/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { Card, Skeleton } from '@/components/ui';
 import { enrichBalanceHistory } from '@/features/dashboard/lib/dashboardBalance';
 import { generateColor } from '@/lib/colors.ts';
-import type { BalanceHistoryData } from '@/types';
 
 const PatrimonyBarChart = lazy(() => import('@/components/charts/PatrimonyBarChart'));
 const NetBalanceLineChart = lazy(() => import('@/components/charts/NetBalanceLineChart'));

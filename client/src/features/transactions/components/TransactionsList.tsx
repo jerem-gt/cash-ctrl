@@ -1,3 +1,4 @@
+import type { Account } from '@cashctrl/types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +9,6 @@ import { TxItem } from '@/features/transactions/components/TxItem';
 import { TxModal } from '@/features/transactions/components/TxModal';
 import { useTransactionsManager } from '@/features/transactions/hooks/useTransactionsManager';
 import { computeRunningBalances } from '@/lib/balance';
-import type { Account } from '@/types';
 
 import { TransactionsFilters } from './TransactionsFilters';
 

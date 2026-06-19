@@ -1,3 +1,4 @@
+import type { Account } from '@cashctrl/types';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   BarChart2,
@@ -25,7 +26,6 @@ import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance } from '@/lib/account';
 import { fmt } from '@/lib/format';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
-import type { Account } from '@/types';
 
 const NAV_BOTTOM_ITEMS = [
   { to: '/transactions', key: 'all_transactions' as const, icon: LayoutGrid, end: true },

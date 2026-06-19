@@ -1,10 +1,10 @@
+import type { Transaction } from '@cashctrl/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-import type { Transaction } from '@/types';
 
 import { TxItem } from './TxItem';
 

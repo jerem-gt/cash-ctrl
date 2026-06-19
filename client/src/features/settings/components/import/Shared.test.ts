@@ -1,6 +1,5 @@
+import type { Bank } from '@cashctrl/types';
 import { describe, expect, it } from 'vitest';
-
-import type { Bank } from '@/types';
 
 import { findBankByName } from './Shared';
 

@@ -1,3 +1,4 @@
+import { Category } from '@cashctrl/types';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,6 @@ import {
   useDeleteCategory,
   useUpdateCategory,
 } from '@/hooks/useCategories.ts';
-import { Category } from '@/types.ts';
 
 function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: () => void }>) {
   const { t } = useTranslation('settings');

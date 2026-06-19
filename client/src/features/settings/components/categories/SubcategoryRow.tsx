@@ -1,3 +1,4 @@
+import { Subcategory } from '@cashctrl/types';
 import { Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { IconButton, showToast } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
 import { useUpdateSubcategory } from '@/hooks/useSubcategories.ts';
-import { Subcategory } from '@/types.ts';
 
 export function SubcategoryRow({
   sub,

@@ -1,3 +1,4 @@
+import type { PendingReimbursement } from '@cashctrl/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardTitle } from '@/components/ui';
 import { useSetReimbursementStatus } from '@/features/transactions/hooks/useReimbursements';
 import { fmtDate, fmtDec } from '@/lib/format';
-import type { PendingReimbursement } from '@/types';
 
 const PAGE_SIZE = 5;
 

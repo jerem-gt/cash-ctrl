@@ -1,3 +1,4 @@
+import type { AccountProfitability } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle } from '@/components/ui';
@@ -7,7 +8,6 @@ import {
   getGainColor,
 } from '@/features/dashboard/lib/profitability';
 import { fmt } from '@/lib/format';
-import type { AccountProfitability } from '@/types';
 
 interface Props {
   list: AccountProfitability[];

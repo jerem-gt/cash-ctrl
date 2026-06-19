@@ -1,6 +1,5 @@
+import { ReimbursementStatus } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
-
-import { ReimbursementStatus } from '@/types.ts';
 
 interface ReimbStatusProps {
   status: ReimbursementStatus;

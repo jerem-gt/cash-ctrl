@@ -1,8 +1,8 @@
+import type { Bank } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import type { QifParseResult } from '@/lib/qif-parser.ts';
 import type { XhbParseResult } from '@/lib/xhb-parser.ts';
-import type { Bank } from '@/types.ts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

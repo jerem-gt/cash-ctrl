@@ -1,3 +1,4 @@
+import type { BackupFile } from '@cashctrl/types';
 import { Download, HardDrive, Play } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import { Button, Input, showToast } from '@/components/ui';
 import { useBackupList, useRunBackup } from '@/features/settings/hooks/useBackup';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { currentLocale } from '@/lib/format';
-import type { BackupFile } from '@/types';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`;

@@ -1,10 +1,10 @@
+import type { Account, Subcategory } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, FormGroup, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useMatchCategorizationRule } from '@/hooks/useCategorizationRules';
 import { transferLabel } from '@/lib/transfer-label';
-import type { Account, Subcategory } from '@/types';
 
 export interface TxCoreState {
   type: 'income' | 'expense';

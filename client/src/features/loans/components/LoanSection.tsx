@@ -1,3 +1,4 @@
+import type { Account, LoanInstallment } from '@cashctrl/types';
 import { Check, Pencil, Settings, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,6 @@ import {
   useUpdateInstallment,
 } from '@/features/loans/hooks/useLoans';
 import { currentLocale, fmtDate, fmtDec, today } from '@/lib/format';
-import type { Account, LoanInstallment } from '@/types';
 
 type Props = {
   account: Account;

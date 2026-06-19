@@ -1,9 +1,9 @@
+import type { PendingReimbursement } from '@cashctrl/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
-import type { PendingReimbursement } from '@/types';
 
 const makePR = (id: number, description: string): PendingReimbursement => ({
   id,

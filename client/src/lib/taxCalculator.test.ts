@@ -1,6 +1,5 @@
+import type { TaxYearData } from '@cashctrl/types';
 import { describe, expect, it } from 'vitest';
-
-import type { TaxYearData } from '@/types';
 
 import { computeAbattement, computePlafondPER, simulate } from './taxCalculator';
 

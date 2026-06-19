@@ -1,7 +1,7 @@
+import type { Account, ScheduledTransaction } from '@cashctrl/types';
 import { describe, expect, it } from 'vitest';
 
 import i18n from '@/i18n';
-import type { Account, ScheduledTransaction } from '@/types';
 
 import {
   buildVersementDescription,

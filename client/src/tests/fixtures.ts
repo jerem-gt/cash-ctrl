@@ -1,4 +1,3 @@
-import { ImportResult } from '@/api/client.ts';
 import type {
   Account,
   AccountProfitability,
@@ -21,7 +20,9 @@ import type {
   TaxYearData,
   Transaction,
   UserPublic,
-} from '@/types';
+} from '@cashctrl/types';
+
+import { ImportResult } from '@/api/client.ts';
 
 export const USERS: UserPublic[] = [
   {

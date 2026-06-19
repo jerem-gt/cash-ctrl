@@ -1,3 +1,4 @@
+import type { StockPosition } from '@cashctrl/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,6 @@ import { TransferStockModal } from '@/features/portfolio/components/TransferStoc
 import { useRefreshPrices, useStockPositions } from '@/features/portfolio/hooks/useStocks';
 import { getPositionMetrics, getTotalMetrics } from '@/features/portfolio/lib/positionMetrics';
 import { fmtDec } from '@/lib/format';
-import type { StockPosition } from '@/types';
 
 interface PositionRowProps {
   pos: StockPosition;

@@ -1,10 +1,10 @@
+import type { InsuranceSupportType } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useCreateInsuranceSupport } from '@/features/insurance/hooks/useInsurance';
 import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput';
-import type { InsuranceSupportType } from '@/types';
 
 interface Props {
   accountId: number;

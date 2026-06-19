@@ -1,3 +1,4 @@
+import type { ScheduledTransaction } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -31,7 +32,6 @@ import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
-import type { ScheduledTransaction } from '@/types';
 
 export default function ScheduledPage() {
   const { t } = useTranslation('scheduled');

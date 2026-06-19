@@ -1,9 +1,9 @@
+import { Account } from '@cashctrl/types';
 import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { accountSeniority } from '@/lib/account.ts';
 import { currentLocale, fmtDec } from '@/lib/format.ts';
-import { Account } from '@/types.ts';
 
 interface AccountHeaderProps {
   account: Account;

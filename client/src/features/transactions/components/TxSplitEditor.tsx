@@ -1,7 +1,7 @@
+import type { Category, Subcategory } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, Select } from '@/components/ui';
-import type { Category, Subcategory } from '@/types';
 
 export interface SplitInput {
   _key: string;

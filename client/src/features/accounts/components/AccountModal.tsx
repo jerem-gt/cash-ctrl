@@ -1,3 +1,4 @@
+import type { Account, AccountType, Bank } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui';
 import { BankSelect } from '@/features/accounts/components/BankSelect';
 import { useCreateAccount } from '@/hooks/useAccounts';
-import type { Account, AccountType, Bank } from '@/types';
 
 export type AccountFormState = {
   name: string;
