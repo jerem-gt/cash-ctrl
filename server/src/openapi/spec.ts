@@ -99,6 +99,45 @@ const sessionAuth = [{ sessionCookie: [] }];
 function pathInt(name: string) {
   return { name, in: 'path', required: true, schema: { type: 'integer' } };
 }
+
+// Génère les 4 opérations standard (list / create / update / delete) pour une ressource CRUD.
+function crudPaths(
+  base: string,
+  tag: string,
+  labels: { list: string; create: string; update: string; remove: string },
+  createSchema: ZodType,
+  updateSchema: ZodType = createSchema,
+) {
+  return {
+    [base]: {
+      get: { tags: [tag], summary: labels.list, security: sessionAuth, responses: r200() },
+      post: {
+        tags: [tag],
+        summary: labels.create,
+        security: sessionAuth,
+        requestBody: body(createSchema),
+        responses: { ...r201, ...r400 },
+      },
+    },
+    [`${base}/{id}`]: {
+      put: {
+        tags: [tag],
+        summary: labels.update,
+        security: sessionAuth,
+        parameters: pId,
+        requestBody: body(updateSchema),
+        responses: { ...r200(), ...r400, ...r404 },
+      },
+      delete: {
+        tags: [tag],
+        summary: labels.remove,
+        security: sessionAuth,
+        parameters: pId,
+        responses: { ...r200(), ...r404, ...r409 },
+      },
+    },
+  };
+}
 const pId = [pathInt('id')];
 const pAccountId = [pathInt('accountId')];
 const pLoanId = [pathInt('loanId')];
@@ -252,38 +291,17 @@ export function buildOpenApiSpec() {
       },
 
       // ── Account Types ─────────────────────────────────────────────────────
-      '/api/account-types': {
-        get: {
-          tags: ['Account Types'],
-          summary: 'Liste des types de compte',
-          security: sessionAuth,
-          responses: r200(),
+      ...crudPaths(
+        '/api/account-types',
+        'Account Types',
+        {
+          list: 'Liste des types de compte',
+          create: 'Créer un type de compte',
+          update: 'Modifier un type de compte',
+          remove: 'Supprimer un type de compte',
         },
-        post: {
-          tags: ['Account Types'],
-          summary: 'Créer un type de compte',
-          security: sessionAuth,
-          requestBody: body(accountTypeSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/account-types/{id}': {
-        put: {
-          tags: ['Account Types'],
-          summary: 'Modifier un type de compte',
-          security: sessionAuth,
-          parameters: pId,
-          requestBody: body(accountTypeSchema),
-          responses: { ...r200(), ...r400, ...r404 },
-        },
-        delete: {
-          tags: ['Account Types'],
-          summary: 'Supprimer un type de compte',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
-        },
-      },
+        accountTypeSchema,
+      ),
 
       // ── Banks ─────────────────────────────────────────────────────────────
       '/api/banks': {
@@ -349,106 +367,44 @@ export function buildOpenApiSpec() {
       },
 
       // ── Categories ────────────────────────────────────────────────────────
-      '/api/categories': {
-        get: {
-          tags: ['Categories'],
-          summary: 'Liste des catégories',
-          security: sessionAuth,
-          responses: r200(),
+      ...crudPaths(
+        '/api/categories',
+        'Categories',
+        {
+          list: 'Liste des catégories',
+          create: 'Créer une catégorie',
+          update: 'Modifier une catégorie',
+          remove: 'Supprimer une catégorie',
         },
-        post: {
-          tags: ['Categories'],
-          summary: 'Créer une catégorie',
-          security: sessionAuth,
-          requestBody: body(categorySchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/categories/{id}': {
-        put: {
-          tags: ['Categories'],
-          summary: 'Modifier une catégorie',
-          security: sessionAuth,
-          parameters: pId,
-          requestBody: body(categorySchema),
-          responses: { ...r200(), ...r400, ...r404 },
-        },
-        delete: {
-          tags: ['Categories'],
-          summary: 'Supprimer une catégorie',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
-        },
-      },
+        categorySchema,
+      ),
 
       // ── Subcategories ─────────────────────────────────────────────────────
-      '/api/subcategories': {
-        get: {
-          tags: ['Subcategories'],
-          summary: 'Liste des sous-catégories',
-          security: sessionAuth,
-          responses: r200(),
+      ...crudPaths(
+        '/api/subcategories',
+        'Subcategories',
+        {
+          list: 'Liste des sous-catégories',
+          create: 'Créer une sous-catégorie',
+          update: 'Modifier une sous-catégorie',
+          remove: 'Supprimer une sous-catégorie',
         },
-        post: {
-          tags: ['Subcategories'],
-          summary: 'Créer une sous-catégorie',
-          security: sessionAuth,
-          requestBody: body(createSubcategorySchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/subcategories/{id}': {
-        put: {
-          tags: ['Subcategories'],
-          summary: 'Modifier une sous-catégorie',
-          security: sessionAuth,
-          parameters: pId,
-          requestBody: body(updateSubcategorySchema),
-          responses: { ...r200(), ...r400, ...r404 },
-        },
-        delete: {
-          tags: ['Subcategories'],
-          summary: 'Supprimer une sous-catégorie',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
-        },
-      },
+        createSubcategorySchema,
+        updateSubcategorySchema,
+      ),
 
       // ── Payment Methods ───────────────────────────────────────────────────
-      '/api/payment-methods': {
-        get: {
-          tags: ['Payment Methods'],
-          summary: 'Liste des moyens de paiement',
-          security: sessionAuth,
-          responses: r200(),
+      ...crudPaths(
+        '/api/payment-methods',
+        'Payment Methods',
+        {
+          list: 'Liste des moyens de paiement',
+          create: 'Créer un moyen de paiement',
+          update: 'Modifier un moyen de paiement',
+          remove: 'Supprimer un moyen de paiement',
         },
-        post: {
-          tags: ['Payment Methods'],
-          summary: 'Créer un moyen de paiement',
-          security: sessionAuth,
-          requestBody: body(paymentMethodSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/payment-methods/{id}': {
-        put: {
-          tags: ['Payment Methods'],
-          summary: 'Modifier un moyen de paiement',
-          security: sessionAuth,
-          parameters: pId,
-          requestBody: body(paymentMethodSchema),
-          responses: { ...r200(), ...r400, ...r404 },
-        },
-        delete: {
-          tags: ['Payment Methods'],
-          summary: 'Supprimer un moyen de paiement',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
-        },
-      },
+        paymentMethodSchema,
+      ),
 
       // ── Transactions ──────────────────────────────────────────────────────
       '/api/transactions': {
