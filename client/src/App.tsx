@@ -192,7 +192,9 @@ export default function App() {
       persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60_000 }}
     >
       <BrowserRouter>
-        <AppShell />
+        <Suspense fallback={null}>
+          <AppShell />
+        </Suspense>
         <Toast />
       </BrowserRouter>
     </PersistQueryClientProvider>
