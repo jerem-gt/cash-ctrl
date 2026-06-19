@@ -1,11 +1,11 @@
 import type {
   Account,
   RecurrenceUnit,
+  ScheduledPayload,
   ScheduledTransaction,
   WeekendHandling,
 } from '@cashctrl/types';
 
-import type { ScheduledPayload } from '@/api/client';
 import { today } from '@/lib/format';
 import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 

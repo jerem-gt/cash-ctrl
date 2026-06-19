@@ -1,6 +1,5 @@
-import type { Account, Category, PaymentMethod } from '@cashctrl/types';
+import type { Account, Category, ImportExecuteBody, PaymentMethod } from '@cashctrl/types';
 
-import type { ImportExecuteBody } from '@/api/client';
 import { type ParsedLedger, type ParsedTransaction, parseLedgerDate } from '@/lib/import-model';
 import { findTransferPeer } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';

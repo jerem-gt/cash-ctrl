@@ -1,12 +1,12 @@
+import type {
+  StockOperationPayload,
+  StockSearchResult,
+  TransferStockPayload,
+  UpdateOperationPayload,
+} from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  type StockOperationPayload,
-  stocksApi,
-  type StockSearchResult,
-  type TransferStockPayload,
-  type UpdateOperationPayload,
-} from '@/api/client';
+import { stocksApi } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 
 const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/i;

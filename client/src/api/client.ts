@@ -54,29 +54,6 @@ import type {
 
 import i18n from '@/i18n';
 
-export type {
-  ArbitragePayload,
-  BackupRunResult,
-  CreateLoanPayload,
-  CreateSupportPayload,
-  CreateTransactionPayload,
-  CreateTransferPayload,
-  ImportExecuteBody,
-  ImportResult,
-  InsuranceFlowPayload,
-  InteretsPayload,
-  JsonFullImportResult,
-  RevaloriserPayload,
-  ScheduledPayload,
-  StockOperationPayload,
-  StockSearchResult,
-  TransferStockPayload,
-  UpdateLoanPayload,
-  UpdateOperationPayload,
-  UpdateTransactionPayload,
-  UpdateTransferPayload,
-} from '@cashctrl/types';
-
 /** Corps d'erreur structuré renvoyé par l'API (cf. server/src/lib/errorCodes.ts). */
 export interface ApiErrorField {
   path: string;
