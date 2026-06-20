@@ -15,7 +15,8 @@ import { BankSelect } from '@/features/accounts/components/BankSelect';
 import { useCreateLoan, useUpdateLoan } from '@/features/loans/hooks/useLoans';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 
 type Props =
   | { mode: 'create'; onClose: () => void }

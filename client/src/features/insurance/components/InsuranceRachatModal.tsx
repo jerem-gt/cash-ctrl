@@ -8,7 +8,8 @@ import { useRachat } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { liquidAccounts } from '@/lib/account';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 import { parseIdOrNull } from '@/lib/parse';
 
 interface Props {

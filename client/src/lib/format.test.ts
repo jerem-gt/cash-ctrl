@@ -1,15 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  fmt,
-  fmtDate,
-  fmtDateShort,
-  fmtDec,
-  isSameMonth,
-  isThisMonth,
-  monthLabel,
-  today,
-} from './format';
+import { isSameMonth, isThisMonth, today } from './dateUtils';
+import { fmt, fmtDate, fmtDateShort, fmtDec, monthLabel } from './format';
 
 describe('fmt', () => {
   it('formate un entier positif en euros sans décimales', () => {

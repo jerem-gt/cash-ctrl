@@ -6,7 +6,7 @@ import type {
   WeekendHandling,
 } from '@cashctrl/types';
 
-import { today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
 import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 
 import type { TScheduled } from './recurrence';

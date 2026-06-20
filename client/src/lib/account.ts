@@ -1,6 +1,8 @@
 import type { Account, Bank } from '@cashctrl/types';
 import { type TFunction } from 'i18next';
 
+import { parseLocalDate } from '@/lib/dateUtils';
+
 type TAccounts = TFunction<'accounts'>;
 
 /**
@@ -57,7 +59,7 @@ export function accountDisplayBalance(a: Account): number {
 }
 
 export function accountSeniority(openingDate: string, t: TAccounts): string {
-  const open = new Date(openingDate + 'T00:00:00');
+  const open = parseLocalDate(openingDate);
   const now = new Date();
   let years = now.getFullYear() - open.getFullYear();
   let months = now.getMonth() - open.getMonth();

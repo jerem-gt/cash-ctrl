@@ -10,7 +10,8 @@ import {
   useLoanInstallments,
   useUpdateInstallment,
 } from '@/features/loans/hooks/useLoans';
-import { currentLocale, fmtDate, fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { currentLocale, fmtDate, fmtDec } from '@/lib/format';
 
 type Props = {
   account: Account;

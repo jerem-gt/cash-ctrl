@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useRevalorisation } from '@/features/insurance/hooks/useInsurance';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 
 interface Props {
   accountId: number;

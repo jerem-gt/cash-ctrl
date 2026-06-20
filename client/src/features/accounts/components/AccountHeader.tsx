@@ -2,8 +2,9 @@ import { Account } from '@cashctrl/types';
 import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { accountSeniority } from '@/lib/account.ts';
-import { currentLocale, fmtDec } from '@/lib/format.ts';
+import { accountSeniority } from '@/lib/account';
+import { parseLocalDate } from '@/lib/dateUtils';
+import { currentLocale, fmtDec } from '@/lib/format';
 
 interface AccountHeaderProps {
   account: Account;
@@ -172,14 +173,11 @@ export function AccountHeader({
               {account.opening_date && (
                 <p className="text-sm text-content-muted font-medium">
                   <span className="text-content-subtle">{t('header.opened_on')}</span>{' '}
-                  {new Date(account.opening_date + 'T00:00:00').toLocaleDateString(
-                    currentLocale(),
-                    {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    },
-                  )}
+                  {parseLocalDate(account.opening_date).toLocaleDateString(currentLocale(), {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
                   <span className="mx-2 text-content-faint">—</span>
                   <span className="bg-surface-strong/50 text-content-secondary px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">
                     {accountSeniority(account.opening_date, t)}

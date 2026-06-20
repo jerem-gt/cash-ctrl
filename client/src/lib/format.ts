@@ -1,5 +1,7 @@
 import i18n from '@/i18n';
 
+import { parseLocalDate } from './dateUtils';
+
 export function currentLocale(): string {
   if (i18n.language.startsWith('en')) return 'en-GB';
   return 'fr-FR';
@@ -42,10 +44,10 @@ export const fmtCurrency = (n: number, currency = 'EUR') =>
 export const fmtDec = (n: number) => fmtCurrency(n);
 
 export const fmtDate = (s: string) =>
-  df({ day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(s + 'T00:00:00'));
+  df({ day: '2-digit', month: 'short', year: 'numeric' }).format(parseLocalDate(s));
 
 export const fmtDateShort = (s: string) =>
-  df({ day: '2-digit', month: 'short' }).format(new Date(s + 'T00:00:00'));
+  df({ day: '2-digit', month: 'short' }).format(parseLocalDate(s));
 
 export function fmtMonthShort(d: Date): string {
   return df({ month: 'short' }).format(d).replace('.', '');
@@ -55,23 +57,8 @@ export function fmtDayNum(d: Date): string {
   return df({ day: '2-digit' }).format(d);
 }
 
-export const today = () => new Date().toISOString().split('T')[0];
-
-export function isThisMonth(dateStr: string): boolean {
-  const d = new Date(dateStr + 'T00:00:00');
-  const n = new Date();
-  return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
-}
-
 export function monthLabel(offset: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() - offset);
   return df({ month: 'short' }).format(d);
-}
-
-export function isSameMonth(dateStr: string, offset: number): boolean {
-  const d = new Date(dateStr + 'T00:00:00');
-  const ref = new Date();
-  ref.setMonth(ref.getMonth() - offset);
-  return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
 }
