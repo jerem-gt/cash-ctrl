@@ -2,7 +2,7 @@ import type { PaymentMethod } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, Select } from '@/components/ui';
-import { XHB_PAYMODE_NAMES } from '@/pages/import.helpers.ts';
+import { XHB_PAYMODE_NAMES } from '@/lib/import.helpers';
 
 // ─── Paymode mapping row ──────────────────────────────────────────────────────
 

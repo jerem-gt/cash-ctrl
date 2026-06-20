@@ -10,10 +10,8 @@ import { useCategories } from '@/hooks/useCategories.ts';
 import { useCategorizationRules } from '@/hooks/useCategorizationRules';
 import { useLogoMap } from '@/hooks/useLogoMap.ts';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods.ts';
+import { buildLedgerFromCsv, type CsvMapping } from '@/lib/csv-import.helpers';
 import { type CsvParseResult, detectDecimalSeparator, parseCsvRaw } from '@/lib/csv-parser.ts';
-import { parseQif } from '@/lib/qif-parser.ts';
-import { parseXhb } from '@/lib/xhb-parser.ts';
-import { buildLedgerFromCsv, type CsvMapping } from '@/pages/csv-import.helpers.ts';
 import {
   type AccountChoice,
   buildExecuteBody,
@@ -25,7 +23,9 @@ import {
   likeMatch,
   resolvePreview,
   resolveXhbPreview,
-} from '@/pages/import.helpers.ts';
+} from '@/lib/import.helpers';
+import { parseQif } from '@/lib/qif-parser.ts';
+import { parseXhb } from '@/lib/xhb-parser.ts';
 
 import { AccountsStep } from './import/AccountsStep';
 import { CategoriesStep } from './import/CategoriesStep';

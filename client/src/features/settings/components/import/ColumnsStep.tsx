@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
+import type { CsvMapping } from '@/lib/csv-import.helpers';
 import type { CsvParseResult } from '@/lib/csv-parser';
-import type { CsvMapping } from '@/pages/csv-import.helpers';
 
 interface Props {
   csvRaw: CsvParseResult;
