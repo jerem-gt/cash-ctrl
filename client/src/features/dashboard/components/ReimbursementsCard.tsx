@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle } from '@/components/ui';
 import { useSetReimbursementStatus } from '@/features/transactions/hooks/useReimbursements';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtCurrency, fmtDate } from '@/lib/format';
 
 const PAGE_SIZE = 5;
 
@@ -37,13 +37,13 @@ function Row({ item, onMarkDone, pendingMutation, faded, markDoneTitle }: Readon
       <td
         className={`py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap ${amountColor}`}
       >
-        −{fmtDec(item.amount)}
+        −{fmtCurrency(item.amount)}
       </td>
       <td className="py-2 pr-3 text-right text-success tabular-nums hidden sm:table-cell whitespace-nowrap">
-        {item.total_reimbursed > 0 ? `+${fmtDec(item.total_reimbursed)}` : '—'}
+        {item.total_reimbursed > 0 ? `+${fmtCurrency(item.total_reimbursed)}` : '—'}
       </td>
       <td className="py-2 pr-3 text-right tabular-nums font-medium whitespace-nowrap">
-        <span className={remainingColor}>{fmtDec(Math.max(0, remaining))}</span>
+        <span className={remainingColor}>{fmtCurrency(Math.max(0, remaining))}</span>
       </td>
       <td className="py-2 text-right">
         {onMarkDone && (

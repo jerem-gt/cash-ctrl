@@ -41,8 +41,6 @@ export const fmt = (n: number) =>
 export const fmtCurrency = (n: number, currency = 'EUR') =>
   nf({ style: 'currency', currency }).format(n);
 
-export const fmtDec = (n: number) => fmtCurrency(n);
-
 export const fmtDate = (s: string) =>
   df({ day: '2-digit', month: 'short', year: 'numeric' }).format(parseLocalDate(s));
 

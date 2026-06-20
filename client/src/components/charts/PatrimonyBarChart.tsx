@@ -12,7 +12,7 @@ import {
 import { useIsDark } from '@/hooks/useTheme';
 import { axisTickProps, chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
 import { generateColor } from '@/lib/colors.ts';
-import { fmt, fmtDec } from '@/lib/format';
+import { fmt, fmtCurrency } from '@/lib/format';
 
 interface Props {
   data: Array<Record<string, string | number>>;
@@ -48,7 +48,7 @@ export default function PatrimonyBarChart({
             if (name === '_total') return null;
             const total = (entry.payload as Record<string, number>)._total;
             const pct = total === 0 ? 0 : (Number(v) / total) * 100;
-            return [`${fmtDec(Number(v))} (${pct.toFixed(1)} %)`, labelFor(String(name))];
+            return [`${fmtCurrency(Number(v))} (${pct.toFixed(1)} %)`, labelFor(String(name))];
           }}
           {...tooltipStyleProps(theme)}
           cursor={{ fill: theme.cursor }}

@@ -11,7 +11,7 @@ import {
   useUpdateReimbursementAmount,
 } from '@/features/transactions/hooks/useReimbursements';
 import { useTransactions } from '@/hooks/useTransactions';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtCurrency, fmtDate } from '@/lib/format';
 
 interface Props {
   tx: Transaction;
@@ -81,11 +81,11 @@ function AmountCell({
       title={t('reimbursements_panel.edit_amount_title')}
     >
       <span className="text-xs font-medium text-success tabular-nums group-hover:underline decoration-dotted">
-        +{fmtDec(reimbursement.amount)}
+        +{fmtCurrency(reimbursement.amount)}
       </span>
       {isPartial && (
         <span className="block text-[10px] text-content-subtle tabular-nums leading-none mt-0.5">
-          / {fmtDec(reimbursement.transaction_amount)}
+          / {fmtCurrency(reimbursement.transaction_amount)}
         </span>
       )}
     </button>
@@ -269,9 +269,9 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
             <span
               className={`text-sm font-medium tabular-nums ${remaining > 0 ? 'text-danger' : 'text-success'}`}
             >
-              {fmtDec(Math.max(0, remaining))}
+              {fmtCurrency(Math.max(0, remaining))}
               <span className="text-[11px] text-content-subtle font-normal ml-1">
-                / {fmtDec(tx.amount)}
+                / {fmtCurrency(tx.amount)}
               </span>
             </span>
           </div>
@@ -289,8 +289,8 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                       <option key={inc.id} value={inc.id}>
                         {inc.description} · {fmtDate(inc.date)} ·{' '}
                         {isPartial
-                          ? `+${fmtDec(remaining)} / ${fmtDec(inc.amount)}`
-                          : `+${fmtDec(inc.amount)}`}
+                          ? `+${fmtCurrency(remaining)} / ${fmtCurrency(inc.amount)}`
+                          : `+${fmtCurrency(inc.amount)}`}
                       </option>
                     );
                   })}

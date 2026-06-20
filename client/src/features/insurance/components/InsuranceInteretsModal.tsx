@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useInterets } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 interface Props {
   accountId: number;
@@ -49,7 +49,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
             autoFocus
           />
           <p className="text-[10px] text-content-subtle mt-1">
-            {t('interets_modal.current_balance')} {fmtDec(support.value)}
+            {t('interets_modal.current_balance')} {fmtCurrency(support.value)}
           </p>
         </FormGroup>
 

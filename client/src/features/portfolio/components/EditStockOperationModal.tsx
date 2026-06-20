@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateStockOperation } from '@/features/portfolio/hooks/useStocks';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 
 interface Props {
@@ -111,7 +111,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               : t('edit_operation_modal.total_received')}
           </p>
           <p className={`font-display text-xl ${totalAmount < 0 ? 'text-danger' : 'text-content'}`}>
-            {fmtDec(totalAmount)}
+            {fmtCurrency(totalAmount)}
           </p>
         </div>
 

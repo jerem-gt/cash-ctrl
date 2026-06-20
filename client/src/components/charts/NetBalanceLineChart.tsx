@@ -11,7 +11,7 @@ import {
 
 import { useIsDark } from '@/hooks/useTheme';
 import { axisTickProps, chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
-import { fmt, fmtDec } from '@/lib/format';
+import { fmt, fmtCurrency } from '@/lib/format';
 
 interface Props {
   data: Array<Record<string, string | number>>;
@@ -39,7 +39,7 @@ export default function NetBalanceLineChart({ data, label }: Readonly<Props>) {
         <XAxis dataKey="year" {...axisTick} />
         <YAxis {...axisTick} tickFormatter={(v) => fmt(Number(v))} width={70} />
         <Tooltip
-          formatter={(v) => [fmtDec(Number(v)), label]}
+          formatter={(v) => [fmtCurrency(Number(v)), label]}
           {...tooltipStyleProps(theme)}
           cursor={{ stroke: theme.refLine, strokeWidth: 1 }}
         />

@@ -10,7 +10,7 @@ import { useCategories } from '@/hooks/useCategories.ts';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { today } from '@/lib/dateUtils';
-import { fmtDayNum, fmtDec, fmtMonthShort } from '@/lib/format';
+import { fmtCurrency, fmtDayNum, fmtMonthShort } from '@/lib/format';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -278,14 +278,14 @@ function TxItemTrailing({
       <div className="text-right w-28 shrink-0 border-l border-line-subtle pl-2 sm:pl-3">
         <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
           {sign}
-          {fmtDec(tx.amount)}
+          {fmtCurrency(tx.amount)}
         </div>
         {runningBalance != null && (
           <div
             className="text-[10px] text-content-subtle tabular-nums leading-tight"
             title={t('tx_item.running_balance_title')}
           >
-            {fmtDec(runningBalance)}
+            {fmtCurrency(runningBalance)}
           </div>
         )}
       </div>

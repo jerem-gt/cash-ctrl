@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, ModalFrame, Skeleton } from '@/components/ui';
 import { useTransactions } from '@/hooks/useTransactions';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtCurrency, fmtDate } from '@/lib/format';
 
 interface ScheduledTxModalProps {
   sched: ScheduledTransaction;
@@ -52,7 +52,7 @@ export function ScheduledTxModal({ sched, onClose }: Readonly<ScheduledTxModalPr
               }`}
             >
               {tx.type === 'income' ? '+' : '−'}
-              {fmtDec(tx.amount)}
+              {fmtCurrency(tx.amount)}
             </span>
           </div>
         ))}

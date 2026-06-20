@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
 import { recurrenceLabel } from '@/features/scheduled/lib/recurrence';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 interface RowProps {
   sched: ScheduledTransaction;
@@ -73,7 +73,7 @@ export function ScheduledRow({
       </div>
       <span className={`text-sm font-medium tabular-nums shrink-0 ${amountColor}`}>
         {amountSign}
-        {fmtDec(sched.amount)}
+        {fmtCurrency(sched.amount)}
       </span>
       <ItemActions onEdit={() => onEdit(sched)} onDelete={() => onDelete(sched)} />
     </div>

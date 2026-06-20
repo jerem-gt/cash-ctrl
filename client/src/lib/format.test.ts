@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isSameMonth, isThisMonth, today } from './dateUtils';
-import { fmt, fmtDate, fmtDateShort, fmtDec, monthLabel } from './format';
+import { fmt, fmtCurrency, fmtDate, fmtDateShort, monthLabel } from './format';
 
 describe('fmt', () => {
   it('formate un entier positif en euros sans décimales', () => {
@@ -27,16 +27,16 @@ describe('fmt', () => {
   });
 });
 
-describe('fmtDec', () => {
+describe('fmtCurrency', () => {
   it('inclut les centimes', () => {
-    const result = fmtDec(24.5);
+    const result = fmtCurrency(24.5);
     expect(result).toMatch(/24/);
     expect(result).toMatch(/50/);
     expect(result).toContain('€');
   });
 
   it('affiche deux décimales pour un entier', () => {
-    const result = fmtDec(100);
+    const result = fmtCurrency(100);
     expect(result).toMatch(/100/);
     expect(result).toContain('€');
   });

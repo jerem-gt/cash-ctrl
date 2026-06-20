@@ -2,7 +2,7 @@ import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } 
 
 import { useIsDark } from '@/hooks/useTheme';
 import { axisTickProps, chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
-import { fmt, fmtDec } from '@/lib/format';
+import { fmt, fmtCurrency } from '@/lib/format';
 
 export const INCOME_COLOR = '#7DBB4A';
 export const EXPENSE_COLOR = '#D46060';
@@ -51,7 +51,7 @@ export default function IncomeExpenseBarChart({
         <XAxis dataKey="month" {...axisTick} />
         <YAxis {...axisTick} tickFormatter={(v) => fmt(Number(v))} width={70} />
         <Tooltip
-          formatter={(v) => (v == null ? '' : fmtDec(Number(v)))}
+          formatter={(v) => (v == null ? '' : fmtCurrency(Number(v)))}
           {...tooltipStyleProps(theme)}
           cursor={{ fill: theme.cursor }}
         />
