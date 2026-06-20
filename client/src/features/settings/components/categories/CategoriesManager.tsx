@@ -39,7 +39,6 @@ function CategoryEditForm({ cat, onClose }: Readonly<{ cat: Category; onClose: (
               onClose();
               showToast(t('categories.update_success'));
             },
-            onError: (err) => showToast(err.message),
           },
         );
       }}
@@ -112,7 +111,6 @@ export function CategoriesManager() {
         showToast(t('categories.create_success'));
         setResetCreationFormKey((prev) => prev + 1);
       },
-      onError: (err) => showToast(err.message),
     });
   }
 

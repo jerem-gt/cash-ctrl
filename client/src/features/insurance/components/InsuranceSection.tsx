@@ -193,7 +193,6 @@ function SupportRow({
                 setActiveModal(null);
                 showToast(t('section.support_deleted'));
               },
-              onError: (err) => showToast(err.message),
             });
           }}
           onCancel={() => setActiveModal(null)}
@@ -454,7 +453,6 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
           onConfirm={() => {
             deleteOp.mutate(deletingOp.id, {
               onSuccess: () => setDeletingOp(null),
-              onError: (e) => showToast(e.message),
             });
           }}
           onCancel={() => setDeletingOp(null)}

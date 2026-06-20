@@ -27,7 +27,6 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
           showToast(t('toasts.created'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
@@ -98,7 +97,6 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
           showToast(t('toasts.updated'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
@@ -151,7 +149,6 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
     if (!confirm(t('user.confirm_delete', { username: user.username }))) return;
     deleteUser.mutate(user.id, {
       onSuccess: () => showToast(t('toasts.deleted')),
-      onError: (err) => showToast(err.message),
     });
   };
 

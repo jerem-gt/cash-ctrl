@@ -54,7 +54,6 @@ function AccountTypeEditForm({ at, onClose }: Readonly<{ at: AccountType; onClos
               onClose();
               showToast(t('account_types.success_edit'));
             },
-            onError: (err) => showToast(err.message),
           },
         );
       }}
@@ -197,7 +196,6 @@ export function AccountTypesManager() {
           setNewAtEnvelopeType('');
           showToast(t('account_types.success_add'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

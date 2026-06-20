@@ -215,7 +215,6 @@ export function PortfolioSection({ accountId, readOnly = false }: Readonly<Props
   const handleRefresh = () => {
     refresh.mutate(undefined, {
       onSuccess: () => showToast(t('section.refresh_success')),
-      onError: (err) => showToast(err.message),
     });
   };
 

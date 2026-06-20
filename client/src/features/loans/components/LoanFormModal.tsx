@@ -186,7 +186,6 @@ export function LoanFormModal(props: Readonly<Props>) {
             showToast(t('form_modal.success_create'));
             props.onClose();
           },
-          onError: (e) => showToast(e.message),
         },
       );
     } else {
@@ -202,7 +201,6 @@ export function LoanFormModal(props: Readonly<Props>) {
             showToast(t('form_modal.success_edit'));
             props.onClose();
           },
-          onError: (e) => showToast(e.message),
         },
       );
     }

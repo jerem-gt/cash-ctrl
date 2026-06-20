@@ -40,7 +40,6 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
           showToast(t('edit_operation_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

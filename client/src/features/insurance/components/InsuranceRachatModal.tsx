@@ -48,7 +48,6 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
           showToast(t('rachat_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

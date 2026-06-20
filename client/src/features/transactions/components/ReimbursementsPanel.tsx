@@ -123,15 +123,12 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
   const handleToggle = () => {
     const newStatus: 'en_attente' | null = localStatus === null ? 'en_attente' : null;
     setLocalStatus(newStatus);
-    setStatus.mutate(
-      { id: tx.id, status: newStatus },
-      { onError: (err) => showToast(err.message) },
-    );
+    setStatus.mutate({ id: tx.id, status: newStatus });
   };
 
   const handleStatusChange = (status: 'en_attente' | 'rembourse') => {
     setLocalStatus(status);
-    setStatus.mutate({ id: tx.id, status }, { onError: (err) => showToast(err.message) });
+    setStatus.mutate({ id: tx.id, status });
   };
 
   const handleTxSelect = (txId: string) => {
@@ -162,19 +159,16 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
           setShowAdd(false);
           showToast(t('reimbursements_panel.link_success'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
 
   const handleUnlink = (linkedId: number) => {
-    unlink.mutate(linkedId, {
-      onError: (err) => showToast(err.message),
-    });
+    unlink.mutate(linkedId);
   };
 
   const handleUpdateAmount = (linkedId: number, amount: number | null) => {
-    updateAmount.mutate({ linkedId, amount }, { onError: (err) => showToast(err.message) });
+    updateAmount.mutate({ linkedId, amount });
   };
 
   return (

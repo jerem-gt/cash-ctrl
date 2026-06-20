@@ -55,7 +55,6 @@ function RuleRow({ rule, subcategoryLabel }: Readonly<RuleRowProps>) {
           showToast(t('categorization_rules.success_update'));
           setEditing(false);
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };
@@ -63,7 +62,6 @@ function RuleRow({ rule, subcategoryLabel }: Readonly<RuleRowProps>) {
   const handleDelete = () => {
     remove.mutate(rule.id, {
       onSuccess: () => showToast(t('categorization_rules.success_delete')),
-      onError: (e) => showToast(e.message),
     });
   };
 
@@ -181,7 +179,6 @@ export function CategorizationRulesCard() {
           setNewSubcategoryId('');
           setShowAddForm(false);
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };
@@ -195,7 +192,6 @@ export function CategorizationRulesCard() {
           showToast(t('categorization_rules.init_success', { count: data.inserted }));
         }
       },
-      onError: (e) => showToast(e.message),
     });
   };
 
@@ -208,7 +204,6 @@ export function CategorizationRulesCard() {
         showToast(t('categorization_rules.success_delete_all'));
         setShowDeleteAllConfirm(false);
       },
-      onError: (e) => showToast(e.message),
     });
   };
 

@@ -52,7 +52,6 @@ export function InsuranceArbitrageModal({
           showToast(t('arbitrage_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

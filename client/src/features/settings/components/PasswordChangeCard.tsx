@@ -31,7 +31,6 @@ export function PasswordChangeCard() {
           setPwForm({ current: '', next: '', confirm: '' });
           showToast(t('password.success'));
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };

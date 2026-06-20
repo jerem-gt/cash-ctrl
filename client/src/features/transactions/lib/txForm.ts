@@ -303,7 +303,6 @@ export function runSubmitTransfer(ctx: TransferCtx): void {
         showToast(ctx.t('modal.success_transfer'));
         ctx.onClose();
       },
-      onError: (err) => showToast(err.message),
     },
   );
 }
@@ -338,7 +337,6 @@ export function runSubmitTx(ctx: TxCtx): void {
         showToast(ctx.t('modal.success_add'));
         ctx.onClose();
       },
-      onError: (err) => showToast(err.message),
     },
   );
 }

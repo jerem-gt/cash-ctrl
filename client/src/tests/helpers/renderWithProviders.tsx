@@ -1,12 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { Toast } from '@/components/ui';
+import { showToast, Toast } from '@/components/ui';
 
 export function createTestQueryClient() {
   return new QueryClient({
+    mutationCache: new MutationCache({
+      onError: (err, _vars, _ctx, mutation) => {
+        if (mutation.meta?.suppressGlobalError) return;
+        showToast(err.message);
+      },
+    }),
     defaultOptions: {
       queries: { retry: false, staleTime: 0 },
       mutations: { retry: false },

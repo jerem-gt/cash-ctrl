@@ -24,7 +24,6 @@ export function SubCategoriesManager({ parentCategory }: Readonly<{ parentCatego
           showToast(t('categories.subcategory_create_success'));
           setResetCreationFormKey((prev) => prev + 1);
         },
-        onError: (err) => showToast(err.message),
       },
     );
   }

@@ -1,4 +1,4 @@
-import { QueryClient, useIsRestoring } from '@tanstack/react-query';
+import { MutationCache, QueryClient, useIsRestoring } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Menu } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
@@ -8,6 +8,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Sidebar } from '@/components/Sidebar';
+import { showToast } from '@/components/ui';
 import { Card, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
@@ -174,6 +175,12 @@ export default function App() {
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        mutationCache: new MutationCache({
+          onError: (err, _vars, _ctx, mutation) => {
+            if (mutation.meta?.suppressGlobalError) return;
+            showToast(err.message);
+          },
+        }),
         defaultOptions: {
           queries: {
             staleTime: 30_000,

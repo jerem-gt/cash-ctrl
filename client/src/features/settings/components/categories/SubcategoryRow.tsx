@@ -3,7 +3,7 @@ import { Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { IconButton, showToast } from '@/components/ui';
+import { IconButton } from '@/components/ui';
 import { SubcategoryEditor } from '@/features/settings/components/categories/SubcategoryEditor.tsx';
 import { useUpdateSubcategory } from '@/hooks/useSubcategories.ts';
 
@@ -35,7 +35,6 @@ export function SubcategoryRow({
                 setEditing(false);
                 onEdit();
               },
-              onError: (err) => showToast(err.message),
             },
           );
         }}

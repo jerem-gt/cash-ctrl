@@ -87,7 +87,6 @@ export function useTransactionsManager(initialAccountId?: number) {
         closeAll();
         showToast(isTransfer ? t('manage.deleted_transfer') : t('manage.deleted_tx'));
       },
-      onError: (e) => showToast(e.message),
     });
   };
 
@@ -115,7 +114,6 @@ export function useTransactionsManager(initialAccountId?: number) {
             closeAll();
             showToast(t('manage.updated_tx'));
           },
-          onError: (e) => showToast(e.message),
         },
       );
     } else {
@@ -134,7 +132,6 @@ export function useTransactionsManager(initialAccountId?: number) {
             closeAll();
             showToast(t('manage.updated_transfer'));
           },
-          onError: (e) => showToast(e.message),
         },
       );
     }

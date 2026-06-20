@@ -46,7 +46,6 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
           showToast(t('edit_operation_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
