@@ -3,11 +3,11 @@ import type { Database } from 'better-sqlite3';
 import { toEuros } from '../../lib/money';
 import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
 import type { Transaction } from '../transactions/transactions.types';
-import { createProfitabilityRepo, marketValueByAccount } from './profitability.repo';
+import { marketValueByAccount } from './investment-profitability.repo';
+import { createProfitabilityRepo } from './profitability.repo';
 import { createReportRepo } from './report.repo';
 import { buildPositionsAt, firstDayOfMonth, sumDeltasBefore } from './stats.calculations';
 
-export type { AccountProfitability, YearlyReturn } from './profitability.repo';
 export type { MonthlyStat, ReportData } from './report.repo';
 
 export interface BalanceHistoryData {
