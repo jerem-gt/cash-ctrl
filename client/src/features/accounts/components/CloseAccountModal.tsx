@@ -6,7 +6,7 @@ import { Button, FormGroup, Input, ModalFrame, Select, showToast } from '@/compo
 import { useCloseAccount } from '@/hooks/useAccounts';
 import { accountDisplayBalance } from '@/lib/account';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 interface Props {
   account: Account;
@@ -82,7 +82,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
           <Trans
             i18nKey="close_modal.balance_warning"
             ns="accounts"
-            values={{ balance: fmtDec(balance) }}
+            values={{ balance: fmtCurrency(balance) }}
             components={{ bold: <span className="font-semibold" /> }}
           />
         </div>

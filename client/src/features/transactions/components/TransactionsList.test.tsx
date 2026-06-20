@@ -224,7 +224,7 @@ describe('TransactionsList', () => {
 
     renderWithProviders(<TransactionsList account={ACCOUNTS[0]} logoMap={mockLogoMap} />);
 
-    // fmtDec(1200) → "1 200,00 €" — on cherche "200,00" pour éviter les problèmes d'espace fine
+    // fmtCurrency(1200) → "1 200,00 €" — on cherche "200,00" pour éviter les problèmes d'espace fine
     expect(screen.getByTitle('Solde courant').textContent).toMatch(/200,00/);
   });
 });

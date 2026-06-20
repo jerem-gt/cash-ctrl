@@ -2,7 +2,7 @@ import { Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { useIsDark } from '@/hooks/useTheme';
 import { chartTheme, tooltipStyleProps } from '@/lib/chartTheme';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 export interface ExpensesPieDatum {
   name: string;
@@ -25,7 +25,7 @@ export default function ExpensesPieChart({ data }: Readonly<{ data: ExpensesPieD
           paddingAngle={2}
         />
         <Tooltip
-          formatter={(v) => (v == null ? '' : fmtDec(Number(v)))}
+          formatter={(v) => (v == null ? '' : fmtCurrency(Number(v)))}
           {...tooltipStyleProps(theme)}
         />
       </PieChart>

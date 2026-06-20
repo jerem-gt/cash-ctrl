@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import { useArbitrage } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 interface Props {
   accountId: number;
@@ -98,7 +98,7 @@ export function InsuranceArbitrageModal({
               {t('arbitrage_modal.amount_label')}
             </label>
             <span className="text-[10px] text-content-subtle">
-              {t('arbitrage_modal.max_label')} {fmtDec(fromSupport.value)}
+              {t('arbitrage_modal.max_label')} {fmtCurrency(fromSupport.value)}
             </span>
           </div>
           <DecimalInput

@@ -11,7 +11,7 @@ import {
   useUpdateInstallment,
 } from '@/features/loans/hooks/useLoans';
 import { today } from '@/lib/dateUtils';
-import { currentLocale, fmtDate, fmtDec } from '@/lib/format';
+import { currentLocale, fmtCurrency, fmtDate } from '@/lib/format';
 
 type Props = {
   account: Account;
@@ -112,10 +112,10 @@ function InstallmentRow({
           />
         </td>
         <td className="px-3 py-2 text-xs text-content-subtle text-right">
-          {fmtDec(inst.principal_amount)}
+          {fmtCurrency(inst.principal_amount)}
         </td>
         <td className="px-3 py-2 text-xs text-content-subtle text-right">
-          {fmtDec(inst.interest_amount)}
+          {fmtCurrency(inst.interest_amount)}
         </td>
         <td className="px-3 py-2">{statusBadge}</td>
         <td className="px-3 py-2">
@@ -146,13 +146,13 @@ function InstallmentRow({
       <td className="px-3 py-2 text-xs text-content-subtle">{inst.installment_number}</td>
       <td className="px-3 py-2 text-xs text-content-secondary">{fmtDate(inst.due_date)}</td>
       <td className="px-3 py-2 text-xs text-content text-right font-medium">
-        {fmtDec(inst.total_amount)}
+        {fmtCurrency(inst.total_amount)}
       </td>
       <td className="px-3 py-2 text-xs text-content-subtle text-right">
-        {fmtDec(inst.principal_amount)}
+        {fmtCurrency(inst.principal_amount)}
       </td>
       <td className="px-3 py-2 text-xs text-content-subtle text-right">
-        {fmtDec(inst.interest_amount)}
+        {fmtCurrency(inst.interest_amount)}
       </td>
       <td className="px-3 py-2">{statusBadge}</td>
       <td className="px-3 py-2">
@@ -223,7 +223,10 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
 
         {/* Ligne 1 — paramètres fixes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-5">
-          <LoanStat label={t('section.capital_borrowed')} value={fmtDec(loan.principal_amount)} />
+          <LoanStat
+            label={t('section.capital_borrowed')}
+            value={fmtCurrency(loan.principal_amount)}
+          />
           <LoanStat
             label={t('section.annual_rate')}
             value={`${(loan.interest_rate * 100).toLocaleString(currentLocale(), { minimumFractionDigits: 2 })} %`}
@@ -232,7 +235,10 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
             label={t('section.duration')}
             value={t('section.duration_value', { months: loan.duration_months })}
           />
-          <LoanStat label={t('section.monthly_payment')} value={fmtDec(loan.monthly_payment)} />
+          <LoanStat
+            label={t('section.monthly_payment')}
+            value={fmtCurrency(loan.monthly_payment)}
+          />
         </div>
 
         {/* Ligne 2 — suivi dynamique */}
@@ -247,13 +253,17 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
                 <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.repaid')}
                 </span>
-                <span className="font-display text-lg text-content">{fmtDec(paidPrincipal)}</span>
+                <span className="font-display text-lg text-content">
+                  {fmtCurrency(paidPrincipal)}
+                </span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.remaining_due')}
                 </span>
-                <span className="font-display text-lg text-danger">{fmtDec(capitalRestantDu)}</span>
+                <span className="font-display text-lg text-danger">
+                  {fmtCurrency(capitalRestantDu)}
+                </span>
               </div>
             </div>
             <div className="h-1.5 bg-surface-emphasis rounded-full overflow-hidden">
@@ -275,14 +285,16 @@ export function LoanSection({ account, onClose, readOnly = false }: Readonly<Pro
                 <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.paid')}
                 </span>
-                <span className="font-display text-lg text-content">{fmtDec(paidInterest)}</span>
+                <span className="font-display text-lg text-content">
+                  {fmtCurrency(paidInterest)}
+                </span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-content-subtle block mb-0.5">
                   {t('section.remaining')}
                 </span>
                 <span className="font-display text-lg text-content">
-                  {fmtDec(remainingInterest)}
+                  {fmtCurrency(remainingInterest)}
                 </span>
               </div>
             </div>

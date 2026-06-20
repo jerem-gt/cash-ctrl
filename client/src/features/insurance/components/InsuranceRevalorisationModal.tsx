@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useRevalorisation } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 interface Props {
   accountId: number;
@@ -41,7 +41,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
   return (
     <ModalFrame
       title={t('revalorisation_modal.title', { support: support.name })}
-      subtitle={t('revalorisation_modal.subtitle', { value: fmtDec(support.value) })}
+      subtitle={t('revalorisation_modal.subtitle', { value: fmtCurrency(support.value) })}
       onClose={revalorisation.isPending ? undefined : onClose}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

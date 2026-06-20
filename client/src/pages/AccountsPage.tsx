@@ -42,7 +42,7 @@ import {
   bankSortOrderMap,
   groupAccountsByBank,
 } from '@/lib/account';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtCurrency, fmtDate } from '@/lib/format';
 import { parseAmountOrZero, parseIdOrNull } from '@/lib/parse';
 
 function AccountsPageSkeleton() {
@@ -241,7 +241,7 @@ export default function AccountsPage() {
                   <span
                     className={`font-display text-lg ${subtotal < 0 ? 'text-danger' : 'text-content-secondary'}`}
                   >
-                    {fmtDec(subtotal)}
+                    {fmtCurrency(subtotal)}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -455,7 +455,7 @@ function AccountCard({
           </IconButton>
         </div>
       </div>
-      <p className={`font-display text-3xl ${balanceClass}`}>{fmtDec(displayBal)}</p>
+      <p className={`font-display text-3xl ${balanceClass}`}>{fmtCurrency(displayBal)}</p>
       <div className="mt-4">
         {isClosed && acc.closed_at ? (
           <p className="text-[11px] text-content-subtle uppercase tracking-wider font-medium">

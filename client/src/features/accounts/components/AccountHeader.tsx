@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { accountSeniority } from '@/lib/account';
 import { parseLocalDate } from '@/lib/dateUtils';
-import { currentLocale, fmtDec } from '@/lib/format';
+import { currentLocale, fmtCurrency } from '@/lib/format';
 
 interface AccountHeaderProps {
   account: Account;
@@ -60,13 +60,13 @@ const StatItem = ({
       <p
         className={`font-display ${isMain ? 'text-4xl text-content' : 'text-2xl text-content-secondary'} leading-none ${forceRed || value < 0 ? 'text-danger' : ''}`}
       >
-        {fmtDec(value)}
+        {fmtCurrency(value)}
       </p>
       {valueAll !== undefined && valueAll !== value ? (
         <p className="text-[11px] text-content-subtle mt-1.5">
           <span>{t('header.forecasted')}&nbsp;</span>
           <span className={valueAll < 0 ? 'text-danger' : 'text-content-muted'}>
-            {fmtDec(valueAll)}
+            {fmtCurrency(valueAll)}
           </span>
         </p>
       ) : (

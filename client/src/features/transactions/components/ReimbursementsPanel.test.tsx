@@ -80,7 +80,7 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     await waitFor(() =>
       expect(screen.getByText(REIMBURSEMENTS[0].description)).toBeInTheDocument(),
     );
-    // The span renders "+<fmtDec(amount)>" — match the span whose normalized textContent is "+45,00€"
+    // The span renders "+<fmtCurrency(amount)>" — match the span whose normalized textContent is "+45,00€"
     expect(
       screen.getByText(
         (_, el) =>

@@ -9,7 +9,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { liquidAccounts } from '@/lib/account';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import { parseIdOrNull } from '@/lib/parse';
 
 interface Props {
@@ -68,7 +68,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               {t('rachat_modal.amount_label')}
             </label>
             <span className="text-[10px] text-content-subtle">
-              {t('rachat_modal.max_label')} {fmtDec(support.value)}
+              {t('rachat_modal.max_label')} {fmtCurrency(support.value)}
             </span>
           </div>
           <DecimalInput

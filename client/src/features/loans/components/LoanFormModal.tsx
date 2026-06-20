@@ -16,7 +16,7 @@ import { useCreateLoan, useUpdateLoan } from '@/features/loans/hooks/useLoans';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 
 type Props =
   | { mode: 'create'; onClose: () => void }
@@ -303,7 +303,7 @@ export function LoanFormModal(props: Readonly<Props>) {
             <span className="text-xs text-content-muted uppercase tracking-wide font-medium">
               {t('form_modal.monthly_estimate')}
             </span>
-            <span className="font-display text-xl text-content">{fmtDec(monthlyPayment)}</span>
+            <span className="font-display text-xl text-content">{fmtCurrency(monthlyPayment)}</span>
           </div>
         )}
         {!isEdit && (

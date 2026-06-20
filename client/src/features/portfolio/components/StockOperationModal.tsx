@@ -6,7 +6,7 @@ import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@
 import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput';
 import { useBuyStock, useSellStock } from '@/features/portfolio/hooks/useStocks';
 import { today } from '@/lib/dateUtils';
-import { fmtDec } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 
 interface BuyProps {
@@ -158,7 +158,7 @@ export function StockOperationModal(props: Readonly<Props>) {
               : t('stock_operation_modal.total_received')}
           </p>
           <p className={`font-display text-xl ${amount < 0 ? 'text-danger' : 'text-content'}`}>
-            {fmtDec(amount)}
+            {fmtCurrency(amount)}
           </p>
         </div>
 

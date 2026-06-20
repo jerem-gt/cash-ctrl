@@ -9,7 +9,7 @@ import {
   useInsuranceOperations,
   useInsurancePositions,
 } from '@/features/insurance/hooks/useInsurance';
-import { fmtDate, fmtDec } from '@/lib/format';
+import { fmtCurrency, fmtDate } from '@/lib/format';
 
 import { AddInsuranceSupportModal } from './AddInsuranceSupportModal';
 import { InsuranceArbitrageModal } from './InsuranceArbitrageModal';
@@ -107,7 +107,7 @@ function SupportRow({
             )}
           </div>
           <p className="text-sm font-bold text-content tabular-nums shrink-0">
-            {fmtDec(support.value)}
+            {fmtCurrency(support.value)}
           </p>
         </div>
         {actionButtons}
@@ -133,11 +133,15 @@ function SupportRow({
           <p className="text-[10px] text-content-subtle uppercase tracking-wider mb-0.5">
             {t('section.support_value_label')}
           </p>
-          <p className="font-medium text-content-secondary tabular-nums">{fmtDec(support.value)}</p>
+          <p className="font-medium text-content-secondary tabular-nums">
+            {fmtCurrency(support.value)}
+          </p>
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="text-sm font-bold text-content tabular-nums">{fmtDec(support.value)}</p>
+          <p className="text-sm font-bold text-content tabular-nums">
+            {fmtCurrency(support.value)}
+          </p>
         </div>
 
         {actionButtons && <div className="shrink-0 justify-end">{actionButtons}</div>}
@@ -258,12 +262,12 @@ function OperationRow({
       )}
       {op.fees > 0 && (
         <span className="hidden sm:inline text-[10px] text-content-subtle shrink-0">
-          {t('section.op_fees', { amount: fmtDec(op.fees) })}
+          {t('section.op_fees', { amount: fmtCurrency(op.fees) })}
         </span>
       )}
       {op.social_fees > 0 && (
         <span className="hidden sm:inline text-[10px] text-content-subtle shrink-0">
-          {t('section.op_social_fees', { amount: fmtDec(op.social_fees) })}
+          {t('section.op_social_fees', { amount: fmtCurrency(op.social_fees) })}
         </span>
       )}
       <span
@@ -272,7 +276,7 @@ function OperationRow({
         }`}
       >
         {signed >= 0 ? '+' : ''}
-        {fmtDec(signed)}
+        {fmtCurrency(signed)}
       </span>
       {onEdit && (
         <IconButton label={t('section.edit_label')} size="sm" onClick={onEdit}>
@@ -369,7 +373,7 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
               {t('section.total_envelope')}
             </span>
             <span className="text-sm font-bold text-content tabular-nums">
-              {fmtDec(totalValue)}
+              {fmtCurrency(totalValue)}
             </span>
           </div>
         )}
