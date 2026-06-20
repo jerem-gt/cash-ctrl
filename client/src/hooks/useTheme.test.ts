@@ -77,6 +77,19 @@ describe('useTheme store', () => {
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 
+  it("retire le backgroundColor inline anti-FOUC à l'init du module", async () => {
+    document.documentElement.style.backgroundColor = '#0c1a21';
+    vi.resetModules();
+    await import('./useTheme');
+    expect(document.documentElement.style.backgroundColor).toBe('');
+  });
+
+  it('setTheme retire le backgroundColor inline anti-FOUC', () => {
+    document.documentElement.style.backgroundColor = '#0c1a21';
+    act(() => mod.setTheme('dark'));
+    expect(document.documentElement.style.backgroundColor).toBe('');
+  });
+
   it('en mode système, réagit au changement de préférence OS', () => {
     const { result } = renderHook(() => mod.useIsDark());
     act(() => mod.setTheme('system'));
