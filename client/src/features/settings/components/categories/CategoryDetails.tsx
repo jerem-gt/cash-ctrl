@@ -8,7 +8,7 @@ import {
   CategoryForm,
 } from '@/features/settings/components/categories/CategoryEditor.tsx';
 import { SubCategoriesManager } from '@/features/settings/components/categories/SubcategoriesManager.tsx';
-import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
+import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
 import { useDeleteCategory, useUpdateCategory } from '@/hooks/useCategories.ts';
 
 export function CategoryDetails({

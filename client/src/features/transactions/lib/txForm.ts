@@ -249,7 +249,7 @@ export function runSubmitEdit(ctx: EditCtx): void {
     to_account_id: ctx.core.to_account_id,
     date: ctx.date,
     payment_method_id: ctx.core.payment_method_id,
-    notes: ctx.notes,
+    notes: ctx.notes || null,
     validated: ctx.validated,
     isVentilated: ctx.isVentilated,
     splits: buildSplitPayload(ctx.splits),

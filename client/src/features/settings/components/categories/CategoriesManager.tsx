@@ -12,7 +12,7 @@ import {
 import { SubCategoriesManager } from '@/features/settings/components/categories/SubcategoriesManager.tsx';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
-import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
+import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
 import {
   useCategories,
   useCreateCategory,

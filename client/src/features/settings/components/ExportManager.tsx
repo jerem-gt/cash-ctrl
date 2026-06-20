@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, showToast } from '@/components/ui';
 import { useAccounts } from '@/hooks/useAccounts';
-import { today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
 
 async function downloadExport(
   path: string,

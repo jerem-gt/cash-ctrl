@@ -9,7 +9,8 @@ import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
-import { fmtDayNum, fmtDec, fmtMonthShort, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDayNum, fmtDec, fmtMonthShort } from '@/lib/format';
 
 const CURRENT_YEAR = new Date().getFullYear();
 

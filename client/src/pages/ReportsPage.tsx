@@ -10,6 +10,7 @@ import { useLogoMap } from '@/hooks/useLogoMap';
 import { useReport, useReportYears } from '@/hooks/useReport';
 import { useProfitability } from '@/hooks/useStats';
 import { generateColor } from '@/lib/colors';
+import { parseLocalDate } from '@/lib/dateUtils';
 import { fmt, fmtMonthShort } from '@/lib/format';
 
 import { buildCatComparison, CategoryComparisonCard } from './reports/CategoryComparisonCard';
@@ -56,7 +57,7 @@ export default function ReportsPage() {
   const barData = useMemo(
     () =>
       (report?.monthly ?? []).map((m) => ({
-        month: fmtMonthShort(new Date(`${m.month}-01T00:00:00`)),
+        month: fmtMonthShort(parseLocalDate(`${m.month}-01`)),
         Revenus: m.income,
         Depenses: m.expense,
       })),
@@ -86,7 +87,7 @@ export default function ReportsPage() {
   const compareBarData = useMemo(
     () =>
       (compareReport?.monthly ?? []).map((m) => ({
-        month: fmtMonthShort(new Date(`${m.month}-01T00:00:00`)),
+        month: fmtMonthShort(parseLocalDate(`${m.month}-01`)),
         Revenus: m.income,
         Depenses: m.expense,
       })),

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Card } from '@/components/ui';
 import { ImportErrorMessage } from '@/features/settings/components/import/Shared';
-import { fmtDate } from '@/lib/format.ts';
+import { fmtDate } from '@/lib/format';
 import type { ImportErrors, PreviewItem, SkipReason } from '@/pages/import.helpers.ts';
 
 interface PreviewStepProps {

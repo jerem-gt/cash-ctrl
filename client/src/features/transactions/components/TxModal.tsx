@@ -31,7 +31,7 @@ import {
   validateSplits,
 } from '@/features/transactions/lib/txForm';
 import { useCreateTransaction, useCreateTransfer } from '@/hooks/useTransactions';
-import { today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
 
 function addCategoryErrors(core: TxCoreState, errs: Set<string>): void {
   if (!Number.parseInt(core.category_id)) errs.add('category_id');

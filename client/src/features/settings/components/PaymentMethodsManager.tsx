@@ -6,7 +6,7 @@ import { Button, Input, showToast } from '@/components/ui';
 import { AddCard } from '@/features/settings/components/AddCard.tsx';
 import { SettingsCard } from '@/features/settings/components/SettingsCard.tsx';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager.tsx';
-import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation.tsx';
+import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
 import {
   useCreatePaymentMethod,
   useDeletePaymentMethod,

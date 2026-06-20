@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { isIsin, TickerInput } from '@/features/portfolio/components/TickerInput';
 import { useBuyStock, useSellStock } from '@/features/portfolio/hooks/useStocks';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
 
 interface BuyProps {

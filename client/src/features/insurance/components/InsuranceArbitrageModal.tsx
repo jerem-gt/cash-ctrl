@@ -12,7 +12,8 @@ import {
   showToast,
 } from '@/components/ui';
 import { useArbitrage } from '@/features/insurance/hooks/useInsurance';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 
 interface Props {
   accountId: number;

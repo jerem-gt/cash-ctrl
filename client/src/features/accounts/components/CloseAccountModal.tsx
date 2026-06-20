@@ -5,7 +5,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button, FormGroup, Input, ModalFrame, Select, showToast } from '@/components/ui';
 import { useCloseAccount } from '@/hooks/useAccounts';
 import { accountDisplayBalance } from '@/lib/account';
-import { fmtDec, today } from '@/lib/format';
+import { today } from '@/lib/dateUtils';
+import { fmtDec } from '@/lib/format';
 
 interface Props {
   account: Account;
