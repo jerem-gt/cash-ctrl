@@ -24,7 +24,7 @@ export type TxFormState = {
   to_account_id: string;
   date: string;
   payment_method_id: string;
-  notes: string;
+  notes: string | null;
   validated: boolean;
   isVentilated: boolean;
   splits: { subcategory_id: number; amount: number }[];
