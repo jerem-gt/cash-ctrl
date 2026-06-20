@@ -3,10 +3,7 @@ import { useState } from 'react';
 import { ConfirmModal } from '@/components/ui';
 
 type PendingDelete = { title: string; body: string; onConfirm: () => void };
-type DeleteMutateFn = (
-  id: number,
-  opts: { onSuccess: () => void; onError: (e: Error) => void },
-) => void;
+type DeleteMutateFn = (id: number, opts: { onSuccess: () => void; onError?: () => void }) => void;
 
 export function useDeleteConfirmation(showToast: (msg: string) => void) {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
@@ -34,10 +31,7 @@ export function useDeleteConfirmation(showToast: (msg: string) => void) {
             closeDelete();
             showToast(successMsg);
           },
-          onError: (e) => {
-            closeDelete();
-            showToast(e.message);
-          },
+          onError: () => closeDelete(),
         });
       },
     });

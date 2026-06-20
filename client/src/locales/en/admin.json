@@ -30,6 +30,7 @@
     "tx_count_one": "1 transaction",
     "tx_count_other": "{{count}} transactions",
     "last_tx": "last on {{date}}",
+    "confirm_delete_title": "Delete user",
     "confirm_delete": "Delete user \"{{username}}\" and all their data?"
   },
   "toasts": {
