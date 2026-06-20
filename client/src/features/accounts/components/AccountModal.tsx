@@ -92,7 +92,6 @@ export function AccountModal(props: Readonly<Props>) {
           showToast(t('modal.success_create'));
           onClose();
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };

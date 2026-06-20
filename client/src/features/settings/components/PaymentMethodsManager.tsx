@@ -40,7 +40,6 @@ function PaymentMethodEditForm({
               onClose();
               showToast(t('payment_methods.success_edit'));
             },
-            onError: (err) => showToast(err.message),
           },
         );
       }}
@@ -143,7 +142,6 @@ export function PaymentMethodsManager() {
           setNewPm({ name: '', icon: '' });
           showToast(t('payment_methods.success_add'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

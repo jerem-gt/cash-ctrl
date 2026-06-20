@@ -29,7 +29,6 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
           showToast(t('interets_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

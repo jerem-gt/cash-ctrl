@@ -72,7 +72,6 @@ function InstallmentRow({
       { installmentId: inst.id, due_date: dueDate, total_amount: total },
       {
         onSuccess: () => setEditing(false),
-        onError: (e) => showToast(e.message),
       },
     );
   };

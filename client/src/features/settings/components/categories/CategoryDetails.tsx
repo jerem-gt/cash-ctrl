@@ -30,7 +30,6 @@ export function CategoryDetails({
           setIsEditingCat(false);
           showToast(t('categories.update_success'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   }

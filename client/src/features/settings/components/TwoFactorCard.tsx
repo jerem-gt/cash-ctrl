@@ -28,7 +28,6 @@ export function TwoFactorCard() {
         setCode('');
         setStep('setup');
       },
-      onError: (e) => showToast(e.message),
     });
   };
 
@@ -43,7 +42,6 @@ export function TwoFactorCard() {
           setSetupData(null);
           setCode('');
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };
@@ -57,7 +55,6 @@ export function TwoFactorCard() {
           setStep('idle');
           setPassword('');
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };

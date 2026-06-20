@@ -295,7 +295,6 @@ export function BanksManager() {
           setNewBank({ name: '', login_url: '' });
           showToast(t('banks.success_add'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

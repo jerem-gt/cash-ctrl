@@ -44,7 +44,6 @@ export function SystemRefsManager() {
     const payload: SystemRefsPayload = { [key]: value };
     updateSystemRefs.mutate(payload, {
       onSuccess: () => showToast(t('system_refs.success')),
-      onError: (err) => showToast(err.message),
     });
   };
 

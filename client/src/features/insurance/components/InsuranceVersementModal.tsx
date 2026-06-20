@@ -45,7 +45,6 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
           showToast(t('versement_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

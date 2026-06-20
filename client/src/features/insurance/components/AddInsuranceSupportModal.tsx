@@ -28,7 +28,6 @@ export function AddInsuranceSupportModal({ accountId, onClose }: Readonly<Props>
           showToast(t('add_support_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

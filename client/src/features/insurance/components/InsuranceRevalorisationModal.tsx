@@ -33,7 +33,6 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
           showToast(t('revalorisation_modal.success'));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

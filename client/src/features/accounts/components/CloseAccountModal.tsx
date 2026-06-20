@@ -51,7 +51,6 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
           showToast(t('close_modal.success'));
           onClose();
         },
-        onError: (e) => showToast(e.message),
       },
     );
   };

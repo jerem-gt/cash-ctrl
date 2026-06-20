@@ -102,8 +102,14 @@ export default function ImportManager() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [importErrors, setImportErrors] = useState<ImportErrors>(NO_IMPORT_ERRORS);
 
-  const importMutation = useMutation({ mutationFn: importApi.executeStructured });
-  const jsonImportMutation = useMutation({ mutationFn: importApi.executeJsonFull });
+  const importMutation = useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: importApi.executeStructured,
+  });
+  const jsonImportMutation = useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: importApi.executeJsonFull,
+  });
 
   const isXhb = parsedFile?.format === 'xhb';
 

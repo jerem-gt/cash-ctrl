@@ -118,7 +118,6 @@ export default function AccountsPage() {
   const handleReopenAccount = (accountId: number) => {
     reopenAccount.mutate(accountId, {
       onSuccess: () => showToast(t('page.reopen_success')),
-      onError: (err) => showToast(err.message),
     });
   };
 
@@ -145,7 +144,6 @@ export default function AccountsPage() {
           setAccountToEdit(null);
           showToast(t('page.edit_success'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

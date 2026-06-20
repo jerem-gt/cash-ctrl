@@ -17,6 +17,7 @@ export function useMe() {
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: ({ username, password }: { username: string; password: string }) =>
       authApi.login(username, password),
     onSuccess: (data) => {
@@ -30,6 +31,7 @@ export function useLogin() {
 export function useVerifyTotp() {
   const qc = useQueryClient();
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: ({ code }: { code: string }) => authApi.verifyTotp(code),
     onSuccess: (data) => qc.setQueryData(queryKeys.me(), data),
   });

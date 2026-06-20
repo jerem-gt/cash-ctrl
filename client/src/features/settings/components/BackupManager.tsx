@@ -86,7 +86,6 @@ export function BackupManager() {
         result.skipped
           ? showToast(t('backup.no_changes'))
           : showToast(t('backup.created', { filename: result.filename })),
-      onError: (err) => showToast(err.message),
     });
   };
 

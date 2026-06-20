@@ -41,7 +41,6 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
           showToast(t('transfer_modal.success', { qty, ticker: position.ticker }));
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };

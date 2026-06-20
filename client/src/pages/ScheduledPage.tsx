@@ -78,7 +78,6 @@ export default function ScheduledPage() {
           setLeadDays('');
           showToast(t('lead_days.success'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
@@ -89,7 +88,6 @@ export default function ScheduledPage() {
         setShowModal(false);
         showToast(t('page.create_success'));
       },
-      onError: (err) => showToast(err.message),
     });
   };
 
@@ -102,7 +100,6 @@ export default function ScheduledPage() {
           setEditTarget(null);
           showToast(t('page.update_success'));
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
@@ -114,7 +111,6 @@ export default function ScheduledPage() {
         setPendingDelete(null);
         showToast(t('page.delete_success'));
       },
-      onError: (err) => showToast(err.message),
     });
   };
 

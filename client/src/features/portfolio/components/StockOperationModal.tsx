@@ -64,7 +64,6 @@ export function StockOperationModal(props: Readonly<Props>) {
           }
           onClose();
         },
-        onError: (err) => showToast(err.message),
       },
     );
   };
