@@ -100,6 +100,28 @@ function pathInt(name: string) {
   return { name, in: 'path', required: true, schema: { type: 'integer' } };
 }
 
+// Génère un POST sur /api/<module>/{accountId}/<action> (insurance, stocks…).
+function accountIdPost(
+  module: string,
+  tag: string,
+  action: string,
+  summary: string,
+  actionSchema: ZodType,
+) {
+  return {
+    [`/api/${module}/{accountId}/${action}`]: {
+      post: {
+        tags: [tag],
+        summary,
+        security: sessionAuth,
+        parameters: pAccountId,
+        requestBody: body(actionSchema),
+        responses: { ...r201, ...r400 },
+      },
+    },
+  };
+}
+
 // Génère les 4 opérations standard (list / create / update / delete) pour une ressource CRUD.
 function crudPaths(
   base: string,
@@ -711,36 +733,15 @@ export function buildOpenApiSpec() {
           responses: r200(),
         },
       },
-      '/api/stocks/{accountId}/buy': {
-        post: {
-          tags: ['Stocks'],
-          summary: 'Acheter des titres',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(buySchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/stocks/{accountId}/sell': {
-        post: {
-          tags: ['Stocks'],
-          summary: 'Vendre des titres',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(buySchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/stocks/{accountId}/transfer': {
-        post: {
-          tags: ['Stocks'],
-          summary: 'Transférer des titres entre comptes',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(stockTransferSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
+      ...accountIdPost('stocks', 'Stocks', 'buy', 'Acheter des titres', buySchema),
+      ...accountIdPost('stocks', 'Stocks', 'sell', 'Vendre des titres', buySchema),
+      ...accountIdPost(
+        'stocks',
+        'Stocks',
+        'transfer',
+        'Transférer des titres entre comptes',
+        stockTransferSchema,
+      ),
       '/api/stocks/{accountId}/operations/{operationId}': {
         put: {
           tags: ['Stocks'],
@@ -842,56 +843,35 @@ export function buildOpenApiSpec() {
           responses: { ...r200(), ...r404 },
         },
       },
-      '/api/insurance/{accountId}/versement': {
-        post: {
-          tags: ['Insurance'],
-          summary: 'Effectuer un versement',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(versementSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/insurance/{accountId}/rachat': {
-        post: {
-          tags: ['Insurance'],
-          summary: 'Effectuer un rachat',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(rachatSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/insurance/{accountId}/arbitrage': {
-        post: {
-          tags: ['Insurance'],
-          summary: 'Effectuer un arbitrage',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(arbitrageSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/insurance/{accountId}/interets': {
-        post: {
-          tags: ['Insurance'],
-          summary: 'Enregistrer des intérêts',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(interetsSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
-      '/api/insurance/{accountId}/revalorisation': {
-        post: {
-          tags: ['Insurance'],
-          summary: 'Revaloriser un contrat',
-          security: sessionAuth,
-          parameters: pAccountId,
-          requestBody: body(revaloriserSchema),
-          responses: { ...r201, ...r400 },
-        },
-      },
+      ...accountIdPost(
+        'insurance',
+        'Insurance',
+        'versement',
+        'Effectuer un versement',
+        versementSchema,
+      ),
+      ...accountIdPost('insurance', 'Insurance', 'rachat', 'Effectuer un rachat', rachatSchema),
+      ...accountIdPost(
+        'insurance',
+        'Insurance',
+        'arbitrage',
+        'Effectuer un arbitrage',
+        arbitrageSchema,
+      ),
+      ...accountIdPost(
+        'insurance',
+        'Insurance',
+        'interets',
+        'Enregistrer des intérêts',
+        interetsSchema,
+      ),
+      ...accountIdPost(
+        'insurance',
+        'Insurance',
+        'revalorisation',
+        'Revaloriser un contrat',
+        revaloriserSchema,
+      ),
 
       // ── Loans ─────────────────────────────────────────────────────────────
       '/api/loans': {
