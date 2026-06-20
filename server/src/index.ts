@@ -79,7 +79,7 @@ process.on('unhandledRejection', (reason) => {
   logger.error(`Unhandled rejection: ${String(reason)}`);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(
     `Server running on http://0.0.0.0:${PORT} (${IS_PROD ? 'production' : 'development'})`,
   );
@@ -90,3 +90,19 @@ app.listen(PORT, '0.0.0.0', () => {
   startBackupInterval(db);
   startScheduledGenerationInterval(db);
 });
+
+function shutdown(signal: string) {
+  logger.info(`${signal} — shutting down`);
+  server.close(() => {
+    // Checkpoint WAL avant fermeture : réduit le travail de recovery au prochain démarrage.
+    db.pragma('wal_checkpoint(TRUNCATE)');
+    db.close();
+    logger.info('DB checkpoint and close complete');
+    process.exit(0);
+  });
+  // Forcer la sortie si des requêtes bloquent trop longtemps.
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
