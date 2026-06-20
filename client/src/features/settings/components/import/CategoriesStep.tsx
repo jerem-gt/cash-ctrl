@@ -2,7 +2,7 @@ import type { Category } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, Select } from '@/components/ui';
-import type { CategoryChoice } from '@/pages/import.helpers.ts';
+import type { CategoryChoice } from '@/lib/import.helpers';
 
 // ─── Category mapping row ─────────────────────────────────────────────────────
 
