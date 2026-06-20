@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
@@ -146,26 +146,24 @@ describe('AdminPage — modification utilisateur', () => {
 
 describe('AdminPage — suppression utilisateur', () => {
   it('supprime un utilisateur après confirmation et affiche un toast', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
     setup();
     await screen.findByText('alice');
     await user.click(screen.getByTitle('Supprimer'));
+    await user.click(await screen.findByRole('button', { name: /confirmer/i }));
 
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('supprimé'),
     );
-    vi.restoreAllMocks();
   });
 
   it('ne supprime pas si la confirmation est annulée', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = userEvent.setup();
     setup();
     await screen.findByText('alice');
     await user.click(screen.getByTitle('Supprimer'));
+    await user.click(await screen.findByRole('button', { name: /annuler/i }));
     expect(document.getElementById('toast')?.textContent ?? '').not.toContain('supprimé');
-    vi.restoreAllMocks();
   });
 });
 

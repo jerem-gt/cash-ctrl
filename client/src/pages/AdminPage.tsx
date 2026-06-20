@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Card, CardTitle, Input, Select, showToast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants';
+import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
 import { useLogout } from '@/hooks/useAuth';
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/useUsers';
 import { fmtDate } from '@/lib/format';
@@ -144,12 +145,16 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
   const logout = useLogout();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const { requestDelete, isDeleting, deleteConfirmModal } = useDeleteConfirmation(showToast);
 
   const handleDelete = (user: UserPublic) => {
-    if (!confirm(t('user.confirm_delete', { username: user.username }))) return;
-    deleteUser.mutate(user.id, {
-      onSuccess: () => showToast(t('toasts.deleted')),
-    });
+    requestDelete(
+      t('user.confirm_delete_title'),
+      t('user.confirm_delete', { username: user.username }),
+      user.id,
+      deleteUser.mutate,
+      t('toasts.deleted'),
+    );
   };
 
   return (
@@ -235,7 +240,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                               setEditingId(user.id);
                               setShowAdd(false);
                             }}
-                            disabled={deleteUser.isPending}
+                            disabled={isDeleting}
                             title={t('user.edit_title')}
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -244,10 +249,10 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                             size="sm"
                             variant="danger"
                             onClick={() => handleDelete(user)}
-                            disabled={deleteUser.isPending}
+                            disabled={isDeleting}
                             title={t('user.delete_title')}
                           >
-                            {deleteUser.isPending && deleteUser.variables === user.id ? (
+                            {isDeleting && deleteUser.variables === user.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <Trash2 className="h-3.5 w-3.5" />
@@ -263,6 +268,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
           )}
         </Card>
       </main>
+      {deleteConfirmModal}
     </div>
   );
 }
