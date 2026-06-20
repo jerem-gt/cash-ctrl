@@ -8,8 +8,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Sidebar } from '@/components/Sidebar';
-import { showToast } from '@/components/ui';
-import { Card, Skeleton, Toast } from '@/components/ui';
+import { Card, showToast, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
