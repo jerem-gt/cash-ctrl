@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from './primitives';
 
 // ─── ModalFrame ───────────────────────────────────────────────────────────────
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
 
 const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
   sm: 'max-w-sm',
@@ -12,6 +12,7 @@ const MODAL_SIZE_CLASS: Record<ModalSize, string> = {
   lg: 'max-w-lg',
   xl: 'max-w-xl',
   '2xl': 'max-w-2xl',
+  '4xl': 'max-w-4xl',
 };
 
 interface ModalFrameProps {
@@ -61,7 +62,9 @@ export function ModalFrame({
         )}
         {hasFooter ? (
           <>
-            <div className="flex-1 overflow-y-auto">{children}</div>
+            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-line [&::-webkit-scrollbar-thumb]:rounded-full">
+              {children}
+            </div>
             <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-line-subtle shrink-0">
               {footer}
             </div>

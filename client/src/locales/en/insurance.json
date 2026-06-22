@@ -117,6 +117,15 @@
     "frais_reels_placeholder": "Actual expenses amount (€)",
     "ceiling_label": "Apply annual deduction ceiling",
     "ceiling_carried_forward": "carry-forward from previous years applied",
+    "carryforward_section": "Available ceiling — {{year}} contributions",
+    "carryforward_hint": "Copy the amounts from your tax assessment (lines \"Computed ceiling\" and \"Unused ceiling for revenues of…\").",
+    "carryforward_base_label": "Base — {{year}} revenues",
+    "carryforward_unused_label": "Unused — {{year}} revenues",
+    "carryforward_placeholder": "0",
+    "ceiling_total_label": "Available ceiling",
+    "ceiling_year_label": "Base — {{year}} revenues",
+    "ceiling_report_label": "Unused carry-forwards",
+    "ceiling_total_value_label": "Total",
     "loading_scale": "Loading tax brackets…",
     "col_without_per": "Without PER contribution",
     "col_with_per": "With PER contribution",
@@ -132,6 +141,14 @@
     "parts_2": "2 shares (couple)",
     "parts_2_5": "2.5 shares (couple + 1 child)",
     "parts_3": "3 shares (couple + 2 children)",
-    "parts_4": "4 shares (couple + 3 children)"
+    "parts_4": "4 shares (couple + 3 children)",
+    "simulate_btn": "See results",
+    "edit_btn": "Edit",
+    "recap_income": "Income {{year}}",
+    "recap_versement": "PER contribution",
+    "recap_parts": "Tax shares",
+    "recap_frais": "Actual expenses",
+    "recap_ceiling": "Available ceiling",
+    "results_placeholder": "Fill in the form to run the simulation."
   }
 }

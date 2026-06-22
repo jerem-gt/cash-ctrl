@@ -123,6 +123,38 @@ describe('simulate', () => {
     expect(sansPlafond.economie).toBeGreaterThan(avecPlafond.economie);
   });
 
+  it('plafondTotal est égal à plafondPER sans report', () => {
+    const result = simulate(50000, 0, 1, YEAR_DATA_2025);
+    expect(result.plafondTotal).toBe(result.plafondPER);
+  });
+
+  it('le report des années précédentes augmente le plafondTotal', () => {
+    const result = simulate(50000, 0, 1, YEAR_DATA_2025, undefined, true, 3000);
+    expect(result.plafondTotal).toBeCloseTo(result.plafondPER + 3000);
+  });
+
+  it('un versement couvert par le report ne déclenche pas de dépassement', () => {
+    // plafondPER 2025 pour 50 000€ = 4 710€, report = 3 000€ → total 7 710€
+    const result = simulate(50000, 7000, 1, YEAR_DATA_2025, undefined, true, 3000);
+    expect(result.plafondDepasse).toBe(false);
+    expect(result.versementDeductible).toBe(7000);
+  });
+
+  it('le plafond total est dépassé si versement > plafondPER + report', () => {
+    // plafondPER = 4 710€, report = 3 000€ → total 7 710€, versement 10 000€ > 7 710€
+    const result = simulate(50000, 10000, 1, YEAR_DATA_2025, undefined, true, 3000);
+    expect(result.plafondDepasse).toBe(true);
+    expect(result.versementDeductible).toBeCloseTo(result.plafondTotal);
+  });
+
+  it('plafondBase fourni remplace le calcul depuis le revenu', () => {
+    // Sans override : plafondPER calculé = 4 710€
+    // Avec override 6 000€ : plafondPER = 6 000€ (valeur de l'avis d'imposition)
+    const result = simulate(50000, 0, 1, YEAR_DATA_2025, undefined, true, 0, 6000);
+    expect(result.plafondPER).toBe(6000);
+    expect(result.plafondTotal).toBe(6000);
+  });
+
   it('revenu imposable avecPER ne peut pas être négatif', () => {
     const result = simulate(5000, 100000, 1, YEAR_DATA_2025);
     expect(result.avecPER.revenuNetImposable).toBeGreaterThanOrEqual(0);

@@ -23,6 +23,7 @@ export interface SimulationResult {
   avecPER: TaxResult;
   versementDeductible: number;
   plafondPER: number;
+  plafondTotal: number;
   plafondDepasse: boolean;
   economie: number;
 }
@@ -101,15 +102,22 @@ export function simulate(
   yearData: TaxYearData,
   fraisReels?: number,
   appliquerPlafond = true,
+  reportAnneesPrecedentes = 0,
+  plafondBase?: number,
 ): SimulationResult {
   const { params, brackets } = yearData;
 
   const abattement = computeAbattement(revenuBrut, params, fraisReels);
   const revenuNetImposable = Math.max(0, revenuBrut - abattement);
 
-  const plafondPER = computePlafondPER(revenuNetImposable, params);
-  const versementDeductible = appliquerPlafond ? Math.min(versementPER, plafondPER) : versementPER;
-  const plafondDepasse = appliquerPlafond && versementPER > plafondPER;
+  // Quand plafondBase est fourni (saisi depuis l'avis d'imposition), on l'utilise
+  // directement plutôt que de le calculer depuis le revenu courant.
+  const plafondPER = plafondBase ?? computePlafondPER(revenuNetImposable, params);
+  const plafondTotal = plafondPER + reportAnneesPrecedentes;
+  const versementDeductible = appliquerPlafond
+    ? Math.min(versementPER, plafondTotal)
+    : versementPER;
+  const plafondDepasse = appliquerPlafond && versementPER > plafondTotal;
 
   const sansPER = computeTaxResult(revenuBrut, abattement, nbParts, brackets);
 
@@ -123,6 +131,7 @@ export function simulate(
     avecPER,
     versementDeductible,
     plafondPER,
+    plafondTotal,
     plafondDepasse,
     economie,
   };
