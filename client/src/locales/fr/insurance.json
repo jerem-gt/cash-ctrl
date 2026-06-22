@@ -117,6 +117,15 @@
     "frais_reels_placeholder": "Montant frais réels (€)",
     "ceiling_label": "Tenir compte du plafond de déduction annuel",
     "ceiling_carried_forward": "report des années précédentes appliqué",
+    "carryforward_section": "Plafond disponible — versements {{year}}",
+    "carryforward_hint": "Reportez les montants de votre avis d'imposition (lignes « Plafond calculé » et « Plafond non utilisé pour les revenus de… »).",
+    "carryforward_base_label": "Base — revenus {{year}}",
+    "carryforward_unused_label": "Non utilisé — revenus {{year}}",
+    "carryforward_placeholder": "0",
+    "ceiling_total_label": "Plafond disponible",
+    "ceiling_year_label": "Base — revenus {{year}}",
+    "ceiling_report_label": "Reports non utilisés",
+    "ceiling_total_value_label": "Total",
     "loading_scale": "Chargement du barème…",
     "col_without_per": "Sans versement PER",
     "col_with_per": "Avec versement PER",
@@ -132,6 +141,14 @@
     "parts_2": "2 parts (couple)",
     "parts_2_5": "2,5 parts (couple + 1 enfant)",
     "parts_3": "3 parts (couple + 2 enfants)",
-    "parts_4": "4 parts (couple + 3 enfants)"
+    "parts_4": "4 parts (couple + 3 enfants)",
+    "simulate_btn": "Voir les résultats",
+    "edit_btn": "Modifier",
+    "recap_income": "Revenu {{year}}",
+    "recap_versement": "Versement PER",
+    "recap_parts": "Parts fiscales",
+    "recap_frais": "Frais réels",
+    "recap_ceiling": "Plafond disponible",
+    "results_placeholder": "Renseignez le formulaire pour lancer la simulation."
   }
 }
