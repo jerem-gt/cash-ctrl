@@ -438,7 +438,9 @@ export function InsuranceSection({ accountId, isPer = false, readOnly = false }:
       {showAdd && (
         <AddInsuranceSupportModal accountId={accountId} onClose={() => setShowAdd(false)} />
       )}
-      {showSimulator && <PerFiscalSimulatorModal onClose={() => setShowSimulator(false)} />}
+      {showSimulator && (
+        <PerFiscalSimulatorModal operations={operations} onClose={() => setShowSimulator(false)} />
+      )}
       {editingOp && (
         <InsuranceEditOperationModal
           accountId={accountId}
