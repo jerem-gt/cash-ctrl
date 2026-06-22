@@ -146,7 +146,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
       <div className="flex justify-between w-full md:hidden">
         {view === 'form' ? (
           <>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="default" onClick={onClose}>
               {tc('close')}
             </Button>
             <Button onClick={() => setView('results')} disabled={!result}>
@@ -156,7 +156,7 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
           </>
         ) : (
           <>
-            <Button variant="ghost" onClick={() => setView('form')}>
+            <Button variant="default" onClick={() => setView('form')}>
               <ArrowLeft className="w-4 h-4 mr-1.5" />
               {t('per_simulator.edit_btn')}
             </Button>
