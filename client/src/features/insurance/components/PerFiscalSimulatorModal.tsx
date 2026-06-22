@@ -1,3 +1,4 @@
+import type { InsuranceOperation } from '@cashctrl/types';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -65,9 +66,10 @@ function TaxColumn({
 
 interface Props {
   onClose: () => void;
+  operations?: InsuranceOperation[];
 }
 
-export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
+export function PerFiscalSimulatorModal({ onClose, operations }: Readonly<Props>) {
   const { t } = useTranslation('insurance');
   const { t: tc } = useTranslation('common');
   const { data: years = [], isLoading: yearsLoading } = useTaxYears();
@@ -89,7 +91,10 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
   const [view, setView] = useState<'form' | 'results'>('form');
   const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
   const [revenuBrut, setRevenuBrut] = useState('');
-  const [versementPER, setVersementPER] = useState('');
+  const [versementOverride, setVersementOverride] = useState<{
+    year: number | undefined;
+    value: string;
+  } | null>(null);
   const [nbParts, setNbParts] = useState(1);
   const [deductionMode, setDeductionMode] = useState<'forfait' | 'frais_reels'>('forfait');
   const [fraisReels, setFraisReels] = useState('');
@@ -105,6 +110,25 @@ export function PerFiscalSimulatorModal({ onClose }: Readonly<Props>) {
     (Number.parseFloat(reportN3) || 0);
 
   const resolvedYear = years.includes(selectedYear) ? selectedYear : years[0];
+
+  const defaultVersement = useMemo(() => {
+    const year = resolvedYear ?? CURRENT_YEAR;
+    const total = (operations ?? [])
+      .filter((op) => op.type === 'versement' && new Date(op.date).getFullYear() === year)
+      .reduce((sum, op) => sum + op.amount, 0);
+    return total > 0 ? String(total) : '';
+  }, [operations, resolvedYear]);
+
+  // Si l'utilisateur a saisi une valeur pour l'année courante, on l'utilise ;
+  // sinon (année différente ou pas encore modifié) on retombe sur le défaut calculé.
+  const versementPER =
+    versementOverride !== null && versementOverride.year === resolvedYear
+      ? versementOverride.value
+      : defaultVersement;
+
+  function setVersementPER(value: string) {
+    setVersementOverride({ year: resolvedYear, value });
+  }
 
   const { data: yearData, isLoading: dataLoading } = useTaxYearData(
     yearsLoading ? undefined : resolvedYear,
