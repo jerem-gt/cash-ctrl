@@ -189,6 +189,62 @@ describe('useUpdateTransaction', () => {
     const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
     expect(cache?.data.map((tx) => tx.id)).toEqual([11, 10]);
   });
+
+  it('invalide (au lieu de patcher) une autre page dont balance_before_page dépend du montant modifié', async () => {
+    const page1Tx = { ...TRANSACTIONS.data[0], id: 10, amount: 20 };
+    const page2Tx = { ...TRANSACTIONS.data[0], id: 20 };
+    let page2CallCount = 0;
+    server.use(
+      http.get('/api/transactions', ({ request }) => {
+        const page = new URL(request.url).searchParams.get('page');
+        if (page === '2') {
+          page2CallCount += 1;
+          return HttpResponse.json({
+            data: [page2Tx],
+            total: 2,
+            page: 2,
+            totalPages: 2,
+            balance_before_page: page2CallCount === 1 ? 100 : 80,
+          });
+        }
+        return HttpResponse.json({ data: [page1Tx], total: 2, page: 1, totalPages: 2 });
+      }),
+    );
+
+    const wrapper = createWrapper();
+    const { result: page1 } = renderHook(() => useTransactions({ page: 1 }), { wrapper });
+    const { result: page2 } = renderHook(() => useTransactions({ page: 2 }), { wrapper });
+    await waitFor(() => expect(page1.current.isSuccess).toBe(true));
+    await waitFor(() => expect(page2.current.isSuccess).toBe(true));
+    expect(page2.current.data?.balance_before_page).toBe(100);
+
+    const updated = { ...page1Tx, amount: 40 };
+    server.use(http.put('/api/transactions/:id', () => HttpResponse.json(updated)));
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 10,
+        account_id: 1,
+        type: 'expense',
+        amount: 40,
+        description: 'Courses',
+        subcategory_id: 1,
+        date: '2026-04-20',
+        payment_method_id: 1,
+        notes: null,
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Page 2 refetchée : balance_before_page recalculé côté serveur
+    await waitFor(() => expect(page2.current.data?.balance_before_page).toBe(80));
+    expect(page2CallCount).toBe(2);
+
+    // Page 1 : patch en place, pas de nouvel appel réseau
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', { page: 1 }]);
+    expect(cache?.data[0].amount).toBe(40);
+  });
 });
 
 describe('useUpdateTransfer', () => {
