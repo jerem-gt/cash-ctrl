@@ -24,7 +24,7 @@ describe('OfflineBanner', () => {
     renderWithProviders(<OfflineBanner />);
     expect(screen.queryByText('Hors ligne — données en cache')).not.toBeInTheDocument();
     act(() => {
-      window.dispatchEvent(new Event('offline'));
+      globalThis.dispatchEvent(new Event('offline'));
     });
     expect(screen.getByText('Hors ligne — données en cache')).toBeInTheDocument();
   });
@@ -32,11 +32,11 @@ describe('OfflineBanner', () => {
   it("disparaît quand l'événement online est déclenché après offline", () => {
     renderWithProviders(<OfflineBanner />);
     act(() => {
-      window.dispatchEvent(new Event('offline'));
+      globalThis.dispatchEvent(new Event('offline'));
     });
     expect(screen.getByText('Hors ligne — données en cache')).toBeInTheDocument();
     act(() => {
-      window.dispatchEvent(new Event('online'));
+      globalThis.dispatchEvent(new Event('online'));
     });
     expect(screen.queryByText('Hors ligne — données en cache')).not.toBeInTheDocument();
   });

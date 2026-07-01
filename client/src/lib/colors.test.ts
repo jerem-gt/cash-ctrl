@@ -43,9 +43,9 @@ describe('generateColor', () => {
       const matches = /hsl\((.*)\)/.exec(color)?.[1].split(', ');
 
       if (matches) {
-        const h = parseFloat(matches[0]);
-        const s = parseFloat(matches[1]);
-        const l = parseFloat(matches[2]);
+        const h = Number.parseFloat(matches[0]);
+        const s = Number.parseFloat(matches[1]);
+        const l = Number.parseFloat(matches[2]);
 
         expect(h).toBeGreaterThanOrEqual(0);
         expect(h).toBeLessThan(360);
