@@ -35,7 +35,7 @@ function RuleRow({ rule, subcategoryLabel }: Readonly<RuleRowProps>) {
   const { data: categories = [] } = useCategories();
   const update = useUpdateCategorizationRule();
   const remove = useDeleteCategorizationRule();
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const handleSave = () => {
     const errs = new Set<string>();
@@ -149,7 +149,7 @@ export function CategorizationRulesCard() {
   const [newSubcategoryId, setNewSubcategoryId] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
-  const [createErrors, setCreateErrors] = useState<Set<string>>(new Set());
+  const [createErrors, setCreateErrors] = useState<Set<string>>(() => new Set());
 
   const subcategoryLabel = (subcategoryId: number): string => {
     for (const cat of categories) {

@@ -9,7 +9,7 @@ export function PasswordChangeCard() {
   const { t: tc } = useTranslation('common');
   const changePassword = useChangePassword();
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const handlePasswordSubmit = (e: SubmitEvent) => {
     e.preventDefault();

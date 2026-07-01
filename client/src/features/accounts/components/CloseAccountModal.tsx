@@ -23,7 +23,7 @@ export function CloseAccountModal({ account, activeAccounts, onClose }: Readonly
 
   const [closedAt, setClosedAt] = useState(today);
   const [transferToId, setTransferToId] = useState('');
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const closeAccount = useCloseAccount();
 
