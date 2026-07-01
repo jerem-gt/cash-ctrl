@@ -93,7 +93,7 @@ export function ScheduledModal({
   const { t } = useTranslation('scheduled');
   const { t: tc } = useTranslation('common');
   const [form, setForm] = useState<FormState>(initial);
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const modeLabels: Record<ScheduledMode, string> = {
     transaction: t('modal.mode_transaction'),

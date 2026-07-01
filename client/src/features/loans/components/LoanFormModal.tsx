@@ -99,7 +99,7 @@ export function LoanFormModal(props: Readonly<Props>) {
     return EMPTY_FORM(today());
   });
 
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const createLoan = useCreateLoan();
   const updateLoan = useUpdateLoan(loan?.id ?? 0);
