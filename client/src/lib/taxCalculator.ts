@@ -95,16 +95,21 @@ function computeTaxResult(
   };
 }
 
+export interface SimulateOptions {
+  fraisReels?: number;
+  appliquerPlafond?: boolean;
+  reportAnneesPrecedentes?: number;
+  plafondBase?: number;
+}
+
 export function simulate(
   revenuBrut: number,
   versementPER: number,
   nbParts: number,
   yearData: TaxYearData,
-  fraisReels?: number,
-  appliquerPlafond = true,
-  reportAnneesPrecedentes = 0,
-  plafondBase?: number,
+  options: SimulateOptions = {},
 ): SimulationResult {
+  const { fraisReels, appliquerPlafond = true, reportAnneesPrecedentes = 0, plafondBase } = options;
   const { params, brackets } = yearData;
 
   const abattement = computeAbattement(revenuBrut, params, fraisReels);

@@ -108,7 +108,7 @@ describe('simulate', () => {
 
   it("utilise les frais réels à la place de l'abattement forfaitaire", () => {
     const forfait = simulate(50000, 0, 1, YEAR_DATA_2025);
-    const fraisReels = simulate(50000, 0, 1, YEAR_DATA_2025, 12000);
+    const fraisReels = simulate(50000, 0, 1, YEAR_DATA_2025, { fraisReels: 12000 });
     // Frais réels 12 000€ > abattement forfait 5 000€ → revenu imposable plus bas → impôt plus bas
     expect(fraisReels.sansPER.impotTotal).toBeLessThan(forfait.sansPER.impotTotal);
   });
@@ -116,7 +116,7 @@ describe('simulate', () => {
   it('prend tout le versement en compte quand appliquerPlafond=false', () => {
     // Revenu 50 000€, versement 15 000€ (> plafond ~4 500€)
     const avecPlafond = simulate(50000, 15000, 1, YEAR_DATA_2025);
-    const sansPlafond = simulate(50000, 15000, 1, YEAR_DATA_2025, undefined, false);
+    const sansPlafond = simulate(50000, 15000, 1, YEAR_DATA_2025, { appliquerPlafond: false });
     expect(avecPlafond.versementDeductible).toBeLessThan(15000);
     expect(sansPlafond.versementDeductible).toBe(15000);
     expect(sansPlafond.plafondDepasse).toBe(false);
@@ -129,20 +129,20 @@ describe('simulate', () => {
   });
 
   it('le report des années précédentes augmente le plafondTotal', () => {
-    const result = simulate(50000, 0, 1, YEAR_DATA_2025, undefined, true, 3000);
+    const result = simulate(50000, 0, 1, YEAR_DATA_2025, { reportAnneesPrecedentes: 3000 });
     expect(result.plafondTotal).toBeCloseTo(result.plafondPER + 3000);
   });
 
   it('un versement couvert par le report ne déclenche pas de dépassement', () => {
     // plafondPER 2025 pour 50 000€ = 4 710€, report = 3 000€ → total 7 710€
-    const result = simulate(50000, 7000, 1, YEAR_DATA_2025, undefined, true, 3000);
+    const result = simulate(50000, 7000, 1, YEAR_DATA_2025, { reportAnneesPrecedentes: 3000 });
     expect(result.plafondDepasse).toBe(false);
     expect(result.versementDeductible).toBe(7000);
   });
 
   it('le plafond total est dépassé si versement > plafondPER + report', () => {
     // plafondPER = 4 710€, report = 3 000€ → total 7 710€, versement 10 000€ > 7 710€
-    const result = simulate(50000, 10000, 1, YEAR_DATA_2025, undefined, true, 3000);
+    const result = simulate(50000, 10000, 1, YEAR_DATA_2025, { reportAnneesPrecedentes: 3000 });
     expect(result.plafondDepasse).toBe(true);
     expect(result.versementDeductible).toBeCloseTo(result.plafondTotal);
   });
@@ -150,7 +150,7 @@ describe('simulate', () => {
   it('plafondBase fourni remplace le calcul depuis le revenu', () => {
     // Sans override : plafondPER calculé = 4 710€
     // Avec override 6 000€ : plafondPER = 6 000€ (valeur de l'avis d'imposition)
-    const result = simulate(50000, 0, 1, YEAR_DATA_2025, undefined, true, 0, 6000);
+    const result = simulate(50000, 0, 1, YEAR_DATA_2025, { plafondBase: 6000 });
     expect(result.plafondPER).toBe(6000);
     expect(result.plafondTotal).toBe(6000);
   });

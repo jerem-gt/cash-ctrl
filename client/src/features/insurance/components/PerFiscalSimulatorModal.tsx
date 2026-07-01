@@ -142,16 +142,12 @@ export function PerFiscalSimulatorModal({ onClose, operations }: Readonly<Props>
 
     const frais = deductionMode === 'frais_reels' ? Number.parseFloat(fraisReels) || 0 : undefined;
     const base = Number.parseFloat(plafondBase) || undefined;
-    return simulate(
-      revenu,
-      versement,
-      nbParts,
-      yearData,
-      frais,
+    return simulate(revenu, versement, nbParts, yearData, {
+      fraisReels: frais,
       appliquerPlafond,
-      totalReport,
-      base,
-    );
+      reportAnneesPrecedentes: totalReport,
+      plafondBase: base,
+    });
   }, [
     revenuBrut,
     versementPER,
