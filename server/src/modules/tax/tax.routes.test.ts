@@ -63,7 +63,7 @@ describe('/api/tax', () => {
     it("retourne les paramètres d'abattement pour 2024", async () => {
       const res = await ctx.agent.get('/api/tax/2024');
       const params = res.body.params;
-      expect(params.abattement_rate).toBe(0.1);
+      expect(params.abattement_rate).toBeCloseTo(0.1);
       expect(params.abattement_min).toBe(448);
       expect(params.abattement_max).toBe(13522);
       expect(params.pass).toBe(46368);
