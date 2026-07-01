@@ -43,7 +43,6 @@
     "notes_placeholder": "Informations complémentaires…",
     "err_required": "Veuillez remplir tous les champs obligatoires.",
     "err_amount": "Le montant doit être positif.",
-    "err_account": "Veuillez choisir un compte.",
     "err_transfer_accounts": "Veuillez choisir les comptes source et destination.",
     "err_versement_fields": "Veuillez choisir le compte AV/PER, le support et le compte source."
   },
