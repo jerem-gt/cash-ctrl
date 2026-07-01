@@ -15,6 +15,7 @@ import {
   getSchedulingOptions,
   getSubmitLabel,
   getTransferAccounts,
+  hasValidAmount,
   initCore,
   initSplits,
   isEditFormIncomplete,
@@ -230,9 +231,31 @@ function core(overrides: Partial<TxCoreState> = {}): TxCoreState {
   };
 }
 
+describe('hasValidAmount', () => {
+  it('false pour une chaîne vide', () => {
+    expect(hasValidAmount('')).toBe(false);
+  });
+
+  it('false pour "0" (règle Sonar : ne pas juste tester la troncature)', () => {
+    expect(hasValidAmount('0')).toBe(false);
+  });
+
+  it('false pour un montant négatif', () => {
+    expect(hasValidAmount('-5')).toBe(false);
+  });
+
+  it('true pour un montant strictement positif', () => {
+    expect(hasValidAmount('12.5')).toBe(true);
+  });
+});
+
 describe('isEditFormIncomplete', () => {
   it('true si amount manquant', () => {
     expect(isEditFormIncomplete(core({ amount: '' }), false, false)).toBe(true);
+  });
+
+  it('true si amount vaut "0"', () => {
+    expect(isEditFormIncomplete(core({ amount: '0' }), false, false)).toBe(true);
   });
 
   it('true si description manquante', () => {
@@ -255,6 +278,10 @@ describe('isEditFormIncomplete', () => {
 });
 
 describe('isTxFormIncomplete', () => {
+  it('true si amount vaut "0"', () => {
+    expect(isTxFormIncomplete(core({ amount: '0' }), undefined, false)).toBe(true);
+  });
+
   it('true si payment_method_id manquant ou 0', () => {
     expect(isTxFormIncomplete(core({ payment_method_id: '' }), undefined, false)).toBe(true);
     expect(isTxFormIncomplete(core({ payment_method_id: '0' }), undefined, false)).toBe(true);

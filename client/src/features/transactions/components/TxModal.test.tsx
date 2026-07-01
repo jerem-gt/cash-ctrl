@@ -264,6 +264,14 @@ describe('TxModal — mise en évidence des champs invalides', () => {
     await waitFor(() => expect(screen.getByPlaceholderText('0,00')).toHaveClass('border-danger'));
   });
 
+  it('passe le champ montant en border-danger si soumis avec la valeur "0"', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.type(screen.getByPlaceholderText('0,00'), '0');
+    await user.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(screen.getByPlaceholderText('0,00')).toHaveClass('border-danger'));
+  });
+
   it('passe le select catégorie en border-danger si soumis sans catégorie', async () => {
     const user = userEvent.setup();
     renderWithProviders(<TxModal {...createProps} />);
