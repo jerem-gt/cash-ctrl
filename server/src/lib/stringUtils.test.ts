@@ -39,6 +39,6 @@ describe('toFileName', () => {
     const longString = 'a'.repeat(1000) + '!!!';
     const result = toFileName(longString);
     expect(result).toBe('a'.repeat(1000));
-    expect(result.length).toBe(1000);
+    expect(result).toHaveLength(1000);
   });
 });

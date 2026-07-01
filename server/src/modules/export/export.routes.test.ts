@@ -60,7 +60,7 @@ describe('/api/export', () => {
 
     it('contient les transactions avec les montants en centimes', async () => {
       const res = await ctx.agent.get('/api/export/json-full');
-      expect(res.body.transactions.length).toBe(2);
+      expect(res.body.transactions).toHaveLength(2);
       const income = res.body.transactions.find((t: { type: string }) => t.type === 'income');
       expect(income.amount).toBe(200000);
     });
@@ -68,16 +68,16 @@ describe('/api/export', () => {
     it('filtre par accountIds', async () => {
       const res = await ctx.agent.get(`/api/export/json-full?accountIds=${accountId}`);
       expect(res.status).toBe(200);
-      expect(res.body.accounts.length).toBe(1);
+      expect(res.body.accounts).toHaveLength(1);
       expect(res.body.accounts[0].id).toBe(accountId);
-      expect(res.body.transactions.length).toBe(2);
+      expect(res.body.transactions).toHaveLength(2);
     });
 
     it('retourne un tableau vide si accountIds ne correspond à aucun compte', async () => {
       const res = await ctx.agent.get('/api/export/json-full?accountIds=999999');
       expect(res.status).toBe(200);
-      expect(res.body.accounts.length).toBe(0);
-      expect(res.body.transactions.length).toBe(0);
+      expect(res.body.accounts).toHaveLength(0);
+      expect(res.body.transactions).toHaveLength(0);
     });
 
     it('les transactions contiennent un tableau splits', async () => {
