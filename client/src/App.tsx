@@ -12,6 +12,7 @@ import { Card, showToast, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { queryPersister } from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
 
@@ -171,6 +172,11 @@ function AppShell() {
 }
 
 export default function App() {
+  // Charge le module thème dès le premier rendu, quelle que soit la route : sinon
+  // en mode "système" la classe .dark et l'écoute des changements OS ne s'activent
+  // qu'en visitant une page qui importe useTheme (graphiques, Réglages), ce qui
+  // laisse le thème figé sur la valeur (parfois erronée) du script anti-FOUC après un F5.
+  useTheme();
   const [queryClient] = useState(
     () =>
       new QueryClient({
