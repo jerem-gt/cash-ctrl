@@ -46,16 +46,23 @@ export function useUpdateTransaction() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data
-                .map((tx) => (tx.id === updated.id ? updated : tx))
-                .sort(byDateThenIdDesc),
-            }
-          : old,
-      );
+      // balance_before_page des autres pages non recalculable localement → invalidation.
+      const entries = qc.getQueriesData<PaginatedTransactions>({
+        queryKey: queryKeys.transactions.all(),
+      });
+      for (const [key, old] of entries) {
+        if (!old) continue;
+        const filters = key[1] as TransactionFilters | undefined;
+        const containsUpdated = old.data.some((tx) => tx.id === updated.id);
+        if (filters?.page !== undefined && !containsUpdated) {
+          void qc.invalidateQueries({ queryKey: key });
+          continue;
+        }
+        qc.setQueryData<PaginatedTransactions>(key, {
+          ...old,
+          data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)).sort(byDateThenIdDesc),
+        });
+      }
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
