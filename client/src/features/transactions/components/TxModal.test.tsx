@@ -134,6 +134,10 @@ describe('TxModal — mode création', () => {
     // 2. Remplir les champs obligatoires du transfert
     await user.type(screen.getByPlaceholderText('0,00'), '100');
 
+    // Sélectionner le compte source (AccountSelect)
+    await user.click(document.getElementById('source-account-select')!);
+    await user.click(screen.getByText(ACCOUNTS[0].name));
+
     // Sélectionner le compte de destination (AccountSelect)
     await user.click(document.getElementById('dest-account-select')!);
     // On sélectionne le deuxième compte des fixtures (différent du source)
@@ -147,6 +151,25 @@ describe('TxModal — mode création', () => {
       expect(document.getElementById('toast')?.textContent).toContain('Transfert effectué ✓');
     });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("bloque la soumission d'un transfert sans fixedAccountId si le compte source n'est pas choisi", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithProviders(<TxModal {...createProps} onClose={onClose} />);
+
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    await user.type(screen.getByPlaceholderText('0,00'), '100');
+    // Compte destination choisi, mais compte source jamais sélectionné
+    await user.click(document.getElementById('dest-account-select')!);
+    await user.click(screen.getByText(ACCOUNTS[1].name));
+
+    await user.click(screen.getByRole('button', { name: 'Transférer' }));
+
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('obligatoires'),
+    );
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
 

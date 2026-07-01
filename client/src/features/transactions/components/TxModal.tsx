@@ -58,10 +58,14 @@ function buildEditErrors(
   return errs;
 }
 
-function buildTransferCreateErrors(core: TxCoreState): Set<string> {
+function buildTransferCreateErrors(
+  core: TxCoreState,
+  fixedAccountId: number | undefined,
+): Set<string> {
   const errs = new Set<string>();
   if (!hasValidAmount(core.amount)) errs.add('amount');
   if (!core.to_account_id) errs.add('to_account_id');
+  if (fixedAccountId == null && !core.account_id) errs.add('account_id');
   return errs;
 }
 
@@ -155,7 +159,7 @@ export function TxModal(props: Readonly<Props>) {
 
   const buildErrors = (): Set<string> => {
     if (isEdit) return buildEditErrors(core, isTransferEdit, isVentilated);
-    if (isTransferCreate) return buildTransferCreateErrors(core);
+    if (isTransferCreate) return buildTransferCreateErrors(core, fixedAccountId);
     return buildTxCreateErrors(core, fixedAccountId, isVentilated);
   };
 
