@@ -57,6 +57,10 @@ export function fmtDayNum(d: Date): string {
 
 export function monthLabel(offset: number): string {
   const d = new Date();
+  // Se caler sur le 1er du mois avant de soustraire : sinon, un jour courant
+  // absent du mois cible (ex. 31 mars - 1 mois) fait "déborder" Date sur le
+  // mois suivant au lieu du mois voulu.
+  d.setDate(1);
   d.setMonth(d.getMonth() - offset);
   return df({ month: 'short' }).format(d);
 }
