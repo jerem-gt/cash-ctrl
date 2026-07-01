@@ -151,6 +151,44 @@ describe('useUpdateTransaction', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('retrie la liste quand la date modifiée change son rang', async () => {
+    const older = { ...TRANSACTIONS.data[0], id: 11, date: '2026-04-10' };
+    server.use(
+      http.get('/api/transactions', () =>
+        HttpResponse.json({
+          data: [TRANSACTIONS.data[0], older],
+          total: 2,
+          page: 1,
+          totalPages: 1,
+        }),
+      ),
+    );
+    const wrapper = createWrapper();
+    const { result: qResult } = renderHook(() => useTransactions(), { wrapper });
+    await waitFor(() => expect(qResult.current.isSuccess).toBe(true));
+
+    const updated = { ...older, date: '2026-04-25' };
+    server.use(http.put('/api/transactions/:id', () => HttpResponse.json(updated)));
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 11,
+        account_id: 1,
+        type: 'expense',
+        amount: 24.5,
+        description: 'Courses',
+        subcategory_id: 1,
+        date: '2026-04-25',
+        payment_method_id: 1,
+        notes: null,
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
+    expect(cache?.data.map((tx) => tx.id)).toEqual([11, 10]);
+  });
 });
 
 describe('useUpdateTransfer', () => {
