@@ -12,6 +12,13 @@ import { queryKeys } from '@/lib/queryKeys';
 type UpdatePayload = UpdateTransactionPayload & { id: number };
 type UpdateTransferPayloadWithId = UpdateTransferPayload & { id: number };
 
+// Même ordre que la requête serveur (ORDER BY t.date DESC, t.id DESC), pour que
+// l'édition de la date d'une transaction remette immédiatement la liste en ordre.
+function byDateThenIdDesc(a: { date: string; id: number }, b: { date: string; id: number }) {
+  if (a.date !== b.date) return a.date > b.date ? -1 : 1;
+  return b.id - a.id;
+}
+
 export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
     queryKey: queryKeys.transactions.list(filters),
@@ -40,7 +47,14 @@ export function useUpdateTransaction() {
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
       qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
-        old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
+        old
+          ? {
+              ...old,
+              data: old.data
+                .map((tx) => (tx.id === updated.id ? updated : tx))
+                .sort(byDateThenIdDesc),
+            }
+          : old,
       );
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
@@ -57,18 +71,20 @@ export function useUpdateTransfer() {
         old
           ? {
               ...old,
-              data: old.data.map((tx) => {
-                if (tx.id === updated.id) return updated;
-                if (updated.transfer_peer_id && tx.id === updated.transfer_peer_id)
-                  return {
-                    ...tx,
-                    amount: updated.amount,
-                    description: updated.description,
-                    date: updated.date,
-                    validated: updated.validated,
-                  };
-                return tx;
-              }),
+              data: old.data
+                .map((tx) => {
+                  if (tx.id === updated.id) return updated;
+                  if (updated.transfer_peer_id && tx.id === updated.transfer_peer_id)
+                    return {
+                      ...tx,
+                      amount: updated.amount,
+                      description: updated.description,
+                      date: updated.date,
+                      validated: updated.validated,
+                    };
+                  return tx;
+                })
+                .sort(byDateThenIdDesc),
             }
           : old,
       );
