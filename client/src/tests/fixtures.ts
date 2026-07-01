@@ -4,6 +4,7 @@ import type {
   AccountType,
   Bank,
   Category,
+  ImportResult,
   InsuranceOperation,
   InsuranceSupportView,
   Loan,
@@ -21,8 +22,6 @@ import type {
   Transaction,
   UserPublic,
 } from '@cashctrl/types';
-
-import { ImportResult } from '@/api/client.ts';
 
 export const USERS: UserPublic[] = [
   {
@@ -466,6 +465,7 @@ export const LOAN: Loan = {
   monthly_payment: 359.61,
   source_account_id: 1,
   deposit_account_id: 2,
+  deposit_transaction_id: null,
   created_at: '2024-01-01T00:00:00',
 };
 
