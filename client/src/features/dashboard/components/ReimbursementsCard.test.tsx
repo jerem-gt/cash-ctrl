@@ -24,6 +24,7 @@ let ReimbursementsCard: typeof import('./ReimbursementsCard').ReimbursementsCard
 
 beforeAll(async () => {
   vi.doMock('@/features/transactions/hooks/useReimbursements', () => ({
+    // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
     useSetReimbursementStatus: () => ({ mutate: vi.fn(), isPending: false }),
   }));
   vi.resetModules();
