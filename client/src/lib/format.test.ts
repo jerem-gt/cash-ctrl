@@ -121,6 +121,34 @@ describe('monthLabel', () => {
   });
 });
 
+describe('monthLabel — jours de fin de mois (pas de rollover Date)', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('depuis le 31 mars, offset 1 renvoie février (pas mars en double)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-31'));
+    expect(monthLabel(1)).toMatch(/févr/i);
+  });
+
+  it('depuis le 31 mars, offset 0 renvoie bien mars', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-31'));
+    expect(monthLabel(0)).toMatch(/mars/i);
+  });
+
+  it('depuis le 31 mai, offset 1 renvoie avril (pas mai en double)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-31'));
+    expect(monthLabel(1)).toMatch(/avr/i);
+  });
+
+  it('depuis le 30 mars, offset 1 renvoie février (année non bissextile)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-30'));
+    expect(monthLabel(1)).toMatch(/févr/i);
+  });
+});
+
 describe('isSameMonth', () => {
   beforeEach(() => {
     vi.useFakeTimers();
