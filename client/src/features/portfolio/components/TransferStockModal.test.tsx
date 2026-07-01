@@ -99,6 +99,21 @@ describe('TransferStockModal', () => {
     );
   });
 
+  it('présélectionne le seul compte destination disponible sans sélection manuelle', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderModal(onClose);
+
+    await waitFor(() => screen.getByLabelText(/compte destination/i));
+    await user.type(screen.getByLabelText(/nombre d'actions/i), '5');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /transférer/i })).not.toBeDisabled(),
+    );
+
+    await user.click(screen.getByRole('button', { name: /transférer/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
   it('ferme le modal au clic sur Annuler', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

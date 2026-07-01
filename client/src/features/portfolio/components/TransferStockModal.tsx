@@ -24,7 +24,10 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
     (a) => a.envelope_type === 'investment' && a.id !== accountId && !a.closed_at,
   );
 
-  const [toAccountId, setToAccountId] = useState<number>(() => investmentTargets[0]?.id ?? 0);
+  // null = pas de choix explicite : on retombe sur le premier compte cible dispo,
+  // recalculé à chaque rendu pour rester à jour si les comptes chargent après coup.
+  const [toAccountIdOverride, setToAccountIdOverride] = useState<number | null>(null);
+  const toAccountId = toAccountIdOverride ?? investmentTargets[0]?.id ?? 0;
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState(today);
 
@@ -70,7 +73,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
             <select
               id="tf-to-account"
               value={toAccountId}
-              onChange={(e) => setToAccountId(Number.parseInt(e.target.value, 10))}
+              onChange={(e) => setToAccountIdOverride(Number.parseInt(e.target.value, 10))}
               className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-line-strong"
             >
               {investmentTargets.map((a) => (
