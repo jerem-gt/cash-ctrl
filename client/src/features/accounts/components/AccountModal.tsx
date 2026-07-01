@@ -60,7 +60,7 @@ export function AccountModal(props: Readonly<Props>) {
 
   const effectiveAccountTypeId = form.account_type_id || String(accountTypes[0]?.id ?? '');
   const createAccount = useCreateAccount();
-  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [errors, setErrors] = useState<Set<string>>(() => new Set());
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
