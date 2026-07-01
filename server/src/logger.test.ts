@@ -195,7 +195,7 @@ describe('requestLogger', () => {
     const { res, triggerFinish } = mockRes(201);
     requestLogger(mockReq('POST', '/timed'), res, vi.fn());
     triggerFinish();
-    expect(infoSpy.mock.calls[0][0]).toMatch(/\d+ms/);
+    expect(infoSpy.mock.calls[0][0]).toMatch(/\d{1,6}ms/);
   });
 });
 
