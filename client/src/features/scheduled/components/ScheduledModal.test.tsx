@@ -85,7 +85,23 @@ describe('ScheduledModal — création', () => {
     await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Test');
     await user.type(screen.getByPlaceholderText('0,00'), '50');
     fireEvent.submit(screen.getByPlaceholderText('0,00').closest('form')!);
-    await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('compte'));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('obligatoires'),
+    );
+  });
+
+  it('toast si sous-catégorie ou moyen de paiement manquants en mode transaction', async () => {
+    const user = userEvent.setup();
+    renderCreate();
+    await user.type(screen.getByPlaceholderText('Ex : Courses Leclerc'), 'Test');
+    await user.type(screen.getByPlaceholderText('0,00'), '50');
+    await user.click(screen.getByRole('button', { name: /choisir/i }));
+    await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    // Compte choisi, mais ni catégorie ni moyen de paiement
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('obligatoires'),
+    );
   });
 
   it('toast si les comptes transfert sont manquants', async () => {
@@ -139,6 +155,15 @@ describe('ScheduledModal — création', () => {
     await user.type(screen.getByPlaceholderText('0,00'), '15');
     await user.click(screen.getByRole('button', { name: /choisir/i }));
     await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    await user.selectOptions(document.getElementById('category-select')!, String(CATEGORIES[0].id));
+    await user.selectOptions(
+      document.getElementById('subcategory-select')!,
+      String(CATEGORIES[0].subcategories[0].id),
+    );
+    await user.selectOptions(
+      document.getElementById('payment-method-select')!,
+      String(PAYMENT_METHODS[0].id),
+    );
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     expect(onSave).toHaveBeenCalledOnce();

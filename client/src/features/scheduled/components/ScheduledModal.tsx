@@ -24,6 +24,15 @@ import { useAccounts } from '@/hooks/useAccounts';
 
 type ScheduledT = ReturnType<typeof import('react-i18next').useTranslation<'scheduled'>>['t'];
 
+function transactionFieldErrors(form: FormState): Set<string> {
+  const errors = new Set<string>();
+  if (!form.account_id) errors.add('account_id');
+  if (!Number.parseInt(form.category_id)) errors.add('category_id');
+  else if (!Number.parseInt(form.subcategory_id)) errors.add('subcategory_id');
+  if (!Number.parseInt(form.payment_method_id)) errors.add('payment_method_id');
+  return errors;
+}
+
 function transferFieldErrors(form: FormState): Set<string> {
   const errors = new Set<string>();
   if (!form.account_id) errors.add('account_id');
@@ -43,8 +52,9 @@ function validateModeFields(
   form: FormState,
   t: ScheduledT,
 ): { errors: Set<string>; message: string } | null {
-  if (form.mode === 'transaction' && !form.account_id) {
-    return { errors: new Set(['account_id']), message: t('modal.err_account') };
+  if (form.mode === 'transaction') {
+    const errors = transactionFieldErrors(form);
+    if (errors.size > 0) return { errors, message: t('modal.err_required') };
   }
   if (form.mode === 'transfer') {
     const errors = transferFieldErrors(form);

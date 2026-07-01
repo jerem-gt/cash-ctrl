@@ -43,7 +43,6 @@
     "notes_placeholder": "Additional information…",
     "err_required": "Please fill in all required fields.",
     "err_amount": "The amount must be positive.",
-    "err_account": "Please choose an account.",
     "err_transfer_accounts": "Please choose the source and destination accounts.",
     "err_versement_fields": "Please choose the life insurance/PER account, the fund, and the source account."
   },
