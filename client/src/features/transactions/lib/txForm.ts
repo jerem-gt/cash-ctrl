@@ -290,7 +290,8 @@ export interface TransferCtx {
 }
 
 export function runSubmitTransfer(ctx: TransferCtx): void {
-  if (!hasValidAmount(ctx.core.amount) || !ctx.core.to_account_id) {
+  const missingAccountId = ctx.fixedAccountId == null && !ctx.core.account_id;
+  if (!hasValidAmount(ctx.core.amount) || !ctx.core.to_account_id || missingAccountId) {
     showToast(ctx.t('modal.err_transfer_required'));
     return;
   }
