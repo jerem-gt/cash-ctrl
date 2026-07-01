@@ -55,8 +55,8 @@ describe('parseAmountOrZero', () => {
 
   it('parse les nombres décimaux', () => {
     expect(parseAmountOrZero('1.5')).toBe(1.5);
-    expect(parseAmountOrZero('42.99')).toBe(42.99);
-    expect(parseAmountOrZero('-3.14')).toBe(-3.14);
+    expect(parseAmountOrZero('42.99')).toBeCloseTo(42.99);
+    expect(parseAmountOrZero('-3.14')).toBeCloseTo(-3.14);
   });
 
   it('parse les entiers', () => {

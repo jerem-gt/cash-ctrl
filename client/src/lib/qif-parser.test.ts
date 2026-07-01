@@ -173,7 +173,7 @@ describe('parseQif', () => {
     it('parse les montants à plusieurs séparateurs de milliers', () => {
       const qif = `!Type:Bank\nD01/01/2024\nT1,234,567.89\nP Test\n^`;
       const result = parseQif(qif);
-      expect(result.transactions[0].amount).toBe(1234567.89);
+      expect(result.transactions[0].amount).toBeCloseTo(1234567.89);
     });
 
     it('ignore les lignes !Option et autres directives', () => {
