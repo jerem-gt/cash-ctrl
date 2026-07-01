@@ -78,6 +78,17 @@ describe('today', () => {
     expect(today()).toBe('2026-04-25');
     vi.useRealTimers();
   });
+
+  it('reste sur la date locale même tôt le matin (pas de décalage UTC via toISOString)', () => {
+    // Piège classique : new Date().toISOString() convertit en UTC, donc entre
+    // minuit et l'heure du décalage local (été Europe/Paris = UTC+2), la date
+    // UTC est encore la veille. today() doit rester construit sur les
+    // composants de date locaux (getFullYear/getMonth/getDate).
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-01T01:00:00'));
+    expect(today()).toBe('2026-07-01');
+    vi.useRealTimers();
+  });
 });
 
 describe('isThisMonth', () => {
