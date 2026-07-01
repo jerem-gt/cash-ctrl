@@ -22,6 +22,7 @@ import {
   getModalTitle,
   getSchedulingOptions,
   getSubmitLabel,
+  hasValidAmount,
   initCore,
   initSplits,
   runSubmitEdit,
@@ -44,7 +45,7 @@ function buildEditErrors(
   isVentilated: boolean,
 ): Set<string> {
   const errs = new Set<string>();
-  if (!core.amount) errs.add('amount');
+  if (!hasValidAmount(core.amount)) errs.add('amount');
   if (!core.description) errs.add('description');
   if (isTransferEdit) {
     if (!core.account_id) errs.add('account_id');
@@ -59,7 +60,7 @@ function buildEditErrors(
 
 function buildTransferCreateErrors(core: TxCoreState): Set<string> {
   const errs = new Set<string>();
-  if (!core.amount) errs.add('amount');
+  if (!hasValidAmount(core.amount)) errs.add('amount');
   if (!core.to_account_id) errs.add('to_account_id');
   return errs;
 }
@@ -70,7 +71,7 @@ function buildTxCreateErrors(
   isVentilated: boolean,
 ): Set<string> {
   const errs = new Set<string>();
-  if (!core.amount) errs.add('amount');
+  if (!hasValidAmount(core.amount)) errs.add('amount');
   if (!core.description) errs.add('description');
   if (!Number.parseInt(core.payment_method_id)) errs.add('payment_method_id');
   if (fixedAccountId == null && !core.account_id) errs.add('account_id');

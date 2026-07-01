@@ -109,6 +109,12 @@ export function initSplits(
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
+// "0" est une chaîne non-vide donc truthy : un simple `!amount` laisse passer
+// un montant nul. On exige explicitement une valeur numérique strictement positive.
+export function hasValidAmount(amount: string): boolean {
+  return amount !== '' && (Number.parseFloat(amount) || 0) > 0;
+}
+
 export function validateSplits(rows: SplitInput[], total: number, t: TTx): string | null {
   if (rows.length === 0) return t('split_validation.err_no_rows');
   for (const s of rows) {
@@ -126,7 +132,7 @@ export function isEditFormIncomplete(
   isTransferEdit: boolean,
   isVentilated: boolean,
 ): boolean {
-  if (!core.amount || !core.description) return true;
+  if (!hasValidAmount(core.amount) || !core.description) return true;
   if (isTransferEdit) return !core.account_id || !core.to_account_id;
   return !core.account_id || (!isVentilated && !core.subcategory_id) || !core.payment_method_id;
 }
@@ -136,7 +142,7 @@ export function isTxFormIncomplete(
   fixedAccountId: number | undefined,
   isVentilated: boolean,
 ): boolean {
-  if (!core.amount || !core.description) return true;
+  if (!hasValidAmount(core.amount) || !core.description) return true;
   if (!Number.parseInt(core.payment_method_id)) return true;
   if (fixedAccountId == null && !core.account_id) return true;
   return !isVentilated && !Number.parseInt(core.subcategory_id);
@@ -284,7 +290,7 @@ export interface TransferCtx {
 }
 
 export function runSubmitTransfer(ctx: TransferCtx): void {
-  if (!ctx.core.amount || !ctx.core.to_account_id) {
+  if (!hasValidAmount(ctx.core.amount) || !ctx.core.to_account_id) {
     showToast(ctx.t('modal.err_transfer_required'));
     return;
   }
