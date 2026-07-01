@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import ScheduledPage from '@/pages/ScheduledPage.tsx';
-import { SCHEDULED } from '@/tests/fixtures';
+import { CATEGORIES, PAYMENT_METHODS, SCHEDULED } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -86,6 +86,15 @@ describe('ScheduledPage', () => {
     const accountTrigger = screen.getByRole('button', { name: /choisir/i });
     await user.click(accountTrigger);
     await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    await user.selectOptions(document.getElementById('category-select')!, String(CATEGORIES[0].id));
+    await user.selectOptions(
+      document.getElementById('subcategory-select')!,
+      String(CATEGORIES[0].subcategories[0].id),
+    );
+    await user.selectOptions(
+      document.getElementById('payment-method-select')!,
+      String(PAYMENT_METHODS[0].id),
+    );
     const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
     await user.click(btns.at(-1)!);
     await waitFor(() => expect(document.getElementById('toast')?.textContent).toContain('créée'));
@@ -108,6 +117,15 @@ describe('ScheduledPage', () => {
     const accountTrigger = screen.getByRole('button', { name: /choisir/i });
     await user.click(accountTrigger);
     await user.click(await screen.findByRole('option', { name: /Compte test/i }));
+    await user.selectOptions(document.getElementById('category-select')!, String(CATEGORIES[0].id));
+    await user.selectOptions(
+      document.getElementById('subcategory-select')!,
+      String(CATEGORIES[0].subcategories[0].id),
+    );
+    await user.selectOptions(
+      document.getElementById('payment-method-select')!,
+      String(PAYMENT_METHODS[0].id),
+    );
     const btns = screen.getAllByRole('button', { name: 'Enregistrer' });
     await user.click(btns.at(-1)!);
     await waitFor(() =>
