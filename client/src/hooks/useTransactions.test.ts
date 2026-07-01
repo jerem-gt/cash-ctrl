@@ -319,6 +319,51 @@ describe('useValidateTransaction', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('invalide (au lieu de patcher) une vue filtrée par validated=false qui ne correspond plus', async () => {
+    const unvalidatedTx = { ...TRANSACTIONS.data[0], validated: 0 as const };
+    let filteredCallCount = 0;
+    let unfilteredCallCount = 0;
+    server.use(
+      http.get('/api/transactions', ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get('validated') === 'false') {
+          filteredCallCount += 1;
+          // Après validation, la transaction ne correspond plus au filtre côté serveur.
+          return HttpResponse.json(
+            filteredCallCount === 1
+              ? { data: [unvalidatedTx], total: 1, page: 1, totalPages: 1 }
+              : { data: [], total: 0, page: 1, totalPages: 1 },
+          );
+        }
+        unfilteredCallCount += 1;
+        return HttpResponse.json({ data: [unvalidatedTx], total: 1, page: 1, totalPages: 1 });
+      }),
+    );
+
+    const wrapper = createWrapper();
+    const { result: unfiltered } = renderHook(() => useTransactions(), { wrapper });
+    const { result: filtered } = renderHook(() => useTransactions({ validated: false }), {
+      wrapper,
+    });
+    await waitFor(() => expect(unfiltered.current.isSuccess).toBe(true));
+    await waitFor(() => expect(filtered.current.isSuccess).toBe(true));
+    expect(filtered.current.data?.data).toHaveLength(1);
+
+    const { result } = renderHook(() => useValidateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({ id: 10, validated: true });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Vue filtrée : refetch déclenché par l'invalidation, la transaction disparaît
+    await waitFor(() => expect(filtered.current.data?.data).toHaveLength(0));
+    // Vue non filtrée : patch en place, sans nouvel appel réseau
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
+    expect(cache?.data[0].validated).toBe(1);
+    expect(filteredCallCount).toBe(2);
+    expect(unfilteredCallCount).toBe(1);
+  });
 });
 
 describe('useCreateTransfer', () => {

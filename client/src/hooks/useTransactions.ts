@@ -124,9 +124,23 @@ export function useValidateTransaction() {
     mutationFn: ({ id, validated }: { id: number; validated: boolean }) =>
       transactionsApi.validate(id, validated),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
-        old ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) } : old,
-      );
+      // Vue filtrée par validated devenue incohérente → invalidation (refetch,
+      // total/pagination corrects) ; sinon patch en place comme avant.
+      const entries = qc.getQueriesData<PaginatedTransactions>({
+        queryKey: queryKeys.transactions.all(),
+      });
+      for (const [key] of entries) {
+        const filters = key[1] as TransactionFilters | undefined;
+        if (filters?.validated !== undefined && filters.validated !== !!updated.validated) {
+          void qc.invalidateQueries({ queryKey: key });
+        } else {
+          qc.setQueryData<PaginatedTransactions>(key, (old) =>
+            old
+              ? { ...old, data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)) }
+              : old,
+          );
+        }
+      }
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
