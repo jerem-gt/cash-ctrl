@@ -1,8 +1,6 @@
 export const parseLocalDate = (s: string) => new Date(s + 'T00:00:00');
 
-// toISOString() convertit en UTC : entre minuit et l'heure du décalage local
-// (ex. 0h-2h en heure d'été Europe/Paris), cela renvoie encore hier. On
-// reconstruit la date à partir des composants locaux pour éviter ce décalage.
+// toISOString() convertit en UTC : entre minuit et l'heure du décalage local, renvoie encore hier.
 export function today(): string {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, '0');
