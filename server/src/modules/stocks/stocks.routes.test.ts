@@ -8,7 +8,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 const MOCK_FETCH_PRICE = { price: 15.5, currency: 'EUR' };
 
 function mockFetchSuccess() {
-  vi.spyOn(global, 'fetch').mockResolvedValue({
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
     json: () => ({
       chart: { result: [{ meta: { regularMarketPrice: 15.5, currency: 'EUR' } }] },
@@ -17,7 +17,7 @@ function mockFetchSuccess() {
 }
 
 function mockFetchFailure() {
-  vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false } as unknown as Response);
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false } as unknown as Response);
 }
 
 describe('/api/stocks', () => {

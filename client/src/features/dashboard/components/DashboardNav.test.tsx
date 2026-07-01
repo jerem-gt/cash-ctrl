@@ -57,7 +57,7 @@ describe('DashboardNav', () => {
     document.body.appendChild(el);
 
     renderWithProviders(<DashboardNav sections={allSections} />);
-    const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const scrollSpy = vi.spyOn(globalThis, 'scrollTo').mockImplementation(() => undefined);
 
     await userEvent.click(screen.getByRole('button', { name: /Ce mois-ci/ }));
     expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
