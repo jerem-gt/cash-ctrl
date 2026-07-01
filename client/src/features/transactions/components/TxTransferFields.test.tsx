@@ -11,6 +11,7 @@ let TxTransferFields: typeof import('./TxTransferFields').TxTransferFields;
 
 beforeAll(async () => {
   vi.doMock('@/hooks/useBanks', () => ({
+    // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
     useBanks: () => ({ data: BANKS }),
   }));
   vi.resetModules();
