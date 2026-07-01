@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 # Annule le run précédent du même groupe quand un nouveau démarre.
 # Pour un push sur develop avec une PR ouverte, les deux événements partagent
@@ -117,9 +118,10 @@ jobs:
   build-and-push:
     name: 📦 Docker Build & Push
     needs: [ci, release]
-    # On build si on est sur PR, OU si une nouvelle release a été publiée sur main
+    # On build si on est sur PR, sur un déclenchement manuel, OU si une nouvelle release a été publiée
     if: |
-      github.event_name == 'pull_request' || 
+      github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
       (needs.release.outputs.new_release_published == 'true')
     runs-on: ubuntu-latest
     permissions:
