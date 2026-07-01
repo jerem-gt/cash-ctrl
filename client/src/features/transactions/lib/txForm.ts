@@ -109,8 +109,7 @@ export function initSplits(
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
-// "0" est une chaîne non-vide donc truthy : un simple `!amount` laisse passer
-// un montant nul. On exige explicitement une valeur numérique strictement positive.
+// "0" est truthy : un simple `!amount` laisse passer un montant nul.
 export function hasValidAmount(amount: string): boolean {
   return amount !== '' && (Number.parseFloat(amount) || 0) > 0;
 }
