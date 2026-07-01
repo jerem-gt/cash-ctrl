@@ -132,7 +132,7 @@ export function TxModal(props: Readonly<Props>) {
   const [splits, setSplits] = useState<SplitInput[]>(() =>
     initSplits(tx ?? duplicateFrom, categories),
   );
-  const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
+  const [fieldErrors, setFieldErrors] = useState<Set<string>>(() => new Set());
 
   const createTx = useCreateTransaction();
   const createTransfer = useCreateTransfer();
