@@ -89,6 +89,7 @@ export function useUpdateTransfer() {
           : old,
       );
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }
@@ -154,6 +155,7 @@ export function useCreateTransfer() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
     },
   });
 }

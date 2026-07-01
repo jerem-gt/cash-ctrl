@@ -259,6 +259,23 @@ describe('useUpdateTransfer', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('invalide dashboardStats après modification', async () => {
+    const wrapper = createWrapper();
+    const invalidateSpy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateTransfer(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 10,
+        amount: 30,
+        description: 'X',
+        date: '2026-01-01',
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
+  });
 });
 
 describe('useDeleteTransaction', () => {
@@ -381,5 +398,24 @@ describe('useCreateTransfer', () => {
       });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('invalide dashboardStats après création', async () => {
+    const wrapper = createWrapper();
+    const invalidateSpy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    const { result } = renderHook(() => useCreateTransfer(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        from_account_id: 1,
+        to_account_id: 2,
+        amount: 100,
+        description: 'Virement',
+        date: '2026-01-01',
+        notes: null,
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
   });
 });
