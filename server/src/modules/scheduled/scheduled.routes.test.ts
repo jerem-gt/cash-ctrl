@@ -147,7 +147,7 @@ describe('/api/scheduled', () => {
     const pastAfter = (after.body.data as { date: string; amount: number }[]).filter(
       (tx) => tx.date <= TODAY,
     );
-    expect(pastAfter.length).toBe(pastBefore.length);
+    expect(pastAfter).toHaveLength(pastBefore.length);
     expect(pastAfter.every((tx) => tx.amount === 100)).toBe(true);
   });
 

@@ -43,7 +43,7 @@ describe('useActiveSection', () => {
     // Nouveau tableau, même contenu → pas de ré-abonnement
     ids = ['a', 'b'];
     rerender();
-    expect(addSpy.mock.calls.filter(([e]) => e === 'scroll').length).toBe(callCount);
+    expect(addSpy.mock.calls.filter(([e]) => e === 'scroll')).toHaveLength(callCount);
   });
 
   it('met à jour la section active lors du scroll', () => {
