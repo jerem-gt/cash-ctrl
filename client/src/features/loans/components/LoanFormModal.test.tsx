@@ -120,7 +120,21 @@ describe('LoanFormModal — mode edition', () => {
     expect(screen.getByPlaceholderText('Ex : 200000')).toHaveValue(
       LOAN.principal_amount.toFixed(2),
     );
+    expect(screen.getByPlaceholderText('Ex : 3.5')).toHaveValue(LOAN.interest_rate * 100);
     expect(screen.getByPlaceholderText('Ex : 240')).toHaveValue(LOAN.duration_months);
+  });
+
+  it('prérempli le taux avec un point décimal, jamais un séparateur de milliers', () => {
+    renderWithProviders(
+      <LoanFormModal
+        mode="edit"
+        account={LOAN_ACCOUNT}
+        loan={{ ...LOAN, interest_rate: 12.345 }}
+        onClose={vi.fn()}
+      />,
+    );
+    const input = screen.getByPlaceholderText('Ex : 3.5');
+    expect(input.value).toBe('1234.5');
   });
 
   it("desactive les champs qui affectent l'echeancier", () => {
