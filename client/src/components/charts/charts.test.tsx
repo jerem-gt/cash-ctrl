@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import ExpensesPieChart from './ExpensesPieChart';
-import ForecastAreaChart from './ForecastAreaChart';
+import ForecastAreaChart, { dedupeTooltipPayload } from './ForecastAreaChart';
 import IncomeExpenseBarChart from './IncomeExpenseBarChart';
 import NetBalanceLineChart from './NetBalanceLineChart';
 import PatrimonyBarChart from './PatrimonyBarChart';
@@ -80,6 +80,22 @@ describe('charts', () => {
       />,
     );
     expect(container).toBeInTheDocument();
+  });
+
+  it('dedupeTooltipPayload retire les entrées identiques du point de jonction', () => {
+    const payload = [
+      { name: 'Solde', value: 1500 },
+      { name: 'Solde', value: 1500 },
+    ];
+    expect(dedupeTooltipPayload(payload)).toHaveLength(1);
+  });
+
+  it('dedupeTooltipPayload conserve les entrées de valeurs différentes', () => {
+    const payload = [
+      { name: 'Solde', value: 1500 },
+      { name: 'Solde', value: 1800 },
+    ];
+    expect(dedupeTooltipPayload(payload)).toHaveLength(2);
   });
 
   it('monte PatrimonyBarChart sans planter', () => {

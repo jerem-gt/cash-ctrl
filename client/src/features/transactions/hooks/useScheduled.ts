@@ -18,6 +18,8 @@ export function useCreateScheduled() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -30,6 +32,8 @@ export function useUpdateScheduled() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -41,6 +45,8 @@ export function useDeleteScheduled() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }

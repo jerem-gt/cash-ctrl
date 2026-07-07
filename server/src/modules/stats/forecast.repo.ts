@@ -1,14 +1,12 @@
+import type { ForecastAccount, ForecastPoint, ForecastResponse } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { dateStr, parseDate } from '../../lib/dateUtils';
 import { toCents } from '../../lib/money';
-import { applyWeekend, getFirstOccurrence, nextOccurrence } from '../../lib/scheduledLogic';
+import { forEachOccurrence } from '../../lib/scheduledLogic';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
 import { createScheduledRepo } from '../scheduled/scheduled.repo';
 import type { ScheduledTransaction } from '../scheduled/scheduled.types';
-import type { ForecastAccount, ForecastPoint, ForecastResponse } from './forecast.types';
-
-// Sécurité anti-boucle infinie si une planif est mal formée (récurrence figée, etc.)
-const MAX_OCCURRENCE_ITERATIONS = 10000;
 
 interface AccountBalanceRow {
   account_id: number;
@@ -56,39 +54,29 @@ function addFlowsFromSchedule(
   const isVersement = sched.insurance_support_id != null;
   const isTransfer = !isVersement && sched.to_account_id != null;
   const amountCents = toCents(sched.amount);
-  const endDate = sched.end_date ? parseDate(sched.end_date) : null;
 
-  // On repart toujours de la 1re occurrence (pas de last_generated_until) : les
-  // transactions déjà pré-générées (non validées, jusqu'à J+lead_days) ne doivent
-  // pas être exclues de la projection sous prétexte qu'elles existent déjà en base.
-  let nominal = getFirstOccurrence(sched);
-
-  let iterations = 0;
-  while (nominal <= horizon && iterations < MAX_OCCURRENCE_ITERATIONS) {
-    iterations++;
-    if (endDate && nominal > endDate) break;
-
-    const actual = applyWeekend(nominal, sched.weekend_handling);
-    if (actual > today && actual <= horizon) {
+  // Pas de resumeFrom (last_generated_until) : les transactions déjà pré-générées
+  // (non validées, jusqu'à J+lead_days) ne doivent pas être exclues de la projection
+  // sous prétexte qu'elles existent déjà en base. `from` fast-forward vers `today`.
+  forEachOccurrence(sched, { from: today, until: horizon }, (actual) => {
+    if (actual >= today && actual <= horizon) {
       recordOccurrenceDelta(sched, isVersement, isTransfer, amountCents, dateStr(actual), addDelta);
     }
-
-    nominal = nextOccurrence(nominal, sched);
-  }
+  });
 }
 
 export function createForecastRepo(db: Database) {
   const scheduledRepo = createScheduledRepo(db);
 
-  const balanceStmt = db.prepare<{ userId: number }, AccountBalanceRow>(`
+  const balanceStmt = db.prepare<{ userId: number; accountId: number | null }, AccountBalanceRow>(`
     SELECT a.id AS account_id, a.name AS account_name, a.bank_id,
            a.initial_balance + COALESCE(bal.s, 0) AS balance
     FROM accounts a
     LEFT JOIN (
-      SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
-      FROM transactions WHERE validated = 1 GROUP BY account_id
+      ${VALIDATED_TX_SUM_SELECT} GROUP BY account_id
     ) bal ON bal.account_id = a.id
     WHERE a.user_id = :userId AND a.closed_at IS NULL
+      AND (:accountId IS NULL OR a.id = :accountId)
   `);
 
   // "Non encore payée" = pas de transaction liée, ou transaction liée non validée
@@ -103,11 +91,16 @@ export function createForecastRepo(db: Database) {
     LEFT JOIN transactions t ON li.transaction_id = t.id
     WHERE l.user_id = :userId
       AND (li.transaction_id IS NULL OR t.validated = 0)
-      AND li.due_date > :from AND li.due_date <= :to
+      AND li.due_date >= :from AND li.due_date <= :to
   `);
 
   return {
-    getForecast(userId: number, horizonDays: number, today: string): ForecastResponse {
+    getForecast(
+      userId: number,
+      horizonDays: number,
+      today: string,
+      accountId?: number,
+    ): ForecastResponse {
       const todayDate = parseDate(today);
       const horizonDate = new Date(todayDate);
       horizonDate.setDate(horizonDate.getDate() + horizonDays);
@@ -137,14 +130,15 @@ export function createForecastRepo(db: Database) {
         addDelta(inst.source_account_id, inst.due_date, -inst.total_amount);
       }
 
-      const accountBalances = balanceStmt.all({ userId });
+      const accountBalances = balanceStmt.all({ userId, accountId: accountId ?? null });
       const accounts: ForecastAccount[] = [];
 
       for (const acc of accountBalances) {
         const deltas = deltasByAccount.get(acc.account_id);
         if (!deltas || deltas.size === 0) continue;
 
-        let running = acc.balance;
+        // Le point initial inclut le delta du jour meme (occurrence/echeance dues aujourd'hui).
+        let running = acc.balance + (deltas.get(today) ?? 0);
         let goesNegativeOn: string | null = running < 0 ? today : null;
         const points: ForecastPoint[] = [{ date: today, balance: running }];
 

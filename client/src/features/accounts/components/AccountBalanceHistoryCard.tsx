@@ -16,7 +16,7 @@ export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
   const [horizon, setHorizon] = useState<30 | 90>(90);
   const { data: history, isLoading } = useAccountBalanceHistory(accountId, horizon);
-  const { data: forecast } = useForecast(horizon);
+  const { data: forecast } = useForecast(horizon, accountId);
 
   const forecastAccount = forecast?.accounts.find((a) => a.account_id === accountId);
   const pastPoints = history?.points ?? [];
@@ -30,7 +30,8 @@ export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
 
   const points = [...pastPoints, ...futurePoints];
   const splitDate = futurePoints.length > 0 ? lastPastDate : undefined;
-  const goesNegativeOn = points.find((p) => p.balance < 0)?.date ?? null;
+  // Calcul serveur (futur uniquement) : un découvert passé résorbé ne doit pas alerter.
+  const goesNegativeOn = forecastAccount?.goes_negative_on ?? null;
 
   return (
     <Card>

@@ -1,10 +1,8 @@
+import type { AccountBalanceHistoryResponse, BalanceHistoryPoint } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { dateStr, parseDate } from '../../lib/dateUtils';
-import type {
-  AccountBalanceHistoryResponse,
-  BalanceHistoryPoint,
-} from './account-balance-history.types';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
 
 interface CurrentBalanceRow {
   balance: number;
@@ -20,8 +18,7 @@ export function createAccountBalanceHistoryRepo(db: Database) {
     SELECT a.initial_balance + COALESCE(bal.s, 0) AS balance
     FROM accounts a
     LEFT JOIN (
-      SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
-      FROM transactions WHERE validated = 1 AND account_id = :accountId GROUP BY account_id
+      ${VALIDATED_TX_SUM_SELECT} AND account_id = :accountId GROUP BY account_id
     ) bal ON bal.account_id = a.id
     WHERE a.id = :accountId
   `);

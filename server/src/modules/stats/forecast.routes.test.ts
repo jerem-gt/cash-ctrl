@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { dateStr } from '../../lib/dateUtils';
+import { toCents } from '../../lib/money';
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
 
@@ -148,7 +149,7 @@ describe('GET /api/stats/forecast', () => {
     expect(loan.status).toBe(201);
 
     const installments = await ctx.agent.get(`/api/loans/${loan.body.id}/installments`);
-    const firstInstallmentCents = Math.round(installments.body[0].total_amount * 100);
+    const firstInstallmentCents = toCents(installments.body[0].total_amount);
 
     const res = await ctx.agent.get('/api/stats/forecast?horizon=90');
     expect(res.status).toBe(200);
@@ -185,5 +186,93 @@ describe('GET /api/stats/forecast', () => {
     expect(findPoint(destForecast, daysFromNow(19))?.balance).toBe(disbursement);
     expect(findPoint(destForecast, day20)?.balance).toBe(disbursement + 20000);
     expect(destForecast.goes_negative_on).toBeNull();
+  });
+
+  it('inclut une occurrence planifiee datee du jour meme dans points[0]', async () => {
+    await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 40,
+      description: 'Depense du jour',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'day',
+      recurrence_interval: 1000,
+      start_date: daysFromNow(0),
+      active: true,
+    });
+
+    const res = await ctx.agent.get('/api/stats/forecast?horizon=90');
+    expect(res.status).toBe(200);
+    const accForecast = (res.body.accounts as ForecastAccountDto[]).find(
+      (a) => a.account_id === accountId,
+    )!;
+    expect(accForecast).toBeTruthy();
+    expect(accForecast.current_balance).toBe(100000);
+
+    const today = daysFromNow(0);
+    expect(findPoint(accForecast, today)?.balance).toBe(100000 - 4000);
+    expect(findPoint(accForecast, daysFromNow(1))?.balance).toBe(100000 - 4000);
+    expect(accForecast.goes_negative_on).toBeNull();
+  });
+
+  it('inclut une echeance de pret due aujourdhui dans points[0]', async () => {
+    ctx.db
+      .prepare(
+        "INSERT INTO account_types (user_id, name, envelope_type) VALUES (?, 'Prêt', 'loan')",
+      )
+      .run(ctx.userId);
+
+    const loan = await ctx.agent.post('/api/loans').send({
+      name: 'Pret jour meme',
+      bank_id: SEED.BANK_ID,
+      opening_date: '2024-01-01',
+      principal_amount: 12000,
+      interest_rate: 0.12,
+      duration_months: 12,
+      start_date: daysFromNow(0),
+      source_account_id: accountId,
+      deposit_account_id: destAccountId,
+    });
+    expect(loan.status).toBe(201);
+
+    const installments = await ctx.agent.get(`/api/loans/${loan.body.id}/installments`);
+    const firstInstallmentCents = toCents(installments.body[0].total_amount);
+
+    const res = await ctx.agent.get('/api/stats/forecast?horizon=90');
+    expect(res.status).toBe(200);
+    const accForecast = (res.body.accounts as ForecastAccountDto[]).find(
+      (a) => a.account_id === accountId,
+    )!;
+    expect(accForecast).toBeTruthy();
+
+    const today = daysFromNow(0);
+    expect(findPoint(accForecast, today)?.balance).toBe(100000 - firstInstallmentCents);
+    expect(findPoint(accForecast, daysFromNow(1))?.balance).toBe(100000 - firstInstallmentCents);
+  });
+
+  it('account_id filtre le forecast sur le seul compte demande', async () => {
+    await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      to_account_id: destAccountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Transfert',
+      payment_method_id: SEED.PM_TRANSFERT,
+      recurrence_unit: 'day',
+      recurrence_interval: 1000,
+      start_date: daysFromNow(5),
+      active: true,
+    });
+
+    const res = await ctx.agent.get(`/api/stats/forecast?horizon=90&account_id=${accountId}`);
+    expect(res.status).toBe(200);
+    const ids = (res.body.accounts as ForecastAccountDto[]).map((a) => a.account_id);
+    expect(ids).toEqual([accountId]);
+  });
+
+  it('account_id 404 si le compte ne nous appartient pas', async () => {
+    const res = await ctx.agent.get('/api/stats/forecast?horizon=90&account_id=999999');
+    expect(res.status).toBe(404);
   });
 });

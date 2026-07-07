@@ -1,6 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { toCents, toEuros } from '../../lib/money';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
 import type {
   Account,
   CloseAccountInput,
@@ -45,8 +46,7 @@ const ACCOUNT_SELECT = `
   LEFT JOIN banks b ON a.bank_id = b.id
   LEFT JOIN account_types at ON a.account_type_id = at.id
   LEFT JOIN (
-    SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
-    FROM transactions WHERE validated = 1 GROUP BY account_id
+    ${VALIDATED_TX_SUM_SELECT} GROUP BY account_id
   ) bal ON bal.account_id = a.id
   LEFT JOIN (
     SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS s
@@ -81,16 +81,14 @@ const ACCOUNT_SELECT = `
 export function createAccountsRepo(db: Database) {
   const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
   const getCountByAccountTypeIdStmt = db
-    .prepare<
-      { accountTypeId: number },
-      number
-    >('SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = :accountTypeId')
+    .prepare<{ accountTypeId: number }, number>(
+      'SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = :accountTypeId',
+    )
     .pluck();
   const getCountByBankIdStmt = db
-    .prepare<
-      { bankId: number },
-      number
-    >('SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = :bankId')
+    .prepare<{ bankId: number }, number>(
+      'SELECT COUNT(*) as cnt FROM accounts WHERE bank_id = :bankId',
+    )
     .pluck();
   const getByUserIdStmt = db.prepare<{ userId: number }, Account>(
     `${ACCOUNT_SELECT} WHERE a.user_id = :userId ORDER BY a.name COLLATE NOCASE`,

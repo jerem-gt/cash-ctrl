@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 
@@ -48,6 +48,16 @@ describe('useCreateScheduled', () => {
     result.current.mutate(PAYLOAD);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('invalide le forecast et l’historique de solde après création', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useCreateScheduled(), { wrapper: Wrapper });
+    result.current.mutate(PAYLOAD);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
+  });
 });
 
 describe('useUpdateScheduled', () => {
@@ -57,6 +67,16 @@ describe('useUpdateScheduled', () => {
     result.current.mutate({ id: 1, ...PAYLOAD });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('invalide le forecast et l’historique de solde après modification', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateScheduled(), { wrapper: Wrapper });
+    result.current.mutate({ id: 1, ...PAYLOAD });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
+  });
 });
 
 describe('useDeleteScheduled', () => {
@@ -65,5 +85,15 @@ describe('useDeleteScheduled', () => {
     const { result } = renderHook(() => useDeleteScheduled(), { wrapper: Wrapper });
     result.current.mutate(1);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('invalide le forecast et l’historique de solde après suppression', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useDeleteScheduled(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });

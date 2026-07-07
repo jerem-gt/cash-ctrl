@@ -2,10 +2,12 @@ import { useId } from 'react';
 import {
   Area,
   AreaChart,
+  DefaultTooltipContent,
   ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
+  type TooltipContentProps,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -45,6 +47,23 @@ function buildChartData(points: ForecastChartPoint[], splitDate: string | undefi
 
 const BRAND_COLOR = '#139AAE';
 
+/** Retire les entrées (name, value) identiques : le point de jonction passé/futur les duplique. */
+export function dedupeTooltipPayload<T extends { name?: unknown; value?: unknown }>(
+  payload: readonly T[] | undefined,
+): T[] {
+  const seen = new Set<string>();
+  return (payload ?? []).filter((entry) => {
+    const key = `${String(entry.name)}:${String(entry.value)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function dedupedTooltipContent(props: TooltipContentProps) {
+  return <DefaultTooltipContent {...props} payload={dedupeTooltipPayload(props.payload)} />;
+}
+
 export default function ForecastAreaChart({
   points,
   goesNegativeOn,
@@ -83,6 +102,7 @@ export default function ForecastAreaChart({
         <Tooltip
           labelFormatter={(v) => fmtDateShort(String(v))}
           formatter={(v) => [fmtCurrency(Number(v)), label]}
+          content={dedupedTooltipContent}
           {...tooltipStyleProps(theme)}
           cursor={{ stroke: theme.refLine, strokeWidth: 1 }}
         />

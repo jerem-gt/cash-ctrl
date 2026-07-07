@@ -353,7 +353,15 @@ export const handlers = [
   http.get('/api/stats/profitability', () => HttpResponse.json(PROFITABILITY_DATA)),
   http.get('/api/stats/report-years', () => HttpResponse.json(REPORT_YEARS)),
   http.get('/api/stats/report', () => HttpResponse.json(REPORT_DATA)),
-  http.get('/api/stats/forecast', () => HttpResponse.json(FORECAST_RESPONSE)),
+  http.get('/api/stats/forecast', ({ request }) => {
+    const accountIdParam = new URL(request.url).searchParams.get('account_id');
+    if (accountIdParam === null) return HttpResponse.json(FORECAST_RESPONSE);
+    const accountId = Number(accountIdParam);
+    return HttpResponse.json({
+      ...FORECAST_RESPONSE,
+      accounts: FORECAST_RESPONSE.accounts.filter((a) => a.account_id === accountId),
+    });
+  }),
   http.get('/api/stats/accounts/:accountId/balance-history', () =>
     HttpResponse.json(ACCOUNT_BALANCE_HISTORY),
   ),
