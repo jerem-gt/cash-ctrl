@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { ProfitabilityCard } from '@/components/ProfitabilityCard';
 import { Skeleton } from '@/components/ui';
+import { AccountBalanceHistoryCard } from '@/features/accounts/components/AccountBalanceHistoryCard';
 import { AccountHeader } from '@/features/accounts/components/AccountHeader';
 import { CloseAccountModal } from '@/features/accounts/components/CloseAccountModal';
 import { InsuranceSection } from '@/features/insurance/components/InsuranceSection';
@@ -149,6 +150,13 @@ export default function AccountDetailPage() {
             onClose={() => setLoanCloseOpen(true)}
             readOnly={readOnly}
           />
+        </div>
+      )}
+
+      {/* Solde passé + projeté — comptes de trésorerie uniquement (ni invest, ni AV/PER, ni prêt) */}
+      {!isInvestment && !isInsurance && !isLoan && (
+        <div className="px-1">
+          <AccountBalanceHistoryCard accountId={accountId} />
         </div>
       )}
 

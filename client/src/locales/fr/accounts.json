@@ -103,6 +103,13 @@
     "duration_year_months_one": "1 an {{months}} mois",
     "duration_year_months_other": "{{count}} ans {{months}} mois"
   },
+  "balance_history": {
+    "title": "Solde",
+    "horizon_30": "30 j",
+    "horizon_90": "90 j",
+    "balance_label": "Solde",
+    "negative_alert": "Solde négatif prévu le {{date}}"
+  },
   "seniority": {
     "less_than_month": "moins d'un mois",
     "months": "{{count}} mois",

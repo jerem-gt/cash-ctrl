@@ -1,5 +1,6 @@
 import type {
   Account,
+  AccountBalanceHistoryResponse,
   AccountProfitability,
   AccountType,
   Bank,
@@ -612,6 +613,18 @@ export const FORECAST_RESPONSE: ForecastResponse = {
       ],
       goes_negative_on: null,
     },
+  ],
+};
+
+// Format « fil » (centimes) tel que renvoyé par GET /api/stats/accounts/:id/balance-history ;
+// statsApi.accountBalanceHistory() convertit ensuite en euros pour le reste du client.
+export const ACCOUNT_BALANCE_HISTORY: AccountBalanceHistoryResponse = {
+  account_id: 1,
+  days: 90,
+  points: [
+    { date: '2026-06-07', balance: 100000 },
+    { date: '2026-06-20', balance: 130000 },
+    { date: '2026-07-07', balance: 150000 },
   ],
 };
 

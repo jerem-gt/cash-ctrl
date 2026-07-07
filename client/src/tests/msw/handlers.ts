@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import {
+  ACCOUNT_BALANCE_HISTORY,
   ACCOUNT_TYPES,
   ACCOUNTS,
   BANKS,
@@ -353,6 +354,9 @@ export const handlers = [
   http.get('/api/stats/report-years', () => HttpResponse.json(REPORT_YEARS)),
   http.get('/api/stats/report', () => HttpResponse.json(REPORT_DATA)),
   http.get('/api/stats/forecast', () => HttpResponse.json(FORECAST_RESPONSE)),
+  http.get('/api/stats/accounts/:accountId/balance-history', () =>
+    HttpResponse.json(ACCOUNT_BALANCE_HISTORY),
+  ),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

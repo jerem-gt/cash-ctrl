@@ -17,6 +17,8 @@ export const queryKeys = {
   reportYears: () => ['report-years'] as const,
   report: (year: number, accountId?: number) => ['report', year, accountId] as const,
   forecast: (horizon: number) => ['forecast', horizon] as const,
+  accountBalanceHistory: (accountId: number, days: number) =>
+    ['account-balance-history', accountId, days] as const,
 
   transactions: {
     all: () => ['transactions'] as const,

@@ -103,6 +103,13 @@
     "duration_year_months_one": "1 year {{months}} months",
     "duration_year_months_other": "{{count}} years {{months}} months"
   },
+  "balance_history": {
+    "title": "Balance",
+    "horizon_30": "30 d",
+    "horizon_90": "90 d",
+    "balance_label": "Balance",
+    "negative_alert": "Negative balance expected on {{date}}"
+  },
   "seniority": {
     "less_than_month": "less than a month",
     "months": "{{count}} months",

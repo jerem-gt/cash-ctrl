@@ -1,5 +1,6 @@
 import type {
   Account,
+  AccountBalanceHistoryResponse,
   AccountProfitability,
   AccountType,
   AppVersion,
@@ -422,6 +423,19 @@ export const statsApi = {
         current_balance: centsToEuros(a.current_balance),
         points: a.points.map((p) => ({ ...p, balance: centsToEuros(p.balance) })),
       })),
+    };
+  },
+  accountBalanceHistory: async (
+    accountId: number,
+    days: 30 | 90 | 365,
+  ): Promise<AccountBalanceHistoryResponse> => {
+    const raw = await request<AccountBalanceHistoryResponse>(
+      'GET',
+      `/api/stats/accounts/${accountId}/balance-history?days=${days}`,
+    );
+    return {
+      ...raw,
+      points: raw.points.map((p) => ({ ...p, balance: centsToEuros(p.balance) })),
     };
   },
 };
