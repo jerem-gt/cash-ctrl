@@ -1,4 +1,5 @@
 import type { ScheduledTransaction } from '@cashctrl/types';
+import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
@@ -19,6 +20,8 @@ interface RowProps {
   onEdit: (s: ScheduledTransaction) => void;
   onDelete: (s: ScheduledTransaction) => void;
   onViewTransactions: (s: ScheduledTransaction) => void;
+  highlighted?: boolean;
+  ref?: Ref<HTMLDivElement>;
 }
 
 function AccountChips({
@@ -86,6 +89,8 @@ export function ScheduledRow({
   onEdit,
   onDelete,
   onViewTransactions,
+  highlighted = false,
+  ref,
 }: Readonly<RowProps>) {
   const { t } = useTranslation('scheduled');
   const isVersement = sched.insurance_support_id != null;
@@ -99,7 +104,12 @@ export function ScheduledRow({
   const amountSign = isTransfer || isVersement ? '' : typeSign;
 
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-line-subtle last:border-0">
+    <div
+      ref={ref}
+      className={`flex items-center gap-3 py-2.5 border-b border-line-subtle last:border-0 transition-all duration-300 ${
+        highlighted ? 'ring-2 ring-brand-500 rounded-lg bg-brand-50/50 dark:bg-brand-500/10' : ''
+      }`}
+    >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium truncate">{sched.description}</p>

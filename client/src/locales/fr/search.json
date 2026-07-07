@@ -1,0 +1,23 @@
+{
+  "placeholder": "Rechercher un compte, une transaction, une page…",
+  "loading": "Recherche…",
+  "empty": "Aucun résultat",
+  "hint_idle": "Tapez au moins 2 caractères pour rechercher…",
+  "groups": {
+    "accounts": "Comptes",
+    "transactions": "Transactions",
+    "scheduled": "Planifications",
+    "stocks": "Titres",
+    "pages": "Pages"
+  },
+  "hints": {
+    "navigate": "naviguer",
+    "open": "ouvrir",
+    "close": "fermer"
+  },
+  "closed_badge": "Clôturé",
+  "inactive_badge": "Inactive",
+  "sidebar_button": "Rechercher…",
+  "aria_open": "Ouvrir la recherche",
+  "aria_open_mobile": "Rechercher"
+}

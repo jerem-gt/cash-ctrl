@@ -51,10 +51,10 @@ Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job
 ### Internationalisation (i18n)
 L'application est bilingue **français / anglais**. La langue est détectée automatiquement (`i18next-browser-languagedetector` : localStorage puis navigateur, `fallbackLng: 'fr'`) et modifiable via le sélecteur dans les Réglages. Les traductions sont découpées par namespace, chacun mappé à une feature ou page (`client/src/locales/fr/` et `client/src/locales/en/`). Utiliser `useTranslation('<namespace>')` dans le composant concerné. Les strings partagées entre plusieurs features vont dans `common`. Les fichiers `en/` doivent rester un miroir exact des clés `fr/` (mêmes clés, placeholders `{{var}}` et suffixes de pluriel).
 
-Pour ajouter un **nouveau namespace**, mettre à jour :
+Les namespaces sont chargés dynamiquement par nom de fichier (`i18next-resources-to-backend`) : il n'y a **pas** de ressources statiques à déclarer dans `i18n.ts`. Pour ajouter un **nouveau namespace** :
 1. Créer `client/src/locales/fr/<namespace>.json` **et** `client/src/locales/en/<namespace>.json`
-2. `client/src/i18n.ts` — ajouter l'import et la ressource dans `resources.fr` **et** `resources.en`
-3. `client/src/i18next.d.ts` — ajouter l'import type et la clé dans `CustomTypeOptions.resources`
+2. `client/src/i18next.d.ts` — ajouter l'import type et la clé dans `CustomTypeOptions.resources`
+3. `client/src/tests/helpers/i18nTestUtils.ts` — ajouter le namespace au tableau `LAZY_NAMESPACES`
 
 Le formatage des montants/dates suit la langue via `currentLocale()` de `client/src/lib/format.ts` (`fr-FR` ↔ `en-GB`), la devise restant EUR.
 

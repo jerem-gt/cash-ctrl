@@ -10,6 +10,7 @@ import type loansFr from './locales/fr/loans.json';
 import type portfolioFr from './locales/fr/portfolio.json';
 import type reportsFr from './locales/fr/reports.json';
 import type scheduledFr from './locales/fr/scheduled.json';
+import type searchFr from './locales/fr/search.json';
 import type settingsFr from './locales/fr/settings.json';
 import type sidebarFr from './locales/fr/sidebar.json';
 import type transactionsFr from './locales/fr/transactions.json';
@@ -31,6 +32,7 @@ declare module 'i18next' {
       scheduled: typeof scheduledFr;
       reports: typeof reportsFr;
       errors: typeof errorsFr;
+      search: typeof searchFr;
     };
   }
 }

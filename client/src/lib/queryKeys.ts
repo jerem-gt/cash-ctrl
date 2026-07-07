@@ -62,4 +62,6 @@ export const queryKeys = {
     list: () => ['categorization-rules', 'list'] as const,
     match: (description: string) => ['categorization-rules', 'match', description] as const,
   },
+
+  search: (q: string) => ['search', q] as const,
 };

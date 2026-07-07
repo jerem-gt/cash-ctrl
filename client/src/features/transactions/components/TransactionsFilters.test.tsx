@@ -35,7 +35,9 @@ describe('TransactionsFilters', () => {
     const onFilterChange = vi.fn();
     renderWithProviders(<TransactionsFilters {...defaultProps} onFilterChange={onFilterChange} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/rechercher/i), { target: { value: 'courses' } });
+    fireEvent.change(screen.getByPlaceholderText(/libellé ou notes/i), {
+      target: { value: 'courses' },
+    });
     void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ description_contains: 'courses' });
@@ -53,7 +55,7 @@ describe('TransactionsFilters', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText(/rechercher/i), { target: { value: '' } });
+    fireEvent.change(screen.getByPlaceholderText(/libellé ou notes/i), { target: { value: '' } });
     void act(() => vi.runAllTimers());
 
     expect(onFilterChange).toHaveBeenCalledWith({ description_contains: undefined });

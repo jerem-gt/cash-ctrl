@@ -1,0 +1,23 @@
+{
+  "placeholder": "Search an account, a transaction, a page…",
+  "loading": "Searching…",
+  "empty": "No results",
+  "hint_idle": "Type at least 2 characters to search…",
+  "groups": {
+    "accounts": "Accounts",
+    "transactions": "Transactions",
+    "scheduled": "Scheduled",
+    "stocks": "Stocks",
+    "pages": "Pages"
+  },
+  "hints": {
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close"
+  },
+  "closed_badge": "Closed",
+  "inactive_badge": "Inactive",
+  "sidebar_button": "Search…",
+  "aria_open": "Open search",
+  "aria_open_mobile": "Search"
+}

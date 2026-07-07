@@ -314,6 +314,32 @@ describe('ScheduledPage', () => {
     expect(screen.queryByText('Loyer')).not.toBeInTheDocument();
   });
 
+  // ─── Highlight depuis la palette de commande (location.state) ───────────
+
+  it('surligne temporairement la ligne visée par highlightScheduledId', async () => {
+    renderWithProviders(<ScheduledPage />, {
+      initialEntries: [
+        { pathname: '/scheduled', state: { highlightScheduledId: SCHEDULED[0].id } },
+      ],
+    });
+    const row = (await screen.findByText('Loyer')).closest('div.flex.items-center.gap-3');
+    await waitFor(() => expect(row?.className).toContain('ring-2'));
+  });
+
+  it("le highlight sélectionne le compte de la cible au lieu de l'auto-sélection du compte en alerte", async () => {
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />, {
+      initialEntries: [{ pathname: '/scheduled', state: { highlightScheduledId: 2 } }],
+    });
+    // Sans le prop autoSelect, le chip "Compte test" (en alerte) filtrerait la liste et masquerait la cible
+    const row = (await screen.findByText('Épargne mensuelle')).closest(
+      'div.flex.items-center.gap-3',
+    );
+    await waitFor(() => expect(row?.className).toContain('ring-2'));
+    const chipLivretA = screen.getByRole('button', { name: /Livret A/i });
+    await waitFor(() => expect(chipLivretA.className).toContain('bg-brand-600'));
+  });
+
   it('le chip "Tous" affiche toutes les planifications', async () => {
     const user = userEvent.setup();
     server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));

@@ -467,6 +467,47 @@ export interface AccountBalanceHistoryResponse {
   points: BalanceHistoryPoint[];
 }
 
+// ─── Recherche globale ──────────────────────────────────────────────────────────
+// amounts : wire format en centimes, cf. api/client.ts pour la conversion en euros.
+
+export interface SearchAccountResult {
+  id: number;
+  name: string;
+  bank: string;
+  closed_at: string | null;
+  envelope_type: string | null;
+}
+
+export interface SearchTransactionResult {
+  id: number;
+  description: string;
+  date: string;
+  amount: number;
+  type: TransactionType;
+  account_id: number;
+}
+
+export interface SearchScheduledResult {
+  id: number;
+  description: string;
+  amount: number;
+  type: TransactionType;
+  active: 0 | 1;
+}
+
+export interface SearchStockResult {
+  id: number;
+  ticker: string;
+  account_id: number;
+}
+
+export interface SearchResponse {
+  accounts: SearchAccountResult[];
+  transactions: SearchTransactionResult[];
+  scheduled: SearchScheduledResult[];
+  stocks: SearchStockResult[];
+}
+
 // ─── API Payloads ─────────────────────────────────────────────────────────────
 
 export type CreateTransferPayload = {

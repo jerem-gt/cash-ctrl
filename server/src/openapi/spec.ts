@@ -987,6 +987,19 @@ export function buildOpenApiSpec() {
         },
       },
 
+      // ── Search ────────────────────────────────────────────────────────────
+      '/api/search': {
+        get: {
+          tags: ['Search'],
+          summary: 'Recherche globale (comptes, transactions, planifications, titres)',
+          security: sessionAuth,
+          parameters: [
+            { name: 'q', in: 'query', required: true, schema: { type: 'string', minLength: 2 } },
+          ],
+          responses: { ...r200(), ...r400 },
+        },
+      },
+
       // ── Export ────────────────────────────────────────────────────────────
       '/api/export/json-full': {
         get: {

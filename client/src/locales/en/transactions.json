@@ -36,7 +36,7 @@
     "edit_amount_title": "Edit attributed amount"
   },
   "filters": {
-    "description_placeholder": "Search a description…",
+    "description_placeholder": "Description or notes…",
     "clear_search": "Clear search",
     "type_label": "Choose a type",
     "all_types": "All types",

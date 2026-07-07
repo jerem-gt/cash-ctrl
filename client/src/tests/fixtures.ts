@@ -17,6 +17,7 @@ import type {
   Reimbursement,
   ReportData,
   ScheduledTransaction,
+  SearchResponse,
   StockOperation,
   StockPosition,
   Subcategory,
@@ -643,4 +644,24 @@ export const REPORT_DATA: ReportData = {
     { category: 'Transport', amount: 500 },
   ],
   income_by_category: [{ category: 'Revenus du travail', amount: 3000 }],
+};
+
+// Format « fil » (centimes) tel que renvoyé par GET /api/search ;
+// searchApi.search() convertit ensuite les montants en euros.
+export const SEARCH_RESPONSE: SearchResponse = {
+  accounts: [
+    { id: 1, name: 'Compte Café', bank: 'DefaultBank', closed_at: null, envelope_type: null },
+  ],
+  transactions: [
+    {
+      id: 10,
+      description: 'Café du matin',
+      date: '2026-04-20',
+      amount: 2450,
+      type: 'expense',
+      account_id: 1,
+    },
+  ],
+  scheduled: [{ id: 1, description: 'Abonnement café', amount: 900, type: 'expense', active: 1 }],
+  stocks: [{ id: 1, ticker: 'CAFE', account_id: 1 }],
 };

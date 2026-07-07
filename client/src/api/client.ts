@@ -35,6 +35,7 @@ import type {
   RevaloriserPayload,
   ScheduledPayload,
   ScheduledTransaction,
+  SearchResponse,
   SettingsUpdate,
   StockOperation,
   StockOperationPayload,
@@ -554,4 +555,18 @@ export const categorizationRulesApi = {
   removeAll: () => request<{ deleted: number }>('DELETE', '/api/categorization-rules'),
   initFromHistory: () =>
     request<{ inserted: number }>('POST', '/api/categorization-rules/init-from-history'),
+};
+
+// Recherche globale
+export const searchApi = {
+  // Le serveur renvoie les montants en centimes ; on convertit ici en euros
+  // pour rester cohérent avec le reste du client (cf. statsApi.forecast).
+  search: async (q: string): Promise<SearchResponse> => {
+    const raw = await request<SearchResponse>('GET', `/api/search?q=${encodeURIComponent(q)}`);
+    return {
+      ...raw,
+      transactions: raw.transactions.map((t) => ({ ...t, amount: centsToEuros(t.amount) })),
+      scheduled: raw.scheduled.map((s) => ({ ...s, amount: centsToEuros(s.amount) })),
+    };
+  },
 };

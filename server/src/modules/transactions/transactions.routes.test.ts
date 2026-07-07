@@ -517,6 +517,56 @@ describe('/api/transactions — Filtres avancés', () => {
   });
 });
 
+describe('/api/transactions — description_contains (accents et notes)', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 12,
+      description: 'Café du matin',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: '2024-05-01',
+      payment_method_id: SEED.PM_CARTE,
+      validated: true,
+    });
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 45,
+      description: 'Dépense diverse',
+      notes: 'Réunion clients importante',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      date: '2024-05-02',
+      payment_method_id: SEED.PM_CARTE,
+      validated: true,
+    });
+  });
+
+  it('matche la description, insensible aux accents et à la casse', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&description_contains=cafe`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].description).toBe('Café du matin');
+  });
+
+  it('matche les notes', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&description_contains=reunion`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].description).toBe('Dépense diverse');
+  });
+});
+
 // ─── Pagination & Solde ────────────────────────────────────────────────────────
 
 describe('/api/transactions — Pagination & Solde', () => {

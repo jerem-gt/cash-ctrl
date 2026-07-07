@@ -2,6 +2,7 @@ import type { Database, Statement } from 'better-sqlite3';
 
 import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants';
 import { toCents, toEuros } from '../../lib/money';
+import { escapeLikeTerm } from '../../lib/sql';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
@@ -124,8 +125,11 @@ function buildFilterConditions(
     params.subcategory_id = filters.subcategory_id;
   }
   if (filters.description_contains) {
-    conditions.push('t.description LIKE :description_contains');
-    params.description_contains = `%${filters.description_contains}%`;
+    conditions.push(`(
+      unaccent(lower(t.description)) LIKE '%' || unaccent(lower(:description_contains)) || '%' ESCAPE '\\'
+      OR unaccent(lower(COALESCE(t.notes, ''))) LIKE '%' || unaccent(lower(:description_contains)) || '%' ESCAPE '\\'
+    )`);
+    params.description_contains = escapeLikeTerm(filters.description_contains);
   }
   if (filters.date_from) {
     conditions.push('t.date >= :date_from');
@@ -170,22 +174,19 @@ function buildFilterConditions(
 
 export function createTransactionsRepo(db: Database) {
   const getCountByCategoryIdStmt = db
-    .prepare<
-      { categoryId: number },
-      number
-    >('SELECT COUNT(*) as n FROM transactions WHERE subcategory_id in (select id from subcategories where category_id = :categoryId)')
+    .prepare<{ categoryId: number }, number>(
+      'SELECT COUNT(*) as n FROM transactions WHERE subcategory_id in (select id from subcategories where category_id = :categoryId)',
+    )
     .pluck();
   const getCountBySubcategoryIdStmt = db
-    .prepare<
-      { subcategoryId: number },
-      number
-    >('SELECT COUNT(*) as cnt FROM transactions WHERE subcategory_id = :subcategoryId')
+    .prepare<{ subcategoryId: number }, number>(
+      'SELECT COUNT(*) as cnt FROM transactions WHERE subcategory_id = :subcategoryId',
+    )
     .pluck();
   const getCountByPaymentMethodIdStmt = db
-    .prepare<
-      { paymentMethodId: number },
-      number
-    >('SELECT COUNT(*) as cnt FROM transactions WHERE payment_method_id = :paymentMethodId')
+    .prepare<{ paymentMethodId: number }, number>(
+      'SELECT COUNT(*) as cnt FROM transactions WHERE payment_method_id = :paymentMethodId',
+    )
     .pluck();
   const getByIdStmt = db.prepare<{ id: number; userId: number }, Transaction>(
     `SELECT * FROM transactions WHERE id = :id AND user_id = :userId`,
