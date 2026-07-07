@@ -18,6 +18,8 @@
   "chart_expenses": "Dépenses",
   "to_validate": "À valider",
   "upcoming": "À venir",
+  "forecast_alert_title": "Découvert prévisionnel",
+  "forecast_alert_item": "{{account}} en négatif prévu le {{date}}",
   "reimbursements_title": "Remboursements",
   "reimb_col_description": "Description",
   "reimb_col_date": "Date",

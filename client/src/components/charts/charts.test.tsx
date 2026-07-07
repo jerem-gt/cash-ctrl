@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import ExpensesPieChart from './ExpensesPieChart';
+import ForecastAreaChart from './ForecastAreaChart';
 import IncomeExpenseBarChart from './IncomeExpenseBarChart';
 import NetBalanceLineChart from './NetBalanceLineChart';
 import PatrimonyBarChart from './PatrimonyBarChart';
@@ -39,6 +40,28 @@ describe('charts', () => {
   it('monte NetBalanceLineChart sans planter avec total négatif', () => {
     const data = [{ year: '2025', liquidites: 300, prets: -800, _total: -500 }];
     const { container } = render(<NetBalanceLineChart data={data} label="Solde net" />);
+    expect(container).toBeInTheDocument();
+  });
+
+  it('monte ForecastAreaChart sans planter', () => {
+    const points = [
+      { date: '2026-07-07', balance: 1500 },
+      { date: '2026-08-15', balance: -200 },
+    ];
+    const { container } = render(
+      <ForecastAreaChart points={points} goesNegativeOn="2026-08-15" label="Solde projeté" />,
+    );
+    expect(container).toBeInTheDocument();
+  });
+
+  it('monte ForecastAreaChart sans planter (aucun solde négatif)', () => {
+    const points = [
+      { date: '2026-07-07', balance: 1500 },
+      { date: '2026-08-15', balance: 1800 },
+    ];
+    const { container } = render(
+      <ForecastAreaChart points={points} goesNegativeOn={null} label="Solde projeté" />,
+    );
     expect(container).toBeInTheDocument();
   });
 

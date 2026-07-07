@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { deltaTrend, pctTrend } from '@/features/dashboard/lib/trends';
+import { useForecast } from '@/features/scheduled/hooks/useForecast';
 import {
   usePendingReimbursements,
   useRecentReimbursements,
@@ -13,6 +14,8 @@ import { accountDisplayBalance } from '@/lib/account';
 import { generateColor } from '@/lib/colors';
 import { monthLabel } from '@/lib/format';
 
+const FORECAST_ALERT_HORIZON = 90;
+
 export function useDashboardData() {
   const { data: accounts = [] } = useAccounts();
   const { data: stats, isLoading } = useDashboardStats();
@@ -21,7 +24,10 @@ export function useDashboardData() {
   const { data: categories = [] } = useCategories();
   const { data: pendingReimbursements = [] } = usePendingReimbursements();
   const { data: recentReimbursements = [] } = useRecentReimbursements();
+  const { data: forecast } = useForecast(FORECAST_ALERT_HORIZON);
   const logoMap = useLogoMap();
+
+  const forecastAlerts = (forecast?.accounts ?? []).filter((a) => a.goes_negative_on !== null);
 
   const colorMap = useMemo(
     () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
@@ -84,5 +90,6 @@ export function useDashboardData() {
     balanceHistory,
     profitabilityList,
     hasReimbursements: pendingReimbursements.length > 0 || recentReimbursements.length > 0,
+    forecastAlerts,
   };
 }

@@ -8,9 +8,10 @@ import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 const baseSched = SCHEDULED[0];
 const accounts = [
-  { id: 1, name: 'Compte courant' },
-  { id: 2, name: 'Livret A' },
+  { id: 1, name: 'Compte courant', bank: 'BNP' },
+  { id: 2, name: 'Livret A', bank: 'LCL' },
 ];
+const logoMap = { BNP: 'bnp-logo.png', LCL: null };
 
 function renderRow(
   sched: ScheduledTransaction,
@@ -20,6 +21,7 @@ function renderRow(
     <ScheduledRow
       sched={sched}
       accounts={accounts}
+      logoMap={logoMap}
       onEdit={callbacks?.onEdit ?? vi.fn()}
       onDelete={callbacks?.onDelete ?? vi.fn()}
       onViewTransactions={callbacks?.onViewTransactions ?? vi.fn()}
@@ -51,7 +53,25 @@ describe('ScheduledRow', () => {
 
   it('affiche le compte destination pour un transfert connu', () => {
     renderRow({ ...baseSched, payment_method: 'Transfert', to_account_id: 2 });
-    expect(screen.getByText(/→ Livret A/)).toBeInTheDocument();
+    expect(screen.getByText('Livret A')).toBeInTheDocument();
+  });
+
+  it('affiche le logo de banque du compte source', () => {
+    renderRow(baseSched);
+    expect(screen.getByAltText(/Logo/)).toHaveAttribute('src', 'bnp-logo.png');
+  });
+
+  it('affiche compte source puis compte AV/PER pour un versement (ordre inverse)', () => {
+    renderRow({
+      ...baseSched,
+      to_account_id: 2,
+      insurance_support_id: 5,
+      insurance_support_name: 'Fonds Euro',
+      account_name: 'Mon PER',
+    });
+    const names = screen.getAllByText(/Livret A|Mon PER/).map((el) => el.textContent);
+    expect(names).toEqual(['Livret A', 'Mon PER']);
+    expect(screen.getByText(/Fonds Euro/)).toBeInTheDocument();
   });
 
   it('affiche le badge "N tx" quand transaction_count > 0', () => {

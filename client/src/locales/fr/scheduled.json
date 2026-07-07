@@ -67,6 +67,16 @@
     "from_label": "depuis {{name}}",
     "until_label": "jusqu'au {{date}}"
   },
+  "forecast": {
+    "title": "Solde projeté",
+    "horizon_30": "30 j",
+    "horizon_90": "90 j",
+    "chip_all": "Tous",
+    "balance_label": "Solde projeté",
+    "empty_selection": "Sélectionnez un compte pour afficher son solde projeté.",
+    "no_forecast": "Aucun flux futur prévu sur cette période.",
+    "negative_alert": "Solde négatif prévu le {{date}}"
+  },
   "tx_modal": {
     "subtitle": "Transactions liées à cette planification",
     "no_transactions": "Aucune transaction liée.",

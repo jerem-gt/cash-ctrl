@@ -2,20 +2,87 @@ import type { ScheduledTransaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
+import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { recurrenceLabel } from '@/features/scheduled/lib/recurrence';
 import { fmtCurrency } from '@/lib/format';
 
+interface RowAccount {
+  id: number;
+  name: string;
+  bank?: string | null;
+}
+
 interface RowProps {
   sched: ScheduledTransaction;
-  accounts: { id: number; name: string }[];
+  accounts: RowAccount[];
+  logoMap?: Record<string, string | null>;
   onEdit: (s: ScheduledTransaction) => void;
   onDelete: (s: ScheduledTransaction) => void;
   onViewTransactions: (s: ScheduledTransaction) => void;
 }
 
+function AccountChips({
+  sched,
+  accounts,
+  logoMap,
+  isTransfer,
+  isVersement,
+  toAccount,
+  sourceAccount,
+}: Readonly<{
+  sched: ScheduledTransaction;
+  accounts: RowAccount[];
+  logoMap: Record<string, string | null>;
+  isTransfer: boolean;
+  isVersement: boolean;
+  toAccount: RowAccount | null | undefined;
+  sourceAccount: RowAccount | null | undefined;
+}>) {
+  const logoFor = (accountId: number | null | undefined): string | null => {
+    if (accountId == null) return null;
+    const acc = accounts.find((a) => a.id === accountId);
+    return acc?.bank ? (logoMap[acc.bank] ?? null) : null;
+  };
+
+  const own = { id: sched.account_id, name: sched.account_name ?? '' };
+  let primary = own;
+  let secondary: RowAccount | null = null;
+
+  if (isVersement && sourceAccount) {
+    // Ordre voulu à l'affichage : compte source (débit) → compte AV/PER.
+    primary = sourceAccount;
+    secondary = own;
+  } else if (isTransfer && toAccount) {
+    secondary = toAccount;
+  }
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap min-w-0 mt-0.5">
+      <AccountBadge
+        name={primary.name}
+        logo={logoFor(primary.id)}
+        className="max-w-[140px] sm:max-w-[220px] text-[11px] text-content-subtle"
+      />
+      {secondary && (
+        <>
+          <span aria-hidden="true" className="text-content-faint text-[10px] shrink-0">
+            →
+          </span>
+          <AccountBadge
+            name={secondary.name}
+            logo={logoFor(secondary.id)}
+            className="max-w-[140px] sm:max-w-[220px] text-[11px] text-content-subtle"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 export function ScheduledRow({
   sched,
   accounts,
+  logoMap = {},
   onEdit,
   onDelete,
   onViewTransactions,
@@ -61,13 +128,18 @@ export function ScheduledRow({
             </button>
           )}
         </div>
+        <AccountChips
+          sched={sched}
+          accounts={accounts}
+          logoMap={logoMap}
+          isTransfer={isTransfer}
+          isVersement={isVersement}
+          toAccount={toAccount}
+          sourceAccount={sourceAccount}
+        />
         <p className="text-[11px] text-content-subtle mt-0.5">
-          {recurrenceLabel(sched, t)} · {sched.account_name}
-          {isTransfer && toAccount ? ` → ${toAccount.name}` : ''}
+          {recurrenceLabel(sched, t)}
           {isVersement && sched.insurance_support_name ? ` · ${sched.insurance_support_name}` : ''}
-          {isVersement && sourceAccount
-            ? ` · ${t('row.from_label', { name: sourceAccount.name })}`
-            : ''}
           {sched.end_date ? ` · ${t('row.until_label', { date: sched.end_date })}` : ''}
         </p>
       </div>

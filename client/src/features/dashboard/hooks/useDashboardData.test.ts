@@ -86,4 +86,36 @@ describe('useDashboardData', () => {
     expect(result.current.accounts.length).toBeGreaterThan(0);
     expect(result.current.logoMap).toBeDefined();
   });
+
+  it('expose forecastAlerts : uniquement les comptes avec goes_negative_on', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useDashboardData(), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.forecastAlerts).toHaveLength(1));
+    expect(result.current.forecastAlerts[0].account_id).toBe(1);
+  });
+
+  it('forecastAlerts est vide quand aucun compte ne passe en négatif', async () => {
+    server.use(
+      http.get('/api/stats/forecast', () =>
+        HttpResponse.json({
+          horizon: 90,
+          accounts: [
+            {
+              account_id: 1,
+              account_name: 'Compte test',
+              bank_id: 1,
+              current_balance: 150000,
+              points: [{ date: '2026-07-07', balance: 150000 }],
+              goes_negative_on: null,
+            },
+          ],
+        }),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useDashboardData(), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.forecastAlerts).toEqual([]);
+  });
 });
