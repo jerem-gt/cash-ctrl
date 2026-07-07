@@ -37,6 +37,8 @@ export function useCreateTransaction() {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -65,6 +67,8 @@ export function useUpdateTransaction() {
       }
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -97,6 +101,8 @@ export function useUpdateTransfer() {
       );
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -110,6 +116,8 @@ export function useDeleteTransaction() {
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -122,6 +130,8 @@ export function useDeleteTransfer() {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -151,6 +161,8 @@ export function useValidateTransaction() {
       }
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -163,6 +175,8 @@ export function useCreateTransfer() {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }

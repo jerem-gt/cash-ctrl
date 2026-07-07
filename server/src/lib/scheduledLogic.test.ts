@@ -1,15 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import { RecurrenceUnit } from '../constants';
+import { RecurrenceUnit, WeekendHandling } from '../constants';
 import { dateStr } from './dateUtils';
-import { applyWeekend, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
+import {
+  applyWeekend,
+  forEachOccurrence,
+  getFirstOccurrence,
+  nextOccurrence,
+} from './scheduledLogic.js';
 
 // Helper: build a minimal ScheduledTransaction-like object
 function sched(
   unit: RecurrenceUnit,
   interval: number,
   startDate: string,
-  opts: { recurrence_day?: number; recurrence_month?: number } = {},
+  opts: {
+    recurrence_day?: number;
+    recurrence_month?: number;
+    weekend_handling?: WeekendHandling;
+    end_date?: string | null;
+  } = {},
 ) {
   return {
     start_date: startDate,
@@ -17,6 +27,8 @@ function sched(
     recurrence_interval: interval,
     recurrence_day: opts.recurrence_day ?? null,
     recurrence_month: opts.recurrence_month ?? null,
+    weekend_handling: opts.weekend_handling ?? 'allow',
+    end_date: opts.end_date ?? null,
   };
 }
 
@@ -142,5 +154,108 @@ describe('nextOccurrence', () => {
     const from = new Date('2024-02-29T00:00:00');
     const s = sched('year', 1, '2024-02-29', { recurrence_day: 29, recurrence_month: 2 });
     expect(dateStr(nextOccurrence(from, s))).toBe('2025-02-28');
+  });
+});
+
+// ─── forEachOccurrence : fast-forward vs itération naïve ──────────────────────
+
+function naiveOccurrences(s: ReturnType<typeof sched>, from: Date, until: Date): string[] {
+  const endDate = s.end_date ? new Date(`${s.end_date}T00:00:00`) : null;
+  let nominal = getFirstOccurrence(s);
+  const result: string[] = [];
+  let guard = 0;
+  while (nominal <= until && guard < 20000) {
+    guard++;
+    if (endDate && nominal > endDate) break;
+    const actual = applyWeekend(nominal, s.weekend_handling);
+    if (actual >= from && actual <= until) result.push(dateStr(actual));
+    nominal = nextOccurrence(nominal, s);
+  }
+  return result;
+}
+
+function fastForwardOccurrences(s: ReturnType<typeof sched>, from: Date, until: Date): string[] {
+  const result: string[] = [];
+  forEachOccurrence(s, { from, until }, (actual) => {
+    if (actual >= from && actual <= until) result.push(dateStr(actual));
+  });
+  return result;
+}
+
+describe('forEachOccurrence — fast-forward arithmétique vs itération naïve', () => {
+  const cases: Array<{
+    label: string;
+    s: ReturnType<typeof sched>;
+    from: string;
+    until: string;
+  }> = [
+    {
+      label: 'day, intervalle 3',
+      s: sched('day', 3, '2015-01-01'),
+      from: '2026-01-01',
+      until: '2026-04-01',
+    },
+    {
+      label: 'week, intervalle 2',
+      s: sched('week', 2, '2015-01-06'),
+      from: '2026-01-01',
+      until: '2026-04-01',
+    },
+    {
+      label: 'month, intervalle 1, ancre fin de mois (31)',
+      s: sched('month', 1, '2015-01-31', { recurrence_day: 31 }),
+      from: '2026-01-01',
+      until: '2027-01-01',
+    },
+    {
+      label: 'month, intervalle 5',
+      s: sched('month', 5, '2015-03-15', { recurrence_day: 15 }),
+      from: '2025-01-01',
+      until: '2028-01-01',
+    },
+    {
+      label: 'year, intervalle 1, ancre 29 fevrier',
+      s: sched('year', 1, '2016-02-29', { recurrence_day: 29, recurrence_month: 2 }),
+      from: '2023-01-01',
+      until: '2030-01-01',
+    },
+    {
+      label: 'year, intervalle 3',
+      s: sched('year', 3, '2010-06-10', { recurrence_day: 10, recurrence_month: 6 }),
+      from: '2024-01-01',
+      until: '2040-01-01',
+    },
+    {
+      label: 'day, weekend_handling after, from proche du samedi',
+      s: sched('day', 1, '2015-01-01', { weekend_handling: 'after' }),
+      from: '2026-04-04', // samedi
+      until: '2026-04-10',
+    },
+    {
+      label: 'month sans recurrence_day (jour dérivant) : fallback safe, résultat identique',
+      s: sched('month', 1, '2015-01-31'),
+      from: '2026-01-01',
+      until: '2026-06-01',
+    },
+  ];
+
+  it.each(cases)('$label : mêmes occurrences avec et sans fast-forward', ({ s, from, until }) => {
+    const fromDate = new Date(`${from}T00:00:00`);
+    const untilDate = new Date(`${until}T00:00:00`);
+    expect(fastForwardOccurrences(s, fromDate, untilDate)).toEqual(
+      naiveOccurrences(s, fromDate, untilDate),
+    );
+  });
+
+  it('accélère réellement : peu de callbacks pour une planif quotidienne ancienne', () => {
+    const s = sched('day', 1, '2015-01-01');
+    const from = new Date('2026-01-01T00:00:00');
+    const until = new Date('2026-01-10T00:00:00');
+    let callbackCount = 0;
+    forEachOccurrence(s, { from, until }, () => {
+      callbackCount++;
+    });
+    // Sans fast-forward il faudrait ~4018 itérations (2015-01-01 → 2026-01-01) pour atteindre `from`.
+    expect(callbackCount).toBeLessThan(20);
   });
 });

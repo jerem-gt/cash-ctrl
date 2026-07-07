@@ -331,6 +331,8 @@ describe('useUpdateTransfer', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });
 
@@ -362,6 +364,8 @@ describe('useDeleteTransfer', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });
 
@@ -473,5 +477,7 @@ describe('useCreateTransfer', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['dashboard-stats'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });

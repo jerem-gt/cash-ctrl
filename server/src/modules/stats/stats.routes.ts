@@ -18,6 +18,7 @@ export const forecastQuerySchema = z.object({
     .int()
     .default(90)
     .refine((v) => v === 30 || v === 90, 'validation.invalid_value'),
+  account_id: z.coerce.number().int().positive().optional(),
 });
 
 export const accountBalanceHistoryQuerySchema = z.object({
@@ -75,8 +76,13 @@ export function createStatsRouter(db: Database): Router {
       res.status(400).json({ error: zodToApiError(parsed.error) });
       return;
     }
+    const { account_id: accountId } = parsed.data;
+    if (accountId !== undefined && !checkAccountOwnership(db, accountId, userId)) {
+      sendError(res, 404, 'account.not_found');
+      return;
+    }
     const today = dateStr(new Date());
-    res.json(forecastRepo.getForecast(userId, parsed.data.horizon, today));
+    res.json(forecastRepo.getForecast(userId, parsed.data.horizon, today, accountId));
   });
 
   router.get('/accounts/:accountId/balance-history', (req, res) => {

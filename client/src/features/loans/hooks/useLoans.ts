@@ -28,6 +28,8 @@ export function useCreateLoan() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -40,6 +42,8 @@ export function useUpdateLoan(loanId: number) {
       void qc.invalidateQueries({ queryKey: queryKeys.loans.byAccount(loan.account_id) });
       void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }
@@ -58,6 +62,8 @@ export function useUpdateInstallment(loanId: number) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.loans.installments(loanId) });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
     },
   });
 }

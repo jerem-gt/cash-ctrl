@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { LOAN, LOAN_INSTALLMENTS } from '@/tests/fixtures';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
@@ -92,6 +92,28 @@ describe('useCreateLoan', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toContain('introuvable');
   });
+
+  it('invalide le forecast et l’historique de solde après création', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useCreateLoan(), { wrapper: Wrapper });
+
+    result.current.mutate({
+      name: 'Nouveau prêt',
+      bank_id: 1,
+      opening_date: '2024-01-01',
+      principal_amount: 12000,
+      interest_rate: 0.05,
+      duration_months: 36,
+      start_date: '2024-02-01',
+      source_account_id: 1,
+      deposit_account_id: 2,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
+  });
 });
 
 describe('useUpdateLoan', () => {
@@ -109,6 +131,23 @@ describe('useUpdateLoan', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.id).toBe(LOAN.id);
   });
+
+  it('invalide le forecast et l’historique de solde après modification', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateLoan(1), { wrapper: Wrapper });
+
+    result.current.mutate({
+      name: 'Prêt modifié',
+      bank_id: null,
+      opening_date: '2024-06-01',
+      source_account_id: 1,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
+  });
 });
 
 describe('useUpdateInstallment', () => {
@@ -124,5 +163,21 @@ describe('useUpdateInstallment', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.id).toBe(LOAN_INSTALLMENTS[0].id);
+  });
+
+  it('invalide le forecast et l’historique de solde après modification', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateInstallment(1), { wrapper: Wrapper });
+
+    result.current.mutate({
+      installmentId: 101,
+      due_date: '2024-03-15',
+      total_amount: 400,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['forecast'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });

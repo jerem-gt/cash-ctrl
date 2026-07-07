@@ -40,4 +40,22 @@ describe('useForecast', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(capturedUrl).toContain('horizon=30');
   });
+
+  it('transmet account_id dans la requête quand fourni', async () => {
+    let capturedUrl = '';
+    server.use(
+      http.get('/api/stats/forecast', ({ request }) => {
+        capturedUrl = request.url;
+        return HttpResponse.json({
+          horizon: 90,
+          accounts: FORECAST_RESPONSE.accounts.filter((a) => a.account_id === 1),
+        });
+      }),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useForecast(90, 1), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(capturedUrl).toContain('account_id=1');
+    expect(result.current.data?.accounts).toHaveLength(1);
+  });
 });

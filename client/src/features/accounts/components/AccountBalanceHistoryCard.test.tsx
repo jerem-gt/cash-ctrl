@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { AccountBalanceHistoryCard } from '@/features/accounts/components/AccountBalanceHistoryCard';
-import { ACCOUNT_BALANCE_HISTORY } from '@/tests/fixtures';
+import { ACCOUNT_BALANCE_HISTORY, FORECAST_RESPONSE } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -33,6 +33,31 @@ describe('AccountBalanceHistoryCard', () => {
     // Fixture par défaut : le compte 1 a un flux projeté (FORECAST_RESPONSE) qui passe négatif le 2026-08-15.
     renderCard(1);
     await waitFor(() => expect(screen.getByText(/Solde négatif prévu le/)).toBeInTheDocument());
+  });
+
+  it("n'alerte pas sur un découvert passé résorbé, même si le futur reste positif", async () => {
+    server.use(
+      http.get('/api/stats/accounts/:accountId/balance-history', () =>
+        HttpResponse.json({
+          account_id: 1,
+          days: 90,
+          points: [
+            { date: '2026-06-07', balance: -20000 },
+            { date: '2026-06-20', balance: 10000 },
+            { date: '2026-07-07', balance: 150000 },
+          ],
+        }),
+      ),
+      http.get('/api/stats/forecast', () =>
+        HttpResponse.json({
+          horizon: 90,
+          accounts: [{ ...FORECAST_RESPONSE.accounts[0], goes_negative_on: null }],
+        }),
+      ),
+    );
+    renderCard(1);
+    await screen.findByText('Solde');
+    await waitFor(() => expect(screen.queryByText(/prévu le/)).not.toBeInTheDocument());
   });
 
   it('change de période au clic sur "30 j"', async () => {

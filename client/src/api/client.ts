@@ -414,8 +414,10 @@ export const statsApi = {
   },
   // Le serveur renvoie les montants en centimes (cf. forecast.repo.ts) ; on
   // convertit ici en euros pour rester cohérent avec le reste du client.
-  forecast: async (horizon: 30 | 90): Promise<ForecastResponse> => {
-    const raw = await request<ForecastResponse>('GET', `/api/stats/forecast?horizon=${horizon}`);
+  forecast: async (horizon: 30 | 90, accountId?: number): Promise<ForecastResponse> => {
+    const qs = new URLSearchParams({ horizon: String(horizon) });
+    if (accountId !== undefined) qs.set('account_id', String(accountId));
+    const raw = await request<ForecastResponse>('GET', `/api/stats/forecast?${qs.toString()}`);
     return {
       horizon: raw.horizon,
       accounts: raw.accounts.map((a) => ({

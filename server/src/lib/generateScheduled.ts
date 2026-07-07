@@ -7,9 +7,9 @@ import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
 import { createSettingsRepo } from '../modules/settings/settings.repo';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
-import { dateStr, parseDate } from './dateUtils.js';
+import { dateStr } from './dateUtils.js';
 import { toCents } from './money.js';
-import { applyWeekend, getFirstOccurrence, nextOccurrence } from './scheduledLogic.js';
+import { forEachOccurrence } from './scheduledLogic.js';
 
 type Db = BetterSqlite3.Database;
 
@@ -57,55 +57,46 @@ function generateForSchedule(
   transfersRepo: ReturnType<typeof createTransfersRepo>,
   scheduledRepo: ReturnType<typeof createScheduledRepo>,
 ): void {
-  let nominal: Date;
-
-  if (sched.last_generated_until) {
-    nominal = nextOccurrence(parseDate(sched.last_generated_until), sched);
-  } else {
-    nominal = getFirstOccurrence(sched);
-  }
-
-  const endDate = sched.end_date ? parseDate(sched.end_date) : null;
   const isVersement = sched.insurance_support_id != null;
   const isTransfer = !isVersement && sched.to_account_id != null;
   let lastNominal: string | null = null;
 
   txDb.transaction(() => {
-    while (nominal <= horizon) {
-      if (endDate && nominal > endDate) break;
+    forEachOccurrence(
+      sched,
+      { until: horizon, resumeFrom: sched.last_generated_until },
+      (actual, nominal) => {
+        const actualStr = dateStr(actual);
 
-      const actual = applyWeekend(nominal, sched.weekend_handling);
-      const actualStr = dateStr(actual);
+        if (isVersement) {
+          generateInsuranceVersement(txDb, sched.user_id, sched, actualStr);
+        } else if (isTransfer) {
+          transfersRepo.create(sched.user_id, {
+            amount: sched.amount,
+            date: actualStr,
+            description: sched.description,
+            from_account_id: sched.account_id,
+            notes: sched.notes,
+            to_account_id: sched.to_account_id!,
+            scheduled_id: sched.id,
+          });
+        } else {
+          txRepo.createScheduled(sched.user_id, {
+            account_id: sched.account_id,
+            type: sched.type,
+            amount: sched.amount,
+            description: sched.description,
+            subcategory_id: sched.subcategory_id!,
+            date: actualStr,
+            payment_method_id: sched.payment_method_id!,
+            notes: sched.notes,
+            scheduled_id: sched.id,
+          });
+        }
 
-      if (isVersement) {
-        generateInsuranceVersement(txDb, sched.user_id, sched, actualStr);
-      } else if (isTransfer) {
-        transfersRepo.create(sched.user_id, {
-          amount: sched.amount,
-          date: actualStr,
-          description: sched.description,
-          from_account_id: sched.account_id,
-          notes: sched.notes,
-          to_account_id: sched.to_account_id!,
-          scheduled_id: sched.id,
-        });
-      } else {
-        txRepo.createScheduled(sched.user_id, {
-          account_id: sched.account_id,
-          type: sched.type,
-          amount: sched.amount,
-          description: sched.description,
-          subcategory_id: sched.subcategory_id!,
-          date: actualStr,
-          payment_method_id: sched.payment_method_id!,
-          notes: sched.notes,
-          scheduled_id: sched.id,
-        });
-      }
-
-      lastNominal = dateStr(nominal);
-      nominal = nextOccurrence(nominal, sched);
-    }
+        lastNominal = dateStr(nominal);
+      },
+    );
 
     if (lastNominal) {
       scheduledRepo.updateLastGeneratedUntil(sched.id, lastNominal);

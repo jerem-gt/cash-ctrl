@@ -16,9 +16,11 @@ export const queryKeys = {
   profitability: () => ['profitability'] as const,
   reportYears: () => ['report-years'] as const,
   report: (year: number, accountId?: number) => ['report', year, accountId] as const,
-  forecast: (horizon: number) => ['forecast', horizon] as const,
+  forecast: (horizon: number, accountId?: number) => ['forecast', horizon, accountId] as const,
+  forecastAll: () => ['forecast'] as const,
   accountBalanceHistory: (accountId: number, days: number) =>
     ['account-balance-history', accountId, days] as const,
+  accountBalanceHistoryAll: () => ['account-balance-history'] as const,
 
   transactions: {
     all: () => ['transactions'] as const,
