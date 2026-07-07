@@ -20,6 +20,7 @@ import {
   REPORT_DATA,
   REPORT_YEARS,
   SCHEDULED,
+  SEARCH_RESPONSE,
   STOCK_OPERATIONS,
   STOCK_POSITIONS,
   STOCK_SEARCH_RESULTS,
@@ -400,4 +401,7 @@ export const handlers = [
     ),
   ),
   http.get('/api/stocks/search', () => HttpResponse.json(STOCK_SEARCH_RESULTS)),
+
+  // Recherche globale
+  http.get('/api/search', () => HttpResponse.json(SEARCH_RESPONSE)),
 ];

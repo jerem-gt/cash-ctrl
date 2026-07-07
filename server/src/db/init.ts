@@ -50,6 +50,12 @@ function runMigrations(db: DatabaseType) {
   }
 }
 
+/** Retire les diacritiques (accents) d'une chaîne ; null-safe pour usage direct en fonction SQLite. */
+export function unaccent(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  return value.normalize('NFD').replaceAll(/[\u0300-\u036f]/g, '');
+}
+
 export function createDb(filePath?: string) {
   const isMemory = filePath === ':memory:';
 
@@ -74,6 +80,9 @@ export function createDb(filePath?: string) {
   db.pragma('cache_size = -16000'); // 16 Mo de cache pages
   db.pragma('temp_store = MEMORY'); // tables temporaires (GROUP BY/ORDER BY) en RAM
   db.pragma('mmap_size = 268435456'); // I/O mappée en mémoire (256 Mo)
+  // Enregistrée ici (et non dans initSchema/initDatabase) pour être active aussi
+  // dans les DB in-memory des tests, qui passent toutes par createDb(':memory:').
+  db.function('unaccent', { deterministic: true }, unaccent);
 
   return db;
 }

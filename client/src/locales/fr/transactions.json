@@ -36,7 +36,7 @@
     "edit_amount_title": "Modifier le montant attribué"
   },
   "filters": {
-    "description_placeholder": "Rechercher une description…",
+    "description_placeholder": "Libellé ou notes…",
     "clear_search": "Effacer la recherche",
     "type_label": "Choisir un type",
     "all_types": "Tous types",

@@ -17,6 +17,7 @@ import { ForecastCard } from '@/features/scheduled/components/ForecastCard';
 import { ScheduledModal } from '@/features/scheduled/components/ScheduledModal';
 import { ScheduledRow } from '@/features/scheduled/components/ScheduledRow';
 import { ScheduledTxModal } from '@/features/scheduled/components/ScheduledTxModal';
+import { useScheduledHighlight } from '@/features/scheduled/hooks/useScheduledHighlight';
 import {
   emptyForm,
   type FormState,
@@ -57,6 +58,16 @@ export default function ScheduledPage() {
   const [leadDays, setLeadDays] = useState<string>('');
   const [showSuspended, setShowSuspended] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<AccountFilter>('all');
+
+  // Cible atteinte depuis la palette : focus sur son compte (sinon le filtre par compte
+  // du ForecastCard peut la masquer) et déplie les suspendues si besoin.
+  const { highlightedId, hasPendingTarget, registerRowNode } = useScheduledHighlight(
+    scheduled,
+    (target) => {
+      setSelectedAccountId(target.account_id);
+      if (!target.active) setShowSuspended(true);
+    },
+  );
 
   const settingsLeadDays = settings?.lead_days;
   const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
@@ -136,9 +147,13 @@ export default function ScheduledPage() {
         {visibleScheduled.map((s) => (
           <ScheduledRow
             key={s.id}
+            ref={(el) => {
+              registerRowNode(s.id, el);
+            }}
             sched={s}
             accounts={accounts}
             logoMap={logoMap}
+            highlighted={highlightedId === s.id}
             onEdit={(s) => setEditTarget(s)}
             onDelete={(s) => setPendingDelete(s)}
             onViewTransactions={(s) => setTxModalTarget(s)}
@@ -158,9 +173,13 @@ export default function ScheduledPage() {
               suspendedScheduled.map((s) => (
                 <ScheduledRow
                   key={s.id}
+                  ref={(el) => {
+                    registerRowNode(s.id, el);
+                  }}
                   sched={s}
                   accounts={accounts}
                   logoMap={logoMap}
+                  highlighted={highlightedId === s.id}
                   onEdit={(s) => setEditTarget(s)}
                   onDelete={(s) => setPendingDelete(s)}
                   onViewTransactions={(s) => setTxModalTarget(s)}
@@ -184,6 +203,7 @@ export default function ScheduledPage() {
         logoMap={logoMap}
         selected={selectedAccountId}
         onSelect={setSelectedAccountId}
+        autoSelect={!hasPendingTarget}
       />
 
       {/* Paramètre global : délai d'anticipation */}

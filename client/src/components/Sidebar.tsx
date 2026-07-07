@@ -7,6 +7,7 @@ import {
   ChevronRight,
   LayoutGrid,
   Power,
+  Search,
   Settings,
   X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { accountDisplayBalance } from '@/lib/account';
 import { fmt } from '@/lib/format';
+import { isMacPlatform } from '@/lib/platform';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 
 const NAV_BOTTOM_ITEMS = [
@@ -45,10 +47,12 @@ interface Props {
   username: string;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  onOpenSearch: () => void;
 }
 
-export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>) {
+export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: Readonly<Props>) {
   const { t } = useTranslation('sidebar');
+  const { t: ts } = useTranslation('search');
   const qc = useQueryClient();
   const logout = useLogout();
   const { data: accounts = [] } = useAccounts();
@@ -140,6 +144,20 @@ export function Sidebar({ username, mobileOpen, onMobileClose }: Readonly<Props>
             {t('personal_tracking')}
           </p>
         </NavLink>
+
+        {/* Recherche */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          aria-label={ts('aria_open')}
+          className="mx-4 mb-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-white/40 hover:text-white/70 hover:bg-white/8 transition-colors"
+        >
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 text-left">{ts('sidebar_button')}</span>
+          <kbd className="px-1.5 py-0.5 rounded border border-white/10 text-[10px] text-white/30">
+            {isMacPlatform() ? '⌘K' : 'Ctrl K'}
+          </kbd>
+        </button>
 
         {/* Solde */}
         <div className="flex flex-col items-center py-6 border-y border-white/[0.07]">

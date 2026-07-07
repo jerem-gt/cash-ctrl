@@ -1,6 +1,7 @@
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
+import type { InitialEntry } from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 
 import { showToast, Toast } from '@/components/ui';
@@ -21,7 +22,7 @@ export function createTestQueryClient() {
 }
 
 interface Options extends RenderOptions {
-  initialEntries?: string[];
+  initialEntries?: InitialEntry[];
 }
 
 export function renderWithProviders(ui: ReactElement, options?: Options) {

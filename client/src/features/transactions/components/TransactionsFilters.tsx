@@ -62,6 +62,17 @@ export const TransactionsFilters = ({
   const [amountMaxInput, setAmountMaxInput] = useState(filters.amount_max?.toString() ?? '');
   const [open, setOpen] = useState(false);
 
+  // Re-synchronise le champ local si le filtre change depuis l'extérieur (ex. recherche lancée
+  // depuis la palette de commande), via le pattern "adjusting state during render" plutôt qu'un
+  // effect (idempotent lors des mises à jour internes issues du debounce ci-dessous).
+  const [prevExternalDescription, setPrevExternalDescription] = useState(
+    filters.description_contains ?? '',
+  );
+  if (prevExternalDescription !== (filters.description_contains ?? '')) {
+    setPrevExternalDescription(filters.description_contains ?? '');
+    setDescriptionInput(filters.description_contains ?? '');
+  }
+
   const activeAdvancedCount = ADVANCED_KEYS.filter((k) => {
     if (!showAccountSelect && k === 'account_id') return false;
     return filters[k] != null;

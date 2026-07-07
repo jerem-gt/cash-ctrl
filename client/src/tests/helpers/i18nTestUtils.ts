@@ -8,6 +8,7 @@ export const LAZY_NAMESPACES = [
   'portfolio',
   'reports',
   'scheduled',
+  'search',
   'settings',
   'transactions',
 ] as const;

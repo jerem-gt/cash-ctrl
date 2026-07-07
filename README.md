@@ -41,6 +41,7 @@ L'interface suit la préférence système et se bascule manuellement (Clair / So
 | **Transferts** | Double écriture atomique entre comptes |
 | **Planifiées** | Récurrence flexible (jour / semaine / mois / an), gestion jours fériés |
 | **Prévisionnel** | Solde projeté à 30/90 jours (planifiées, transferts, échéances de prêts), alerte de découvert sur le dashboard, historique + projection par compte |
+| **Recherche globale** | Palette de commande (Ctrl+K / ⌘K) : comptes, transactions (libellé et notes), planifications, titres et pages — insensible aux accents |
 | **Portefeuille** | Achats / ventes / transferts de titres, suivi PRU, prix historiques |
 | **Assurance-vie** | Supports euro/UC, versements, rachats, arbitrages, intérêts, réévaluations |
 | **Prêts** | Tableau d'amortissement, remboursements anticipés |

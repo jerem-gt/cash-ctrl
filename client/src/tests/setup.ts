@@ -7,8 +7,9 @@ import i18n, { initPromise } from '../i18n';
 import { LAZY_NAMESPACES } from './helpers/i18nTestUtils';
 import { server } from './msw/server';
 
-// jsdom doesn't implement scrollTo
+// jsdom doesn't implement scrollTo / scrollIntoView
 window.scrollTo = () => undefined;
+Element.prototype.scrollIntoView = () => undefined;
 
 // recharts ResponsiveContainer uses ResizeObserver — stub for jsdom
 globalThis.ResizeObserver = class {

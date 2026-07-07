@@ -19,6 +19,7 @@ import { createLoansRouter } from './modules/loans/loans.routes';
 import { createPaymentMethodsRouter } from './modules/payment-methods/payment-methods.routes';
 import { createReimbursementsRouter } from './modules/reimbursements/reimbursements.routes';
 import { createScheduledRouter } from './modules/scheduled/scheduled.routes';
+import { createSearchRouter } from './modules/search/search.routes';
 import { createSettingsRouter } from './modules/settings/settings.routes';
 import { createStatsRouter } from './modules/stats/stats.routes';
 import { createStocksRouter } from './modules/stocks/stocks.routes';
@@ -97,6 +98,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use('/api/stats', createStatsRouter(db));
   app.use('/api/tax', createTaxRouter(db));
   app.use('/api/categorization-rules', createCategorizationRulesRouter(db));
+  app.use('/api/search', createSearchRouter(db));
 
   app.use('/api/docs', createDocsRouter());
 

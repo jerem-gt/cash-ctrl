@@ -24,12 +24,30 @@ type ModalState =
 
 const initialModalsState: ModalState = { type: 'none' };
 
-export function useTransactionsManager(initialAccountId?: number) {
+export function useTransactionsManager(
+  initialAccountId?: number,
+  initialFilters?: Partial<Filters>,
+) {
   const { t } = useTranslation('transactions');
 
   // --- ÉTATS DE NAVIGATION / DONNÉES ---
-  const [filters, setFilters] = useState<Filters>({ account_id: initialAccountId });
+  const [filters, setFilters] = useState<Filters>({
+    account_id: initialAccountId,
+    ...initialFilters,
+  });
   const [page, setPage] = useState(1);
+
+  // Re-synchronise le filtre description quand initialFilters change (ex. nouvelle
+  // recherche depuis la palette) — pattern "adjusting state during render".
+  const initialDescriptionContains = initialFilters?.description_contains;
+  const [lastInitialDescription, setLastInitialDescription] = useState(initialDescriptionContains);
+  if (lastInitialDescription !== initialDescriptionContains) {
+    setLastInitialDescription(initialDescriptionContains);
+    if (initialDescriptionContains !== undefined) {
+      setFilters((prev) => ({ ...prev, description_contains: initialDescriptionContains }));
+      setPage(1);
+    }
+  }
   const [limit, setLimit] = useState(() => Number(localStorage.getItem('cashctrl.txLimit')) || 25);
 
   // --- ÉTATS DES MODALES (Interface) ---

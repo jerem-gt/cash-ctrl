@@ -16,6 +16,8 @@ interface Props {
   logoMap: Record<string, string | null>;
   selected: AccountFilter;
   onSelect: (id: AccountFilter) => void;
+  /** false quand la page impose déjà une sélection (ex. highlight depuis la palette). */
+  autoSelect?: boolean;
 }
 
 function pickDefaultAccount(accounts: ForecastAccount[]): AccountFilter {
@@ -38,7 +40,13 @@ const CHIP_BASE =
 const CHIP_ACTIVE = 'bg-brand-600 border-brand-600 text-white';
 const CHIP_INACTIVE = 'bg-surface-muted border-line text-content-muted hover:bg-surface-emphasis';
 
-export function ForecastCard({ accounts, logoMap, selected, onSelect }: Readonly<Props>) {
+export function ForecastCard({
+  accounts,
+  logoMap,
+  selected,
+  onSelect,
+  autoSelect = true,
+}: Readonly<Props>) {
   const { t } = useTranslation('scheduled');
   const [horizon, setHorizon] = useState<30 | 90>(90);
   const { data, isLoading } = useForecast(horizon);
@@ -50,12 +58,12 @@ export function ForecastCard({ accounts, logoMap, selected, onSelect }: Readonly
     if (!data) return;
     if (!initializedRef.current) {
       initializedRef.current = true;
-      onSelect(pickDefaultAccount(data.accounts));
+      if (autoSelect) onSelect(pickDefaultAccount(data.accounts));
       return;
     }
     const stillPresent = data.accounts.some((a) => a.account_id === selected);
     if (selected !== 'all' && !stillPresent) onSelect('all');
-  }, [data, selected, onSelect]);
+  }, [data, selected, onSelect, autoSelect]);
 
   const logoFor = (accountId: number): string | null => {
     const acc = accounts.find((a) => a.id === accountId);

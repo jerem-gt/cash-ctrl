@@ -1,6 +1,6 @@
 import { MutationCache, QueryClient, useIsRestoring } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Menu } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Sidebar } from '@/components/Sidebar';
 import { Card, showToast, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
+import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -78,6 +79,7 @@ function ScrollToTop() {
 function AppShell() {
   const { t } = useTranslation('sidebar');
   const { t: tc } = useTranslation('common');
+  const { t: ts } = useTranslation('search');
   // Ajoute (dev) au titre si on est hors production
   const { isDev } = useAppVersion();
   useEffect(() => {
@@ -88,6 +90,19 @@ function AppShell() {
   const { data: me, isLoading } = useMe();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+      if (!isShortcut) return;
+      e.preventDefault();
+      setPaletteOpen((v) => !v);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   if (isLoading || isRestoring) {
     return (
@@ -115,7 +130,13 @@ function AppShell() {
     <div className="flex min-h-screen bg-canvas overflow-x-hidden">
       <ScrollToTop />
       <OfflineBanner />
-      <Sidebar username={me.username} mobileOpen={sidebarOpen} onMobileClose={closeSidebar} />
+      <Sidebar
+        username={me.username}
+        mobileOpen={sidebarOpen}
+        onMobileClose={closeSidebar}
+        onOpenSearch={() => setPaletteOpen(true)}
+      />
+      {paletteOpen && <CommandPalette onClose={closePalette} />}
       <main className="md:ml-72 flex-1 min-w-0 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">
         <div className="flex items-center gap-3 mb-4 md:hidden">
           <button
@@ -125,7 +146,14 @@ function AppShell() {
           >
             <Menu className="h-5 w-5 text-content-secondary" />
           </button>
-          <span className="text-lg font-bold text-content">{APP_CONFIG.name}</span>
+          <span className="text-lg font-bold text-content flex-1">{APP_CONFIG.name}</span>
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="p-2 rounded-md hover:bg-surface-strong transition-colors"
+            aria-label={ts('aria_open_mobile')}
+          >
+            <Search className="h-5 w-5 text-content-secondary" />
+          </button>
         </div>
         <ErrorBoundary>
           <Suspense
