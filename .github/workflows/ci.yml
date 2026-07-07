@@ -40,13 +40,28 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      # Le checkout réécrit les mtimes → cache-strategy content obligatoire côté ESLint
+      - name: Cache ESLint
+        uses: actions/cache@v6
+        with:
+          path: .eslintcache
+          key: eslint-${{ hashFiles('package-lock.json', 'eslint.config.js') }}-${{ github.sha }}
+          restore-keys: |
+            eslint-${{ hashFiles('package-lock.json', 'eslint.config.js') }}-
 
-      - name: Test with coverage
+      - name: Lint & Tests (parallèle)
         run: |
-          npm run test:coverage --workspace=server
-          npm run test:coverage --workspace=client
+          npm run lint -- --cache --cache-location .eslintcache --cache-strategy content &
+          LINT=$!
+          npm run test:coverage --workspace=server &
+          SERVER=$!
+          npm run test:coverage --workspace=client &
+          CLIENT=$!
+          FAIL=0
+          wait $LINT || FAIL=1
+          wait $SERVER || FAIL=1
+          wait $CLIENT || FAIL=1
+          exit $FAIL
 
       - name: Build
         run: |
@@ -56,6 +71,16 @@ jobs:
       - name: Prune dev deps
         run: npm prune --omit=dev
 
+      # Artifact léger pour Sonar : uniquement les rapports de coverage
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: sonar-assets
+          path: |
+            server/coverage/lcov.info
+            client/coverage/lcov.info
+
+      # Artifact lourd pour le build Docker
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -63,9 +88,7 @@ jobs:
           path: |
             node_modules
             server/dist
-            server/coverage/lcov.info
             client/dist
-            client/coverage/lcov.info
 
   sonar:
     name: 🛡️ SonarCloud Analysis
@@ -76,10 +99,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download build assets
+      - name: Download coverage
         uses: actions/download-artifact@v8
         with:
-          name: build-assets
+          name: sonar-assets
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v8
