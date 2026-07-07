@@ -269,4 +269,60 @@ describe('ScheduledPage', () => {
     await user.click(await screen.findByRole('button', { name: '3 tx' }));
     expect(await screen.findByText('Transactions liées à cette planification')).toBeInTheDocument();
   });
+
+  // ─── Prévisionnel (ForecastCard : graphique + chips + filtrage liste) ───
+
+  const SCHED_TWO_ACCOUNTS = [
+    { ...SCHEDULED[0], id: 1, account_id: 1, account_name: 'Compte test', description: 'Loyer' },
+    {
+      ...SCHEDULED[0],
+      id: 2,
+      account_id: 2,
+      account_name: 'Livret A',
+      to_account_id: null,
+      description: 'Épargne mensuelle',
+    },
+  ];
+
+  it('affiche le graphique de solde projeté et sélectionne par défaut le compte en alerte', async () => {
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />);
+    expect(await screen.findByText('Solde projeté')).toBeInTheDocument();
+    const chipCompteTest = await screen.findByRole('button', { name: /Compte test/i });
+    await waitFor(() => expect(chipCompteTest.className).toContain('bg-brand-600'));
+    expect(screen.getByText('Loyer')).toBeInTheDocument();
+    expect(screen.queryByText('Épargne mensuelle')).not.toBeInTheDocument();
+  });
+
+  it("affiche un point d'alerte sur le chip du compte qui passe en négatif", async () => {
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />);
+    const chipCompteTest = await screen.findByRole('button', { name: /Compte test/i });
+    const chipLivretA = await screen.findByRole('button', { name: /Livret A/i });
+    await waitFor(() => expect(chipCompteTest.querySelector('.bg-danger')).toBeInTheDocument());
+    expect(chipLivretA.querySelector('.bg-danger')).toBeNull();
+  });
+
+  it('changer de chip filtre la liste des planifications', async () => {
+    const user = userEvent.setup();
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />);
+    const chipLivretA = await screen.findByRole('button', { name: /Livret A/i });
+    await user.click(chipLivretA);
+    await waitFor(() => expect(chipLivretA.className).toContain('bg-brand-600'));
+    expect(screen.getByText('Épargne mensuelle')).toBeInTheDocument();
+    expect(screen.queryByText('Loyer')).not.toBeInTheDocument();
+  });
+
+  it('le chip "Tous" affiche toutes les planifications', async () => {
+    const user = userEvent.setup();
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />);
+    await screen.findByText('Loyer');
+    const chipAll = screen.getByRole('button', { name: 'Tous' });
+    await user.click(chipAll);
+    await waitFor(() => expect(chipAll.className).toContain('bg-brand-600'));
+    expect(screen.getByText('Loyer')).toBeInTheDocument();
+    expect(screen.getByText('Épargne mensuelle')).toBeInTheDocument();
+  });
 });

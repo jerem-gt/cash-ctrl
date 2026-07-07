@@ -12,6 +12,8 @@ import {
   showToast,
   Skeleton,
 } from '@/components/ui';
+import type { AccountFilter } from '@/features/scheduled/components/ForecastCard';
+import { ForecastCard } from '@/features/scheduled/components/ForecastCard';
 import { ScheduledModal } from '@/features/scheduled/components/ScheduledModal';
 import { ScheduledRow } from '@/features/scheduled/components/ScheduledRow';
 import { ScheduledTxModal } from '@/features/scheduled/components/ScheduledTxModal';
@@ -54,6 +56,7 @@ export default function ScheduledPage() {
   const [txModalTarget, setTxModalTarget] = useState<ScheduledTransaction | null>(null);
   const [leadDays, setLeadDays] = useState<string>('');
   const [showSuspended, setShowSuspended] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<AccountFilter>('all');
 
   const settingsLeadDays = settings?.lead_days;
   const defaultLeadDays = settingsLeadDays == null ? '30' : String(settingsLeadDays);
@@ -114,13 +117,19 @@ export default function ScheduledPage() {
     });
   };
 
-  const activeScheduled = scheduled.filter((s) => s.active);
-  const suspendedScheduled = scheduled.filter((s) => !s.active);
-  const visibleScheduled = activeScheduled.length === 0 ? scheduled : activeScheduled;
+  const matchesAccountFilter = (s: ScheduledTransaction) =>
+    selectedAccountId === 'all' ||
+    s.account_id === selectedAccountId ||
+    s.to_account_id === selectedAccountId;
+
+  const filteredScheduled = scheduled.filter(matchesAccountFilter);
+  const activeScheduled = filteredScheduled.filter((s) => s.active);
+  const suspendedScheduled = filteredScheduled.filter((s) => !s.active);
+  const visibleScheduled = activeScheduled.length === 0 ? filteredScheduled : activeScheduled;
   const hasSuspendedSection = activeScheduled.length > 0 && suspendedScheduled.length > 0;
 
   const scheduledListOrEmpty =
-    scheduled.length === 0 ? (
+    filteredScheduled.length === 0 ? (
       <p className="text-sm text-content-subtle py-2">{t('page.no_scheduled')}</p>
     ) : (
       <>
@@ -129,6 +138,7 @@ export default function ScheduledPage() {
             key={s.id}
             sched={s}
             accounts={accounts}
+            logoMap={logoMap}
             onEdit={(s) => setEditTarget(s)}
             onDelete={(s) => setPendingDelete(s)}
             onViewTransactions={(s) => setTxModalTarget(s)}
@@ -150,6 +160,7 @@ export default function ScheduledPage() {
                   key={s.id}
                   sched={s}
                   accounts={accounts}
+                  logoMap={logoMap}
                   onEdit={(s) => setEditTarget(s)}
                   onDelete={(s) => setPendingDelete(s)}
                   onViewTransactions={(s) => setTxModalTarget(s)}
@@ -166,6 +177,14 @@ export default function ScheduledPage() {
         <h2 className="font-display text-2xl tracking-tight">{t('page.title')}</h2>
         <p className="text-sm text-content-subtle mt-0.5">{t('page.subtitle')}</p>
       </div>
+
+      {/* Prévisionnel de trésorerie */}
+      <ForecastCard
+        accounts={accounts}
+        logoMap={logoMap}
+        selected={selectedAccountId}
+        onSelect={setSelectedAccountId}
+      />
 
       {/* Paramètre global : délai d'anticipation */}
       <Card className="max-w-sm">

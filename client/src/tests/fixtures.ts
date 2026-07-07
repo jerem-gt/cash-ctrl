@@ -4,6 +4,7 @@ import type {
   AccountType,
   Bank,
   Category,
+  ForecastResponse,
   ImportResult,
   InsuranceOperation,
   InsuranceSupportView,
@@ -582,6 +583,37 @@ export const PROFITABILITY_DATA: AccountProfitability[] = [
     yearly_returns: [],
   },
 ];
+
+// Format « fil » (centimes) tel que renvoyé par GET /api/stats/forecast ;
+// statsApi.forecast() convertit ensuite en euros pour le reste du client.
+export const FORECAST_RESPONSE: ForecastResponse = {
+  horizon: 90,
+  accounts: [
+    {
+      account_id: 1,
+      account_name: 'Compte test',
+      bank_id: 1,
+      current_balance: 150000,
+      points: [
+        { date: '2026-07-07', balance: 150000 },
+        { date: '2026-07-08', balance: 150000 },
+        { date: '2026-08-15', balance: -20000 },
+      ],
+      goes_negative_on: '2026-08-15',
+    },
+    {
+      account_id: 2,
+      account_name: 'Livret A',
+      bank_id: 2,
+      current_balance: 50000,
+      points: [
+        { date: '2026-07-07', balance: 50000 },
+        { date: '2026-07-08', balance: 55000 },
+      ],
+      goes_negative_on: null,
+    },
+  ],
+};
 
 export const REPORT_YEARS: number[] = [2026, 2025, 2024];
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
 import { DashboardNav } from '@/features/dashboard/components/DashboardNav';
 import { DashboardSkeleton } from '@/features/dashboard/components/DashboardSkeleton';
+import { ForecastAlertCard } from '@/features/dashboard/components/ForecastAlertCard';
 import { ProfitabilityTable } from '@/features/dashboard/components/ProfitabilityTable';
 import { ReimbursementsCard } from '@/features/dashboard/components/ReimbursementsCard';
 import { WealthCard } from '@/features/dashboard/components/WealthCard';
@@ -54,6 +55,7 @@ export default function DashboardPage() {
     balanceHistory,
     profitabilityList,
     hasReimbursements,
+    forecastAlerts,
   } = useDashboardData();
 
   if (isLoading) return <DashboardSkeleton />;
@@ -61,11 +63,14 @@ export default function DashboardPage() {
   const trendLabel = t('metric_trend_vs_last_month');
   const txItemProps = { accounts, logoMap };
 
-  const hasPendingSection = toValidate.length > 0 || upcoming.length > 0 || hasReimbursements;
+  const hasForecastAlerts = forecastAlerts.length > 0;
+  const hasPendingSection =
+    toValidate.length > 0 || upcoming.length > 0 || hasReimbursements || hasForecastAlerts;
   const hasWealthSection =
     (balanceHistory && balanceHistory.data.length > 0) || profitabilityList.length > 0;
 
-  const pendingCount = toValidate.length + upcoming.length + pendingReimbursements.length;
+  const pendingCount =
+    toValidate.length + upcoming.length + pendingReimbursements.length + forecastAlerts.length;
 
   const navSections = [
     { id: 'section-this-month', label: t('section_this_month'), show: true },
@@ -187,6 +192,8 @@ export default function DashboardPage() {
       {hasPendingSection && (
         <>
           <SectionLabel id="section-pending" label={t('section_pending')} />
+
+          {hasForecastAlerts && <ForecastAlertCard alerts={forecastAlerts} />}
 
           {(toValidate.length > 0 || upcoming.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

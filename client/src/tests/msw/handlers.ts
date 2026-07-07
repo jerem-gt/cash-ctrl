@@ -5,6 +5,7 @@ import {
   ACCOUNTS,
   BANKS,
   CATEGORIES,
+  FORECAST_RESPONSE,
   IMPORT_RESULT,
   INSURANCE_OPERATIONS,
   INSURANCE_POSITIONS,
@@ -351,6 +352,7 @@ export const handlers = [
   http.get('/api/stats/profitability', () => HttpResponse.json(PROFITABILITY_DATA)),
   http.get('/api/stats/report-years', () => HttpResponse.json(REPORT_YEARS)),
   http.get('/api/stats/report', () => HttpResponse.json(REPORT_DATA)),
+  http.get('/api/stats/forecast', () => HttpResponse.json(FORECAST_RESPONSE)),
 
   // Stocks
   http.get('/api/stocks/:accountId/positions', () => HttpResponse.json(STOCK_POSITIONS)),

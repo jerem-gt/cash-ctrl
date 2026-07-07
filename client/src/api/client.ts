@@ -14,6 +14,7 @@ import type {
   CreateTransactionPayload,
   CreateTransferPayload,
   DashboardStats,
+  ForecastResponse,
   ImportExecuteBody,
   ImportResult,
   InsuranceFlowPayload,
@@ -398,6 +399,8 @@ export const taxApi = {
 };
 
 // Stats
+const centsToEuros = (cents: number) => cents / 100;
+
 export const statsApi = {
   dashboard: () => request<DashboardStats>('GET', '/api/stats'),
   balanceHistory: () => request<BalanceHistoryData>('GET', '/api/stats/balance-history'),
@@ -407,6 +410,19 @@ export const statsApi = {
     const qs = new URLSearchParams({ year: String(params.year) });
     if (params.account_id != null) qs.set('account_id', String(params.account_id));
     return request<ReportData>('GET', `/api/stats/report?${qs.toString()}`);
+  },
+  // Le serveur renvoie les montants en centimes (cf. forecast.repo.ts) ; on
+  // convertit ici en euros pour rester cohérent avec le reste du client.
+  forecast: async (horizon: 30 | 90): Promise<ForecastResponse> => {
+    const raw = await request<ForecastResponse>('GET', `/api/stats/forecast?horizon=${horizon}`);
+    return {
+      horizon: raw.horizon,
+      accounts: raw.accounts.map((a) => ({
+        ...a,
+        current_balance: centsToEuros(a.current_balance),
+        points: a.points.map((p) => ({ ...p, balance: centsToEuros(p.balance) })),
+      })),
+    };
   },
 };
 

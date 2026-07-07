@@ -122,6 +122,37 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Loyer à venir')).toBeInTheDocument();
   });
 
+  // ─── Alerte de découvert prévisionnel ────────────────────────────────────
+
+  it('affiche la carte de découvert prévisionnel quand un compte passe en négatif', async () => {
+    renderWithProviders(<DashboardPage />);
+    expect(await screen.findByText('Découvert prévisionnel')).toBeInTheDocument();
+    expect(screen.getByText(/Compte test en négatif prévu le/)).toBeInTheDocument();
+  });
+
+  it("masque la carte de découvert prévisionnel quand aucun compte n'est concerné", async () => {
+    server.use(
+      http.get('/api/stats/forecast', () =>
+        HttpResponse.json({
+          horizon: 90,
+          accounts: [
+            {
+              account_id: 1,
+              account_name: 'Compte test',
+              bank_id: 1,
+              current_balance: 150000,
+              points: [{ date: '2026-07-07', balance: 150000 }],
+              goes_negative_on: null,
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithProviders(<DashboardPage />);
+    await screen.findByText('Tableau de bord');
+    expect(screen.queryByText('Découvert prévisionnel')).not.toBeInTheDocument();
+  });
+
   it('affiche la WealthCard avec les boutons de vue quand balanceHistory a des données', async () => {
     server.use(
       http.get('/api/stats/balance-history', () =>

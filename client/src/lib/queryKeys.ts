@@ -16,6 +16,7 @@ export const queryKeys = {
   profitability: () => ['profitability'] as const,
   reportYears: () => ['report-years'] as const,
   report: (year: number, accountId?: number) => ['report', year, accountId] as const,
+  forecast: (horizon: number) => ['forecast', horizon] as const,
 
   transactions: {
     all: () => ['transactions'] as const,

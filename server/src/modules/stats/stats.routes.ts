@@ -1,15 +1,27 @@
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
+import { z } from 'zod';
 
 import { dateStr } from '../../lib/dateUtils';
+import { zodToApiError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo';
 import { fetchAndStorePriceHistory } from '../stocks/stocks.service';
+import { createForecastRepo } from './forecast.repo';
 import { createStatsRepo } from './stats.repo';
+
+export const forecastQuerySchema = z.object({
+  horizon: z.coerce
+    .number()
+    .int()
+    .default(90)
+    .refine((v) => v === 30 || v === 90, 'validation.invalid_value'),
+});
 
 export function createStatsRouter(db: Database): Router {
   const repo = createStatsRepo(db);
   const stocksRepo = createStocksRepo(db);
+  const forecastRepo = createForecastRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -43,6 +55,17 @@ export function createStatsRouter(db: Database): Router {
     const accountId =
       rawAccountId !== undefined && !Number.isNaN(rawAccountId) ? rawAccountId : undefined;
     res.json(repo.getReport(userId, year, accountId));
+  });
+
+  router.get('/forecast', (req, res) => {
+    const userId = sessionUserId(req);
+    const parsed = forecastQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: zodToApiError(parsed.error) });
+      return;
+    }
+    const today = dateStr(new Date());
+    res.json(forecastRepo.getForecast(userId, parsed.data.horizon, today));
   });
 
   router.get('/profitability', async (req, res) => {

@@ -67,6 +67,16 @@
     "from_label": "from {{name}}",
     "until_label": "until {{date}}"
   },
+  "forecast": {
+    "title": "Projected balance",
+    "horizon_30": "30 d",
+    "horizon_90": "90 d",
+    "chip_all": "All",
+    "balance_label": "Projected balance",
+    "empty_selection": "Select an account to display its projected balance.",
+    "no_forecast": "No future cash flow expected over this period.",
+    "negative_alert": "Negative balance expected on {{date}}"
+  },
   "tx_modal": {
     "subtitle": "Transactions linked to this schedule",
     "no_transactions": "No linked transactions.",

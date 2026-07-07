@@ -6,12 +6,7 @@ export type ReimbursementStatus = 'en_attente' | 'rembourse' | null;
 export type RecurrenceUnit = 'day' | 'week' | 'month' | 'year';
 export type WeekendHandling = 'allow' | 'before' | 'after';
 export type InsuranceOperationType =
-  | 'versement'
-  | 'rachat'
-  | 'arbitrage_in'
-  | 'arbitrage_out'
-  | 'interets'
-  | 'revalorisation';
+  'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets' | 'revalorisation';
 export type StockOperationType = 'buy' | 'sell' | 'transfer_in' | 'transfer_out';
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -438,6 +433,27 @@ export interface ReportData {
   income_by_category: Array<{ category: string; amount: number }>;
 }
 
+// ─── Forecast ─────────────────────────────────────────────────────────────────
+
+export interface ForecastPoint {
+  date: string;
+  balance: number;
+}
+
+export interface ForecastAccount {
+  account_id: number;
+  account_name: string;
+  bank_id: number;
+  current_balance: number;
+  points: ForecastPoint[];
+  goes_negative_on: string | null;
+}
+
+export interface ForecastResponse {
+  horizon: number;
+  accounts: ForecastAccount[];
+}
+
 // ─── API Payloads ─────────────────────────────────────────────────────────────
 
 export type CreateTransferPayload = {
@@ -509,8 +525,7 @@ export interface UpdateTransactionPayload {
 }
 
 export type BackupRunResult =
-  | { skipped: false; filename: string }
-  | { skipped: true; filename: null };
+  { skipped: false; filename: string } | { skipped: true; filename: null };
 
 export interface StockSearchResult {
   symbol: string;
