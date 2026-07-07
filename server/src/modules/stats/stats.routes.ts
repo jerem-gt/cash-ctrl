@@ -2,11 +2,13 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { checkAccountOwnership } from '../../lib/accountHelpers';
 import { dateStr } from '../../lib/dateUtils';
-import { zodToApiError } from '../../lib/routeHelpers';
+import { parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo';
 import { fetchAndStorePriceHistory } from '../stocks/stocks.service';
+import { createAccountBalanceHistoryRepo } from './account-balance-history.repo';
 import { createForecastRepo } from './forecast.repo';
 import { createStatsRepo } from './stats.repo';
 
@@ -18,10 +20,19 @@ export const forecastQuerySchema = z.object({
     .refine((v) => v === 30 || v === 90, 'validation.invalid_value'),
 });
 
+export const accountBalanceHistoryQuerySchema = z.object({
+  days: z.coerce
+    .number()
+    .int()
+    .default(90)
+    .refine((v) => v === 30 || v === 90 || v === 365, 'validation.invalid_value'),
+});
+
 export function createStatsRouter(db: Database): Router {
   const repo = createStatsRepo(db);
   const stocksRepo = createStocksRepo(db);
   const forecastRepo = createForecastRepo(db);
+  const accountBalanceHistoryRepo = createAccountBalanceHistoryRepo(db);
   const router = Router();
   router.use(requireAuth);
 
@@ -66,6 +77,23 @@ export function createStatsRouter(db: Database): Router {
     }
     const today = dateStr(new Date());
     res.json(forecastRepo.getForecast(userId, parsed.data.horizon, today));
+  });
+
+  router.get('/accounts/:accountId/balance-history', (req, res) => {
+    const userId = sessionUserId(req);
+    const accountId = parseNumberParam(req, res, 'accountId');
+    if (accountId === null) return;
+    const parsed = accountBalanceHistoryQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: zodToApiError(parsed.error) });
+      return;
+    }
+    if (!checkAccountOwnership(db, accountId, userId)) {
+      sendError(res, 404, 'account.not_found');
+      return;
+    }
+    const today = dateStr(new Date());
+    res.json(accountBalanceHistoryRepo.getBalanceHistory(accountId, parsed.data.days, today));
   });
 
   router.get('/profitability', async (req, res) => {

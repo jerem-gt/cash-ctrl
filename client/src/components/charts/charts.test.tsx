@@ -65,6 +65,23 @@ describe('charts', () => {
     expect(container).toBeInTheDocument();
   });
 
+  it('monte ForecastAreaChart sans planter avec un splitDate (passé plein + projeté pointillé)', () => {
+    const points = [
+      { date: '2026-06-01', balance: 1000 },
+      { date: '2026-07-07', balance: 1500 },
+      { date: '2026-08-15', balance: -200 },
+    ];
+    const { container } = render(
+      <ForecastAreaChart
+        points={points}
+        goesNegativeOn="2026-08-15"
+        label="Solde"
+        splitDate="2026-07-07"
+      />,
+    );
+    expect(container).toBeInTheDocument();
+  });
+
   it('monte PatrimonyBarChart sans planter', () => {
     const { container } = render(
       <PatrimonyBarChart

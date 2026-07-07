@@ -26,3 +26,11 @@ export function useProfitability() {
     staleTime: 60_000,
   });
 }
+
+export function useAccountBalanceHistory(accountId: number, days: 30 | 90 | 365) {
+  return useQuery({
+    queryKey: queryKeys.accountBalanceHistory(accountId, days),
+    queryFn: () => statsApi.accountBalanceHistory(accountId, days),
+    staleTime: 60_000,
+  });
+}

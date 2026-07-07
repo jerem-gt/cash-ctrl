@@ -5,7 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import AccountDetailPage from '@/pages/AccountDetailPage.tsx';
-import { TRANSACTIONS } from '@/tests/fixtures.ts';
+import { ACCOUNTS, INVESTMENT_ACCOUNT, LOAN_ACCOUNT, TRANSACTIONS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -104,5 +104,33 @@ describe('AccountDetailPage', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Transfert modifié'),
     );
+  });
+
+  it('affiche la carte de solde pour un compte de trésorerie (courant)', async () => {
+    renderDetail('1');
+    await screen.findByText('Compte test');
+    await waitFor(() => expect(screen.getByText('Solde')).toBeInTheDocument());
+  });
+
+  it("n'affiche pas la carte de solde pour un compte d'assurance-vie", async () => {
+    renderDetail('10');
+    await screen.findByText('AV Suravenir');
+    expect(screen.queryByText('Solde')).not.toBeInTheDocument();
+  });
+
+  it("n'affiche pas la carte de solde pour un compte d'investissement", async () => {
+    server.use(
+      http.get('/api/accounts', () => HttpResponse.json([...ACCOUNTS, INVESTMENT_ACCOUNT])),
+    );
+    renderDetail('3');
+    await screen.findByText('PEA');
+    expect(screen.queryByText('Solde')).not.toBeInTheDocument();
+  });
+
+  it("n'affiche pas la carte de solde pour un compte de prêt", async () => {
+    server.use(http.get('/api/accounts', () => HttpResponse.json([LOAN_ACCOUNT])));
+    renderDetail('10');
+    await screen.findByText('Prêt immobilier');
+    expect(screen.queryByText('Solde')).not.toBeInTheDocument();
   });
 });

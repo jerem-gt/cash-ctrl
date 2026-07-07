@@ -454,6 +454,19 @@ export interface ForecastResponse {
   accounts: ForecastAccount[];
 }
 
+// ─── Balance history (compte) ──────────────────────────────────────────────────
+
+export interface BalanceHistoryPoint {
+  date: string;
+  balance: number;
+}
+
+export interface AccountBalanceHistoryResponse {
+  account_id: number;
+  days: number;
+  points: BalanceHistoryPoint[];
+}
+
 // ─── API Payloads ─────────────────────────────────────────────────────────────
 
 export type CreateTransferPayload = {
