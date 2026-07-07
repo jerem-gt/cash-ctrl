@@ -1,19 +1,28 @@
-import fs from 'node:fs';
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createDb } from './db/init.js';
 import { initSchema } from './db/schema.js';
-import { logger } from './logger.js';
-import { downloadDefaultBankLogos } from './logoDownloader.js';
 
-vi.mock('node:fs', () => ({
-  default: {
-    existsSync: vi.fn(),
-    mkdirSync: vi.fn(),
-    writeFileSync: vi.fn(),
-  },
-}));
+// vi.mock hoisté leak entre fichiers avec isolate: false → vi.doMock + imports dynamiques
+const fsMock = {
+  existsSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  writeFileSync: vi.fn(),
+};
+let logger: (typeof import('./logger.js'))['logger'];
+let downloadDefaultBankLogos: (typeof import('./logoDownloader.js'))['downloadDefaultBankLogos'];
+
+beforeAll(async () => {
+  vi.doMock('node:fs', () => ({ default: fsMock }));
+  vi.resetModules();
+  ({ logger } = await import('./logger.js'));
+  ({ downloadDefaultBankLogos } = await import('./logoDownloader.js'));
+});
+
+afterAll(() => {
+  vi.doUnmock('node:fs');
+  vi.resetModules();
+});
 
 describe('downloadDefaultBankLogos', () => {
   function setupDb() {
@@ -23,7 +32,7 @@ describe('downloadDefaultBankLogos', () => {
   }
 
   beforeEach(() => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
+    fsMock.existsSync.mockReturnValue(true);
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
     vi.spyOn(logger, 'info').mockImplementation(() => {});
   });
@@ -36,9 +45,9 @@ describe('downloadDefaultBankLogos', () => {
 
   it('creates LOGOS_DIR when it does not exist', async () => {
     const db = setupDb();
-    vi.mocked(fs.existsSync).mockReturnValueOnce(false);
+    fsMock.existsSync.mockReturnValueOnce(false);
     await downloadDefaultBankLogos(db);
-    expect(fs.mkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
+    expect(fsMock.mkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
   });
 
   it('skips banks that already have a logo', async () => {
@@ -75,7 +84,7 @@ describe('downloadDefaultBankLogos', () => {
     const bank = db.prepare('SELECT id FROM banks WHERE name = ?').get('BankFileExists') as {
       id: number;
     };
-    vi.mocked(fs.existsSync)
+    fsMock.existsSync
       .mockReturnValueOnce(true) // LOGOS_DIR exists
       .mockReturnValueOnce(true); // logo file exists → update path, no fetch
     vi.stubGlobal('fetch', vi.fn());
@@ -94,7 +103,7 @@ describe('downloadDefaultBankLogos', () => {
       null,
       'https://www.example.com/login',
     );
-    vi.mocked(fs.existsSync)
+    fsMock.existsSync
       .mockReturnValueOnce(true) // LOGOS_DIR exists
       .mockReturnValueOnce(false); // logo file absent → fetch
     vi.stubGlobal(
@@ -106,7 +115,7 @@ describe('downloadDefaultBankLogos', () => {
     );
     await downloadDefaultBankLogos(db);
     expect(vi.mocked(fetch)).toHaveBeenCalledOnce();
-    expect(fs.writeFileSync).toHaveBeenCalled();
+    expect(fsMock.writeFileSync).toHaveBeenCalled();
   });
 
   it('logs a warning when fetch returns an HTTP error', async () => {
@@ -116,7 +125,7 @@ describe('downloadDefaultBankLogos', () => {
       null,
       'https://www.example.com/login',
     );
-    vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
+    fsMock.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     await downloadDefaultBankLogos(db);
     expect(logger.warn).toHaveBeenCalled();
@@ -142,7 +151,7 @@ describe('downloadDefaultBankLogos', () => {
       null,
       'https://www.example.com/login',
     );
-    vi.mocked(fs.existsSync).mockReturnValueOnce(true).mockReturnValueOnce(false);
+    fsMock.existsSync.mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));
     await downloadDefaultBankLogos(db);
     expect(logger.warn).toHaveBeenCalled();
