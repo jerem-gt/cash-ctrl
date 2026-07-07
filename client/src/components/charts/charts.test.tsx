@@ -2,7 +2,11 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import ExpensesPieChart from './ExpensesPieChart';
-import ForecastAreaChart, { dedupeTooltipPayload } from './ForecastAreaChart';
+import ForecastAreaChart, {
+  buildXTicks,
+  computeYDomain,
+  dedupeTooltipPayload,
+} from './ForecastAreaChart';
 import IncomeExpenseBarChart from './IncomeExpenseBarChart';
 import NetBalanceLineChart from './NetBalanceLineChart';
 import PatrimonyBarChart from './PatrimonyBarChart';
@@ -96,6 +100,81 @@ describe('charts', () => {
       { name: 'Solde', value: 1800 },
     ];
     expect(dedupeTooltipPayload(payload)).toHaveLength(2);
+  });
+
+  it("monte ForecastAreaChart sans planter avec splitLabel (repère aujourd'hui)", () => {
+    const points = [
+      { date: '2026-06-01', balance: 1000 },
+      { date: '2026-07-07', balance: 1500 },
+    ];
+    const { container } = render(
+      <ForecastAreaChart
+        points={points}
+        goesNegativeOn={null}
+        label="Solde"
+        splitDate="2026-07-07"
+        splitLabel="Aujourd'hui"
+      />,
+    );
+    expect(container).toBeInTheDocument();
+  });
+
+  describe('computeYDomain', () => {
+    it('ne démarre pas le domaine à 0 pour une série plate positive', () => {
+      const [min, max] = computeYDomain([4712, 4712, 4712, 4712]);
+      expect(min).toBeGreaterThan(0);
+      expect(min).toBeLessThan(4712);
+      expect(max).toBeGreaterThan(4712);
+    });
+
+    it('inclut 0 et une ligne zéro quand la série traverse le négatif', () => {
+      const values = [-200, 300, 1800];
+      const [min, max] = computeYDomain(values);
+      expect(min).toBeLessThanOrEqual(0);
+      expect(max).toBeGreaterThanOrEqual(0);
+    });
+
+    it('produit un domaine non dégénéré pour une série parfaitement plate', () => {
+      const [min, max] = computeYDomain([0, 0, 0]);
+      expect(min).toBeLessThan(max);
+    });
+
+    it('ne clampe pas à 0 quand la série reste entièrement négative', () => {
+      const [min, max] = computeYDomain([-500, -500, -500]);
+      expect(max).toBeLessThan(0);
+      expect(min).toBeLessThan(max);
+    });
+
+    it('retourne [0, 0] pour un tableau vide', () => {
+      expect(computeYDomain([])).toEqual([0, 0]);
+    });
+  });
+
+  describe('buildXTicks', () => {
+    it('inclut toujours le premier et le dernier point', () => {
+      const dates = Array.from(
+        { length: 91 },
+        (_, i) => `2026-01-${String((i % 28) + 1).padStart(2, '0')}`,
+      );
+      const ticks = buildXTicks(dates);
+      expect(ticks[0]).toBe(dates[0]);
+      expect(ticks.at(-1)).toBe(dates.at(-1));
+    });
+
+    it('inclut toujours le premier et le dernier point sur une série de 31 jours', () => {
+      const dates = Array.from(
+        { length: 31 },
+        (_, i) => `2026-07-${String(i + 1).padStart(2, '0')}`,
+      );
+      const ticks = buildXTicks(dates);
+      expect(ticks[0]).toBe(dates[0]);
+      expect(ticks.at(-1)).toBe(dates.at(-1));
+    });
+
+    it('retourne le tableau tel quel pour 0 ou 1 point', () => {
+      expect(buildXTicks([])).toEqual([]);
+      expect(buildXTicks(['2026-07-07'])).toEqual(['2026-07-07']);
+    });
   });
 
   it('monte PatrimonyBarChart sans planter', () => {

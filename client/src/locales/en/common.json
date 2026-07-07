@@ -18,6 +18,7 @@
   "amount": "Amount (€)",
   "fees": "Fees (€)",
   "date": "Date",
+  "today": "Today",
   "transfer": "Transfer",
   "validate": "Validate",
   "mark_done": "Mark as done",
