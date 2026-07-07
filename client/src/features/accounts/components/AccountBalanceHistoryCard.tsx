@@ -14,6 +14,7 @@ interface Props {
 
 export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
   const { t } = useTranslation('accounts');
+  const { t: tc } = useTranslation('common');
   const [horizon, setHorizon] = useState<30 | 90>(90);
   const { data: history, isLoading } = useAccountBalanceHistory(accountId, horizon);
   const { data: forecast } = useForecast(horizon, accountId);
@@ -57,6 +58,7 @@ export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
               goesNegativeOn={goesNegativeOn}
               label={t('balance_history.balance_label')}
               splitDate={splitDate}
+              splitLabel={tc('today')}
             />
           </Suspense>
           {goesNegativeOn && (

@@ -27,6 +27,8 @@ interface Props {
   label: string;
   /** Date (incluse côté passé) séparant trait plein (historique) et pointillés (projeté). */
   splitDate?: string;
+  /** Libellé i18n affiché sur le repère vertical à splitDate (ex. "Aujourd'hui"). */
+  splitLabel?: string;
 }
 
 interface ChartDatum {
@@ -43,6 +45,57 @@ function buildChartData(points: ForecastChartPoint[], splitDate: string | undefi
     pastBalance: splitDate === undefined || p.date <= splitDate ? p.balance : undefined,
     futureBalance: splitDate !== undefined && p.date >= splitDate ? p.balance : undefined,
   }));
+}
+
+/** Arrondit un pas brut au multiple "lisible" le plus proche (1/2/5 × 10^n), à la d3. */
+function niceStep(roughStep: number): number {
+  if (roughStep <= 0) return 1;
+  const exponent = Math.floor(Math.log10(roughStep));
+  const base = 10 ** exponent;
+  const fraction = roughStep / base;
+  let niceFraction: number;
+  if (fraction <= 1) niceFraction = 1;
+  else if (fraction <= 2) niceFraction = 2;
+  else if (fraction <= 5) niceFraction = 5;
+  else niceFraction = 10;
+  return niceFraction * base;
+}
+
+/**
+ * Domaine Y ajusté aux données : marge = max(10 % de l'amplitude, plancher pour les
+ * séries plates). 0 n'est inclus que si min >= 0 et s'en approche naturellement, ou
+ * si la série traverse déjà le négatif.
+ */
+export function computeYDomain(values: readonly number[]): [number, number] {
+  if (values.length === 0) return [0, 0];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const amplitude = max - min;
+  const scaleRef = Math.max(Math.abs(min), Math.abs(max));
+  const flatMargin = Math.max(scaleRef * 0.05, 10);
+  const margin = Math.max(amplitude * 0.1, flatMargin);
+  let rawLower: number;
+  if (min >= 0) {
+    rawLower = Math.max(0, min - margin);
+  } else {
+    rawLower = min - margin;
+  }
+  const rawUpper = max + margin;
+  const step = niceStep(margin);
+  const lower = Math.floor(rawLower / step) * step;
+  const upper = Math.ceil(rawUpper / step) * step;
+  return [lower, upper];
+}
+
+/** Construit les ticks X en garantissant toujours le premier et le dernier point. */
+export function buildXTicks(dates: readonly string[], maxTicks = 6): string[] {
+  if (dates.length <= 1) return [...dates];
+  const lastIndex = dates.length - 1;
+  const step = Math.max(1, Math.round(lastIndex / (maxTicks - 1)));
+  const indices: number[] = [];
+  for (let i = 0; i <= lastIndex; i += step) indices.push(i);
+  if (indices.at(-1) !== lastIndex) indices.push(lastIndex);
+  return indices.map((i) => dates[i]);
 }
 
 const BRAND_COLOR = '#139AAE';
@@ -69,6 +122,7 @@ export default function ForecastAreaChart({
   goesNegativeOn,
   label,
   splitDate,
+  splitLabel,
 }: Readonly<Props>) {
   const isDark = useIsDark();
   const theme = chartTheme(isDark);
@@ -78,10 +132,11 @@ export default function ForecastAreaChart({
   const color = hasNegative ? dangerColor : BRAND_COLOR;
   const elementId = useId();
   const gradId = `fcg${elementId.replaceAll(':', '')}`;
-  // Un tick sur ~6, sans jamais tomber à 0 (recharts interprète 0 comme "tout afficher").
-  const tickInterval = Math.max(1, Math.ceil(points.length / 6) - 1);
   const negativePoint = goesNegativeOn ? points.find((p) => p.date === goesNegativeOn) : undefined;
   const chartData = buildChartData(points, splitDate);
+  const xTicks = buildXTicks(chartData.map((d) => d.date));
+  const yDomain = computeYDomain(chartData.map((d) => d.balance));
+  const showZeroLine = yDomain[0] <= 0 && yDomain[1] >= 0;
 
   return (
     <ResponsiveContainer width="100%" height={200}>
@@ -94,11 +149,17 @@ export default function ForecastAreaChart({
         </defs>
         <XAxis
           dataKey="date"
-          interval={tickInterval}
+          ticks={xTicks}
+          interval="preserveStartEnd"
           tickFormatter={(v: string) => fmtDateShort(v)}
           {...axisTick}
         />
-        <YAxis {...axisTick} tickFormatter={(v) => fmtCurrency(Number(v))} width={80} />
+        <YAxis
+          {...axisTick}
+          domain={yDomain}
+          tickFormatter={(v) => fmtCurrency(Number(v))}
+          width={80}
+        />
         <Tooltip
           labelFormatter={(v) => fmtDateShort(String(v))}
           formatter={(v) => [fmtCurrency(Number(v)), label]}
@@ -106,7 +167,25 @@ export default function ForecastAreaChart({
           {...tooltipStyleProps(theme)}
           cursor={{ stroke: theme.refLine, strokeWidth: 1 }}
         />
-        <ReferenceLine y={0} stroke={theme.refLine} strokeWidth={1} />
+        {showZeroLine && <ReferenceLine y={0} stroke={theme.refLine} strokeWidth={1} />}
+        {splitDate !== undefined && (
+          <ReferenceLine
+            x={splitDate}
+            stroke={theme.refLine}
+            strokeWidth={1}
+            strokeDasharray="2 4"
+            label={
+              splitLabel === undefined
+                ? undefined
+                : {
+                    value: splitLabel,
+                    position: 'insideTopRight',
+                    fontSize: 10,
+                    fill: theme.axisTick,
+                  }
+            }
+          />
+        )}
         {splitDate === undefined ? (
           <Area
             type="monotone"
