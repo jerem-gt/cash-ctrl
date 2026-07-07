@@ -22,6 +22,14 @@
 ### Hook pre-commit
 Le projet utilise Husky et lint-staged pour corriger automatiquement les problèmes de lint avant chaque commit. Le hook exécute `lint-staged` qui applique ESLint et Stylelint sur les fichiers stagés.
 
+### CI (`.github/workflows/ci.yml`)
+Le job CI lance lint et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
+- Clé de cache : hash de `package-lock.json` + `eslint.config.js` → toute modification de l'un des deux invalide le cache (run suivant plus lent, le temps de le reconstruire).
+- `--cache-strategy content` est **obligatoire** : le checkout réécrit les mtimes à chaque run, la stratégie `metadata` par défaut invaliderait tout.
+- Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans `ci.yml`.
+
+Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job SonarCloud) et `build-assets` (node_modules prunés + dists, consommé par le build Docker). Un nouveau rapport destiné à Sonar va dans `sonar-assets`.
+
 ## TypeScript & Code Quality
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.
 - **Path Aliases**: Utiliser `@/*` pour les imports dans `src/` (configuré dans `tsconfig.json`).
