@@ -33,7 +33,7 @@ function renderPalette(open: boolean, onClose = vi.fn()) {
 describe('CommandPalette', () => {
   it("ne rend rien quand elle n'est pas montée", () => {
     renderPalette(false);
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/rechercher/i)).not.toBeInTheDocument();
   });
 
   it('affiche les pages (client-side) sans saisie, avec le hint idle', () => {

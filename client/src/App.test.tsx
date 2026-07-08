@@ -43,13 +43,15 @@ describe('App', () => {
   it('Ctrl+K ouvre puis referme la palette de commande (plateforme non-Mac)', async () => {
     render(<App />);
     await screen.findByTitle(/Déconnexion/i);
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/rechercher un compte/i)).not.toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    expect(await screen.findByRole('listbox')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText(/rechercher un compte/i)).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByPlaceholderText(/rechercher un compte/i)).not.toBeInTheDocument(),
+    );
   });
 
   it('Ctrl+Shift+K ne déclenche pas la palette (réservé aux devtools du navigateur)', async () => {
@@ -57,6 +59,6 @@ describe('App', () => {
     await screen.findByTitle(/Déconnexion/i);
 
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true, shiftKey: true });
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/rechercher un compte/i)).not.toBeInTheDocument();
   });
 });
