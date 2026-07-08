@@ -8,36 +8,44 @@ import { useLocation, useNavigate } from 'react-router-dom';
  */
 export function useScheduledHighlight(
   scheduled: ScheduledTransaction[],
+  isFetchedAfterMount: boolean,
   onTarget: (target: ScheduledTransaction) => void,
 ) {
   const location = useLocation();
   const navigate = useNavigate();
-  // Capturé une seule fois au montage (initialiseur paresseux) : l'effet ci-dessous
-  // nettoie location.state juste après, avant même l'arrivée des données `scheduled`.
-  const [pendingId] = useState(
-    () =>
-      (location.state as { highlightScheduledId?: number } | null)?.highlightScheduledId ??
-      undefined,
-  );
+  const [pendingId, setPendingId] = useState<number | undefined>(undefined);
+  const [resolvedFor, setResolvedFor] = useState<number | undefined>(undefined);
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
   const rowNodesRef = useRef(new Map<number, HTMLDivElement | null>());
 
-  // Nettoie le state de navigation tout de suite pour ne pas re-déclencher le flash
-  // si l'utilisateur revient sur cette page (retour arrière / rechargement).
-  useEffect(() => {
-    if (pendingId === undefined) return;
-    void navigate(location.pathname, { replace: true, state: null });
-    // eslint-disable-next-line @eslint-react/exhaustive-deps -- volontaire : à ne lancer qu'au montage
-  }, []);
+  // Ré-arme à chaque navigation (location.key) portant une cible, même si on est déjà sur /scheduled.
+  const [armedKey, setArmedKey] = useState<string | undefined>(undefined);
+  if (armedKey !== location.key) {
+    const id = (location.state as { highlightScheduledId?: number } | null)?.highlightScheduledId;
+    if (id !== undefined) {
+      setArmedKey(location.key);
+      setPendingId(id);
+      setResolvedFor(undefined);
+      setHighlightedId(null);
+    }
+  }
 
-  // Résout la cible dès que les données sont là (pattern "adjusting state during render").
-  const [resolvedFor, setResolvedFor] = useState<number | undefined>(undefined);
-  if (pendingId !== undefined && resolvedFor !== pendingId && scheduled.length > 0) {
-    setResolvedFor(pendingId);
+  // Nettoie le state après armement (pas de flash au retour arrière ; le replace change location.key mais state null ⇒ pas de ré-armement).
+  useEffect(() => {
+    if (armedKey === undefined) return;
+    void navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line @eslint-react/exhaustive-deps -- volontaire : uniquement à chaque armement
+  }, [armedKey]);
+
+  // Résout la cible dès les données, et rejoue tant qu'elle reste introuvable (cache persisté périmé rafraîchi ensuite).
+  if (pendingId !== undefined && resolvedFor !== pendingId) {
     const target = scheduled.find((s) => s.id === pendingId);
-    if (target) {
+    if (target !== undefined) {
+      setResolvedFor(pendingId);
       setHighlightedId(target.id);
       onTarget(target);
+    } else if (isFetchedAfterMount) {
+      setPendingId(undefined);
     }
   }
 

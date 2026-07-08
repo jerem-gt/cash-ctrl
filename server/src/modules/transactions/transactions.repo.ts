@@ -2,7 +2,7 @@ import type { Database, Statement } from 'better-sqlite3';
 
 import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants';
 import { toCents, toEuros } from '../../lib/money';
-import { escapeLikeTerm } from '../../lib/sql';
+import { escapeLikeTerm, likeUnaccent } from '../../lib/sql';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
@@ -126,8 +126,8 @@ function buildFilterConditions(
   }
   if (filters.description_contains) {
     conditions.push(`(
-      unaccent(lower(t.description)) LIKE '%' || unaccent(lower(:description_contains)) || '%' ESCAPE '\\'
-      OR unaccent(lower(COALESCE(t.notes, ''))) LIKE '%' || unaccent(lower(:description_contains)) || '%' ESCAPE '\\'
+      ${likeUnaccent('t.description', 'description_contains')}
+      OR ${likeUnaccent("COALESCE(t.notes, '')", 'description_contains')}
     )`);
     params.description_contains = escapeLikeTerm(filters.description_contains);
   }

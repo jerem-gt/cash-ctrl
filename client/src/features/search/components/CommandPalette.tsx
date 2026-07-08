@@ -8,6 +8,7 @@ import {
   Settings,
   TrendingUp,
   Wallet,
+  X,
 } from 'lucide-react';
 import {
   type KeyboardEvent,
@@ -206,23 +207,30 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
     setActiveIndex(0);
   }
   // Filet de sécurité si la liste rétrécit sans que `query` ait changé (ex. filtrage des pages).
-  const clampedActiveIndex = flat.length === 0 ? 0 : Math.min(activeIndex, flat.length - 1);
+  const clampedActiveIndex = Math.min(Math.max(activeIndex, 0), flat.length - 1);
 
   useEffect(() => {
     const el = containerRef.current?.querySelector(`[data-index="${clampedActiveIndex}"]`);
     el?.scrollIntoView({ block: 'nearest' });
   }, [clampedActiveIndex]);
 
+  // Capture + stopPropagation : Escape ferme la palette sans atteindre une ModalFrame sous-jacente, même hors focus input.
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [onClose]);
+
   const isIdle = query.trim().length < 2;
   const isLoadingResults = !isIdle && isLoading;
   const isEmpty = !isIdle && !isLoadingResults && flat.length === 0;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
-      return;
-    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex(Math.min(clampedActiveIndex + 1, flat.length - 1));
@@ -243,7 +251,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center md:items-center md:bg-black/35 md:p-4"
+      className="fixed inset-0 z-[60] flex items-start justify-center md:items-center md:bg-black/35 md:p-4"
       onClick={onClose}
     >
       <div
@@ -263,6 +271,14 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
             aria-label={t('placeholder')}
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-content-faint"
           />
+          <button
+            type="button"
+            onClick={onClose}
+            className="md:hidden shrink-0"
+            aria-label={t('aria_close')}
+          >
+            <X className="h-4 w-4 text-content-subtle" aria-hidden="true" />
+          </button>
         </div>
 
         <div role="listbox" aria-label={t('placeholder')} className="flex-1 overflow-y-auto">

@@ -340,6 +340,17 @@ describe('ScheduledPage', () => {
     await waitFor(() => expect(chipLivretA.className).toContain('bg-brand-600'));
   });
 
+  it("reprend l'auto-sélection du compte en alerte quand la cible du highlight n'existe plus dans la liste fraîche", async () => {
+    server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));
+    renderWithProviders(<ScheduledPage />, {
+      initialEntries: [{ pathname: '/scheduled', state: { highlightScheduledId: 999999 } }],
+    });
+    // Cible absente une fois la liste fraîche chargée → l'auto-sélection reprend la main.
+    const chipCompteTest = await screen.findByRole('button', { name: /Compte test/i });
+    await waitFor(() => expect(chipCompteTest.className).toContain('bg-brand-600'));
+    expect(screen.getByText('Loyer')).toBeInTheDocument();
+  });
+
   it('le chip "Tous" affiche toutes les planifications', async () => {
     const user = userEvent.setup();
     server.use(http.get('/api/scheduled', () => HttpResponse.json(SCHED_TWO_ACCOUNTS)));

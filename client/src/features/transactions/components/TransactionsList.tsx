@@ -18,6 +18,7 @@ interface Props {
   emptyMessage?: string;
   readOnly?: boolean;
   initialFilters?: Partial<Filters>;
+  resyncKey?: string;
 }
 
 export function TransactionsList({
@@ -26,9 +27,10 @@ export function TransactionsList({
   emptyMessage,
   readOnly = false,
   initialFilters,
+  resyncKey,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
-  const { state, actions } = useTransactionsManager(account?.id, initialFilters);
+  const { state, actions } = useTransactionsManager(account?.id, initialFilters, resyncKey);
   const resolvedEmptyMessage = emptyMessage ?? t('list.empty');
 
   const runningBalances = useMemo(() => {
