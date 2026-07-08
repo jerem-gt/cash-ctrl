@@ -7,3 +7,8 @@ export const VALIDATED_TX_SUM_SELECT =
 export function escapeLikeTerm(term: string): string {
   return term.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 }
+
+/** Condition LIKE insensible accents/casse sur `column`, paramétrée par `:param` (déjà échappé via escapeLikeTerm). */
+export function likeUnaccent(column: string, param = 'q'): string {
+  return `unaccent(lower(${column})) LIKE '%' || unaccent(lower(:${param})) || '%' ESCAPE '\\'`;
+}

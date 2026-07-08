@@ -62,6 +62,31 @@ describe('TransactionsFilters', () => {
     vi.useRealTimers();
   });
 
+  it("ne réécrit pas l'input local quand sa valeur dérivée correspond déjà au filtre externe (espace final préservé)", () => {
+    vi.useFakeTimers();
+    const onFilterChange = vi.fn();
+    const { rerender } = renderWithProviders(
+      <TransactionsFilters {...defaultProps} filters={{}} onFilterChange={onFilterChange} />,
+    );
+
+    const input = screen.getByPlaceholderText<HTMLInputElement>(/libellé ou notes/i);
+    fireEvent.change(input, { target: { value: 'car ' } });
+    void act(() => vi.runAllTimers());
+
+    expect(onFilterChange).toHaveBeenCalledWith({ description_contains: 'car' });
+
+    // La resynchro ne doit pas écraser l'espace final local (derive('car ') === valeur externe 'car').
+    rerender(
+      <TransactionsFilters
+        {...defaultProps}
+        filters={{ description_contains: 'car' }}
+        onFilterChange={onFilterChange}
+      />,
+    );
+    expect(input.value).toBe('car ');
+    vi.useRealTimers();
+  });
+
   // --- Type ---
 
   it('appelle onFilterChange lors du changement de type (revenus/dépenses)', () => {

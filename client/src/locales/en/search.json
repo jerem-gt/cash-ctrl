@@ -19,5 +19,6 @@
   "inactive_badge": "Inactive",
   "sidebar_button": "Search…",
   "aria_open": "Open search",
-  "aria_open_mobile": "Search"
+  "aria_open_mobile": "Search",
+  "aria_close": "Close search"
 }

@@ -73,6 +73,22 @@ describe('ForecastCard', () => {
     await waitFor(() => expect(capturedUrl).toContain('horizon=30'));
   });
 
+  it('reste passif quand autoSelect est false (ni init, ni correction de sélection)', async () => {
+    const onSelect = vi.fn();
+    renderWithProviders(
+      <ForecastCard
+        accounts={ACCOUNTS}
+        logoMap={{}}
+        selected={999}
+        onSelect={onSelect}
+        autoSelect={false}
+      />,
+    );
+    await screen.findByText('Solde projeté');
+    // Sélection déjà invalide (999) : sans autoSelect, le card ne doit pas la corriger vers 'all'.
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it("affiche un message quand aucun compte n'a de flux futur", async () => {
     server.use(
       http.get('/api/stats/forecast', () => HttpResponse.json({ horizon: 90, accounts: [] })),

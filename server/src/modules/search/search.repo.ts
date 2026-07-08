@@ -7,7 +7,7 @@ import type {
 } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { escapeLikeTerm } from '../../lib/sql';
+import { escapeLikeTerm, likeUnaccent } from '../../lib/sql';
 
 const LIMIT = 8;
 
@@ -18,8 +18,8 @@ const ACCOUNTS_SQL = `
   LEFT JOIN account_types at ON a.account_type_id = at.id
   WHERE a.user_id = :userId
     AND (
-      unaccent(lower(a.name)) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
-      OR unaccent(lower(COALESCE(b.name, ''))) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
+      ${likeUnaccent('a.name')}
+      OR ${likeUnaccent("COALESCE(b.name, '')")}
     )
   ORDER BY a.name COLLATE NOCASE
   LIMIT ${LIMIT}
@@ -30,8 +30,8 @@ const TRANSACTIONS_SQL = `
   FROM transactions t
   WHERE t.user_id = :userId
     AND (
-      unaccent(lower(t.description)) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
-      OR unaccent(lower(COALESCE(t.notes, ''))) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
+      ${likeUnaccent('t.description')}
+      OR ${likeUnaccent("COALESCE(t.notes, '')")}
     )
   ORDER BY t.date DESC
   LIMIT ${LIMIT}
@@ -42,8 +42,8 @@ const SCHEDULED_SQL = `
   FROM scheduled_transactions s
   WHERE s.user_id = :userId
     AND (
-      unaccent(lower(s.description)) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
-      OR unaccent(lower(COALESCE(s.notes, ''))) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
+      ${likeUnaccent('s.description')}
+      OR ${likeUnaccent("COALESCE(s.notes, '')")}
     )
   ORDER BY s.active DESC, s.description COLLATE NOCASE ASC
   LIMIT ${LIMIT}
@@ -54,7 +54,7 @@ const STOCKS_SQL = `
   FROM stock_positions sp
   WHERE sp.user_id = :userId
     AND sp.quantity > 0
-    AND unaccent(lower(sp.ticker)) LIKE '%' || unaccent(lower(:q)) || '%' ESCAPE '\\'
+    AND ${likeUnaccent('sp.ticker')}
   ORDER BY sp.ticker COLLATE NOCASE
   LIMIT ${LIMIT}
 `;

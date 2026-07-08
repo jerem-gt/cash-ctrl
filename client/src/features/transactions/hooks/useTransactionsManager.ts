@@ -27,6 +27,7 @@ const initialModalsState: ModalState = { type: 'none' };
 export function useTransactionsManager(
   initialAccountId?: number,
   initialFilters?: Partial<Filters>,
+  resyncKey?: string,
 ) {
   const { t } = useTranslation('transactions');
 
@@ -37,16 +38,15 @@ export function useTransactionsManager(
   });
   const [page, setPage] = useState(1);
 
-  // Re-synchronise le filtre description quand initialFilters change (ex. nouvelle
-  // recherche depuis la palette) — pattern "adjusting state during render".
-  const initialDescriptionContains = initialFilters?.description_contains;
-  const [lastInitialDescription, setLastInitialDescription] = useState(initialDescriptionContains);
-  if (lastInitialDescription !== initialDescriptionContains) {
-    setLastInitialDescription(initialDescriptionContains);
-    if (initialDescriptionContains !== undefined) {
-      setFilters((prev) => ({ ...prev, description_contains: initialDescriptionContains }));
-      setPage(1);
-    }
+  // Resynchronise le filtre description à chaque navigation (resyncKey = location.key), y compris son nettoyage.
+  const [lastResyncKey, setLastResyncKey] = useState(resyncKey);
+  if (lastResyncKey !== resyncKey) {
+    setLastResyncKey(resyncKey);
+    setFilters((prev) => ({
+      ...prev,
+      description_contains: initialFilters?.description_contains,
+    }));
+    setPage(1);
   }
   const [limit, setLimit] = useState(() => Number(localStorage.getItem('cashctrl.txLimit')) || 25);
 

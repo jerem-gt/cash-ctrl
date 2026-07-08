@@ -54,11 +54,13 @@ export function ForecastCard({
 
   const forecastAccounts = data?.accounts ?? [];
 
+  // Card passif tant qu'une cible pilote la page (autoSelect false) : ni init ni reset stillPresent qui écraserait sa sélection.
   useEffect(() => {
     if (!data) return;
+    if (!autoSelect) return;
     if (!initializedRef.current) {
       initializedRef.current = true;
-      if (autoSelect) onSelect(pickDefaultAccount(data.accounts));
+      onSelect(pickDefaultAccount(data.accounts));
       return;
     }
     const stillPresent = data.accounts.some((a) => a.account_id === selected);

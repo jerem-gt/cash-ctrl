@@ -1,4 +1,4 @@
-import { Transaction } from '@cashctrl/types';
+import { Filters, Transaction } from '@cashctrl/types';
 import { act, renderHook } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -152,6 +152,93 @@ describe('useTransactionsManager', () => {
       });
       expect(result.current.state.filters.type).toBe('income');
       expect(result.current.state.page).toBe(1); // Reset
+    });
+  });
+
+  describe('Resynchronisation du filtre description via resyncKey (deep-link ?q=)', () => {
+    it("n'ajuste rien au premier rendu (l'init lazy des filtres couvre déjà le deep-link initial)", () => {
+      const { result } = renderHook(() =>
+        useTransactionsManager(undefined, { description_contains: 'chat' }, 'key-1'),
+      );
+      expect(result.current.state.filters.description_contains).toBe('chat');
+    });
+
+    it('réapplique le filtre description quand resyncKey change (nouvelle recherche depuis la palette)', () => {
+      const { result, rerender } = renderHook(
+        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
+          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
+        {
+          initialProps: {
+            initialFilters: { description_contains: 'chat' },
+            resyncKey: 'key-1',
+          },
+        },
+      );
+
+      rerender({ initialFilters: { description_contains: 'chien' }, resyncKey: 'key-2' });
+
+      expect(result.current.state.filters.description_contains).toBe('chien');
+    });
+
+    it('nettoie le filtre description quand resyncKey change vers une navigation sans ?q=', () => {
+      const { result, rerender } = renderHook(
+        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
+          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
+        {
+          initialProps: {
+            initialFilters: { description_contains: 'chat' },
+            resyncKey: 'key-1',
+          },
+        },
+      );
+
+      rerender({ initialFilters: {}, resyncKey: 'key-2' });
+
+      expect(result.current.state.filters.description_contains).toBeUndefined();
+    });
+
+    it('réapplique le même ?q= après une divergence locale (retour sur le même deep-link)', () => {
+      const { result, rerender } = renderHook(
+        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
+          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
+        {
+          initialProps: {
+            initialFilters: { description_contains: 'chat' },
+            resyncKey: 'key-1',
+          },
+        },
+      );
+
+      act(() => {
+        result.current.actions.handleFilterChange({ description_contains: 'divergé' });
+      });
+      expect(result.current.state.filters.description_contains).toBe('divergé');
+
+      rerender({ initialFilters: { description_contains: 'chat' }, resyncKey: 'key-2' });
+
+      expect(result.current.state.filters.description_contains).toBe('chat');
+    });
+
+    it('réinitialise la page à 1 lors de la resynchronisation', () => {
+      const { result, rerender } = renderHook(
+        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
+          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
+        {
+          initialProps: {
+            initialFilters: { description_contains: 'chat' },
+            resyncKey: 'key-1',
+          },
+        },
+      );
+
+      act(() => {
+        result.current.actions.setPage(3);
+      });
+      expect(result.current.state.page).toBe(3);
+
+      rerender({ initialFilters: { description_contains: 'chien' }, resyncKey: 'key-2' });
+
+      expect(result.current.state.page).toBe(1);
     });
   });
 

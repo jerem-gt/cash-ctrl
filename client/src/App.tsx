@@ -14,6 +14,7 @@ import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { isMacPlatform } from '@/lib/platform';
 import { queryPersister } from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
 
@@ -38,6 +39,8 @@ const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default:
 const LoginPage = lazyLoad(() =>
   import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
 );
+
+const isMac = isMacPlatform();
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -95,7 +98,13 @@ function AppShell() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const isShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+      let isModifierMatch: boolean;
+      if (isMac) {
+        isModifierMatch = e.metaKey && !e.ctrlKey;
+      } else {
+        isModifierMatch = e.ctrlKey && !e.metaKey;
+      }
+      const isShortcut = isModifierMatch && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k';
       if (!isShortcut) return;
       e.preventDefault();
       setPaletteOpen((v) => !v);

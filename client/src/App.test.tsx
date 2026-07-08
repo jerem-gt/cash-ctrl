@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -38,5 +38,25 @@ describe('App', () => {
     render(<App />);
     await screen.findByTitle(/Déconnexion/i);
     expect(document.title).toBe('CashCtrl (dev)');
+  });
+
+  it('Ctrl+K ouvre puis referme la palette de commande (plateforme non-Mac)', async () => {
+    render(<App />);
+    await screen.findByTitle(/Déconnexion/i);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+    expect(await screen.findByRole('listbox')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+  });
+
+  it('Ctrl+Shift+K ne déclenche pas la palette (réservé aux devtools du navigateur)', async () => {
+    render(<App />);
+    await screen.findByTitle(/Déconnexion/i);
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true, shiftKey: true });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });

@@ -39,7 +39,7 @@ import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 export default function ScheduledPage() {
   const { t } = useTranslation('scheduled');
   const { t: tc } = useTranslation('common');
-  const { data: scheduled = [], isLoading } = useScheduled();
+  const { data: scheduled = [], isLoading, isFetchedAfterMount } = useScheduled();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
   const createScheduled = useCreateScheduled();
@@ -63,6 +63,7 @@ export default function ScheduledPage() {
   // du ForecastCard peut la masquer) et déplie les suspendues si besoin.
   const { highlightedId, hasPendingTarget, registerRowNode } = useScheduledHighlight(
     scheduled,
+    isFetchedAfterMount,
     (target) => {
       setSelectedAccountId(target.account_id);
       if (!target.active) setShowSuspended(true);
