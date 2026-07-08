@@ -251,16 +251,18 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
   let index = -1;
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-[60] flex items-start justify-center md:items-center md:bg-black/35 md:p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="fixed inset-0 z-[60] flex items-start justify-center md:items-center md:p-4">
+      {/* Backdrop bouton natif masqué de l'arbre a11y (redondant avec Escape et le bouton X) : clic souris pour fermer. */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default md:bg-black/35"
+      />
       <div
         ref={containerRef}
-        className="flex flex-col w-full h-full md:h-auto md:max-h-[70vh] md:max-w-xl bg-surface md:rounded-2xl md:shadow-xl md:border md:border-line-subtle overflow-hidden"
+        className="relative flex flex-col w-full h-full md:h-auto md:max-h-[70vh] md:max-w-xl bg-surface md:rounded-2xl md:shadow-xl md:border md:border-line-subtle overflow-hidden"
       >
         <div className="flex items-center gap-2 px-4 py-3 border-b border-line-subtle shrink-0">
           <Search className="h-4 w-4 text-content-subtle shrink-0" aria-hidden="true" />
