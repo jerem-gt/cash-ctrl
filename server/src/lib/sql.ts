@@ -5,10 +5,13 @@ export const VALIDATED_TX_SUM_SELECT =
 
 /** Échappe `\`, `%` et `_` pour un usage sûr dans un motif LIKE (ESCAPE '\'). */
 export function escapeLikeTerm(term: string): string {
-  return term.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+  return term
+    .replaceAll('\\', String.raw`\\`)
+    .replaceAll('%', String.raw`\%`)
+    .replaceAll('_', String.raw`\_`);
 }
 
 /** Condition LIKE insensible accents/casse sur `column`, paramétrée par `:param` (déjà échappé via escapeLikeTerm). */
 export function likeUnaccent(column: string, param = 'q'): string {
-  return `unaccent(lower(${column})) LIKE '%' || unaccent(lower(:${param})) || '%' ESCAPE '\\'`;
+  return String.raw`unaccent(lower(${column})) LIKE '%' || unaccent(lower(:${param})) || '%' ESCAPE '\'`;
 }

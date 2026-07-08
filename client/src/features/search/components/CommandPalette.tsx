@@ -97,7 +97,8 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
   const goTo = useCallback(
     (to: string, state?: unknown) => {
       onClose();
-      void navigate(to, state ? { state } : undefined);
+      // Promise.resolve + catch no-op : concilie no-floating-promises (ESLint) et l'interdiction de `void` (Sonar).
+      Promise.resolve(navigate(to, state ? { state } : undefined)).catch(() => undefined);
     },
     [onClose, navigate],
   );
@@ -251,13 +252,15 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-[60] flex items-start justify-center md:items-center md:bg-black/35 md:p-4"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         ref={containerRef}
         className="flex flex-col w-full h-full md:h-auto md:max-h-[70vh] md:max-w-xl bg-surface md:rounded-2xl md:shadow-xl md:border md:border-line-subtle overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 px-4 py-3 border-b border-line-subtle shrink-0">
           <Search className="h-4 w-4 text-content-subtle shrink-0" aria-hidden="true" />
@@ -281,7 +284,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
           </button>
         </div>
 
-        <div role="listbox" aria-label={t('placeholder')} className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           {isLoadingResults && (
             <div className="p-4 text-sm text-content-subtle">{t('loading')}</div>
           )}
@@ -300,8 +303,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
                     <button
                       key={row.id}
                       type="button"
-                      role="option"
-                      aria-selected={isActive}
+                      aria-current={isActive || undefined}
                       data-index={rowIndex}
                       // onMouseMove (pas Enter) : le hover synthétique d'une liste apparue sous un curseur immobile ne doit pas voler la sélection
                       onMouseMove={() => setActiveIndex(rowIndex)}
