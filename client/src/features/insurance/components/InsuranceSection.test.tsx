@@ -14,22 +14,26 @@ function renderSection(accountId = 10, isPer = false) {
 }
 
 describe('InsuranceSection', () => {
-  it('affiche les supports après chargement', async () => {
+  it.each([
+    {
+      name: 'affiche les supports après chargement',
+      awaitText: 'Fonds Euro Sécurité',
+      expectText: 'Amundi MSCI World',
+    },
+    {
+      name: 'affiche le badge Euro pour un fonds euro',
+      awaitText: 'Fonds Euro Sécurité',
+      expectText: 'Euro',
+    },
+    {
+      name: 'affiche le badge UC pour une UC',
+      awaitText: 'Amundi MSCI World',
+      expectText: 'UC',
+    },
+  ])('$name', async ({ awaitText, expectText }) => {
     renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    expect(screen.getAllByText('Amundi MSCI World').length).toBeGreaterThan(0);
-  });
-
-  it('affiche le badge Euro pour un fonds euro', async () => {
-    renderSection();
-    await screen.findAllByText('Fonds Euro Sécurité');
-    expect(screen.getAllByText('Euro').length).toBeGreaterThan(0);
-  });
-
-  it('affiche le badge UC pour une UC', async () => {
-    renderSection();
-    await screen.findAllByText('Amundi MSCI World');
-    expect(screen.getAllByText('UC').length).toBeGreaterThan(0);
+    await screen.findAllByText(awaitText);
+    expect(screen.getAllByText(expectText).length).toBeGreaterThan(0);
   });
 
   it('affiche la valeur pour un support', async () => {

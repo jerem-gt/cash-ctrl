@@ -46,20 +46,12 @@ describe('/api/categorization-rules', () => {
     expect(res.body.pattern).toBe('%leclerc%');
   });
 
-  it('GET /match retourne null si aucune règle ne correspond', async () => {
-    const res = await ctx.agent.get('/api/categorization-rules/match?description=LOYER+JANVIER');
-    expect(res.status).toBe(200);
-    expect(res.body).toBeNull();
-  });
-
-  it('GET /match retourne null si description vide', async () => {
-    const res = await ctx.agent.get('/api/categorization-rules/match?description=');
-    expect(res.status).toBe(200);
-    expect(res.body).toBeNull();
-  });
-
-  it('GET /match retourne null si description absente', async () => {
-    const res = await ctx.agent.get('/api/categorization-rules/match');
+  it.each([
+    { label: 'aucune règle ne correspond', qs: '?description=LOYER+JANVIER' },
+    { label: 'description vide', qs: '?description=' },
+    { label: 'description absente', qs: '' },
+  ])('GET /match retourne null si $label', async ({ qs }) => {
+    const res = await ctx.agent.get(`/api/categorization-rules/match${qs}`);
     expect(res.status).toBe(200);
     expect(res.body).toBeNull();
   });

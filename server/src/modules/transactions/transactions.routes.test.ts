@@ -501,18 +501,12 @@ describe('/api/transactions — Filtres avancés', () => {
     expect(res.body.data).toHaveLength(1);
   });
 
-  it('retourne 400 pour validated invalide', async () => {
-    const res = await ctx.agent.get('/api/transactions?validated=oui');
-    expect(res.status).toBe(400);
-  });
-
-  it('retourne 400 pour date_from au mauvais format', async () => {
-    const res = await ctx.agent.get('/api/transactions?date_from=15-01-2024');
-    expect(res.status).toBe(400);
-  });
-
-  it('retourne 400 pour amount_min négatif', async () => {
-    const res = await ctx.agent.get('/api/transactions?amount_min=-10');
+  it.each([
+    { label: 'validated invalide', qs: 'validated=oui' },
+    { label: 'date_from au mauvais format', qs: 'date_from=15-01-2024' },
+    { label: 'amount_min négatif', qs: 'amount_min=-10' },
+  ])('retourne 400 pour $label', async ({ qs }) => {
+    const res = await ctx.agent.get(`/api/transactions?${qs}`);
     expect(res.status).toBe(400);
   });
 });
