@@ -2,6 +2,8 @@ import type { ScheduledTransaction } from '@cashctrl/types';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { fireAndForget } from '@/lib/async';
+
 /**
  * Surlignage temporaire d'une planification atteinte depuis la palette de commande
  * (`navigate('/scheduled', { state: { highlightScheduledId } })`).
@@ -33,10 +35,7 @@ export function useScheduledHighlight(
   // Nettoie le state après armement (pas de flash au retour arrière ; le replace change location.key mais state null ⇒ pas de ré-armement).
   useEffect(() => {
     if (armedKey === undefined) return;
-    // Promise.resolve + catch no-op : concilie no-floating-promises (ESLint) et l'interdiction de `void` (Sonar).
-    Promise.resolve(navigate(location.pathname, { replace: true, state: null })).catch(
-      () => undefined,
-    );
+    fireAndForget(navigate(location.pathname, { replace: true, state: null }));
     // eslint-disable-next-line @eslint-react/exhaustive-deps -- volontaire : uniquement à chaque armement
   }, [armedKey]);
 

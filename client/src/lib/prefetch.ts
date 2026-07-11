@@ -10,6 +10,7 @@ import {
   settingsApi,
   transactionsApi,
 } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { prefetchRouteChunk } from '@/lib/routeChunks';
 
 export function prefetchForRoute(qc: QueryClient, route: string): void {
@@ -31,44 +32,48 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
     case '/':
       // Le Dashboard tire ses transactions (récentes, à valider, à venir) de
       // l'endpoint dashboard-stats : pas besoin de précharger la liste complète.
-      void accounts();
-      void banks();
-      void cats();
+      fireAndForget(accounts());
+      fireAndForget(banks());
+      fireAndForget(cats());
       break;
     case '/transactions':
-      void accounts();
-      void banks();
-      void cats();
-      void pms();
-      void p(['transactions', { page: 1, limit: 25 }], () =>
-        transactionsApi.list({ page: 1, limit: 25 }),
+      fireAndForget(accounts());
+      fireAndForget(banks());
+      fireAndForget(cats());
+      fireAndForget(pms());
+      fireAndForget(
+        p(['transactions', { page: 1, limit: 25 }], () =>
+          transactionsApi.list({ page: 1, limit: 25 }),
+        ),
       );
       break;
     case '/scheduled':
-      void accounts();
-      void cats();
-      void pms();
-      void p(['scheduled'], scheduledApi.list);
+      fireAndForget(accounts());
+      fireAndForget(cats());
+      fireAndForget(pms());
+      fireAndForget(p(['scheduled'], scheduledApi.list));
       break;
     case '/accounts':
-      void accounts();
-      void banks();
-      void ats();
+      fireAndForget(accounts());
+      fireAndForget(banks());
+      fireAndForget(ats());
       break;
     case '/settings':
-      void cats();
-      void ats();
-      void banks();
-      void pms();
-      void p(['settings'], settingsApi.get);
+      fireAndForget(cats());
+      fireAndForget(ats());
+      fireAndForget(banks());
+      fireAndForget(pms());
+      fireAndForget(p(['settings'], settingsApi.get));
       break;
   }
 }
 
 export function prefetchAccountDetail(qc: QueryClient, accountId: number): void {
   prefetchRouteChunk('/accounts/:id');
-  void qc.prefetchQuery({
-    queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
-    queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
-  });
+  fireAndForget(
+    qc.prefetchQuery({
+      queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
+      queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
+    }),
+  );
 }

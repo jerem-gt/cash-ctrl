@@ -2,6 +2,7 @@ import type { CreateLoanPayload, UpdateLoanPayload } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { loansApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useLoan(accountId: number) {
@@ -26,10 +27,10 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (payload: CreateLoanPayload) => loansApi.create(payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -39,11 +40,11 @@ export function useUpdateLoan(loanId: number) {
   return useMutation({
     mutationFn: (payload: UpdateLoanPayload) => loansApi.update(loanId, payload),
     onSuccess: (loan) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.loans.byAccount(loan.account_id) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.loans.byAccount(loan.account_id) }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -60,10 +61,10 @@ export function useUpdateInstallment(loanId: number) {
       total_amount: number;
     }) => loansApi.updateInstallment(loanId, installmentId, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.loans.installments(loanId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.loans.installments(loanId) }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }

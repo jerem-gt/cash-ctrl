@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
 
+import { fireAndForget } from '@/lib/async';
+
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation('settings');
   const current = i18n.language;
 
   const handleChange = (lang: 'fr' | 'en') => {
-    void i18n.changeLanguage(lang);
+    fireAndForget(i18n.changeLanguage(lang));
   };
 
   return (
