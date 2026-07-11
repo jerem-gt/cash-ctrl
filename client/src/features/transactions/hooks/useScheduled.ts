@@ -2,6 +2,7 @@ import type { ScheduledPayload } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { scheduledApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useScheduled() {
@@ -16,10 +17,10 @@ export function useCreateScheduled() {
   return useMutation({
     mutationFn: scheduledApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.scheduled() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -30,10 +31,10 @@ export function useUpdateScheduled() {
     mutationFn: ({ id, ...data }: { id: number } & ScheduledPayload) =>
       scheduledApi.update(id, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.scheduled() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -43,10 +44,10 @@ export function useDeleteScheduled() {
   return useMutation({
     mutationFn: scheduledApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.scheduled() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.scheduled() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }

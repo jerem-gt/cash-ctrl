@@ -2,6 +2,7 @@ import type { BackupRunResult } from '@cashctrl/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { backupApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 
 export function useBackupList() {
   return useQuery({
@@ -16,9 +17,9 @@ export function useRunBackup() {
     mutationFn: backupApi.run,
     onSuccess: (result) => {
       if (!result.skipped) {
-        void qc.invalidateQueries({ queryKey: ['backup-list'] });
+        fireAndForget(qc.invalidateQueries({ queryKey: ['backup-list'] }));
       }
-      void qc.invalidateQueries({ queryKey: ['settings'] });
+      fireAndForget(qc.invalidateQueries({ queryKey: ['settings'] }));
     },
   });
 }

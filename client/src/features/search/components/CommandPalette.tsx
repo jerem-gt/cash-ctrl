@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, Empty } from '@/components/ui';
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch';
 import { useLogoMap } from '@/hooks/useLogoMap';
+import { fireAndForget } from '@/lib/async';
 import { fmtCurrency, fmtDateShort } from '@/lib/format';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
 
@@ -97,8 +98,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
   const goTo = useCallback(
     (to: string, state?: unknown) => {
       onClose();
-      // Promise.resolve + catch no-op : concilie no-floating-promises (ESLint) et l'interdiction de `void` (Sonar).
-      Promise.resolve(navigate(to, state ? { state } : undefined)).catch(() => undefined);
+      fireAndForget(navigate(to, state ? { state } : undefined));
     },
     [onClose, navigate],
   );

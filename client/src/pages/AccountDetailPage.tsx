@@ -16,6 +16,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useProfitability } from '@/hooks/useStats';
+import { fireAndForget } from '@/lib/async';
 
 function AccountDetailSkeleton() {
   const { t } = useTranslation('accounts');
@@ -94,7 +95,7 @@ export default function AccountDetailPage() {
     return (
       <div className="space-y-5">
         <button
-          onClick={() => void navigate('/accounts')}
+          onClick={() => fireAndForget(navigate('/accounts'))}
           className="text-sm text-content-subtle hover:text-content-secondary transition-colors"
         >
           {t('detail.not_found_back')}

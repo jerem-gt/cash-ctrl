@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { reimbursementsApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function usePendingReimbursements() {
@@ -36,11 +37,13 @@ export function useLinkReimbursement(transactionId: number) {
       attributedAmount?: number;
     }) => reimbursementsApi.link(transactionId, linkedTxId, attributedAmount),
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
-      });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      fireAndForget(
+        qc.invalidateQueries({
+          queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+        }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
     },
   });
 }
@@ -51,10 +54,12 @@ export function useUpdateReimbursementAmount(transactionId: number) {
     mutationFn: ({ linkedId, amount }: { linkedId: number; amount: number | null }) =>
       reimbursementsApi.updateAmount(transactionId, linkedId, amount),
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
-      });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
+      fireAndForget(
+        qc.invalidateQueries({
+          queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+        }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
     },
   });
 }
@@ -64,11 +69,13 @@ export function useUnlinkReimbursement(transactionId: number) {
   return useMutation({
     mutationFn: (linkedId: number) => reimbursementsApi.unlink(transactionId, linkedId),
     onSuccess: () => {
-      void qc.invalidateQueries({
-        queryKey: queryKeys.reimbursements.byTransaction(transactionId),
-      });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      fireAndForget(
+        qc.invalidateQueries({
+          queryKey: queryKeys.reimbursements.byTransaction(transactionId),
+        }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
     },
   });
 }
@@ -79,9 +86,9 @@ export function useSetReimbursementStatus() {
     mutationFn: ({ id, status }: { id: number; status: 'en_attente' | 'rembourse' | null }) =>
       reimbursementsApi.setStatus(id, status),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() });
-      void qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() }));
     },
   });
 }

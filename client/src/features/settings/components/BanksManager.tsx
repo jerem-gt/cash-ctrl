@@ -34,6 +34,7 @@ import {
   useUpdateBank,
   useUploadBankLogo,
 } from '@/hooks/useBanks.ts';
+import { fireAndForget } from '@/lib/async';
 
 function BankEditForm({ bank, onClose }: Readonly<{ bank: Bank; onClose: () => void }>) {
   const { t } = useTranslation('settings');
@@ -310,7 +311,7 @@ export function BanksManager() {
 
     reorderBanks.mutate(
       reordered.map((b, i) => ({ id: b.id, sort_order: i })),
-      { onError: () => void qc.invalidateQueries({ queryKey: ['banks'] }) },
+      { onError: () => fireAndForget(qc.invalidateQueries({ queryKey: ['banks'] })) },
     );
   };
 

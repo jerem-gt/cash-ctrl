@@ -7,6 +7,7 @@ import type {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 
 type UpdatePayload = UpdateTransactionPayload & { id: number };
@@ -34,11 +35,11 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: transactionsApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -57,7 +58,7 @@ export function useUpdateTransaction() {
         const filters = key[1] as TransactionFilters | undefined;
         const containsUpdated = old.data.some((tx) => tx.id === updated.id);
         if (filters?.page !== undefined && !containsUpdated) {
-          void qc.invalidateQueries({ queryKey: key });
+          fireAndForget(qc.invalidateQueries({ queryKey: key }));
           continue;
         }
         qc.setQueryData<PaginatedTransactions>(key, {
@@ -65,10 +66,10 @@ export function useUpdateTransaction() {
           data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)).sort(byDateThenIdDesc),
         });
       }
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -99,10 +100,10 @@ export function useUpdateTransfer() {
             }
           : old,
       );
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -112,12 +113,12 @@ export function useDeleteTransaction() {
   return useMutation({
     mutationFn: transactionsApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -127,11 +128,11 @@ export function useDeleteTransfer() {
   return useMutation({
     mutationFn: transfersApi.remove,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -150,7 +151,7 @@ export function useValidateTransaction() {
       for (const [key] of entries) {
         const filters = key[1] as TransactionFilters | undefined;
         if (filters?.validated !== undefined && filters.validated !== !!updated.validated) {
-          void qc.invalidateQueries({ queryKey: key });
+          fireAndForget(qc.invalidateQueries({ queryKey: key }));
         } else {
           qc.setQueryData<PaginatedTransactions>(key, (old) =>
             old
@@ -159,10 +160,10 @@ export function useValidateTransaction() {
           );
         }
       }
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }
@@ -172,11 +173,11 @@ export function useCreateTransfer() {
   return useMutation({
     mutationFn: transfersApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() });
-      void qc.invalidateQueries({ queryKey: queryKeys.forecastAll() });
-      void qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() });
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
     },
   });
 }

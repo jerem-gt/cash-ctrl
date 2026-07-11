@@ -7,6 +7,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { stocksApi } from '@/api/client';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 
 const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/i;
@@ -41,10 +42,12 @@ export function useBuyStock(accountId: number) {
   return useMutation({
     mutationFn: (payload: StockOperationPayload) => stocksApi.buy(accountId, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
     },
   });
 }
@@ -54,10 +57,12 @@ export function useSellStock(accountId: number) {
   return useMutation({
     mutationFn: (payload: StockOperationPayload) => stocksApi.sell(accountId, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
     },
   });
 }
@@ -67,8 +72,10 @@ export function useRefreshPrices(accountId: number) {
   return useMutation({
     mutationFn: () => stocksApi.refreshPrices(),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
     },
   });
 }
@@ -78,13 +85,19 @@ export function useTransferStock(fromAccountId: number) {
   return useMutation({
     mutationFn: (payload: TransferStockPayload) => stocksApi.transfer(fromAccountId, payload),
     onSuccess: ({ inOperation }) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(fromAccountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(fromAccountId) });
-      void qc.invalidateQueries({
-        queryKey: queryKeys.stocks.positions.byAccount(inOperation.account_id),
-      });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(inOperation.account_id) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(fromAccountId) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(fromAccountId) }));
+      fireAndForget(
+        qc.invalidateQueries({
+          queryKey: queryKeys.stocks.positions.byAccount(inOperation.account_id),
+        }),
+      );
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(inOperation.account_id) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
     },
   });
 }
@@ -95,10 +108,12 @@ export function useUpdateStockOperation(accountId: number) {
     mutationFn: ({ operationId, ...data }: { operationId: number } & UpdateOperationPayload) =>
       stocksApi.updateOperation(accountId, operationId, data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) });
-      void qc.invalidateQueries({ queryKey: queryKeys.accounts() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.all() });
+      fireAndForget(
+        qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
     },
   });
 }
