@@ -49,36 +49,17 @@ describe('Pagination', () => {
     expect(screen.getByText('»').closest('button')).toBeDisabled();
   });
 
-  it('appelle onChange avec la page suivante au clic →', async () => {
+  it.each([
+    { label: '→', description: 'la page suivante', expected: 3 },
+    { label: '←', description: 'la page précédente', expected: 1 },
+    { label: '«', description: '1', expected: 1 },
+    { label: '»', description: 'totalPages', expected: 5 },
+  ])('appelle onChange avec $description au clic $label', async ({ label, expected }) => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<Pagination {...base} onChange={onChange} />);
-    await user.click(screen.getByText('→'));
-    expect(onChange).toHaveBeenCalledWith(3);
-  });
-
-  it('appelle onChange avec la page précédente au clic ←', async () => {
-    const onChange = vi.fn();
-    const user = userEvent.setup();
-    render(<Pagination {...base} onChange={onChange} />);
-    await user.click(screen.getByText('←'));
-    expect(onChange).toHaveBeenCalledWith(1);
-  });
-
-  it('appelle onChange avec 1 au clic «', async () => {
-    const onChange = vi.fn();
-    const user = userEvent.setup();
-    render(<Pagination {...base} onChange={onChange} />);
-    await user.click(screen.getByText('«'));
-    expect(onChange).toHaveBeenCalledWith(1);
-  });
-
-  it('appelle onChange avec totalPages au clic »', async () => {
-    const onChange = vi.fn();
-    const user = userEvent.setup();
-    render(<Pagination {...base} onChange={onChange} />);
-    await user.click(screen.getByText('»'));
-    expect(onChange).toHaveBeenCalledWith(5);
+    await user.click(screen.getByText(label));
+    expect(onChange).toHaveBeenCalledWith(expected);
   });
 
   it('navigue à la page saisie après Entrée', async () => {

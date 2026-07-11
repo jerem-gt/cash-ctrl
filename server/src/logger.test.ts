@@ -170,23 +170,13 @@ describe('requestLogger', () => {
     expect(infoSpy).not.toHaveBeenCalled();
   });
 
-  it('log info pour POST 2xx', () => {
-    const { res, triggerFinish } = mockRes(201);
-    requestLogger(mockReq('POST', '/items'), res, vi.fn());
-    triggerFinish();
-    expect(infoSpy).toHaveBeenCalledOnce();
-  });
-
-  it('log info pour PUT 2xx', () => {
-    const { res, triggerFinish } = mockRes(200);
-    requestLogger(mockReq('PUT', '/items/1'), res, vi.fn());
-    triggerFinish();
-    expect(infoSpy).toHaveBeenCalledOnce();
-  });
-
-  it('log info pour DELETE 2xx', () => {
-    const { res, triggerFinish } = mockRes(200);
-    requestLogger(mockReq('DELETE', '/items/1'), res, vi.fn());
+  it.each([
+    { method: 'POST', path: '/items', status: 201 },
+    { method: 'PUT', path: '/items/1', status: 200 },
+    { method: 'DELETE', path: '/items/1', status: 200 },
+  ])('log info pour $method 2xx', ({ method, path, status }) => {
+    const { res, triggerFinish } = mockRes(status);
+    requestLogger(mockReq(method, path), res, vi.fn());
     triggerFinish();
     expect(infoSpy).toHaveBeenCalledOnce();
   });
