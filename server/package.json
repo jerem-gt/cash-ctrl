@@ -20,7 +20,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
-    "helmet": "^8.2.0",
+    "helmet": "^8.3.0",
     "multer": "^2.2.0",
     "otpauth": "^9.5.1",
     "swagger-ui-express": "^5.0.1",
