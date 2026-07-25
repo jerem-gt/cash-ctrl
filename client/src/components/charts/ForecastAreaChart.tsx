@@ -161,7 +161,7 @@ export default function ForecastAreaChart({
           width={80}
         />
         <Tooltip
-          labelFormatter={(v) => fmtDateShort(String(v))}
+          labelFormatter={(v) => fmtDateShort(v as string)}
           formatter={(v) => [fmtCurrency(Number(v)), label]}
           content={dedupedTooltipContent}
           {...tooltipStyleProps(theme)}
