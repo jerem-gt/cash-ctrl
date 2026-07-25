@@ -28,8 +28,8 @@
     "idb-keyval": "^6.3.0",
     "lucide-react": "^1.25.0",
     "qrcode.react": "^4.2.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-i18next": "^17.0.10",
     "react-router-dom": "^7.18.1",
     "recharts": "^3.10.0"
