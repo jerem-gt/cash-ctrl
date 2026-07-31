@@ -334,6 +334,8 @@ describe('firstDayOfMonth', () => {
 
   it('retourne le mois précédent pour monthsBack = 1', () => {
     const prev = new Date();
+    // Set to first day to avoid overflow when current day > target month's days (e.g., 31)
+    prev.setUTCDate(1);
     prev.setUTCMonth(prev.getUTCMonth() - 1);
     const expected = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-01`;
     expect(firstDayOfMonth(1)).toBe(expected);
