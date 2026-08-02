@@ -246,6 +246,7 @@ export function AccountsStep({
           <div className="flex gap-3">
             {(['DD/MM', 'MM/DD'] as const).map((fmt) => (
               <button
+                type="button"
                 key={fmt}
                 onClick={() => onDateFormatChange(fmt)}
                 className={`px-4 py-2 text-sm rounded-lg border transition-all ${dateFormat === fmt ? 'border-brand-600 bg-brand-600 text-white' : 'border-line text-content-secondary hover:border-line-strong'}`}

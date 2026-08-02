@@ -169,6 +169,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
         <div className="flex items-center gap-3">
           <span className="text-sm text-white/50">{username}</span>
           <button
+            type="button"
             onClick={() => logout.mutate()}
             className="text-white/50 hover:text-white transition-colors"
             title={t('page.logout_title')}

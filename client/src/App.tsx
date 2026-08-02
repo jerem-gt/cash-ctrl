@@ -59,6 +59,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
       return (
         <div className="flex items-center justify-center min-h-screen bg-canvas">
           <button
+            type="button"
             className="text-sm text-content-muted underline"
             onClick={() => globalThis.location.reload()}
           >
@@ -149,6 +150,7 @@ function AppShell() {
       <main className="md:ml-72 flex-1 min-w-0 p-4 md:p-9 md:max-w-[calc(100vw-18rem)]">
         <div className="flex items-center gap-3 mb-4 md:hidden">
           <button
+            type="button"
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-md hover:bg-surface-strong transition-colors"
             aria-label={t('open_menu')}
@@ -157,6 +159,7 @@ function AppShell() {
           </button>
           <span className="text-lg font-bold text-content flex-1">{APP_CONFIG.name}</span>
           <button
+            type="button"
             onClick={() => setPaletteOpen(true)}
             className="p-2 rounded-md hover:bg-surface-strong transition-colors"
             aria-label={ts('aria_open_mobile')}

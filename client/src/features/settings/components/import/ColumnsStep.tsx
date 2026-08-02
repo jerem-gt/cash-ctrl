@@ -275,12 +275,14 @@ export function ColumnsStep({
       {/* Navigation */}
       <div className="flex gap-3 pt-2">
         <button
+          type="button"
           onClick={onBack}
           className="text-sm text-content-muted hover:text-content transition-colors"
         >
           ← {t('import.step_file')}
         </button>
         <button
+          type="button"
           onClick={handleNext}
           disabled={!canSubmit}
           className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

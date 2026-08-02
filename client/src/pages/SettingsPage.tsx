@@ -40,6 +40,7 @@ export default function SettingsPage() {
 
         <div className={`flex-1 min-w-0 ${mobileShowContent ? '' : 'hidden md:block'}`}>
           <button
+            type="button"
             onClick={() => setMobileShowContent(false)}
             className="flex items-center gap-1 text-sm text-content-muted hover:text-content mb-4 transition-colors md:hidden"
           >

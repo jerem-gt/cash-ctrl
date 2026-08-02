@@ -62,6 +62,7 @@ export function WealthCard({ history }: Readonly<Props>) {
           {total > PAGE_SIZE && (
             <div className="flex items-center gap-0.5">
               <button
+                type="button"
                 onClick={() => setOffset((o) => o + PAGE_SIZE)}
                 disabled={!canGoBack}
                 className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
@@ -70,6 +71,7 @@ export function WealthCard({ history }: Readonly<Props>) {
                 <ChevronLeft size={14} />
               </button>
               <button
+                type="button"
                 onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
                 disabled={!canGoForward}
                 className="p-0.5 rounded text-content-muted hover:text-content hover:bg-surface-muted disabled:opacity-30 disabled:cursor-default transition-colors"
@@ -82,6 +84,7 @@ export function WealthCard({ history }: Readonly<Props>) {
           <div className="flex text-[11px] rounded-lg overflow-hidden border border-line-subtle">
             {(['net', 'breakdown'] as View[]).map((v, i) => (
               <button
+                type="button"
                 key={v}
                 onClick={() => setView(v)}
                 className={`px-2.5 py-1 transition-colors ${i > 0 ? 'border-l border-line-subtle' : ''} ${

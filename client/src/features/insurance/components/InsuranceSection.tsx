@@ -45,18 +45,21 @@ function SupportRow({
   const actionButtons = !readOnly && (
     <div className="flex gap-1 flex-wrap">
       <button
+        type="button"
         onClick={() => setActiveModal('versement')}
         className="text-[11px] font-bold text-success hover:text-success hover:bg-success-surface px-2 py-1 rounded-lg border border-success/30 transition-all"
       >
         {t('section.action_versement')}
       </button>
       <button
+        type="button"
         onClick={() => setActiveModal('rachat')}
         className="text-[11px] font-bold text-danger hover:text-danger hover:bg-danger-surface px-2 py-1 rounded-lg border border-danger/30 transition-all"
       >
         {t('section.action_rachat')}
       </button>
       <button
+        type="button"
         onClick={() => setActiveModal('arbitrage')}
         className="text-[11px] font-bold text-info hover:text-info hover:bg-info-surface px-2 py-1 rounded-lg border border-info/30 transition-all"
       >
@@ -64,6 +67,7 @@ function SupportRow({
       </button>
       {support.type === 'euro' && (
         <button
+          type="button"
           onClick={() => setActiveModal('interets')}
           className="text-[11px] font-bold text-warning hover:text-warning hover:bg-warning-surface px-2 py-1 rounded-lg border border-warning/30 transition-all"
         >
@@ -72,6 +76,7 @@ function SupportRow({
       )}
       {support.type === 'uc' && (
         <button
+          type="button"
           onClick={() => setActiveModal('revalorisation')}
           className="text-[11px] font-bold text-violet-600 hover:text-violet-800 hover:bg-violet-50 dark:text-violet-300 dark:hover:text-violet-200 dark:hover:bg-violet-500/15 px-2 py-1 rounded-lg border border-violet-200 dark:border-violet-500/30 transition-all"
         >
@@ -79,6 +84,7 @@ function SupportRow({
         </button>
       )}
       <button
+        type="button"
         onClick={() => setActiveModal('delete')}
         className="text-[11px] text-content-subtle hover:text-danger px-2 py-1 rounded-lg transition-all"
         title={t('section.delete_support_btn_title')}

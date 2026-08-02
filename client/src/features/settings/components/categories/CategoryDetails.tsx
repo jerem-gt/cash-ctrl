@@ -71,12 +71,14 @@ export function CategoryDetails({
 
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => setIsEditingCat(true)}
                   className="px-4 py-2 text-[11px] font-bold text-content-muted hover:text-content bg-surface-muted hover:bg-surface-emphasis rounded-xl transition-all"
                 >
                   {t('categories.editor_edit_label')}
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     requestDelete(
                       t('categories.delete_title'),

@@ -128,6 +128,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
         }`}
       >
         <button
+          type="button"
           onClick={onMobileClose}
           className="absolute top-4 right-4 p-1.5 text-white/30 hover:text-white/70 transition-colors rounded-md hover:bg-white/5 md:hidden"
           aria-label={t('close_menu')}
@@ -216,6 +217,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                               )}
                             </span>
                             <button
+                              type="button"
                               onClick={() => toggleGroup(group.label)}
                               aria-label={isCollapsed ? t('expand') : t('collapse')}
                               className="px-1.5 py-2.5 text-white/25 hover:text-white/60 transition-colors"
@@ -311,6 +313,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
 
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setMenuOpen((v) => !v)}
                 className={`p-2 transition-colors rounded-md hover:bg-white/5 ${menuOpen ? 'text-white/70' : 'text-white/30 hover:text-white/70'}`}
                 title={t('menu_title')}
@@ -318,6 +321,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                 <Settings className="h-5 w-5" />
               </button>
               <button
+                type="button"
                 onClick={() => logout.mutate()}
                 className="p-2 text-white/30 hover:text-red-400/80 transition-colors rounded-md hover:bg-white/5"
                 title={t('logout_title')}
