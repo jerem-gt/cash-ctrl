@@ -27,7 +27,7 @@ describe('AccountDetailPage', () => {
 
   it(`affiche "Compte introuvable" pour un id inexistant`, async () => {
     renderDetail('999');
-    await waitFor(() => expect(screen.getByText('Compte introuvable.')).toBeInTheDocument());
+    expect(await screen.findByText('Compte introuvable.')).toBeInTheDocument();
   });
 
   it('affiche les transactions après chargement', async () => {
@@ -43,9 +43,7 @@ describe('AccountDetailPage', () => {
       ),
     );
     renderDetail();
-    await waitFor(() => {
-      expect(screen.getByText('Aucune transaction sur ce compte')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('Aucune transaction sur ce compte')).toBeInTheDocument();
   });
 
   it("ouvre le modal d'ajout pré-rempli avec ce compte", async () => {
@@ -109,7 +107,7 @@ describe('AccountDetailPage', () => {
   it('affiche la carte de solde pour un compte de trésorerie (courant)', async () => {
     renderDetail('1');
     await screen.findByText('Compte test');
-    await waitFor(() => expect(screen.getByText('Solde')).toBeInTheDocument());
+    expect(await screen.findByText('Solde')).toBeInTheDocument();
   });
 
   it("n'affiche pas la carte de solde pour un compte d'assurance-vie", async () => {

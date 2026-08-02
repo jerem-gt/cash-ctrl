@@ -36,7 +36,7 @@ describe('EditStockOperationModal', () => {
     await user.clear(qtyInput);
     await user.type(qtyInput, '20');
     // 20 * 12 + 1.5 = 241.5
-    await waitFor(() => expect(screen.getByText(/241/)).toBeInTheDocument());
+    expect(await screen.findByText(/241/)).toBeInTheDocument();
   });
 
   it('soumet le formulaire et ferme le modal', async () => {

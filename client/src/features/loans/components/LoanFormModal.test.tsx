@@ -43,7 +43,7 @@ describe('LoanFormModal — mode creation', () => {
     await user.type(screen.getByPlaceholderText('Ex : 3.5'), '12');
     await user.type(screen.getByPlaceholderText('Ex : 240'), '12');
 
-    await waitFor(() => expect(screen.getByText('Mensualité estimée')).toBeInTheDocument());
+    expect(await screen.findByText('Mensualité estimée')).toBeInTheDocument();
   });
 
   it('soumet le formulaire et ferme le modal', async () => {

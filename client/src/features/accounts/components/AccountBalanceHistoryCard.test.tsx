@@ -26,13 +26,13 @@ describe('AccountBalanceHistoryCard', () => {
     );
     renderCard();
     await screen.findByText('Solde');
-    await waitFor(() => expect(screen.queryByText(/prévu le/)).not.toBeInTheDocument());
+    expect(screen.queryByText(/prévu le/)).not.toBeInTheDocument();
   });
 
   it('affiche le passé + le projeté et alerte si le solde devient négatif', async () => {
     // Fixture par défaut : le compte 1 a un flux projeté (FORECAST_RESPONSE) qui passe négatif le 2026-08-15.
     renderCard(1);
-    await waitFor(() => expect(screen.getByText(/Solde négatif prévu le/)).toBeInTheDocument());
+    expect(await screen.findByText(/Solde négatif prévu le/)).toBeInTheDocument();
   });
 
   it("n'alerte pas sur un découvert passé résorbé, même si le futur reste positif", async () => {
@@ -57,7 +57,7 @@ describe('AccountBalanceHistoryCard', () => {
     );
     renderCard(1);
     await screen.findByText('Solde');
-    await waitFor(() => expect(screen.queryByText(/prévu le/)).not.toBeInTheDocument());
+    expect(screen.queryByText(/prévu le/)).not.toBeInTheDocument();
   });
 
   it('change de période au clic sur "30 j"', async () => {

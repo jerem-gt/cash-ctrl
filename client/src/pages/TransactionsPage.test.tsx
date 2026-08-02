@@ -14,7 +14,7 @@ describe('TransactionsPage', () => {
 
   it('affiche le compteur de transactions', async () => {
     renderWithProviders(<TransactionsPage />);
-    await waitFor(() => expect(screen.getByText('1 transaction(s)')).toBeInTheDocument());
+    expect(await screen.findByText('1 transaction(s)')).toBeInTheDocument();
   });
 
   it("soumet le formulaire d'édition d'une transaction (intégration page → modal → API)", async () => {

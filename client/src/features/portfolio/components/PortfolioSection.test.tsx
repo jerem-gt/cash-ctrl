@@ -28,7 +28,7 @@ describe('PortfolioSection', () => {
   it(`affiche "Aucune position ouverte" quand le portefeuille est vide`, async () => {
     server.use(http.get('/api/stocks/:accountId/positions', () => HttpResponse.json([])));
     renderPortfolio();
-    await waitFor(() => expect(screen.getByText('Aucune position ouverte')).toBeInTheDocument());
+    expect(await screen.findByText('Aucune position ouverte')).toBeInTheDocument();
   });
 
   it('ouvre le modal Acheter au clic sur + Acheter', async () => {
