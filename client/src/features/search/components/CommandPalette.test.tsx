@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useLocation } from 'react-router-dom';
@@ -48,11 +48,9 @@ describe('CommandPalette', () => {
     renderPalette(true);
     await user.type(screen.getByPlaceholderText(/rechercher/i), 'café');
 
-    await waitFor(
-      () =>
-        expect(screen.getByText(SEARCH_RESPONSE.transactions[0].description)).toBeInTheDocument(),
-      { timeout: 2000 },
-    );
+    expect(
+      await screen.findByText(SEARCH_RESPONSE.transactions[0].description, { timeout: 2000 }),
+    ).toBeInTheDocument();
     expect(screen.getByText(SEARCH_RESPONSE.accounts[0].name)).toBeInTheDocument();
     expect(screen.getByText(SEARCH_RESPONSE.scheduled[0].description)).toBeInTheDocument();
     expect(screen.getByText(SEARCH_RESPONSE.stocks[0].ticker)).toBeInTheDocument();
@@ -88,7 +86,7 @@ describe('CommandPalette', () => {
     const { onClose } = renderPalette(true);
     const input = screen.getByPlaceholderText(/rechercher/i);
     await user.type(input, 'zzzzz');
-    await waitFor(() => expect(screen.getByText('Aucun résultat')).toBeInTheDocument());
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument();
 
     // Bug avant fix : ArrowDown sur liste vide stocke un index négatif (-1) qui n'est jamais remonté.
     await user.keyboard('{ArrowDown}');
@@ -96,17 +94,13 @@ describe('CommandPalette', () => {
     server.use(http.get('/api/search', () => HttpResponse.json(SEARCH_RESPONSE)));
     await user.clear(input);
     await user.type(input, 'café');
-    await waitFor(() =>
-      expect(screen.getByText(SEARCH_RESPONSE.accounts[0].name)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(SEARCH_RESPONSE.accounts[0].name)).toBeInTheDocument();
 
     await user.keyboard('{Enter}');
 
     expect(onClose).toHaveBeenCalled();
-    await waitFor(() =>
-      expect(screen.getByTestId('location').textContent).toContain(
-        `/accounts/${SEARCH_RESPONSE.accounts[0].id}`,
-      ),
+    expect(await screen.findByTestId('location', { timeout: 2000 })).toHaveTextContent(
+      `/accounts/${SEARCH_RESPONSE.accounts[0].id}`,
     );
   });
 
@@ -116,19 +110,15 @@ describe('CommandPalette', () => {
     const input = screen.getByPlaceholderText(/rechercher/i);
     await user.type(input, 'café');
 
-    await waitFor(
-      () =>
-        expect(screen.getByText(SEARCH_RESPONSE.transactions[0].description)).toBeInTheDocument(),
-      { timeout: 2000 },
-    );
+    expect(
+      await screen.findByText(SEARCH_RESPONSE.transactions[0].description, { timeout: 2000 }),
+    ).toBeInTheDocument();
 
     // 1er résultat (compte) surligné par défaut : ArrowDown avance vers la transaction.
     await user.keyboard('{ArrowDown}{Enter}');
 
     expect(onClose).toHaveBeenCalled();
-    await waitFor(() =>
-      expect(screen.getByTestId('location').textContent).toContain('/transactions?q=caf'),
-    );
+    expect(await screen.findByTestId('location')).toHaveTextContent('/transactions?q=caf');
   });
 
   it('le clic sur une planification navigue vers /scheduled avec le state highlightScheduledId', async () => {
@@ -136,18 +126,17 @@ describe('CommandPalette', () => {
     const { onClose } = renderPalette(true);
     await user.type(screen.getByPlaceholderText(/rechercher/i), 'café');
 
-    await waitFor(
-      () => expect(screen.getByText(SEARCH_RESPONSE.scheduled[0].description)).toBeInTheDocument(),
-      { timeout: 2000 },
-    );
+    expect(
+      await screen.findByText(SEARCH_RESPONSE.scheduled[0].description, { timeout: 2000 }),
+    ).toBeInTheDocument();
     await user.click(screen.getByText(SEARCH_RESPONSE.scheduled[0].description));
 
     expect(onClose).toHaveBeenCalled();
-    await waitFor(() => {
-      const text = screen.getByTestId('location').textContent ?? '';
-      expect(text).toContain('/scheduled');
-      expect(text).toContain(`"highlightScheduledId":${SEARCH_RESPONSE.scheduled[0].id}`);
-    });
+    const locationEl = await screen.findByTestId('location');
+    expect(locationEl.textContent).toContain('/scheduled');
+    expect(locationEl.textContent).toContain(
+      `"highlightScheduledId":${SEARCH_RESPONSE.scheduled[0].id}`,
+    );
   });
 
   it('le clic sur une page navigue directement (sans appel réseau)', async () => {
@@ -156,6 +145,6 @@ describe('CommandPalette', () => {
     await user.click(screen.getByText('Rapports'));
 
     expect(onClose).toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByTestId('location').textContent).toContain('/reports'));
+    expect(await screen.findByTestId('location')).toHaveTextContent('/reports');
   });
 });

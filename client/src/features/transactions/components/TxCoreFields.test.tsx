@@ -158,7 +158,7 @@ describe('TxCoreFields', () => {
         value={{ ...defaultValue, description: 'Courses Leclerc' }}
       />,
     );
-    await waitFor(() => expect(screen.getByText('Alimentation › Supermarché')).toBeInTheDocument());
+    expect(await screen.findByText('Alimentation › Supermarché')).toBeInTheDocument();
   });
 
   it('masque le badge suggestion si la sous-catégorie est déjà appliquée', async () => {

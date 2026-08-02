@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -43,7 +43,7 @@ describe('TickerInput', () => {
 
   it('affiche le dropdown avec les résultats pour un ISIN valide', async () => {
     renderInput(VALID_ISIN);
-    await waitFor(() => expect(screen.getByText('Décathlon SA')).toBeInTheDocument());
+    expect(await screen.findByText('Décathlon SA')).toBeInTheDocument();
     expect(screen.getByText('DCAM.PA')).toBeInTheDocument();
     expect(screen.getByText('DCAM.DE')).toBeInTheDocument();
     expect(screen.getByText('Paris')).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('TickerInput', () => {
   it("affiche 'Aucun résultat' quand la recherche renvoie vide", async () => {
     server.use(http.get('/api/stocks/search', () => HttpResponse.json([])));
     renderInput(VALID_ISIN);
-    await waitFor(() => expect(screen.getByText('Aucun résultat')).toBeInTheDocument());
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument();
   });
 
   it('appelle onChange avec le symbole au clic sur un résultat', async () => {
@@ -60,7 +60,7 @@ describe('TickerInput', () => {
     const onChange = vi.fn();
     renderInput(VALID_ISIN, onChange);
 
-    await waitFor(() => screen.getByText('DCAM.PA'));
+    expect(await screen.findByText('DCAM.PA')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /DCAM\.PA/i }));
 
     expect(onChange).toHaveBeenCalledWith('DCAM.PA');

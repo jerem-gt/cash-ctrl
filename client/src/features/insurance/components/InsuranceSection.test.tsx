@@ -45,11 +45,9 @@ describe('InsuranceSection', () => {
   it(`affiche "Aucun support" quand portefeuille vide`, async () => {
     server.use(http.get('/api/insurance/:accountId/positions', () => HttpResponse.json([])));
     renderSection();
-    await waitFor(() =>
-      expect(
-        screen.getByText(/Aucun support — ajoutez un fonds euro ou une UC/i),
-      ).toBeInTheDocument(),
-    );
+    expect(
+      await screen.findByText(/Aucun support — ajoutez un fonds euro ou une UC/i),
+    ).toBeInTheDocument();
   });
 
   it("n'affiche pas le bouton Actualiser les VL", async () => {

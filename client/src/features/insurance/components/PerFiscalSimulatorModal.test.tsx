@@ -14,7 +14,7 @@ function renderModal(onClose = vi.fn()) {
 
 async function waitForYearData() {
   // Attend que le barème soit chargé — abattement_min 2026 (barème par défaut en 2026)
-  await waitFor(() => expect(screen.getByText(/509/)).toBeInTheDocument(), { timeout: 3000 });
+  expect(await screen.findByText(/509/, { timeout: 3000 })).toBeInTheDocument();
 }
 
 async function fillAndCompute(revenu: string, versement: string) {
@@ -45,7 +45,7 @@ describe('PerFiscalSimulatorModal', () => {
 
   it("affiche le sélecteur d'année avec les années disponibles", async () => {
     renderModal();
-    await waitFor(() => expect(screen.getByRole('option', { name: '2026' })).toBeInTheDocument());
+    expect(await screen.findByRole('option', { name: '2026' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '2025' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '2024' })).toBeInTheDocument();
   });
@@ -70,7 +70,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('50000', '4000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument());
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
     expect(screen.getByText('Sans versement PER')).toBeInTheDocument();
     expect(screen.getByText('Avec versement PER')).toBeInTheDocument();
   });
@@ -81,7 +81,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('55000', '3000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getAllByText(/Tranche/i).length).toBeGreaterThan(0));
+    expect((await screen.findAllByText(/Tranche/i)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Tranche 11%/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Tranche 30%/i).length).toBeGreaterThan(0);
   });
@@ -92,9 +92,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('50000', '15000');
     await navigateToResults(user);
-    await waitFor(() =>
-      expect(screen.getByText(/dépasse le plafond déductible/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(/dépasse le plafond déductible/i)).toBeInTheDocument();
   });
 
   it("n'affiche pas l'avertissement plafond si le versement est dans les limites", async () => {
@@ -103,7 +101,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('50000', '2000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument());
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
     expect(screen.queryByText(/dépasse le plafond déductible/i)).not.toBeInTheDocument();
   });
 
@@ -113,9 +111,7 @@ describe('PerFiscalSimulatorModal', () => {
     await screen.findByText('Simulateur fiscal PER');
     const radio = screen.getByRole('radio', { name: /frais réels/i });
     await user.click(radio);
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText(/montant frais réels/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByPlaceholderText(/montant frais réels/i)).toBeInTheDocument();
   });
 
   it('utilise les frais réels dans le calcul', async () => {
@@ -126,7 +122,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.type(screen.getByLabelText(/revenu brut annuel/i), '50000');
     await user.type(screen.getByLabelText(/versement per prévu/i), '3000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument());
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
     // Retour au formulaire pour modifier le mode déduction
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('radio', { name: /frais réels/i }));
@@ -134,10 +130,8 @@ describe('PerFiscalSimulatorModal', () => {
     await user.clear(fraisInput);
     await user.type(fraisInput, '12000');
     await navigateToResults(user);
-    await waitFor(() => {
-      const columns = screen.getAllByText(/Revenu imposable/i);
-      expect(columns.length).toBeGreaterThan(0);
-    });
+    const columns = await screen.findAllByText(/Revenu imposable/i);
+    expect(columns.length).toBeGreaterThan(0);
   });
 
   it('ferme la modale au clic sur le bouton Fermer', async () => {
@@ -165,9 +159,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('55000', '4000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText(/sortie du PER/i)).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    expect(await screen.findByText(/sortie du PER/i, { timeout: 3000 })).toBeInTheDocument();
   });
 
   it("l'économie est 0€ si versement est 0", async () => {
@@ -176,9 +168,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('50000', '0');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    expect(await screen.findByText("Économie d'impôt", { timeout: 3000 })).toBeInTheDocument();
   });
 
   it('affiche les abattements min/max du barème sélectionné', async () => {
@@ -194,7 +184,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('40000', '2000');
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument());
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     // Le bouton "Modifier" disparaît (rendu conditionnel dans le footer ternaire)
     expect(screen.queryByRole('button', { name: /modifier/i })).not.toBeInTheDocument();
@@ -214,9 +204,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.type(screen.getByLabelText(/revenu brut annuel/i), '50000');
     await user.type(screen.getByLabelText(/versement per prévu/i), '15000');
     await navigateToResults(user);
-    await waitFor(() =>
-      expect(screen.getByText(/dépasse le plafond déductible/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(/dépasse le plafond déductible/i)).toBeInTheDocument();
     // Retour au formulaire pour décocher la case
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     await user.click(screen.getByRole('checkbox'));
@@ -224,9 +212,7 @@ describe('PerFiscalSimulatorModal', () => {
     expect(screen.queryByText(/plafond disponible — versements 2026/i)).not.toBeInTheDocument();
     // Naviguer vers les résultats : plus d'avertissement
     await navigateToResults(user);
-    await waitFor(() =>
-      expect(screen.queryByText(/dépasse le plafond déductible/i)).not.toBeInTheDocument(),
-    );
+    expect(screen.queryByText(/dépasse le plafond déductible/i)).not.toBeInTheDocument();
   });
 
   it('affiche les quatre champs de plafond avec labels basés sur les années de revenus', async () => {
@@ -249,9 +235,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.type(screen.getByLabelText(/revenu brut annuel/i), '50000');
     await user.type(screen.getByLabelText(/versement per prévu/i), '6000');
     await navigateToResults(user);
-    await waitFor(() =>
-      expect(screen.getByText(/dépasse le plafond déductible/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(/dépasse le plafond déductible/i)).toBeInTheDocument();
     // Retour au formulaire pour saisir le report
     await user.click(screen.getByRole('button', { name: /modifier/i }));
     // Report non utilisé revenus 2025 = 2 000€ → plafondTotal ≈ 6 806€ → plus de dépassement
@@ -259,9 +243,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.clear(reportN1);
     await user.type(reportN1, '2000');
     await navigateToResults(user);
-    await waitFor(() =>
-      expect(screen.queryByText(/dépasse le plafond déductible/i)).not.toBeInTheDocument(),
-    );
+    expect(screen.queryByText(/dépasse le plafond déductible/i)).not.toBeInTheDocument();
   });
 
   it('affiche le récapitulatif du plafond total quand un report est saisi', async () => {
@@ -273,7 +255,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.type(screen.getByLabelText(/versement per prévu/i), '4000');
     // Naviguer vers résultats → pas de récapitulatif de report
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText("Économie d'impôt")).toBeInTheDocument());
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
     expect(screen.queryByText(/reports non utilisés/i)).not.toBeInTheDocument();
     // Retour au formulaire → saisir un report
     await user.click(screen.getByRole('button', { name: /modifier/i }));
@@ -282,7 +264,7 @@ describe('PerFiscalSimulatorModal', () => {
     await user.type(reportN1, '1500');
     // Naviguer vers résultats → bloc de détail plafond visible
     await navigateToResults(user);
-    await waitFor(() => expect(screen.getByText(/reports non utilisés/i)).toBeInTheDocument());
+    expect(await screen.findByText(/reports non utilisés/i)).toBeInTheDocument();
     // "Base — revenus 2025" apparaît dans le détail du plafond (résultats) ET
     // dans le formulaire CSS-hidden mais toujours présent dans le DOM
     expect(screen.getAllByText(/base — revenus 2025/i).length).toBeGreaterThanOrEqual(2);

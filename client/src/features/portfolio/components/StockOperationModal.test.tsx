@@ -35,7 +35,7 @@ describe('StockOperationModal — achat', () => {
     await user.type(screen.getByLabelText(/nombre d'actions/i), '10');
     await user.type(screen.getByLabelText(/prix unitaire/i), '12');
     // fees default 0 → total = 10*12 = 120
-    await waitFor(() => expect(screen.getByText(/120/)).toBeInTheDocument());
+    expect(await screen.findByText(/120/)).toBeInTheDocument();
   });
 
   it('soumet le formulaire et ferme le modal', async () => {
@@ -101,7 +101,7 @@ describe('StockOperationModal — vente', () => {
 
     await user.type(screen.getByLabelText(/nombre d'actions/i), '5');
     // price = 15 (pré-rempli), fees = 0 → net = 5*15 - 0 = 75
-    await waitFor(() => expect(screen.getByText(/75/)).toBeInTheDocument());
+    expect(await screen.findByText(/75/)).toBeInTheDocument();
   });
 
   it('soumet le formulaire et ferme le modal', async () => {

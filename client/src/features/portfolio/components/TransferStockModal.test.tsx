@@ -37,7 +37,7 @@ describe('TransferStockModal', () => {
 
   it('affiche le sélecteur de compte destination sans le compte source', async () => {
     renderModal();
-    await waitFor(() => expect(screen.getByLabelText(/compte destination/i)).toBeInTheDocument());
+    expect(await screen.findByLabelText(/compte destination/i)).toBeInTheDocument();
     expect(screen.getByText('CTO')).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'PEA' })).not.toBeInTheDocument();
   });
@@ -45,22 +45,20 @@ describe('TransferStockModal', () => {
   it('affiche un message quand aucun autre compte investissement disponible', async () => {
     server.use(http.get('/api/accounts', () => HttpResponse.json([])));
     renderModal();
-    await waitFor(() =>
-      expect(screen.getByText(/Aucun autre compte d'investissement/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(/Aucun autre compte d'investissement/i)).toBeInTheDocument();
   });
 
   it('désactive le bouton Transférer quand la quantité est vide', async () => {
     renderModal();
     // Attendre que les comptes soient chargés (selector visible)
-    await waitFor(() => screen.getByLabelText(/compte destination/i));
+    expect(await screen.findByLabelText(/compte destination/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /transférer/i })).toBeDisabled();
   });
 
   it('désactive le bouton Transférer quand la quantité dépasse le max', async () => {
     const user = userEvent.setup();
     renderModal();
-    await waitFor(() => screen.getByLabelText(/compte destination/i));
+    expect(await screen.findByLabelText(/compte destination/i)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/nombre d'actions/i), '999');
     expect(screen.getByRole('button', { name: /transférer/i })).toBeDisabled();
@@ -104,11 +102,9 @@ describe('TransferStockModal', () => {
     const onClose = vi.fn();
     renderModal(onClose);
 
-    await waitFor(() => screen.getByLabelText(/compte destination/i));
+    expect(await screen.findByLabelText(/compte destination/i)).toBeInTheDocument();
     await user.type(screen.getByLabelText(/nombre d'actions/i), '5');
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /transférer/i })).not.toBeDisabled(),
-    );
+    expect(screen.getByRole('button', { name: /transférer/i })).not.toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: /transférer/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
