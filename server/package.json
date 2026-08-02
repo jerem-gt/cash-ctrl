@@ -2,6 +2,7 @@
   "name": "@cashctrl/server",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "tsx watch --no-cache src/index.ts",
     "build": "tsup src/index.ts --clean --minify",
