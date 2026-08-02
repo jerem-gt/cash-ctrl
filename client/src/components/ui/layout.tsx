@@ -153,6 +153,7 @@ export function Tabs({
     <div className={`flex gap-1 ${s.container} ${className}`}>
       {tabs.map((tab) => (
         <button
+          type="button"
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`flex-1 ${s.button} transition-all duration-150 font-medium ${

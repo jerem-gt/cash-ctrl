@@ -11,6 +11,7 @@ export function CategoryRow({
 }>) {
   return (
     <button
+      type="button"
       key={cat.id}
       onClick={() => handleSelectCat(cat.id)}
       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${

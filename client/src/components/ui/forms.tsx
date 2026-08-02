@@ -49,6 +49,7 @@ export function Switch({ checked, onChange, disabled = false, label, id }: Reado
     >
       <button
         role="switch"
+        type="button"
         aria-checked={checked}
         id={id}
         disabled={disabled}

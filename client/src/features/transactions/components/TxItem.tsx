@@ -299,6 +299,7 @@ function ValidateButton({ tx, validated }: Readonly<Pick<Props, 'tx'> & { valida
   const colorClass = validated ? 'text-success' : 'text-content-faint hover:bg-surface-emphasis';
   return (
     <button
+      type="button"
       onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
       disabled={validate.isPending}
       className={`p-1.5 rounded-md transition-colors ${colorClass} disabled:opacity-50 disabled:cursor-not-allowed`}

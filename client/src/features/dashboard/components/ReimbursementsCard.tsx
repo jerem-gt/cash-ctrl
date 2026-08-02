@@ -86,6 +86,7 @@ function PageNav({
   return (
     <div className="flex items-center gap-0.5">
       <button
+        type="button"
         onClick={onPrev}
         disabled={page === 0}
         aria-label={prevLabel}
@@ -97,6 +98,7 @@ function PageNav({
         {page + 1}/{totalPages}
       </span>
       <button
+        type="button"
         onClick={onNext}
         disabled={page === totalPages - 1}
         aria-label={nextLabel}

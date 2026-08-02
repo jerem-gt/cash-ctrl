@@ -51,6 +51,7 @@ export function Pagination({
       </div>
       <div className="flex items-center gap-1">
         <button
+          type="button"
           onClick={() => onChange(1)}
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -59,6 +60,7 @@ export function Pagination({
           «
         </button>
         <button
+          type="button"
           onClick={() => onChange(page - 1)}
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -78,6 +80,7 @@ export function Pagination({
           <span className="text-xs text-content-subtle">/ {totalPages}</span>
         </div>
         <button
+          type="button"
           onClick={() => onChange(page + 1)}
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -86,6 +89,7 @@ export function Pagination({
           →
         </button>
         <button
+          type="button"
           onClick={() => onChange(totalPages)}
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"

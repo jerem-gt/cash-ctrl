@@ -95,6 +95,7 @@ export default function AccountDetailPage() {
     return (
       <div className="space-y-5">
         <button
+          type="button"
           onClick={() => fireAndForget(navigate('/accounts'))}
           className="text-sm text-content-subtle hover:text-content-secondary transition-colors"
         >
@@ -170,6 +171,7 @@ export default function AccountDetailPage() {
             </p>
             {isClosed && (
               <button
+                type="button"
                 onClick={() => setTemporarilyUnlocked((v) => !v)}
                 className="flex items-center gap-1.5 text-xs text-content-subtle hover:text-content-secondary transition-colors"
                 title={

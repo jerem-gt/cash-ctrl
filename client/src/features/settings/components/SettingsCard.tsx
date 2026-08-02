@@ -56,6 +56,7 @@ export function SettingsCard({
           <div className="flex items-center gap-2">
             {collapsibleContent ? (
               <button
+                type="button"
                 aria-label={title}
                 aria-expanded={isExpanded}
                 onClick={() => setExpanded((v) => !v)}

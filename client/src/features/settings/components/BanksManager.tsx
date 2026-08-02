@@ -213,6 +213,7 @@ function BankCard({ bank, index }: Readonly<{ bank: Bank; index: number }>) {
         leading={
           <div className="flex flex-col items-center gap-0.5 shrink-0">
             <button
+              type="button"
               {...attributes}
               {...listeners}
               className="p-1 text-content-faint hover:text-content-muted cursor-grab active:cursor-grabbing touch-none"

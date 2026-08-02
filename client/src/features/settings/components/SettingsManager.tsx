@@ -82,6 +82,7 @@ export function SettingsManager({ activeTab, onChange }: Readonly<Props>) {
           <div className="flex flex-col">
             {group.items.map((item) => (
               <button
+                type="button"
                 key={item.key}
                 onClick={() => onChange(item.key)}
                 className={`flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all ${

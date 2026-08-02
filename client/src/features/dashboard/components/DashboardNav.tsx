@@ -30,6 +30,7 @@ export function DashboardNav({ sections }: Readonly<Props>) {
       <nav className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {visible.map(({ id, label, badge }) => (
           <button
+            type="button"
             key={id}
             onClick={() => scrollToSection(id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors ${

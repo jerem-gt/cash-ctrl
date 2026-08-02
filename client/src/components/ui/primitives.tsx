@@ -49,7 +49,11 @@ export function Button({
     danger: 'bg-surface border border-danger/30 text-danger hover:bg-danger-surface',
   };
   return (
-    <button className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} {...props} />
+    <button
+      type="button"
+      className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
+      {...props}
+    />
   );
 }
 
@@ -76,6 +80,7 @@ export function IconButton({
     <button
       aria-label={label}
       title={label}
+      type="button"
       className={`inline-flex items-center justify-center rounded-lg transition-all duration-100 disabled:opacity-50 disabled:cursor-not-allowed ${sizes[size]} ${variants[variant]} ${className}`}
       {...props}
     />

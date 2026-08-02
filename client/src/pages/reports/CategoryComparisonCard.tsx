@@ -28,6 +28,7 @@ export function CategoryComparisonCard({
       <div className="flex gap-1 mb-4">
         {(['expense', 'income'] as const).map((tab) => (
           <button
+            type="button"
             key={tab}
             onClick={() => setCatTab(tab)}
             className={`px-3 py-1 text-xs rounded-lg transition-colors ${

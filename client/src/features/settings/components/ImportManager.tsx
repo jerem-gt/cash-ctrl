@@ -593,12 +593,14 @@ export default function ImportManager() {
           ) : (
             <div className="flex gap-3 mt-4">
               <button
+                type="button"
                 onClick={() => setStep('accounts')}
                 className="text-sm text-content-muted hover:text-content transition-colors"
               >
                 ← {t('import.step_accounts')}
               </button>
               <button
+                type="button"
                 onClick={goToPreview}
                 className="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
