@@ -100,6 +100,9 @@ export function buildXTicks(dates: readonly string[], maxTicks = 6): string[] {
 
 const BRAND_COLOR = '#139AAE';
 
+// Formatter pour les dates (axe X et tooltip)
+export const formatDateShort = (v: unknown): string => fmtDateShort(v as string);
+
 /** Retire les entrées (name, value) identiques : le point de jonction passé/futur les duplique. */
 export function dedupeTooltipPayload<T extends { name?: unknown; value?: unknown }>(
   payload: readonly T[] | undefined,
@@ -151,7 +154,7 @@ export default function ForecastAreaChart({
           dataKey="date"
           ticks={xTicks}
           interval="preserveStartEnd"
-          tickFormatter={(v: string) => fmtDateShort(v)}
+          tickFormatter={formatDateShort}
           {...axisTick}
         />
         <YAxis
@@ -161,7 +164,7 @@ export default function ForecastAreaChart({
           width={80}
         />
         <Tooltip
-          labelFormatter={(v) => fmtDateShort(v as string)}
+          labelFormatter={formatDateShort}
           formatter={(v) => [fmtCurrency(Number(v)), label]}
           content={dedupedTooltipContent}
           {...tooltipStyleProps(theme)}

@@ -6,6 +6,7 @@ import ForecastAreaChart, {
   buildXTicks,
   computeYDomain,
   dedupeTooltipPayload,
+  formatDateShort,
 } from './ForecastAreaChart';
 import IncomeExpenseBarChart from './IncomeExpenseBarChart';
 import NetBalanceLineChart from './NetBalanceLineChart';
@@ -189,5 +190,16 @@ describe('charts', () => {
       />,
     );
     expect(container).toBeInTheDocument();
+  });
+
+  describe('ForecastAreaChart formatters', () => {
+    it('formatDateShort formate correctement une date', () => {
+      expect(formatDateShort('2026-07-07')).toMatch(/07.*juil/i);
+      expect(formatDateShort('2026-08-15')).toMatch(/15.*août/i);
+    });
+
+    it('formatDateShort accepte unknown et le caste en string', () => {
+      expect(formatDateShort('2026-06-01')).toMatch(/01.*juin/i);
+    });
   });
 });
