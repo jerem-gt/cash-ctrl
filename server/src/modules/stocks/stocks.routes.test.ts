@@ -567,6 +567,170 @@ describe('/api/stocks', () => {
     });
   });
 
+  // ─── Tickers en cache ──────────────────────────────────────────────────────
+
+  describe('GET /tickers + DELETE /tickers/:ticker', () => {
+    const seedPrice = (ticker: string, price = 10) =>
+      ctx.db
+        .prepare(
+          "INSERT OR REPLACE INTO stock_prices (ticker, price, currency, fetched_at, name) VALUES (?, ?, 'EUR', datetime('now'), ?)",
+        )
+        .run(ticker, price, null);
+
+    it('liste les tickers en cache avec leur statut in_use', async () => {
+      seedPrice('CACHEA.PA');
+      const res = await ctx.agent.get('/api/stocks/tickers');
+      expect(res.status).toBe(200);
+      const row = res.body.find((t: { ticker: string }) => t.ticker === 'CACHEA.PA');
+      expect(row).toBeDefined();
+      expect(row.price).toBe(10);
+      expect(row.in_use).toBe(false);
+      expect(row.held_in).toEqual([]);
+      expect(row.used_by_others).toBe(false);
+      expect(row.has_price_history).toBe(false);
+    });
+
+    it('marque in_use un ticker encore détenu et renseigne held_in', async () => {
+      seedPrice('AIR.PA');
+      await ctx.agent.post(`/api/stocks/${bourseAccountId}/buy`).send({
+        ticker: 'AIR.PA',
+        quantity: 5,
+        price_per_share: 150,
+        fees: 0,
+        date: TODAY,
+      });
+      const res = await ctx.agent.get('/api/stocks/tickers');
+      const row = res.body.find((t: { ticker: string }) => t.ticker === 'AIR.PA');
+      expect(row).toBeDefined();
+      expect(row.in_use).toBe(true);
+      expect(row.held_in).toContain('PEA Test');
+      expect(row.used_by_others).toBe(false);
+      expect(row.has_price_history).toBe(false);
+    });
+
+    it('marque used_by_others quand un autre utilisateur détient le ticker', async () => {
+      seedPrice('SHARED.PA');
+      ctx.db
+        .prepare(
+          `INSERT INTO users (username, password_hash)
+           SELECT 'other_user', 'x' WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'other_user')`,
+        )
+        .run();
+      const otherUserId = (
+        ctx.db.prepare('SELECT id FROM users WHERE username = ?').get('other_user') as {
+          id: number;
+        }
+      ).id;
+      const otherAcc = ctx.db
+        .prepare(
+          `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance)
+           VALUES (?, 'Compte Autre', ?, (SELECT id FROM account_types WHERE name = 'Bourse' LIMIT 1), 0)`,
+        )
+        .run(otherUserId, SEED.BANK_ID);
+      const otherAccountId = Number(otherAcc.lastInsertRowid);
+      ctx.db
+        .prepare(
+          `INSERT INTO stock_positions (user_id, account_id, ticker, quantity)
+           VALUES (?, ?, 'SHARED.PA', 3)`,
+        )
+        .run(otherUserId, otherAccountId);
+
+      const res = await ctx.agent.get('/api/stocks/tickers');
+      const row = res.body.find((t: { ticker: string }) => t.ticker === 'SHARED.PA');
+      expect(row).toBeDefined();
+      expect(row.in_use).toBe(true);
+      expect(row.held_in).toEqual([]);
+      expect(row.used_by_others).toBe(true);
+      expect(row.has_price_history).toBe(false);
+    });
+
+    it('supprime un ticker inutilisé du cache', async () => {
+      seedPrice('ORPHAN.PA');
+      const res = await ctx.agent.delete('/api/stocks/tickers/ORPHAN.PA');
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      const list = await ctx.agent.get('/api/stocks/tickers');
+      expect(list.body.find((t: { ticker: string }) => t.ticker === 'ORPHAN.PA')).toBeUndefined();
+    });
+
+    it('refuse la suppression d’un ticker encore détenu (409)', async () => {
+      seedPrice('AIR.PA');
+      const res = await ctx.agent.delete('/api/stocks/tickers/AIR.PA');
+      expect(res.status).toBe(409);
+    });
+
+    it('refuse la suppression d’un ticker avec historique de prix (409)', async () => {
+      ctx.db
+        .prepare(
+          "INSERT OR REPLACE INTO stock_price_history (ticker, date, price, currency) VALUES ('HIST.PA', '2024-12-31', 10, 'EUR')",
+        )
+        .run();
+      seedPrice('HIST.PA');
+      const res = await ctx.agent.delete('/api/stocks/tickers/HIST.PA');
+      expect(res.status).toBe(409);
+    });
+
+    it('retourne 404 pour un ticker absent du cache', async () => {
+      const res = await ctx.agent.delete('/api/stocks/tickers/NOPE.PA');
+      expect(res.status).toBe(404);
+    });
+
+    it('renomme un ticker et le répercute partout', async () => {
+      seedPrice('RENAMED.PA');
+      ctx.db
+        .prepare(
+          "INSERT OR REPLACE INTO stock_price_history (ticker, date, price, currency) VALUES ('RENAMED.PA', '2024-12-31', 10, 'EUR')",
+        )
+        .run();
+      ctx.db
+        .prepare(
+          "INSERT INTO stock_positions (user_id, account_id, ticker, quantity) VALUES (?, ?, 'RENAMED.PA', 2)",
+        )
+        .run(ctx.userId, bourseAccountId);
+
+      const res = await ctx.agent
+        .put('/api/stocks/tickers/RENAMED.PA')
+        .send({ new_ticker: 'REN2.PA' });
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      const price = ctx.db
+        .prepare('SELECT ticker FROM stock_prices WHERE ticker = ?')
+        .get('REN2.PA') as { ticker: string } | undefined;
+      expect(price?.ticker).toBe('REN2.PA');
+      const pos = ctx.db
+        .prepare('SELECT ticker FROM stock_positions WHERE ticker = ?')
+        .get('REN2.PA') as { ticker: string } | undefined;
+      expect(pos?.ticker).toBe('REN2.PA');
+      const hist = ctx.db
+        .prepare("SELECT ticker FROM stock_price_history WHERE ticker = 'REN2.PA'")
+        .get() as { ticker: string } | undefined;
+      expect(hist?.ticker).toBe('REN2.PA');
+      expect(
+        ctx.db.prepare("SELECT COUNT(*) AS c FROM stock_prices WHERE ticker = 'RENAMED.PA'").get(),
+      ).toEqual({ c: 0 });
+    });
+
+    it('refuse le rename vers un ticker déjà en cache (409)', async () => {
+      seedPrice('A.PA');
+      seedPrice('B.PA');
+      const res = await ctx.agent.put('/api/stocks/tickers/A.PA').send({ new_ticker: 'B.PA' });
+      expect(res.status).toBe(409);
+    });
+
+    it('retourne 404 pour un rename de ticker absent du cache', async () => {
+      const res = await ctx.agent.put('/api/stocks/tickers/NOPE.PA').send({ new_ticker: 'NEW.PA' });
+      expect(res.status).toBe(404);
+    });
+
+    it('refuse le rename vers un ticker identique (400)', async () => {
+      seedPrice('C.PA');
+      const res = await ctx.agent.put('/api/stocks/tickers/C.PA').send({ new_ticker: 'C.PA' });
+      expect(res.status).toBe(400);
+    });
+  });
+
   // ─── Intégration balance_stocks ───────────────────────────────────────────
 
   describe('balance_stocks dans /api/accounts', () => {

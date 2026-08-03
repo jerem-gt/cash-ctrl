@@ -5,6 +5,7 @@ import {
   ACCOUNT_TYPES,
   ACCOUNTS,
   BANKS,
+  CACHED_STOCK_TICKERS,
   CATEGORIES,
   FORECAST_RESPONSE,
   IMPORT_RESULT,
@@ -390,6 +391,9 @@ export const handlers = [
       fetched_at: '2026-05-01T10:00:00',
     }),
   ),
+  http.get('/api/stocks/tickers', () => HttpResponse.json(CACHED_STOCK_TICKERS)),
+  http.delete('/api/stocks/tickers/:ticker', () => HttpResponse.json({ ok: true })),
+  http.put('/api/stocks/tickers/:ticker', () => HttpResponse.json({ ok: true })),
   http.post('/api/stocks/prices/refresh', () => HttpResponse.json({ ok: true })),
   http.post('/api/stocks/:accountId/transfer', () =>
     HttpResponse.json(

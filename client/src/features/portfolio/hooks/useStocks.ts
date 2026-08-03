@@ -37,6 +37,41 @@ export function useStockOperations(accountId: number) {
   });
 }
 
+export function useCachedTickers() {
+  return useQuery({
+    queryKey: queryKeys.stocks.cachedTickers(),
+    queryFn: () => stocksApi.cachedTickers(),
+  });
+}
+
+export function useDeleteCachedTicker() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ticker: string) => stocksApi.deleteTicker(ticker),
+    onSuccess: () => {
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.cachedTickers() }));
+    },
+  });
+}
+
+export function useRenameTicker() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ticker, newTicker }: { ticker: string; newTicker: string }) =>
+      stocksApi.renameTicker(ticker, newTicker),
+    onSuccess: () => {
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.cachedTickers() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.profitability() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reportYears() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.balanceHistory() }));
+    },
+  });
+}
+
 export function useBuyStock(accountId: number) {
   const qc = useQueryClient();
   return useMutation({

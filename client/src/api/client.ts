@@ -9,6 +9,7 @@ import type {
   BackupRunResult,
   BalanceHistoryData,
   Bank,
+  CachedStockTicker,
   Category,
   CreateLoanPayload,
   CreateSupportPayload,
@@ -328,6 +329,13 @@ export const stocksApi = {
     request<StockSearchResult[]>('GET', `/api/stocks/search?q=${encodeURIComponent(q)}`),
   price: (ticker: string) => request<StockPrice>('GET', `/api/stocks/price/${ticker}`),
   refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
+  cachedTickers: () => request<CachedStockTicker[]>('GET', '/api/stocks/tickers'),
+  deleteTicker: (ticker: string) =>
+    request<{ ok: boolean }>('DELETE', `/api/stocks/tickers/${encodeURIComponent(ticker)}`),
+  renameTicker: (ticker: string, newTicker: string) =>
+    request<{ ok: boolean }>('PUT', `/api/stocks/tickers/${encodeURIComponent(ticker)}`, {
+      new_ticker: newTicker,
+    }),
   updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>
     request<StockOperation>('PUT', `/api/stocks/${accountId}/operations/${operationId}`, payload),
   transfer: (accountId: number, payload: TransferStockPayload) =>

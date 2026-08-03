@@ -793,9 +793,9 @@ export function seedTestData(db: Database) {
   // AAPL — Apple : 1 achat
   buyStock(accPEA, 'AAPL', 5, 170, 1.99, yearsAgo(1, 1, 10));
 
-  // LVMH.PA — LVMH : achat (historique) + vente partielle récente → 1 action restante
-  buyStock(accPEA, 'LVMH.PA', 2, 580, 1.99, yearsAgo(1, 0, 20));
-  sellStock(accPEA, 'LVMH.PA', 1, 620, 1.99, monthDay(-2, 15));
+  // MC.PA — LVMH : achat (historique) + vente partielle récente → 1 action restante
+  buyStock(accPEA, 'MC.PA', 2, 580, 1.99, yearsAgo(1, 0, 20));
+  sellStock(accPEA, 'MC.PA', 1, 620, 1.99, monthDay(-2, 15));
 
   // Cours actuels simulés
   const stmtPrice = db.prepare(`
@@ -804,7 +804,7 @@ export function seedTestData(db: Database) {
   `);
   stmtPrice.run('DCAM.PA', 11.85, 'EUR', 'DCAM Amundi Diversifié');
   stmtPrice.run('AAPL', 185.5, 'USD', 'Apple Inc.');
-  stmtPrice.run('LVMH.PA', 610, 'EUR', 'LVMH Moët Hennessy');
+  stmtPrice.run('MC.PA', 610, 'EUR', 'LVMH Moët Hennessy');
 
   // ── Assurance Vie & PER ──────────────────────────────────────────────────────
   const insuranceRepo = createInsuranceRepo(db);
@@ -1103,7 +1103,7 @@ export function seedTestData(db: Database) {
     `  Transactions  : ~${40 + paidInstallments.length * 2 + 12 + expenses2025.length} (dont historique 2025 complet, ${paidInstallments.length} mensualités prêt, 8 virements liés, 1 ventilée)`,
   );
   console.log(
-    '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), LVMH.PA x1 (PRU 580€) — frais en tx séparées',
+    '  Bourse (PEA)  : DCAM.PA x35 (PRU 10,80€), AAPL x5 (PRU 170$), MC.PA x1 (PRU 580€) — frais en tx séparées',
   );
   console.log(
     '  Assurance Vie : Fonds Euro 4 110,50€ (rachat avec prélèv. sociaux) + Amundi MSCI World 3 130€ (versement avec frais)',

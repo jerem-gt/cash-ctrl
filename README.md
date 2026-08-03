@@ -6,53 +6,53 @@ Application de gestion de finances personnelles — multi-comptes, transactions 
 
 ## Aperçu
 
-| Dashboard | Transactions |
-|---|---|
+| Dashboard                                      | Transactions                                         |
+| ---------------------------------------------- | ---------------------------------------------------- |
 | ![Dashboard](./docs/screenshots/dashboard.png) | ![Transactions](./docs/screenshots/transactions.png) |
 
-| Portefeuille boursier (PEA) | Assurance-vie |
-|---|---|
+| Portefeuille boursier (PEA)                | Assurance-vie                                       |
+| ------------------------------------------ | --------------------------------------------------- |
 | ![PEA](./docs/screenshots/account-pea.png) | ![Assurance-vie](./docs/screenshots/account-av.png) |
 
-| Planifications | Paramètres |
-|---|---|
+| Planifications                                      | Paramètres                                     |
+| --------------------------------------------------- | ---------------------------------------------- |
 | ![Planifications](./docs/screenshots/scheduled.png) | ![Paramètres](./docs/screenshots/settings.png) |
 
-| Rapports | Compte courant (prévisionnel) |
-|---|---|
+| Rapports                                    | Compte courant (prévisionnel)                            |
+| ------------------------------------------- | -------------------------------------------------------- |
 | ![Rapports](./docs/screenshots/reports.png) | ![Compte courant](./docs/screenshots/account-detail.png) |
 
 ### 🌗 Thème clair / sombre
 
 L'interface suit la préférence système et se bascule manuellement (Clair / Sombre / Système) depuis les Réglages.
 
-| Clair | Sombre |
-|---|---|
+| Clair                                                | Sombre                                                     |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
 | ![Dashboard clair](./docs/screenshots/dashboard.png) | ![Dashboard sombre](./docs/screenshots/dashboard-dark.png) |
 
 ---
 
 ## ✨ Fonctionnalités
 
-| Domaine | Détail |
-|---|---|
-| **Comptes** | Multi-comptes, multi-banques avec logos auto |
-| **Transactions** | Revenus / dépenses, catégories, sous-catégories, notes, fractionnement |
-| **Transferts** | Double écriture atomique entre comptes |
-| **Planifiées** | Récurrence flexible (jour / semaine / mois / an), gestion jours fériés |
-| **Prévisionnel** | Solde projeté à 30/90 jours (planifiées, transferts, échéances de prêts), alerte de découvert sur le dashboard, historique + projection par compte |
-| **Recherche globale** | Palette de commande (Ctrl+K / ⌘K) : comptes, transactions (libellé et notes), planifications, titres et pages — insensible aux accents |
-| **Portefeuille** | Achats / ventes / transferts de titres, suivi PRU, prix historiques |
-| **Assurance-vie** | Supports euro/UC, versements, rachats, arbitrages, intérêts, réévaluations |
-| **Prêts** | Tableau d'amortissement, remboursements anticipés |
-| **Remboursements** | Suivi des dépenses à se faire rembourser |
-| **Simulateur PER** | Calcul de la déductibilité fiscale (barèmes IR en base) |
-| **Rapports** | Comparaison annuelle revenus/dépenses et performances boursières par année |
-| **Catégorisation auto** | Règles LIKE pour affecter automatiquement une catégorie aux transactions |
-| **Import / Export** | Import QIF / XHB (Homebank) / CSV (wizard de mapping colonnes) ; export JSON toutes entités |
-| **Sauvegarde** | Sauvegardes incrémentales automatiques |
-| **2FA** | Double authentification TOTP (Google Authenticator, Authy…) |
-| **i18n** | Interface disponible en français et en anglais via react-i18next — détection automatique de la langue du navigateur, sélecteur dans les Réglages, persistance localStorage ; namespaces par feature |
+| Domaine                 | Détail                                                                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Comptes**             | Multi-comptes, multi-banques avec logos auto                                                                                                                                                        |
+| **Transactions**        | Revenus / dépenses, catégories, sous-catégories, notes, fractionnement                                                                                                                              |
+| **Transferts**          | Double écriture atomique entre comptes                                                                                                                                                              |
+| **Planifiées**          | Récurrence flexible (jour / semaine / mois / an), gestion jours fériés                                                                                                                              |
+| **Prévisionnel**        | Solde projeté à 30/90 jours (planifiées, transferts, échéances de prêts), alerte de découvert sur le dashboard, historique + projection par compte                                                  |
+| **Recherche globale**   | Palette de commande (Ctrl+K / ⌘K) : comptes, transactions (libellé et notes), planifications, titres et pages — insensible aux accents                                                              |
+| **Portefeuille**        | Achats / ventes / transferts de titres, suivi PRU, prix historiques, gestion des tickers (suppression des caches inutilisés)                                                                        |
+| **Assurance-vie**       | Supports euro/UC, versements, rachats, arbitrages, intérêts, réévaluations                                                                                                                          |
+| **Prêts**               | Tableau d'amortissement, remboursements anticipés                                                                                                                                                   |
+| **Remboursements**      | Suivi des dépenses à se faire rembourser                                                                                                                                                            |
+| **Simulateur PER**      | Calcul de la déductibilité fiscale (barèmes IR en base)                                                                                                                                             |
+| **Rapports**            | Comparaison annuelle revenus/dépenses et performances boursières par année                                                                                                                          |
+| **Catégorisation auto** | Règles LIKE pour affecter automatiquement une catégorie aux transactions                                                                                                                            |
+| **Import / Export**     | Import QIF / XHB (Homebank) / CSV (wizard de mapping colonnes) ; export JSON toutes entités                                                                                                         |
+| **Sauvegarde**          | Sauvegardes incrémentales automatiques                                                                                                                                                              |
+| **2FA**                 | Double authentification TOTP (Google Authenticator, Authy…)                                                                                                                                         |
+| **i18n**                | Interface disponible en français et en anglais via react-i18next — détection automatique de la langue du navigateur, sélecteur dans les Réglages, persistance localStorage ; namespaces par feature |
 
 ---
 
@@ -74,19 +74,19 @@ npm run dev
 
 ## 🧱 Stack
 
-| Couche | Technologie | Version |
-|---|---|---|
-| Frontend | React + Vite | 19 / 8 |
-| Style | Tailwind CSS | 4 |
-| État async | TanStack Query | 5 |
-| Routing | React Router | 7 |
-| Backend | Node.js + Express | 24 / 5 |
-| Base de données | SQLite (better-sqlite3) | — |
-| Validation | Zod | 4 |
-| Charts | Recharts | 3 |
-| i18n | react-i18next | 15 |
-| Tests | Vitest + Testing Library + MSW | 4 |
-| CI/CD | GitHub Actions + Docker + Watchtower | — |
+| Couche          | Technologie                          | Version |
+| --------------- | ------------------------------------ | ------- |
+| Frontend        | React + Vite                         | 19 / 8  |
+| Style           | Tailwind CSS                         | 4       |
+| État async      | TanStack Query                       | 5       |
+| Routing         | React Router                         | 7       |
+| Backend         | Node.js + Express                    | 24 / 5  |
+| Base de données | SQLite (better-sqlite3)              | —       |
+| Validation      | Zod                                  | 4       |
+| Charts          | Recharts                             | 3       |
+| i18n            | react-i18next                        | 15      |
+| Tests           | Vitest + Testing Library + MSW       | 4       |
+| CI/CD           | GitHub Actions + Docker + Watchtower | —       |
 
 ---
 
