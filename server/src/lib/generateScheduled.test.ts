@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { RecurrenceUnit, TransactionType, WeekendHandling } from '../constants';
+import { RecurrenceUnit, TransactionType, WeekendHandling } from '../constants.js';
 import { type Fixtures, SEED, setupFixtures } from '../tests/helpers/testDb.js';
-import { dateStr } from './dateUtils';
+import { dateStr } from './dateUtils.js';
 import {
   generateScheduledTransactions,
   startScheduledGenerationInterval,

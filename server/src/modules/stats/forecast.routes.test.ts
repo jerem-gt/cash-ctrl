@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { dateStr } from '../../lib/dateUtils';
-import { toCents } from '../../lib/money';
+import { dateStr } from '../../lib/dateUtils.js';
+import { toCents } from '../../lib/money.js';
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
 

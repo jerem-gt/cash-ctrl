@@ -2,7 +2,7 @@ import supertest from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
-import { SEED } from '../../tests/helpers/testDb';
+import { SEED } from '../../tests/helpers/testDb.js';
 
 describe('/api/subcategories', () => {
   let ctx: TestContext;

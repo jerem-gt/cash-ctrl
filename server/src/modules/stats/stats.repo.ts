@@ -1,14 +1,14 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
-import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
-import type { Transaction } from '../transactions/transactions.types';
-import { marketValueByAccount } from './investment-profitability.repo';
-import { createProfitabilityRepo } from './profitability.repo';
-import { createReportRepo } from './report.repo';
-import { buildPositionsAt, firstDayOfMonth, sumDeltasBefore } from './stats.calculations';
+import { toEuros } from '../../lib/money.js';
+import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo.js';
+import type { Transaction } from '../transactions/transactions.types.js';
+import { marketValueByAccount } from './investment-profitability.repo.js';
+import { createProfitabilityRepo } from './profitability.repo.js';
+import { createReportRepo } from './report.repo.js';
+import { buildPositionsAt, firstDayOfMonth, sumDeltasBefore } from './stats.calculations.js';
 
-export type { MonthlyStat, ReportData } from './report.repo';
+export type { MonthlyStat, ReportData } from './report.repo.js';
 
 export interface BalanceHistoryData {
   account_types: string[];
@@ -18,7 +18,7 @@ export interface BalanceHistoryData {
 export interface DashboardStats {
   month_income: number;
   month_expense: number;
-  monthly: import('./report.repo').MonthlyStat[];
+  monthly: import('./report.repo.js').MonthlyStat[];
   expenses_by_category: Array<{ category: string; amount: number }>;
   recent: Transaction[];
   to_validate: Transaction[];
@@ -211,10 +211,9 @@ export function createStatsRepo(db: Database) {
 
       const hasAccounts =
         (db
-          .prepare<
-            [number],
-            { cnt: number }
-          >('SELECT COUNT(*) AS cnt FROM accounts WHERE user_id = ?')
+          .prepare<[number], { cnt: number }>(
+            'SELECT COUNT(*) AS cnt FROM accounts WHERE user_id = ?',
+          )
           .get(userId)?.cnt ?? 0) > 0;
 
       if (!hasAccounts) return { account_types: [], data: [] };

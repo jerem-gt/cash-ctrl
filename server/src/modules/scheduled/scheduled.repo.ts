@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
 
-import { dateStr } from '../../lib/dateUtils';
-import { toCents, toEuros } from '../../lib/money';
-import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types';
+import { dateStr } from '../../lib/dateUtils.js';
+import { toCents, toEuros } from '../../lib/money.js';
+import type { CreateScheduledInput, ScheduledTransaction } from './scheduled.types.js';
 
 function mapScheduled(row: ScheduledTransaction): ScheduledTransaction {
   return { ...row, amount: toEuros(row.amount), insurance_fees: toEuros(row.insurance_fees) };

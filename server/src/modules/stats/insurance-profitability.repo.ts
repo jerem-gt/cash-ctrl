@@ -1,14 +1,14 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
-import type { AccountProfitability } from './profitability.types';
+import { toEuros } from '../../lib/money.js';
+import type { AccountProfitability } from './profitability.types.js';
 import {
   buildFlowsByAccountYear,
   buildYearlyReturn,
   getAllYears,
   groupByAccount,
   twrAnnualized,
-} from './stats.calculations';
+} from './stats.calculations.js';
 
 export function computeInsuranceProfitability(
   db: Database,

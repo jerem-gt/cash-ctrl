@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { Bank, BankWithCount } from './banks.types';
+import type { Bank, BankWithCount } from './banks.types.js';
 
 export function createBanksRepo(db: Database) {
   const getAllStmt = db.prepare<[], BankWithCount>(`

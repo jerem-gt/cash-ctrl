@@ -4,7 +4,7 @@ import type {
   CreatePaymentMethodInput,
   PaymentMethod,
   PaymentMethodWithCount,
-} from './payment-methods.types';
+} from './payment-methods.types.js';
 
 export function createPaymentMethodsRepo(db: Database, userId: number) {
   const getAllStmt = db.prepare<{ userId: number }, PaymentMethodWithCount>(`

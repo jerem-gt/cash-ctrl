@@ -1,4 +1,4 @@
-import { InsuranceOperationType, InsuranceSupportType } from '../../constants';
+import { InsuranceOperationType, InsuranceSupportType } from '../../constants.js';
 
 export interface InsuranceSupport {
   id: number;

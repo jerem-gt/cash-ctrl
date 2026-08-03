@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { buildError } from './lib/errorCodes';
+import { buildError } from './lib/errorCodes.js';
 
 declare module 'express-session' {
   interface SessionData {

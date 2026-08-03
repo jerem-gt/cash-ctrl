@@ -1,11 +1,11 @@
 import type { Database } from 'better-sqlite3';
 
-import { SubcategoryWithCount } from '../subcategories/subcategories.types';
+import { SubcategoryWithCount } from '../subcategories/subcategories.types.js';
 import {
   Category,
   CategoryWithCountAndSubCategories,
   CreateCategoryInput,
-} from './categories.types';
+} from './categories.types.js';
 
 export function createCategoriesRepo(db: Database, userId: number) {
   const getAllStmt = db.prepare(`

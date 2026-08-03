@@ -1,9 +1,9 @@
 import type { Database } from 'better-sqlite3';
 
-import { createDb } from '../../db/init';
-import { initSchema } from '../../db/schema';
-import { seedTaxData } from '../../db/seeds/tax.seed';
-import { createSettingsRepo } from '../../modules/settings/settings.repo';
+import { createDb } from '../../db/init.js';
+import { initSchema } from '../../db/schema.js';
+import { seedTaxData } from '../../db/seeds/tax.seed.js';
+import { createSettingsRepo } from '../../modules/settings/settings.repo.js';
 
 // IDs des données seed (stables car AUTOINCREMENT depuis 1 à chaque DB fraîche)
 export const SEED = {

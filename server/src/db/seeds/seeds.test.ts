@@ -8,7 +8,7 @@ import { seedAccountTypes } from './accountTypes.seed.js';
 import { seedBanks } from './banks.seed.js';
 import { seedCategories } from './categories.seed.js';
 import { DEFAULT_PAYMENT_METHODS, seedPaymentMethods } from './paymentMethods.seed.js';
-import { seedSubcategories } from './subcategories.seed';
+import { seedSubcategories } from './subcategories.seed.js';
 import { seedAdminUser } from './users.seed.js';
 
 function createFreshDb(): Database {
@@ -187,8 +187,7 @@ describe('seedAdminUser', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const user = db.prepare('SELECT username FROM users WHERE username = ?').get('admin') as
-      | { username: string }
-      | undefined;
+      { username: string } | undefined;
     expect(user?.username).toBe('admin');
   });
 
@@ -199,8 +198,7 @@ describe('seedAdminUser', () => {
     try {
       seedAdminUser(db);
       const user = db.prepare('SELECT username FROM users WHERE username = ?').get('superadmin') as
-        | { username: string }
-        | undefined;
+        { username: string } | undefined;
       expect(user?.username).toBe('superadmin');
     } finally {
       delete process.env.ADMIN_USER;

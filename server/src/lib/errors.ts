@@ -1,4 +1,4 @@
-import { type ErrorCode, type ErrorParams, renderMessage } from './errorCodes';
+import { type ErrorCode, type ErrorParams, renderMessage } from './errorCodes.js';
 
 /**
  * Erreurs HTTP typées levées par les repos/services et traduites en réponse par

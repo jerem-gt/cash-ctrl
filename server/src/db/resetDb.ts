@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { createDb, DATA_DIR, initDatabase } from './init';
+import { createDb, DATA_DIR, initDatabase } from './init.js';
 
 const DB_PATH = path.join(DATA_DIR, 'cashctrl.db');
 

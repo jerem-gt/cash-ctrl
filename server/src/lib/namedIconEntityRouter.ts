@@ -2,9 +2,9 @@ import type { Database, RunResult } from 'better-sqlite3';
 import { type Request, Router } from 'express';
 import { z } from 'zod';
 
-import { requireAuth, sessionUserId } from '../middleware';
-import type { ErrorCode } from './errorCodes';
-import { parseBody, parseNumberParam, requireById, sendError } from './routeHelpers';
+import { requireAuth, sessionUserId } from '../middleware.js';
+import type { ErrorCode } from './errorCodes.js';
+import { parseBody, parseNumberParam, requireById, sendError } from './routeHelpers.js';
 
 /** Payload partagé des entités « nom + icône » (catégories, moyens de paiement). */
 export interface NamedIconEntityInput {

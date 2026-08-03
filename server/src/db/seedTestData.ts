@@ -9,15 +9,15 @@ import {
   ReimbursementStatus,
   TransactionType,
   WeekendHandling,
-} from '../constants';
-import { dateStr } from '../lib/dateUtils';
-import { toCents } from '../lib/money';
-import { createInsuranceRepo } from '../modules/insurance/insurance.repo';
-import { createLoansRepo } from '../modules/loans/loans.repo';
-import { createStocksRepo } from '../modules/stocks/stocks.repo';
-import { createTransfersRepo } from '../modules/transfers/transfers.repo';
-import { createDb, DATA_DIR } from './init';
-import { seedUserData } from './seed';
+} from '../constants.js';
+import { dateStr } from '../lib/dateUtils.js';
+import { toCents } from '../lib/money.js';
+import { createInsuranceRepo } from '../modules/insurance/insurance.repo.js';
+import { createLoansRepo } from '../modules/loans/loans.repo.js';
+import { createStocksRepo } from '../modules/stocks/stocks.repo.js';
+import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
+import { createDb, DATA_DIR } from './init.js';
+import { seedUserData } from './seed.js';
 
 export function seedTestData(db: Database) {
   // ── Réinitialisation du compte test (cascade sur toutes ses données) ────────
@@ -56,8 +56,7 @@ export function seedTestData(db: Database) {
   // ── Helpers ─────────────────────────────────────────────────────────────────
   function lookupId(table: string, name: string): number {
     const row = db.prepare(`SELECT id FROM ${table} WHERE name = ?`).get(name) as
-      | { id: number }
-      | undefined;
+      { id: number } | undefined;
     if (!row) throw new Error(`${table} : "${name}" introuvable`);
     return row.id;
   }

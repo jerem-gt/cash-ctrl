@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { UserPublic } from './users.types';
+import type { UserPublic } from './users.types.js';
 
 export function createUsersRepo(db: Database) {
   const listStmt = db.prepare<[], UserPublic>(`

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
 import { zodToApiError } from '../../lib/routeHelpers.js';
-import { dateSchema, optionalDateSchema } from '../../lib/validators';
+import { dateSchema, optionalDateSchema } from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createImportRepo } from './import.repo.js';
 

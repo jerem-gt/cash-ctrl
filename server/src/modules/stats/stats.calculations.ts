@@ -1,4 +1,4 @@
-import { toEuros } from '../../lib/money';
+import { toEuros } from '../../lib/money.js';
 
 export interface YearlyReturn {
   year: string;

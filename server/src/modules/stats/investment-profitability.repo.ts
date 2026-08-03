@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
-import type { AccountProfitability } from './profitability.types';
+import { toEuros } from '../../lib/money.js';
+import type { AccountProfitability } from './profitability.types.js';
 import {
   addToFlowMap,
   buildFlowsByAccountYear,
@@ -12,7 +12,7 @@ import {
   groupByAccount,
   type StockOp,
   twrAnnualized,
-} from './stats.calculations';
+} from './stats.calculations.js';
 
 export function marketValueByAccount(db: Database, userId: number): Map<number, number> {
   const rows = db

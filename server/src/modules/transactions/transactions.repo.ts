@@ -1,8 +1,8 @@
 import type { Database, Statement } from 'better-sqlite3';
 
-import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants';
-import { toCents, toEuros } from '../../lib/money';
-import { escapeLikeTerm, likeUnaccent } from '../../lib/sql';
+import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants.js';
+import { toCents, toEuros } from '../../lib/money.js';
+import { escapeLikeTerm, likeUnaccent } from '../../lib/sql.js';
 import type {
   CreateScheduledTransactionInput,
   CreateTransactionInput,
@@ -11,7 +11,7 @@ import type {
   Transaction,
   TransactionFilters,
   TransactionSplit,
-} from './transactions.types';
+} from './transactions.types.js';
 
 export interface TransactionRow extends Omit<Transaction, 'splits' | 'stock_operation'> {
   splits_json: string | null;

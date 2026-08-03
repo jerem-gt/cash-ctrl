@@ -1,12 +1,12 @@
 import type { StockOperation, StockPosition, StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
-import { getSystemRefs, getTransferIds } from '../../lib/administrationDataConstants';
-import { BadRequestError, NotFoundError } from '../../lib/errors';
-import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
-import { toCents, toEuros } from '../../lib/money';
-import { BuyInput, SellInput, TransferInput } from './stocks.types';
+import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
+import { getSystemRefs, getTransferIds } from '../../lib/administrationDataConstants.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
+import { insertFeesTransaction } from '../../lib/insertFeesTransaction.js';
+import { toCents, toEuros } from '../../lib/money.js';
+import { BuyInput, SellInput, TransferInput } from './stocks.types.js';
 
 function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
@@ -157,10 +157,9 @@ export function createStocksRepo(db: Database) {
 
     sell(userId: number, input: SellInput): { operation: StockOperation; transaction_id: number } {
       const position = db
-        .prepare<
-          [number, string],
-          { quantity: number }
-        >('SELECT quantity FROM stock_positions WHERE account_id = ? AND ticker = ?')
+        .prepare<[number, string], { quantity: number }>(
+          'SELECT quantity FROM stock_positions WHERE account_id = ? AND ticker = ?',
+        )
         .get(input.account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {
@@ -198,10 +197,9 @@ export function createStocksRepo(db: Database) {
 
     getOperations: (accountId: number): StockOperation[] =>
       db
-        .prepare<
-          [number],
-          StockOperation
-        >('SELECT * FROM stock_operations WHERE account_id = ? ORDER BY date DESC, created_at DESC')
+        .prepare<[number], StockOperation>(
+          'SELECT * FROM stock_operations WHERE account_id = ? ORDER BY date DESC, created_at DESC',
+        )
         .all(accountId)
         .map(mapOperation),
 
@@ -210,10 +208,9 @@ export function createStocksRepo(db: Database) {
       input: TransferInput,
     ): { outOperation: StockOperation; inOperation: StockOperation } {
       const position = db
-        .prepare<
-          [number, string],
-          { quantity: number; avg_price: number }
-        >('SELECT quantity, avg_price FROM stock_positions WHERE account_id = ? AND ticker = ?')
+        .prepare<[number, string], { quantity: number; avg_price: number }>(
+          'SELECT quantity, avg_price FROM stock_positions WHERE account_id = ? AND ticker = ?',
+        )
         .get(input.from_account_id, input.ticker);
 
       if (!position || position.quantity < input.quantity) {

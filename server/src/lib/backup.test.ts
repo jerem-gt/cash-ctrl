@@ -4,14 +4,14 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestDb, type Fixtures, setupFixtures } from '../tests/helpers/testDb';
+import { createTestDb, type Fixtures, setupFixtures } from '../tests/helpers/testDb.js';
 import {
   listBackups,
   rotateBackups,
   runBackup,
   startBackupInterval,
   userBackupDir,
-} from './backup';
+} from './backup.js';
 
 let tmpDir: string;
 let fixtures: Fixtures;
@@ -99,10 +99,9 @@ describe('runBackup', () => {
     const before = Date.now();
     runBackup(fixtures.db, fixtures.userId, tmpDir);
     const row = fixtures.db
-      .prepare<
-        [number],
-        { backup_last_at: string; backup_last_hash: string }
-      >('SELECT backup_last_at, backup_last_hash FROM user_settings WHERE user_id = ?')
+      .prepare<[number], { backup_last_at: string; backup_last_hash: string }>(
+        'SELECT backup_last_at, backup_last_hash FROM user_settings WHERE user_id = ?',
+      )
       .get(fixtures.userId);
     expect(new Date(row!.backup_last_at).getTime()).toBeGreaterThanOrEqual(before);
     expect(row!.backup_last_hash).toHaveLength(64); // SHA-256 hex
@@ -121,10 +120,9 @@ describe('runBackup', () => {
     const before = Date.now();
     runBackup(fixtures.db, fixtures.userId, tmpDir);
     const row = fixtures.db
-      .prepare<
-        [number],
-        { backup_last_at: string }
-      >('SELECT backup_last_at FROM user_settings WHERE user_id = ?')
+      .prepare<[number], { backup_last_at: string }>(
+        'SELECT backup_last_at FROM user_settings WHERE user_id = ?',
+      )
       .get(fixtures.userId);
     expect(new Date(row!.backup_last_at).getTime()).toBeGreaterThanOrEqual(before);
   });
@@ -198,10 +196,9 @@ describe('startBackupInterval', () => {
     vi.advanceTimersByTime(1000);
     clearInterval(handle);
     const row = fixtures.db
-      .prepare<
-        [number],
-        { backup_last_hash: string | null }
-      >('SELECT backup_last_hash FROM user_settings WHERE user_id = ?')
+      .prepare<[number], { backup_last_hash: string | null }>(
+        'SELECT backup_last_hash FROM user_settings WHERE user_id = ?',
+      )
       .get(fixtures.userId);
     expect(row?.backup_last_hash).not.toBeNull();
   });

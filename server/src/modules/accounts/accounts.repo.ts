@@ -1,13 +1,13 @@
 import type { Database } from 'better-sqlite3';
 
-import { toCents, toEuros } from '../../lib/money';
-import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
+import { toCents, toEuros } from '../../lib/money.js';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql.js';
 import type {
   Account,
   CloseAccountInput,
   CreateAccountInput,
   UpdateAccountInput,
-} from './accounts.types';
+} from './accounts.types.js';
 
 function mapAccount(row: Account): Account {
   return {

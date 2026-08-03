@@ -2,13 +2,13 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { toCents, toEuros } from '../../lib/money';
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { dateSchema, nameSchema, optionalDateSchema } from '../../lib/validators';
+import { toCents, toEuros } from '../../lib/money.js';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
+import { dateSchema, nameSchema, optionalDateSchema } from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from '../loans/loans.repo.js';
-import { createTransfersRepo } from '../transfers/transfers.repo';
-import { createAccountsRepo } from './accounts.repo';
+import { createTransfersRepo } from '../transfers/transfers.repo.js';
+import { createAccountsRepo } from './accounts.repo.js';
 
 export const accountSchema = z.object({
   name: nameSchema,

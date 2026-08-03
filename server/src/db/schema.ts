@@ -8,7 +8,7 @@ import {
   STOCK_OPERATION_TYPES,
   TRANSACTION_TYPES,
   WEEKEND_HANDLING,
-} from '../constants';
+} from '../constants.js';
 
 const sqlIn = (arr: readonly string[]) => arr.map((v) => `'${v}'`).join(', ');
 

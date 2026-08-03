@@ -2,18 +2,23 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../constants';
-import { handleHttpErrors, parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
+import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../constants.js';
+import {
+  handleHttpErrors,
+  parseBody,
+  parseNumberParam,
+  sendError,
+} from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   descriptionSchema,
   feesSchema,
   optionalDateSchema,
   positiveAmountSchema,
-} from '../../lib/validators';
+} from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createScheduledRepo } from './scheduled.repo';
-import { scheduledCreate, scheduledUpdate } from './scheduled.service';
+import { createScheduledRepo } from './scheduled.repo.js';
+import { scheduledCreate, scheduledUpdate } from './scheduled.service.js';
 
 export const scheduledSchema = z.object({
   account_id: z.number().int().positive(),

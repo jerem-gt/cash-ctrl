@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
+import { toEuros } from '../../lib/money.js';
 
 export interface MonthlyStat {
   month: string; // YYYY-MM

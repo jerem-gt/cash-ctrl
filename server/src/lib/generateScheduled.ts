@@ -1,10 +1,10 @@
 import type BetterSqlite3 from 'better-sqlite3';
 
 import { logger } from '../logger.js';
-import { createLoansRepo } from '../modules/loans/loans.repo';
-import { createScheduledRepo } from '../modules/scheduled/scheduled.repo';
-import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
-import { createSettingsRepo } from '../modules/settings/settings.repo';
+import { createLoansRepo } from '../modules/loans/loans.repo.js';
+import { createScheduledRepo } from '../modules/scheduled/scheduled.repo.js';
+import { ScheduledTransaction } from '../modules/scheduled/scheduled.types.js';
+import { createSettingsRepo } from '../modules/settings/settings.repo.js';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
 import { dateStr } from './dateUtils.js';

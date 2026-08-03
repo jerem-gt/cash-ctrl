@@ -3,10 +3,10 @@ import { Request, Router } from 'express';
 import { z } from 'zod';
 
 import { ENVELOPE_TYPES } from '../../constants.js';
-import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createAccountsRepo } from '../accounts/accounts.repo';
-import { createAccountTypesRepo } from './account-types.repo';
+import { createAccountsRepo } from '../accounts/accounts.repo.js';
+import { createAccountTypesRepo } from './account-types.repo.js';
 
 export const accountTypeSchema = z.object({
   name: z.string().min(1).max(50),

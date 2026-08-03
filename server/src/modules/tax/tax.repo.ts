@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
-import type { TaxBracket, TaxYearData, TaxYearParams } from './tax.types';
+import { toEuros } from '../../lib/money.js';
+import type { TaxBracket, TaxYearData, TaxYearParams } from './tax.types.js';
 
 interface BracketRow {
   id: number;
@@ -61,10 +61,9 @@ export function createTaxRepo(db: Database) {
       if (!paramsRow) return null;
 
       const bracketRows = db
-        .prepare<
-          [number],
-          BracketRow
-        >('SELECT * FROM tax_brackets WHERE year = ? ORDER BY min_income_cents')
+        .prepare<[number], BracketRow>(
+          'SELECT * FROM tax_brackets WHERE year = ? ORDER BY min_income_cents',
+        )
         .all(year);
 
       return {

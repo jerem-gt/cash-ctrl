@@ -1,11 +1,11 @@
 import type { Database } from 'better-sqlite3';
 
 import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
-import { getTransferIds } from '../../lib/administrationDataConstants';
+import { getTransferIds } from '../../lib/administrationDataConstants.js';
 import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { generateScheduledTransactions } from '../../lib/generateScheduled.js';
-import { createScheduledRepo } from './scheduled.repo';
-import type { CreateScheduledInput } from './scheduled.types';
+import { createScheduledRepo } from './scheduled.repo.js';
+import type { CreateScheduledInput } from './scheduled.types.js';
 
 function checkTransferConstraints(d: CreateScheduledInput, transferPmId: number | undefined): void {
   if (d.payment_method_id != transferPmId) return;

@@ -1,7 +1,7 @@
 import type { Database, Statement } from 'better-sqlite3';
 
-import type { SystemRefColumn } from '../../lib/systemEntities';
-import type { UserSettings } from './settings.types';
+import type { SystemRefColumn } from '../../lib/systemEntities.js';
+import type { UserSettings } from './settings.types.js';
 
 const DEFAULTS: Omit<UserSettings, 'user_id'> = {
   lead_days: 30,

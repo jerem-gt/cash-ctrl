@@ -2,20 +2,20 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { createAccountActionHandler } from '../../lib/handleAccountAction';
+import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
 import {
   handleHttpErrors,
   makeCheckAccount,
   parseBody,
   parseNumberParam,
   sendError,
-} from '../../lib/routeHelpers';
+} from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   descriptionSchema,
   feesSchema,
   positiveAmountSchema,
-} from '../../lib/validators';
+} from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createStocksRepo } from './stocks.repo.js';
 import { getOrRefreshPrice, refreshUserPrices, searchByQuery } from './stocks.service.js';

@@ -13,7 +13,7 @@ import {
   sumDeltasBefore,
   twrAnnualized,
   type YearlyReturn,
-} from './stats.calculations';
+} from './stats.calculations.js';
 
 // ─── getAllYears ──────────────────────────────────────────────────────────────
 

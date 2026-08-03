@@ -1,12 +1,12 @@
 import type { Database } from 'better-sqlite3';
 
-import { type EnvelopeType } from '../../constants';
+import { type EnvelopeType } from '../../constants.js';
 import { BadRequestError, HttpError, NotFoundError } from '../../lib/errors.js';
-import { createAccountsRepo } from '../accounts/accounts.repo';
-import { createScheduledRepo } from '../scheduled/scheduled.repo';
-import { createStocksRepo } from '../stocks/stocks.repo';
-import { createTransactionsRepo } from './transactions.repo';
-import type { CreateTransactionInput } from './transactions.types';
+import { createAccountsRepo } from '../accounts/accounts.repo.js';
+import { createScheduledRepo } from '../scheduled/scheduled.repo.js';
+import { createStocksRepo } from '../stocks/stocks.repo.js';
+import { createTransactionsRepo } from './transactions.repo.js';
+import type { CreateTransactionInput } from './transactions.types.js';
 
 const NO_DIRECT_WRITE_ENVELOPES = new Set<EnvelopeType>(['life_insurance', 'per']);
 

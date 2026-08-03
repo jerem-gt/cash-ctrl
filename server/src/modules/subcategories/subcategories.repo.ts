@@ -4,7 +4,7 @@ import type {
   CreateSubcategoryInput,
   Subcategory,
   SubcategoryWithCount,
-} from './subcategories.types';
+} from './subcategories.types.js';
 
 export function createSubcategoriesRepo(db: Database, userId: number) {
   const getAllStmt = db.prepare<{ userId: number }, SubcategoryWithCount>(`

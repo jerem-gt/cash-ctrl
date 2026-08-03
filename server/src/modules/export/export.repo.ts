@@ -17,7 +17,7 @@ import {
   FullExportStockPosition,
   FullExportSubcategory,
   FullExportTransaction,
-} from './export.types';
+} from './export.types.js';
 
 export function createExportRepo(db: Database) {
   return {
@@ -61,17 +61,15 @@ export function createExportRepo(db: Database) {
         .all(userId);
 
       const categoriesRaw = db
-        .prepare<
-          [number],
-          { id: number; name: string; icon: string }
-        >(`SELECT id, name, icon FROM categories WHERE user_id = ?`)
+        .prepare<[number], { id: number; name: string; icon: string }>(
+          `SELECT id, name, icon FROM categories WHERE user_id = ?`,
+        )
         .all(userId);
 
       const subcatsRaw = db
-        .prepare<
-          [number],
-          FullExportSubcategory & { category_id: number }
-        >(`SELECT id, category_id, name FROM subcategories WHERE user_id = ?`)
+        .prepare<[number], FullExportSubcategory & { category_id: number }>(
+          `SELECT id, category_id, name FROM subcategories WHERE user_id = ?`,
+        )
         .all(userId);
 
       const categories: FullExportCategory[] = categoriesRaw.map((c) => ({
@@ -84,10 +82,9 @@ export function createExportRepo(db: Database) {
       }));
 
       const paymentMethods = db
-        .prepare<
-          [number],
-          FullExportPaymentMethod
-        >(`SELECT id, name, icon FROM payment_methods WHERE user_id = ?`)
+        .prepare<[number], FullExportPaymentMethod>(
+          `SELECT id, name, icon FROM payment_methods WHERE user_id = ?`,
+        )
         .all(userId);
 
       const txsRaw = db

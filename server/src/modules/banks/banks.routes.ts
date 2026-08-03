@@ -3,12 +3,12 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
-import { nameSchema } from '../../lib/validators';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers.js';
+import { nameSchema } from '../../lib/validators.js';
 import { LOGOS_DIR } from '../../logoDownloader.js';
 import { requireAuth } from '../../middleware.js';
-import { createAccountsRepo } from '../accounts/accounts.repo';
-import { createBanksRepo } from './banks.repo';
+import { createAccountsRepo } from '../accounts/accounts.repo.js';
+import { createBanksRepo } from './banks.repo.js';
 
 export const bankSchema = z.object({
   name: nameSchema,

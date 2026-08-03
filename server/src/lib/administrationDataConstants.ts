@@ -1,6 +1,6 @@
 import { Database } from 'better-sqlite3';
 
-import { createSettingsRepo } from '../modules/settings/settings.repo';
+import { createSettingsRepo } from '../modules/settings/settings.repo.js';
 
 /** Références « système » de l'utilisateur, lues en une seule passe sur user_settings. */
 export interface SystemRefs {

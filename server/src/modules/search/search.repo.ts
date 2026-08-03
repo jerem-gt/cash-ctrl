@@ -7,7 +7,7 @@ import type {
 } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { escapeLikeTerm, likeUnaccent } from '../../lib/sql';
+import { escapeLikeTerm, likeUnaccent } from '../../lib/sql.js';
 
 const LIMIT = 8;
 

@@ -1,10 +1,13 @@
 import type { Database } from 'better-sqlite3';
 
-import { getTransferIds } from '../../lib/administrationDataConstants';
-import { toCents } from '../../lib/money';
-import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo';
-import type { Transaction, UpdateSharedTransactionInput } from '../transactions/transactions.types';
-import type { TransferInput } from './transfers.types';
+import { getTransferIds } from '../../lib/administrationDataConstants.js';
+import { toCents } from '../../lib/money.js';
+import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/transactions.repo.js';
+import type {
+  Transaction,
+  UpdateSharedTransactionInput,
+} from '../transactions/transactions.types.js';
+import type { TransferInput } from './transfers.types.js';
 
 export function createTransfersRepo(db: Database) {
   const insertTxStmt = db.prepare(`

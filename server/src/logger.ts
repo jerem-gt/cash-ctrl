@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 
-import { buildError } from './lib/errorCodes';
-import { HttpError } from './lib/errors';
+import { buildError } from './lib/errorCodes.js';
+import { HttpError } from './lib/errors.js';
 
 const COLORS = {
   RESET: '\x1b[0m',

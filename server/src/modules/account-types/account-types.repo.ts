@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { AccountType, AccountTypeWithCount } from './account-types.types';
+import type { AccountType, AccountTypeWithCount } from './account-types.types.js';
 
 export function createAccountTypesRepo(db: Database, userId: number) {
   const getAllStmt = db.prepare<{ userId: number }, AccountTypeWithCount>(`

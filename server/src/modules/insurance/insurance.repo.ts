@@ -1,10 +1,13 @@
 import type { Database } from 'better-sqlite3';
 
-import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers';
-import { getSocialFeesSubcategoryId, getTransferIds } from '../../lib/administrationDataConstants';
-import { BadRequestError, NotFoundError } from '../../lib/errors';
-import { insertFeesTransaction } from '../../lib/insertFeesTransaction';
-import { toCents, toEuros } from '../../lib/money';
+import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
+import {
+  getSocialFeesSubcategoryId,
+  getTransferIds,
+} from '../../lib/administrationDataConstants.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
+import { insertFeesTransaction } from '../../lib/insertFeesTransaction.js';
+import { toCents, toEuros } from '../../lib/money.js';
 import {
   ArbitrageInput,
   CreateSupportInput,
@@ -16,7 +19,7 @@ import {
   RevaloriserInput,
   UpdateOperationInput,
   VersementInput,
-} from './insurance.types';
+} from './insurance.types.js';
 
 function getAccountName(db: Database, accountId: number): string {
   const row = db
@@ -214,10 +217,9 @@ export function createInsuranceRepo(db: Database) {
 
     getSupports(accountId: number): InsuranceSupport[] {
       return db
-        .prepare<
-          [number],
-          InsuranceSupport
-        >(`SELECT * FROM insurance_supports WHERE account_id = ? ORDER BY type, name`)
+        .prepare<[number], InsuranceSupport>(
+          `SELECT * FROM insurance_supports WHERE account_id = ? ORDER BY type, name`,
+        )
         .all(accountId);
     },
 
@@ -231,10 +233,9 @@ export function createInsuranceRepo(db: Database) {
 
     hasOperations(supportId: number): boolean {
       const row = db
-        .prepare<
-          [number],
-          { n: number }
-        >('SELECT COUNT(*) AS n FROM insurance_operations WHERE support_id = ?')
+        .prepare<[number], { n: number }>(
+          'SELECT COUNT(*) AS n FROM insurance_operations WHERE support_id = ?',
+        )
         .get(supportId);
       return (row?.n ?? 0) > 0;
     },
@@ -248,7 +249,9 @@ export function createInsuranceRepo(db: Database) {
         .prepare<
           [number, number],
           { transaction_id: number | null; arbitrage_peer_id: number | null }
-        >('SELECT transaction_id, arbitrage_peer_id FROM insurance_operations WHERE id = ? AND user_id = ?')
+        >(
+          'SELECT transaction_id, arbitrage_peer_id FROM insurance_operations WHERE id = ? AND user_id = ?',
+        )
         .get(operationId, userId);
       if (!op) throw new NotFoundError('insurance.operation_not_found');
       const peerId = op.arbitrage_peer_id;
@@ -359,10 +362,9 @@ export function createInsuranceRepo(db: Database) {
         const mainTx =
           op.fees_transaction_id == null && feesCents > 0 && op.transaction_id != null
             ? db
-                .prepare<
-                  [number],
-                  { account_id: number; description: string }
-                >('SELECT account_id, description FROM transactions WHERE id = ?')
+                .prepare<[number], { account_id: number; description: string }>(
+                  'SELECT account_id, description FROM transactions WHERE id = ?',
+                )
                 .get(op.transaction_id)
             : null;
 

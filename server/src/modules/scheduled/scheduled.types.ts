@@ -1,4 +1,4 @@
-import { RecurrenceUnit, TransactionType, WeekendHandling } from '../../constants';
+import { RecurrenceUnit, TransactionType, WeekendHandling } from '../../constants.js';
 
 export interface ScheduledTransaction {
   id: number;

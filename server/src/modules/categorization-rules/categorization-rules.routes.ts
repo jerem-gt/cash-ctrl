@@ -2,9 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
-import { requireAuth, sessionUserId } from '../../middleware';
-import { createCategorizationRulesRepo } from './categorization-rules.repo';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
+import { requireAuth, sessionUserId } from '../../middleware.js';
+import { createCategorizationRulesRepo } from './categorization-rules.repo.js';
 
 export const ruleSchema = z.object({
   pattern: z.string().min(1).max(200),

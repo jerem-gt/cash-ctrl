@@ -2,13 +2,18 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { handleHttpErrors, parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
+import {
+  handleHttpErrors,
+  parseBody,
+  parseNumberParam,
+  sendError,
+} from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   nameSchema,
   optionalDateSchema,
   positiveAmountSchema,
-} from '../../lib/validators';
+} from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
 import { loanCreate, loanUpdate } from './loans.service.js';

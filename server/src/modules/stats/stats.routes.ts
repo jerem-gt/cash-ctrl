@@ -2,15 +2,15 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { checkAccountOwnership } from '../../lib/accountHelpers';
-import { dateStr } from '../../lib/dateUtils';
-import { parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers';
+import { checkAccountOwnership } from '../../lib/accountHelpers.js';
+import { dateStr } from '../../lib/dateUtils.js';
+import { parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createStocksRepo } from '../stocks/stocks.repo';
-import { fetchAndStorePriceHistory } from '../stocks/stocks.service';
-import { createAccountBalanceHistoryRepo } from './account-balance-history.repo';
-import { createForecastRepo } from './forecast.repo';
-import { createStatsRepo } from './stats.repo';
+import { createStocksRepo } from '../stocks/stocks.repo.js';
+import { fetchAndStorePriceHistory } from '../stocks/stocks.service.js';
+import { createAccountBalanceHistoryRepo } from './account-balance-history.repo.js';
+import { createForecastRepo } from './forecast.repo.js';
+import { createStatsRepo } from './stats.repo.js';
 
 export const forecastQuerySchema = z.object({
   horizon: z.coerce

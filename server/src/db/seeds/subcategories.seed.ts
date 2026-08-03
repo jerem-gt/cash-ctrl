@@ -1,8 +1,8 @@
 import type { Database } from 'better-sqlite3';
 
-import type { Lang } from '../../lib/systemEntities';
-import { logger } from '../../logger';
-import { DEFAULT_CATEGORIES } from './categories.seed';
+import type { Lang } from '../../lib/systemEntities.js';
+import { logger } from '../../logger.js';
+import { DEFAULT_CATEGORIES } from './categories.seed.js';
 
 type SubcategoryDef = {
   code: string;
@@ -161,8 +161,7 @@ export function seedSubcategories(
           id = Number(result.lastInsertRowid);
         } else {
           const existing = findExistingStmt.get(userId, parentId, name) as
-            | { id: number }
-            | undefined;
+            { id: number } | undefined;
           id = existing?.id ?? 0;
         }
         if (id > 0) {

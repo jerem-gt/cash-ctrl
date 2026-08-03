@@ -2,11 +2,11 @@ import type { Database } from 'better-sqlite3';
 import { Request, Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers';
+import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createCategoriesRepo } from '../categories/categories.repo';
-import { createTransactionsRepo } from '../transactions/transactions.repo';
-import { createSubcategoriesRepo } from './subcategories.repo';
+import { createCategoriesRepo } from '../categories/categories.repo.js';
+import { createTransactionsRepo } from '../transactions/transactions.repo.js';
+import { createSubcategoriesRepo } from './subcategories.repo.js';
 
 export const createSubcategorySchema = z.object({
   category_id: z.number().int().positive(),

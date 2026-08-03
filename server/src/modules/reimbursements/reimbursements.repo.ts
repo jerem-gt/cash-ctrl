@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
-import { toEuros } from '../../lib/money';
-import type { PendingReimbursement, Reimbursement } from './reimbursements.types';
+import { toEuros } from '../../lib/money.js';
+import type { PendingReimbursement, Reimbursement } from './reimbursements.types.js';
 
 export function createReimbursementsRepo(db: Database) {
   const getRecentCompletedStmt = db.prepare<

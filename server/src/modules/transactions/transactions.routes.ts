@@ -2,18 +2,18 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants';
+import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants.js';
 import {
   handleHttpErrors,
   parseBody,
   parseNumberParam,
   sendError,
   zodToApiError,
-} from '../../lib/routeHelpers';
-import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators';
+} from '../../lib/routeHelpers.js';
+import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createTransactionsRepo } from './transactions.repo';
-import { transactionCreate, transactionDelete, transactionUpdate } from './transactions.service';
+import { createTransactionsRepo } from './transactions.repo.js';
+import { transactionCreate, transactionDelete, transactionUpdate } from './transactions.service.js';
 
 export const transactionSchema = z
   .object({

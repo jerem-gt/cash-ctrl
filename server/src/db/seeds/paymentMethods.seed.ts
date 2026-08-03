@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { Lang } from '../../lib/systemEntities';
+import type { Lang } from '../../lib/systemEntities.js';
 
 type PaymentMethodDef = {
   code: string;

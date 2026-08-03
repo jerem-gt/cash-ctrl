@@ -2,10 +2,10 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, sendError } from '../../lib/routeHelpers';
-import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntities';
+import { parseBody, sendError } from '../../lib/routeHelpers.js';
+import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntities.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createSettingsRepo } from './settings.repo';
+import { createSettingsRepo } from './settings.repo.js';
 
 export const settingsSchema = z.object({
   lead_days: z.number().int().min(0).max(365),

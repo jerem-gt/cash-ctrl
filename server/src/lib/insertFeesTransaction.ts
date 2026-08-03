@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import { getSystemRefs } from './administrationDataConstants';
+import { getSystemRefs } from './administrationDataConstants.js';
 
 export function insertFeesTransaction(
   db: Database,

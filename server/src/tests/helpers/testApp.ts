@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import supertest from 'supertest';
 
 import { createApp } from '../../app.js';
-import { createTestDb, seedTestReferenceData } from './testDb';
+import { createTestDb, seedTestReferenceData } from './testDb.js';
 
 export const TEST_USER = 'testuser';
 export const TEST_PASS = 'test-password-123';

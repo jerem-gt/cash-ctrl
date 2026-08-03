@@ -1,6 +1,6 @@
-import { WeekendHandling } from '../constants';
-import { ScheduledTransaction } from '../modules/scheduled/scheduled.types';
-import { parseDate } from './dateUtils';
+import { WeekendHandling } from '../constants.js';
+import { ScheduledTransaction } from '../modules/scheduled/scheduled.types.js';
+import { parseDate } from './dateUtils.js';
 
 // Sécurité anti-boucle infinie si une planif est mal formée (récurrence figée, etc.)
 export const MAX_OCCURRENCE_ITERATIONS = 10000;
