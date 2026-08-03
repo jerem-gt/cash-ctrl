@@ -1,8 +1,8 @@
 import type { AccountBalanceHistoryResponse, BalanceHistoryPoint } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { dateStr, parseDate } from '../../lib/dateUtils';
-import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
+import { dateStr, parseDate } from '../../lib/dateUtils.js';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql.js';
 
 interface CurrentBalanceRow {
   balance: number;

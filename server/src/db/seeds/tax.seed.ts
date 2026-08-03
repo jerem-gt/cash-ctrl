@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import { toCents } from '../../lib/money';
+import { toCents } from '../../lib/money.js';
 
 interface BracketDef {
   min_income: number; // euros

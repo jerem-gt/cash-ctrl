@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { sessionUserId } from '../middleware';
-import { type ErrorCode } from './errorCodes';
-import { handleHttpErrors, sendError, zodToApiError } from './routeHelpers';
+import { sessionUserId } from '../middleware.js';
+import { type ErrorCode } from './errorCodes.js';
+import { handleHttpErrors, sendError, zodToApiError } from './routeHelpers.js';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 

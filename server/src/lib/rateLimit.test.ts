@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { initSchema } from '../db/schema';
-import { FailureRateLimiter } from './rateLimit';
+import { initSchema } from '../db/schema.js';
+import { FailureRateLimiter } from './rateLimit.js';
 
 function createLimiter(maxAttempts = 3, windowMs = 1000) {
   const db = new Database(':memory:');

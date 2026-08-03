@@ -1,4 +1,4 @@
-import { SubcategoryWithCount } from '../subcategories/subcategories.types';
+import { SubcategoryWithCount } from '../subcategories/subcategories.types.js';
 
 export interface Category {
   id: number;

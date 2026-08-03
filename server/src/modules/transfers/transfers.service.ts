@@ -1,11 +1,11 @@
 import type { Database } from 'better-sqlite3';
 
 import { BadRequestError, HttpError, NotFoundError } from '../../lib/errors.js';
-import { createAccountsRepo } from '../accounts/accounts.repo';
-import { createStocksRepo } from '../stocks/stocks.repo';
-import { createTransactionsRepo } from '../transactions/transactions.repo';
-import { createTransfersRepo } from './transfers.repo';
-import type { TransferInput, UpdateTransferInput } from './transfers.types';
+import { createAccountsRepo } from '../accounts/accounts.repo.js';
+import { createStocksRepo } from '../stocks/stocks.repo.js';
+import { createTransactionsRepo } from '../transactions/transactions.repo.js';
+import { createTransfersRepo } from './transfers.repo.js';
+import type { TransferInput, UpdateTransferInput } from './transfers.types.js';
 
 function resolveTransferAccountIds(
   isExpense: boolean,

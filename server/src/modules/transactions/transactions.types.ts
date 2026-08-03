@@ -1,4 +1,4 @@
-import { ReimbursementStatus, StockOperationType, TransactionType } from '../../constants';
+import { ReimbursementStatus, StockOperationType, TransactionType } from '../../constants.js';
 
 export interface TransactionSplit {
   id: number;

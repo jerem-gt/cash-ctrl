@@ -1,9 +1,9 @@
 import type { Database } from 'better-sqlite3';
 
-import { createSettingsRepo } from '../settings/settings.repo';
-import { computeInsuranceProfitability } from './insurance-profitability.repo';
-import { computeInvestmentProfitability } from './investment-profitability.repo';
-import { computeSavingsProfitability } from './savings-profitability.repo';
+import { createSettingsRepo } from '../settings/settings.repo.js';
+import { computeInsuranceProfitability } from './insurance-profitability.repo.js';
+import { computeInvestmentProfitability } from './investment-profitability.repo.js';
+import { computeSavingsProfitability } from './savings-profitability.repo.js';
 
 export function createProfitabilityRepo(db: Database) {
   return {

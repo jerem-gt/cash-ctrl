@@ -5,7 +5,7 @@ import supertest from 'supertest';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../app.js';
-import { createTestDb } from '../../tests/helpers/testDb';
+import { createTestDb } from '../../tests/helpers/testDb.js';
 
 function setup() {
   const db = createTestDb();

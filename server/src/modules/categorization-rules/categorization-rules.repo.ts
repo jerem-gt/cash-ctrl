@@ -4,7 +4,7 @@ import type {
   CategorizationRule,
   CreateRuleInput,
   UpdateRuleInput,
-} from './categorization-rules.types';
+} from './categorization-rules.types.js';
 
 function longestCommonWordPrefix(descriptions: string[]): string {
   if (descriptions.length === 1) return descriptions[0];

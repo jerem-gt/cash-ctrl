@@ -2,7 +2,7 @@ import supertest from 'supertest';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../app.js';
-import { createTestDb } from '../tests/helpers/testDb';
+import { createTestDb } from '../tests/helpers/testDb.js';
 
 describe('GET /api/docs/openapi.json', () => {
   it('retourne la spec OpenAPI 3.1 avec les champs attendus', async () => {

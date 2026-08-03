@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { RecurrenceUnit, WeekendHandling } from '../constants';
-import { dateStr } from './dateUtils';
+import { RecurrenceUnit, WeekendHandling } from '../constants.js';
+import { dateStr } from './dateUtils.js';
 import {
   applyWeekend,
   forEachOccurrence,

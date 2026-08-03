@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { createDb, DATA_DIR, initDatabase } from './init';
-import { seedTestData } from './seedTestData';
+import { createDb, DATA_DIR, initDatabase } from './init.js';
+import { seedTestData } from './seedTestData.js';
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 const DB_PATH = path.join(DATA_DIR, 'cashctrl.db');

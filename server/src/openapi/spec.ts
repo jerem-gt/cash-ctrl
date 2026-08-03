@@ -1,22 +1,22 @@
 import type { ZodType } from 'zod';
 import { toJSONSchema } from 'zod';
 
-import { accountTypeSchema } from '../modules/account-types/account-types.routes';
-import { accountSchema, closeSchema } from '../modules/accounts/accounts.routes';
+import { accountTypeSchema } from '../modules/account-types/account-types.routes.js';
+import { accountSchema, closeSchema } from '../modules/accounts/accounts.routes.js';
 import {
   changePasswordSchema,
   disableTotpSchema,
   enableTotpSchema,
   loginSchema,
   verifyTotpSchema,
-} from '../modules/auth/auth.routes';
-import { bankSchema, reorderSchema } from '../modules/banks/banks.routes';
-import { categorySchema } from '../modules/categories/categories.routes';
+} from '../modules/auth/auth.routes.js';
+import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
+import { categorySchema } from '../modules/categories/categories.routes.js';
 import {
   matchQuerySchema,
   ruleSchema,
-} from '../modules/categorization-rules/categorization-rules.routes';
-import { executeSchema, jsonFullSchema } from '../modules/import/import.routes';
+} from '../modules/categorization-rules/categorization-rules.routes.js';
+import { executeSchema, jsonFullSchema } from '../modules/import/import.routes.js';
 import {
   arbitrageSchema,
   createSupportSchema,
@@ -25,36 +25,36 @@ import {
   revaloriserSchema,
   updateOperationSchema,
   versementSchema,
-} from '../modules/insurance/insurance.routes';
+} from '../modules/insurance/insurance.routes.js';
 import {
   createLoanSchema,
   updateInstallmentSchema,
   updateLoanSchema,
-} from '../modules/loans/loans.routes';
-import { paymentMethodSchema } from '../modules/payment-methods/payment-methods.routes';
+} from '../modules/loans/loans.routes.js';
+import { paymentMethodSchema } from '../modules/payment-methods/payment-methods.routes.js';
 import {
   attributedAmountSchema,
   linkSchema,
   statusSchema,
-} from '../modules/reimbursements/reimbursements.routes';
-import { scheduledSchema } from '../modules/scheduled/scheduled.routes';
-import { settingsSchema, systemRefsSchema } from '../modules/settings/settings.routes';
+} from '../modules/reimbursements/reimbursements.routes.js';
+import { scheduledSchema } from '../modules/scheduled/scheduled.routes.js';
+import { settingsSchema, systemRefsSchema } from '../modules/settings/settings.routes.js';
 import {
   buySchema,
   editOperationSchema,
   stockTransferSchema,
-} from '../modules/stocks/stocks.routes';
+} from '../modules/stocks/stocks.routes.js';
 import {
   createSubcategorySchema,
   updateSubcategorySchema,
-} from '../modules/subcategories/subcategories.routes';
+} from '../modules/subcategories/subcategories.routes.js';
 import {
   querySchema as transactionQuerySchema,
   transactionSchema,
   validateSchema,
-} from '../modules/transactions/transactions.routes';
-import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes';
-import { createUserSchema, updateUserSchema } from '../modules/users/users.routes';
+} from '../modules/transactions/transactions.routes.js';
+import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes.js';
+import { createUserSchema, updateUserSchema } from '../modules/users/users.routes.js';
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 

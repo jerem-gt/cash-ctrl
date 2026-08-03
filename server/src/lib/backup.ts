@@ -4,11 +4,11 @@ import path from 'node:path';
 
 import type { Database } from 'better-sqlite3';
 
-import { DATA_DIR } from '../db/init';
-import { logger } from '../logger';
-import { createExportRepo } from '../modules/export/export.repo';
-import type { FullExport } from '../modules/export/export.types';
-import { createSettingsRepo } from '../modules/settings/settings.repo';
+import { DATA_DIR } from '../db/init.js';
+import { logger } from '../logger.js';
+import { createExportRepo } from '../modules/export/export.repo.js';
+import type { FullExport } from '../modules/export/export.types.js';
+import { createSettingsRepo } from '../modules/settings/settings.repo.js';
 
 export const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 

@@ -1,4 +1,4 @@
-import type { YearlyReturn } from './stats.calculations';
+import type { YearlyReturn } from './stats.calculations.js';
 
 export interface AccountProfitability {
   account_id: number;

@@ -2,10 +2,10 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { dateStr } from '../../lib/dateUtils';
-import { sendError } from '../../lib/routeHelpers';
+import { dateStr } from '../../lib/dateUtils.js';
+import { sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createExportRepo } from './export.repo';
+import { createExportRepo } from './export.repo.js';
 
 export function createExportRouter(db: Database): Router {
   const exportRepo = createExportRepo(db);

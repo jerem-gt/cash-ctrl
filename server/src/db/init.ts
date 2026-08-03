@@ -3,8 +3,8 @@ import path from 'node:path';
 
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 
-import { initSchema } from './schema';
-import { seedDatabase } from './seed';
+import { initSchema } from './schema.js';
+import { seedDatabase } from './seed.js';
 
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
 

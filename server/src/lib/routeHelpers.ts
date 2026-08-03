@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 
-import { HttpError } from './errors';
+import { HttpError } from './errors.js';
 
 declare module 'express-serve-static-core' {
   interface Locals {
@@ -10,14 +10,14 @@ declare module 'express-serve-static-core' {
   }
 }
 
-import { sessionUserId } from '../middleware';
+import { sessionUserId } from '../middleware.js';
 import {
   type ApiErrorField,
   buildError,
   type ErrorCode,
   type ErrorParams,
   renderMessage,
-} from './errorCodes';
+} from './errorCodes.js';
 
 /** Envoie une erreur structurée `{ error: { code, message, params? } }`. */
 export function sendError(

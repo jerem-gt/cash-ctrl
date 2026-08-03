@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildError, ERROR_MESSAGES, renderMessage } from './errorCodes';
+import { buildError, ERROR_MESSAGES, renderMessage } from './errorCodes.js';
 
 describe('renderMessage', () => {
   it('retourne le template tel quel sans params', () => {

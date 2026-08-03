@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toFileName } from './stringUtils';
+import { toFileName } from './stringUtils.js';
 
 describe('toFileName', () => {
   it('devrait transformer en minuscules', () => {

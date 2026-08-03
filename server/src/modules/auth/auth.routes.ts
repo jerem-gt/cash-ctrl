@@ -5,9 +5,9 @@ import * as OTPAuth from 'otpauth';
 import { z } from 'zod';
 
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
-import { sendError } from '../../lib/routeHelpers';
+import { sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createAuthRepo } from './auth.repo';
+import { createAuthRepo } from './auth.repo.js';
 
 export const loginSchema = z.object({
   username: z.string().min(1),

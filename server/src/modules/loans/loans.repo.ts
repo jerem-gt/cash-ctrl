@@ -1,9 +1,9 @@
 import type { Loan, LoanInstallment } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { getAccountTypeIds, getSystemRefs } from '../../lib/administrationDataConstants';
-import { dateStr } from '../../lib/dateUtils';
-import { toCents, toEuros } from '../../lib/money';
+import { getAccountTypeIds, getSystemRefs } from '../../lib/administrationDataConstants.js';
+import { dateStr } from '../../lib/dateUtils.js';
+import { toCents, toEuros } from '../../lib/money.js';
 import { createTransfersRepo } from '../transfers/transfers.repo.js';
 import type { CreateLoanInput, UpdateInstallmentInput, UpdateLoanInput } from './loans.types.js';
 

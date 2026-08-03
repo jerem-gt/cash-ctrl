@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { dateStr } from '../../lib/dateUtils';
+import { dateStr } from '../../lib/dateUtils.js';
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
 

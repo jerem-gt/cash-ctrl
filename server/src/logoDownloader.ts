@@ -3,9 +3,9 @@ import path from 'node:path';
 
 import type { Database } from 'better-sqlite3';
 
-import { DATA_DIR } from './db/init';
-import { toFileName } from './lib/stringUtils';
-import { logger } from './logger';
+import { DATA_DIR } from './db/init.js';
+import { toFileName } from './lib/stringUtils.js';
+import { logger } from './logger.js';
 import { createBanksRepo } from './modules/banks/banks.repo.js';
 
 export const LOGOS_DIR = path.join(DATA_DIR, 'logos');

@@ -2,19 +2,19 @@ import type { Database } from 'better-sqlite3';
 import { type Response, Router } from 'express';
 import { z } from 'zod';
 
-import type { ErrorCode } from '../../lib/errorCodes';
-import { createAccountActionHandler } from '../../lib/handleAccountAction';
+import type { ErrorCode } from '../../lib/errorCodes.js';
+import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
 import {
   handleHttpErrors,
   makeCheckAccount,
   parseNumberParam,
   sendError,
   zodToApiError,
-} from '../../lib/routeHelpers';
-import { dateSchema, feesSchema, nameSchema, positiveAmountSchema } from '../../lib/validators';
+} from '../../lib/routeHelpers.js';
+import { dateSchema, feesSchema, nameSchema, positiveAmountSchema } from '../../lib/validators.js';
 import { requireAuth } from '../../middleware.js';
 import { createInsuranceRepo } from './insurance.repo.js';
-import type { InsuranceSupport } from './insurance.types';
+import type { InsuranceSupport } from './insurance.types.js';
 
 /**
  * Récupère un support et vérifie qu'il appartient bien au compte ciblé.

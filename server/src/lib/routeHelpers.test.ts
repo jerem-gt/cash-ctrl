@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { parseNumberParam, zodToApiError } from './routeHelpers';
+import { parseNumberParam, zodToApiError } from './routeHelpers.js';
 
 function mockRes() {
   const res = {

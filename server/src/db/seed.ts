@@ -1,15 +1,15 @@
 import type { Database } from 'better-sqlite3';
 
-import type { Lang, SystemRefColumn } from '../lib/systemEntities';
-import { SYSTEM_ENTITIES_BY_TYPE } from '../lib/systemEntities';
-import { createSettingsRepo } from '../modules/settings/settings.repo';
-import { seedAccountTypes } from './seeds/accountTypes.seed';
-import { seedBanks } from './seeds/banks.seed';
-import { seedCategories } from './seeds/categories.seed';
-import { seedPaymentMethods } from './seeds/paymentMethods.seed';
-import { seedSubcategories } from './seeds/subcategories.seed';
-import { seedTaxData } from './seeds/tax.seed';
-import { seedAdminUser } from './seeds/users.seed';
+import type { Lang, SystemRefColumn } from '../lib/systemEntities.js';
+import { SYSTEM_ENTITIES_BY_TYPE } from '../lib/systemEntities.js';
+import { createSettingsRepo } from '../modules/settings/settings.repo.js';
+import { seedAccountTypes } from './seeds/accountTypes.seed.js';
+import { seedBanks } from './seeds/banks.seed.js';
+import { seedCategories } from './seeds/categories.seed.js';
+import { seedPaymentMethods } from './seeds/paymentMethods.seed.js';
+import { seedSubcategories } from './seeds/subcategories.seed.js';
+import { seedTaxData } from './seeds/tax.seed.js';
+import { seedAdminUser } from './seeds/users.seed.js';
 
 export function seedUserData(db: Database, userId: number, lang: Lang = 'fr') {
   seedAccountTypes(db, userId, lang);

@@ -2,10 +2,10 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { handleHttpErrors, parseBody, parseNumberParam } from '../../lib/routeHelpers';
-import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators';
+import { handleHttpErrors, parseBody, parseNumberParam } from '../../lib/routeHelpers.js';
+import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { transferCreate, transferDelete, transferUpdate } from './transfers.service';
+import { transferCreate, transferDelete, transferUpdate } from './transfers.service.js';
 
 export const transferSchema = z.object({
   from_account_id: z.number().int().positive(),

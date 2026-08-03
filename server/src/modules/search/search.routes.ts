@@ -2,9 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { zodToApiError } from '../../lib/routeHelpers';
+import { zodToApiError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import { createSearchRepo } from './search.repo';
+import { createSearchRepo } from './search.repo.js';
 
 export const searchQuerySchema = z.object({
   q: z.string().trim().min(2),

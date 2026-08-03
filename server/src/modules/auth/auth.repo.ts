@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { User } from './auth.types';
+import type { User } from './auth.types.js';
 
 export function createAuthRepo(db: Database) {
   const getByUsernameStmt = db.prepare<{ username: string }, User>(

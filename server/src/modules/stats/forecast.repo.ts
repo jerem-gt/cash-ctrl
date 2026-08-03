@@ -1,12 +1,12 @@
 import type { ForecastAccount, ForecastPoint, ForecastResponse } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { dateStr, parseDate } from '../../lib/dateUtils';
-import { toCents } from '../../lib/money';
-import { forEachOccurrence } from '../../lib/scheduledLogic';
-import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql';
-import { createScheduledRepo } from '../scheduled/scheduled.repo';
-import type { ScheduledTransaction } from '../scheduled/scheduled.types';
+import { dateStr, parseDate } from '../../lib/dateUtils.js';
+import { toCents } from '../../lib/money.js';
+import { forEachOccurrence } from '../../lib/scheduledLogic.js';
+import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql.js';
+import { createScheduledRepo } from '../scheduled/scheduled.repo.js';
+import type { ScheduledTransaction } from '../scheduled/scheduled.types.js';
 
 interface AccountBalanceRow {
   account_id: number;

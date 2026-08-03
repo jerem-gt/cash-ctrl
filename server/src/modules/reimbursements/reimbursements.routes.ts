@@ -2,13 +2,13 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { REIMBURSEMENT_STATUSES } from '../../constants';
-import { dateStr } from '../../lib/dateUtils';
-import { toCents } from '../../lib/money';
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers';
+import { REIMBURSEMENT_STATUSES } from '../../constants.js';
+import { dateStr } from '../../lib/dateUtils.js';
+import { toCents } from '../../lib/money.js';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
-import { createReimbursementsRepo } from './reimbursements.repo';
+import { createReimbursementsRepo } from './reimbursements.repo.js';
 
 export const linkSchema = z.object({
   linked_transaction_id: z.number().int().positive(),

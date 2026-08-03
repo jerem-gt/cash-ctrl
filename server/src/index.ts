@@ -6,10 +6,10 @@ import path from 'node:path';
 import express from 'express';
 
 import { createApp } from './app.js';
-import { createDb, initDatabase } from './db/init';
+import { createDb, initDatabase } from './db/init.js';
 import { startBackupInterval } from './lib/backup.js';
 import { startScheduledGenerationInterval } from './lib/generateScheduled.js';
-import { logger } from './logger';
+import { logger } from './logger.js';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
 

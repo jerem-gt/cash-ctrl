@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { seedUserData } from '../../db/seed.js';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
 import { requireAdmin } from '../../middleware.js';
-import { createUsersRepo } from './users.repo';
+import { createUsersRepo } from './users.repo.js';
 
 export const createUserSchema = z.object({
   username: z.string().min(1).max(64),
