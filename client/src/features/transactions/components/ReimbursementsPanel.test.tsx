@@ -277,9 +277,9 @@ describe('ReimbursementsPanel — formulaire de liaison', () => {
   it('lie un remboursement et ferme le formulaire après succès', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /lier un remboursement/i })).toBeInTheDocument(),
-    );
+    expect(
+      await screen.findByRole('button', { name: /lier un remboursement/i }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /lier un remboursement/i }));
 
     // Select first income option (after "— Choisir —")
