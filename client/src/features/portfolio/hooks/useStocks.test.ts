@@ -10,7 +10,10 @@ import { server } from '@/tests/msw/server';
 
 import {
   useBuyStock,
+  useCachedTickers,
+  useDeleteCachedTicker,
   useRefreshPrices,
+  useRenameTicker,
   useSellStock,
   useStockOperations,
   useStockPositions,
@@ -178,6 +181,36 @@ describe('useUpdateStockOperation', () => {
         fees: 0,
         date: '2026-01-01',
       });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+// ─── useCachedTickers + useDeleteCachedTicker ─────────────────────────────────
+
+describe('useCachedTickers', () => {
+  it('récupère les tickers en cache', async () => {
+    const { result } = renderHook(() => useCachedTickers(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.some((t) => t.ticker === 'DCAM.PA')).toBe(true);
+  });
+});
+
+describe('useDeleteCachedTicker', () => {
+  it('supprime un ticker et invalide le cache', async () => {
+    const { result } = renderHook(() => useDeleteCachedTicker(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate('ORPHAN.PA');
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useRenameTicker', () => {
+  it('renomme un ticker et invalide le cache', async () => {
+    const { result } = renderHook(() => useRenameTicker(), { wrapper: createWrapper() });
+    act(() => {
+      result.current.mutate({ ticker: 'AIR.PA', newTicker: 'AIRBUS.PA' });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });

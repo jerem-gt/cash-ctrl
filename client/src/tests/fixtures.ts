@@ -4,6 +4,7 @@ import type {
   AccountProfitability,
   AccountType,
   Bank,
+  CachedStockTicker,
   Category,
   ForecastResponse,
   ImportResult,
@@ -185,6 +186,42 @@ export const INVESTMENT_ACCOUNT_2: Account = {
 export const STOCK_SEARCH_RESULTS = [
   { symbol: 'DCAM.PA', name: 'Décathlon SA', exchange: 'Paris', type: 'EQUITY' },
   { symbol: 'DCAM.DE', name: 'Decathlon', exchange: 'XETRA', type: 'EQUITY' },
+];
+
+export const CACHED_STOCK_TICKERS: CachedStockTicker[] = [
+  {
+    ticker: 'DCAM.PA',
+    price: 15,
+    currency: 'EUR',
+    name: 'Décathlon SA',
+    fetched_at: '2026-05-01T10:00:00',
+    in_use: false,
+    held_in: [],
+    used_by_others: false,
+    has_price_history: false,
+  },
+  {
+    ticker: 'ORPHAN.PA',
+    price: 42,
+    currency: 'EUR',
+    name: null,
+    fetched_at: '2026-05-01T10:00:00',
+    in_use: false,
+    held_in: [],
+    used_by_others: false,
+    has_price_history: false,
+  },
+  {
+    ticker: 'AIR.PA',
+    price: 150,
+    currency: 'EUR',
+    name: 'Airbus SE',
+    fetched_at: '2026-05-01T10:00:00',
+    in_use: true,
+    held_in: ['PEA Test'],
+    used_by_others: true,
+    has_price_history: true,
+  },
 ];
 
 export const ACCOUNT_TYPES: AccountType[] = [

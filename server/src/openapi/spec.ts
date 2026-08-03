@@ -763,6 +763,42 @@ export function buildOpenApiSpec() {
           responses: r200(),
         },
       },
+      '/api/stocks/tickers': {
+        get: {
+          tags: ['Stocks'],
+          summary: 'Lister les tickers en cache (cotes)',
+          security: sessionAuth,
+          responses: r200(),
+        },
+      },
+      '/api/stocks/tickers/{ticker}': {
+        delete: {
+          tags: ['Stocks'],
+          summary: 'Supprimer la cotation en cache d’un ticker inutilisé',
+          security: sessionAuth,
+          parameters: [{ name: 'ticker', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { ...r200(), ...r404, ...r409 },
+        },
+        put: {
+          tags: ['Stocks'],
+          summary: 'Renommer un ticker et répercuter partout où il est utilisé',
+          security: sessionAuth,
+          parameters: [{ name: 'ticker', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: { new_ticker: { type: 'string' } },
+                  required: ['new_ticker'],
+                },
+              },
+            },
+          },
+          responses: { ...r200(), ...r400, ...r404, ...r409 },
+        },
+      },
       '/api/stocks/price/{ticker}': {
         get: {
           tags: ['Stocks'],

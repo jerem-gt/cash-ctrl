@@ -127,6 +127,12 @@ export const ERROR_MESSAGES = {
   'stock.insufficient_position': 'Position insuffisante : {{available}} action(s) disponible(s)',
   'stock.net_amount_after_fees_positive': 'Le montant net après frais doit être positif',
   'stock.net_amount_positive': 'Le montant net doit être positif',
+  'stock.ticker_required': 'Le ticker est requis',
+  'stock.ticker_not_cached': 'Aucune cotation en cache pour {{ticker}}',
+  'stock.ticker_in_use':
+    'Impossible de supprimer {{ticker}} : il est encore utilisé par une position ou un historique de prix.',
+  'stock.ticker_exists': 'Le ticker {{ticker}} existe déjà dans la cache.',
+  'stock.ticker_same': 'Le nouveau ticker doit être différent de l’actuel.',
 
   // ── Prêts ─────────────────────────────────────────────────────────────────
   'loan.not_found': 'Prêt introuvable',

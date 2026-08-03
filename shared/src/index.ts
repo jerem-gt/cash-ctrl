@@ -220,6 +220,22 @@ export interface StockPrice {
   fetched_at: string;
 }
 
+export interface CachedStockTicker {
+  ticker: string;
+  price: number;
+  currency: string;
+  name: string | null;
+  fetched_at: string;
+  /** Le ticker est encore utilisé (position ou historique de prix) → non supprimable. */
+  in_use: boolean;
+  /** Noms des comptes du user courant qui détiennent encore ce ticker (positions). */
+  held_in: string[];
+  /** Un autre utilisateur détient encore ce ticker (positions). */
+  used_by_others: boolean;
+  /** Un historique de prix (années de clôture) existe pour ce ticker. */
+  has_price_history: boolean;
+}
+
 // ─── Transactions ─────────────────────────────────────────────────────────────
 
 export interface TransactionSplit {

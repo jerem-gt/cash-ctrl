@@ -34,6 +34,7 @@ export const queryKeys = {
     },
     operations: (accountId: number) => ['stock-operations', accountId] as const,
     search: (query: string) => ['stock-search', query] as const,
+    cachedTickers: () => ['stock-cached-tickers'] as const,
   },
 
   insurance: {

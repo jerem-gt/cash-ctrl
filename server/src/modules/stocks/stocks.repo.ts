@@ -1,4 +1,4 @@
-import type { StockOperation, StockPosition, StockPrice } from '@cashctrl/types';
+import type { CachedStockTicker, StockOperation, StockPosition, StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
@@ -11,6 +11,16 @@ import { BuyInput, SellInput, TransferInput } from './stocks.types.js';
 function mapOperation(row: StockOperation): StockOperation {
   return { ...row, fees: toEuros(row.fees) };
 }
+
+type CachedTickerRow = Omit<
+  CachedStockTicker,
+  'in_use' | 'has_price_history' | 'held_in' | 'used_by_others'
+> & {
+  in_use: 0 | 1;
+  has_price_history: 0 | 1;
+  held_in: string;
+  used_by_others: 0 | 1;
+};
 
 function insertStockTxAndOp(
   db: Database,
@@ -82,6 +92,60 @@ export function createStocksRepo(db: Database) {
   const getStockPriceStmt = db.prepare<{ ticker: string }, StockPrice>(`
     SELECT ticker, price, currency, name, fetched_at FROM stock_prices WHERE ticker = :ticker
   `);
+
+  const getCachedTickersStmt = db.prepare<{ user_id: number }, CachedTickerRow>(
+    `
+    SELECT sp.ticker, sp.price, sp.currency, sp.name, sp.fetched_at,
+           CASE WHEN EXISTS (
+             SELECT 1 FROM stock_positions p
+             WHERE p.ticker = sp.ticker AND p.quantity > 0
+           ) OR EXISTS (
+             SELECT 1 FROM stock_price_history h WHERE h.ticker = sp.ticker
+           ) THEN 1 ELSE 0 END AS in_use,
+           CASE WHEN EXISTS (
+             SELECT 1 FROM stock_price_history h WHERE h.ticker = sp.ticker
+           ) THEN 1 ELSE 0 END AS has_price_history,
+           CASE WHEN EXISTS (
+             SELECT 1 FROM stock_positions p
+             WHERE p.ticker = sp.ticker AND p.quantity > 0 AND p.user_id != :user_id
+           ) THEN 1 ELSE 0 END AS used_by_others,
+           COALESCE((
+             SELECT GROUP_CONCAT(a.name, '·')
+             FROM stock_positions p
+             JOIN accounts a ON a.id = p.account_id
+             WHERE p.ticker = sp.ticker AND p.quantity > 0 AND a.user_id = :user_id
+           ), '') AS held_in
+    FROM stock_prices sp
+    ORDER BY sp.ticker
+  `,
+  );
+
+  const getCachedTickerExistsStmt = db.prepare<{ ticker: string }, { cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM stock_prices WHERE ticker = :ticker`,
+  );
+
+  const renamePriceStmt = db.prepare(
+    `UPDATE stock_prices SET ticker = :new_ticker WHERE ticker = :old_ticker`,
+  );
+  const renamePriceHistoryStmt = db.prepare(
+    `UPDATE stock_price_history SET ticker = :new_ticker WHERE ticker = :old_ticker`,
+  );
+  const renamePositionsStmt = db.prepare(
+    `UPDATE stock_positions SET ticker = :new_ticker WHERE ticker = :old_ticker`,
+  );
+  const renameOperationsStmt = db.prepare(
+    `UPDATE stock_operations SET ticker = :new_ticker WHERE ticker = :old_ticker`,
+  );
+
+  const deleteCachedTickerStmt = db.prepare<{ ticker: string }>(
+    'DELETE FROM stock_prices WHERE ticker = :ticker',
+  );
+
+  const isTickerUsedStmt = db.prepare<{ ticker: string }, { cnt: number }>(
+    `SELECT COUNT(*) AS cnt
+     FROM stock_positions p
+     WHERE p.ticker = :ticker AND p.quantity > 0`,
+  );
 
   const upsertPriceStmt = db.prepare(`
     INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at)
@@ -315,6 +379,31 @@ export function createStocksRepo(db: Database) {
 
     getStockPrice: (ticker: string) => getStockPriceStmt.get({ ticker }) ?? undefined,
     getAllTickers: () => getAllTickersStmt.all(),
+    getCachedTickers: (userId: number) =>
+      getCachedTickersStmt.all({ user_id: userId }).map((t) => ({
+        ...t,
+        in_use: t.in_use === 1,
+        has_price_history: t.has_price_history === 1,
+        used_by_others: t.used_by_others === 1,
+        held_in: t.held_in ? t.held_in.split('·') : [],
+      })),
+    isTickerUsed: (ticker: string): boolean =>
+      (isTickerUsedStmt.get({ ticker })?.cnt ?? 0) > 0 ||
+      (hasPriceHistoryStmt.get({ ticker })?.cnt ?? 0) > 0,
+    deleteCachedTicker: (ticker: string): boolean => {
+      const result = deleteCachedTickerStmt.run({ ticker });
+      return result.changes > 0;
+    },
+    isCachedTicker: (ticker: string): boolean =>
+      (getCachedTickerExistsStmt.get({ ticker })?.cnt ?? 0) > 0,
+    renameTicker: (oldTicker: string, newTicker: string): void => {
+      db.transaction(() => {
+        renamePriceStmt.run({ old_ticker: oldTicker, new_ticker: newTicker });
+        renamePriceHistoryStmt.run({ old_ticker: oldTicker, new_ticker: newTicker });
+        renamePositionsStmt.run({ old_ticker: oldTicker, new_ticker: newTicker });
+        renameOperationsStmt.run({ old_ticker: oldTicker, new_ticker: newTicker });
+      })();
+    },
     upsertPrice: (ticker: string, price: number, currency: string, name: string | null) =>
       upsertPriceStmt.run({ ticker, price, currency, name }),
 

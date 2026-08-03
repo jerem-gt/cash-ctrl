@@ -47,6 +47,10 @@ export const editOperationSchema = z.object({
   description: descriptionSchema.optional(),
 });
 
+export const renameTickerSchema = z.object({
+  new_ticker: z.string().min(1).max(20),
+});
+
 export function createStocksRouter(db: Database): Router {
   const repo = createStocksRepo(db);
   const router = Router();
@@ -155,6 +159,54 @@ export function createStocksRouter(db: Database): Router {
     }
     const results = await searchByQuery(q);
     res.json(results);
+  });
+
+  router.get('/tickers', (req, res) => {
+    res.json(repo.getCachedTickers(sessionUserId(req)));
+  });
+
+  router.delete('/tickers/:ticker', (req, res) => {
+    const { ticker } = req.params;
+    if (!ticker) {
+      sendError(res, 400, 'stock.ticker_required');
+      return;
+    }
+    if (repo.isTickerUsed(ticker)) {
+      sendError(res, 409, 'stock.ticker_in_use', { ticker });
+      return;
+    }
+    if (!repo.deleteCachedTicker(ticker)) {
+      sendError(res, 404, 'stock.ticker_not_cached', { ticker });
+      return;
+    }
+    res.json({ ok: true });
+  });
+
+  router.put('/tickers/:ticker', (req, res) => {
+    const { ticker } = req.params;
+    if (!ticker) {
+      sendError(res, 400, 'stock.ticker_required');
+      return;
+    }
+    const data = parseBody(res, renameTickerSchema, req.body);
+    if (!data) return;
+
+    if (data.new_ticker === ticker) {
+      sendError(res, 400, 'stock.ticker_same');
+      return;
+    }
+    if (repo.isCachedTicker(data.new_ticker)) {
+      sendError(res, 409, 'stock.ticker_exists', { ticker: data.new_ticker });
+      return;
+    }
+    if (!repo.isCachedTicker(ticker)) {
+      sendError(res, 404, 'stock.ticker_not_cached', { ticker });
+      return;
+    }
+    handleHttpErrors(res, () => {
+      repo.renameTicker(ticker, data.new_ticker);
+      res.json({ ok: true });
+    });
   });
 
   router.get('/price/:ticker', async (req, res) => {
