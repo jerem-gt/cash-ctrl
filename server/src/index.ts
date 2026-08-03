@@ -32,7 +32,7 @@ app.set('trust proxy', 1);
 // Logos de banques : noms stables, changent rarement → cache navigateur d'une journée
 app.use('/logos', express.static(LOGOS_DIR, { maxAge: '1d' }));
 
-const CLIENT_DIST = path.join(__dirname, '../../client/dist');
+const CLIENT_DIST = path.join(import.meta.dirname, '../../client/dist');
 
 if (IS_PROD) {
   // Assets Vite à noms hashés → cache immuable 1 an ; index.html ne doit jamais être caché

@@ -6,7 +6,7 @@ import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import { initSchema } from './schema.js';
 import { seedDatabase } from './seed.js';
 
-export const DATA_DIR = process.env.DATA_DIR ?? path.join(__dirname, '../../data');
+export const DATA_DIR = process.env.DATA_DIR ?? path.join(import.meta.dirname, '../../data');
 
 // Each entry converts the DB from version N to N+1.
 const MIGRATIONS: Array<(db: DatabaseType) => void> = [
