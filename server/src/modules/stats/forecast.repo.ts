@@ -3,7 +3,7 @@ import type { Database } from 'better-sqlite3';
 
 import { dateStr, parseDate } from '../../lib/dateUtils.js';
 import { toCents } from '../../lib/money.js';
-import { forEachOccurrence } from '../../lib/scheduledLogic.js';
+import { forEachOccurrence, OccurrenceRange } from '../../lib/scheduledLogic.js';
 import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql.js';
 import { createScheduledRepo } from '../scheduled/scheduled.repo.js';
 import type { ScheduledTransaction } from '../scheduled/scheduled.types.js';
@@ -13,6 +13,15 @@ interface AccountBalanceRow {
   account_name: string;
   bank_id: number;
   balance: number;
+}
+
+/** Échéance d'une planif déjà matérialisée en table `transactions`. */
+interface MaterializedRow {
+  account_id: number;
+  type: 'income' | 'expense';
+  amount: number;
+  date: string;
+  validated: number;
 }
 
 interface PendingInstallmentRow {
@@ -49,16 +58,21 @@ function addFlowsFromSchedule(
   sched: ScheduledTransaction,
   today: Date,
   horizon: Date,
+  lastMaterialized: string | null,
   addDelta: (accountId: number, date: string, deltaCents: number) => void,
 ): void {
   const isVersement = sched.insurance_support_id != null;
   const isTransfer = !isVersement && sched.to_account_id != null;
   const amountCents = toCents(sched.amount);
 
-  // Pas de resumeFrom (last_generated_until) : les transactions déjà pré-générées
-  // (non validées, jusqu'à J+lead_days) ne doivent pas être exclues de la projection
-  // sous prétexte qu'elles existent déjà en base. `from` fast-forward vers `today`.
-  forEachOccurrence(sched, { from: today, until: horizon }, (actual) => {
+  // Les échéances déjà matérialisées en base (pré-générées jusqu'à J+lead_days) font foi :
+  // on reprend la récurrence après la dernière d'entre elles au lieu de repartir de `today`.
+  // (cf. manière de génération `generateScheduled`). Sans aucune ligne -> projection de config.
+  const range: OccurrenceRange = lastMaterialized
+    ? { until: horizon, resumeFrom: lastMaterialized }
+    : { from: today, until: horizon };
+
+  forEachOccurrence(sched, range, (actual) => {
     if (actual >= today && actual <= horizon) {
       recordOccurrenceDelta(sched, isVersement, isTransfer, amountCents, dateStr(actual), addDelta);
     }
@@ -67,6 +81,17 @@ function addFlowsFromSchedule(
 
 export function createForecastRepo(db: Database) {
   const scheduledRepo = createScheduledRepo(db);
+
+  const scheduledTxStmt = db.prepare<
+    { scheduledId: number; userId: number; from: string; to: string },
+    MaterializedRow
+  >(`
+    SELECT account_id, type, amount, date, validated
+    FROM transactions
+    WHERE scheduled_id = :scheduledId AND user_id = :userId
+      AND date >= :from AND date <= :to
+    ORDER BY date
+  `);
 
   const balanceStmt = db.prepare<{ userId: number; accountId: number | null }, AccountBalanceRow>(`
     SELECT a.id AS account_id, a.name AS account_name, a.bank_id,
@@ -94,6 +119,73 @@ export function createForecastRepo(db: Database) {
       AND li.due_date >= :from AND li.due_date <= :to
   `);
 
+  const addScheduleRows = (
+    sched: ScheduledTransaction,
+    userId: number,
+    today: string,
+    todayDate: Date,
+    horizon: Date,
+    horizonStr: string,
+    addDelta: (accountId: number, date: string, deltaCents: number) => void,
+  ): void => {
+    const rows = scheduledTxStmt.all({
+      scheduledId: sched.id,
+      userId,
+      from: today,
+      to: horizonStr,
+    });
+    // Deltas des échéances déjà matérialisées (y compris déplacées) : seule source de
+    // vérité. Les transactions validées sont déjà dans `current_balance` (somme sans filtre
+    // de date) : on ne les re-projette pas (pas de doublon).
+    for (const r of rows) {
+      if (r.validated === 0) {
+        addDelta(r.account_id, r.date, r.type === 'income' ? r.amount : -r.amount);
+      }
+    }
+    // Au-delà de la dernière échéance connue (validée ou non), on projette la config pour
+    // conserver le rythme d'origine au-delà de la fenêtre pré-générée (J+lead_days).
+    const lastMaterialized = rows.length > 0 ? rows[rows.length - 1].date : null;
+    addFlowsFromSchedule(sched, todayDate, horizon, lastMaterialized, addDelta);
+  };
+
+  const buildForecastAccounts = (
+    accountBalances: AccountBalanceRow[],
+    deltasByAccount: Map<number, Map<string, number>>,
+    todayDate: Date,
+    horizonDays: number,
+    today: string,
+  ): ForecastAccount[] => {
+    const accounts: ForecastAccount[] = [];
+    for (const acc of accountBalances) {
+      const deltas = deltasByAccount.get(acc.account_id);
+      if (!deltas || deltas.size === 0) continue;
+
+      // Le point initial inclut le delta du jour meme (occurrence/echeance dues aujourd'hui).
+      let running = acc.balance + (deltas.get(today) ?? 0);
+      let goesNegativeOn: string | null = running < 0 ? today : null;
+      const points: ForecastPoint[] = [{ date: today, balance: running }];
+
+      for (let i = 1; i <= horizonDays; i++) {
+        const d = new Date(todayDate);
+        d.setDate(d.getDate() + i);
+        const dStr = dateStr(d);
+        running += deltas.get(dStr) ?? 0;
+        points.push({ date: dStr, balance: running });
+        if (goesNegativeOn === null && running < 0) goesNegativeOn = dStr;
+      }
+
+      accounts.push({
+        account_id: acc.account_id,
+        account_name: acc.account_name,
+        bank_id: acc.bank_id,
+        current_balance: acc.balance,
+        points,
+        goes_negative_on: goesNegativeOn,
+      });
+    }
+    return accounts;
+  };
+
   return {
     getForecast(
       userId: number,
@@ -118,7 +210,7 @@ export function createForecastRepo(db: Database) {
 
       const schedules = scheduledRepo.getActiveByUserId(userId);
       for (const sched of schedules) {
-        addFlowsFromSchedule(sched, todayDate, horizonDate, addDelta);
+        addScheduleRows(sched, userId, today, todayDate, horizonDate, horizonStr, addDelta);
       }
 
       const installments = pendingInstallmentsStmt.all({
@@ -131,35 +223,13 @@ export function createForecastRepo(db: Database) {
       }
 
       const accountBalances = balanceStmt.all({ userId, accountId: accountId ?? null });
-      const accounts: ForecastAccount[] = [];
-
-      for (const acc of accountBalances) {
-        const deltas = deltasByAccount.get(acc.account_id);
-        if (!deltas || deltas.size === 0) continue;
-
-        // Le point initial inclut le delta du jour meme (occurrence/echeance dues aujourd'hui).
-        let running = acc.balance + (deltas.get(today) ?? 0);
-        let goesNegativeOn: string | null = running < 0 ? today : null;
-        const points: ForecastPoint[] = [{ date: today, balance: running }];
-
-        for (let i = 1; i <= horizonDays; i++) {
-          const d = new Date(todayDate);
-          d.setDate(d.getDate() + i);
-          const dStr = dateStr(d);
-          running += deltas.get(dStr) ?? 0;
-          points.push({ date: dStr, balance: running });
-          if (goesNegativeOn === null && running < 0) goesNegativeOn = dStr;
-        }
-
-        accounts.push({
-          account_id: acc.account_id,
-          account_name: acc.account_name,
-          bank_id: acc.bank_id,
-          current_balance: acc.balance,
-          points,
-          goes_negative_on: goesNegativeOn,
-        });
-      }
+      const accounts = buildForecastAccounts(
+        accountBalances,
+        deltasByAccount,
+        todayDate,
+        horizonDays,
+        today,
+      );
 
       return { horizon: horizonDays, accounts };
     },

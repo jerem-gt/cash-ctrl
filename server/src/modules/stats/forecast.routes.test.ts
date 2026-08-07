@@ -251,6 +251,100 @@ describe('GET /api/stats/forecast', () => {
     expect(findPoint(accForecast, daysFromNow(1))?.balance).toBe(100000 - firstInstallmentCents);
   });
 
+  it("après avoir déplacé une occurrence (unique) à aujourd'hui + validation, ne la projette plus à l'ancienne date", async () => {
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Prélèvement à déplacer',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'day',
+      recurrence_interval: 1000,
+      start_date: daysFromNow(5),
+      active: true,
+    });
+    expect(sched.status).toBe(201);
+    const scheduledId = sched.body.id;
+
+    const txs = await ctx.agent.get(`/api/transactions?scheduled_id=${scheduledId}`);
+    const oldTx = (txs.body.data as { id: number; date: string }[])[0];
+    const oldDate = oldTx.date;
+    expect(oldDate).toBe(daysFromNow(5));
+
+    // L'utilisateur déplace la transaction pré-générée à aujourd'hui et la valide.
+    const move = await ctx.agent.put(`/api/transactions/${oldTx.id}`).send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Prélèvement à déplacer',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      date: daysFromNow(0),
+      validated: true,
+      scheduled_id: scheduledId,
+    });
+    expect(move.status).toBe(200);
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=30&account_id=${accountId}`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId);
+    // Dépense consommée aujourd'hui (validée, dans le solde courant) : plus aucune
+    // échéance future à projeter → le compte n'apparaît pas dans le forecast
+    // (l'ancienne date n'est PAS reprojetée).
+    expect(acc).toBeUndefined();
+  });
+
+  it('déplacer une occurrence récurrente : ancienne date non projetée, rythme des suivantes conservé', async () => {
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Loyer',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'week',
+      recurrence_interval: 1,
+      start_date: daysFromNow(14),
+      active: true,
+    });
+    expect(sched.status).toBe(201);
+    const scheduledId = sched.body.id;
+
+    const txs = await ctx.agent.get(`/api/transactions?scheduled_id=${scheduledId}`);
+    const rows = txs.body.data as Array<{ id: number; date: string }>;
+    const first = rows.find((r) => r.date === daysFromNow(14))!;
+    const second = rows.find((r) => r.date === daysFromNow(21))!;
+    expect(second).toBeTruthy();
+
+    await ctx.agent.put(`/api/transactions/${first.id}`).send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Loyer',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      date: daysFromNow(0),
+      validated: true,
+      scheduled_id: scheduledId,
+    });
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90&account_id=${accountId}`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId)!;
+
+    // L'ancienne occurrence (jours 14) a disparu…
+    const prevOfDay14 = findPoint(acc, daysFromNow(13))?.balance ?? 0;
+    const atDay14 = findPoint(acc, daysFromNow(14))?.balance ?? 0;
+    expect(prevOfDay14 - atDay14).toBe(0);
+
+    // …mais le rythme se poursuit (jours 21, 28…) : une nouvelle échéance est bien projetée.
+    let sawLaterDip = false;
+    for (const p of acc.points) {
+      if (p.balance < acc.points[0].balance) sawLaterDip = true;
+    }
+    expect(sawLaterDip).toBe(true);
+    expect(findPoint(acc, daysFromNow(21))?.balance).toBeLessThan(acc.points[0].balance);
+  });
+
   it('account_id filtre le forecast sur le seul compte demande', async () => {
     await ctx.agent.post('/api/scheduled').send({
       account_id: accountId,
