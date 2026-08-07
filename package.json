@@ -19,7 +19,7 @@
     "format": "prettier . --write"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.18.1",
+    "@eslint-react/eslint-plugin": "^5.18.2",
     "@eslint/js": "^10.0.1",
     "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
