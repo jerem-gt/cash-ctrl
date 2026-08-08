@@ -57,10 +57,25 @@ Dans `getForecast`, pour chaque planif :
   (`date >= today`, comportement actuel, cf. test « occurrence planifiée le jour même »).
 
 ### Limites résiduelles
-- Tampon de pré-génération vide/périmé (job pas encore passé) → on retombe tôt sur
-  la config : pas de perte totale, mais moins précis jusqu'au prochain run.
 - `weekend_handling` : les dates lues sont réelles (post-ajustement) ; baser le
   fallback sur `MAX(date)` peut dériver le nominal. Impact faible.
+
+### Correctif (08/08/2026) : déplacement d'une occurrence vers le **passé**
+Le fix initial n'anchait le fallback config que sur la **fenêtre** pré-générée
+(`date >= aujourd'hui`). Avancer un loyer du 10 au 7 (`PUT /api/transactions/:id`,
+date passée + `validated: true`, `scheduled_id` conservé) sortait l'occurrence de
+cette fenêtre → `lastMaterialized: null` → re-projection de la config : le loyer
+réapparaissait à l'ancienne date (double comptage « aujourd'hui + ancienne date »).
+
+**Correctif** (`forecast.repo.ts`) : l'ancre provient désormais de la **dernière
+échéance matérialisée toutes périodes confondues**
+(`SELECT MAX(date) FROM transactions WHERE scheduled_id = ? AND user_id = ?`, sans
+filtre de date). Le fallback reprend le rythme après elle même lorsqu'elle est dans
+le passé → l'occurrence déplacée/validée n'est plus re-projetée, les suivantes le
+restent.
+- [x] TU : « loyer avancé : déplacer l'occurrence à une date passée ne la
+      réapparaît pas dans le forecast » (`forecast.routes.test.ts`)
+- [x] Suite serveur complète verte (694 tests) + `tsc --noEmit` + eslint
 
 ## Étapes réalisées
 - [x] `forecast.repo.ts` : table d'abord + fallback + helpers (`addScheduleRows`,

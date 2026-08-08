@@ -93,6 +93,15 @@ export function createForecastRepo(db: Database) {
     ORDER BY date
   `);
 
+  // Dernière échéance matérialisée, toutes périodes confondues (passé + futur). Une
+  // occurrence avancée à une date passée (payée/validée) tombe hors de la fenêtre de
+  // pré-génération : c'est elle en revanche qui ancre la projection de la config.
+  const lastScheduledTxStmt = db
+    .prepare<{ scheduledId: number; userId: number }, string | null>(
+      `SELECT MAX(date) FROM transactions WHERE scheduled_id = :scheduledId AND user_id = :userId`,
+    )
+    .pluck();
+
   const balanceStmt = db.prepare<{ userId: number; accountId: number | null }, AccountBalanceRow>(`
     SELECT a.id AS account_id, a.name AS account_name, a.bank_id,
            a.initial_balance + COALESCE(bal.s, 0) AS balance
@@ -144,7 +153,7 @@ export function createForecastRepo(db: Database) {
     }
     // Au-delà de la dernière échéance connue (validée ou non), on projette la config pour
     // conserver le rythme d'origine au-delà de la fenêtre pré-générée (J+lead_days).
-    const lastMaterialized = rows.length > 0 ? rows[rows.length - 1].date : null;
+    const lastMaterialized = lastScheduledTxStmt.get({ scheduledId: sched.id, userId }) ?? null;
     addFlowsFromSchedule(sched, todayDate, horizon, lastMaterialized, addDelta);
   };
 
