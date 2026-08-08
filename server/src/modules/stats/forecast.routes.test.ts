@@ -345,6 +345,49 @@ describe('GET /api/stats/forecast', () => {
     expect(findPoint(acc, daysFromNow(21))?.balance).toBeLessThan(acc.points[0].balance);
   });
 
+  it("loyer avancé : déplacer l'occurrence à une date passée ne la réapparaît pas dans le forecast", async () => {
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      description: 'Loyer avancé',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'day',
+      recurrence_interval: 1000,
+      start_date: daysFromNow(15),
+      active: true,
+    });
+    expect(sched.status).toBe(201);
+    const scheduledId = sched.body.id;
+
+    const txs = await ctx.agent.get(`/api/transactions?scheduled_id=${scheduledId}`);
+    const oldTx = (txs.body.data as { id: number; date: string }[])[0];
+    const oldDate = oldTx.date;
+    expect(oldDate).toBe(daysFromNow(15));
+
+    // L'utilisateur avance le loyer : déplacement de l'occurrence pré-générée à hier
+    // (date passée) + validation. Le tampon de pré-génération devient vide.
+    const move = await ctx.agent.put(`/api/transactions/${oldTx.id}`).send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 200,
+      description: 'Loyer avancé',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      date: daysFromNow(-1),
+      validated: true,
+      scheduled_id: scheduledId,
+    });
+    expect(move.status).toBe(200);
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90&account_id=${accountId}`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId);
+    // Le loyer est déjà payé (hier, dans le solde courant) : plus aucune échéance dans
+    // la fenêtre 90 j → le compte ne doit PAS réapparaître en projetant l'ancienne date.
+    expect(acc).toBeUndefined();
+  });
+
   it('account_id filtre le forecast sur le seul compte demande', async () => {
     await ctx.agent.post('/api/scheduled').send({
       account_id: accountId,
