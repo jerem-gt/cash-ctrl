@@ -388,6 +388,77 @@ describe('GET /api/stats/forecast', () => {
     expect(acc).toBeUndefined();
   });
 
+  it('projette un transfert au-delà du tampon de pré-génération (fallback config, 2 comptes)', async () => {
+    await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      to_account_id: destAccountId,
+      type: 'expense',
+      amount: 60,
+      description: 'Virement périodique',
+      payment_method_id: SEED.PM_TRANSFERT,
+      recurrence_unit: 'day',
+      recurrence_interval: 40,
+      start_date: daysFromNow(0),
+      active: true,
+    });
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90`);
+    const accounts = fc.body.accounts as ForecastAccountDto[];
+    const acc = accounts.find((a) => a.account_id === accountId)!;
+    const dest = accounts.find((a) => a.account_id === destAccountId)!;
+    expect(acc).toBeTruthy();
+    expect(dest).toBeTruthy();
+
+    // L'occurrence pré-générée (J0) vit en base ; au-delà (J+40 > lead), la config est
+    // re-projetée : débit sur le compte source, crédit sur le compte destination.
+    const prevAcc = findPoint(acc, daysFromNow(39))?.balance ?? 0;
+    expect(prevAcc - (findPoint(acc, daysFromNow(40))?.balance ?? 0)).toBe(6000);
+    const prevDest = findPoint(dest, daysFromNow(39))?.balance ?? 0;
+    expect((findPoint(dest, daysFromNow(40))?.balance ?? 0) - prevDest).toBe(6000);
+  });
+
+  it('projette un versement AV au-delà du tampon (seul le compte source est débité)', async () => {
+    const av = await ctx.agent.post('/api/accounts').send({
+      name: 'PER test',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_PER,
+      opening_date: '2020-01-01',
+      initial_balance: 0,
+    });
+    const avAccountId = av.body.id;
+    const sup = await ctx.agent
+      .post(`/api/insurance/${avAccountId}/supports`)
+      .send({ account_id: avAccountId, name: 'Fonds Euro', type: 'euro' });
+    const supportId = sup.body.id;
+
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: avAccountId,
+      to_account_id: accountId,
+      insurance_support_id: supportId,
+      insurance_fees: 0,
+      type: 'expense',
+      amount: 80,
+      description: 'Versement PER périodique',
+      recurrence_unit: 'day',
+      recurrence_interval: 40,
+      start_date: daysFromNow(0),
+      active: true,
+    });
+    expect(sched.status).toBe(201);
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90`);
+    const accounts = fc.body.accounts as ForecastAccountDto[];
+    const acc = accounts.find((a) => a.account_id === accountId)!;
+    expect(acc).toBeTruthy();
+
+    // Seul le compte source (to_account_id) est débité au-delà du tampon (J+40).
+    const prev = findPoint(acc, daysFromNow(39))?.balance ?? 0;
+    expect(prev - (findPoint(acc, daysFromNow(40))?.balance ?? 0)).toBe(8000);
+    // Le compte AV n'est pas côté dans le forecast (l'apport passe par insurance_operations).
+    const avInFc = accounts.find((a) => a.account_id === avAccountId);
+    expect(avInFc).toBeUndefined();
+  });
+
   it('account_id filtre le forecast sur le seul compte demande', async () => {
     await ctx.agent.post('/api/scheduled').send({
       account_id: accountId,
