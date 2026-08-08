@@ -459,6 +459,50 @@ describe('GET /api/stats/forecast', () => {
     expect(avInFc).toBeUndefined();
   });
 
+  it('projette depuis la config quand le tampon de pré-génération est encore vide', async () => {
+    await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 30,
+      description: 'Abonnement hors tampon',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'day',
+      recurrence_interval: 50,
+      start_date: daysFromNow(45),
+      active: true,
+    });
+
+    // Aucune occurrence matérialisée (J+45 > tampon J+30) : le fallback part de `today`
+    // et projette la première occurrence config à J+45 dans la fenêtre 90 j.
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId)!;
+    expect(acc).toBeTruthy();
+    const prev = findPoint(acc, daysFromNow(44))?.balance ?? 0;
+    expect(prev - (findPoint(acc, daysFromNow(45))?.balance ?? 0)).toBe(3000);
+  });
+
+  it('crédite un revenu planifié projeté depuis la config (income)', async () => {
+    await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'income',
+      amount: 40,
+      description: 'Rémunération hors tampon',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'day',
+      recurrence_interval: 50,
+      start_date: daysFromNow(45),
+      active: true,
+    });
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId)!;
+    expect(acc).toBeTruthy();
+    const prev = findPoint(acc, daysFromNow(44))?.balance ?? 0;
+    expect((findPoint(acc, daysFromNow(45))?.balance ?? 0) - prev).toBe(4000);
+  });
+
   it('account_id filtre le forecast sur le seul compte demande', async () => {
     await ctx.agent.post('/api/scheduled').send({
       account_id: accountId,
