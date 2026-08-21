@@ -116,7 +116,11 @@ export const TransactionsFilters = ({
   const resetAdvanced = () => {
     setAmountMinInput('');
     setAmountMaxInput('');
-    onFilterChange(Object.fromEntries(ADVANCED_KEYS.map((k) => [k, undefined])));
+    // Sur la page d'un compte (showAccountSelect=false), l'ID du compte est fixe : ne pas le réinitialiser.
+    const keys = showAccountSelect
+      ? ADVANCED_KEYS
+      : ADVANCED_KEYS.filter((k) => k !== 'account_id');
+    onFilterChange(Object.fromEntries(keys.map((k) => [k, undefined])));
   };
 
   return (
