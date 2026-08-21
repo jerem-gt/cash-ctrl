@@ -235,6 +235,53 @@ describe('TransactionsFilters', () => {
     expect(onFilterChange).toHaveBeenCalledWith({ account_id: 1 });
   });
 
+  // --- Réinitialisation ---
+
+  it('réinitialise les filtres avancés sans toucher au compte quand showAccountSelect est false', () => {
+    const onFilterChange = vi.fn();
+    renderWithProviders(
+      <TransactionsFilters
+        {...defaultProps}
+        filters={{ account_id: ACCOUNTS[0].id, category_id: CATEGORIES[0].id }}
+        showAccountSelect={false}
+        onFilterChange={onFilterChange}
+      />,
+    );
+    openAdvanced();
+
+    fireEvent.click(screen.getByRole('button', { name: /réinitialiser/i }));
+
+    const patch = onFilterChange.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.keys(patch)).not.toContain('account_id');
+    expect(patch.category_id).toBeUndefined();
+    expect(patch.subcategory_id).toBeUndefined();
+    expect(patch.date_from).toBeUndefined();
+    expect(patch.date_to).toBeUndefined();
+    expect(patch.amount_min).toBeUndefined();
+    expect(patch.amount_max).toBeUndefined();
+    expect(patch.payment_method_id).toBeUndefined();
+    expect(patch.validated).toBeUndefined();
+  });
+
+  it('réinitialise aussi le compte quand showAccountSelect est true', () => {
+    const onFilterChange = vi.fn();
+    renderWithProviders(
+      <TransactionsFilters
+        {...defaultProps}
+        filters={{ account_id: ACCOUNTS[0].id, category_id: CATEGORIES[0].id }}
+        showAccountSelect={true}
+        onFilterChange={onFilterChange}
+      />,
+    );
+    openAdvanced();
+
+    fireEvent.click(screen.getByRole('button', { name: /réinitialiser/i }));
+
+    expect(onFilterChange).toHaveBeenCalledWith(
+      expect.objectContaining({ account_id: undefined, category_id: undefined }),
+    );
+  });
+
   // --- Dates ---
 
   it('appelle onFilterChange avec date_from lors du changement de date de début', () => {
