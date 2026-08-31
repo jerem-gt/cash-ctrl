@@ -22,7 +22,7 @@ afterAll(() => {
 
 function makeQc() {
   const qc = createTestQueryClient();
-  const spy = vi.spyOn(qc, 'prefetchQuery').mockResolvedValue(undefined);
+  const spy = vi.spyOn(qc, 'query').mockResolvedValue(undefined);
   return { qc, spy };
 }
 
