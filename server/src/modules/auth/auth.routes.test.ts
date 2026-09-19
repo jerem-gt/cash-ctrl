@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-hardcoded-passwords */
 import bcrypt from 'bcrypt';
 import * as OTPAuth from 'otpauth';
 import supertest from 'supertest';
