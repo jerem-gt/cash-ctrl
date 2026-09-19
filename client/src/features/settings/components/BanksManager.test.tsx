@@ -1,7 +1,9 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { vi } from 'vitest';
 
+import { banksApi } from '@/api/client';
 import { BANKS } from '@/tests/fixtures.ts';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
@@ -132,7 +134,7 @@ describe('BanksManager', () => {
     });
 
     it('soumet le formulaire avec un logo uploadé', async () => {
-      server.use(http.post('/api/banks/:id/logo', () => HttpResponse.json(BANKS[0])));
+      const uploadSpy = vi.spyOn(banksApi, 'uploadLogo').mockResolvedValue(BANKS[0]);
       const user = userEvent.setup();
       renderWithProviders(<BanksManager />);
       await screen.findByText('BNP');
@@ -147,6 +149,7 @@ describe('BanksManager', () => {
       await waitFor(() =>
         expect(document.getElementById('toast')?.textContent).toContain('mise à jour'),
       );
+      uploadSpy.mockRestore();
     });
   });
 

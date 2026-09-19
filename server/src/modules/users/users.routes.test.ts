@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-hardcoded-passwords */
 import bcrypt from 'bcrypt';
 import supertest from 'supertest';
 import { describe, expect, it } from 'vitest';
