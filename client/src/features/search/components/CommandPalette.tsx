@@ -93,6 +93,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
   const { data, isLoading } = useGlobalSearch(query);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const goTo = useCallback(
@@ -215,6 +216,10 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
     el?.scrollIntoView({ block: 'nearest' });
   }, [clampedActiveIndex]);
 
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   // Capture + stopPropagation : Escape ferme la palette sans atteindre une ModalFrame sous-jacente, même hors focus input.
   useEffect(() => {
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
@@ -267,7 +272,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
         <div className="flex items-center gap-2 px-4 py-3 border-b border-line-subtle shrink-0">
           <Search className="h-4 w-4 text-content-subtle shrink-0" aria-hidden="true" />
           <input
-            autoFocus
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

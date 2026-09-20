@@ -1,5 +1,5 @@
 import { Pencil, X } from 'lucide-react';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, ConfirmModal, ModalFrame, showToast } from '@/components/ui';
@@ -22,6 +22,13 @@ export function TickersManager() {
   const [pending, setPending] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [newTicker, setNewTicker] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      renameInputRef.current?.focus();
+    }
+  }, [editing]);
 
   if (isLoading) return <SettingsManagerSkeleton />;
 
@@ -184,7 +191,7 @@ export function TickersManager() {
               maxLength={TICKER_MAX_LENGTH}
               onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
               className="w-full px-3 py-2 bg-surface-muted border border-line rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
-              autoFocus
+              ref={renameInputRef}
             />
             <p className="text-[11px] text-content-muted mt-2">
               {t('tickers.rename_hint', { ticker: editing })}
