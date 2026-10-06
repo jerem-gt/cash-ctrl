@@ -174,12 +174,14 @@ async function refreshTickers(
   stocksRepo: ReturnType<typeof createStocksRepo>,
   tickers: string[],
 ): Promise<void> {
-  for (const ticker of tickers) {
-    const result = await refreshPrice(stocksRepo, ticker);
-    if (!result) {
-      logger.warn(`Failed to fetch price for ${ticker}`);
-    }
-  }
+  await Promise.all(
+    tickers.map(async (ticker) => {
+      const result = await refreshPrice(stocksRepo, ticker);
+      if (!result) {
+        logger.warn(`Failed to fetch price for ${ticker}`);
+      }
+    }),
+  );
 }
 
 /** Rafraîchit toutes les cotes détenues, tous utilisateurs confondus (job de fond). */

@@ -15,35 +15,37 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
 
   const banksRepo = createBanksRepo(db);
 
-  for (const bank of banksRepo.getAll()) {
-    if (bank.logo || !bank.login_url) continue;
+  await Promise.all(
+    banksRepo.getAll().map(async (bank) => {
+      if (bank.logo || !bank.login_url) return;
 
-    let hostname: string;
-    try {
-      hostname = new URL(bank.login_url).hostname;
-    } catch {
-      logger.warn(`logos: ${bank.name} — URL invalide : ${bank.login_url}`);
-      continue;
-    }
-
-    const filename = `${toFileName(bank.name)}-${bank.id}.png`;
-    const filepath = path.join(LOGOS_DIR, filename);
-    if (fs.existsSync(filepath)) {
-      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
-      continue;
-    }
-
-    try {
-      const res = await fetch(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
-      if (!res.ok) {
-        logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
-        continue;
+      let hostname: string;
+      try {
+        hostname = new URL(bank.login_url).hostname;
+      } catch {
+        logger.warn(`logos: ${bank.name} — URL invalide : ${bank.login_url}`);
+        return;
       }
-      fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
-      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
-      logger.info(`logos: downloaded ${bank.name}`);
-    } catch (err) {
-      logger.warn(`logos: ${bank.name} — ${(err as Error).message}`);
-    }
-  }
+
+      const filename = `${toFileName(bank.name)}-${bank.id}.png`;
+      const filepath = path.join(LOGOS_DIR, filename);
+      if (fs.existsSync(filepath)) {
+        banksRepo.updateLogo(bank.id, `/logos/${filename}`);
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
+        if (!res.ok) {
+          logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
+          return;
+        }
+        fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
+        banksRepo.updateLogo(bank.id, `/logos/${filename}`);
+        logger.info(`logos: downloaded ${bank.name}`);
+      } catch (err) {
+        logger.warn(`logos: ${bank.name} — ${(err as Error).message}`);
+      }
+    }),
+  );
 }
