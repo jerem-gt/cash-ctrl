@@ -33,7 +33,7 @@ jobs:
 
       # Remplacement de actions/setup-node par actions/cache
       - name: Cache npm dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
