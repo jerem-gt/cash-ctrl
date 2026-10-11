@@ -188,6 +188,11 @@ jobs:
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v4
 
+      # Icône Dozzle : data URI encodée depuis le favicon, pour éviter de dupliquer le SVG
+      - name: Compute Dozzle icon
+        id: dozzle_icon
+        run: echo "value=data:image/svg+xml;base64,$(base64 -w0 client/public/favicon.svg)" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
@@ -197,6 +202,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             APP_VERSION=${{ needs.release.outputs.new_release_version || 'dev' }}
+            DOZZLE_ICON=${{ steps.dozzle_icon.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

@@ -37,4 +37,10 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- "http://localhost:${PORT}/api/health" || exit 1
 
+# Icône affichée par Dozzle, passée en build-arg depuis client/public/favicon.svg
+# (généré dans CI) : ARG DOZZLE_ICON="data:image/svg+xml;base64,$(base64 -w0 client/public/favicon.svg)"
+# Déclaré en fin de stage pour ne pas invalider le cache des COPY.
+ARG DOZZLE_ICON
+LABEL dev.dozzle.icon=$DOZZLE_ICON
+
 CMD ["node", "server/dist/index.js"]
