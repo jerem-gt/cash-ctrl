@@ -133,7 +133,7 @@ jobs:
           fetch-depth: 0
       - name: Semantic Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v7.1.2
+        uses: cycjimmy/semantic-release-action@v7
         with:
           branches: |
             [
