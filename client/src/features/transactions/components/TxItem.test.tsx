@@ -132,4 +132,53 @@ describe('TxItem', () => {
     renderTx({ ...baseTx, transfer_peer_id: 99 });
     expect(screen.getByRole('img', { name: /transfert/i })).toBeInTheDocument();
   });
+
+  describe('menu mobile', () => {
+    it("ouvre le menu et déclenche l'action puis se ferme", async () => {
+      const user = userEvent.setup();
+      const onEdit = vi.fn();
+      renderWithProviders(
+        <TxItem tx={baseTx} onEdit={onEdit} onDelete={noop} onDuplicate={noop} />,
+      );
+      const trigger = screen.getByRole('button', { name: 'Actions' });
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      await user.click(trigger);
+      expect(trigger).toHaveAttribute('aria-expanded', 'true');
+      await user.click(screen.getByText('Modifier'));
+      expect(onEdit).toHaveBeenCalledWith(baseTx);
+      expect(screen.queryByText('Modifier')).not.toBeInTheDocument();
+    });
+
+    it('ferme le menu avec Échap', async () => {
+      const user = userEvent.setup();
+      renderTx(baseTx);
+      await user.click(screen.getByRole('button', { name: 'Actions' }));
+      expect(screen.getByText('Dupliquer')).toBeInTheDocument();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByText('Dupliquer')).not.toBeInTheDocument();
+    });
+
+    it('ferme le menu au clic sur le fond', async () => {
+      const user = userEvent.setup();
+      renderTx(baseTx);
+      await user.click(screen.getByRole('button', { name: 'Actions' }));
+      const backdrop = document.querySelector<HTMLElement>('div.fixed.inset-0');
+      expect(backdrop).not.toBeNull();
+      await user.click(backdrop!);
+      expect(screen.queryByText('Supprimer')).not.toBeInTheDocument();
+    });
+
+    it('ne liste que les actions disponibles', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<TxItem tx={baseTx} onDelete={noop} />);
+      await user.click(screen.getByRole('button', { name: 'Actions' }));
+      expect(screen.getByText('Supprimer')).toBeInTheDocument();
+      expect(screen.queryByText('Modifier')).not.toBeInTheDocument();
+    });
+
+    it('masque le menu sans aucune action', () => {
+      renderWithProviders(<TxItem tx={baseTx} />);
+      expect(screen.queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument();
+    });
+  });
 });

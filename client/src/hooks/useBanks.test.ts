@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { createHookWrapper } from '@/tests/helpers/hookWrapper';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 
 import { useBanks, useCreateBank, useDeleteBank, useReorderBanks, useUpdateBank } from './useBanks';
 
@@ -55,5 +55,25 @@ describe('useReorderBanks', () => {
       { id: 2, sort_order: 1 },
     ]);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('invalidation des banques', () => {
+  it('useUpdateBank invalide aussi les comptes (nom de banque dénormalisé)', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useUpdateBank(), { wrapper: Wrapper });
+    result.current.mutate({ id: 1, name: 'BNP Paribas' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(expect.arrayContaining([['banks'], ['accounts']]));
+  });
+
+  it('useDeleteBank invalide aussi les comptes', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useDeleteBank(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(expect.arrayContaining([['banks'], ['accounts']]));
   });
 });

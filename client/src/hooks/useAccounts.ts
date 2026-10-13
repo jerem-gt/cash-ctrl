@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { accountsApi } from '@/api/client';
-import { fireAndForget } from '@/lib/async';
+import { invalidateBalances, invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useAccounts() {
@@ -15,7 +15,7 @@ export function useCreateAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountsApi.create,
-    onSuccess: () => fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() })),
+    onSuccess: () => invalidateBalances(qc),
   });
 }
 
@@ -33,7 +33,7 @@ export function useUpdateAccount() {
       initial_balance: number;
       opening_date: string | null;
     }) => accountsApi.update(id, payload),
-    onSuccess: () => fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() })),
+    onSuccess: () => invalidateBalances(qc),
   });
 }
 
@@ -42,8 +42,8 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: accountsApi.remove,
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateBalances(qc);
+      invalidateTransactions(qc);
     },
   });
 }
@@ -52,7 +52,7 @@ export function useReopenAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: accountsApi.reopen,
-    onSuccess: () => fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() })),
+    onSuccess: () => invalidateBalances(qc),
   });
 }
 
@@ -68,8 +68,8 @@ export function useCloseAccount() {
       transfer_to_account_id?: number;
     }) => accountsApi.close(id, payload),
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateBalances(qc);
+      invalidateTransactions(qc);
     },
   });
 }

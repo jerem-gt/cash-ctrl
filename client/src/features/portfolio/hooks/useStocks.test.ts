@@ -6,6 +6,7 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { STOCK_OPERATIONS, STOCK_POSITIONS } from '@/tests/fixtures';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
 import {
@@ -213,5 +214,64 @@ describe('useRenameTicker', () => {
       result.current.mutate({ ticker: 'AIR.PA', newTicker: 'AIRBUS.PA' });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('invalidation de la bourse', () => {
+  it('useBuyStock invalide positions, opérations, soldes et transactions', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useBuyStock(3), { wrapper: Wrapper });
+    act(() => {
+      result.current.mutate({
+        ticker: 'CW8.PA',
+        quantity: 2,
+        price_per_share: 400,
+        fees: 0,
+        date: '2026-04-01',
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(
+      expect.arrayContaining([
+        ['stock-positions', 3],
+        ['stock-operations', 3],
+        ['accounts'],
+        ['dashboard-stats'],
+        ['balance-history'],
+        ['profitability'],
+        ['transactions'],
+      ]),
+    );
+  });
+
+  it('useRenameTicker invalide positions et toutes les opérations de bourse', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useRenameTicker(), { wrapper: Wrapper });
+    act(() => {
+      result.current.mutate({ ticker: 'OLD', newTicker: 'NEW' });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(
+      expect.arrayContaining([['stock-positions'], ['stock-operations'], ['transactions']]),
+    );
+  });
+});
+
+describe('useStockSearch (normalisation)', () => {
+  it("appelle l'API avec la valeur normalisée (trim + majuscules)", async () => {
+    let received: string | null = null;
+    server.use(
+      http.get('/api/stocks/search', ({ request }) => {
+        received = new URL(request.url).searchParams.get('q');
+        return HttpResponse.json([]);
+      }),
+    );
+    const { result } = renderHook(() => useStockSearch('  fr0014000mr3 '), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(received).toBe('FR0014000MR3');
   });
 });

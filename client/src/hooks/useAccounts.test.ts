@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { createHookWrapper } from '@/tests/helpers/hookWrapper';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
 import {
@@ -122,5 +122,41 @@ describe('useCloseAccount', () => {
     result.current.mutate({ id: 1, closed_at: '2025-01-01' });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toBe('Clôture impossible');
+  });
+});
+
+describe('invalidation des comptes', () => {
+  it('useUpdateAccount invalide les comptes et tout ce qui dépend des soldes', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useUpdateAccount(), { wrapper: Wrapper });
+    result.current.mutate({
+      id: 1,
+      name: 'Modifié',
+      bank_id: 1,
+      account_type_id: 1,
+      initial_balance: 0,
+      opening_date: '2024-01-01',
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(
+      expect.arrayContaining([
+        ['accounts'],
+        ['dashboard-stats'],
+        ['forecast'],
+        ['account-balance-history'],
+        ['balance-history'],
+        ['profitability'],
+      ]),
+    );
+  });
+
+  it('useDeleteAccount invalide aussi les transactions', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useDeleteAccount(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(expect.arrayContaining([['accounts'], ['transactions']]));
   });
 });

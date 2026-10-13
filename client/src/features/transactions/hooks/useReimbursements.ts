@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { reimbursementsApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
+import { invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function usePendingReimbursements() {
@@ -43,7 +44,8 @@ export function useLinkReimbursement(transactionId: number) {
         }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() }));
+      invalidateTransactions(qc);
     },
   });
 }
@@ -60,6 +62,7 @@ export function useUpdateReimbursementAmount(transactionId: number) {
         }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() }));
     },
   });
 }
@@ -75,7 +78,7 @@ export function useUnlinkReimbursement(transactionId: number) {
         }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateTransactions(qc);
     },
   });
 }
@@ -86,7 +89,7 @@ export function useSetReimbursementStatus() {
     mutationFn: ({ id, status }: { id: number; status: 'en_attente' | 'rembourse' | null }) =>
       reimbursementsApi.setStatus(id, status),
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateTransactions(qc);
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.pending() }));
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reimbursements.recent() }));
     },

@@ -481,3 +481,87 @@ describe('useCreateTransfer', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['account-balance-history'] });
   });
 });
+
+describe('patch des listes filtrées', () => {
+  const tx = TRANSACTIONS.data[0];
+  const updatePayload = {
+    id: 10,
+    account_id: 1,
+    type: 'expense' as const,
+    amount: 24.5,
+    description: 'Courses',
+    subcategory_id: 1,
+    date: '2026-04-20',
+    payment_method_id: 1,
+    notes: null,
+    validated: true,
+  };
+
+  function seed(wrapper: ReturnType<typeof createWrapper>, filters: object, rows = [tx]) {
+    wrapper.qc.setQueryData(['transactions', filters], {
+      data: rows,
+      total: rows.length,
+      page: 1,
+      totalPages: 1,
+    });
+  }
+
+  it('invalide une liste filtrée par compte quand la transaction change de compte', async () => {
+    const wrapper = createWrapper();
+    seed(wrapper, { account_id: 1 });
+    const spy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    server.use(
+      http.put('/api/transactions/:id', () => HttpResponse.json({ ...tx, account_id: 2 })),
+    );
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({ ...updatePayload, account_id: 2 });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['transactions', { account_id: 1 }] });
+  });
+
+  it('patche en place une liste filtrée quand aucun champ filtrable ne change', async () => {
+    const wrapper = createWrapper();
+    seed(wrapper, { account_id: 1 });
+    const spy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    server.use(http.put('/api/transactions/:id', () => HttpResponse.json({ ...tx, notes: 'x' })));
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({ ...updatePayload, notes: 'x' });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: ['transactions', { account_id: 1 }] });
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', { account_id: 1 }]);
+    expect(cache?.data[0].notes).toBe('x');
+  });
+
+  it('virement : invalide les pages sans la ligne et patche la jambe pair', async () => {
+    const peer = { ...tx, id: 11, account_id: 2, transfer_peer_id: 10 };
+    const updated = { ...tx, transfer_peer_id: 11, amount: 55 };
+    const wrapper = createWrapper();
+    seed(wrapper, undefined as unknown as object, [tx, peer]);
+    wrapper.qc.setQueryData(['transactions', { page: 2 }], {
+      data: [{ ...tx, id: 50 }],
+      total: 3,
+      page: 2,
+      totalPages: 2,
+    });
+    const spy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    server.use(http.put('/api/transfers/:id', () => HttpResponse.json(updated)));
+    const { result } = renderHook(() => useUpdateTransfer(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 10,
+        amount: 55,
+        description: 'Courses',
+        date: '2026-04-20',
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['transactions', { page: 2 }] });
+    const cache = wrapper.qc.getQueryData<typeof TRANSACTIONS>(['transactions', undefined]);
+    expect(cache?.data.find((t) => t.id === 11)?.amount).toBe(55);
+  });
+});

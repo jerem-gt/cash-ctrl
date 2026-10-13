@@ -8,15 +8,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { stocksApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
+import { invalidateBalances, invalidatePortfolio, invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/i;
 
 export function useStockSearch(query: string) {
+  const normalized = query.trim().toUpperCase();
   return useQuery<StockSearchResult[]>({
-    queryKey: queryKeys.stocks.search(query.toUpperCase()),
-    queryFn: () => stocksApi.search(query),
-    enabled: ISIN_REGEX.test(query.trim()),
+    queryKey: queryKeys.stocks.search(normalized),
+    queryFn: () => stocksApi.search(normalized),
+    enabled: ISIN_REGEX.test(normalized),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -61,13 +63,10 @@ export function useRenameTicker() {
       stocksApi.renameTicker(ticker, newTicker),
     onSuccess: () => {
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.cachedTickers() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.profitability() }));
+      invalidatePortfolio(qc);
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.reportYears() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.balanceHistory() }));
     },
   });
 }
@@ -81,8 +80,8 @@ export function useBuyStock(accountId: number) {
         qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateBalances(qc);
+      invalidateTransactions(qc);
     },
   });
 }
@@ -96,8 +95,8 @@ export function useSellStock(accountId: number) {
         qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateBalances(qc);
+      invalidateTransactions(qc);
     },
   });
 }
@@ -110,7 +109,7 @@ export function useRefreshPrices(accountId: number) {
       fireAndForget(
         qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
       );
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      invalidateBalances(qc);
     },
   });
 }
@@ -132,7 +131,7 @@ export function useTransferStock(fromAccountId: number) {
       fireAndForget(
         qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(inOperation.account_id) }),
       );
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
+      invalidateBalances(qc);
     },
   });
 }
@@ -147,8 +146,8 @@ export function useUpdateStockOperation(accountId: number) {
         qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.byAccount(accountId) }),
       );
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.operations(accountId) }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+      invalidateBalances(qc);
+      invalidateTransactions(qc);
     },
   });
 }

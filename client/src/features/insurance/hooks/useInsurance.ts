@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { insuranceApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
+import { invalidateBalances, invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useInsurancePositions(accountId: number) {
@@ -40,8 +41,8 @@ function useInvalidate(accountId: number) {
   return () => {
     fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.insurance.positions(accountId) }));
     fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.insurance.operations(accountId) }));
-    fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-    fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
+    invalidateBalances(qc);
+    invalidateTransactions(qc);
   };
 }
 
