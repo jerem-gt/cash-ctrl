@@ -1,4 +1,4 @@
-import { MutationCache, QueryClient, useIsRestoring } from '@tanstack/react-query';
+import { MutationCache, QueryClient, useIsRestoring, useQueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Menu, Search } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
@@ -14,8 +14,9 @@ import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useMe } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import i18n from '@/i18n';
 import { isMacPlatform } from '@/lib/platform';
-import { queryPersister } from '@/lib/queryPersister';
+import { claimCacheOwner, queryPersister, shouldPersistQuery } from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
 
 // Recharge la page si un chunk hashé n'existe plus (déploiement PWA)
@@ -63,7 +64,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
             className="text-sm text-content-muted underline"
             onClick={() => globalThis.location.reload()}
           >
-            Une erreur est survenue — cliquez pour recharger
+            {i18n.t('error_boundary_reload', { ns: 'common' })}
           </button>
         </div>
       );
@@ -80,6 +81,11 @@ function ScrollToTop() {
   return null;
 }
 
+function RoutedErrorBoundary({ children }: Readonly<{ children: ReactNode }>) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname}>{children}</ErrorBoundary>;
+}
+
 function AppShell() {
   const { t } = useTranslation('sidebar');
   const { t: tc } = useTranslation('common');
@@ -92,6 +98,11 @@ function AppShell() {
 
   const isRestoring = useIsRestoring();
   const { data: me, isLoading } = useMe();
+  const qc = useQueryClient();
+  const username = me?.username;
+  useEffect(() => {
+    if (username) claimCacheOwner(qc, username);
+  }, [qc, username]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -167,7 +178,7 @@ function AppShell() {
             <Search className="h-5 w-5 text-content-secondary" />
           </button>
         </div>
-        <ErrorBoundary>
+        <RoutedErrorBoundary>
           <Suspense
             fallback={
               <div className="space-y-5 animate-pulse">
@@ -205,7 +216,7 @@ function AppShell() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
-        </ErrorBoundary>
+        </RoutedErrorBoundary>
       </main>
     </div>
   );
@@ -241,7 +252,11 @@ export default function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60_000 }}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: 24 * 60 * 60_000,
+        dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
+      }}
     >
       <BrowserRouter>
         <Suspense fallback={null}>

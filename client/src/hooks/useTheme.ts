@@ -1,11 +1,13 @@
 import { useSyncExternalStore } from 'react';
 
+import { safeStorage } from '@/lib/safeStorage';
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 const KEY = 'cashctrl.theme';
 
 function readStored(): ThemeMode {
-  const v = localStorage.getItem(KEY);
+  const v = safeStorage.getItem(KEY);
   if (v === 'light' || v === 'dark') return v;
   return 'system';
 }
@@ -55,9 +57,9 @@ function getSnapshot(): ThemeMode {
 export function setTheme(mode: ThemeMode) {
   current = mode;
   if (mode === 'system') {
-    localStorage.removeItem(KEY);
+    safeStorage.removeItem(KEY);
   } else {
-    localStorage.setItem(KEY, mode);
+    safeStorage.setItem(KEY, mode);
   }
   applyTheme();
   for (const cb of listeners) cb();

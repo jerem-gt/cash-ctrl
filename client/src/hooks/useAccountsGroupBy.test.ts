@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy.ts';
 
@@ -40,5 +40,17 @@ describe('useAccountsGroupBy', () => {
     const { unmount } = renderHook(() => useAccountsGroupBy());
     unmount();
     expect(() => act(() => setGroupBy('type'))).not.toThrow();
+  });
+
+  it('ne plante pas au chargement du module quand localStorage.getItem l�ve', async () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    vi.resetModules();
+    const mod = await import('@/hooks/useAccountsGroupBy.ts');
+    const { result } = renderHook(() => mod.useAccountsGroupBy());
+    expect(result.current).toBe('bank');
+    vi.restoreAllMocks();
+    vi.resetModules();
   });
 });

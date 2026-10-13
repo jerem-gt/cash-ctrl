@@ -14,6 +14,7 @@ import {
   useUpdateTransaction,
   useUpdateTransfer,
 } from '@/hooks/useTransactions.ts';
+import { safeStorage } from '@/lib/safeStorage';
 
 type ModalState =
   | { type: 'none' }
@@ -48,7 +49,7 @@ export function useTransactionsManager(
     }));
     setPage(1);
   }
-  const [limit, setLimit] = useState(() => Number(localStorage.getItem('cashctrl.txLimit')) || 25);
+  const [limit, setLimit] = useState(() => Number(safeStorage.getItem('cashctrl.txLimit')) || 25);
 
   // --- ÉTATS DES MODALES (Interface) ---
   const [modal, setModal] = useState<ModalState>(initialModalsState);
@@ -89,7 +90,7 @@ export function useTransactionsManager(
     setPage(1); // On reset toujours la page lors d'un filtre
   };
   const handleLimitChange = (newLimit: number) => {
-    localStorage.setItem('cashctrl.txLimit', String(newLimit));
+    safeStorage.setItem('cashctrl.txLimit', String(newLimit));
     setLimit(newLimit);
     setPage(1);
   };

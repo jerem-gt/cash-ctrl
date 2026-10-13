@@ -1,11 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { queryPersister } from '@/lib/queryPersister';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
-import { useChangePassword, useLogin, useLogout, useMe } from './useAuth';
+import { useChangePassword, useLogin, useLogout, useMe, useVerifyTotp } from './useAuth';
 
 describe('useMe', () => {
   it("charge les infos de l'utilisateur connecté", async () => {
@@ -61,6 +62,69 @@ describe('useLogout', () => {
     result.current.mutate();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(qc.getQueryData(['me'])).toBeNull();
+  });
+});
+
+describe('useLogout cache persist�', () => {
+  it('supprime le cache persist� et vide les autres requ�tes', async () => {
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
+    const { Wrapper, qc } = createHookWrapper();
+    qc.setQueryData(['accounts'], [1]);
+    const { result } = renderHook(() => useLogout(), { wrapper: Wrapper });
+    result.current.mutate();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalled();
+    expect(qc.getQueryData(['accounts'])).toBeUndefined();
+    spy.mockRestore();
+  });
+
+  it('ne bloque pas le logout si removeClient �choue', async () => {
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockRejectedValue(new Error('idb'));
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useLogout(), { wrapper: Wrapper });
+    result.current.mutate();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    spy.mockRestore();
+  });
+});
+
+describe('isolation du cache par utilisateur', () => {
+  it('purge le cache quand un autre utilisateur se connecte', async () => {
+    localStorage.setItem('cashctrl.cacheOwner', 'alice');
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
+    const { Wrapper, qc } = createHookWrapper();
+    qc.setQueryData(['accounts'], [1]);
+    const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
+    result.current.mutate({ username: 'test', password: 'pass' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qc.getQueryData(['accounts'])).toBeUndefined();
+    expect(spy).toHaveBeenCalled();
+    expect(localStorage.getItem('cashctrl.cacheOwner')).toBe('test');
+    spy.mockRestore();
+  });
+
+  it('conserve le cache quand le m�me utilisateur se reconnecte', async () => {
+    localStorage.setItem('cashctrl.cacheOwner', 'test');
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
+    const { Wrapper, qc } = createHookWrapper();
+    qc.setQueryData(['accounts'], [1]);
+    const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
+    result.current.mutate({ username: 'test', password: 'pass' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qc.getQueryData(['accounts'])).toEqual([1]);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('useVerifyTotp r�assigne le propri�taire du cache', async () => {
+    localStorage.setItem('cashctrl.cacheOwner', 'alice');
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useVerifyTotp(), { wrapper: Wrapper });
+    result.current.mutate({ code: '123456' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
 
