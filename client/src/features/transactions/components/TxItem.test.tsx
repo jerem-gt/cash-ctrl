@@ -124,13 +124,13 @@ describe('TxItem', () => {
 
   it("expose les notes au toucher et aux lecteurs d'écran", () => {
     renderTx({ ...baseTx, notes: 'Remboursement partiel' });
-    expect(screen.getByRole('img', { name: 'Remboursement partiel' })).toBeInTheDocument();
+    expect(screen.getByText('Remboursement partiel', { selector: '.sr-only' })).toBeInTheDocument();
     expect(screen.getAllByText('Remboursement partiel').length).toBeGreaterThan(0);
   });
 
-  it("expose l'indicateur de virement avec un role img", () => {
+  it("expose l'indicateur de virement aux lecteurs d'écran", () => {
     renderTx({ ...baseTx, transfer_peer_id: 99 });
-    expect(screen.getByRole('img', { name: /transfert/i })).toBeInTheDocument();
+    expect(screen.getByText(/transfert/i, { selector: '.sr-only' })).toBeInTheDocument();
   });
 
   describe('menu mobile', () => {

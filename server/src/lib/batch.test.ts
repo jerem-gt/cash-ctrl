@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mapInBatches } from './batch.js';
 
 describe('mapInBatches', () => {
-  it('traite tous les items avec une concurrence born�e', async () => {
+  it('traite tous les items avec une concurrence bornée', async () => {
     let running = 0;
     let max = 0;
     const done: number[] = [];
