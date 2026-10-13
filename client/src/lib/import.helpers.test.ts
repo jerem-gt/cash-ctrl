@@ -827,7 +827,10 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
           transferTarget: null,
         },
       ],
-      accounts: new Set(['ACC1']),
+      accounts: ['ACC1'],
+      uniqueCategories: category ? [category] : [],
+      uniqueTransferTargets: [],
+      detectedDateFormat: 'DD/MM' as const,
     };
   }
 

@@ -187,16 +187,15 @@ describe('useTransactionsManager', () => {
     });
 
     it('nettoie le filtre description quand resyncKey change vers une navigation sans ?q=', () => {
-      const { result, rerender } = renderHook(
-        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
-          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
-        {
-          initialProps: {
-            initialFilters: { description_contains: 'chat' },
-            resyncKey: 'key-1',
-          },
+      const { result, rerender } = renderHook<
+        ReturnType<typeof useTransactionsManager>,
+        { initialFilters: Partial<Filters>; resyncKey: string }
+      >((props) => useTransactionsManager(undefined, props.initialFilters, props.resyncKey), {
+        initialProps: {
+          initialFilters: { description_contains: 'chat' },
+          resyncKey: 'key-1',
         },
-      );
+      });
 
       rerender({ initialFilters: {}, resyncKey: 'key-2' });
 

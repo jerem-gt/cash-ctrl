@@ -39,7 +39,7 @@ describe('Popover', () => {
     render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'ouvrir' }));
     expect(screen.getByText('menu')).toBeInTheDocument();
-    fireEvent.keyDown(globalThis, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByText('menu')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ouvrir' })).toHaveFocus();
   });
