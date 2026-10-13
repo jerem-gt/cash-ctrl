@@ -1,11 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { safeStorage } from './safeStorage';
-
-afterEach(() => {
-  vi.restoreAllMocks();
-  localStorage.clear();
-});
 
 describe('safeStorage', () => {
   it('lit, écrit et supprime normalement', () => {
