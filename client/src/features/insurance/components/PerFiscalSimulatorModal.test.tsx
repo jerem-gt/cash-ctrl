@@ -270,16 +270,24 @@ describe('PerFiscalSimulatorModal', () => {
     expect(screen.getAllByText(/base — revenus 2025/i).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('affiche un message de chargement si les barèmes ne sont pas disponibles', async () => {
+  it('affiche un message de chargement tant que les barèmes ne sont pas disponibles', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     server.use(
       http.get('/api/tax/years', () => HttpResponse.json([2025])),
       http.get('/api/tax/:year', async () => {
-        await new Promise((r) => setTimeout(r, 100));
+        await gate;
         return HttpResponse.json(TAX_YEAR_DATA_2025);
       }),
     );
     renderModal();
-    await screen.findByText('Simulateur fiscal PER');
+    expect(await screen.findByText('Chargement du barème…')).toBeInTheDocument();
+    release();
+    await waitFor(() =>
+      expect(screen.queryByText('Chargement du barème…')).not.toBeInTheDocument(),
+    );
     expect(screen.getByLabelText(/revenu brut annuel/i)).toBeInTheDocument();
   });
 });
