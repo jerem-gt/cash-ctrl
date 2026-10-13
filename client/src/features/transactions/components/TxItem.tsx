@@ -1,6 +1,6 @@
 import type { Account, Transaction } from '@cashctrl/types';
 import { ArrowLeftRight, Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
@@ -160,6 +160,18 @@ function TxItemBody({
   );
 }
 
+// Pastille décorative (aria-hidden) accompagnée d'un libellé lisible par les lecteurs d'écran.
+function TxIndicator({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+  return (
+    <span title={label} className="flex items-center">
+      <span aria-hidden="true" className="flex items-center">
+        {children}
+      </span>
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 // Indicateurs d'état discrets : un seul langage (lucide), monochrome gris.
 function TxIndicators({
   tx,
@@ -171,26 +183,19 @@ function TxIndicators({
   return (
     <span className="flex items-center gap-1 shrink-0 text-content-subtle">
       {isScheduled && (
-        <span
-          title={t('tx_item.scheduled_title')}
-          role="img"
-          aria-label={t('tx_item.scheduled_title')}
-          className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"
-        />
+        <TxIndicator label={t('tx_item.scheduled_title')}>
+          <span className="block w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+        </TxIndicator>
       )}
       {isTransfer && (
-        <span
-          title={t('tx_item.transfer_title')}
-          role="img"
-          aria-label={t('tx_item.transfer_title')}
-        >
+        <TxIndicator label={t('tx_item.transfer_title')}>
           <ArrowLeftRight size={12} />
-        </span>
+        </TxIndicator>
       )}
       {tx.notes && (
-        <span title={tx.notes} role="img" aria-label={tx.notes}>
+        <TxIndicator label={tx.notes}>
           <StickyNote size={12} />
-        </span>
+        </TxIndicator>
       )}
     </span>
   );

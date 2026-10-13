@@ -51,7 +51,7 @@ describe('useAccountsGroupBy', () => {
     expect(() => act(() => setGroupBy('type'))).not.toThrow();
   });
 
-  it('ne plante pas au chargement du module quand localStorage.getItem l�ve', async () => {
+  it('ne plante pas au chargement du module quand localStorage.getItem lève', async () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });

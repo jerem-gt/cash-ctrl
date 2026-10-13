@@ -65,8 +65,8 @@ describe('useLogout', () => {
   });
 });
 
-describe('useLogout cache persist�', () => {
-  it('supprime le cache persist� et vide les autres requ�tes', async () => {
+describe('useLogout cache persisté', () => {
+  it('supprime le cache persisté et vide les autres requêtes', async () => {
     const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
     const { Wrapper, qc } = createHookWrapper();
     qc.setQueryData(['accounts'], [1]);
@@ -78,7 +78,7 @@ describe('useLogout cache persist�', () => {
     spy.mockRestore();
   });
 
-  it('ne bloque pas le logout si removeClient �choue', async () => {
+  it('ne bloque pas le logout si removeClient échoue', async () => {
     const spy = vi.spyOn(queryPersister, 'removeClient').mockRejectedValue(new Error('idb'));
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useLogout(), { wrapper: Wrapper });
@@ -103,7 +103,7 @@ describe('isolation du cache par utilisateur', () => {
     spy.mockRestore();
   });
 
-  it('conserve le cache quand le m�me utilisateur se reconnecte', async () => {
+  it('conserve le cache quand le même utilisateur se reconnecte', async () => {
     localStorage.setItem('cashctrl.cacheOwner', 'test');
     const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
     const { Wrapper, qc } = createHookWrapper();
@@ -116,7 +116,7 @@ describe('isolation du cache par utilisateur', () => {
     spy.mockRestore();
   });
 
-  it('useVerifyTotp r�assigne le propri�taire du cache', async () => {
+  it('useVerifyTotp réassigne le propriétaire du cache', async () => {
     localStorage.setItem('cashctrl.cacheOwner', 'alice');
     const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
     const { Wrapper } = createHookWrapper();
