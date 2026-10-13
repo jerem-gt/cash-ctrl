@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
+import { monthLabel } from '@/lib/format';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
@@ -59,6 +60,19 @@ describe('useDashboardData', () => {
     expect(result.current.barData[0]).toMatchObject({ Revenus: 2500, Depenses: 1000 });
     expect(typeof result.current.barData[0].month).toBe('string');
     expect(result.current.barData[0].month.length).toBeGreaterThan(0);
+  });
+
+  it('étiquette correctement les mois quand monthly contient 3 éléments', async () => {
+    const three = { ...STATS, monthly: [{ income: 1, expense: 1 }, ...STATS.monthly] };
+    server.use(http.get('/api/stats', () => HttpResponse.json(three)));
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useDashboardData(), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.barData.map((b) => b.month)).toEqual([
+      monthLabel(2),
+      monthLabel(1),
+      monthLabel(0),
+    ]);
   });
 
   it('hasReimbursements est true si des remboursements sont en attente', async () => {

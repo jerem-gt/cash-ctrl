@@ -9,7 +9,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useReport, useReportYears } from '@/hooks/useReport';
 import { useProfitability } from '@/hooks/useStats';
-import { generateColor } from '@/lib/colors';
+import { categoryColorMap } from '@/lib/colors';
 import { parseLocalDate } from '@/lib/dateUtils';
 import { fmt, fmtMonthShort } from '@/lib/format';
 
@@ -49,10 +49,7 @@ export default function ReportsPage() {
     if (compareYear === newYear) setCompareYear(undefined);
   };
 
-  const colorMap = useMemo(
-    () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
-    [categories],
-  );
+  const colorMap = useMemo(() => categoryColorMap(categories), [categories]);
 
   const barData = useMemo(
     () =>

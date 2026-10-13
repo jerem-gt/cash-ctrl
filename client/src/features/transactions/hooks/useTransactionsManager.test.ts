@@ -112,6 +112,12 @@ describe('useTransactionsManager', () => {
       expect(result.current.state.limit).toBe(50);
     });
 
+    it(`retombe sur 25 si la valeur stockee est hors liste`, () => {
+      localStorage.setItem(`cashctrl.txLimit`, `37`);
+      const { result } = renderHook(() => useTransactionsManager());
+      expect(result.current.state.limit).toBe(25);
+    });
+
     it(`persiste le nouveau limit dans localStorage lors du changement`, () => {
       const { result } = renderHook(() => useTransactionsManager());
       act(() => {

@@ -1,4 +1,4 @@
-import { generateColor } from '@/lib/colors.ts';
+import { categoryColorMap, generateColor } from '@/lib/colors.ts';
 
 describe('generateColor', () => {
   const basePalette = [
@@ -55,5 +55,19 @@ describe('generateColor', () => {
         expect(l).toBeLessThanOrEqual(60);
       }
     }
+  });
+});
+
+describe('categoryColorMap', () => {
+  test("la couleur d'une catégorie reste stable après ajout ou renommage", () => {
+    const base = [
+      { id: 3, name: 'Transport' },
+      { id: 7, name: 'Loisirs' },
+    ];
+    const before = categoryColorMap(base);
+    const after = categoryColorMap([{ id: 9, name: 'Aaa' }, ...base]);
+    expect(after.Transport).toBe(before.Transport);
+    expect(after.Loisirs).toBe(before.Loisirs);
+    expect(categoryColorMap([{ id: 3, name: 'Renommé' }]).Renommé).toBe(before.Transport);
   });
 });

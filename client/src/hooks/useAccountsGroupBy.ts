@@ -6,7 +6,12 @@ export type GroupBy = 'bank' | 'type';
 
 const KEY = 'cashctrl.accountsGroupBy';
 
-let current: GroupBy = (safeStorage.getItem(KEY) as GroupBy) ?? 'bank';
+function readStored(): GroupBy {
+  const v = safeStorage.getItem(KEY);
+  return v === 'type' ? 'type' : 'bank';
+}
+
+let current: GroupBy = readStored();
 const listeners = new Set<() => void>();
 
 function subscribe(cb: () => void) {

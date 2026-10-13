@@ -20,9 +20,16 @@ export const queryPersister = createAsyncStoragePersister({
   throttleTime: 2000,
 });
 
-// La session (`me`) ne doit jamais être persistée
+// Session et requêtes éphémères (version, recherches) ne sont jamais persistées
+const NON_PERSISTED_ROOTS: ReadonlySet<unknown> = new Set([
+  queryKeys.me()[0],
+  queryKeys.version()[0],
+  queryKeys.search('')[0],
+  queryKeys.stocks.search('')[0],
+]);
+
 export function shouldPersistQuery(query: Query): boolean {
-  return query.queryKey[0] !== queryKeys.me()[0] && defaultShouldDehydrateQuery(query);
+  return !NON_PERSISTED_ROOTS.has(query.queryKey[0]) && defaultShouldDehydrateQuery(query);
 }
 
 // Purge le cache persisté sans bloquer si IndexedDB échoue
