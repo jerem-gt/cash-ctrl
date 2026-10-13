@@ -27,6 +27,26 @@ describe('useForecast', () => {
     expect(acc2?.goes_negative_on).toBeNull();
   });
 
+  it('convertit aussi overdue_points (centimes -> euros)', async () => {
+    server.use(
+      http.get('/api/stats/forecast', () =>
+        HttpResponse.json({
+          horizon: 90,
+          accounts: [
+            {
+              ...FORECAST_RESPONSE.accounts[0],
+              overdue_points: [{ date: '2026-07-06', balance: 123456 }],
+            },
+          ],
+        }),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useForecast(90), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.accounts[0].overdue_points?.[0].balance).toBeCloseTo(1234.56, 2);
+  });
+
   it("transmet l'horizon demandé dans la requête", async () => {
     let capturedUrl = '';
     server.use(

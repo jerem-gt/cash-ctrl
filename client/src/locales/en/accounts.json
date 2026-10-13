@@ -108,6 +108,7 @@
     "horizon_30": "30 d",
     "horizon_90": "90 d",
     "balance_label": "Balance",
+    "projected_label": "Planned",
     "negative_alert": "Negative balance expected on {{date}}"
   },
   "seniority": {

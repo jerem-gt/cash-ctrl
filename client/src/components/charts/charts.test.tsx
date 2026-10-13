@@ -87,6 +87,29 @@ describe('charts', () => {
     expect(container).toBeInTheDocument();
   });
 
+  it('monte ForecastAreaChart sans planter avec un pointillé prévu avant splitDate', () => {
+    const points = [
+      { date: '2026-07-05', balance: 1000 },
+      { date: '2026-07-06', balance: 1000 },
+      { date: '2026-07-07', balance: 1500 },
+      { date: '2026-07-08', balance: 1600 },
+    ];
+    const { container } = render(
+      <ForecastAreaChart
+        points={points}
+        goesNegativeOn={null}
+        label="Solde"
+        splitDate="2026-07-07"
+        projectedPastPoints={[
+          { date: '2026-07-05', balance: 1000 },
+          { date: '2026-07-06', balance: 4000 },
+        ]}
+        projectedLabel="Prévu"
+      />,
+    );
+    expect(container).toBeInTheDocument();
+  });
+
   it('dedupeTooltipPayload retire les entrées identiques du point de jonction', () => {
     const payload = [
       { name: 'Solde', value: 1500 },

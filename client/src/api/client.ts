@@ -433,6 +433,7 @@ export const statsApi = {
         ...a,
         current_balance: centsToEuros(a.current_balance),
         points: a.points.map((p) => ({ ...p, balance: centsToEuros(p.balance) })),
+        overdue_points: a.overdue_points?.map((p) => ({ ...p, balance: centsToEuros(p.balance) })),
       })),
     };
   },

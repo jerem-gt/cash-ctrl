@@ -108,6 +108,7 @@
     "horizon_30": "30 j",
     "horizon_90": "90 j",
     "balance_label": "Solde",
+    "projected_label": "Prévu",
     "negative_alert": "Solde négatif prévu le {{date}}"
   },
   "seniority": {

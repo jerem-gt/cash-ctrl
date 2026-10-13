@@ -31,6 +31,12 @@ export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
 
   const points = [...pastPoints, ...futurePoints];
   const splitDate = futurePoints.length > 0 ? lastPastDate : undefined;
+  // Prévu avant aujourd'hui (non validé échu) : pointillé parallèle à la courbe pleine.
+  // Le point du jour porte le prévu (retards inclus), pas le validé de la courbe pleine.
+  const todayForecast = forecastAccount?.points.find((p) => p.date === lastPastDate);
+  const overduePoints = forecastAccount?.overdue_points;
+  const projectedPastPoints =
+    overduePoints && todayForecast ? [...overduePoints, todayForecast] : overduePoints;
   // Calcul serveur (futur uniquement) : un découvert passé résorbé ne doit pas alerter.
   const goesNegativeOn = forecastAccount?.goes_negative_on ?? null;
 
@@ -58,6 +64,8 @@ export function AccountBalanceHistoryCard({ accountId }: Readonly<Props>) {
               goesNegativeOn={goesNegativeOn}
               label={t('balance_history.balance_label')}
               splitDate={splitDate}
+              projectedPastPoints={projectedPastPoints}
+              projectedLabel={t('balance_history.projected_label')}
               splitLabel={tc('today')}
             />
           </Suspense>
