@@ -173,6 +173,7 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
             onClick={() => logout.mutate()}
             className="text-white/50 hover:text-white transition-colors"
             title={t('page.logout_title')}
+            aria-label={t('page.logout_title')}
           >
             <LogOut className="h-4 w-4" />
           </button>

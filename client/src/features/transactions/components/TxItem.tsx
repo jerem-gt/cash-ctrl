@@ -9,10 +9,8 @@ import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
-import { today } from '@/lib/dateUtils';
+import { parseLocalDate, today } from '@/lib/dateUtils';
 import { fmtCurrency, fmtDayNum, fmtMonthShort } from '@/lib/format';
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 interface Props {
   tx: Transaction;
@@ -37,9 +35,11 @@ function getTxClasses(isFuture: boolean, validated: boolean, type: Transaction['
   return { rowClass, amountColor };
 }
 
+const currentYear = () => new Date().getFullYear();
+
 function TxDateBlock({ date }: Readonly<{ date: string }>) {
-  const d = new Date(date);
-  const isCurrentYear = d.getFullYear() === CURRENT_YEAR;
+  const d = parseLocalDate(date);
+  const isCurrentYear = d.getFullYear() === currentYear();
   return (
     <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-line-subtle pr-3">
       <span className="text-[9px] uppercase font-bold text-content-subtle leading-none tracking-tighter">
@@ -156,6 +156,9 @@ function TxItemBody({
         </div>
       </div>
 
+      {tx.notes && (
+        <p className="sm:hidden text-[11px] text-content-subtle line-clamp-2">{tx.notes}</p>
+      )}
       <div className="flex items-center gap-1.5 flex-wrap">
         <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} />
         {/* Mobile : badges renvoyés sous la description pour ne pas l'écraser */}
@@ -180,16 +183,22 @@ function TxIndicators({
       {isScheduled && (
         <span
           title={t('tx_item.scheduled_title')}
+          role="img"
+          aria-label={t('tx_item.scheduled_title')}
           className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0"
         />
       )}
       {isTransfer && (
-        <span title={t('tx_item.transfer_title')}>
+        <span
+          title={t('tx_item.transfer_title')}
+          role="img"
+          aria-label={t('tx_item.transfer_title')}
+        >
           <ArrowLeftRight size={12} />
         </span>
       )}
       {tx.notes && (
-        <span title={tx.notes}>
+        <span title={tx.notes} role="img" aria-label={tx.notes}>
           <StickyNote size={12} />
         </span>
       )}
@@ -296,6 +305,7 @@ function TxItemTrailing({
 function ValidateButton({ tx, validated }: Readonly<Pick<Props, 'tx'> & { validated: boolean }>) {
   const { t } = useTranslation('transactions');
   const validate = useValidateTransaction();
+  const validatedLabel = validated ? t('tx_item.unvalidate_title') : t('tx_item.validate_title');
   const colorClass = validated ? 'text-success' : 'text-content-faint hover:bg-surface-emphasis';
   return (
     <button
@@ -303,7 +313,9 @@ function ValidateButton({ tx, validated }: Readonly<Pick<Props, 'tx'> & { valida
       onClick={() => validate.mutate({ id: tx.id, validated: !validated })}
       disabled={validate.isPending}
       className={`p-1.5 rounded-md transition-colors ${colorClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-      title={validated ? t('tx_item.unvalidate_title') : t('tx_item.validate_title')}
+      title={validatedLabel}
+      aria-label={validatedLabel}
+      aria-pressed={validated}
     >
       {validate.isPending ? (
         <Loader2 size={14} className="animate-spin" />

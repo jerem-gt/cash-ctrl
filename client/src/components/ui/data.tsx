@@ -56,6 +56,7 @@ export function Pagination({
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.first')}
+          aria-label={t('pagination.first')}
         >
           «
         </button>
@@ -65,6 +66,7 @@ export function Pagination({
           disabled={page === 1}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.prev')}
+          aria-label={t('pagination.prev')}
         >
           ←
         </button>
@@ -85,6 +87,7 @@ export function Pagination({
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.next')}
+          aria-label={t('pagination.next')}
         >
           →
         </button>
@@ -94,6 +97,7 @@ export function Pagination({
           disabled={page === totalPages}
           className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-surface text-content-secondary hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title={t('pagination.last')}
+          aria-label={t('pagination.last')}
         >
           »
         </button>

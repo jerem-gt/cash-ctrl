@@ -33,6 +33,7 @@
     "err_no_transactions": "Aucune transaction trouvée dans ce fichier.",
     "err_json_invalid": "Format JSON invalide ou version non supportée (attendu: version 1.0).",
     "err_file_read": "Erreur lors de la lecture du fichier.",
+    "err_file_too_large": "Fichier trop volumineux (maximum {{max}} Mo).",
     "file_loaded": "Fichier chargé",
     "date_format_title": "Format de date",
     "date_detected": "Détecté :",

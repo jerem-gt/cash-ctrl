@@ -11,11 +11,13 @@ import {
   Settings,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useMatch } from 'react-router-dom';
 
 import { Tabs } from '@/components/ui';
+import { nextEscapeOrder, pushEscape } from '@/components/ui/escapeStack';
+import { getFocusReturnTarget } from '@/components/ui/focusTracker';
 import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -24,6 +26,7 @@ import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { accountDisplayBalance } from '@/lib/account';
 import { fmt } from '@/lib/format';
 import { isMacPlatform } from '@/lib/platform';
@@ -79,6 +82,26 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
     onMobileClose();
   }, [pathname, onMobileClose]);
 
+  const isDesktop = useMediaQuery('(min-width: 768px)', true);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onMobileCloseRef = useRef(onMobileClose);
+  useEffect(() => {
+    onMobileCloseRef.current = onMobileClose;
+  });
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const trigger = getFocusReturnTarget();
+    closeButtonRef.current?.focus();
+    const release = pushEscape({
+      onEscape: () => onMobileCloseRef.current(),
+      order: nextEscapeOrder(),
+    });
+    return () => {
+      release();
+      if (trigger?.isConnected) trigger.focus();
+    };
+  }, [mobileOpen]);
+
   const accountsActive = useMatch({ path: '/accounts/:id', end: true }) !== null;
   const logoMap = useLogoMap();
   const bankSortOrder = useMemo(
@@ -87,29 +110,33 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
   );
 
   const groups = useMemo(() => {
+    const emptyKey = groupBy === 'bank' ? 'no_bank' : 'no_type';
     const map = new Map<string, Account[]>();
     for (const acc of accounts.filter((a) => !a.closed_at)) {
-      const key = groupBy === 'bank' ? (acc.bank ?? '') : (acc.type ?? 'Autre');
+      const key = groupBy === 'bank' ? (acc.bank ?? '') : (acc.type ?? '');
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(acc);
     }
     return [...map.entries()]
       .sort(([a], [b]) => {
+        if (a === '') return 1;
+        if (b === '') return -1;
         if (groupBy === 'bank') {
-          if (a === '') return 1;
-          if (b === '') return -1;
           return (bankSortOrder[a] ?? Infinity) - (bankSortOrder[b] ?? Infinity);
         }
         return a.localeCompare(b);
       })
       .map(([key, accs]) => ({
-        label: groupBy === 'bank' && key === '' ? t('no_bank') : key,
+        label: key === '' ? t(emptyKey) : key,
         accounts: accs,
       }));
   }, [accounts, groupBy, bankSortOrder, t]);
   const soldeTotal = useMemo(
     () =>
-      groups.reduce((t, g) => t + g.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0), 0),
+      groups.reduce(
+        (sum, g) => sum + g.accounts.reduce((s, a) => s + accountDisplayBalance(a), 0),
+        0,
+      ),
     [groups],
   );
 
@@ -123,12 +150,14 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
         />
       )}
       <aside
+        inert={!mobileOpen && !isDesktop}
         className={`fixed inset-y-0 left-0 w-72 bg-sidebar-bg text-sidebar-fg flex flex-col z-50 transition-transform duration-300 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <button
           type="button"
+          ref={closeButtonRef}
           onClick={onMobileClose}
           className="absolute top-4 right-4 p-1.5 text-white/30 hover:text-white/70 transition-colors rounded-md hover:bg-white/5 md:hidden"
           aria-label={t('close_menu')}
@@ -317,6 +346,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                 onClick={() => setMenuOpen((v) => !v)}
                 className={`p-2 transition-colors rounded-md hover:bg-white/5 ${menuOpen ? 'text-white/70' : 'text-white/30 hover:text-white/70'}`}
                 title={t('menu_title')}
+                aria-label={t('menu_title')}
               >
                 <Settings className="h-5 w-5" />
               </button>
@@ -325,6 +355,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                 onClick={() => logout.mutate()}
                 className="p-2 text-white/30 hover:text-red-400/80 transition-colors rounded-md hover:bg-white/5"
                 title={t('logout_title')}
+                aria-label={t('logout_title')}
               >
                 <Power className="h-5 w-5" />
               </button>

@@ -79,6 +79,7 @@ function AmountCell({
       onClick={handleStartEdit}
       className="text-right shrink-0 group"
       title={t('reimbursements_panel.edit_amount_title')}
+      aria-label={t('reimbursements_panel.edit_amount_title')}
     >
       <span className="text-xs font-medium text-success tabular-nums group-hover:underline decoration-dotted">
         +{fmtCurrency(reimbursement.amount)}
@@ -247,6 +248,7 @@ export function ReimbursementsPanel({ tx }: Readonly<Props>) {
                     disabled={unlink.isPending}
                     className="text-content-faint hover:text-danger transition-colors text-base leading-none px-1 shrink-0"
                     title={t('reimbursements_panel.unlink_title')}
+                    aria-label={t('reimbursements_panel.unlink_title')}
                   >
                     ×
                   </button>

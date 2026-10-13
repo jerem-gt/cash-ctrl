@@ -1,5 +1,7 @@
 import { type TFunction } from 'i18next';
 
+import { parseLocalDate } from '@/lib/dateUtils';
+
 type TDashboard = TFunction<'dashboard'>;
 
 export function getGainColor(positive: boolean): string {
@@ -22,7 +24,7 @@ const MS_PER_MONTH = 30.44 * 24 * 3600 * 1000;
  * Utilisé par formatDuration et exposé pour les tests.
  */
 export function totalMonthsSince(openingDate: string, now: number): number {
-  return Math.floor((now - new Date(openingDate).getTime()) / MS_PER_MONTH);
+  return Math.floor((now - parseLocalDate(openingDate).getTime()) / MS_PER_MONTH);
 }
 
 /**

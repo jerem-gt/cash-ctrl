@@ -177,6 +177,9 @@ export default function AccountDetailPage() {
                 title={
                   temporarilyUnlocked ? t('detail.readonly_off_title') : t('detail.readonly_title')
                 }
+                aria-label={
+                  temporarilyUnlocked ? t('detail.readonly_off_title') : t('detail.readonly_title')
+                }
               >
                 <span
                   className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors ${temporarilyUnlocked ? 'bg-warning border-warning/30' : 'bg-surface-strong border-line'}`}

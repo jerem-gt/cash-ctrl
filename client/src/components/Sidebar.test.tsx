@@ -1,10 +1,25 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 import { Sidebar } from './Sidebar';
+
+function stubMatchMedia(matches: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation(() => ({
+      matches,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function renderSidebar(onOpenSearch: () => void = vi.fn()) {
   return renderWithProviders(
@@ -70,5 +85,31 @@ describe('Sidebar', () => {
     renderSidebar(onOpenSearch);
     await user.click(screen.getByText(/rechercher/i));
     expect(onOpenSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('est inert quand fermé sous le breakpoint md', () => {
+    stubMatchMedia(false);
+    const { container } = renderSidebar();
+    expect(container.querySelector('aside')).toHaveAttribute('inert');
+  });
+
+  it("n'est jamais inert en desktop", () => {
+    stubMatchMedia(true);
+    const { container } = renderSidebar();
+    expect(container.querySelector('aside')).not.toHaveAttribute('inert');
+  });
+
+  it('Échap ferme le tiroir ouvert et le focus va au bouton de fermeture', async () => {
+    stubMatchMedia(false);
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const { container } = renderWithProviders(
+      <Sidebar username="u" mobileOpen onMobileClose={onClose} onOpenSearch={() => {}} />,
+    );
+    expect(container.querySelector('aside')).not.toHaveAttribute('inert');
+    expect(screen.getByRole('button', { name: 'Fermer le menu' })).toHaveFocus();
+    onClose.mockClear();
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
