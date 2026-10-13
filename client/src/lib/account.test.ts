@@ -29,7 +29,7 @@ function makeAccount(id: number, name: string, bank: string | null): Account {
 }
 
 function makeBank(name: string, sort_order: number): Bank {
-  return { id: 1, name, logo: null, domain: null, sort_order };
+  return { id: 1, name, logo: null, login_url: null, sort_order };
 }
 
 describe('accountSeniority', () => {

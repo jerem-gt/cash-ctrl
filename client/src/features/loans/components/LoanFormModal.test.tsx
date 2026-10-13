@@ -133,8 +133,7 @@ describe('LoanFormModal — mode edition', () => {
         onClose={vi.fn()}
       />,
     );
-    const input = screen.getByPlaceholderText('Ex : 3.5');
-    expect(input.value).toBe('1234.5');
+    expect(screen.getByPlaceholderText('Ex : 3.5')).toHaveValue(1234.5);
   });
 
   it("desactive les champs qui affectent l'echeancier", () => {

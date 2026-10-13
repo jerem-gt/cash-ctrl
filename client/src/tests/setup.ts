@@ -31,7 +31,7 @@ beforeAll(async () => {
   await initPromise;
   await i18n.changeLanguage('fr');
   await i18n.loadNamespaces([...LAZY_NAMESPACES]);
-  server.listen({ onUnhandledRequest: 'warn' });
+  server.listen({ onUnhandledFrame: 'warn' });
 });
 afterEach(async () => {
   cleanup();

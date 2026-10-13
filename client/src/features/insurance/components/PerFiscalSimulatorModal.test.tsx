@@ -14,7 +14,7 @@ function renderModal(onClose = vi.fn()) {
 
 async function waitForYearData() {
   // Attend que le barème soit chargé — abattement_min 2026 (barème par défaut en 2026)
-  expect(await screen.findByText(/509/, { timeout: 3000 })).toBeInTheDocument();
+  expect(await screen.findByText(/509/)).toBeInTheDocument();
 }
 
 async function fillAndCompute(revenu: string, versement: string) {
@@ -159,7 +159,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('55000', '4000');
     await navigateToResults(user);
-    expect(await screen.findByText(/sortie du PER/i, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText(/sortie du PER/i)).toBeInTheDocument();
   });
 
   it("l'économie est 0€ si versement est 0", async () => {
@@ -168,7 +168,7 @@ describe('PerFiscalSimulatorModal', () => {
     await waitForYearData();
     const user = await fillAndCompute('50000', '0');
     await navigateToResults(user);
-    expect(await screen.findByText("Économie d'impôt", { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText("Économie d'impôt")).toBeInTheDocument();
   });
 
   it('affiche les abattements min/max du barème sélectionné', async () => {

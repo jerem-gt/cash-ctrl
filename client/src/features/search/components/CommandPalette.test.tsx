@@ -63,7 +63,7 @@ describe('CommandPalette', () => {
     await user.type(screen.getByPlaceholderText(/rechercher/i), 'café');
 
     expect(
-      await screen.findByText(SEARCH_RESPONSE.transactions[0].description, { timeout: 2000 }),
+      await screen.findByText(SEARCH_RESPONSE.transactions[0].description),
     ).toBeInTheDocument();
     expect(screen.getByText(SEARCH_RESPONSE.accounts[0].name)).toBeInTheDocument();
     expect(screen.getByText(SEARCH_RESPONSE.scheduled[0].description)).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('CommandPalette', () => {
     await user.keyboard('{Enter}');
 
     expect(onClose).toHaveBeenCalled();
-    expect(await screen.findByTestId('location', { timeout: 2000 })).toHaveTextContent(
+    expect(await screen.findByTestId('location')).toHaveTextContent(
       `/accounts/${SEARCH_RESPONSE.accounts[0].id}`,
     );
   });
@@ -125,7 +125,7 @@ describe('CommandPalette', () => {
     await user.type(input, 'café');
 
     expect(
-      await screen.findByText(SEARCH_RESPONSE.transactions[0].description, { timeout: 2000 }),
+      await screen.findByText(SEARCH_RESPONSE.transactions[0].description),
     ).toBeInTheDocument();
 
     // 1er résultat (compte) surligné par défaut : ArrowDown avance vers la transaction.
@@ -140,9 +140,7 @@ describe('CommandPalette', () => {
     const { onClose } = renderPalette(true);
     await user.type(screen.getByPlaceholderText(/rechercher/i), 'café');
 
-    expect(
-      await screen.findByText(SEARCH_RESPONSE.scheduled[0].description, { timeout: 2000 }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(SEARCH_RESPONSE.scheduled[0].description)).toBeInTheDocument();
     await user.click(screen.getByText(SEARCH_RESPONSE.scheduled[0].description));
 
     expect(onClose).toHaveBeenCalled();

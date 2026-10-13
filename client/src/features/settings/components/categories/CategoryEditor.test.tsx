@@ -82,7 +82,7 @@ describe('CategoryEditor', () => {
     await user.click(screen.getByRole('button', { name: '🛒' }));
 
     // Simuler Échap
-    fireEvent.keyDown(globalThis, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
 
     // Le picker ne devrait plus être visible (il faut attendre la fin de l'effet)
     await waitFor(() => {

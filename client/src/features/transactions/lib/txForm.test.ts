@@ -31,14 +31,14 @@ const CATS: Pick<Category, 'id' | 'name' | 'subcategories'>[] = [
     id: 1,
     name: 'Alimentation',
     subcategories: [
-      { id: 10, name: 'Supermarché', category_id: 1 },
-      { id: 11, name: 'Restaurant', category_id: 1 },
+      { id: 10, name: 'Supermarché' },
+      { id: 11, name: 'Restaurant' },
     ],
   },
   {
     id: 2,
     name: 'Transport',
-    subcategories: [{ id: 20, name: 'Essence', category_id: 2 }],
+    subcategories: [{ id: 20, name: 'Essence' }],
   },
 ];
 
@@ -103,7 +103,7 @@ describe('initCore', () => {
   });
 
   it('initialise depuis une tx en édition', () => {
-    const tx = makeTx({ amount: 42.5, subcategory_id: 10, category_id: 1 });
+    const tx = makeTx({ amount: 42.5, subcategory_id: 10 });
     const c = initCore(tx, undefined, undefined);
     expect(c.amount).toBe('42.50');
     expect(c.subcategory_id).toBe('10');
@@ -130,10 +130,9 @@ describe('initCore', () => {
   });
 
   it('mappe subcategory_id null en chaîne vide', () => {
-    const tx = makeTx({ subcategory_id: null, category_id: null });
+    const tx = makeTx({ subcategory_id: null });
     const c = initCore(tx, undefined, undefined);
     expect(c.subcategory_id).toBe('');
-    expect(c.category_id).toBe('');
   });
 });
 
@@ -157,8 +156,8 @@ describe('initSplits', () => {
   it('mappe les splits avec leur catégorie parente', () => {
     const tx = makeTx({
       splits: [
-        { id: 1, transaction_id: 1, subcategory_id: 11, amount: 30 },
-        { id: 2, transaction_id: 1, subcategory_id: 20, amount: 20 },
+        { id: 1, subcategory_id: 11, amount: 30 },
+        { id: 2, subcategory_id: 20, amount: 20 },
       ],
     });
     const result = initSplits(tx, CATS);
@@ -362,14 +361,15 @@ describe('getSchedulingOptions', () => {
       type: 'expense',
       amount: 50,
       description: 'Plan A',
-      category_id: null,
+      category_id: 1,
       subcategory_id: null,
-      category: null,
-      subcategory: null,
+      category: 'Alimentation',
+      subcategory: '',
       payment_method_id: null,
-      payment_method: null,
+      payment_method: '',
       insurance_support_id: null,
       insurance_fees: 0,
+      insurance_support_name: '',
       notes: null,
       recurrence_unit: 'month',
       recurrence_interval: 1,
@@ -379,7 +379,7 @@ describe('getSchedulingOptions', () => {
       start_date: '2026-01-01',
       end_date: null,
       active: 1,
-      next_due_date: '2026-05-01',
+      transaction_count: 0,
     },
     {
       id: 2,
@@ -388,14 +388,15 @@ describe('getSchedulingOptions', () => {
       type: 'expense',
       amount: 100,
       description: 'Transfert récurrent',
-      category_id: null,
+      category_id: 1,
       subcategory_id: null,
-      category: null,
-      subcategory: null,
+      category: 'Alimentation',
+      subcategory: '',
       payment_method_id: null,
-      payment_method: null,
+      payment_method: '',
       insurance_support_id: null,
       insurance_fees: 0,
+      insurance_support_name: '',
       notes: null,
       recurrence_unit: 'month',
       recurrence_interval: 1,
@@ -405,7 +406,7 @@ describe('getSchedulingOptions', () => {
       start_date: '2026-01-01',
       end_date: null,
       active: 1,
-      next_due_date: '2026-05-05',
+      transaction_count: 0,
     },
     {
       id: 3,
@@ -414,14 +415,15 @@ describe('getSchedulingOptions', () => {
       type: 'income',
       amount: 200,
       description: 'Inactif',
-      category_id: null,
+      category_id: 1,
       subcategory_id: null,
-      category: null,
-      subcategory: null,
+      category: 'Alimentation',
+      subcategory: '',
       payment_method_id: null,
-      payment_method: null,
+      payment_method: '',
       insurance_support_id: null,
       insurance_fees: 0,
+      insurance_support_name: '',
       notes: null,
       recurrence_unit: 'month',
       recurrence_interval: 1,
@@ -431,7 +433,7 @@ describe('getSchedulingOptions', () => {
       start_date: '2026-01-01',
       end_date: null,
       active: 0,
-      next_due_date: '2026-05-10',
+      transaction_count: 0,
     },
   ];
 
