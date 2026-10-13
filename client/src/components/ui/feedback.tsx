@@ -52,6 +52,11 @@ let toastTimer: ReturnType<typeof setTimeout>;
 export function showToast(msg: string) {
   const el = document.getElementById('toast');
   if (!el) return;
+  // Re-promotion dans le top layer pour passer au-dessus des modales (<dialog>) ouvertes.
+  if (typeof el.showPopover === 'function') {
+    if (el.matches(':popover-open')) el.hidePopover();
+    el.showPopover();
+  }
   el.textContent = msg;
   el.classList.add('opacity-100', 'translate-y-0');
   el.classList.remove('opacity-0', 'translate-y-2');
@@ -66,7 +71,8 @@ export function Toast() {
   return (
     <div
       id="toast"
-      className="fixed bottom-6 right-6 bg-inverse text-inverse-fg px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg opacity-0 translate-y-2 transition-all duration-200 pointer-events-none z-50"
+      popover="manual"
+      className="fixed top-auto left-auto bottom-6 right-6 m-0 border-0 overflow-visible bg-inverse text-inverse-fg px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg opacity-0 translate-y-2 transition-all duration-200 pointer-events-none z-50"
     />
   );
 }

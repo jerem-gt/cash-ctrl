@@ -22,7 +22,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import { Badge, Empty } from '@/components/ui';
+import { Badge, Empty, useModalDialog } from '@/components/ui';
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { fireAndForget } from '@/lib/async';
@@ -94,6 +94,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useModalDialog(onClose, { initialFocusRef: inputRef });
   const [activeIndex, setActiveIndex] = useState(0);
 
   const goTo = useCallback(
@@ -216,22 +217,6 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
     el?.scrollIntoView({ block: 'nearest' });
   }, [clampedActiveIndex]);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  // Capture + stopPropagation : Escape ferme la palette sans atteindre une ModalFrame sous-jacente, même hors focus input.
-  useEffect(() => {
-    const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [onClose]);
-
   const isIdle = query.trim().length < 2;
   const isLoadingResults = !isIdle && isLoading;
   const isEmpty = !isIdle && !isLoadingResults && flat.length === 0;
@@ -256,7 +241,12 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
   let index = -1;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center md:items-center md:p-4">
+    <dialog
+      ref={dialogRef}
+      aria-label={t('placeholder')}
+      onCancel={(e) => e.preventDefault()}
+      className="fixed inset-0 z-[60] m-0 flex h-full max-h-none w-full max-w-none items-start justify-center border-0 bg-transparent p-0 text-content backdrop:bg-transparent md:items-center md:p-4"
+    >
       {/* Backdrop bouton natif masqué de l'arbre a11y (redondant avec Escape et le bouton X) : clic souris pour fermer. */}
       <button
         type="button"
@@ -345,6 +335,6 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
           </span>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

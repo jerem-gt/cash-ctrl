@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Input } from '@/components/ui';
+import { Button, Input, Popover } from '@/components/ui';
 
 const EmojiPickerWidget = React.lazy(() =>
   import('./EmojiPickerWidget').then((m) => ({ default: m.EmojiPickerWidget })),
@@ -37,10 +37,7 @@ export function CategoryEditor({
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showPicker) setShowPicker(false);
-        else onCancel?.();
-      }
+      if (e.key === 'Escape' && !showPicker) onCancel?.();
     };
     globalThis.addEventListener('keydown', handleEsc);
     return () => globalThis.removeEventListener('keydown', handleEsc);
@@ -58,31 +55,26 @@ export function CategoryEditor({
           {form.icon}
         </button>
 
-        {showPicker && (
-          <>
-            <button
-              type="button"
-              className="fixed inset-0 z-40 bg-transparent"
-              onClick={() => setShowPicker(false)}
+        <Popover
+          open={showPicker}
+          onClose={() => setShowPicker(false)}
+          className="absolute top-full left-0 mt-2 shadow-2xl border border-line-subtle rounded-2xl overflow-hidden animate-in slide-in-from-top-2"
+        >
+          <Suspense
+            fallback={
+              <div className="p-8 text-xs text-content-subtle bg-surface">
+                {t('categories.loading_emoji')}
+              </div>
+            }
+          >
+            <EmojiPickerWidget
+              onSelect={(emoji) => {
+                setForm((f) => ({ ...f, icon: emoji }));
+                setShowPicker(false);
+              }}
             />
-            <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl border border-line-subtle rounded-2xl overflow-hidden animate-in slide-in-from-top-2">
-              <Suspense
-                fallback={
-                  <div className="p-8 text-xs text-content-subtle bg-surface">
-                    {t('categories.loading_emoji')}
-                  </div>
-                }
-              >
-                <EmojiPickerWidget
-                  onSelect={(emoji) => {
-                    setForm((f) => ({ ...f, icon: emoji }));
-                    setShowPicker(false);
-                  }}
-                />
-              </Suspense>
-            </div>
-          </>
-        )}
+          </Suspense>
+        </Popover>
       </div>
 
       {/* NOM */}
