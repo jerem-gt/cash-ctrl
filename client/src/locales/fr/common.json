@@ -44,5 +44,6 @@
     "last": "Dernière page",
     "per_page": "{{n}} / page",
     "info": "{{from}}–{{to}} sur {{total}}"
-  }
+  },
+  "error_boundary_reload": "Une erreur est survenue — cliquez pour recharger"
 }

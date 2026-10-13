@@ -44,5 +44,6 @@
     "last": "Last page",
     "per_page": "{{n}} / page",
     "info": "{{from}}–{{to}} of {{total}}"
-  }
+  },
+  "error_boundary_reload": "An error occurred — click to reload"
 }

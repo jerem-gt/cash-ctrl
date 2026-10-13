@@ -5,6 +5,7 @@ import type { MeData } from '@/api/client';
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
 import { queryKeys } from '@/lib/queryKeys';
+import { claimCacheOwner, purgePersistedCache } from '@/lib/queryPersister';
 
 export function useMe() {
   return useQuery({
@@ -22,6 +23,7 @@ export function useLogin() {
       authApi.login(username, password),
     onSuccess: (data) => {
       if (!data.totp_required) {
+        claimCacheOwner(qc, data.username);
         qc.setQueryData(queryKeys.me(), data satisfies MeData);
       }
     },
@@ -33,7 +35,10 @@ export function useVerifyTotp() {
   return useMutation({
     meta: { suppressGlobalError: true },
     mutationFn: ({ code }: { code: string }) => authApi.verifyTotp(code),
-    onSuccess: (data) => qc.setQueryData(queryKeys.me(), data),
+    onSuccess: (data) => {
+      claimCacheOwner(qc, data.username);
+      qc.setQueryData(queryKeys.me(), data);
+    },
   });
 }
 
@@ -46,6 +51,7 @@ export function useLogout() {
       showToast(t('logout_success'));
       qc.setQueryData(queryKeys.me(), null);
       qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
+      purgePersistedCache();
     },
   });
 }
