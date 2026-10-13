@@ -462,6 +462,8 @@ export interface ForecastAccount {
   bank_id: number;
   current_balance: number;
   points: ForecastPoint[];
+  /** Segment rétrospectif (jusqu'à la veille) quand des transactions non validées sont échues. */
+  overdue_points?: ForecastPoint[];
   goes_negative_on: string | null;
 }
 

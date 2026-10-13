@@ -16,6 +16,7 @@ interface ForecastAccountDto {
   bank_id: number;
   current_balance: number;
   points: ForecastPointDto[];
+  overdue_points?: ForecastPointDto[];
   goes_negative_on: string | null;
 }
 
@@ -343,6 +344,73 @@ describe('GET /api/stats/forecast', () => {
     }
     expect(sawLaterDip).toBe(true);
     expect(findPoint(acc, daysFromNow(21))?.balance).toBeLessThan(acc.points[0].balance);
+  });
+
+  it('une transaction non validée échue est prise en compte via overdue_points', async () => {
+    const created = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 70,
+      description: 'Retard',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      date: daysFromNow(-3),
+      validated: false,
+    });
+    expect(created.status).toBe(201);
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=30&account_id=${accountId}`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId)!;
+    const overdue = acc.overdue_points!;
+
+    expect(overdue[0].date).toBe(daysFromNow(-4));
+    expect(overdue[0].balance).toBe(acc.current_balance);
+    expect(findPoint({ ...acc, points: overdue }, daysFromNow(-3))?.balance).toBe(
+      acc.current_balance - 7000,
+    );
+    expect(acc.points[0].balance).toBe(acc.current_balance - 7000);
+  });
+
+  it("déplacer la dernière occurrence pré-générée dans le passé ne la reprojette pas à l'ancienne date", async () => {
+    const sched = await ctx.agent.post('/api/scheduled').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Hebdo',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      recurrence_unit: 'week',
+      recurrence_interval: 1,
+      start_date: daysFromNow(14),
+      active: true,
+    });
+    const scheduledId = sched.body.id;
+
+    const txs = await ctx.agent.get(`/api/transactions?scheduled_id=${scheduledId}`);
+    const rows = (txs.body.data as Array<{ id: number; date: string }>).toSorted((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+    const last = rows.at(-1)!;
+
+    await ctx.agent.put(`/api/transactions/${last.id}`).send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 50,
+      description: 'Hebdo',
+      subcategory_id: SEED.SUBCAT_AUTRE,
+      payment_method_id: SEED.PM_CARTE,
+      date: daysFromNow(-1),
+      validated: true,
+      scheduled_id: scheduledId,
+    });
+
+    const fc = await ctx.agent.get(`/api/stats/forecast?horizon=90&account_id=${accountId}`);
+    const acc = (fc.body.accounts as ForecastAccountDto[]).find((a) => a.account_id === accountId)!;
+
+    const prev = new Date(`${last.date}T00:00:00`);
+    prev.setDate(prev.getDate() - 1);
+    const prevStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
+    expect(findPoint(acc, last.date)?.balance).toBe(findPoint(acc, prevStr)?.balance);
   });
 
   it("loyer avancé : déplacer l'occurrence à une date passée ne la réapparaît pas dans le forecast", async () => {

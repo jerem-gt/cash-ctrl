@@ -93,15 +93,6 @@ export function createForecastRepo(db: Database) {
     ORDER BY date
   `);
 
-  // Dernière échéance matérialisée, toutes périodes confondues (passé + futur). Une
-  // occurrence avancée à une date passée (payée/validée) tombe hors de la fenêtre de
-  // pré-génération : c'est elle en revanche qui ancre la projection de la config.
-  const lastScheduledTxStmt = db
-    .prepare<{ scheduledId: number; userId: number }, string | null>(
-      `SELECT MAX(date) FROM transactions WHERE scheduled_id = :scheduledId AND user_id = :userId`,
-    )
-    .pluck();
-
   const balanceStmt = db.prepare<{ userId: number; accountId: number | null }, AccountBalanceRow>(`
     SELECT a.id AS account_id, a.name AS account_name, a.bank_id,
            a.initial_balance + COALESCE(bal.s, 0) AS balance
@@ -151,49 +142,143 @@ export function createForecastRepo(db: Database) {
         addDelta(r.account_id, r.date, r.type === 'income' ? r.amount : -r.amount);
       }
     }
-    // Au-delà de la dernière échéance connue (validée ou non), on projette la config pour
-    // conserver le rythme d'origine au-delà de la fenêtre pré-générée (J+lead_days).
-    const lastMaterialized = lastScheduledTxStmt.get({ scheduledId: sched.id, userId }) ?? null;
-    addFlowsFromSchedule(sched, todayDate, horizon, lastMaterialized, addDelta);
+    // Ancre = dernière date nominale générée (comme generateScheduled) : indépendante des
+    // déplacements d'occurrences, contrairement à MAX(transactions.date).
+    addFlowsFromSchedule(sched, todayDate, horizon, sched.last_generated_until ?? null, addDelta);
+  };
+
+  // Transactions non validées déjà échues : absentes du solde, attendues d'un jour à l'autre.
+  const overdueStmt = db.prepare<
+    { userId: number; from: string; today: string },
+    { account_id: number; date: string; delta: number }
+  >(`
+    SELECT account_id, date, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS delta
+    FROM transactions
+    WHERE user_id = :userId AND validated = 0 AND date >= :from AND date < :today
+    GROUP BY account_id, date
+  `);
+
+  // Transactions validées de la fenêtre passée : servent à recoller la courbe à l'historique.
+  const validatedPastStmt = db.prepare<
+    { userId: number; from: string; today: string },
+    { account_id: number; date: string; delta: number }
+  >(`
+    SELECT account_id, date, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS delta
+    FROM transactions
+    WHERE user_id = :userId AND validated = 1 AND date >= :from AND date <= :today
+    GROUP BY account_id, date
+  `);
+
+  const groupByAccount = (
+    rows: { account_id: number; date: string; delta: number }[],
+  ): Map<number, Map<string, number>> => {
+    const map = new Map<number, Map<string, number>>();
+    for (const r of rows) {
+      let byDate = map.get(r.account_id);
+      if (!byDate) {
+        byDate = new Map();
+        map.set(r.account_id, byDate);
+      }
+      byDate.set(r.date, r.delta);
+    }
+    return map;
+  };
+
+  /**
+   * Segment pointillé rétrospectif : part du solde historique la veille du plus ancien retard
+   * (identique à la courbe pleine) et cumule validés + retards jusqu'à hier.
+   */
+  const buildOverduePoints = (
+    acc: AccountBalanceRow,
+    overdue: Map<string, number>,
+    validatedPast: Map<string, number> | undefined,
+    today: string,
+  ): ForecastPoint[] => {
+    const first = [...overdue.keys()].sort((a, b) => a.localeCompare(b))[0];
+    const anchor = parseDate(first);
+    anchor.setDate(anchor.getDate() - 1);
+
+    let running = acc.balance;
+    for (const [date, v] of validatedPast ?? []) {
+      if (date > dateStr(anchor)) running -= v;
+    }
+
+    const points: ForecastPoint[] = [{ date: dateStr(anchor), balance: running }];
+    for (let d = new Date(anchor); ;) {
+      d.setDate(d.getDate() + 1);
+      const dStr = dateStr(d);
+      if (dStr >= today) break;
+      running += (validatedPast?.get(dStr) ?? 0) + (overdue.get(dStr) ?? 0);
+      points.push({ date: dStr, balance: running });
+    }
+    return points;
+  };
+
+  const buildForecastAccount = (
+    acc: AccountBalanceRow,
+    deltas: Map<number, Map<string, number>>,
+    overdueByAccount: Map<number, Map<string, number>>,
+    validatedPastByAccount: Map<number, Map<string, number>>,
+    todayDate: Date,
+    horizonDays: number,
+    today: string,
+  ): ForecastAccount | null => {
+    const accDeltas = deltas.get(acc.account_id) ?? new Map<string, number>();
+    const overdue = overdueByAccount.get(acc.account_id);
+    if (accDeltas.size === 0 && !overdue) return null;
+
+    const overduePoints = overdue
+      ? buildOverduePoints(acc, overdue, validatedPastByAccount.get(acc.account_id), today)
+      : undefined;
+    const overdueTotal = overdue ? [...overdue.values()].reduce((s, v) => s + v, 0) : 0;
+
+    // Le point initial inclut les retards non validés et le delta du jour meme.
+    let running = acc.balance + overdueTotal + (accDeltas.get(today) ?? 0);
+    let goesNegativeOn: string | null = running < 0 ? today : null;
+    const points: ForecastPoint[] = [{ date: today, balance: running }];
+
+    for (let i = 1; i <= horizonDays; i++) {
+      const d = new Date(todayDate);
+      d.setDate(d.getDate() + i);
+      const dStr = dateStr(d);
+      running += accDeltas.get(dStr) ?? 0;
+      points.push({ date: dStr, balance: running });
+      if (goesNegativeOn === null && running < 0) goesNegativeOn = dStr;
+    }
+
+    return {
+      account_id: acc.account_id,
+      account_name: acc.account_name,
+      bank_id: acc.bank_id,
+      current_balance: acc.balance,
+      points,
+      ...(overduePoints && { overdue_points: overduePoints }),
+      goes_negative_on: goesNegativeOn,
+    };
   };
 
   const buildForecastAccounts = (
     accountBalances: AccountBalanceRow[],
     deltasByAccount: Map<number, Map<string, number>>,
+    overdueByAccount: Map<number, Map<string, number>>,
+    validatedPastByAccount: Map<number, Map<string, number>>,
     todayDate: Date,
     horizonDays: number,
     today: string,
-  ): ForecastAccount[] => {
-    const accounts: ForecastAccount[] = [];
-    for (const acc of accountBalances) {
-      const deltas = deltasByAccount.get(acc.account_id);
-      if (!deltas || deltas.size === 0) continue;
-
-      // Le point initial inclut le delta du jour meme (occurrence/echeance dues aujourd'hui).
-      let running = acc.balance + (deltas.get(today) ?? 0);
-      let goesNegativeOn: string | null = running < 0 ? today : null;
-      const points: ForecastPoint[] = [{ date: today, balance: running }];
-
-      for (let i = 1; i <= horizonDays; i++) {
-        const d = new Date(todayDate);
-        d.setDate(d.getDate() + i);
-        const dStr = dateStr(d);
-        running += deltas.get(dStr) ?? 0;
-        points.push({ date: dStr, balance: running });
-        if (goesNegativeOn === null && running < 0) goesNegativeOn = dStr;
-      }
-
-      accounts.push({
-        account_id: acc.account_id,
-        account_name: acc.account_name,
-        bank_id: acc.bank_id,
-        current_balance: acc.balance,
-        points,
-        goes_negative_on: goesNegativeOn,
-      });
-    }
-    return accounts;
-  };
+  ): ForecastAccount[] =>
+    accountBalances
+      .map((acc) =>
+        buildForecastAccount(
+          acc,
+          deltasByAccount,
+          overdueByAccount,
+          validatedPastByAccount,
+          todayDate,
+          horizonDays,
+          today,
+        ),
+      )
+      .filter((a) => a !== null);
 
   return {
     getForecast(
@@ -231,10 +316,23 @@ export function createForecastRepo(db: Database) {
         addDelta(inst.source_account_id, inst.due_date, -inst.total_amount);
       }
 
+      // Fenêtre rétrospective = celle de l'historique de solde (horizon jours).
+      const lookback = new Date(todayDate);
+      lookback.setDate(lookback.getDate() - horizonDays);
+      const lookbackStr = dateStr(lookback);
+      const overdueByAccount = groupByAccount(
+        overdueStmt.all({ userId, from: lookbackStr, today }),
+      );
+      const validatedPastByAccount = groupByAccount(
+        validatedPastStmt.all({ userId, from: lookbackStr, today }),
+      );
+
       const accountBalances = balanceStmt.all({ userId, accountId: accountId ?? null });
       const accounts = buildForecastAccounts(
         accountBalances,
         deltasByAccount,
+        overdueByAccount,
+        validatedPastByAccount,
         todayDate,
         horizonDays,
         today,
