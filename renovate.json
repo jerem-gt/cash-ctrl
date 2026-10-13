@@ -1,72 +1,7 @@
 {
-  "extends": ["config:recommended"],
-
+  "extends": ["config:recommended", "group:allNonMajor", "group:react"],
   "baseBranchPatterns": ["develop"],
-
-  "dependencyDashboardApproval": false,
-
-  "rangeStrategy": "bump",
-
   "semanticCommits": "enabled",
-
-  "minimumReleaseAge": "3 days",
-
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 2,
-
-  "schedule": ["at any time"],
-
-  "labels": ["dependencies"],
-
-  "reviewers": ["jerem-gt"],
-
-  "npm": {
-    "enabled": true
-  },
-
-  "packageRules": [
-    {
-      "description": "Group all minor/patch prod deps",
-      "matchDepTypes": ["dependencies"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "prod deps (minor/patch)"
-    },
-    {
-      "description": "Group devDependencies minor/patch, automerge patches",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "devDependencies",
-      "automerge": true,
-      "automergeType": "pr"
-    },
-    {
-      "description": "Keep React + types updates isolated",
-      "matchPackageNames": [
-        "react",
-        "react-dom",
-        "@types/react",
-        "@types/react-dom"
-      ],
-      "groupName": "react",
-      "automerge": false
-    },
-    {
-      "description": "Keep build tools isolated",
-      "matchPackageNames": [
-        "vite",
-        "typescript",
-        "@vitejs/plugin-react",
-        "vite-plugin-pwa",
-        "tailwindcss",
-        "postcss"
-      ],
-      "groupName": "build-tools",
-      "automerge": false
-    },
-    {
-      "description": "Backend critical deps — never automerge",
-      "matchPackageNames": ["express", "better-sqlite3", "express-session"],
-      "automerge": false
-    }
-  ]
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"]
 }
