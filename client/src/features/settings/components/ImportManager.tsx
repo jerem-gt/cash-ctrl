@@ -25,6 +25,7 @@ import {
   resolveXhbPreview,
 } from '@/lib/import.helpers';
 import { parseQif } from '@/lib/qif-parser.ts';
+import { FileTooLargeError, MAX_IMPORT_FILE_BYTES, readFileText } from '@/lib/readFileText';
 import { parseXhb } from '@/lib/xhb-parser.ts';
 
 import { AccountsStep } from './import/AccountsStep';
@@ -242,9 +243,7 @@ export default function ImportManager() {
         return true;
       };
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
+      const processText = (text: string) => {
         try {
           if (isJsonFile) {
             handleJsonFile(text);
@@ -261,7 +260,16 @@ export default function ImportManager() {
           setParseError(t('import.err_file_read'));
         }
       };
-      reader.readAsText(file, 'UTF-8');
+
+      readFileText(file).then(processText, (err: unknown) => {
+        if (err instanceof FileTooLargeError) {
+          setParseError(
+            t('import.err_file_too_large', { max: MAX_IMPORT_FILE_BYTES / 1024 / 1024 }),
+          );
+        } else {
+          setParseError(t('import.err_file_read'));
+        }
+      });
     },
     [categories, banks, accountTypes, paymentMethods, makeDefaultAccChoice, t],
   );

@@ -52,6 +52,7 @@ function Row({ item, onMarkDone, pendingMutation, faded, markDoneTitle }: Readon
             onClick={() => onMarkDone(item.id)}
             disabled={pendingMutation}
             title={markDoneTitle}
+            aria-label={markDoneTitle}
             className="text-content-faint hover:text-success transition-colors text-base leading-none opacity-0 group-hover:opacity-100"
           >
             ✓

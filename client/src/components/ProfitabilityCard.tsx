@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, CardTitle } from '@/components/ui';
+import { parseLocalDate } from '@/lib/dateUtils';
 import { fmt } from '@/lib/format';
 
 type TAccounts = ReturnType<typeof useTranslation<'accounts'>>['t'];
 
 function formatDuration(openingDate: string, t: TAccounts): string {
   const msPerMonth = 30.44 * 24 * 3600 * 1000;
-  const totalMonths = Math.floor((Date.now() - new Date(openingDate).getTime()) / msPerMonth);
+  const totalMonths = Math.floor((Date.now() - parseLocalDate(openingDate).getTime()) / msPerMonth);
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
   if (years === 0) return t('profitability.duration_months', { count: months });

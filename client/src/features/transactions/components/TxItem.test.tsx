@@ -115,4 +115,21 @@ describe('TxItem', () => {
     renderTx(txWithNotes);
     expect(screen.getAllByTitle('Remboursement partiel').length).toBeGreaterThan(0);
   });
+
+  it('expose le bouton de validation par son nom et aria-pressed', () => {
+    renderTx(baseTx);
+    const btn = screen.getByRole('button', { name: /marquer comme non validée/i });
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it("expose les notes au toucher et aux lecteurs d'écran", () => {
+    renderTx({ ...baseTx, notes: 'Remboursement partiel' });
+    expect(screen.getByRole('img', { name: 'Remboursement partiel' })).toBeInTheDocument();
+    expect(screen.getAllByText('Remboursement partiel').length).toBeGreaterThan(0);
+  });
+
+  it("expose l'indicateur de virement avec un role img", () => {
+    renderTx({ ...baseTx, transfer_peer_id: 99 });
+    expect(screen.getByRole('img', { name: /transfert/i })).toBeInTheDocument();
+  });
 });

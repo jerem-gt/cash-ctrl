@@ -88,6 +88,7 @@ function SupportRow({
         onClick={() => setActiveModal('delete')}
         className="text-[11px] text-content-subtle hover:text-danger px-2 py-1 rounded-lg transition-all"
         title={t('section.delete_support_btn_title')}
+        aria-label={t('section.delete_support_btn_title')}
       >
         ×
       </button>

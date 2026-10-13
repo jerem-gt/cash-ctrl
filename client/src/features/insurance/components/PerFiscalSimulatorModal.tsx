@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button, DecimalInput, FormGroup, ModalFrame, Select } from '@/components/ui';
 import { useTaxYearData, useTaxYears } from '@/features/insurance/hooks/useTax';
+import { parseLocalDate } from '@/lib/dateUtils';
 import { fmt } from '@/lib/format';
 import {
   type BracketDetail,
@@ -114,7 +115,7 @@ export function PerFiscalSimulatorModal({ onClose, operations }: Readonly<Props>
   const defaultVersement = useMemo(() => {
     const year = resolvedYear ?? CURRENT_YEAR;
     const total = (operations ?? [])
-      .filter((op) => op.type === 'versement' && new Date(op.date).getFullYear() === year)
+      .filter((op) => op.type === 'versement' && parseLocalDate(op.date).getFullYear() === year)
       .reduce((sum, op) => sum + op.amount, 0);
     return total > 0 ? String(total) : '';
   }, [operations, resolvedYear]);
