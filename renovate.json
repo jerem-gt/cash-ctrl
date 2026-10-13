@@ -3,5 +3,10 @@
   "baseBranchPatterns": ["develop"],
   "semanticCommits": "enabled",
   "rangeStrategy": "bump",
-  "labels": ["dependencies"]
+  "labels": ["dependencies"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"],
+    "automerge": false
+  }
 }
