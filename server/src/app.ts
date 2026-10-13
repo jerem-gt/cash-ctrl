@@ -39,19 +39,33 @@ export interface AppOptions {
   healthExtraCheck?: () => string | null;
 }
 
+function resolveSessionSecret(secret: string | undefined): string {
+  if (secret) {
+    return secret;
+  }
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-secret';
+  }
+  throw new Error('createApp: sessionSecret is required outside NODE_ENV=test');
+}
+
 export function createApp(db: Database, options?: AppOptions): express.Application {
+  const sessionSecret = resolveSessionSecret(options?.sessionSecret);
+  const sessionStore = new SQLiteSessionStore(db);
   const app = express();
 
   app.use(helmet());
   app.use(compression());
-  app.use(express.json({ limit: '10mb' }));
+  // Parseur 10 Mo dédié aux imports, monté avant le parseur global (body-parser ignore un corps déjà parsé).
+  app.use('/api/import', express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
 
   app.use(
     session({
-      store: new SQLiteSessionStore(db),
-      secret: options?.sessionSecret ?? 'test-secret',
+      store: sessionStore,
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -84,7 +98,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
     });
   });
 
-  app.use('/api/auth', createAuthRouter(db));
+  app.use('/api/auth', createAuthRouter(db, sessionStore));
   app.use('/api/users', createUsersRouter(db));
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));

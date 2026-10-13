@@ -13,6 +13,7 @@ export const ERROR_MESSAGES = {
   'common.invalid_request': 'Requête invalide',
   'common.invalid_param': 'Paramètre {{param}} invalide',
   'common.internal': 'Erreur interne du serveur.',
+  'common.payload_too_large': 'Requête trop volumineuse',
 
   // ── Validation (par champ) ────────────────────────────────────────────────
   'validation.invalid': 'Données invalides',

@@ -157,6 +157,13 @@ describe('POST /api/import/structured', () => {
 
   // ─── Import de transactions ────────────────────────────────────────────────
 
+  it('accepte un corps de plus de 100 ko (parseur 10 Mo dédié)', async () => {
+    const res = await ctx.agent
+      .post('/api/import/structured')
+      .send({ ...EMPTY_BODY, padding: 'x'.repeat(200_000) });
+    expect(res.status).toBe(201);
+  });
+
   it('importe une transaction de dépense sur un compte existant', async () => {
     const tx = { ...VALID_TX, account_id: accountId };
     const res = await ctx.agent
@@ -185,8 +192,7 @@ describe('POST /api/import/structured', () => {
     await ctx.agent.post('/api/import/structured').send({ ...EMPTY_BODY, transactions: [tx] });
 
     const row = ctx.db.prepare('SELECT * FROM transactions WHERE account_id = ?').get(accountId) as
-      | { amount: number; validated: number; notes: string }
-      | undefined;
+      { amount: number; validated: number; notes: string } | undefined;
     expect(row?.amount).toBe(15000); // stored in cents (150 € × 100)
     expect(row?.validated).toBe(1);
     expect(row?.notes).toBe('note test');
@@ -274,8 +280,7 @@ describe('POST /api/import/structured', () => {
     expect(res.body.transactions).toBe(1);
 
     const acc = ctx.db.prepare("SELECT id FROM accounts WHERE name = 'Nouveau Courant'").get() as
-      | { id: number }
-      | undefined;
+      { id: number } | undefined;
     expect(acc).toBeDefined();
 
     const row = ctx.db
@@ -362,8 +367,7 @@ describe('POST /api/import/structured', () => {
     expect(res.status).toBe(201);
 
     const sc = ctx.db.prepare("SELECT id FROM subcategories WHERE name = 'Restaurant'").get() as
-      | { id: number }
-      | undefined;
+      { id: number } | undefined;
     expect(sc).toBeDefined();
 
     const row = ctx.db
@@ -393,8 +397,7 @@ describe('POST /api/import/structured', () => {
     expect(res.status).toBe(201);
 
     const cat = ctx.db.prepare("SELECT id FROM categories WHERE name = 'Animaux'").get() as
-      | { id: number }
-      | undefined;
+      { id: number } | undefined;
     expect(cat).toBeDefined();
 
     const sc = ctx.db

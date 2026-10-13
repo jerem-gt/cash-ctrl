@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { sendError } from '../../lib/routeHelpers.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
+import type { SQLiteSessionStore } from '../../session-store.js';
 import { createAuthRepo } from './auth.repo.js';
 
 export const loginSchema = z.object({
@@ -80,7 +81,7 @@ function startSession(
   });
 }
 
-export function createAuthRouter(db: Database): Router {
+export function createAuthRouter(db: Database, sessionStore: SQLiteSessionStore): Router {
   const authRepo = createAuthRepo(db);
   const router = Router();
   const loginLimiter = new FailureRateLimiter(db);
@@ -195,6 +196,7 @@ export function createAuthRouter(db: Database): Router {
     }
 
     authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
+    sessionStore.destroyOtherSessions(userId, req.sessionID);
     res.json({ ok: true });
   });
 
