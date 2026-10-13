@@ -32,6 +32,7 @@ export const queryKeys = {
       all: () => ['stock-positions'] as const,
       byAccount: (accountId: number) => ['stock-positions', accountId] as const,
     },
+    operationsAll: () => ['stock-operations'] as const,
     operations: (accountId: number) => ['stock-operations', accountId] as const,
     search: (query: string) => ['stock-search', query] as const,
     cachedTickers: () => ['stock-cached-tickers'] as const,

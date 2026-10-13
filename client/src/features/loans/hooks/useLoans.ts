@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { loansApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
+import { invalidateBalances, invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useLoan(accountId: number) {
@@ -27,10 +28,8 @@ export function useCreateLoan() {
   return useMutation({
     mutationFn: (payload: CreateLoanPayload) => loansApi.create(payload),
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }
@@ -41,10 +40,8 @@ export function useUpdateLoan(loanId: number) {
     mutationFn: (payload: UpdateLoanPayload) => loansApi.update(loanId, payload),
     onSuccess: (loan) => {
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.loans.byAccount(loan.account_id) }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }
@@ -62,9 +59,8 @@ export function useUpdateInstallment(loanId: number) {
     }) => loansApi.updateInstallment(loanId, installmentId, data),
     onSuccess: () => {
       fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.loans.installments(loanId) }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }

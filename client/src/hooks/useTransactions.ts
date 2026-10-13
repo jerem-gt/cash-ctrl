@@ -1,13 +1,21 @@
 import type {
   PaginatedTransactions,
+  Transaction,
   TransactionFilters,
   UpdateTransactionPayload,
   UpdateTransferPayload,
 } from '@cashctrl/types';
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import { transactionsApi, transfersApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
+import { invalidateBalances, invalidatePortfolio, invalidateTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 type UpdatePayload = UpdateTransactionPayload & { id: number };
@@ -30,16 +38,76 @@ export function useTransactions(filters?: TransactionFilters) {
   });
 }
 
+const FILTERABLE_FIELDS = [
+  'account_id',
+  'type',
+  'amount',
+  'description',
+  'date',
+  'category_id',
+  'subcategory_id',
+  'payment_method_id',
+  'validated',
+  'scheduled_id',
+] as const satisfies readonly (keyof Transaction)[];
+
+function hasActiveFilter(filters?: TransactionFilters) {
+  if (!filters) return false;
+  return Object.entries(filters).some(
+    ([name, value]) => name !== 'page' && name !== 'limit' && value !== undefined,
+  );
+}
+
+function matchesFilterableFields(a: Transaction, b: Transaction) {
+  return FILTERABLE_FIELDS.every((field) => a[field] === b[field]);
+}
+
+/**
+ * Patche les listes en cache après modification. Invalide plutôt que de patcher
+ * quand la page ne contient pas la ligne (balance_before_page non recalculable)
+ * ou qu'un champ filtrable change dans une liste filtrée (la ligne peut en sortir).
+ * `peerPatch` met à jour la jambe pair d'un virement.
+ */
+function patchTransactionLists(
+  qc: QueryClient,
+  updated: Transaction,
+  peerPatch?: Partial<Transaction>,
+) {
+  const peerId = peerPatch ? updated.transfer_peer_id : null;
+  const entries = qc.getQueriesData<PaginatedTransactions>({
+    queryKey: queryKeys.transactions.all(),
+  });
+  for (const [key, old] of entries) {
+    if (!old) continue;
+    const filters = key[1] as TransactionFilters | undefined;
+    const previous = old.data.find((tx) => tx.id === updated.id);
+    if (filters?.page !== undefined && !previous) {
+      fireAndForget(qc.invalidateQueries({ queryKey: key }));
+      continue;
+    }
+    if (previous && hasActiveFilter(filters) && !matchesFilterableFields(previous, updated)) {
+      fireAndForget(qc.invalidateQueries({ queryKey: key }));
+      continue;
+    }
+    const patched = old.data.map((tx) => {
+      if (tx.id === updated.id) return updated;
+      if (peerId !== null && tx.id === peerId) return { ...tx, ...peerPatch };
+      return tx;
+    });
+    qc.setQueryData<PaginatedTransactions>(key, {
+      ...old,
+      data: patched.toSorted(byDateThenIdDesc),
+    });
+  }
+}
+
 export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: transactionsApi.create,
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }
@@ -49,27 +117,8 @@ export function useUpdateTransaction() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
-      // balance_before_page des autres pages non recalculable localement → invalidation.
-      const entries = qc.getQueriesData<PaginatedTransactions>({
-        queryKey: queryKeys.transactions.all(),
-      });
-      for (const [key, old] of entries) {
-        if (!old) continue;
-        const filters = key[1] as TransactionFilters | undefined;
-        const containsUpdated = old.data.some((tx) => tx.id === updated.id);
-        if (filters?.page !== undefined && !containsUpdated) {
-          fireAndForget(qc.invalidateQueries({ queryKey: key }));
-          continue;
-        }
-        qc.setQueryData<PaginatedTransactions>(key, {
-          ...old,
-          data: old.data.map((tx) => (tx.id === updated.id ? updated : tx)).sort(byDateThenIdDesc),
-        });
-      }
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      patchTransactionLists(qc, updated);
+      invalidateBalances(qc);
     },
   });
 }
@@ -79,31 +128,13 @@ export function useUpdateTransfer() {
   return useMutation({
     mutationFn: ({ id, ...data }: UpdateTransferPayloadWithId) => transfersApi.update(id, data),
     onSuccess: (updated) => {
-      qc.setQueriesData<PaginatedTransactions>({ queryKey: queryKeys.transactions.all() }, (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data
-                .map((tx) => {
-                  if (tx.id === updated.id) return updated;
-                  if (updated.transfer_peer_id && tx.id === updated.transfer_peer_id)
-                    return {
-                      ...tx,
-                      amount: updated.amount,
-                      description: updated.description,
-                      date: updated.date,
-                      validated: updated.validated,
-                    };
-                  return tx;
-                })
-                .sort(byDateThenIdDesc),
-            }
-          : old,
-      );
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      patchTransactionLists(qc, updated, {
+        amount: updated.amount,
+        description: updated.description,
+        date: updated.date,
+        validated: updated.validated,
+      });
+      invalidateBalances(qc);
     },
   });
 }
@@ -113,12 +144,9 @@ export function useDeleteTransaction() {
   return useMutation({
     mutationFn: transactionsApi.remove,
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.stocks.positions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidatePortfolio(qc);
+      invalidateBalances(qc);
     },
   });
 }
@@ -128,11 +156,8 @@ export function useDeleteTransfer() {
   return useMutation({
     mutationFn: transfersApi.remove,
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }
@@ -160,10 +185,7 @@ export function useValidateTransaction() {
           );
         }
       }
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateBalances(qc);
     },
   });
 }
@@ -173,11 +195,8 @@ export function useCreateTransfer() {
   return useMutation({
     mutationFn: transfersApi.create,
     onSuccess: () => {
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.transactions.all() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accounts() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.dashboardStats() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.forecastAll() }));
-      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.accountBalanceHistoryAll() }));
+      invalidateTransactions(qc);
+      invalidateBalances(qc);
     },
   });
 }

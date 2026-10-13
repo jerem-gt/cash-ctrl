@@ -11,6 +11,7 @@ import {
   REIMBURSEMENTS,
   TRANSACTIONS,
 } from '@/tests/fixtures';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
 import {
@@ -216,5 +217,36 @@ describe('useSetReimbursementStatus', () => {
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toContain('Transaction introuvable');
+  });
+});
+
+describe('invalidation des remboursements', () => {
+  it('useLinkReimbursement invalide aussi reimbursements.recent', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useLinkReimbursement(10), { wrapper: Wrapper });
+    act(() => {
+      result.current.mutate({ linkedTxId: 20 });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(
+      expect.arrayContaining([
+        ['reimbursements', 10],
+        ['reimbursements', 'pending'],
+        ['reimbursements', 'recent'],
+        ['transactions'],
+      ]),
+    );
+  });
+
+  it('useUpdateReimbursementAmount invalide aussi reimbursements.recent', async () => {
+    const { qc, Wrapper } = createHookWrapper();
+    const keys = spyInvalidations(qc);
+    const { result } = renderHook(() => useUpdateReimbursementAmount(10), { wrapper: Wrapper });
+    act(() => {
+      result.current.mutate({ linkedId: 20, amount: 10 });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(keys()).toEqual(expect.arrayContaining([['reimbursements', 'recent']]));
   });
 });

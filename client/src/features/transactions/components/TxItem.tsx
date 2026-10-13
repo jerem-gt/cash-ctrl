@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
+import { Popover } from '@/components/ui/popover';
 import { AccountBadge } from '@/features/accounts/components/AccountBadge';
 import { useCategories } from '@/hooks/useCategories.ts';
-import { useClickOutside } from '@/hooks/useClickOutside';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { parseLocalDate, today } from '@/lib/dateUtils';
 import { fmtCurrency, fmtDayNum, fmtMonthShort } from '@/lib/format';
@@ -65,58 +65,48 @@ function TxMobileMenu({
 }: Readonly<Pick<Props, 'tx' | 'onEdit' | 'onDuplicate' | 'onDelete'>>) {
   const { t } = useTranslation('transactions');
   const [menuOpen, setMenuOpen] = useState(false);
-  const ref = useClickOutside<HTMLDivElement>(() => setMenuOpen(false));
-  if (onEdit == null && onDuplicate == null && onDelete == null) return null;
+  const neutral = 'hover:bg-surface-muted text-content-secondary';
+  const actions = [
+    { key: 'edit', label: t('tx_item.edit'), run: onEdit, className: neutral },
+    { key: 'duplicate', label: t('tx_item.duplicate'), run: onDuplicate, className: neutral },
+    {
+      key: 'delete',
+      label: t('tx_item.delete'),
+      run: onDelete,
+      className: 'hover:bg-danger-surface text-danger',
+    },
+  ].filter((action) => action.run != null);
+  if (actions.length === 0) return null;
   return (
-    <div ref={ref} className="relative sm:hidden">
+    <div className="relative sm:hidden">
       <button
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
         className="p-1.5 text-content-faint hover:text-content-secondary hover:bg-surface-emphasis rounded-md transition-colors"
         aria-label={t('tx_item.actions')}
+        aria-expanded={menuOpen}
       >
         <MoreHorizontal size={15} />
       </button>
-      {menuOpen && (
-        <div className="absolute right-0 top-8 z-20 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-32 text-sm">
-          {onEdit && (
-            <button
-              type="button"
-              onClick={() => {
-                onEdit(tx);
-                setMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
-            >
-              {t('tx_item.edit')}
-            </button>
-          )}
-          {onDuplicate && (
-            <button
-              type="button"
-              onClick={() => {
-                onDuplicate(tx);
-                setMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-surface-muted text-content-secondary transition-colors"
-            >
-              {t('tx_item.duplicate')}
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => {
-                onDelete(tx);
-                setMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-danger-surface text-danger transition-colors"
-            >
-              {t('tx_item.delete')}
-            </button>
-          )}
-        </div>
-      )}
+      <Popover
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        className="absolute right-0 top-8 bg-surface border border-line rounded-xl shadow-lg py-1 min-w-32 text-sm"
+      >
+        {actions.map(({ key, label, run, className }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => {
+              run?.(tx);
+              setMenuOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 transition-colors ${className}`}
+          >
+            {label}
+          </button>
+        ))}
+      </Popover>
     </div>
   );
 }

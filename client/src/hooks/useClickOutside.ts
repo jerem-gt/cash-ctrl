@@ -1,15 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export function useClickOutside<T extends HTMLElement>(onClose: () => void) {
   const ref = useRef<T>(null);
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) onClose();
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) {
+        onCloseRef.current();
+      }
     }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [onClose]);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, []);
 
   return ref;
 }
