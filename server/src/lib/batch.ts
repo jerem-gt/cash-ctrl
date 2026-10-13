@@ -4,7 +4,10 @@ export async function mapInBatches<T>(
   size: number,
   fn: (item: T) => Promise<void>,
 ): Promise<void> {
-  for (let i = 0; i < items.length; i += size) {
-    await Promise.all(items.slice(i, i + size).map(fn));
-  }
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) batches.push(items.slice(i, i + size));
+  await batches.reduce(async (previous, batch) => {
+    await previous;
+    await Promise.all(batch.map(fn));
+  }, Promise.resolve());
 }
