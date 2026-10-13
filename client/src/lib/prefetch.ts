@@ -20,7 +20,7 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
   prefetchRouteChunk(route);
 
   const p = (key: unknown[], fn: () => Promise<unknown>) =>
-    qc.query({ queryKey: key, queryFn: fn });
+    qc.query({ queryKey: key, queryFn: fn }).catch(() => undefined);
 
   const accounts = () => p(['accounts'], accountsApi.list);
   const banks = () => p(['banks'], banksApi.list);
@@ -71,9 +71,11 @@ export function prefetchForRoute(qc: QueryClient, route: string): void {
 export function prefetchAccountDetail(qc: QueryClient, accountId: number): void {
   prefetchRouteChunk('/accounts/:id');
   fireAndForget(
-    qc.query({
-      queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
-      queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
-    }),
+    qc
+      .query({
+        queryKey: ['transactions', { account_id: accountId, page: 1, limit: 25 }],
+        queryFn: () => transactionsApi.list({ account_id: accountId, page: 1, limit: 25 }),
+      })
+      .catch(() => undefined),
   );
 }

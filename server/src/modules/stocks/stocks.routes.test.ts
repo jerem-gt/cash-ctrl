@@ -719,6 +719,62 @@ describe('/api/stocks', () => {
       expect(res.status).toBe(409);
     });
 
+    it('refuse le rename si un autre utilisateur détient le ticker (409)', async () => {
+      seedPrice('OTH.PA');
+      ctx.db
+        .prepare(
+          `INSERT INTO users (username, password_hash)
+           SELECT 'other_user', 'x' WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'other_user')`,
+        )
+        .run();
+      const otherUserId = (
+        ctx.db.prepare('SELECT id FROM users WHERE username = ?').get('other_user') as {
+          id: number;
+        }
+      ).id;
+      const otherAcc = ctx.db
+        .prepare(
+          `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance)
+           VALUES (?, 'Compte Autre', ?, (SELECT id FROM account_types WHERE name = 'Bourse' LIMIT 1), 0)`,
+        )
+        .run(otherUserId, SEED.BANK_ID);
+      ctx.db
+        .prepare(
+          `INSERT INTO stock_positions (user_id, account_id, ticker, quantity)
+           VALUES (?, ?, 'OTH.PA', 3)`,
+        )
+        .run(otherUserId, Number(otherAcc.lastInsertRowid));
+
+      const res = await ctx.agent.put('/api/stocks/tickers/OTH.PA').send({ new_ticker: 'OTH2.PA' });
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('stock.ticker_used_by_others');
+      expect(
+        ctx.db.prepare("SELECT COUNT(*) AS c FROM stock_prices WHERE ticker = 'OTH.PA'").get(),
+      ).toEqual({ c: 1 });
+    });
+
+    it('refuse le rename en cas de collision de position sur un même compte (409)', async () => {
+      seedPrice('COL1.PA');
+      const accId = (
+        ctx.db
+          .prepare("SELECT id FROM accounts WHERE user_id = ? AND name = 'PEA Test' LIMIT 1")
+          .get(ctx.userId) as { id: number } | undefined
+      )?.id;
+      expect(accId).toBeDefined();
+      for (const t of ['COL1.PA', 'COL2.PA']) {
+        ctx.db
+          .prepare(
+            'INSERT INTO stock_positions (user_id, account_id, ticker, quantity) VALUES (?, ?, ?, 1)',
+          )
+          .run(ctx.userId, accId, t);
+      }
+      const res = await ctx.agent
+        .put('/api/stocks/tickers/COL1.PA')
+        .send({ new_ticker: 'COL2.PA' });
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('stock.ticker_exists');
+    });
+
     it('retourne 404 pour un rename de ticker absent du cache', async () => {
       const res = await ctx.agent.put('/api/stocks/tickers/NOPE.PA').send({ new_ticker: 'NEW.PA' });
       expect(res.status).toBe(404);

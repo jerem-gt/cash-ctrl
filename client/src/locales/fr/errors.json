@@ -113,7 +113,9 @@
     "price_not_found": "Cotation introuvable pour {{ticker}}",
     "insufficient_position": "Position insuffisante : {{available}} action(s) disponible(s)",
     "net_amount_after_fees_positive": "Le montant net après frais doit être positif",
-    "net_amount_positive": "Le montant net doit être positif"
+    "net_amount_positive": "Le montant net doit être positif",
+    "ticker_exists": "Le ticker {{ticker}} existe déjà",
+    "ticker_used_by_others": "Impossible de renommer {{ticker}} : il est détenu par un autre utilisateur"
   },
   "loan": {
     "not_found": "Prêt introuvable",

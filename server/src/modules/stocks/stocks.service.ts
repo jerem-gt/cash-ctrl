@@ -1,6 +1,7 @@
 import type { StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
+import { mapInBatches } from '../../lib/batch.js';
 import { logger } from '../../logger.js';
 import { createStocksRepo } from './stocks.repo.js';
 
@@ -170,18 +171,18 @@ export async function getOrRefreshPrice(
   return fetched ?? cached ?? null;
 }
 
+const REFRESH_BATCH_SIZE = 5;
+
 async function refreshTickers(
   stocksRepo: ReturnType<typeof createStocksRepo>,
   tickers: string[],
 ): Promise<void> {
-  await Promise.all(
-    tickers.map(async (ticker) => {
-      const result = await refreshPrice(stocksRepo, ticker);
-      if (!result) {
-        logger.warn(`Failed to fetch price for ${ticker}`);
-      }
-    }),
-  );
+  await mapInBatches(tickers, REFRESH_BATCH_SIZE, async (ticker) => {
+    const result = await refreshPrice(stocksRepo, ticker);
+    if (!result) {
+      logger.warn(`Failed to fetch price for ${ticker}`);
+    }
+  });
 }
 
 /** Rafraîchit toutes les cotes détenues, tous utilisateurs confondus (job de fond). */

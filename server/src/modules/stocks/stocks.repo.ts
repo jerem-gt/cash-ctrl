@@ -147,6 +147,19 @@ export function createStocksRepo(db: Database) {
      WHERE p.ticker = :ticker AND p.quantity > 0`,
   );
 
+  const usedByOthersStmt = db.prepare<{ ticker: string; user_id: number }, { cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM stock_positions
+     WHERE ticker = :ticker AND quantity > 0 AND user_id != :user_id`,
+  );
+  const positionCollisionStmt = db.prepare<
+    { old_ticker: string; new_ticker: string },
+    { cnt: number }
+  >(
+    `SELECT COUNT(*) AS cnt FROM stock_positions o
+     JOIN stock_positions n ON n.account_id = o.account_id AND n.ticker = :new_ticker
+     WHERE o.ticker = :old_ticker`,
+  );
+
   const upsertPriceStmt = db.prepare(`
     INSERT OR REPLACE INTO stock_prices (ticker, price, currency, name, fetched_at)
     VALUES (:ticker, :price, :currency, :name, datetime('now'))
@@ -396,6 +409,10 @@ export function createStocksRepo(db: Database) {
     },
     isCachedTicker: (ticker: string): boolean =>
       (getCachedTickerExistsStmt.get({ ticker })?.cnt ?? 0) > 0,
+    isTickerUsedByOthers: (ticker: string, userId: number): boolean =>
+      (usedByOthersStmt.get({ ticker, user_id: userId })?.cnt ?? 0) > 0,
+    hasPositionCollision: (oldTicker: string, newTicker: string): boolean =>
+      (positionCollisionStmt.get({ old_ticker: oldTicker, new_ticker: newTicker })?.cnt ?? 0) > 0,
     renameTicker: (oldTicker: string, newTicker: string): void => {
       db.transaction(() => {
         renamePriceStmt.run({ old_ticker: oldTicker, new_ticker: newTicker });
