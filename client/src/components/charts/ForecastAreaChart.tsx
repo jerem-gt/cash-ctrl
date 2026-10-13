@@ -29,6 +29,10 @@ interface Props {
   splitDate?: string;
   /** Libellé i18n affiché sur le repère vertical à splitDate (ex. "Aujourd'hui"). */
   splitLabel?: string;
+  /** Prévu rétrospectif (avant splitDate) : prolonge le pointillé en parallèle de la courbe pleine. */
+  projectedPastPoints?: ForecastChartPoint[];
+  /** Libellé de la série pointillée (sinon `label`). */
+  projectedLabel?: string;
 }
 
 interface ChartDatum {
@@ -38,13 +42,26 @@ interface ChartDatum {
   futureBalance: number | undefined;
 }
 
-function buildChartData(points: ForecastChartPoint[], splitDate: string | undefined): ChartDatum[] {
-  return points.map((p) => ({
-    date: p.date,
-    balance: p.balance,
-    pastBalance: splitDate === undefined || p.date <= splitDate ? p.balance : undefined,
-    futureBalance: splitDate !== undefined && p.date >= splitDate ? p.balance : undefined,
-  }));
+function buildChartData(
+  points: ForecastChartPoint[],
+  splitDate: string | undefined,
+  projectedPast: readonly ForecastChartPoint[] = [],
+): ChartDatum[] {
+  const projectedByDate = new Map(projectedPast.map((p) => [p.date, p.balance]));
+  return points.map((p) => {
+    let futureBalance: number | undefined;
+    if (splitDate !== undefined && p.date >= splitDate) {
+      futureBalance = projectedByDate.get(p.date) ?? p.balance;
+    } else if (splitDate !== undefined) {
+      futureBalance = projectedByDate.get(p.date);
+    }
+    return {
+      date: p.date,
+      balance: p.balance,
+      pastBalance: splitDate === undefined || p.date <= splitDate ? p.balance : undefined,
+      futureBalance,
+    };
+  });
 }
 
 /** Arrondit un pas brut au multiple "lisible" le plus proche (1/2/5 × 10^n), à la d3. */
@@ -126,6 +143,8 @@ export default function ForecastAreaChart({
   label,
   splitDate,
   splitLabel,
+  projectedPastPoints,
+  projectedLabel,
 }: Readonly<Props>) {
   const isDark = useIsDark();
   const theme = chartTheme(isDark);
@@ -136,9 +155,13 @@ export default function ForecastAreaChart({
   const elementId = useId();
   const gradId = `fcg${elementId.replaceAll(':', '')}`;
   const negativePoint = goesNegativeOn ? points.find((p) => p.date === goesNegativeOn) : undefined;
-  const chartData = buildChartData(points, splitDate);
+  const chartData = buildChartData(points, splitDate, projectedPastPoints);
   const xTicks = buildXTicks(chartData.map((d) => d.date));
-  const yDomain = computeYDomain(chartData.map((d) => d.balance));
+  const yDomain = computeYDomain(
+    chartData.flatMap((d) =>
+      d.futureBalance === undefined ? [d.balance] : [d.balance, d.futureBalance],
+    ),
+  );
   const showZeroLine = yDomain[0] <= 0 && yDomain[1] >= 0;
 
   return (
@@ -165,7 +188,7 @@ export default function ForecastAreaChart({
         />
         <Tooltip
           labelFormatter={formatDateShort}
-          formatter={(v) => [fmtCurrency(Number(v)), label]}
+          formatter={(v, name) => [fmtCurrency(Number(v)), name]}
           content={dedupedTooltipContent}
           {...tooltipStyleProps(theme)}
           cursor={{ stroke: theme.refLine, strokeWidth: 1 }}
@@ -215,7 +238,7 @@ export default function ForecastAreaChart({
             <Area
               type="monotone"
               dataKey="futureBalance"
-              name={label}
+              name={projectedLabel ?? label}
               stroke={color}
               strokeWidth={2}
               strokeDasharray="5 5"
