@@ -37,7 +37,7 @@ describe('App', () => {
   it('définit le titre du document après authentification', async () => {
     render(<App />);
     await screen.findByTitle(/Déconnexion/i);
-    expect(document.title).toBe('CashCtrl (dev)');
+    await waitFor(() => expect(document.title).toBe('CashCtrl (dev)'));
   });
 
   it('Ctrl+K ouvre puis referme la palette de commande (plateforme non-Mac)', async () => {

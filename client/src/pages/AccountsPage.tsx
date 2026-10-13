@@ -18,6 +18,7 @@ import {
   ConfirmModal,
   Empty,
   IconButton,
+  Popover,
   showToast,
   Skeleton,
   Tabs,
@@ -166,37 +167,32 @@ export default function AccountsPage() {
             {t('page.add')}
             <ChevronDown size={14} className="opacity-80" />
           </Button>
-          {addMenuOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                aria-hidden="true"
-                onClick={() => setAddMenuOpen(false)}
-              />
-              <div className="absolute right-0 top-full mt-1.5 z-20 min-w-40 bg-surface border border-line rounded-xl shadow-lg py-1 text-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddOpen(true);
-                    setAddMenuOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
-                >
-                  {t('page.add_account_menu')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddLoanOpen(true);
-                    setAddMenuOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
-                >
-                  {t('page.add_loan_menu')}
-                </button>
-              </div>
-            </>
-          )}
+          <Popover
+            open={addMenuOpen}
+            onClose={() => setAddMenuOpen(false)}
+            className="absolute right-0 top-full mt-1.5 min-w-40 bg-surface border border-line rounded-xl shadow-lg py-1 text-sm"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setAddOpen(true);
+                setAddMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
+            >
+              {t('page.add_account_menu')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAddLoanOpen(true);
+                setAddMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-content-secondary hover:bg-surface-muted transition-colors"
+            >
+              {t('page.add_loan_menu')}
+            </button>
+          </Popover>
         </div>
       </div>
 

@@ -2,8 +2,9 @@ import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useLocation } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { ModalFrame } from '@/components/ui';
 import { SEARCH_RESPONSE } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
@@ -29,6 +30,19 @@ function renderPalette(open: boolean, onClose = vi.fn()) {
   );
   return { ...utils, onClose };
 }
+
+// Simule showModal() natif : focalise le premier focusable du dialog (ex. le bouton de fond).
+const originalShowModal = HTMLDialogElement.prototype.showModal as unknown;
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+    this.querySelector<HTMLElement>('button,input')?.focus();
+  };
+});
+afterAll(() => {
+  HTMLDialogElement.prototype.showModal =
+    originalShowModal as typeof HTMLDialogElement.prototype.showModal;
+});
 
 describe('CommandPalette', () => {
   it("ne rend rien quand elle n'est pas montée", () => {
@@ -146,5 +160,48 @@ describe('CommandPalette', () => {
 
     expect(onClose).toHaveBeenCalled();
     expect(await screen.findByTestId('location')).toHaveTextContent('/reports');
+  });
+
+  it("place le focus dans l'input à l'ouverture", () => {
+    renderPalette(true);
+    expect(screen.getByPlaceholderText(/rechercher/i)).toHaveFocus();
+  });
+
+  it('Escape ne ferme que la palette quand une ModalFrame est dessous', () => {
+    const onClosePalette = vi.fn();
+    const onCloseModal = vi.fn();
+    renderWithProviders(
+      <>
+        <ModalFrame title="M" onClose={onCloseModal}>
+          x
+        </ModalFrame>
+        <CommandPalette onClose={onClosePalette} />
+      </>,
+    );
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClosePalette).toHaveBeenCalledOnce();
+    expect(onCloseModal).not.toHaveBeenCalled();
+  });
+
+  it('restaure le focus sur le déclencheur à la fermeture', () => {
+    const Harness = ({ open }: Readonly<{ open: boolean }>) => (
+      <>
+        <button>déclencheur</button>
+        {open && <CommandPalette onClose={vi.fn()} />}
+      </>
+    );
+    const { rerender } = renderWithProviders(<Harness open={false} />);
+    screen.getByRole('button', { name: 'déclencheur' }).focus();
+    rerender(<Harness open />);
+    expect(screen.getByPlaceholderText(/rechercher/i)).toHaveFocus();
+    rerender(<Harness open={false} />);
+    expect(screen.getByRole('button', { name: 'déclencheur' })).toHaveFocus();
+  });
+
+  it('previent le cancel natif du dialog', () => {
+    renderPalette(true);
+    const ev = new Event('cancel', { cancelable: true });
+    screen.getByRole('dialog').dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
   });
 });

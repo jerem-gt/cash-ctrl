@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect, useId } from 'react';
+import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from './primitives';
+import { useModalDialog } from './useModalDialog';
 
 // ─── ModalFrame ───────────────────────────────────────────────────────────────
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
@@ -35,24 +36,18 @@ export function ModalFrame({
   footer,
 }: Readonly<ModalFrameProps>) {
   const titleId = useId();
-  useEffect(() => {
-    if (!onClose) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogRef = useModalDialog(onClose);
 
   const hasFooter = footer !== undefined;
 
   return (
     <div className="fixed inset-0 bg-black/35 z-50 flex items-center justify-center p-4">
       <dialog
-        open
-        aria-modal="true"
+        ref={dialogRef}
         aria-labelledby={titleId}
-        className={`static m-0 border-0 bg-surface rounded-2xl p-7 w-full ${MODAL_SIZE_CLASS[size]} shadow-xl max-h-[calc(100vh-2rem)] ${hasFooter ? 'flex flex-col' : 'block overflow-y-auto'}`}
+        tabIndex={-1}
+        onCancel={(e) => e.preventDefault()}
+        className={`fixed inset-0 m-auto h-fit border-0 bg-surface text-content rounded-2xl p-7 w-[calc(100%-2rem)] backdrop:bg-transparent ${MODAL_SIZE_CLASS[size]} shadow-xl max-h-[calc(100vh-2rem)] ${hasFooter ? 'flex flex-col' : 'block overflow-y-auto'}`}
       >
         <h3 id={titleId} className={`font-display text-xl ${subtitle ? 'mb-1' : 'mb-5'} shrink-0`}>
           {title}
