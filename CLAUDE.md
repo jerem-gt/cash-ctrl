@@ -14,6 +14,7 @@
 - **Unit Tests**: `npm run test` (Vitest)
 - **Test Watch**: `npm run test:watch`
 - **Coverage**: `npm run test:coverage`
+- **Types des tests**: `npm run typecheck:test` (`tsc -p tsconfig.test.json` ; `tsconfig.json` exclut les `*.test.ts(x)`, donc `build` ne les vérifie pas)
 
 ### Server (`/server`)
 - **Test**: `npm run test` (Vitest)
@@ -23,7 +24,7 @@
 Le projet utilise Husky et lint-staged pour corriger automatiquement les problèmes de lint avant chaque commit. Le hook exécute `lint-staged` qui applique ESLint et Stylelint sur les fichiers stagés.
 
 ### CI (`.github/workflows/ci.yml`)
-Le job CI lance lint et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
+Le job CI lance lint, vérification des types des tests client (`typecheck:test`) et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
 - Clé de cache : hash de `package-lock.json` + `eslint.config.js` → toute modification de l'un des deux invalide le cache (run suivant plus lent, le temps de le reconstruire).
 - `--cache-strategy content` est **obligatoire** : le checkout réécrit les mtimes à chaque run, la stratégie `metadata` par défaut invaliderait tout.
 - Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans `ci.yml`.
