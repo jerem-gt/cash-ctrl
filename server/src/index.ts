@@ -14,11 +14,13 @@ import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '3000');
-const SESSION_SECRET = process.env.SESSION_SECRET ?? 'dev-secret-change-in-production';
 const IS_PROD = process.env.NODE_ENV === 'production';
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ??
+  (process.env.NODE_ENV === 'development' ? 'dev-secret-not-for-production' : undefined);
 
-if (IS_PROD && !process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET must be set in production');
+if (!SESSION_SECRET) {
+  throw new Error('SESSION_SECRET must be set (only NODE_ENV=development allows a default secret)');
 }
 
 const db = createDb();

@@ -12,6 +12,7 @@ export class SQLiteSessionStore extends Store {
   private readonly stmtDelete: Statement<[string]>;
   private readonly stmtTouch: Statement<[number, string]>;
   private readonly stmtCleanup: Statement<[number]>;
+  private readonly stmtDeleteOthers: Statement<[number, string]>;
 
   constructor(db: Database) {
     super();
@@ -24,11 +25,17 @@ export class SQLiteSessionStore extends Store {
       )
     `);
 
-    this.stmtGet     = db.prepare('SELECT data, expires_at FROM sessions WHERE sid = ?');
-    this.stmtUpsert  = db.prepare('INSERT OR REPLACE INTO sessions (sid, data, expires_at) VALUES (?, ?, ?)');
-    this.stmtDelete  = db.prepare('DELETE FROM sessions WHERE sid = ?');
-    this.stmtTouch   = db.prepare('UPDATE sessions SET expires_at = ? WHERE sid = ?');
+    this.stmtGet = db.prepare('SELECT data, expires_at FROM sessions WHERE sid = ?');
+    this.stmtUpsert = db.prepare(
+      'INSERT OR REPLACE INTO sessions (sid, data, expires_at) VALUES (?, ?, ?)',
+    );
+    this.stmtDelete = db.prepare('DELETE FROM sessions WHERE sid = ?');
+    this.stmtTouch = db.prepare('UPDATE sessions SET expires_at = ? WHERE sid = ?');
     this.stmtCleanup = db.prepare('DELETE FROM sessions WHERE expires_at < ?');
+
+    this.stmtDeleteOthers = db.prepare(
+      "DELETE FROM sessions WHERE json_extract(data, '$.userId') = ? AND sid != ?",
+    );
 
     setInterval(() => this.stmtCleanup.run(Date.now()), 60 * 60 * 1000).unref();
   }
@@ -65,6 +72,11 @@ export class SQLiteSessionStore extends Store {
     } catch (err) {
       callback?.(err);
     }
+  }
+
+  /** Supprime toutes les sessions d'un utilisateur sauf `currentSid`. */
+  destroyOtherSessions(userId: number, currentSid: string): void {
+    this.stmtDeleteOthers.run(userId, currentSid);
   }
 
   touch(sid: string, session: SessionData, callback?: (err?: unknown) => void): void {

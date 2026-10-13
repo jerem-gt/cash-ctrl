@@ -1,6 +1,6 @@
 import type { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 
-import { buildError } from './lib/errorCodes.js';
+import { buildError, type ErrorCode } from './lib/errorCodes.js';
 import { HttpError } from './lib/errors.js';
 
 const COLORS = {
@@ -66,6 +66,17 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   next();
 }
 
+function bodyParserError(err: unknown): { status: number; code: ErrorCode } | null {
+  const type = (err as { type?: unknown } | null)?.type;
+  if (type === 'entity.too.large') {
+    return { status: 413, code: 'common.payload_too_large' };
+  }
+  if (type === 'entity.parse.failed') {
+    return { status: 400, code: 'common.invalid_request' };
+  }
+  return null;
+}
+
 // 4 params requis pour qu'Express reconnaisse le gestionnaire d'erreur (fn.length === 4)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
@@ -73,6 +84,14 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) =>
     logger.warn(`${req.method} ${req.originalUrl} ${err.status} — ${err.code}`);
     if (!res.headersSent) {
       res.status(err.status).json({ error: buildError(err.code, err.params) });
+    }
+    return;
+  }
+  const bodyError = bodyParserError(err);
+  if (bodyError) {
+    logger.warn(`${req.method} ${req.originalUrl} ${bodyError.status} — ${bodyError.code}`);
+    if (!res.headersSent) {
+      res.status(bodyError.status).json({ error: buildError(bodyError.code) });
     }
     return;
   }

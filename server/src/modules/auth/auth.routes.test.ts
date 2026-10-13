@@ -176,6 +176,30 @@ describe('POST /api/auth/change-password', () => {
     expect(res.body.ok).toBe(true);
   });
 
+  it('invalide les autres sessions du user mais garde la courante et celles des autres', async () => {
+    const { app, db } = setup();
+    db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(
+      'bob',
+      bcrypt.hashSync('password123', 4),
+    );
+    const creds = { username: 'alice', password: 'password123' };
+    const current = supertest.agent(app);
+    const other = supertest.agent(app);
+    const bob = supertest.agent(app);
+    await current.post('/api/auth/login').send(creds);
+    await other.post('/api/auth/login').send(creds);
+    await bob.post('/api/auth/login').send({ username: 'bob', password: 'password123' });
+
+    const res = await current
+      .post('/api/auth/change-password')
+      .send({ current: 'password123', next: 'newpassword456' });
+    expect(res.status).toBe(200);
+
+    expect((await current.get('/api/auth/me')).status).toBe(200);
+    expect((await other.get('/api/auth/me')).status).toBe(401);
+    expect((await bob.get('/api/auth/me')).status).toBe(200);
+  });
+
   it("retourne 401 si l'ancien mot de passe est incorrect", async () => {
     const { app } = setup();
     const agent = supertest.agent(app);

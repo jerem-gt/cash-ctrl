@@ -72,6 +72,17 @@ describe('SQLiteSessionStore', () => {
     expect(sess).toBeTruthy();
   });
 
+  it('destroyOtherSessions supprime les autres sessions du user et garde les autres', async () => {
+    const withUser = (userId: number) => ({ ...makeSession(), userId }) as unknown as SessionData;
+    await promisifyVoid((cb) => store.set('a1', withUser(1), cb));
+    await promisifyVoid((cb) => store.set('a2', withUser(1), cb));
+    await promisifyVoid((cb) => store.set('b1', withUser(2), cb));
+    store.destroyOtherSessions(1, 'a1');
+    expect(await promisify<SessionData>((cb) => store.get('a1', cb))).toBeTruthy();
+    expect(await promisify<SessionData>((cb) => store.get('a2', cb))).toBeNull();
+    expect(await promisify<SessionData>((cb) => store.get('b1', cb))).toBeTruthy();
+  });
+
   it('set overwrites an existing session', async () => {
     await promisifyVoid((cb) => store.set('s5', makeSession(), cb));
     const second = { ...makeSession(), extra: 'data' } as unknown as SessionData;

@@ -5,6 +5,7 @@
     "invalid_request": "Invalid request",
     "invalid_param": "Invalid parameter {{param}}",
     "internal": "Internal server error.",
+    "payload_too_large": "Request too large",
     "network": "Server unreachable. Check your connection."
   },
   "validation": {
