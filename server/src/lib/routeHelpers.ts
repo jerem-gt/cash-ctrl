@@ -120,9 +120,10 @@ export function handleHttpErrors(res: Response, fn: () => void): void {
   } catch (err) {
     if (err instanceof HttpError) {
       sendError(res, err.status, err.code, err.params);
-    } else {
-      sendError(res, 400, 'common.invalid_request');
+      return;
     }
+    // Erreur inattendue : remontée au globalErrorHandler (500 + log).
+    throw err;
   }
 }
 
