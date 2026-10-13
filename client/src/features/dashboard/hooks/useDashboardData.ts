@@ -11,7 +11,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useBalanceHistory, useDashboardStats, useProfitability } from '@/hooks/useStats';
 import { accountDisplayBalance } from '@/lib/account';
-import { generateColor } from '@/lib/colors';
+import { categoryColorMap } from '@/lib/colors';
 import { monthLabel } from '@/lib/format';
 
 const FORECAST_ALERT_HORIZON = 90;
@@ -29,10 +29,7 @@ export function useDashboardData() {
 
   const forecastAlerts = (forecast?.accounts ?? []).filter((a) => a.goes_negative_on !== null);
 
-  const colorMap = useMemo(
-    () => Object.fromEntries(categories.map((c, i) => [c.name, generateColor(i)])),
-    [categories],
-  );
+  const colorMap = useMemo(() => categoryColorMap(categories), [categories]);
 
   const totalBalance = accounts.reduce((s, a) => s + accountDisplayBalance(a), 0);
   const monthIncome = stats?.month_income ?? 0;
@@ -60,8 +57,8 @@ export function useDashboardData() {
 
   const barData = useMemo(
     () =>
-      (stats?.monthly ?? []).map((m, i) => ({
-        month: monthLabel(5 - i),
+      (stats?.monthly ?? []).map((m, i, arr) => ({
+        month: monthLabel(arr.length - 1 - i),
         Revenus: m.income,
         Depenses: m.expense,
       })),

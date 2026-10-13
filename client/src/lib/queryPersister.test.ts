@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 
+import { queryKeys } from './queryKeys';
 import { shouldPersistQuery } from './queryPersister';
 
 function buildQuery(key: unknown[], data: unknown) {
@@ -14,6 +15,14 @@ function buildQuery(key: unknown[], data: unknown) {
 describe('shouldPersistQuery', () => {
   it('exclut la query me', () => {
     expect(shouldPersistQuery(buildQuery(['me'], { username: 'a' }))).toBe(false);
+  });
+
+  it.each([
+    ['version', queryKeys.version()],
+    ['recherche globale', queryKeys.search('abc')],
+    ['recherche ISIN', queryKeys.stocks.search('FR00')],
+  ])('exclut la query %s', (_label, key) => {
+    expect(shouldPersistQuery(buildQuery([...key], {}))).toBe(false);
   });
 
   it('persiste les autres queries en succès', () => {

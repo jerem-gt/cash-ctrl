@@ -26,3 +26,8 @@ export function generateColor(i: number): string {
 
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
+
+// Couleur indexée sur l'id de catégorie : stable à l'ajout, au renommage ou au tri.
+export function categoryColorMap(categories: readonly { id: number; name: string }[]) {
+  return Object.fromEntries(categories.map((c) => [c.name, generateColor(c.id)]));
+}

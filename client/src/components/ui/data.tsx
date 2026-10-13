@@ -1,8 +1,9 @@
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { LIMIT_OPTIONS } from '@/lib/pagination';
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
-const LIMIT_OPTIONS = [10, 25, 50, 100];
 
 interface PaginationProps {
   page: number;

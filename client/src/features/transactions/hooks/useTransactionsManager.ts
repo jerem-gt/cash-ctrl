@@ -14,6 +14,7 @@ import {
   useUpdateTransaction,
   useUpdateTransfer,
 } from '@/hooks/useTransactions.ts';
+import { DEFAULT_LIMIT, LIMIT_OPTIONS } from '@/lib/pagination';
 import { safeStorage } from '@/lib/safeStorage';
 
 type ModalState =
@@ -49,7 +50,10 @@ export function useTransactionsManager(
     }));
     setPage(1);
   }
-  const [limit, setLimit] = useState(() => Number(safeStorage.getItem('cashctrl.txLimit')) || 25);
+  const [limit, setLimit] = useState(() => {
+    const stored = Number(safeStorage.getItem('cashctrl.txLimit'));
+    return LIMIT_OPTIONS.includes(stored) ? stored : DEFAULT_LIMIT;
+  });
 
   // --- ÉTATS DES MODALES (Interface) ---
   const [modal, setModal] = useState<ModalState>(initialModalsState);
