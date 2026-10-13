@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Database } from 'better-sqlite3';
 
 import { DATA_DIR } from './db/init.js';
+import { mapInBatches } from './lib/batch.js';
 import { toFileName } from './lib/stringUtils.js';
 import { logger } from './logger.js';
 import { createBanksRepo } from './modules/banks/banks.repo.js';
@@ -15,37 +16,35 @@ export async function downloadDefaultBankLogos(db: Database): Promise<void> {
 
   const banksRepo = createBanksRepo(db);
 
-  await Promise.all(
-    banksRepo.getAll().map(async (bank) => {
-      if (bank.logo || !bank.login_url) return;
+  await mapInBatches(banksRepo.getAll(), 5, async (bank) => {
+    if (bank.logo || !bank.login_url) return;
 
-      let hostname: string;
-      try {
-        hostname = new URL(bank.login_url).hostname;
-      } catch {
-        logger.warn(`logos: ${bank.name} — URL invalide : ${bank.login_url}`);
+    let hostname: string;
+    try {
+      hostname = new URL(bank.login_url).hostname;
+    } catch {
+      logger.warn(`logos: ${bank.name} — URL invalide : ${bank.login_url}`);
+      return;
+    }
+
+    const filename = `${toFileName(bank.name)}-${bank.id}.png`;
+    const filepath = path.join(LOGOS_DIR, filename);
+    if (fs.existsSync(filepath)) {
+      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
+      if (!res.ok) {
+        logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
         return;
       }
-
-      const filename = `${toFileName(bank.name)}-${bank.id}.png`;
-      const filepath = path.join(LOGOS_DIR, filename);
-      if (fs.existsSync(filepath)) {
-        banksRepo.updateLogo(bank.id, `/logos/${filename}`);
-        return;
-      }
-
-      try {
-        const res = await fetch(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
-        if (!res.ok) {
-          logger.warn(`logos: ${bank.name} HTTP ${res.status}`);
-          return;
-        }
-        fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
-        banksRepo.updateLogo(bank.id, `/logos/${filename}`);
-        logger.info(`logos: downloaded ${bank.name}`);
-      } catch (err) {
-        logger.warn(`logos: ${bank.name} — ${(err as Error).message}`);
-      }
-    }),
-  );
+      fs.writeFileSync(filepath, Buffer.from(await res.arrayBuffer()));
+      banksRepo.updateLogo(bank.id, `/logos/${filename}`);
+      logger.info(`logos: downloaded ${bank.name}`);
+    } catch (err) {
+      logger.warn(`logos: ${bank.name} — ${(err as Error).message}`);
+    }
+  });
 }

@@ -112,4 +112,16 @@ describe('prefetchAccountDetail', () => {
     prefetchAccountDetail(qc, 42);
     expect(prefetchRouteChunk).toHaveBeenCalledWith('/accounts/:id');
   });
+
+  it('ne produit aucun rejet non géré si la requête échoue', async () => {
+    const { qc, spy } = makeQc();
+    spy.mockRejectedValue(new Error('boom'));
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    prefetchAccountDetail(qc, 42);
+    prefetchForRoute(qc, '/accounts');
+    await new Promise((r) => setTimeout(r, 10));
+    process.off('unhandledRejection', unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
+  });
 });

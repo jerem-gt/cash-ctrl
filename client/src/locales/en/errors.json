@@ -113,7 +113,9 @@
     "price_not_found": "No quote found for {{ticker}}",
     "insufficient_position": "Insufficient position: {{available}} share(s) available",
     "net_amount_after_fees_positive": "The net amount after fees must be positive",
-    "net_amount_positive": "The net amount must be positive"
+    "net_amount_positive": "The net amount must be positive",
+    "ticker_exists": "Ticker {{ticker}} already exists",
+    "ticker_used_by_others": "Cannot rename {{ticker}}: it is held by another user"
   },
   "loan": {
     "not_found": "Loan not found",

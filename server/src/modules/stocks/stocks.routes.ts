@@ -203,6 +203,14 @@ export function createStocksRouter(db: Database): Router {
       sendError(res, 404, 'stock.ticker_not_cached', { ticker });
       return;
     }
+    if (repo.isTickerUsedByOthers(ticker, sessionUserId(req))) {
+      sendError(res, 409, 'stock.ticker_used_by_others', { ticker });
+      return;
+    }
+    if (repo.hasPositionCollision(ticker, data.new_ticker)) {
+      sendError(res, 409, 'stock.ticker_exists', { ticker: data.new_ticker });
+      return;
+    }
     handleHttpErrors(res, () => {
       repo.renameTicker(ticker, data.new_ticker);
       res.json({ ok: true });

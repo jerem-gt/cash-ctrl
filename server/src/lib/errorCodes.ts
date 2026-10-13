@@ -132,6 +132,8 @@ export const ERROR_MESSAGES = {
   'stock.ticker_in_use':
     'Impossible de supprimer {{ticker}} : il est encore utilisé par une position ou un historique de prix.',
   'stock.ticker_exists': 'Le ticker {{ticker}} existe déjà dans la cache.',
+  'stock.ticker_used_by_others':
+    'Impossible de renommer {{ticker}} : il est détenu par un autre utilisateur.',
   'stock.ticker_same': 'Le nouveau ticker doit être différent de l’actuel.',
 
   // ── Prêts ─────────────────────────────────────────────────────────────────
