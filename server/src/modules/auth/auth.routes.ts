@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { type NextFunction, type Request, type Response, Router } from 'express';
 import * as OTPAuth from 'otpauth';
 import { z } from 'zod';
 
@@ -48,12 +48,44 @@ function verifyTotpCode(secret: string, code: string): boolean {
   return totp.validate({ token: code, window: 1 }) !== null;
 }
 
+interface SessionUser {
+  id: number;
+  username: string;
+  is_admin: number;
+}
+
+/** Régénère la session (anti-fixation) puis y pose l'utilisateur authentifié. */
+function startSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  user: SessionUser,
+  totpEnabled: boolean,
+): void {
+  req.session.regenerate((regenErr) => {
+    if (regenErr) {
+      next(regenErr);
+      return;
+    }
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    req.session.isAdmin = user.is_admin === 1;
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        next(saveErr);
+        return;
+      }
+      res.json({ username: user.username, isAdmin: user.is_admin === 1, totpEnabled });
+    });
+  });
+}
+
 export function createAuthRouter(db: Database): Router {
   const authRepo = createAuthRepo(db);
   const router = Router();
   const loginLimiter = new FailureRateLimiter(db);
 
-  router.post('/login', async (req, res) => {
+  router.post('/login', async (req, res, next) => {
     const key = req.ip ?? 'unknown';
     if (!loginLimiter.isAllowed(key)) {
       sendError(res, 429, 'auth.too_many_attempts');
@@ -85,15 +117,10 @@ export function createAuthRouter(db: Database): Router {
     }
 
     loginLimiter.reset(key);
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    req.session.isAdmin = user.is_admin === 1;
-    req.session.save(() =>
-      res.json({ username: user.username, isAdmin: user.is_admin === 1, totpEnabled: false }),
-    );
+    startSession(req, res, next, user, false);
   });
 
-  router.post('/2fa/verify', (req, res) => {
+  router.post('/2fa/verify', (req, res, next) => {
     const key = req.ip ?? 'unknown';
     if (!loginLimiter.isAllowed(key)) {
       sendError(res, 429, 'auth.too_many_attempts');
@@ -129,14 +156,7 @@ export function createAuthRouter(db: Database): Router {
     }
 
     loginLimiter.reset(key);
-    delete req.session.pendingUserId;
-    delete req.session.pendingTotpAt;
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    req.session.isAdmin = user.is_admin === 1;
-    req.session.save(() =>
-      res.json({ username: user.username, isAdmin: user.is_admin === 1, totpEnabled: true }),
-    );
+    startSession(req, res, next, user, true);
   });
 
   router.post('/logout', (req, res) => {

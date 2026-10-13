@@ -2,7 +2,8 @@ import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { parseNumberParam, zodToApiError } from './routeHelpers.js';
+import { HttpError } from './errors.js';
+import { handleHttpErrors, parseNumberParam, zodToApiError } from './routeHelpers.js';
 
 function mockRes() {
   const res = {
@@ -86,5 +87,26 @@ describe('zodToApiError', () => {
     expect(byPath.type.code).toBe('validation.invalid_value');
     // chaque champ porte un message FR de repli non vide
     for (const f of body.fields) expect(f.message.length).toBeGreaterThan(0);
+  });
+});
+
+describe('handleHttpErrors', () => {
+  it('répond avec le status et le code d’une HttpError', () => {
+    const res = mockRes();
+    handleHttpErrors(res, () => {
+      throw new HttpError(409, 'common.invalid_request');
+    });
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('relance les erreurs qui ne sont pas des HttpError', () => {
+    const res = mockRes();
+    const boom = new Error('boom');
+    expect(() =>
+      handleHttpErrors(res, () => {
+        throw boom;
+      }),
+    ).toThrow(boom);
+    expect(res.statusCode).toBe(0);
   });
 });

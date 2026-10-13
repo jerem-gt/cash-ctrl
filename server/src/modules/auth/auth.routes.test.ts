@@ -1,3 +1,5 @@
+import { createHmac } from 'node:crypto';
+
 import bcrypt from 'bcrypt';
 import * as OTPAuth from 'otpauth';
 import supertest from 'supertest';
@@ -21,6 +23,24 @@ function makeTotp(secret: string) {
     period: 30,
     secret: OTPAuth.Secret.fromBase32(secret),
   });
+}
+
+/** Cookie `connect.sid` signé (secret de test) pointant vers un sid donné. */
+function signedSidCookie(sid: string): string {
+  // SHA-256 = 32 octets → base64 de 44 caractères dont un '=' final à retirer.
+  const sig = createHmac('sha256', 'test-secret').update(sid).digest('base64').slice(0, -1);
+  const signed = 's:' + sid + '.' + sig;
+  return 'connect.sid=' + encodeURIComponent(signed);
+}
+
+function sessionExists(db: ReturnType<typeof createTestDb>, sid: string): boolean {
+  return db.prepare('SELECT 1 FROM sessions WHERE sid = ?').get(sid) !== undefined;
+}
+
+function sidFromSetCookie(res: { headers: Record<string, unknown> }): string {
+  const [first] = res.headers['set-cookie'] as string[];
+  const value = decodeURIComponent(first.split(';')[0].split('=')[1]);
+  return value.slice(2, value.lastIndexOf('.'));
 }
 
 /** Active la 2FA sur alice et retourne un agent avec session TOTP en attente. */
@@ -48,6 +68,22 @@ describe('POST /api/auth/login', () => {
     expect(res.body.username).toBe('alice');
     expect(res.body.isAdmin).toBe(false);
     expect(res.body.totpEnabled).toBe(false);
+  });
+
+  it("régénère l'id de session au login (anti-fixation)", async () => {
+    const { app, db } = setup();
+    db.prepare('INSERT INTO sessions (sid, data, expires_at) VALUES (?, ?, ?)').run(
+      'fixed-sid',
+      JSON.stringify({ cookie: { originalMaxAge: 60_000 } }),
+      Date.now() + 60_000,
+    );
+    const res = await supertest(app)
+      .post('/api/auth/login')
+      .set('Cookie', signedSidCookie('fixed-sid'))
+      .send({ username: 'alice', password: 'password123' });
+    expect(res.status).toBe(200);
+    expect(sidFromSetCookie(res)).not.toBe('fixed-sid');
+    expect(sessionExists(db, 'fixed-sid')).toBe(false);
   });
 
   it('retourne 401 si le mot de passe est incorrect', async () => {
@@ -252,6 +288,28 @@ describe('POST /api/auth/2fa/verify', () => {
     expect(res.body.username).toBe('alice');
     const me = await agent.get('/api/auth/me');
     expect(me.status).toBe(200);
+  });
+
+  it("régénère l'id de session après vérification (anti-fixation)", async () => {
+    const { app, db } = setup();
+    const secret = new OTPAuth.Secret();
+    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
+      secret.base32,
+      'alice',
+    );
+    const login = await supertest(app)
+      .post('/api/auth/login')
+      .send({ username: 'alice', password: 'password123' });
+    const pendingSid = sidFromSetCookie(login);
+    expect(sessionExists(db, pendingSid)).toBe(true);
+
+    const res = await supertest(app)
+      .post('/api/auth/2fa/verify')
+      .set('Cookie', signedSidCookie(pendingSid))
+      .send({ code: makeTotp(secret.base32).generate() });
+    expect(res.status).toBe(200);
+    expect(sidFromSetCookie(res)).not.toBe(pendingSid);
+    expect(sessionExists(db, pendingSid)).toBe(false);
   });
 
   it('retourne 401 si le code est invalide', async () => {

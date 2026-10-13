@@ -23,16 +23,19 @@ if (IS_PROD && !process.env.SESSION_SECRET) {
 
 const db = createDb();
 initDatabase(db);
+const CLIENT_DIST = path.join(import.meta.dirname, '../../client/dist');
+
 const app = createApp(db, {
   sessionSecret: SESSION_SECRET,
   secureCookies: process.env.SECURE_COOKIE === 'true',
+  healthExtraCheck: IS_PROD
+    ? () => (fs.existsSync(path.join(CLIENT_DIST, 'index.html')) ? null : 'frontend')
+    : undefined,
 });
 
 app.set('trust proxy', 1);
 // Logos de banques : noms stables, changent rarement → cache navigateur d'une journée
 app.use('/logos', express.static(LOGOS_DIR, { maxAge: '1d' }));
-
-const CLIENT_DIST = path.join(import.meta.dirname, '../../client/dist');
 
 if (IS_PROD) {
   // Assets Vite à noms hashés → cache immuable 1 an ; index.html ne doit jamais être caché
@@ -47,21 +50,6 @@ if (IS_PROD) {
       },
     }),
   );
-
-  // Override health check in production to also verify the frontend bundle
-  app.get('/api/health', (_req, res) => {
-    try {
-      db.prepare('SELECT 1').get();
-    } catch {
-      res.status(503).json({ ok: false, reason: 'db' });
-      return;
-    }
-    if (!fs.existsSync(path.join(CLIENT_DIST, 'index.html'))) {
-      res.status(503).json({ ok: false, reason: 'frontend' });
-      return;
-    }
-    res.json({ ok: true });
-  });
 
   app.get('*splat', (_req, res) =>
     res.sendFile(path.join(CLIENT_DIST, 'index.html'), {

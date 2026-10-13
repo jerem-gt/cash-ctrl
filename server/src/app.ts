@@ -35,6 +35,8 @@ export interface AppOptions {
   sessionSecret?: string;
   secureCookies?: boolean;
   backupDir?: string;
+  /** Check de santé supplémentaire : renvoie une raison d'échec, ou null si OK. */
+  healthExtraCheck?: () => string | null;
 }
 
 export function createApp(db: Database, options?: AppOptions): express.Application {
@@ -64,9 +66,15 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.get('/api/health', (_req, res) => {
     try {
       db.prepare('SELECT 1').get();
-      res.json({ ok: true });
     } catch {
       res.status(503).json({ ok: false, reason: 'db' });
+      return;
+    }
+    const reason = options?.healthExtraCheck?.() ?? null;
+    if (reason === null) {
+      res.json({ ok: true });
+    } else {
+      res.status(503).json({ ok: false, reason });
     }
   });
 
