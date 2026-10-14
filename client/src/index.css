@@ -1,7 +1,51 @@
 @import '@fontsource-variable/manrope';
 @import '@fontsource-variable/dm-sans';
 @import "tailwindcss";
-@config "../tailwind.config.js";
+@custom-variant dark (&:is(.dark *));
+
+/* Tokens exposés comme utilitaires Tailwind. `inline` : les utilitaires lisent directement les variables --c-* (donc le thème .dark). */
+@theme inline {
+  --font-sans: "Inter", "DM Sans", sans-serif;
+  --font-display: "Manrope Variable", "Manrope", sans-serif;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-muted: var(--c-surface-muted);
+  --color-surface-emphasis: var(--c-surface-emphasis);
+  --color-surface-strong: var(--c-surface-strong);
+  --color-inverse: var(--c-inverse);
+  --color-inverse-fg: var(--c-inverse-fg);
+  --color-content: var(--c-content);
+  --color-content-secondary: var(--c-content-secondary);
+  --color-content-muted: var(--c-content-muted);
+  --color-content-subtle: var(--c-content-subtle);
+  --color-content-faint: var(--c-content-faint);
+  --color-line: var(--c-line);
+  --color-line-subtle: var(--c-line-subtle);
+  --color-line-strong: var(--c-line-strong);
+  --color-success: var(--c-success);
+  --color-success-surface: var(--c-success-surface);
+  --color-danger: var(--c-danger);
+  --color-danger-surface: var(--c-danger-surface);
+  --color-warning: var(--c-warning);
+  --color-warning-surface: var(--c-warning-surface);
+  --color-info: var(--c-info);
+  --color-info-surface: var(--c-info-surface);
+
+  /* Couleur de marque (identique dans les deux thèmes) */
+  --color-brand-50: #ecfdfe;
+  --color-brand-100: #cbf3f7;
+  --color-brand-200: #a5e9f0;
+  --color-brand-400: #2cc5dd;
+  --color-brand-500: #139aae;
+  --color-brand-600: #0d8896;
+  --color-brand-700: #0b6b7a;
+  --color-brand-800: #11555f;
+
+  --color-sidebar-bg: #102e3a;
+  --color-sidebar-fg: #f4f1eb;
+  --color-sidebar-accent: #2cc5dd;
+}
 
 /*
  * Tokens de couleur — source unique de vérité pour les teintes neutres et
