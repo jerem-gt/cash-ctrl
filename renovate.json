@@ -8,5 +8,11 @@
     "enabled": true,
     "schedule": ["before 5am on monday"],
     "automerge": false
-  }
+  },
+  "packageRules": [
+    {
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<25"
+    }
+  ]
 }
