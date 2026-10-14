@@ -11,6 +11,16 @@
   },
   "packageRules": [
     {
+      "description": "Dockerfile et ci.yml (container) montent de version Node ensemble",
+      "matchPackageNames": ["node"],
+      "matchDatasources": ["docker", "node-version"],
+      "groupName": "node",
+      "addLabels": ["node"],
+      "prBodyNotes": [
+        "Si majeure : aligner aussi `@types/node` (server/package.json) et la règle `allowedVersions` dans renovate.json."
+      ]
+    },
+    {
       "matchPackageNames": ["@types/node"],
       "allowedVersions": "<25"
     }
