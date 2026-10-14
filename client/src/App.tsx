@@ -4,7 +4,7 @@ import { Menu, Search } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Sidebar } from '@/components/Sidebar';

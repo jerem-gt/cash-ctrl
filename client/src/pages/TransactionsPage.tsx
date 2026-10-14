@@ -1,4 +1,4 @@
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router';
 
 import { TransactionsList } from '@/features/transactions/components/TransactionsList';
 import { useLogoMap } from '@/hooks/useLogoMap';

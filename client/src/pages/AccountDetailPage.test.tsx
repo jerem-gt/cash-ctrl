@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
 import AccountDetailPage from '@/pages/AccountDetailPage.tsx';

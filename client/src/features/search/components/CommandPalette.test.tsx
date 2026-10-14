@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ModalFrame } from '@/components/ui';
