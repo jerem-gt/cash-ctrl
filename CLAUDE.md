@@ -43,7 +43,7 @@ Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job
 
 ### Frontend (React)
 - **State Management**: Utiliser **TanStack Query** (`@tanstack/react-query`) pour tout l'état asynchrone.
-- **Routing**: `react-router-dom` v7+.
+- **Routing**: `react-router` v7+ (importer depuis `react-router`, pas `react-router-dom`).
 - **Components**: Préférer les composants fonctionnels. Utiliser les icônes de `lucide-react`.
 - **Styling**: Tailwind CSS 4 avec PostCSS.
 - **Charts**: Utiliser `recharts` pour la visualisation financière.

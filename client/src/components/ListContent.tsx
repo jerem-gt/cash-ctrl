@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import { type ReactNode, useId } from 'react';
 
 import { Skeleton } from '@/components/ui';
 
@@ -6,7 +6,7 @@ type Props<T> = {
   isLoading: boolean;
   items: T[];
   empty: string;
-  render: (item: T) => React.ReactNode;
+  render: (item: T) => ReactNode;
   skeletonCount?: number;
 };
 

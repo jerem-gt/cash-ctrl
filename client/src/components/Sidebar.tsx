@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink, useLocation, useMatch } from 'react-router-dom';
+import { NavLink, useLocation, useMatch } from 'react-router';
 
 import { Tabs } from '@/components/ui';
 import { nextEscapeOrder, pushEscape } from '@/components/ui/escapeStack';

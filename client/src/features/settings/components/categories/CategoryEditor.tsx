@@ -1,9 +1,9 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Input, Popover } from '@/components/ui';
 
-const EmojiPickerWidget = React.lazy(() =>
+const EmojiPickerWidget = lazy(() =>
   import('./EmojiPickerWidget').then((m) => ({ default: m.EmojiPickerWidget })),
 );
 

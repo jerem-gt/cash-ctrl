@@ -10,8 +10,8 @@ let AccountsPage: typeof import('./AccountsPage').default;
 let setGroupBy: typeof import('@/hooks/useAccountsGroupBy').setGroupBy;
 
 beforeAll(async () => {
-  vi.doMock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
+  vi.doMock('react-router', async () => {
+    const actual = await vi.importActual('react-router');
     return { ...actual };
   });
   vi.resetModules();
@@ -20,7 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  vi.doUnmock('react-router-dom');
+  vi.doUnmock('react-router');
   vi.resetModules();
 });
 

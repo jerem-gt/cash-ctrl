@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import { ProfitabilityCard } from '@/components/ProfitabilityCard';
 import { Skeleton } from '@/components/ui';
