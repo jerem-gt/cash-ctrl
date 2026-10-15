@@ -1,5 +1,5 @@
 {
-  "extends": ["config:recommended", "group:allNonMajor", "group:react"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "group:allNonMajor", "group:react"],
   "baseBranchPatterns": ["develop"],
   "semanticCommits": "enabled",
   "rangeStrategy": "bump",
