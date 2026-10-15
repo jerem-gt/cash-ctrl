@@ -41,7 +41,7 @@ export function MonthlyChartCard({
         {legendItems.map(([color, label, dashed]) => (
           <div key={label} className="flex items-center gap-1.5 text-[11px] text-content-subtle">
             {dashed ? (
-              <svg width="16" height="8">
+              <svg width="16" height="8" aria-hidden="true">
                 <line
                   x1="0"
                   y1="4"
