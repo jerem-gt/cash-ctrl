@@ -42,10 +42,9 @@ export function FrequentTxChips({ accountId, core, categories, onPick }: Readonl
   const pick = (f: FrequentTransaction) => onPick(toCorePatch(f));
 
   return (
-    <div
-      role="group"
+    <fieldset
       aria-label={t('frequent.label')}
-      className="flex flex-nowrap md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-1"
+      className="min-w-0 flex flex-nowrap md:flex-wrap gap-2 overflow-x-auto md:overflow-visible pb-1"
     >
       {data.map((f) => {
         const category = categories.find((c) => c.id === f.category_id);
@@ -72,6 +71,6 @@ export function FrequentTxChips({ accountId, core, categories, onPick }: Readonl
           </button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
