@@ -1,6 +1,9 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
+// Fuseau fixe pour des tests de dates déterministes (la CI tourne en UTC).
+process.env.TZ = 'Europe/Paris';
+
 const NODE_GLOBS = [
   'src/lib/dateUtils.tz.test.ts',
   'src/lib/{account,balance,colors,format,parse,csv-parser,import-model,qif-parser,routeChunks,stock,taxCalculator}.test.ts',

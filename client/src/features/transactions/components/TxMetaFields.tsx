@@ -32,8 +32,8 @@ export function TxMetaFields({
   return (
     <>
       <div className="flex gap-3 flex-wrap items-end">
-        <FormGroup label={tc('date')}>
-          <DateInput value={date} onChange={onDateChange} />
+        <FormGroup label={tc('date')} htmlFor="tx-date-input">
+          <DateInput id="tx-date-input" value={date} onChange={onDateChange} />
         </FormGroup>
       </div>
 

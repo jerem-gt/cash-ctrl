@@ -1,3 +1,4 @@
+import { Minus, Plus } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
   ChangeEvent,
@@ -6,6 +7,9 @@ import type {
   Ref,
   SelectHTMLAttributes,
 } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { addDays } from '@/lib/dateUtils';
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 interface BadgeProps {
@@ -132,6 +136,63 @@ export function DecimalInput({
     if (isDecimalInProgress(e.target.value, allowNegative)) onChange?.(e);
   };
   return <Input type="text" inputMode="decimal" onChange={handleChange} {...props} />;
+}
+
+// ─── DateInput ────────────────────────────────────────────────────────────────
+interface DateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  id?: string;
+  error?: boolean;
+  disabled?: boolean;
+}
+export function DateInput({
+  value,
+  onChange,
+  id,
+  error = false,
+  disabled,
+}: Readonly<DateInputProps>) {
+  const { t } = useTranslation('common');
+  const borderClass = error
+    ? 'border-danger focus-within:border-danger focus-within:ring-danger/20'
+    : 'border-line focus-within:border-brand-500 focus-within:ring-brand-500/20';
+  const stepButtonClass =
+    'flex w-10 shrink-0 items-center justify-center border-line text-content-secondary transition-colors enabled:hover:bg-surface-emphasis focus-visible:outline-none focus-visible:bg-surface-emphasis disabled:cursor-not-allowed';
+  return (
+    <div
+      className={`flex items-stretch overflow-hidden rounded-lg border bg-surface-muted transition-all focus-within:ring-1 has-disabled:opacity-60 ${borderClass}`}
+    >
+      <button
+        type="button"
+        aria-label={t('date_prev_day')}
+        title={t('date_prev_day')}
+        disabled={disabled}
+        onClick={() => onChange(addDays(value, -1))}
+        className={`${stepButtonClass} border-r`}
+      >
+        <Minus size={16} />
+      </button>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex-1 min-w-0 px-3 py-2 text-sm bg-transparent outline-none disabled:cursor-not-allowed"
+      />
+      <button
+        type="button"
+        aria-label={t('date_next_day')}
+        title={t('date_next_day')}
+        disabled={disabled}
+        onClick={() => onChange(addDays(value, 1))}
+        className={`${stepButtonClass} border-l`}
+      >
+        <Plus size={16} />
+      </button>
+    </div>
+  );
 }
 
 // ─── Select ───────────────────────────────────────────────────────────────────

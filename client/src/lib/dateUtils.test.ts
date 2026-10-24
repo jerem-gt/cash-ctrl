@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { addDays, formatLocalDate } from './dateUtils';
 
+describe('fuseau des tests', () => {
+  it("est Europe/Paris (sinon les tests de changement d'heure passent à vide)", () => {
+    expect(new Date(2026, 6, 1).getTimezoneOffset()).toBe(-120);
+    expect(new Date(2026, 0, 1).getTimezoneOffset()).toBe(-60);
+  });
+});
+
 describe('formatLocalDate', () => {
   it('formate en YYYY-MM-DD local avec padding', () => {
     expect(formatLocalDate(new Date(2026, 0, 5))).toBe('2026-01-05');
