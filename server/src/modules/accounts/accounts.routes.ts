@@ -25,9 +25,19 @@ export const closeSchema = z.object({
 
 export const favoriteSchema = z.object({ favorite: z.boolean() });
 
-export const favoritesReorderSchema = z.array(
-  z.object({ id: z.number().int(), favorite_order: z.number().int() }),
-);
+export const favoritesReorderSchema = z
+  .array(
+    z.object({
+      id: z.number().int().positive(),
+      favorite_order: z.number().int().nonnegative(),
+    }),
+  )
+  .refine(
+    (items) =>
+      new Set(items.map((i) => i.id)).size === items.length &&
+      new Set(items.map((i) => i.favorite_order)).size === items.length,
+    { message: 'ids et ordres doivent être uniques' },
+  );
 
 export function createAccountsRouter(db: Database): Router {
   const accountsRepo = createAccountsRepo(db);
@@ -52,8 +62,10 @@ export function createAccountsRouter(db: Database): Router {
     const data = parseBody(res, favoritesReorderSchema, req.body);
     if (!data) return;
     const userId = sessionUserId(req);
-    if (data.some((item) => !accountsRepo.exists(item.id, userId))) {
-      sendError(res, 404, 'account.not_found');
+    const activeIds = accountsRepo.getActiveFavoriteIds(userId);
+    const submitted = new Set(data.map((item) => item.id));
+    if (activeIds.length !== submitted.size || activeIds.some((id) => !submitted.has(id))) {
+      sendError(res, 409, 'account.favorites_out_of_sync');
       return;
     }
     accountsRepo.reorderFavorites(userId, data);

@@ -16,7 +16,12 @@ import { useMe } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import i18n from '@/i18n';
 import { isMacPlatform } from '@/lib/platform';
-import { claimCacheOwner, queryPersister, shouldPersistQuery } from '@/lib/queryPersister';
+import {
+  claimCacheOwner,
+  PERSIST_BUSTER,
+  queryPersister,
+  shouldPersistQuery,
+} from '@/lib/queryPersister';
 import { routeChunk } from '@/lib/routeChunks';
 
 // Recharge la page si un chunk hashé n'existe plus (déploiement PWA)
@@ -255,6 +260,7 @@ export default function App() {
       persistOptions={{
         persister: queryPersister,
         maxAge: 24 * 60 * 60_000,
+        buster: PERSIST_BUSTER,
         dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
       }}
     >

@@ -415,14 +415,62 @@ describe('favoris', () => {
     expect(byId(b).favorite_order).toBe(0);
   });
 
-  it('PUT /favorites/reorder ignore les comptes non favoris', async () => {
+  const reorder = (items: unknown) => ctx.agent.put('/api/accounts/favorites/reorder').send(items);
+
+  it('PUT /favorites/reorder retourne 409 pour un compte non favori', async () => {
     const a = await createAccount('A');
-    const res = await ctx.agent
-      .put('/api/accounts/favorites/reorder')
-      .send([{ id: a, favorite_order: 5 }]);
-    expect(res.status).toBe(200);
+    const res = await reorder([{ id: a, favorite_order: 5 }]);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('account.favorites_out_of_sync');
     const list = await ctx.agent.get('/api/accounts');
     expect(list.body.find((x: { id: number }) => x.id === a).favorite_order).toBeNull();
+  });
+
+  it('PUT /favorites/reorder retourne 409 pour un compte clôturé', async () => {
+    const a = await createAccount('A');
+    await setFavorite(a, true);
+    await ctx.agent.post(`/api/accounts/${a}/close`).send({ closed_at: '2025-01-01' });
+    const res = await reorder([{ id: a, favorite_order: 0 }]);
+    expect(res.status).toBe(409);
+  });
+
+  it('PUT /favorites/reorder retourne 409 si un favori manque', async () => {
+    const a = await createAccount('A');
+    const b = await createAccount('B');
+    await setFavorite(a, true);
+    await setFavorite(b, true);
+    const res = await reorder([{ id: a, favorite_order: 0 }]);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('account.favorites_out_of_sync');
+  });
+
+  it('PUT /favorites/reorder retourne 400 pour un ordre négatif', async () => {
+    const a = await createAccount('A');
+    await setFavorite(a, true);
+    const res = await reorder([{ id: a, favorite_order: -1 }]);
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /favorites/reorder retourne 400 pour des ids dupliqués', async () => {
+    const a = await createAccount('A');
+    await setFavorite(a, true);
+    const res = await reorder([
+      { id: a, favorite_order: 0 },
+      { id: a, favorite_order: 1 },
+    ]);
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /favorites/reorder retourne 400 pour des ordres dupliqués', async () => {
+    const a = await createAccount('A');
+    const b = await createAccount('B');
+    await setFavorite(a, true);
+    await setFavorite(b, true);
+    const res = await reorder([
+      { id: a, favorite_order: 0 },
+      { id: b, favorite_order: 0 },
+    ]);
+    expect(res.status).toBe(400);
   });
 
   it('PUT /favorites/reorder retourne 400 si le corps est invalide', async () => {
@@ -430,11 +478,9 @@ describe('favoris', () => {
     expect(res.status).toBe(400);
   });
 
-  it('PUT /favorites/reorder retourne 404 si un id est inconnu', async () => {
-    const res = await ctx.agent
-      .put('/api/accounts/favorites/reorder')
-      .send([{ id: 99999, favorite_order: 0 }]);
-    expect(res.status).toBe(404);
+  it('PUT /favorites/reorder retourne 409 si un id est inconnu', async () => {
+    const res = await reorder([{ id: 99999, favorite_order: 0 }]);
+    expect(res.status).toBe(409);
   });
 
   it('la clôture retire le favori et la réouverture ne le restaure pas', async () => {

@@ -32,6 +32,7 @@ export const ERROR_MESSAGES = {
   'account.already_closed': 'Ce compte est déjà clôturé',
   'account.not_closed': "Ce compte n'est pas clôturé",
   'account.favorite_closed': 'Un compte clôturé ne peut pas être favori',
+  'account.favorites_out_of_sync': 'La liste des favoris a changé, rechargez la page.',
   'account.close_requires_zero_or_target':
     'Le solde doit être nul ou un compte de destination est requis',
 

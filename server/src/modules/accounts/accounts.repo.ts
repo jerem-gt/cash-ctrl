@@ -115,6 +115,11 @@ export function createAccountsRepo(db: Database) {
       'SELECT COALESCE(MAX(favorite_order), -1) FROM accounts WHERE user_id = :userId',
     )
     .pluck();
+  const activeFavoriteIdsStmt = db
+    .prepare<{ userId: number }, number>(
+      'SELECT id FROM accounts WHERE user_id = :userId AND favorite_order IS NOT NULL AND closed_at IS NULL',
+    )
+    .pluck();
   const setFavoriteOrderStmt = db.prepare(
     'UPDATE accounts SET favorite_order = :favoriteOrder WHERE id = :id AND user_id = :userId',
   );
@@ -170,6 +175,8 @@ export function createAccountsRepo(db: Database) {
       const next = (maxFavoriteOrderStmt.get({ userId }) ?? -1) + 1;
       setFavoriteOrderStmt.run({ favoriteOrder: next, id, userId });
     },
+
+    getActiveFavoriteIds: (userId: number): number[] => activeFavoriteIdsStmt.all({ userId }),
 
     reorderFavorites: db.transaction(
       (userId: number, items: { id: number; favorite_order: number }[]) => {

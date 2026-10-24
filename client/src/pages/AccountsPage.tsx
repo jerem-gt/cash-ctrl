@@ -564,7 +564,7 @@ function AccountCard({
         </div>
       </div>
       <p className={`font-display text-3xl ${balanceClass}`}>{fmtCurrency(displayBal)}</p>
-      <div className="relative z-10 mt-4 flex items-center justify-between gap-2">
+      <div className="mt-4 flex items-center justify-between gap-2">
         {isClosed && acc.closed_at ? (
           <p className="text-[11px] text-content-subtle uppercase tracking-wider font-medium">
             {t('page.closed_on', { date: fmtDate(acc.closed_at) })}
@@ -574,7 +574,7 @@ function AccountCard({
             {acc.opening_date && accountSeniority(acc.opening_date, t)}
           </p>
         )}
-        <div className="flex items-center shrink-0 -my-1.5">
+        <div className="relative z-10 flex items-center shrink-0 -my-1.5">
           {dragHandle}
           {!isClosed && onToggleFavorite && (
             <IconButton
