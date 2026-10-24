@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   Button,
-  DateInput,
+  DateField,
   DecimalInput,
   FormGroup,
   Input,
@@ -139,7 +139,7 @@ export function StockOperationModal(props: Readonly<Props>) {
           </FormGroup>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-end">
           <FormGroup label={t('stock_operation_modal.fees_label')} htmlFor="op-fees">
             <DecimalInput
               id="op-fees"
@@ -148,9 +148,7 @@ export function StockOperationModal(props: Readonly<Props>) {
               placeholder={t('stock_operation_modal.fees_placeholder')}
             />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="op-date" className="min-w-56">
-            <DateInput id="op-date" value={date} onChange={setDate} />
-          </FormGroup>
+          <DateField id="op-date" value={date} onChange={setDate} />
         </div>
 
         <div className="bg-surface-muted rounded-xl p-3 border border-line">

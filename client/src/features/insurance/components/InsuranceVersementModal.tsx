@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateField, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useVersement } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -82,13 +82,11 @@ export function InsuranceVersementModal({ accountId, support, onClose }: Readonl
           </FormGroup>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-end">
           <FormGroup label={t('versement_modal.fees_label')} htmlFor="vers-fees">
             <DecimalInput id="vers-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="vers-date" className="min-w-56">
-            <DateInput id="vers-date" value={date} onChange={setDate} required />
-          </FormGroup>
+          <DateField id="vers-date" value={date} onChange={setDate} required />
         </div>
 
         <div className="flex gap-2 justify-end mt-1">

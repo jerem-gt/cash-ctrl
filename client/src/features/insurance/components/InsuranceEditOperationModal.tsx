@@ -2,7 +2,7 @@ import type { InsuranceOperation } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateField, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateInsuranceOperation } from '@/features/insurance/hooks/useInsurance';
 
 interface Props {
@@ -103,9 +103,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                 />
               </FormGroup>
             )}
-            <FormGroup label={tc('date')} htmlFor="edit-op-date" className="min-w-56">
-              <DateInput id="edit-op-date" value={date} onChange={setDate} required />
-            </FormGroup>
+            <DateField id="edit-op-date" value={date} onChange={setDate} required />
           </div>
 
           <div className="flex gap-2 justify-end mt-1">

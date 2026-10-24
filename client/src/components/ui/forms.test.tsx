@@ -2,9 +2,51 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FormGroup, Switch } from './forms';
+import { DateField, FormGroup, Switch } from './forms';
+
+describe('DateField', () => {
+  it("relie le libellé par défaut à l'input", () => {
+    render(<DateField id="d" value="2026-06-13" onChange={vi.fn()} />);
+    expect(screen.getByLabelText('Date')).toHaveAttribute('id', 'd');
+  });
+
+  it('accepte un libellé personnalisé', () => {
+    render(<DateField id="d" label="Échéance" value="2026-06-13" onChange={vi.fn()} />);
+    expect(screen.getByLabelText('Échéance')).toBeInTheDocument();
+  });
+
+  it('transmet required', () => {
+    render(<DateField id="d" value="2026-06-13" onChange={vi.fn()} required />);
+    expect(screen.getByLabelText('Date')).toBeRequired();
+  });
+
+  it('applique min-w-56 au conteneur', () => {
+    const { container } = render(<DateField id="d" value="2026-06-13" onChange={vi.fn()} />);
+    expect(container.firstElementChild).toHaveClass('min-w-56');
+    expect(container.firstElementChild).not.toHaveClass('min-w-25');
+  });
+});
 
 describe('FormGroup', () => {
+  it('a min-w-25 par défaut', () => {
+    const { container } = render(
+      <FormGroup label="Nom">
+        <input />
+      </FormGroup>,
+    );
+    expect(container.firstElementChild).toHaveClass('min-w-25');
+  });
+
+  it('remplace min-w-25 avec minWidthClass', () => {
+    const { container } = render(
+      <FormGroup label="Nom" minWidthClass="min-w-56">
+        <input />
+      </FormGroup>,
+    );
+    expect(container.firstElementChild).toHaveClass('min-w-56');
+    expect(container.firstElementChild).not.toHaveClass('min-w-25');
+  });
+
   it('affiche le label et les enfants', () => {
     render(
       <FormGroup label="Nom">

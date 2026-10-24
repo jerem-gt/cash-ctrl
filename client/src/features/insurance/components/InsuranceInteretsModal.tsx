@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateField, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { useInterets } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
 import { fmtCurrency } from '@/lib/format';
@@ -52,9 +52,7 @@ export function InsuranceInteretsModal({ accountId, support, onClose }: Readonly
           </p>
         </FormGroup>
 
-        <FormGroup label={tc('date')} htmlFor="interets-date">
-          <DateInput id="interets-date" value={date} onChange={setDate} required />
-        </FormGroup>
+        <DateField id="interets-date" value={date} onChange={setDate} required />
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={interets.isPending}>

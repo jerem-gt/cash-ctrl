@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   Button,
-  DateInput,
+  DateField,
   DecimalInput,
   FormGroup,
   ModalFrame,
@@ -109,13 +109,11 @@ export function InsuranceArbitrageModal({
           />
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-end">
           <FormGroup label={tc('fees')} htmlFor="arb-fees">
             <DecimalInput id="arb-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="arb-date" className="min-w-56">
-            <DateInput id="arb-date" value={date} onChange={setDate} required />
-          </FormGroup>
+          <DateField id="arb-date" value={date} onChange={setDate} required />
         </div>
 
         <div className="flex gap-2 justify-end mt-1">
