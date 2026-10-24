@@ -682,6 +682,48 @@ describe('GET /api/accounts/:id/frequent-transactions', () => {
     expect((await get()).body).toEqual([]);
   });
 
+  it('exclut les transactions à date future', async () => {
+    insertTx({ date: daysAgo(-3) });
+    insertTx({ date: daysAgo(-10) });
+    insertTx({ date: daysAgo(5) });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transferts sans pair (moyen de paiement transfert)', async () => {
+    insertTwice({ paymentMethodId: SEED.PM_TRANSFERT });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transferts sans pair (sous-catégorie transfert)', async () => {
+    insertTwice({ subcategoryId: SEED.SUBCAT_TRANSFERT });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('inclut les transactions importées', async () => {
+    const tx = (date: string) => ({
+      account_id: accountId,
+      new_account_source_name: null,
+      type: 'expense',
+      amount: 12,
+      description: 'Boulangerie',
+      subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+      new_subcategory_key: null,
+      date,
+      notes: null,
+      validated: false,
+    });
+    const imp = await ctx.agent.post('/api/import/structured').send({
+      newAccounts: [],
+      newSubcategories: [],
+      transactions: [tx(daysAgo(5)), tx(daysAgo(10))],
+      transfers: [],
+    });
+    expect(imp.status).toBe(201);
+    const res = await get();
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0]).toMatchObject({ description: 'Boulangerie', count: 2 });
+  });
+
   it('exclut les occurrences uniques', async () => {
     insertTx();
     expect((await get()).body).toEqual([]);

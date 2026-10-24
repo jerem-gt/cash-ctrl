@@ -1,12 +1,11 @@
 import type { Account, Subcategory } from '@cashctrl/types';
+import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DecimalInput, FormGroup, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useMatchCategorizationRule } from '@/hooks/useCategorizationRules';
 import { transferLabel } from '@/lib/transfer-label';
-
-export const TX_AMOUNT_INPUT_ID = 'tx-amount-input';
 
 export interface TxCoreState {
   type: 'income' | 'expense';
@@ -32,6 +31,7 @@ interface Props {
   /** Masque les sélecteurs catégorie/sous-catégorie (mode ventilation). */
   hideCategories?: boolean;
   fieldErrors?: Set<string>;
+  amountRef?: Ref<HTMLInputElement>;
 }
 
 export function TxCoreFields({
@@ -45,6 +45,7 @@ export function TxCoreFields({
   fixedAccountId,
   hideCategories,
   fieldErrors,
+  amountRef,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
   const { data: matchedRule } = useMatchCategorizationRule(isTransfer ? '' : value.description);
@@ -117,7 +118,7 @@ export function TxCoreFields({
         )}
         <FormGroup label={t('tx_core.amount')}>
           <DecimalInput
-            id={TX_AMOUNT_INPUT_ID}
+            ref={amountRef}
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"

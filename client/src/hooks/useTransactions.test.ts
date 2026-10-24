@@ -154,6 +154,30 @@ describe('useUpdateTransaction', () => {
     expect(cache?.data[0].amount).toBe(30);
   });
 
+  it('invalide les suggestions de transactions fréquentes', async () => {
+    const updated = { ...TRANSACTIONS.data[0], description: 'Modifié' };
+    server.use(http.put('/api/transactions/:id', () => HttpResponse.json(updated)));
+    const wrapper = createWrapper();
+    const spy = vi.spyOn(wrapper.qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateTransaction(), { wrapper });
+    act(() => {
+      result.current.mutate({
+        id: 10,
+        account_id: 1,
+        type: 'expense',
+        amount: 30,
+        description: 'Modifié',
+        subcategory_id: 1,
+        date: '2026-01-01',
+        payment_method_id: 1,
+        notes: null,
+        validated: false,
+      });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy.mock.calls.map(([f]) => f?.queryKey)).toContainEqual(['frequent-transactions']);
+  });
+
   it('gère un cache vide (old undefined)', async () => {
     const { result } = renderHook(() => useUpdateTransaction(), { wrapper: createWrapper() });
     act(() => {

@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { createHookWrapper } from '@/tests/helpers/hookWrapper';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 
 import {
   useCreatePaymentMethod,
@@ -44,5 +44,14 @@ describe('useDeletePaymentMethod', () => {
     const { result } = renderHook(() => useDeletePaymentMethod(), { wrapper: Wrapper });
     result.current.mutate(1);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('invalide les suggestions de transactions fréquentes', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidated = spyInvalidations(qc);
+    const { result } = renderHook(() => useDeletePaymentMethod(), { wrapper: Wrapper });
+    result.current.mutate(1);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidated()).toContainEqual(['frequent-transactions']);
   });
 });

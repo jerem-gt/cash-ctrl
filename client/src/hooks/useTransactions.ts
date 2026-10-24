@@ -112,6 +112,7 @@ function patchTransactionLists(
       data: patched.toSorted(byDateThenIdDesc),
     });
   }
+  invalidateFrequentTransactions(qc);
 }
 
 export function useCreateTransaction() {
@@ -131,7 +132,6 @@ export function useUpdateTransaction() {
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
       patchTransactionLists(qc, updated);
-      invalidateFrequentTransactions(qc);
       invalidateBalances(qc);
     },
   });
@@ -148,7 +148,6 @@ export function useUpdateTransfer() {
         date: updated.date,
         validated: updated.validated,
       });
-      invalidateFrequentTransactions(qc);
       invalidateBalances(qc);
     },
   });
