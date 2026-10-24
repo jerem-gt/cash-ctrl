@@ -101,6 +101,15 @@ Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 4. **Handler MSW** (`tests/msw/handlers.ts`) — ajouter l'intercepteur du nouvel endpoint. Placer les handlers littéraux (ex. `/api/banks/reorder`) **avant** les handlers paramétriques (`/api/banks/:id`) pour éviter le masquage.
 5. **Fixtures** (`tests/fixtures.ts`) — mettre à jour les objets typés si un type gagne un nouveau champ requis.
 
+## Review après développement
+Toute implémentation non triviale (directe ou déléguée à un sous-agent) se termine par une review :
+1. Vérifications vertes : tests server + client, `typecheck:test`, build client, lint des fichiers touchés.
+2. Commit de la feature (après accord de l'utilisateur).
+3. Skill `mattpocock-skills:code-review` depuis le commit parent : source **Spec** = la spec validée (mémoire, issue ou ticket), source **Standards** = ce fichier.
+4. Présenter les deux axes, puis corriger les findings validés par l'utilisateur dans un commit dédié.
+
+Terminé quand chaque finding est corrigé ou explicitement écarté par l'utilisateur.
+
 ## Project Structure
 - `client/src/` : Code source React.
 - `server/src/` : Code source de l'API.
