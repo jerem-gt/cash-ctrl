@@ -24,7 +24,7 @@ import {
   resolvePreview,
   resolveXhbPreview,
 } from '@/lib/import.helpers';
-import { invalidateFrequentTransactions } from '@/lib/invalidate';
+import { invalidateBalances, invalidateTransactions } from '@/lib/invalidate';
 import { parseQif } from '@/lib/qif-parser.ts';
 import { FileTooLargeError, MAX_IMPORT_FILE_BYTES, readFileText } from '@/lib/readFileText';
 import { parseXhb } from '@/lib/xhb-parser.ts';
@@ -409,8 +409,8 @@ export default function ImportManager() {
     setImportErrors(NO_IMPORT_ERRORS);
     try {
       await importMutation.mutateAsync(body);
-      invalidateFrequentTransactions(queryClient);
-      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      invalidateTransactions(queryClient);
+      invalidateBalances(queryClient);
       setStep('done');
     } catch (err) {
       // Erreurs de validation par champ → remontées sur les lignes de l'aperçu.
@@ -467,8 +467,8 @@ export default function ImportManager() {
     if (parsedFile?.format !== 'json') return;
     try {
       await jsonImportMutation.mutateAsync(parsedFile.data);
-      invalidateFrequentTransactions(queryClient);
-      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      invalidateTransactions(queryClient);
+      invalidateBalances(queryClient);
       setStep('done');
     } catch {
       /* error shown inline */

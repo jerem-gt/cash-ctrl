@@ -306,6 +306,24 @@ describe("ImportManager — exécution de l'import", () => {
     expect(screen.getByText(/2/)).toBeInTheDocument();
   });
 
+  it("invalide transactions, suggestions et comptes après l'import", async () => {
+    server.use(
+      http.post('/api/import/structured', () =>
+        HttpResponse.json({ transactions: 2, transfers: 0 }, { status: 201 }),
+      ),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderImportManager();
+    const spy = vi.spyOn(queryClient, 'invalidateQueries');
+    await goToPreview(user);
+    await user.click(await screen.findByRole('button', { name: /importer/i }));
+    await screen.findByText(/importation terminée/i);
+    const keys = spy.mock.calls.map(([f]) => f?.queryKey);
+    expect(keys).toContainEqual(['transactions']);
+    expect(keys).toContainEqual(['frequent-transactions']);
+    expect(keys).toContainEqual(['accounts']);
+  });
+
   it("affiche une erreur si l'API échoue", async () => {
     server.use(
       http.post('/api/import/structured', () =>

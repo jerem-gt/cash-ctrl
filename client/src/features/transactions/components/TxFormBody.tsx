@@ -1,4 +1,5 @@
 import type { Account, Category, PaymentMethod } from '@cashctrl/types';
+import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { TxCoreFields, type TxCoreState } from '@/features/transactions/components/TxCoreFields';
@@ -20,6 +21,7 @@ interface Props {
   paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
   fixedAccountId: number | undefined;
   fieldErrors?: Set<string>;
+  amountRef?: Ref<HTMLInputElement>;
 }
 
 export function TxFormBody({
@@ -37,6 +39,7 @@ export function TxFormBody({
   paymentMethods,
   fixedAccountId,
   fieldErrors,
+  amountRef,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
 
@@ -64,6 +67,7 @@ export function TxFormBody({
         fixedAccountId={fixedAccountId}
         hideCategories={isVentilated}
         fieldErrors={fieldErrors}
+        amountRef={amountRef}
       />
       {!isTransferCreate && (
         <>

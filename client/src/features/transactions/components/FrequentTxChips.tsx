@@ -1,10 +1,7 @@
 import type { Category, FrequentTransaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
-import {
-  TX_AMOUNT_INPUT_ID,
-  type TxCoreState,
-} from '@/features/transactions/components/TxCoreFields';
+import type { TxCoreState } from '@/features/transactions/components/TxCoreFields';
 import { useFrequentTransactions } from '@/hooks/useTransactions';
 
 interface Props {
@@ -14,12 +11,25 @@ interface Props {
   onPick: (patch: Partial<TxCoreState>) => void;
 }
 
+function toCorePatch(f: FrequentTransaction): Partial<TxCoreState> {
+  return {
+    type: f.type,
+    description: f.description,
+    category_id: String(f.category_id),
+    subcategory_id: String(f.subcategory_id),
+    payment_method_id: f.payment_method_id === null ? '' : String(f.payment_method_id),
+  };
+}
+
+const normalize = (s: string | undefined) => (s ?? '').trim().toLowerCase();
+
 function isActive(f: FrequentTransaction, core: TxCoreState): boolean {
+  const patch = toCorePatch(f);
   return (
-    core.type === f.type &&
-    core.description.trim().toLowerCase() === f.description.toLowerCase() &&
-    core.subcategory_id === String(f.subcategory_id) &&
-    core.payment_method_id === (f.payment_method_id === null ? '' : String(f.payment_method_id))
+    core.type === patch.type &&
+    normalize(core.description) === normalize(patch.description) &&
+    core.subcategory_id === patch.subcategory_id &&
+    core.payment_method_id === patch.payment_method_id
   );
 }
 
@@ -29,16 +39,7 @@ export function FrequentTxChips({ accountId, core, categories, onPick }: Readonl
 
   if (!data || data.length === 0) return null;
 
-  const pick = (f: FrequentTransaction) => {
-    onPick({
-      type: f.type,
-      description: f.description,
-      category_id: String(f.category_id),
-      subcategory_id: String(f.subcategory_id),
-      payment_method_id: f.payment_method_id === null ? '' : String(f.payment_method_id),
-    });
-    document.getElementById(TX_AMOUNT_INPUT_ID)?.focus();
-  };
+  const pick = (f: FrequentTransaction) => onPick(toCorePatch(f));
 
   return (
     <div

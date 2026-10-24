@@ -3,6 +3,7 @@ import type {
   ChangeEvent,
   InputHTMLAttributes,
   ReactNode,
+  Ref,
   SelectHTMLAttributes,
 } from 'react';
 
@@ -92,7 +93,9 @@ export function Input({
   className = '',
   error = false,
   ...props
-}: Readonly<InputHTMLAttributes<HTMLInputElement> & { error?: boolean }>) {
+}: Readonly<
+  InputHTMLAttributes<HTMLInputElement> & { error?: boolean; ref?: Ref<HTMLInputElement> }
+>) {
   const borderClass = error
     ? 'border-danger focus:border-danger focus:ring-danger/20'
     : 'border-line focus:border-brand-500 focus:ring-brand-500/20';
@@ -117,6 +120,7 @@ function isDecimalInProgress(value: string, allowNegative: boolean): boolean {
 interface DecimalInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   allowNegative?: boolean;
   error?: boolean;
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function DecimalInput({

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { subcategoriesApi } from '@/api/client';
+import { invalidateFrequentTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useCreateSubcategory() {
@@ -24,6 +25,9 @@ export function useDeleteSubcategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: subcategoriesApi.remove,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.categories() }),
+    onSuccess: () => {
+      invalidateFrequentTransactions(qc);
+      return qc.invalidateQueries({ queryKey: queryKeys.categories() });
+    },
   });
 }

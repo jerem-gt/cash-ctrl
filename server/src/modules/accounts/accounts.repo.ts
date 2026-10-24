@@ -115,7 +115,14 @@ export function createAccountsRepo(db: Database) {
       WHERE t.account_id = :accountId
         AND t.user_id = :userId
         AND t.date >= date('now', :months)
+        AND t.date <= date('now')
         AND t.transfer_peer_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM user_settings us
+          WHERE us.user_id = t.user_id
+            AND (us.transfer_payment_method_id = t.payment_method_id
+                 OR us.transfer_subcategory_id = t.subcategory_id)
+        )
         AND t.scheduled_id IS NULL
         AND NOT EXISTS (SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id)
     ),

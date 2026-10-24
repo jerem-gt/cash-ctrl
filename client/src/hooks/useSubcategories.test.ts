@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { createHookWrapper } from '@/tests/helpers/hookWrapper';
+import { createHookWrapper, spyInvalidations } from '@/tests/helpers/hookWrapper';
 
 import {
   useCreateSubcategory,
@@ -39,5 +39,14 @@ describe('useDeleteSubcategory', () => {
     result.current.mutate(10);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('invalide les suggestions de transactions fréquentes', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const invalidated = spyInvalidations(qc);
+    const { result } = renderHook(() => useDeleteSubcategory(), { wrapper: Wrapper });
+    result.current.mutate(10);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidated()).toContainEqual(['frequent-transactions']);
   });
 });

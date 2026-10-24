@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { paymentMethodsApi } from '@/api/client';
+import { invalidateFrequentTransactions } from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function usePaymentMethods() {
@@ -28,6 +29,9 @@ export function useDeletePaymentMethod() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: paymentMethodsApi.remove,
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.paymentMethods() }),
+    onSuccess: () => {
+      invalidateFrequentTransactions(qc);
+      return qc.invalidateQueries({ queryKey: queryKeys.paymentMethods() });
+    },
   });
 }

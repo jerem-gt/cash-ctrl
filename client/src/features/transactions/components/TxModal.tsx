@@ -5,7 +5,7 @@ import type {
   ReimbursementStatus,
   Transaction,
 } from '@cashctrl/types';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, ModalFrame, showToast } from '@/components/ui';
@@ -150,6 +150,13 @@ export function TxModal(props: Readonly<Props>) {
     setCore((c) => ({ ...c, ...patch }));
   };
 
+  const amountRef = useRef<HTMLInputElement>(null);
+
+  const handleFrequentPick = (patch: Partial<TxCoreState>) => {
+    handleCorePatch(patch);
+    amountRef.current?.focus();
+  };
+
   const frequentAccountId = fixedAccountId ?? (Number.parseInt(core.account_id) || undefined);
   const showFrequent = !isEdit && !isDuplicate && !isTransfer && !isVentilated;
 
@@ -290,7 +297,7 @@ export function TxModal(props: Readonly<Props>) {
             accountId={frequentAccountId}
             core={core}
             categories={categories}
-            onPick={handleCorePatch}
+            onPick={handleFrequentPick}
           />
         )}
 
@@ -303,6 +310,7 @@ export function TxModal(props: Readonly<Props>) {
           onSplitsChange={setSplits}
           core={core}
           onCorePatch={handleCorePatch}
+          amountRef={amountRef}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}
