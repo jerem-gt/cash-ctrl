@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 
 import { cleanup, configure } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 
 import i18n, { initPromise } from '../i18n';
 import { LAZY_NAMESPACES } from './helpers/i18nTestUtils';
@@ -31,7 +31,12 @@ beforeAll(async () => {
   await initPromise;
   await i18n.changeLanguage('fr');
   await i18n.loadNamespaces([...LAZY_NAMESPACES]);
-  server.listen({ onUnhandledFrame: 'warn' });
+  // Une seule session MSW par worker : la rouvrir par fichier laisse des sockets keep-alive orphelins.
+  const g = globalThis as { __mswListening?: boolean };
+  if (!g.__mswListening) {
+    server.listen({ onUnhandledFrame: 'warn' });
+    g.__mswListening = true;
+  }
 });
 afterEach(async () => {
   cleanup();
@@ -41,4 +46,3 @@ afterEach(async () => {
   localStorage.clear();
   if (i18n.language !== 'fr') await i18n.changeLanguage('fr');
 });
-afterAll(() => server.close());
