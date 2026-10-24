@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateField, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useRachat } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -103,9 +103,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               onChange={(e) => setSocialFees(e.target.value)}
             />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="rachat-date" className="min-w-56">
-            <DateInput id="rachat-date" value={date} onChange={setDate} required />
-          </FormGroup>
+          <DateField id="rachat-date" value={date} onChange={setDate} required />
         </div>
 
         <div className="flex gap-2 justify-end mt-1">

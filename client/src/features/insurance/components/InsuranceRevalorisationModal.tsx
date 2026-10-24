@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateField, DecimalInput, ModalFrame, showToast } from '@/components/ui';
 import { useRevalorisation } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
 import { fmtCurrency } from '@/lib/format';
@@ -62,9 +62,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
           <p className="text-[10px] text-content-subtle">{t('revalorisation_modal.amount_hint')}</p>
         </div>
 
-        <FormGroup label={tc('date')} htmlFor="reval-date">
-          <DateInput id="reval-date" value={date} onChange={setDate} required />
-        </FormGroup>
+        <DateField id="reval-date" value={date} onChange={setDate} required />
 
         <div className="flex gap-2 justify-end mt-1">
           <Button type="button" onClick={onClose} disabled={revalorisation.isPending}>

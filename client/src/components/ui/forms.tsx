@@ -1,23 +1,27 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { DateInput } from './primitives';
+
 // ─── FormGroup ────────────────────────────────────────────────────────────────
 export function FormGroup({
   label,
   htmlFor,
   className = '',
+  minWidthClass = 'min-w-25',
   optional = false,
   children,
 }: Readonly<{
   label: string;
   htmlFor?: string;
   className?: string;
+  minWidthClass?: string;
   optional?: boolean;
   children: ReactNode;
 }>) {
   const { t } = useTranslation('common');
   return (
-    <div className={`flex flex-col gap-1.5 flex-1 min-w-25 ${className}`}>
+    <div className={`flex flex-col gap-1.5 flex-1 ${minWidthClass} ${className}`}>
       <label
         htmlFor={htmlFor}
         className="text-[11px] font-medium uppercase tracking-wider text-content-subtle"
@@ -31,6 +35,40 @@ export function FormGroup({
       </label>
       {children}
     </div>
+  );
+}
+
+// ─── DateField ────────────────────────────────────────────────────────────────
+export function DateField({
+  id,
+  value,
+  onChange,
+  label,
+  required,
+  error,
+  disabled,
+}: Readonly<{
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  label?: string;
+  required?: boolean;
+  error?: boolean;
+  disabled?: boolean;
+}>) {
+  const { t } = useTranslation('common');
+  // min-w-56 : deux boutons de 40 px + la date JJ/MM/AAAA et l'icône calendrier
+  return (
+    <FormGroup label={label ?? t('date')} htmlFor={id} minWidthClass="min-w-56">
+      <DateInput
+        id={id}
+        value={value}
+        onChange={onChange}
+        required={required}
+        error={error}
+        disabled={disabled}
+      />
+    </FormGroup>
   );
 }
 
