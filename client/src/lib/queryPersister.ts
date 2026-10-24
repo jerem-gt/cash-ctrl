@@ -7,6 +7,9 @@ import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 import { safeStorage } from '@/lib/safeStorage';
 
+// À incrémenter quand la forme d'une donnée persistée change
+export const PERSIST_BUSTER = '1';
+
 const hasIdb = typeof indexedDB !== 'undefined';
 const OWNER_KEY = 'cashctrl.cacheOwner';
 

@@ -25,7 +25,8 @@
     "already_closed": "Ce compte est déjà clôturé",
     "not_closed": "Ce compte n'est pas clôturé",
     "close_requires_zero_or_target": "Le solde doit être nul ou un compte de destination est requis",
-    "favorite_closed": "Un compte clôturé ne peut pas être favori"
+    "favorite_closed": "Un compte clôturé ne peut pas être favori",
+    "favorites_out_of_sync": "La liste des favoris a changé, rechargez la page."
   },
   "account_type": {
     "not_found": "Type de compte introuvable",

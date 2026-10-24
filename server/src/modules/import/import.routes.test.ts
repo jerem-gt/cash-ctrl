@@ -711,7 +711,77 @@ describe('POST /api/import/json-full', () => {
     expect(res.status).toBe(201);
     const list = await ctx.agent.get('/api/accounts');
     const fav = list.body.find((a: { name: string }) => a.name === 'Compte Favori');
-    expect(fav.favorite_order).toBe(3);
+    expect(fav.favorite_order).toBe(0);
+  });
+
+  it('importe un compte clôturé sans favorite_order', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        {
+          ...makeExportAccount(EX_ACC1, 'Compte Clos'),
+          closed_at: '2024-01-01',
+          favorite_order: 3,
+        },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const list = await ctx.agent.get('/api/accounts');
+    const acc = list.body.find((a: { name: string }) => a.name === 'Compte Clos');
+    expect(acc.favorite_order).toBeNull();
+  });
+
+  it('ajoute les favoris importés après les favoris existants en conservant leur ordre', async () => {
+    const a = await ctx.agent.post('/api/accounts').send({
+      name: 'Existant A',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    const b = await ctx.agent.post('/api/accounts').send({
+      name: 'Existant B',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    await ctx.agent.put(`/api/accounts/${a.body.id}/favorite`).send({ favorite: true });
+    await ctx.agent.put(`/api/accounts/${b.body.id}/favorite`).send({ favorite: true });
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [
+        { ...makeExportAccount(EX_ACC1, 'Import Cinq'), favorite_order: 5 },
+        { ...makeExportAccount(EX_ACC2, 'Import Deux'), favorite_order: 2 },
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const list = await ctx.agent.get('/api/accounts');
+    const orderOf = (name: string) =>
+      (list.body as { name: string; favorite_order: number | null }[]).find((x) => x.name === name)
+        ?.favorite_order;
+    expect(orderOf('Import Deux')).toBe(2);
+    expect(orderOf('Import Cinq')).toBe(3);
+  });
+
+  it('importe un ancien export sans la clé favorite_order', async () => {
+    const legacyAccount: Record<string, unknown> = makeExportAccount(EX_ACC1, 'Compte Ancien');
+    delete legacyAccount.favorite_order;
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [legacyAccount],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const list = await ctx.agent.get('/api/accounts');
+    const acc = list.body.find((x: { name: string }) => x.name === 'Compte Ancien');
+    expect(acc.favorite_order).toBeNull();
   });
 
   // ─── buildSubcategoryMap ──────────────────────────────────────────────────

@@ -189,6 +189,11 @@ export function createImportRepo(db: Database) {
   const findAccountByName = db.prepare<[number, string, number | null], { id: number }>(
     `SELECT id FROM accounts WHERE user_id = ? AND name = ? AND bank_id IS ?`,
   );
+  const maxFavoriteOrder = db
+    .prepare<[number], number>(
+      'SELECT COALESCE(MAX(favorite_order), -1) FROM accounts WHERE user_id = ?',
+    )
+    .pluck();
   const insertAccount = db.prepare(
     `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date, closed_at, favorite_order)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -305,6 +310,13 @@ export function createImportRepo(db: Database) {
   ) => {
     const map = new Map<number, number>();
     let created = 0;
+    // Favoris importés ajoutés après ceux de l'utilisateur, ordre relatif conservé
+    const base = (maxFavoriteOrder.get(userId) ?? -1) + 1;
+    const favoriteOrders = new Map<number, number>();
+    accounts
+      .filter((a) => a.favorite_order !== null && a.closed_at === null)
+      .sort((a, b) => (a.favorite_order ?? 0) - (b.favorite_order ?? 0))
+      .forEach((a, index) => favoriteOrders.set(a.id, base + index));
     for (const a of accounts) {
       const resolvedBankId = resolveFromMap(a.bank_id, bankMap) ?? a.bank_id;
       const existing = findAccountByName.get(userId, a.name, resolvedBankId);
@@ -319,7 +331,7 @@ export function createImportRepo(db: Database) {
           a.initial_balance,
           a.opening_date,
           a.closed_at,
-          a.favorite_order,
+          favoriteOrders.get(a.id) ?? null,
         );
         map.set(a.id, Number(res.lastInsertRowid));
         created++;
