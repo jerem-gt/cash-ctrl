@@ -79,6 +79,7 @@ export function initSchema(db: Database) {
             initial_balance INTEGER NOT NULL DEFAULT 0,
             opening_date    TEXT,
             closed_at       TEXT,
+            favorite_order  INTEGER,
             created_at      TEXT             DEFAULT (datetime('now'))
         );
 

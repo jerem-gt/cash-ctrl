@@ -118,6 +118,7 @@ describe('TransactionsList', () => {
             balance_all: 1000,
             opening_date: '',
             closed_at: null,
+            favorite_order: null,
             capital_restant_du: null,
             capital_restant_du_all: null,
           },

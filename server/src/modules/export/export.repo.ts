@@ -54,7 +54,7 @@ export function createExportRepo(db: Database) {
       const accounts = db
         .prepare<[number], FullExportAccount>(
           `SELECT a.id, a.name, a.bank_id, a.account_type_id,
-                  a.initial_balance, a.opening_date, a.closed_at
+                  a.initial_balance, a.opening_date, a.closed_at, a.favorite_order
            FROM accounts a
            WHERE a.user_id = ? ${acctIn}`,
         )

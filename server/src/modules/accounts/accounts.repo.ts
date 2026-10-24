@@ -32,6 +32,7 @@ const ACCOUNT_SELECT = `
          a.initial_balance,
          a.opening_date,
          a.closed_at,
+         a.favorite_order,
          a.created_at,
          COALESCE(b.name, '')           AS bank,
          COALESCE(at.name, '')          AS type,
@@ -106,6 +107,20 @@ export function createAccountsRepo(db: Database) {
   const updateClosedAtStmt = db.prepare(
     'UPDATE accounts SET closed_at = :closedAt WHERE id = :id AND user_id = :userId',
   );
+  const closeStmt = db.prepare(
+    'UPDATE accounts SET closed_at = :closedAt, favorite_order = NULL WHERE id = :id AND user_id = :userId',
+  );
+  const maxFavoriteOrderStmt = db
+    .prepare<{ userId: number }, number>(
+      'SELECT COALESCE(MAX(favorite_order), -1) FROM accounts WHERE user_id = :userId',
+    )
+    .pluck();
+  const setFavoriteOrderStmt = db.prepare(
+    'UPDATE accounts SET favorite_order = :favoriteOrder WHERE id = :id AND user_id = :userId',
+  );
+  const reorderFavoriteStmt = db.prepare(
+    'UPDATE accounts SET favorite_order = :favoriteOrder WHERE id = :id AND user_id = :userId AND favorite_order IS NOT NULL AND closed_at IS NULL',
+  );
   const deleteStmt = db.prepare('DELETE FROM accounts WHERE id = :id AND user_id = :userId');
 
   return {
@@ -145,8 +160,27 @@ export function createAccountsRepo(db: Database) {
         userId,
       }),
 
+    setFavorite: (userId: number, id: number, favorite: boolean) => {
+      if (!favorite) {
+        setFavoriteOrderStmt.run({ favoriteOrder: null, id, userId });
+        return;
+      }
+      const current = getByIdStmt.get({ id, userId });
+      if (current?.favorite_order !== null) return;
+      const next = (maxFavoriteOrderStmt.get({ userId }) ?? -1) + 1;
+      setFavoriteOrderStmt.run({ favoriteOrder: next, id, userId });
+    },
+
+    reorderFavorites: db.transaction(
+      (userId: number, items: { id: number; favorite_order: number }[]) => {
+        for (const item of items) {
+          reorderFavoriteStmt.run({ favoriteOrder: item.favorite_order, id: item.id, userId });
+        }
+      },
+    ),
+
     close: (userId: number, id: number, data: CloseAccountInput) =>
-      updateClosedAtStmt.run({
+      closeStmt.run({
         closedAt: data.closed_at,
         id,
         userId,

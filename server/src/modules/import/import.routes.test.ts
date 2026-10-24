@@ -463,6 +463,7 @@ const EMPTY_EXPORT = {
     initial_balance: number;
     opening_date: string | null;
     closed_at: string | null;
+    favorite_order: number | null;
   }>,
   categories: [] as Array<{
     id: number;
@@ -565,6 +566,7 @@ const makeExportAccount = (id: number, name: string, bankId = EX_BANK1, atId = E
   initial_balance: 0,
   opening_date: null,
   closed_at: null,
+  favorite_order: null,
 });
 
 const makeExportTx = (
@@ -696,6 +698,20 @@ describe('POST /api/import/json-full', () => {
     const res = await ctx.agent.post('/api/import/json-full').send(body);
     expect(res.status).toBe(201);
     expect(res.body.accounts).toBe(1);
+  });
+
+  it('importe favorite_order du compte', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [{ ...makeExportAccount(EX_ACC1, 'Compte Favori'), favorite_order: 3 }],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const list = await ctx.agent.get('/api/accounts');
+    const fav = list.body.find((a: { name: string }) => a.name === 'Compte Favori');
+    expect(fav.favorite_order).toBe(3);
   });
 
   // ─── buildSubcategoryMap ──────────────────────────────────────────────────

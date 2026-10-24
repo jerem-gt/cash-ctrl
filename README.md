@@ -36,7 +36,7 @@ L'interface suit la préférence système et se bascule manuellement (Clair / So
 
 | Domaine                 | Détail                                                                                                                                                                                              |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Comptes**             | Multi-comptes, multi-banques avec logos auto                                                                                                                                                        |
+| **Comptes**             | Multi-comptes, multi-banques avec logos auto, favoris ordonnables                                                                                                                                   |
 | **Transactions**        | Revenus / dépenses, catégories, sous-catégories, notes, fractionnement                                                                                                                              |
 | **Transferts**          | Double écriture atomique entre comptes                                                                                                                                                              |
 | **Planifiées**          | Récurrence flexible (jour / semaine / mois / an), gestion jours fériés                                                                                                                              |

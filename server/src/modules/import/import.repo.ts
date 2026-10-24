@@ -190,8 +190,8 @@ export function createImportRepo(db: Database) {
     `SELECT id FROM accounts WHERE user_id = ? AND name = ? AND bank_id IS ?`,
   );
   const insertAccount = db.prepare(
-    `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date, closed_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date, closed_at, favorite_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const findCategoryByName = db.prepare<[number, string], { id: number }>(
     `SELECT id FROM categories WHERE user_id = ? AND name = ?`,
@@ -319,6 +319,7 @@ export function createImportRepo(db: Database) {
           a.initial_balance,
           a.opening_date,
           a.closed_at,
+          a.favorite_order,
         );
         map.set(a.id, Number(res.lastInsertRowid));
         created++;

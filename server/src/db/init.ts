@@ -40,6 +40,7 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
     db.exec(`
       ALTER TABLE banks RENAME COLUMN domain TO login_url;
     `),
+  (db) => db.exec('ALTER TABLE accounts ADD COLUMN favorite_order INTEGER;'),
 ];
 
 function runMigrations(db: DatabaseType) {

@@ -24,7 +24,8 @@
     "not_found_or_not_owned": "Compte introuvable ou n'appartenant pas à l'utilisateur",
     "already_closed": "Ce compte est déjà clôturé",
     "not_closed": "Ce compte n'est pas clôturé",
-    "close_requires_zero_or_target": "Le solde doit être nul ou un compte de destination est requis"
+    "close_requires_zero_or_target": "Le solde doit être nul ou un compte de destination est requis",
+    "favorite_closed": "Un compte clôturé ne peut pas être favori"
   },
   "account_type": {
     "not_found": "Type de compte introuvable",

@@ -23,6 +23,12 @@ export const closeSchema = z.object({
   transfer_to_account_id: z.number().int().positive().optional(),
 });
 
+export const favoriteSchema = z.object({ favorite: z.boolean() });
+
+export const favoritesReorderSchema = z.array(
+  z.object({ id: z.number().int(), favorite_order: z.number().int() }),
+);
+
 export function createAccountsRouter(db: Database): Router {
   const accountsRepo = createAccountsRepo(db);
   const loansRepo = createLoansRepo(db);
@@ -40,6 +46,37 @@ export function createAccountsRouter(db: Database): Router {
     const userId = sessionUserId(req);
     const result = accountsRepo.create(userId, data);
     res.status(201).json(accountsRepo.getById(Number(result.lastInsertRowid), userId));
+  });
+
+  router.put('/favorites/reorder', (req, res) => {
+    const data = parseBody(res, favoritesReorderSchema, req.body);
+    if (!data) return;
+    const userId = sessionUserId(req);
+    if (data.some((item) => !accountsRepo.exists(item.id, userId))) {
+      sendError(res, 404, 'account.not_found');
+      return;
+    }
+    accountsRepo.reorderFavorites(userId, data);
+    res.json({ ok: true });
+  });
+
+  router.put('/:id/favorite', (req, res) => {
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
+    const userId = sessionUserId(req);
+    const account = accountsRepo.getById(id, userId);
+    if (!account) {
+      sendError(res, 404, 'account.not_found');
+      return;
+    }
+    const data = parseBody(res, favoriteSchema, req.body);
+    if (!data) return;
+    if (data.favorite && account.closed_at) {
+      sendError(res, 409, 'account.favorite_closed');
+      return;
+    }
+    accountsRepo.setFavorite(userId, id, data.favorite);
+    res.json(accountsRepo.getById(id, userId));
   });
 
   router.put('/:id', (req, res) => {

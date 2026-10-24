@@ -324,3 +324,127 @@ describe('POST /api/accounts/:id/reopen', () => {
     expect(account.closed_at).toBeNull();
   });
 });
+
+describe('favoris', () => {
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    ctx = await createTestContext();
+  });
+
+  async function createAccount(name: string) {
+    const res = await ctx.agent.post('/api/accounts').send({
+      name,
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      initial_balance: 0,
+      opening_date: '2024-01-01',
+    });
+    return res.body.id as number;
+  }
+
+  const setFavorite = (id: number, favorite: boolean) =>
+    ctx.agent.put(`/api/accounts/${id}/favorite`).send({ favorite });
+
+  it('un nouveau compte n est pas favori', async () => {
+    const id = await createAccount('A');
+    const res = await ctx.agent.get('/api/accounts');
+    expect(res.body.find((a: { id: number }) => a.id === id).favorite_order).toBeNull();
+  });
+
+  it('PUT /:id/favorite ajoute en fin de liste', async () => {
+    const a = await createAccount('A');
+    const b = await createAccount('B');
+    const resA = await setFavorite(a, true);
+    const resB = await setFavorite(b, true);
+    expect(resA.status).toBe(200);
+    expect(resA.body.favorite_order).toBe(0);
+    expect(resB.body.favorite_order).toBe(1);
+  });
+
+  it('PUT /:id/favorite est sans effet si déjà favori', async () => {
+    const a = await createAccount('A');
+    const b = await createAccount('B');
+    await setFavorite(a, true);
+    await setFavorite(b, true);
+    const res = await setFavorite(a, true);
+    expect(res.body.favorite_order).toBe(0);
+  });
+
+  it('PUT /:id/favorite avec false remet à NULL', async () => {
+    const a = await createAccount('A');
+    await setFavorite(a, true);
+    const res = await setFavorite(a, false);
+    expect(res.status).toBe(200);
+    expect(res.body.favorite_order).toBeNull();
+  });
+
+  it('PUT /:id/favorite retourne 400 si le corps est invalide', async () => {
+    const a = await createAccount('A');
+    const res = await ctx.agent.put(`/api/accounts/${a}/favorite`).send({ favorite: 'oui' });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /:id/favorite retourne 404 si le compte est inconnu', async () => {
+    const res = await setFavorite(99999, true);
+    expect(res.status).toBe(404);
+  });
+
+  it('PUT /:id/favorite retourne 409 pour un compte clôturé', async () => {
+    const a = await createAccount('A');
+    await ctx.agent.post(`/api/accounts/${a}/close`).send({ closed_at: '2025-01-01' });
+    const res = await setFavorite(a, true);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('account.favorite_closed');
+  });
+
+  it('PUT /favorites/reorder réordonne les favoris', async () => {
+    const a = await createAccount('A');
+    const b = await createAccount('B');
+    await setFavorite(a, true);
+    await setFavorite(b, true);
+    const res = await ctx.agent.put('/api/accounts/favorites/reorder').send([
+      { id: a, favorite_order: 1 },
+      { id: b, favorite_order: 0 },
+    ]);
+    expect(res.status).toBe(200);
+    const list = await ctx.agent.get('/api/accounts');
+    const byId = (id: number) =>
+      (list.body as { id: number; favorite_order: number | null }[]).find((x) => x.id === id)!;
+    expect(byId(a).favorite_order).toBe(1);
+    expect(byId(b).favorite_order).toBe(0);
+  });
+
+  it('PUT /favorites/reorder ignore les comptes non favoris', async () => {
+    const a = await createAccount('A');
+    const res = await ctx.agent
+      .put('/api/accounts/favorites/reorder')
+      .send([{ id: a, favorite_order: 5 }]);
+    expect(res.status).toBe(200);
+    const list = await ctx.agent.get('/api/accounts');
+    expect(list.body.find((x: { id: number }) => x.id === a).favorite_order).toBeNull();
+  });
+
+  it('PUT /favorites/reorder retourne 400 si le corps est invalide', async () => {
+    const res = await ctx.agent.put('/api/accounts/favorites/reorder').send({ id: 1 });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /favorites/reorder retourne 404 si un id est inconnu', async () => {
+    const res = await ctx.agent
+      .put('/api/accounts/favorites/reorder')
+      .send([{ id: 99999, favorite_order: 0 }]);
+    expect(res.status).toBe(404);
+  });
+
+  it('la clôture retire le favori et la réouverture ne le restaure pas', async () => {
+    const a = await createAccount('A');
+    await setFavorite(a, true);
+    const closed = await ctx.agent
+      .post(`/api/accounts/${a}/close`)
+      .send({ closed_at: '2025-01-01' });
+    expect(closed.body.favorite_order).toBeNull();
+    const reopened = await ctx.agent.post(`/api/accounts/${a}/reopen`);
+    expect(reopened.body.favorite_order).toBeNull();
+  });
+});

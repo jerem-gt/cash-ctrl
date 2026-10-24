@@ -1,14 +1,33 @@
 import type { Account } from '@cashctrl/types';
 import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Archive,
   ArchiveRestore,
   ChevronDown,
   ChevronUp,
+  GripVertical,
   Pencil,
   Plus,
+  Star,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
@@ -31,6 +50,8 @@ import {
   useAccounts,
   useDeleteAccount,
   useReopenAccount,
+  useReorderFavorites,
+  useToggleFavorite,
   useUpdateAccount,
 } from '@/hooks/useAccounts';
 import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
@@ -41,6 +62,7 @@ import {
   accountDisplayBalance,
   accountSeniority,
   bankSortOrderMap,
+  favoriteAccounts,
   groupAccountsByBank,
 } from '@/lib/account';
 import { fmtCurrency, fmtDate } from '@/lib/format';
@@ -89,6 +111,12 @@ export default function AccountsPage() {
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const reopenAccount = useReopenAccount();
+  const toggleFavorite = useToggleFavorite();
+  const reorderFavorites = useReorderFavorites();
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
   const [loanToEdit, setLoanToEdit] = useState<Account | null>(null);
@@ -98,6 +126,8 @@ export default function AccountsPage() {
 
   const activeAccounts = useMemo(() => accounts.filter((a) => !a.closed_at), [accounts]);
   const closedAccounts = useMemo(() => accounts.filter((a) => !!a.closed_at), [accounts]);
+
+  const favorites = useMemo(() => favoriteAccounts(accounts), [accounts]);
 
   const groups = useMemo(() => {
     if (groupBy === 'type') {
@@ -120,6 +150,19 @@ export default function AccountsPage() {
     reopenAccount.mutate(accountId, {
       onSuccess: () => showToast(t('page.reopen_success')),
     });
+  };
+
+  const handleToggleFavorite = (acc: Account) => {
+    toggleFavorite.mutate({ id: acc.id, favorite: acc.favorite_order === null });
+  };
+
+  const handleFavoritesDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = favorites.findIndex((a) => a.id === active.id);
+    const newIndex = favorites.findIndex((a) => a.id === over.id);
+    const reordered = arrayMove(favorites, oldIndex, newIndex);
+    reorderFavorites.mutate(reordered.map((a, i) => ({ id: a.id, favorite_order: i })));
   };
 
   const handleDeleteAccount = (accountId: number) => {
@@ -200,6 +243,40 @@ export default function AccountsPage() {
         <Empty>{t('page.no_accounts')}</Empty>
       ) : (
         <div className="space-y-6">
+          {/* Favoris */}
+          {favorites.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-3 text-xs font-semibold uppercase tracking-widest text-content-subtle">
+                <Star size={13} strokeWidth={2} />
+                {t('page.favorites_section')}
+              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleFavoritesDragEnd}
+              >
+                <SortableContext items={favorites.map((a) => a.id)} strategy={rectSortingStrategy}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favorites.map((acc) => (
+                      <SortableFavoriteCard
+                        key={acc.id}
+                        acc={acc}
+                        logoMap={logoMap}
+                        showBank
+                        onEdit={() =>
+                          acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
+                        }
+                        onDelete={() => setAccountToDelete(acc)}
+                        onClose={() => setAccountToClose(acc)}
+                        onToggleFavorite={() => handleToggleFavorite(acc)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
+
           {/* Groupement */}
           {groups.length > 0 && (
             <div className="flex justify-end">
@@ -250,6 +327,7 @@ export default function AccountsPage() {
                       }
                       onDelete={() => setAccountToDelete(acc)}
                       onClose={() => setAccountToClose(acc)}
+                      onToggleFavorite={() => handleToggleFavorite(acc)}
                     />
                   ))}
                 </div>
@@ -338,6 +416,48 @@ export default function AccountsPage() {
   );
 }
 
+type AccountCardProps = Readonly<{
+  acc: Account;
+  logoMap: Record<string, string | null>;
+  showBank?: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  onClose?: () => void;
+  onReopen?: () => void;
+  onToggleFavorite?: () => void;
+}>;
+
+function SortableFavoriteCard(props: AccountCardProps) {
+  const { t } = useTranslation('accounts');
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.acc.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 20 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <AccountCard
+        {...props}
+        dragHandle={
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label={t('page.reorder_favorite', { name: props.acc.name })}
+            className="p-1.5 text-content-faint hover:text-content-muted cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical size={18} strokeWidth={1.5} />
+          </button>
+        }
+      />
+    </div>
+  );
+}
+
 function AccountCard({
   acc,
   logoMap,
@@ -346,15 +466,9 @@ function AccountCard({
   onDelete,
   onClose,
   onReopen,
-}: Readonly<{
-  acc: Account;
-  logoMap: Record<string, string | null>;
-  showBank?: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onClose?: () => void;
-  onReopen?: () => void;
-}>) {
+  onToggleFavorite,
+  dragHandle,
+}: AccountCardProps & Readonly<{ dragHandle?: ReactNode }>) {
   const { t } = useTranslation('accounts');
   const isClosed = acc.closed_at !== null;
   const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
@@ -450,18 +564,36 @@ function AccountCard({
         </div>
       </div>
       <p className={`font-display text-3xl ${balanceClass}`}>{fmtCurrency(displayBal)}</p>
-      <div className="mt-4">
+      <div className="relative z-10 mt-4 flex items-center justify-between gap-2">
         {isClosed && acc.closed_at ? (
           <p className="text-[11px] text-content-subtle uppercase tracking-wider font-medium">
             {t('page.closed_on', { date: fmtDate(acc.closed_at) })}
           </p>
         ) : (
-          acc.opening_date && (
-            <p className="text-[11px] text-content-faint uppercase tracking-wider font-medium">
-              {accountSeniority(acc.opening_date, t)}
-            </p>
-          )
+          <p className="text-[11px] text-content-faint uppercase tracking-wider font-medium">
+            {acc.opening_date && accountSeniority(acc.opening_date, t)}
+          </p>
         )}
+        <div className="flex items-center shrink-0 -my-1.5">
+          {dragHandle}
+          {!isClosed && onToggleFavorite && (
+            <IconButton
+              label={
+                acc.favorite_order === null ? t('page.add_favorite') : t('page.remove_favorite')
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+            >
+              <Star
+                size={18}
+                strokeWidth={1.5}
+                className={acc.favorite_order === null ? '' : 'fill-current text-warning'}
+              />
+            </IconButton>
+          )}
+        </div>
       </div>
     </div>
   );

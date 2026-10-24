@@ -1,8 +1,11 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ACCOUNTS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 
 import { Sidebar } from './Sidebar';
 
@@ -111,5 +114,34 @@ describe('Sidebar', () => {
     onClose.mockClear();
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Sidebar - favoris', () => {
+  it("n'affiche pas la section Favoris sans favori", async () => {
+    renderSidebar();
+    await screen.findByText('Compte test');
+    expect(screen.queryByText('Favoris')).not.toBeInTheDocument();
+  });
+
+  it("affiche la section Favoris dans l'ordre en tête de liste", async () => {
+    server.use(
+      http.get('/api/accounts', () =>
+        HttpResponse.json(
+          ACCOUNTS.map((a) => {
+            if (a.id === 2) return { ...a, favorite_order: 0 };
+            if (a.id === 1) return { ...a, favorite_order: 1 };
+            return a;
+          }),
+        ),
+      ),
+    );
+    renderSidebar();
+    await screen.findByText('Favoris');
+    const links = screen
+      .getAllByRole('link')
+      .filter((l) => l.getAttribute('href')?.startsWith('/accounts/'));
+    expect(links[0]).toHaveAttribute('href', '/accounts/2');
+    expect(links[1]).toHaveAttribute('href', '/accounts/1');
   });
 });

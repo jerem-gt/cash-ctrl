@@ -81,7 +81,11 @@
     "edit_account": "Edit account",
     "close_account": "Close account",
     "reopen_account": "Reopen account",
-    "delete_account": "Delete account"
+    "delete_account": "Delete account",
+    "favorites_section": "Favorites",
+    "add_favorite": "Add to favorites",
+    "remove_favorite": "Remove from favorites",
+    "reorder_favorite": "Reorder favorite {{name}}"
   },
   "profitability": {
     "title": "Return",
