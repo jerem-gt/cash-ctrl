@@ -28,6 +28,11 @@ describe('TxMetaFields', () => {
     expect(screen.getByDisplayValue('2026-06-13')).toBeInTheDocument();
   });
 
+  it('relie le libellé Date au champ', () => {
+    renderFields();
+    expect(screen.getByLabelText('Date')).toHaveValue('2026-06-13');
+  });
+
   it('appelle onDateChange quand la date change', () => {
     const onDateChange = vi.fn();
     renderFields({ onDateChange });
