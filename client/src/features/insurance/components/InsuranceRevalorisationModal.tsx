@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { useRevalorisation } from '@/features/insurance/hooks/useInsurance';
 import { today } from '@/lib/dateUtils';
 import { fmtCurrency } from '@/lib/format';
@@ -63,13 +63,7 @@ export function InsuranceRevalorisationModal({ accountId, support, onClose }: Re
         </div>
 
         <FormGroup label={tc('date')} htmlFor="reval-date">
-          <Input
-            id="reval-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
+          <DateInput id="reval-date" value={date} onChange={setDate} required />
         </FormGroup>
 
         <div className="flex gap-2 justify-end mt-1">

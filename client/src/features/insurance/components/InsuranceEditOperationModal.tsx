@@ -2,7 +2,7 @@ import type { InsuranceOperation } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { useUpdateInsuranceOperation } from '@/features/insurance/hooks/useInsurance';
 
 interface Props {
@@ -81,7 +81,7 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
             />
           </FormGroup>
 
-          <div className="flex gap-3 items-end">
+          <div className="flex flex-wrap gap-3 items-end">
             {hasFees && (
               <FormGroup label={t('edit_operation_modal.fees_label')} htmlFor="edit-op-fees">
                 <DecimalInput
@@ -103,14 +103,8 @@ export function InsuranceEditOperationModal({ accountId, op, onClose }: Readonly
                 />
               </FormGroup>
             )}
-            <FormGroup label={tc('date')} htmlFor="edit-op-date" className="min-w-36">
-              <Input
-                id="edit-op-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
+            <FormGroup label={tc('date')} htmlFor="edit-op-date" className="min-w-56">
+              <DateInput id="edit-op-date" value={date} onChange={setDate} required />
             </FormGroup>
           </div>
 

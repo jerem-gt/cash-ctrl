@@ -2,7 +2,7 @@ import type { StockPosition } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import { Button, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
 import { useTransferStock } from '@/features/portfolio/hooks/useStocks';
 import { useAccounts } from '@/hooks/useAccounts';
 import { today } from '@/lib/dateUtils';
@@ -85,7 +85,7 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
           )}
         </FormGroup>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <FormGroup
             label={t('transfer_modal.quantity_label', { max: position.quantity })}
             htmlFor="tf-quantity"
@@ -102,13 +102,8 @@ export function TransferStockModal({ accountId, position, onClose }: Readonly<Pr
               autoFocus
             />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="tf-date">
-            <Input
-              id="tf-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+          <FormGroup label={tc('date')} htmlFor="tf-date" className="min-w-56">
+            <DateInput id="tf-date" value={date} onChange={setDate} />
           </FormGroup>
         </div>
 
