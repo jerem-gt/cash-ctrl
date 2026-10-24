@@ -6,6 +6,8 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useMatchCategorizationRule } from '@/hooks/useCategorizationRules';
 import { transferLabel } from '@/lib/transfer-label';
 
+export const TX_AMOUNT_INPUT_ID = 'tx-amount-input';
+
 export interface TxCoreState {
   type: 'income' | 'expense';
   amount: string;
@@ -115,6 +117,7 @@ export function TxCoreFields({
         )}
         <FormGroup label={t('tx_core.amount')}>
           <DecimalInput
+            id={TX_AMOUNT_INPUT_ID}
             value={value.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
             placeholder="0,00"

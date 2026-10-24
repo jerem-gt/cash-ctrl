@@ -22,6 +22,9 @@ export const queryKeys = {
     ['account-balance-history', accountId, days] as const,
   accountBalanceHistoryAll: () => ['account-balance-history'] as const,
 
+  frequentTransactions: (accountId: number) => ['frequent-transactions', accountId] as const,
+  frequentTransactionsAll: () => ['frequent-transactions'] as const,
+
   transactions: {
     all: () => ['transactions'] as const,
     list: (filters?: TransactionFilters) => ['transactions', filters] as const,

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TRANSACTIONS } from '@/tests/fixtures';
+import { FREQUENT_TRANSACTIONS, TRANSACTIONS } from '@/tests/fixtures';
 import { server } from '@/tests/msw/server';
 
 import {
@@ -13,6 +13,7 @@ import {
   useCreateTransfer,
   useDeleteTransaction,
   useDeleteTransfer,
+  useFrequentTransactions,
   useTransactions,
   useUpdateTransaction,
   useUpdateTransfer,
@@ -26,6 +27,26 @@ function createWrapper() {
   }
   return Object.assign(Wrapper, { qc });
 }
+
+describe('useFrequentTransactions', () => {
+  it("charge les suggestions du compte depuis l'API", async () => {
+    server.use(
+      http.get('/api/accounts/:id/frequent-transactions', () =>
+        HttpResponse.json(FREQUENT_TRANSACTIONS),
+      ),
+    );
+    const { result } = renderHook(() => useFrequentTransactions(1), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(FREQUENT_TRANSACTIONS);
+  });
+
+  it("ne requête pas tant qu'aucun compte n'est défini", () => {
+    const { result } = renderHook(() => useFrequentTransactions(undefined), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+});
 
 describe('useTransactions', () => {
   it('est en chargement initialement', () => {

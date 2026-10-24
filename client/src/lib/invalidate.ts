@@ -20,7 +20,11 @@ export function invalidateBalances(qc: QueryClient) {
 }
 
 export function invalidateTransactions(qc: QueryClient) {
-  invalidateAll(qc, [queryKeys.transactions.all()]);
+  invalidateAll(qc, [queryKeys.transactions.all(), queryKeys.frequentTransactionsAll()]);
+}
+
+export function invalidateFrequentTransactions(qc: QueryClient) {
+  invalidateAll(qc, [queryKeys.frequentTransactionsAll()]);
 }
 
 // Positions et opérations de bourse, tous comptes confondus.

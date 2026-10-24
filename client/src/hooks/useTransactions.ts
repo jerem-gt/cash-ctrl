@@ -13,9 +13,14 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
-import { transactionsApi, transfersApi } from '@/api/client';
+import { accountsApi, transactionsApi, transfersApi } from '@/api/client';
 import { fireAndForget } from '@/lib/async';
-import { invalidateBalances, invalidatePortfolio, invalidateTransactions } from '@/lib/invalidate';
+import {
+  invalidateBalances,
+  invalidateFrequentTransactions,
+  invalidatePortfolio,
+  invalidateTransactions,
+} from '@/lib/invalidate';
 import { queryKeys } from '@/lib/queryKeys';
 
 type UpdatePayload = UpdateTransactionPayload & { id: number };
@@ -35,6 +40,14 @@ export function useTransactions(filters?: TransactionFilters) {
     // Garde l'ancienne page affichée pendant le chargement de la suivante
     // (pagination/filtres fluides, sans flash de spinner).
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useFrequentTransactions(accountId: number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.frequentTransactions(accountId ?? 0),
+    queryFn: () => accountsApi.frequentTransactions(accountId!),
+    enabled: accountId !== undefined,
   });
 }
 
@@ -118,6 +131,7 @@ export function useUpdateTransaction() {
     mutationFn: ({ id, ...data }: UpdatePayload) => transactionsApi.update(id, data),
     onSuccess: (updated) => {
       patchTransactionLists(qc, updated);
+      invalidateFrequentTransactions(qc);
       invalidateBalances(qc);
     },
   });
@@ -134,6 +148,7 @@ export function useUpdateTransfer() {
         date: updated.date,
         validated: updated.validated,
       });
+      invalidateFrequentTransactions(qc);
       invalidateBalances(qc);
     },
   });

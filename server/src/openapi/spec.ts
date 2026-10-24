@@ -292,6 +292,15 @@ export function buildOpenApiSpec() {
           responses: { ...r200(), ...r404 },
         },
       },
+      '/api/accounts/{id}/frequent-transactions': {
+        get: {
+          tags: ['Accounts'],
+          summary: 'Transactions fréquentes du compte (6 derniers mois)',
+          security: sessionAuth,
+          parameters: pId,
+          responses: { ...r200(), ...r404 },
+        },
+      },
       '/api/accounts/{id}/close': {
         post: {
           tags: ['Accounts'],

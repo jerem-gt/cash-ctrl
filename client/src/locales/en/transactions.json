@@ -101,6 +101,10 @@
     "account_dest": "Destination account",
     "payment_method": "Payment method"
   },
+  "frequent": {
+    "label": "Suggestions",
+    "title": "{{category}} › {{subcategory}} · ×{{times}}"
+  },
   "modal": {
     "title_edit": "Edit transaction",
     "title_duplicate_transfer": "Duplicate transfer",
