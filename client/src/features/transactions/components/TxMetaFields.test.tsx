@@ -35,6 +35,14 @@ describe('TxMetaFields', () => {
     expect(onDateChange).toHaveBeenCalledWith('2026-07-01');
   });
 
+  it('appelle onDateChange avec le lendemain au clic sur +', async () => {
+    const user = userEvent.setup();
+    const onDateChange = vi.fn();
+    renderFields({ onDateChange });
+    await user.click(screen.getByRole('button', { name: 'Jour suivant' }));
+    expect(onDateChange).toHaveBeenCalledWith('2026-06-14');
+  });
+
   it('affiche la textarea de notes', () => {
     renderFields({ notes: 'Note initiale' });
     expect(screen.getByDisplayValue('Note initiale')).toBeInTheDocument();

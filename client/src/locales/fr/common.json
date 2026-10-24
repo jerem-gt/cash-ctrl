@@ -18,6 +18,8 @@
   "amount": "Montant (€)",
   "fees": "Frais (€)",
   "date": "Date",
+  "date_prev_day": "Jour précédent",
+  "date_next_day": "Jour suivant",
   "today": "Aujourd'hui",
   "transfer": "Transfert",
   "validate": "Valider",
