@@ -114,7 +114,8 @@ export default function AccountsPage() {
   const toggleFavorite = useToggleFavorite();
   const reorderFavorites = useReorderFavorites();
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    // Seuil de déplacement : un simple tap sur la poignée ne démarre pas de drag
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
@@ -150,6 +151,14 @@ export default function AccountsPage() {
     reopenAccount.mutate(accountId, {
       onSuccess: () => showToast(t('page.reopen_success')),
     });
+  };
+
+  const handleEdit = (acc: Account) => {
+    if (acc.envelope_type === 'loan') {
+      setLoanToEdit(acc);
+    } else {
+      setAccountToEdit(acc);
+    }
   };
 
   const handleToggleFavorite = (acc: Account) => {
@@ -263,9 +272,7 @@ export default function AccountsPage() {
                         acc={acc}
                         logoMap={logoMap}
                         showBank
-                        onEdit={() =>
-                          acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
-                        }
+                        onEdit={() => handleEdit(acc)}
                         onDelete={() => setAccountToDelete(acc)}
                         onClose={() => setAccountToClose(acc)}
                         onToggleFavorite={() => handleToggleFavorite(acc)}
@@ -322,9 +329,7 @@ export default function AccountsPage() {
                       acc={acc}
                       logoMap={logoMap}
                       showBank={groupBy === 'type'}
-                      onEdit={() =>
-                        acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
-                      }
+                      onEdit={() => handleEdit(acc)}
                       onDelete={() => setAccountToDelete(acc)}
                       onClose={() => setAccountToClose(acc)}
                       onToggleFavorite={() => handleToggleFavorite(acc)}
@@ -355,9 +360,7 @@ export default function AccountsPage() {
                       acc={acc}
                       logoMap={logoMap}
                       showBank
-                      onEdit={() =>
-                        acc.envelope_type === 'loan' ? setLoanToEdit(acc) : setAccountToEdit(acc)
-                      }
+                      onEdit={() => handleEdit(acc)}
                       onDelete={() => setAccountToDelete(acc)}
                       onReopen={() => handleReopenAccount(acc.id)}
                     />
