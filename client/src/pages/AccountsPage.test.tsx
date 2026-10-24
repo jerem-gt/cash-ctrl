@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ACCOUNTS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -159,5 +160,101 @@ describe('AccountsPage', () => {
     await waitFor(() => {
       expect(document.getElementById('toast')?.textContent).toMatch(/réouvert/i);
     });
+  });
+});
+
+describe('AccountsPage - favoris', () => {
+  const withFavorites = () =>
+    server.use(
+      http.get('/api/accounts', () =>
+        HttpResponse.json(
+          ACCOUNTS.map((a) => {
+            if (a.id === 2) return { ...a, favorite_order: 0 };
+            if (a.id === 1) return { ...a, favorite_order: 1 };
+            return a;
+          }),
+        ),
+      ),
+    );
+
+  it("masque la section Favoris s'il n'y a aucun favori", async () => {
+    renderAccountsPage();
+    await screen.findByText('BNP');
+    expect(screen.queryByText('Favoris')).not.toBeInTheDocument();
+  });
+
+  it("affiche la section Favoris dans l'ordre et garde les comptes dans leur groupe", async () => {
+    withFavorites();
+    renderAccountsPage();
+    await screen.findByText('Favoris');
+    const links = screen.getAllByRole('link', { name: /Voir les transactions/ });
+    expect(links[0]).toHaveAccessibleName(/Livret A/);
+    expect(links[1]).toHaveAccessibleName(/Compte test/);
+    expect(screen.getAllByText('Livret A')).toHaveLength(2);
+  });
+
+  it('affiche une étoile non remplie et ajoute aux favoris au clic', async () => {
+    const user = userEvent.setup();
+    let body: unknown = null;
+    server.use(
+      http.put('/api/accounts/:id/favorite', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...ACCOUNTS[0], favorite_order: 0 });
+      }),
+    );
+    renderAccountsPage();
+    await screen.findByText('BNP');
+    const stars = screen.getAllByRole('button', { name: 'Mettre en favori' });
+    await user.click(stars[0]);
+    await waitFor(() => expect(body).toEqual({ favorite: true }));
+  });
+
+  it('retire des favoris au clic sur une étoile remplie', async () => {
+    const user = userEvent.setup();
+    let body: unknown = null;
+    withFavorites();
+    server.use(
+      http.put('/api/accounts/:id/favorite', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...ACCOUNTS[1], favorite_order: null });
+      }),
+    );
+    renderAccountsPage();
+    await screen.findByText('Favoris');
+    await user.click(screen.getAllByRole('button', { name: 'Retirer des favoris' })[0]);
+    await waitFor(() => expect(body).toEqual({ favorite: false }));
+  });
+
+  it("affiche un toast d'erreur si le basculement échoue", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.put('/api/accounts/:id/favorite', () =>
+        HttpResponse.json({ error: 'Refusé' }, { status: 409 }),
+      ),
+    );
+    renderAccountsPage();
+    await screen.findByText('BNP');
+    await user.click(screen.getAllByRole('button', { name: 'Mettre en favori' })[0]);
+    expect(await screen.findByText('Refusé')).toBeInTheDocument();
+  });
+
+  it('expose une poignée de réordonnancement par favori', async () => {
+    withFavorites();
+    renderAccountsPage();
+    await screen.findByText('Favoris');
+    expect(screen.getAllByRole('button', { name: /Réordonner le favori/ })).toHaveLength(2);
+  });
+
+  it("n'affiche pas d'étoile sur un compte clôturé", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/accounts', () =>
+        HttpResponse.json([{ ...ACCOUNTS[0], closed_at: '2025-01-01' }]),
+      ),
+    );
+    renderAccountsPage();
+    await user.click(await screen.findByRole('button', { name: /Comptes clôturés/ }));
+    await screen.findByText('Compte test');
+    expect(screen.queryByRole('button', { name: 'Mettre en favori' })).not.toBeInTheDocument();
   });
 });

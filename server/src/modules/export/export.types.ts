@@ -19,6 +19,7 @@ export interface FullExportAccount {
   initial_balance: number;
   opening_date: string | null;
   closed_at: string | null;
+  favorite_order: number | null;
 }
 
 export interface FullExportSubcategory {

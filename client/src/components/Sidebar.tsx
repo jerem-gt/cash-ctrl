@@ -9,6 +9,7 @@ import {
   Power,
   Search,
   Settings,
+  Star,
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -27,7 +28,7 @@ import { useLogout } from '@/hooks/useAuth';
 import { useBanks } from '@/hooks/useBanks';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { accountDisplayBalance } from '@/lib/account';
+import { accountDisplayBalance, favoriteAccounts } from '@/lib/account';
 import { fmt } from '@/lib/format';
 import { isMacPlatform } from '@/lib/platform';
 import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
@@ -131,6 +132,44 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
         accounts: accs,
       }));
   }, [accounts, groupBy, bankSortOrder, t]);
+  const renderAccountLink = (acc: Account, compact = false) => {
+    const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
+    return (
+      <NavLink
+        key={acc.id}
+        to={`/accounts/${acc.id}`}
+        onMouseEnter={() => prefetchAccountDetail(qc, acc.id)}
+        className={({ isActive }: { isActive: boolean }) =>
+          `flex items-center justify-between pl-6 pr-3 ${compact ? 'py-1' : 'py-1.5'} gap-2 text-xs transition-all duration-100 ${
+            isActive
+              ? 'bg-white/8 text-white/90'
+              : 'text-white/40 hover:text-white/70 hover:bg-white/4'
+          }`
+        }
+      >
+        <span className="flex items-center gap-1.5 min-w-0">
+          {logo ? (
+            <img
+              src={logo}
+              alt=""
+              className="w-4 h-4 object-contain rounded shrink-0 opacity-60"
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          ) : (
+            acc.bank && <span className="w-4 h-4 rounded bg-white/10 shrink-0 inline-block" />
+          )}
+          <span className="truncate">{acc.name}</span>
+        </span>
+        <span
+          className={`tabular-nums shrink-0 ${accountDisplayBalance(acc) < 0 ? 'text-red-400/70' : ''}`}
+        >
+          {fmt(accountDisplayBalance(acc))}
+        </span>
+      </NavLink>
+    );
+  };
+
+  const favorites = useMemo(() => favoriteAccounts(accounts), [accounts]);
   const soldeTotal = useMemo(
     () =>
       groups.reduce(
@@ -201,6 +240,17 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
 
         {/* Nav */}
         <nav className="flex-1 py-4 flex flex-col overflow-hidden">
+          {favorites.length > 0 && (
+            <div className="shrink-0 mb-2 pb-2 border-b border-white/[0.07]">
+              <div className="flex items-center gap-1.5 px-6 py-2 text-xs uppercase tracking-[0.2em] text-white/30 font-semibold select-none">
+                <Star className="h-3 w-3" />
+                <span>{t('favorites_section')}</span>
+              </div>
+              <div className="max-h-40 overflow-y-auto overflow-x-hidden">
+                {favorites.map((acc) => renderAccountLink(acc, true))}
+              </div>
+            </div>
+          )}
           <div className="flex flex-col flex-1 overflow-hidden">
             <NavLink
               to="/accounts"
@@ -259,45 +309,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                             </button>
                           </span>
                         </div>
-                        {!isCollapsed &&
-                          group.accounts.map((acc) => {
-                            const logo = acc.bank ? (logoMap[acc.bank] ?? null) : null;
-                            return (
-                              <NavLink
-                                key={acc.id}
-                                to={`/accounts/${acc.id}`}
-                                onMouseEnter={() => prefetchAccountDetail(qc, acc.id)}
-                                className={({ isActive }: { isActive: boolean }) =>
-                                  `flex items-center justify-between pl-6 pr-3 py-1.5 gap-2 text-xs transition-all duration-100 ${
-                                    isActive
-                                      ? 'bg-white/8 text-white/90'
-                                      : 'text-white/40 hover:text-white/70 hover:bg-white/4'
-                                  }`
-                                }
-                              >
-                                <span className="flex items-center gap-1.5 min-w-0">
-                                  {logo ? (
-                                    <img
-                                      src={logo}
-                                      alt=""
-                                      className="w-4 h-4 object-contain rounded shrink-0 opacity-60"
-                                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                                    />
-                                  ) : (
-                                    acc.bank && (
-                                      <span className="w-4 h-4 rounded bg-white/10 shrink-0 inline-block" />
-                                    )
-                                  )}
-                                  <span className="truncate">{acc.name}</span>
-                                </span>
-                                <span
-                                  className={`tabular-nums shrink-0 ${accountDisplayBalance(acc) < 0 ? 'text-red-400/70' : ''}`}
-                                >
-                                  {fmt(accountDisplayBalance(acc))}
-                                </span>
-                              </NavLink>
-                            );
-                          })}
+                        {!isCollapsed && group.accounts.map((acc) => renderAccountLink(acc))}
                       </div>
                     );
                   })}

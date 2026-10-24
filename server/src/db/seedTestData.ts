@@ -165,6 +165,10 @@ export function seedTestData(db: Database) {
   );
   db.prepare('UPDATE accounts SET closed_at = ? WHERE id = ?').run(yearsAgo(3, 10, 30), accClosed);
 
+  // Favoris ordonnés — alimente la section « Favoris » de /accounts et de la sidebar
+  const setFavoriteOrder = db.prepare('UPDATE accounts SET favorite_order = ? WHERE id = ?');
+  [accBNPCourant, accPEA, accBNPLivret].forEach((id, index) => setFavoriteOrder.run(index, id));
+
   // ── Transactions ─────────────────────────────────────────────────────────────
   type TxInput = {
     account_id: number;

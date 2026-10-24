@@ -40,6 +40,13 @@ export function groupAccountsByBank(
     .map(([bank, accs]) => ({ bank: bank === '' ? null : bank, accounts: accs }));
 }
 
+/** Comptes favoris actifs, triés par favorite_order. */
+export function favoriteAccounts(accounts: Account[]): Account[] {
+  return accounts
+    .filter((a) => a.favorite_order !== null && !a.closed_at)
+    .sort((a, b) => (a.favorite_order ?? 0) - (b.favorite_order ?? 0));
+}
+
 /**
  * Comptes « liquides » éligibles comme source/destination d'un flux : ni
  * enveloppe (assurance/PER/bourse), ni clôturés, en excluant le compte courant

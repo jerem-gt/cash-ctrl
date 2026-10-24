@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import i18n from '@/i18n';
 
-import { accountSeniority, bankSortOrderMap, groupAccountsByBank } from './account';
+import {
+  accountSeniority,
+  bankSortOrderMap,
+  favoriteAccounts,
+  groupAccountsByBank,
+} from './account';
 
 const t = i18n.getFixedT('fr', 'accounts');
 
@@ -19,6 +24,7 @@ function makeAccount(id: number, name: string, bank: string | null): Account {
     initial_balance: 0,
     opening_date: null,
     closed_at: null,
+    favorite_order: null,
     balance: 0,
     balance_all: 0,
     balance_stocks: 0,
@@ -130,5 +136,21 @@ describe('groupAccountsByBank', () => {
 
   it('renvoie un tableau vide pour une liste vide', () => {
     expect(groupAccountsByBank([], {})).toEqual([]);
+  });
+});
+
+describe('favoriteAccounts', () => {
+  it('retourne les favoris actifs triés par favorite_order', () => {
+    const accounts = [
+      { ...makeAccount(1, 'A', 'BNP'), favorite_order: 2 },
+      makeAccount(2, 'B', 'BNP'),
+      { ...makeAccount(3, 'C', 'BNP'), favorite_order: 0 },
+      { ...makeAccount(4, 'D', 'BNP'), favorite_order: 1, closed_at: '2025-01-01' },
+    ];
+    expect(favoriteAccounts(accounts).map((a) => a.id)).toEqual([3, 1]);
+  });
+
+  it('retourne un tableau vide sans favori', () => {
+    expect(favoriteAccounts([makeAccount(1, 'A', 'BNP')])).toEqual([]);
   });
 });

@@ -81,7 +81,11 @@
     "edit_account": "Modifier le compte",
     "close_account": "Clôturer le compte",
     "reopen_account": "Rouvrir le compte",
-    "delete_account": "Supprimer le compte"
+    "delete_account": "Supprimer le compte",
+    "favorites_section": "Favoris",
+    "add_favorite": "Mettre en favori",
+    "remove_favorite": "Retirer des favoris",
+    "reorder_favorite": "Réordonner le favori {{name}}"
   },
   "profitability": {
     "title": "Rendement",

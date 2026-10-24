@@ -24,7 +24,8 @@
     "not_found_or_not_owned": "Account not found or does not belong to the user",
     "already_closed": "This account is already closed",
     "not_closed": "This account is not closed",
-    "close_requires_zero_or_target": "The balance must be zero or a destination account is required"
+    "close_requires_zero_or_target": "The balance must be zero or a destination account is required",
+    "favorite_closed": "A closed account cannot be a favorite"
   },
   "account_type": {
     "not_found": "Account type not found",

@@ -236,6 +236,10 @@ export const accountsApi = {
   close: (id: number, payload: { closed_at: string; transfer_to_account_id?: number }) =>
     request<Account>('POST', `/api/accounts/${id}/close`, payload),
   reopen: (id: number) => request<Account>('POST', `/api/accounts/${id}/reopen`),
+  setFavorite: (id: number, favorite: boolean) =>
+    request<Account>('PUT', `/api/accounts/${id}/favorite`, { favorite }),
+  reorderFavorites: (items: { id: number; favorite_order: number }[]) =>
+    request<{ ok: boolean }>('PUT', '/api/accounts/favorites/reorder', items),
 };
 
 // Categories

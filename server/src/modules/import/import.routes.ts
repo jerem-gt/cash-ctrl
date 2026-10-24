@@ -122,6 +122,7 @@ export const jsonFullSchema = z.object({
       initial_balance: z.number().int(),
       opening_date: z.string().nullable(),
       closed_at: z.string().nullable(),
+      favorite_order: z.number().int().nullable().default(null),
     }),
   ),
   categories: z.array(

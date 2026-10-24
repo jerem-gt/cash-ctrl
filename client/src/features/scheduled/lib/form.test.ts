@@ -25,6 +25,7 @@ function makeAccount(overrides: Partial<Account> = {}): Account {
     initial_balance: 0,
     opening_date: null,
     closed_at: null,
+    favorite_order: null,
     balance: 0,
     balance_all: 0,
     balance_stocks: 0,

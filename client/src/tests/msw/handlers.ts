@@ -96,6 +96,12 @@ export const handlers = [
   // Accounts
   http.get('/api/accounts', () => HttpResponse.json(ACCOUNTS)),
   http.post('/api/accounts', () => HttpResponse.json({ ...ACCOUNTS[0], id: 99, name: 'Nouveau' })),
+  http.put('/api/accounts/favorites/reorder', () => HttpResponse.json({ ok: true })),
+  http.put('/api/accounts/:id/favorite', async ({ request, params }) => {
+    const { favorite } = (await request.json()) as { favorite: boolean };
+    const base = ACCOUNTS.find((a) => a.id === Number(params.id)) ?? ACCOUNTS[0];
+    return HttpResponse.json({ ...base, favorite_order: favorite ? 0 : null });
+  }),
   http.put('/api/accounts/:id', () => HttpResponse.json(ACCOUNTS[0])),
   http.delete('/api/accounts/:id', () => HttpResponse.json({ ok: true })),
   http.post('/api/accounts/:id/close', () =>

@@ -65,6 +65,13 @@ describe('/api/export', () => {
       expect(income.amount).toBe(200000);
     });
 
+    it('exporte favorite_order des comptes', async () => {
+      await ctx.agent.put(`/api/accounts/${accountId}/favorite`).send({ favorite: true });
+      const res = await ctx.agent.get('/api/export/json-full');
+      expect(res.body.accounts[0].favorite_order).toBe(0);
+      await ctx.agent.put(`/api/accounts/${accountId}/favorite`).send({ favorite: false });
+    });
+
     it('filtre par accountIds', async () => {
       const res = await ctx.agent.get(`/api/export/json-full?accountIds=${accountId}`);
       expect(res.status).toBe(200);
