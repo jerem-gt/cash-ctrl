@@ -1,7 +1,7 @@
 import type { ScheduledTransaction } from '@cashctrl/types';
 import { useTranslation } from 'react-i18next';
 
-import { FormGroup, Input } from '@/components/ui';
+import { DateInput, FormGroup } from '@/components/ui';
 
 interface Props {
   date: string;
@@ -33,7 +33,7 @@ export function TxMetaFields({
     <>
       <div className="flex gap-3 flex-wrap items-end">
         <FormGroup label={tc('date')}>
-          <Input type="date" value={date} onChange={(e) => onDateChange(e.target.value)} />
+          <DateInput value={date} onChange={onDateChange} />
         </FormGroup>
       </div>
 
