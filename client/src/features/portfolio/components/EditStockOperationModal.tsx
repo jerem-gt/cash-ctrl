@@ -2,7 +2,15 @@ import type { Transaction } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
+import {
+  Button,
+  DateInput,
+  DecimalInput,
+  FormGroup,
+  Input,
+  ModalFrame,
+  showToast,
+} from '@/components/ui';
 import { useUpdateStockOperation } from '@/features/portfolio/hooks/useStocks';
 import { fmtCurrency } from '@/lib/format';
 import { calculateTotalAmount } from '@/lib/stock.ts';
@@ -85,7 +93,7 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
           </FormGroup>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <FormGroup label={t('edit_operation_modal.fees_label')} htmlFor="edit-op-fees">
             <DecimalInput
               id="edit-op-fees"
@@ -93,13 +101,8 @@ export function EditStockOperationModal({ tx, onClose }: Readonly<Props>) {
               onChange={(e) => setFees(e.target.value)}
             />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="edit-op-date">
-            <Input
-              id="edit-op-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+          <FormGroup label={tc('date')} htmlFor="edit-op-date" className="min-w-56">
+            <DateInput id="edit-op-date" value={date} onChange={setDate} />
           </FormGroup>
         </div>
 

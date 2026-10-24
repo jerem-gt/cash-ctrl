@@ -145,6 +145,7 @@ interface DateInputProps {
   id?: string;
   error?: boolean;
   disabled?: boolean;
+  required?: boolean;
 }
 export function DateInput({
   value,
@@ -152,6 +153,7 @@ export function DateInput({
   id,
   error = false,
   disabled,
+  required,
 }: Readonly<DateInputProps>) {
   const { t } = useTranslation('common');
   const borderClass = error
@@ -178,6 +180,7 @@ export function DateInput({
         type="date"
         value={value}
         disabled={disabled}
+        required={required}
         onChange={(e) => onChange(e.target.value)}
         className="flex-1 min-w-0 px-3 py-2 text-sm bg-transparent outline-none disabled:cursor-not-allowed"
       />

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -68,6 +68,25 @@ describe('InsuranceVersementModal', () => {
     await waitFor(() =>
       expect(document.getElementById('toast')?.textContent).toContain('Versement enregistré'),
     );
+  });
+
+  it('soumet la date du lendemain après clic sur Jour suivant', async () => {
+    let body: { date?: string } = {};
+    server.use(
+      http.post(`/api/insurance/:accountId/versement`, async ({ request }) => {
+        body = (await request.json()) as { date?: string };
+        return HttpResponse.json({ success: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderModal();
+
+    fireEvent.change(screen.getByLabelText(/date/i), { target: { value: '2026-03-10' } });
+    await user.click(screen.getByRole('button', { name: 'Jour suivant' }));
+    await user.type(screen.getByLabelText(/montant versé/i), '500');
+    await user.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    await waitFor(() => expect(body.date).toBe('2026-03-11'));
   });
 
   it('désactive le bouton Enregistrer si le montant est vide', () => {

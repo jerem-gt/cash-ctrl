@@ -2,7 +2,7 @@ import type { InsuranceSupportView } from '@cashctrl/types';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, DecimalInput, FormGroup, Input, ModalFrame, showToast } from '@/components/ui';
+import { Button, DateInput, DecimalInput, FormGroup, ModalFrame, showToast } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { useRachat } from '@/features/insurance/hooks/useInsurance';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -92,7 +92,7 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
           </FormGroup>
         )}
 
-        <div className="flex gap-3 items-end">
+        <div className="flex flex-wrap gap-3 items-end">
           <FormGroup label={t('rachat_modal.fees_label')} htmlFor="rachat-fees">
             <DecimalInput id="rachat-fees" value={fees} onChange={(e) => setFees(e.target.value)} />
           </FormGroup>
@@ -103,14 +103,8 @@ export function InsuranceRachatModal({ accountId, support, onClose }: Readonly<P
               onChange={(e) => setSocialFees(e.target.value)}
             />
           </FormGroup>
-          <FormGroup label={tc('date')} htmlFor="rachat-date" className="min-w-36">
-            <Input
-              id="rachat-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
+          <FormGroup label={tc('date')} htmlFor="rachat-date" className="min-w-56">
+            <DateInput id="rachat-date" value={date} onChange={setDate} required />
           </FormGroup>
         </div>
 

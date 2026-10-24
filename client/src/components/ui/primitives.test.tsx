@@ -45,6 +45,11 @@ describe('DateInput', () => {
     expect(document.getElementById('d')).toBeDisabled();
   });
 
+  it("porte l'attribut required sur l'input quand la prop est passée", () => {
+    render(<DateInput id="d" value="2026-06-13" onChange={vi.fn()} required />);
+    expect(document.getElementById('d')).toBeRequired();
+  });
+
   it("porte border-danger sur le conteneur en cas d'erreur", () => {
     render(<DateInput id="d" value="2026-06-13" onChange={vi.fn()} error />);
     expect(document.getElementById('d')?.parentElement).toHaveClass('border-danger');
