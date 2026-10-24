@@ -72,6 +72,17 @@ export function createAccountsRouter(db: Database): Router {
     res.json({ ok: true });
   });
 
+  router.get('/:id/frequent-transactions', (req, res) => {
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
+    const userId = sessionUserId(req);
+    if (!accountsRepo.exists(id, userId)) {
+      sendError(res, 404, 'account.not_found');
+      return;
+    }
+    res.json(accountsRepo.getFrequentTransactions(userId, id));
+  });
+
   router.put('/:id/favorite', (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;

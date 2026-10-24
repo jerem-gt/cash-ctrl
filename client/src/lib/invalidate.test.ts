@@ -1,7 +1,12 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
-import { invalidateBalances, invalidatePortfolio, invalidateTransactions } from './invalidate';
+import {
+  invalidateBalances,
+  invalidateFrequentTransactions,
+  invalidatePortfolio,
+  invalidateTransactions,
+} from './invalidate';
 
 function keysInvalidatedBy(fn: (qc: QueryClient) => void) {
   const qc = new QueryClient();
@@ -23,7 +28,14 @@ describe('invalidate', () => {
   });
 
   it('invalidateTransactions cible toutes les listes de transactions', () => {
-    expect(keysInvalidatedBy(invalidateTransactions)).toEqual([['transactions']]);
+    expect(keysInvalidatedBy(invalidateTransactions)).toEqual([
+      ['transactions'],
+      ['frequent-transactions'],
+    ]);
+  });
+
+  it('invalidateFrequentTransactions cible uniquement les suggestions', () => {
+    expect(keysInvalidatedBy(invalidateFrequentTransactions)).toEqual([['frequent-transactions']]);
   });
 
   it('invalidatePortfolio cible positions et opérations de bourse', () => {

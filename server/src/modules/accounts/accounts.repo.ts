@@ -1,3 +1,4 @@
+import type { FrequentTransaction } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { toCents, toEuros } from '../../lib/money.js';
@@ -79,6 +80,10 @@ const ACCOUNT_SELECT = `
     GROUP BY li.loan_id
   ) inst_all ON inst_all.loan_id = l.id`;
 
+const FREQUENT_TX_MONTHS = 6;
+const FREQUENT_TX_MIN_COUNT = 2;
+const FREQUENT_TX_LIMIT = 5;
+
 export function createAccountsRepo(db: Database) {
   const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
   const getCountByAccountTypeIdStmt = db
@@ -97,6 +102,36 @@ export function createAccountsRepo(db: Database) {
   const getByIdStmt = db.prepare<{ id: number; userId: number }, Account>(
     `${ACCOUNT_SELECT} WHERE a.id = :id AND a.user_id = :userId`,
   );
+
+  const frequentTransactionsStmt = db.prepare<
+    { accountId: number; userId: number; months: string; minCount: number; limit: number },
+    FrequentTransaction
+  >(`
+    WITH base AS (
+      SELECT t.id, t.type, TRIM(t.description) AS description, sc.category_id,
+             t.subcategory_id, t.payment_method_id, t.date
+      FROM transactions t
+      JOIN subcategories sc ON sc.id = t.subcategory_id
+      WHERE t.account_id = :accountId
+        AND t.user_id = :userId
+        AND t.date >= date('now', :months)
+        AND t.transfer_peer_id IS NULL
+        AND t.scheduled_id IS NULL
+        AND NOT EXISTS (SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id)
+    ),
+    ranked AS (
+      SELECT *,
+             COUNT(*) OVER w AS count,
+             ROW_NUMBER() OVER (w ORDER BY date DESC, id DESC) AS rn
+      FROM base
+      WINDOW w AS (PARTITION BY type, LOWER(description), subcategory_id, payment_method_id)
+    )
+    SELECT type, description, category_id, subcategory_id, payment_method_id, count,
+           date AS last_date
+    FROM ranked
+    WHERE rn = 1 AND count >= :minCount
+    ORDER BY count DESC, date DESC, id DESC
+    LIMIT :limit`);
 
   const createStmt = db.prepare(
     'INSERT INTO accounts (user_id, name, bank_id, account_type_id, initial_balance, opening_date) VALUES (:user_id, :name, :bank_id, :account_type_id, :initial_balance, :opening_date)',
@@ -175,6 +210,15 @@ export function createAccountsRepo(db: Database) {
       const next = (maxFavoriteOrderStmt.get({ userId }) ?? -1) + 1;
       setFavoriteOrderStmt.run({ favoriteOrder: next, id, userId });
     },
+
+    getFrequentTransactions: (userId: number, accountId: number): FrequentTransaction[] =>
+      frequentTransactionsStmt.all({
+        accountId,
+        userId,
+        months: `-${FREQUENT_TX_MONTHS} months`,
+        minCount: FREQUENT_TX_MIN_COUNT,
+        limit: FREQUENT_TX_LIMIT,
+      }),
 
     getActiveFavoriteIds: (userId: number): number[] => activeFavoriteIdsStmt.all({ userId }),
 

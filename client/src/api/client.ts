@@ -17,6 +17,7 @@ import type {
   CreateTransferPayload,
   DashboardStats,
   ForecastResponse,
+  FrequentTransaction,
   ImportExecuteBody,
   ImportResult,
   InsuranceFlowPayload,
@@ -236,6 +237,8 @@ export const accountsApi = {
   close: (id: number, payload: { closed_at: string; transfer_to_account_id?: number }) =>
     request<Account>('POST', `/api/accounts/${id}/close`, payload),
   reopen: (id: number) => request<Account>('POST', `/api/accounts/${id}/reopen`),
+  frequentTransactions: (id: number) =>
+    request<FrequentTransaction[]>('GET', `/api/accounts/${id}/frequent-transactions`),
   setFavorite: (id: number, favorite: boolean) =>
     request<Account>('PUT', `/api/accounts/${id}/favorite`, { favorite }),
   reorderFavorites: (items: { id: number; favorite_order: number }[]) =>

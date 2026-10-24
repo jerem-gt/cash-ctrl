@@ -5,7 +5,14 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TxFormState } from '@/features/transactions/lib/txForm.ts';
-import { ACCOUNTS, CATEGORIES, PAYMENT_METHODS, SCHEDULED, TRANSACTIONS } from '@/tests/fixtures';
+import {
+  ACCOUNTS,
+  CATEGORIES,
+  FREQUENT_TRANSACTIONS,
+  PAYMENT_METHODS,
+  SCHEDULED,
+  TRANSACTIONS,
+} from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -364,5 +371,98 @@ describe('TxModal — mode édition', () => {
     renderWithProviders(<TxModal {...editProps} onClose={onClose} />);
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+});
+
+describe('TxModal — suggestions fréquentes', () => {
+  const useFrequent = () =>
+    server.use(
+      http.get('/api/accounts/:id/frequent-transactions', () =>
+        HttpResponse.json(FREQUENT_TRANSACTIONS),
+      ),
+    );
+  const field = (id: string) => document.getElementById(id) as HTMLSelectElement;
+
+  it('affiche les chips en création avec compte fixé', async () => {
+    useFrequent();
+    renderWithProviders(<TxModal {...createProps} fixedAccountId={1} />);
+    expect(await screen.findByRole('button', { name: /Boulangerie/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Remboursement/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Boulangerie/ })).toHaveAttribute(
+      'title',
+      'Alimentation › Supermarché · ×4',
+    );
+  });
+
+  it('remplit le formulaire au clic sans toucher au montant et focus le montant', async () => {
+    useFrequent();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} fixedAccountId={1} />);
+    await user.type(screen.getByPlaceholderText('0,00'), '12');
+    const chip = await screen.findByRole('button', { name: /Boulangerie/ });
+    await user.click(chip);
+    expect(screen.getByPlaceholderText(/Ex : Course/i)).toHaveValue('Boulangerie');
+    expect(field('category-select').value).toBe('1');
+    expect(field('subcategory-select').value).toBe('1');
+    expect(field('payment-method-select').value).toBe('1');
+    expect(screen.getByPlaceholderText('0,00')).toHaveValue('12');
+    expect(screen.getByPlaceholderText('0,00')).toHaveFocus();
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Remboursement/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('applique le type de la suggestion', async () => {
+    useFrequent();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} fixedAccountId={1} />);
+    await user.click(await screen.findByRole('button', { name: /Remboursement/ }));
+    expect(screen.getByDisplayValue('Revenu')).toBeInTheDocument();
+    expect(field('payment-method-select').value).toBe('');
+  });
+
+  it('masque les chips tant qu’aucun compte n’est choisi', async () => {
+    useFrequent();
+    renderWithProviders(<TxModal {...createProps} />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: /Boulangerie/ })).not.toBeInTheDocument();
+  });
+
+  it('affiche les chips après le choix du compte', async () => {
+    useFrequent();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} />);
+    await user.click(document.getElementById('source-account-select')!);
+    await user.click(screen.getByText(ACCOUNTS[0].name));
+    expect(await screen.findByRole('button', { name: /Boulangerie/ })).toBeInTheDocument();
+  });
+
+  it('masque les chips en édition', async () => {
+    useFrequent();
+    renderWithProviders(<TxModal {...editProps} />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: /Boulangerie/ })).not.toBeInTheDocument();
+  });
+
+  it('masque les chips en duplication', async () => {
+    useFrequent();
+    renderWithProviders(<TxModal {...createProps} fixedAccountId={1} duplicateFrom={baseTx} />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole('button', { name: /Boulangerie/ })).not.toBeInTheDocument();
+  });
+
+  it('masque les chips en mode transfert et en ventilation', async () => {
+    useFrequent();
+    const user = userEvent.setup();
+    renderWithProviders(<TxModal {...createProps} fixedAccountId={1} />);
+    await screen.findByRole('button', { name: /Boulangerie/ });
+    await user.click(screen.getByRole('button', { name: 'Ventiler' }));
+    expect(screen.queryByRole('button', { name: /Boulangerie/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Ventilée/ }));
+    expect(await screen.findByRole('button', { name: /Boulangerie/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Transfert' }));
+    expect(screen.queryByRole('button', { name: /Boulangerie/ })).not.toBeInTheDocument();
   });
 });

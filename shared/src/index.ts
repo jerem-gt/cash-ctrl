@@ -271,6 +271,16 @@ export interface Transaction {
   stock_operation?: StockOperation | null;
 }
 
+export interface FrequentTransaction {
+  type: TransactionType;
+  description: string;
+  category_id: number;
+  subcategory_id: number;
+  payment_method_id: number | null;
+  count: number;
+  last_date: string;
+}
+
 export interface Reimbursement {
   id: number;
   amount: number;

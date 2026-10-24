@@ -494,3 +494,207 @@ describe('favoris', () => {
     expect(reopened.body.favorite_order).toBeNull();
   });
 });
+
+describe('GET /api/accounts/:id/frequent-transactions', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  const daysAgo = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  interface TxOpts {
+    type?: 'income' | 'expense';
+    description?: string;
+    subcategoryId?: number | null;
+    paymentMethodId?: number | null;
+    date?: string;
+    scheduledId?: number | null;
+    peerOf?: number | null;
+  }
+
+  function insertTx(opts: TxOpts = {}, account = accountId) {
+    const res = ctx.db
+      .prepare(
+        `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, scheduled_id, transfer_peer_id)
+         VALUES (?, ?, ?, 1000, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        ctx.userId,
+        account,
+        opts.type ?? 'expense',
+        opts.description ?? 'Boulangerie',
+        opts.subcategoryId === undefined ? SEED.SUBCAT_SUPERMARCHE : opts.subcategoryId,
+        opts.date ?? daysAgo(5),
+        opts.paymentMethodId === undefined ? SEED.PM_CARTE : opts.paymentMethodId,
+        opts.scheduledId ?? null,
+        opts.peerOf ?? null,
+      );
+    return Number(res.lastInsertRowid);
+  }
+
+  function insertTwice(opts: TxOpts = {}) {
+    return [insertTx(opts), insertTx({ ...opts, date: daysAgo(10) })];
+  }
+
+  const get = async () => ctx.agent.get(`/api/accounts/${accountId}/frequent-transactions`);
+
+  beforeEach(async () => {
+    ctx = await createTestContext();
+    const res = await ctx.agent.post('/api/accounts').send({
+      name: 'Courant',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+    });
+    accountId = res.body.id as number;
+  });
+
+  it('retourne 401 sans authentification', async () => {
+    const res = await supertest(ctx.app).get(`/api/accounts/${accountId}/frequent-transactions`);
+    expect(res.status).toBe(401);
+  });
+
+  it('retourne 404 pour un compte inconnu', async () => {
+    const res = await ctx.agent.get('/api/accounts/9999/frequent-transactions');
+    expect(res.status).toBe(404);
+  });
+
+  it("retourne 404 pour le compte d'un autre utilisateur", async () => {
+    const other = Number(
+      ctx.db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('other', 'x')
+        .lastInsertRowid,
+    );
+    const otherAccount = Number(
+      ctx.db
+        .prepare(
+          'INSERT INTO accounts (user_id, name, bank_id, account_type_id) VALUES (?, ?, ?, ?)',
+        )
+        .run(other, 'Autre', SEED.BANK_ID, SEED.AT_COURANT).lastInsertRowid,
+    );
+    const res = await ctx.agent.get(`/api/accounts/${otherAccount}/frequent-transactions`);
+    expect(res.status).toBe(404);
+  });
+
+  it('retourne un tableau vide sans transaction', async () => {
+    const res = await get();
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('groupe les occurrences et expose les champs attendus', async () => {
+    insertTwice();
+    const res = await get();
+    expect(res.body).toEqual([
+      {
+        type: 'expense',
+        description: 'Boulangerie',
+        category_id: 3,
+        subcategory_id: SEED.SUBCAT_SUPERMARCHE,
+        payment_method_id: SEED.PM_CARTE,
+        count: 2,
+        last_date: daysAgo(5),
+      },
+    ]);
+  });
+
+  it('normalise casse et espaces et garde la variante la plus récente', async () => {
+    insertTx({ description: 'boulangerie', date: daysAgo(20) });
+    insertTx({ description: '  BOULANGERIE ', date: daysAgo(2) });
+    insertTx({ description: 'Boulangerie  ', date: daysAgo(30) });
+    const res = await get();
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].description).toBe('BOULANGERIE');
+    expect(res.body[0].count).toBe(3);
+    expect(res.body[0].last_date).toBe(daysAgo(2));
+  });
+
+  it('sépare les groupes par type, sous-catégorie et moyen de paiement', async () => {
+    insertTwice({ type: 'income' });
+    insertTwice({ subcategoryId: SEED.SUBCAT_CINEMA });
+    insertTwice({ paymentMethodId: SEED.PM_VIREMENT });
+    insertTwice({ paymentMethodId: null });
+    insertTwice();
+    const res = await get();
+    expect(res.body).toHaveLength(5);
+  });
+
+  it('trie par count DESC puis dernière date DESC et limite à 5', async () => {
+    insertTx({ description: 'A', date: daysAgo(50) });
+    insertTx({ description: 'A', date: daysAgo(51) });
+    insertTx({ description: 'A', date: daysAgo(52) });
+    for (const [i, name] of ['B', 'C', 'D', 'E', 'F'].entries()) {
+      insertTx({ description: name, date: daysAgo(i + 1) });
+      insertTx({ description: name, date: daysAgo(i + 60) });
+    }
+    const res = await get();
+    expect(res.body.map((r: { description: string }) => r.description)).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+    ]);
+  });
+
+  it('exclut les transferts', async () => {
+    const peer = insertTx({ description: 'Peer' });
+    insertTx({ description: 'Virement', peerOf: peer });
+    insertTx({ description: 'Virement', peerOf: peer, date: daysAgo(9) });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transactions ventilées', async () => {
+    const ids = insertTwice({ description: 'Courses' });
+    for (const id of ids) {
+      ctx.db
+        .prepare(
+          'INSERT INTO transaction_splits (user_id, transaction_id, subcategory_id, amount) VALUES (?, ?, ?, 500)',
+        )
+        .run(ctx.userId, id, SEED.SUBCAT_SUPERMARCHE);
+    }
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transactions issues du planificateur', async () => {
+    const sched = Number(
+      ctx.db
+        .prepare(
+          `INSERT INTO scheduled_transactions (user_id, account_id, type, amount, description, recurrence_unit, start_date)
+           VALUES (?, ?, 'expense', 1000, 'Loyer', 'month', '2024-01-01')`,
+        )
+        .run(ctx.userId, accountId).lastInsertRowid,
+    );
+    insertTwice({ scheduledId: sched });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transactions sans sous-catégorie', async () => {
+    insertTwice({ subcategoryId: null });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les transactions de plus de 6 mois', async () => {
+    insertTx({ date: daysAgo(400) });
+    insertTx({ date: daysAgo(300) });
+    insertTx({ date: daysAgo(5) });
+    expect((await get()).body).toEqual([]);
+  });
+
+  it('exclut les occurrences uniques', async () => {
+    insertTx();
+    expect((await get()).body).toEqual([]);
+  });
+
+  it("ignore les transactions d'un autre compte", async () => {
+    const res = await ctx.agent.post('/api/accounts').send({
+      name: 'Second',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+    });
+    insertTx({}, res.body.id as number);
+    insertTx({ date: daysAgo(9) }, res.body.id as number);
+    expect((await get()).body).toEqual([]);
+  });
+});

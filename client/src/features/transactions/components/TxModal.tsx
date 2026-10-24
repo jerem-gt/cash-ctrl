@@ -9,6 +9,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, ModalFrame, showToast } from '@/components/ui';
+import { FrequentTxChips } from '@/features/transactions/components/FrequentTxChips';
 import { ReimbursementsPanel } from '@/features/transactions/components/ReimbursementsPanel';
 import { ReimbursementStatusPicker } from '@/features/transactions/components/ReimbursementStatusPicker';
 import { type TxCoreState } from '@/features/transactions/components/TxCoreFields';
@@ -86,7 +87,7 @@ function buildTxCreateErrors(
 type BaseProps = {
   accounts: Account[];
   logoMap: Record<string, string | null>;
-  categories: Pick<Category, 'id' | 'name' | 'subcategories'>[];
+  categories: Pick<Category, 'id' | 'name' | 'icon' | 'subcategories'>[];
   paymentMethods: Pick<PaymentMethod, 'id' | 'name' | 'icon'>[];
   fixedAccountId?: number;
   onClose: () => void;
@@ -139,6 +140,18 @@ export function TxModal(props: Readonly<Props>) {
   const { data: scheduledList } = useScheduled();
   const isTransferCreate = !isEdit && isTransfer;
   const noOtherAccounts = fixedAccountId != null && accounts.every((a) => a.id === fixedAccountId);
+
+  const handleCorePatch = (patch: Partial<TxCoreState>) => {
+    setFieldErrors((prev) => {
+      const s = new Set(prev);
+      Object.keys(patch).forEach((k) => s.delete(k));
+      return s;
+    });
+    setCore((c) => ({ ...c, ...patch }));
+  };
+
+  const frequentAccountId = fixedAccountId ?? (Number.parseInt(core.account_id) || undefined);
+  const showFrequent = !isEdit && !isDuplicate && !isTransfer && !isVentilated;
 
   const handleModeToggle = (toTransfer: boolean) => {
     setFieldErrors(new Set());
@@ -272,6 +285,15 @@ export function TxModal(props: Readonly<Props>) {
       />
 
       <form id="tx-modal-form" onSubmit={handleSubmit} className="space-y-3">
+        {showFrequent && (
+          <FrequentTxChips
+            accountId={frequentAccountId}
+            core={core}
+            categories={categories}
+            onPick={handleCorePatch}
+          />
+        )}
+
         <TxFormBody
           isTransferEdit={isTransferEdit}
           isTransferCreate={isTransferCreate}
@@ -280,14 +302,7 @@ export function TxModal(props: Readonly<Props>) {
           splits={splits}
           onSplitsChange={setSplits}
           core={core}
-          onCorePatch={(patch) => {
-            setFieldErrors((prev) => {
-              const s = new Set(prev);
-              Object.keys(patch).forEach((k) => s.delete(k));
-              return s;
-            });
-            setCore((c) => ({ ...c, ...patch }));
-          }}
+          onCorePatch={handleCorePatch}
           accounts={accounts}
           logoMap={logoMap}
           categories={categories}

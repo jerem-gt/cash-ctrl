@@ -7,6 +7,7 @@ import type {
   CachedStockTicker,
   Category,
   ForecastResponse,
+  FrequentTransaction,
   ImportResult,
   InsuranceOperation,
   InsuranceSupportView,
@@ -359,6 +360,27 @@ export const SUBCATEGORIES: Subcategory[] = [
 ];
 
 export const PAYMENT_METHODS: PaymentMethod[] = [{ id: 1, name: 'CB', icon: '💳' }];
+
+export const FREQUENT_TRANSACTIONS: FrequentTransaction[] = [
+  {
+    type: 'expense',
+    description: 'Boulangerie',
+    category_id: 1,
+    subcategory_id: 1,
+    payment_method_id: 1,
+    count: 4,
+    last_date: '2026-10-20',
+  },
+  {
+    type: 'income',
+    description: 'Remboursement',
+    category_id: 2,
+    subcategory_id: 2,
+    payment_method_id: null,
+    count: 2,
+    last_date: '2026-10-10',
+  },
+];
 
 export const STOCK_TX: Transaction = {
   id: 20,

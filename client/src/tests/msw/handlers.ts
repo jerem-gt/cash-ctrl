@@ -96,6 +96,7 @@ export const handlers = [
   // Accounts
   http.get('/api/accounts', () => HttpResponse.json(ACCOUNTS)),
   http.post('/api/accounts', () => HttpResponse.json({ ...ACCOUNTS[0], id: 99, name: 'Nouveau' })),
+  http.get('/api/accounts/:id/frequent-transactions', () => HttpResponse.json([])),
   http.put('/api/accounts/favorites/reorder', () => HttpResponse.json({ ok: true })),
   http.put('/api/accounts/:id/favorite', async ({ request, params }) => {
     const { favorite } = (await request.json()) as { favorite: boolean };
