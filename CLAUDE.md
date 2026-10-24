@@ -117,6 +117,7 @@ Captures dans `docs/screenshots/` (clair + `-dark`). Pour une nouvelle page : aj
 
 ## Environnement
 - Utiliser l'outil **Bash** (pas PowerShell) pour les commandes shell.
-- Les chemins Windows doivent utiliser des slashes et être entre guillemets : `cd "C:/Users/jerem/WebstormProjects/cash-ctrl"`
+- Les chemins Windows doivent utiliser des slashes et être entre guillemets : `"C:/Users/jerem/WebstormProjects/cash-ctrl/client"`
+- **Jamais de `cd`** (chaque `cd …&&` déclenche une confirmation) : le répertoire courant est déjà la racine ; utiliser `npm --prefix client run test`, `git -C <dir>`, `npx eslint <chemins>` et des chemins absolus.
 - PowerShell est bloqué par la politique d'exécution — ne pas l'utiliser pour les commandes `npm`.
 - **GitHub CLI** : `gh` est disponible dans le Bash PATH (ajouté via `~/.bashrc`). Utiliser directement `gh pr create ...`
