@@ -1,5 +1,5 @@
 import { type Filters, Transaction } from '@cashctrl/types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 
@@ -28,7 +28,7 @@ type ModalState =
 
 const initialModalsState: ModalState = { type: 'none' };
 
-export function useTransactionsManager(initialAccountId?: number) {
+export function useTransactionsManager(routeAccountId?: number) {
   const { t } = useTranslation('transactions');
 
   // --- ÉTATS DE NAVIGATION / DONNÉES (l'URL est la source de vérité) ---
@@ -38,17 +38,26 @@ export function useTransactionsManager(initialAccountId?: number) {
     // Sur la page d'un compte, account_id vient de la route et jamais de l'URL.
     return {
       filters:
-        initialAccountId === undefined
+        routeAccountId === undefined
           ? parsed.filters
-          : { ...parsed.filters, account_id: initialAccountId },
+          : { ...parsed.filters, account_id: routeAccountId },
       page: parsed.page,
     };
-  }, [searchParams, initialAccountId]);
-  const writeUrl = (next: Filters, nextPage: number) => {
-    const toWrite = initialAccountId === undefined ? next : { ...next, account_id: undefined };
-    setSearchParams(toTxSearch(toWrite, nextPage), { replace: true });
-  };
-  const setPage = (p: number) => writeUrl(filters, p);
+  }, [searchParams, routeAccountId]);
+  // Dernière écriture pas encore rendue : base des écritures successives avant re-rendu.
+  const pendingRef = useRef<{ filters: Filters; page: number } | null>(null);
+  useEffect(() => {
+    pendingRef.current = null;
+  }, [searchParams]);
+  const writeUrl = useCallback(
+    (next: Filters, nextPage: number) => {
+      pendingRef.current = { filters: next, page: nextPage };
+      const toWrite = routeAccountId === undefined ? next : { ...next, account_id: undefined };
+      setSearchParams(toTxSearch(toWrite, nextPage), { replace: true });
+    },
+    [routeAccountId, setSearchParams],
+  );
+  const setPage = (p: number) => writeUrl(pendingRef.current?.filters ?? filters, p);
   const [limit, setLimit] = useState(() => {
     const stored = Number(safeStorage.getItem('cashctrl.txLimit'));
     return LIMIT_OPTIONS.includes(stored) ? stored : DEFAULT_LIMIT;
@@ -89,7 +98,7 @@ export function useTransactionsManager(initialAccountId?: number) {
 
   // --- ACTIONS (Logique métier) ---
   const handleFilterChange = (patch: Partial<Filters>) => {
-    writeUrl({ ...filters, ...patch }, 1); // On reset toujours la page lors d'un filtre
+    writeUrl({ ...(pendingRef.current?.filters ?? filters), ...patch }, 1); // On reset toujours la page lors d'un filtre
   };
   const handleLimitChange = (newLimit: number) => {
     safeStorage.setItem('cashctrl.txLimit', String(newLimit));
@@ -98,20 +107,12 @@ export function useTransactionsManager(initialAccountId?: number) {
   };
 
   // Page hors limites (ex. URL périmée) : on revient à la dernière page une fois la réponse reçue.
-  const totalPagesKnown = result?.totalPages;
+  const responseTotalPages = result?.totalPages;
   useEffect(() => {
-    if (isLoading || isFetching || totalPagesKnown === undefined) return;
-    const last = Math.max(1, totalPagesKnown);
-    if (page > last) {
-      setSearchParams(
-        toTxSearch(
-          initialAccountId === undefined ? filters : { ...filters, account_id: undefined },
-          last,
-        ),
-        { replace: true },
-      );
-    }
-  }, [isLoading, isFetching, totalPagesKnown, page, filters, initialAccountId, setSearchParams]);
+    if (isLoading || isFetching || responseTotalPages === undefined) return;
+    const last = Math.max(1, responseTotalPages);
+    if (page > last) writeUrl(filters, last);
+  }, [isLoading, isFetching, responseTotalPages, page, filters, writeUrl]);
 
   const handleDelete = () => {
     if (modal.type !== 'delete') return;

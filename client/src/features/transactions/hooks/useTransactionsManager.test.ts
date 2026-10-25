@@ -258,6 +258,30 @@ describe('useTransactionsManager', () => {
       expect(result.current.state.page).toBe(3);
     });
 
+    it("n'écrit pas account_id en corrigeant une page hors limites sur la page d'un compte", () => {
+      vi.mocked(useTransactions).mockReturnValue({
+        data: { data: [], total: 20, totalPages: 2 },
+        isLoading: false,
+        isFetching: false,
+      } as unknown as ReturnType<typeof useTransactions>);
+
+      const { location } = renderManager('/accounts/7?page=9&category_id=3', 7);
+
+      expect(location.search).toBe('?category_id=3&page=2');
+    });
+
+    it('conserve les deux patchs de deux handleFilterChange avant le re-rendu', () => {
+      const { result, location } = renderManager('/transactions');
+
+      act(() => {
+        result.current.actions.handleFilterChange({ amount_min: 10 });
+        result.current.actions.handleFilterChange({ amount_max: 50 });
+      });
+
+      expect(location.search).toContain('amount_min=10');
+      expect(location.search).toContain('amount_max=50');
+    });
+
     it('ne corrige pas la page tant que la requête est en cours', () => {
       vi.mocked(useTransactions).mockReturnValue({
         data: undefined,
