@@ -58,6 +58,8 @@ jobs:
           LINT=$!
           npm run typecheck:test --workspace=client &
           TYPES=$!
+          npm run typecheck --workspace=server &
+          SERVER_TYPES=$!
           npm run test:coverage --workspace=server &
           SERVER=$!
           npm run test:coverage --workspace=client &
@@ -65,6 +67,7 @@ jobs:
           FAIL=0
           wait $LINT || FAIL=1
           wait $TYPES || FAIL=1
+          wait $SERVER_TYPES || FAIL=1
           wait $SERVER || FAIL=1
           wait $CLIENT || FAIL=1
           exit $FAIL

@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "db:reset": "tsx src/db/resetDb.ts",
     "db:reset:dev": "tsx src/db/devSeed.ts",
     "db:seed:test": "tsx src/db/seedTestData.ts"
