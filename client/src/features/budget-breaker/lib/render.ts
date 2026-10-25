@@ -87,6 +87,29 @@ function drawPaddle(ctx: CanvasRenderingContext2D, paddle: GameState['paddle']) 
   ctx.fill();
 }
 
+function drawBricks(ctx: CanvasRenderingContext2D, bricks: GameState['bricks']) {
+  ctx.save();
+  ctx.strokeStyle = palette.brand;
+  ctx.fillStyle = palette.brand;
+  ctx.lineWidth = 1.5;
+  for (const { rect, alive } of bricks) {
+    if (!alive) continue;
+    const x = rect.x - 2;
+    const y = rect.y - 2;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, rect.w + 4, rect.h + 4, 6);
+    } else {
+      ctx.rect(x, y, rect.w + 4, rect.h + 4);
+    }
+    ctx.globalAlpha = 0.1;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export function drawFrame(
   ctx: CanvasRenderingContext2D,
   game: GameState,
@@ -95,6 +118,7 @@ export function drawFrame(
   reduced: boolean,
 ) {
   ctx.clearRect(0, 0, game.width, game.height);
+  drawBricks(ctx, game.bricks);
 
   for (const p of particles) {
     ctx.globalAlpha = Math.max(p.life / p.max, 0);
