@@ -173,6 +173,30 @@ describe('TransactionsFilters', () => {
     });
   });
 
+  it("propose 'Sans catégorie' et émet category_id: 'none'", () => {
+    renderWithProviders(<TransactionsFilters {...defaultProps} />);
+    openAdvanced();
+
+    fireEvent.change(screen.getByLabelText(/choisir une catégorie/i), {
+      target: { value: 'none' },
+    });
+
+    expect(mockOnFilterChange).toHaveBeenCalledWith({
+      category_id: 'none',
+      subcategory_id: undefined,
+    });
+  });
+
+  it("désactive le select des sous-catégories quand 'Sans catégorie' est choisi", () => {
+    renderWithProviders(
+      <TransactionsFilters {...defaultProps} filters={{ category_id: 'none' }} />,
+    );
+    openAdvanced();
+
+    expect(screen.getByLabelText(/choisir une catégorie/i)).toHaveValue('none');
+    expect(screen.getByLabelText(/choisir une sous-catégorie/i)).toBeDisabled();
+  });
+
   // --- Sous-catégories ---
 
   it("désactive le select des sous-catégories si aucune catégorie n'est sélectionnée", () => {
@@ -377,23 +401,66 @@ describe('TransactionsFilters', () => {
     });
   });
 
-  // --- Validées ---
+  // --- Virements exclus ---
 
-  it('appelle onFilterChange avec validated: false quand la checkbox est cochée', () => {
-    renderWithProviders(<TransactionsFilters {...defaultProps} />);
-    openAdvanced();
+  it('affiche le badge « Virements exclus » seulement quand le filtre est actif', () => {
+    const { rerender } = renderWithProviders(<TransactionsFilters {...defaultProps} />);
+    expect(screen.queryByText('Virements exclus')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('switch'));
-
-    expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: false });
+    rerender(<TransactionsFilters {...defaultProps} filters={{ exclude_transfers: true }} />);
+    expect(screen.getByText('Virements exclus')).toBeInTheDocument();
   });
 
-  it('appelle onFilterChange avec undefined quand la checkbox est décochée', () => {
+  it('retire exclude_transfers au clic sur le ×', () => {
+    renderWithProviders(
+      <TransactionsFilters {...defaultProps} filters={{ exclude_transfers: true }} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inclure les virements' }));
+
+    expect(mockOnFilterChange).toHaveBeenCalledWith({ exclude_transfers: undefined });
+  });
+
+  it('la réinitialisation retire aussi exclude_transfers', () => {
+    const onFilterChange = vi.fn();
+    renderWithProviders(
+      <TransactionsFilters
+        {...defaultProps}
+        filters={{ category_id: 1, exclude_transfers: true }}
+        onFilterChange={onFilterChange}
+      />,
+    );
+    openAdvanced();
+
+    fireEvent.click(screen.getByRole('button', { name: /réinitialiser/i }));
+
+    const patch = onFilterChange.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.keys(patch)).toContain('exclude_transfers');
+    expect(patch.exclude_transfers).toBeUndefined();
+  });
+
+  // --- Validées ---
+
+  it.each([
+    { value: 'false', expected: false },
+    { value: 'true', expected: true },
+    { value: '', expected: undefined },
+  ])(
+    'appelle onFilterChange avec validated: $expected pour la valeur "$value"',
+    ({ value, expected }) => {
+      renderWithProviders(<TransactionsFilters {...defaultProps} filters={{ validated: true }} />);
+      openAdvanced();
+
+      fireEvent.change(screen.getByLabelText(/filtrer par validation/i), { target: { value } });
+
+      expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: expected });
+    },
+  );
+
+  it('reflète le filtre validated courant dans le select', () => {
     renderWithProviders(<TransactionsFilters {...defaultProps} filters={{ validated: false }} />);
     openAdvanced();
 
-    fireEvent.click(screen.getByRole('switch'));
-
-    expect(mockOnFilterChange).toHaveBeenCalledWith({ validated: undefined });
+    expect(screen.getByLabelText(/filtrer par validation/i)).toHaveValue('false');
   });
 });

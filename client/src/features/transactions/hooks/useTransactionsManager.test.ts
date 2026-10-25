@@ -191,6 +191,12 @@ describe('useTransactionsManager', () => {
       expect(result.current.state.page).toBe(3);
     });
 
+    it('lit validated=true et category_id=none depuis l’URL', () => {
+      const { result } = renderManager('/transactions?category_id=none&validated=true');
+      expect(result.current.state.filters).toEqual({ category_id: 'none', validated: true });
+      expect(result.current.state.activeSubcategories).toEqual([]);
+    });
+
     it("handleFilterChange réécrit l'URL et retire page", () => {
       const { result, location } = renderManager('/transactions?q=chat&page=3');
 

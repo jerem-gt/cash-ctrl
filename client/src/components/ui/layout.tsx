@@ -1,5 +1,8 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Link } from 'react-router';
+
+import { LINK_CLASS } from './linkStyles';
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
@@ -40,6 +43,7 @@ interface MetricProps {
   icon?: ReactNode;
   trend?: MetricTrend;
   trendLabel?: string;
+  to?: string;
 }
 
 const METRIC_VALUE_COLORS = {
@@ -86,6 +90,7 @@ export function Metric({
   icon,
   trend,
   trendLabel,
+  to,
 }: Readonly<MetricProps>) {
   let footer: ReactNode = null;
   if (trend) {
@@ -106,7 +111,13 @@ export function Metric({
         )}
       </div>
       <p className={`font-display text-2xl tabular-nums ${METRIC_VALUE_COLORS[variant]}`}>
-        {value}
+        {to ? (
+          <Link to={to} className={LINK_CLASS}>
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
       </p>
       {footer}
     </Card>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Card, Empty, Metric, Skeleton } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
+import { categoryTransactionsUrl, yearRange } from '@/features/transactions/lib/txLinks';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useLogoMap } from '@/hooks/useLogoMap';
@@ -67,8 +68,14 @@ export default function ReportsPage() {
         name: d.category,
         value: d.amount,
         fill: colorMap[d.category],
+        to: categoryTransactionsUrl({
+          type: 'expense',
+          categoryId: d.category_id,
+          range: yearRange(year),
+          accountId,
+        }),
       })),
-    [report, colorMap],
+    [report, colorMap, year, accountId],
   );
 
   const incomeCatData = useMemo(
@@ -77,8 +84,14 @@ export default function ReportsPage() {
         name: d.category,
         value: d.amount,
         fill: colorMap[d.category],
+        to: categoryTransactionsUrl({
+          type: 'income',
+          categoryId: d.category_id,
+          range: yearRange(year),
+          accountId,
+        }),
       })),
-    [report, colorMap],
+    [report, colorMap, year, accountId],
   );
 
   const compareBarData = useMemo(
@@ -277,6 +290,7 @@ export default function ReportsPage() {
                 mergedCatData={mergedCatData}
                 year={year}
                 compareYear={compareYear}
+                accountId={accountId}
               />
             </>
           )}

@@ -501,8 +501,15 @@ describe('/api/transactions — Filtres avancés', () => {
     expect(res.body.data).toHaveLength(1);
   });
 
+  it('sans filtre validated retourne toutes les transactions', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(3);
+  });
+
   it.each([
     { label: 'validated invalide', qs: 'validated=oui' },
+    { label: 'category_id invalide', qs: 'category_id=abc' },
     { label: 'date_from au mauvais format', qs: 'date_from=15-01-2024' },
     { label: 'amount_min négatif', qs: 'amount_min=-10' },
   ])('retourne 400 pour $label', async ({ qs }) => {
@@ -713,6 +720,115 @@ describe('/api/transactions — filtre scheduled_id', () => {
   it('retourne 400 si scheduled_id est négatif', async () => {
     const res = await ctx.agent.get('/api/transactions?scheduled_id=-1');
     expect(res.status).toBe(400);
+  });
+});
+
+describe('/api/transactions — filtre exclude_transfers', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+    const other = await ctx.agent.post('/api/accounts').send({
+      name: 'Autre',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 10,
+      description: 'Normale',
+      subcategory_id: SEED.SUBCAT_LOYER,
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    await ctx.agent.post('/api/transfers').send({
+      from_account_id: accountId,
+      to_account_id: other.body.id,
+      amount: 50,
+      date: TODAY,
+      description: 'Virement',
+    });
+  });
+
+  it('inclut les virements sans le paramètre', async () => {
+    const res = await ctx.agent.get(`/api/transactions?account_id=${accountId}`);
+    expect(res.body.total).toBe(2);
+  });
+
+  it('exclut les virements avec exclude_transfers=true', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&exclude_transfers=true`,
+    );
+    expect(res.body.total).toBe(1);
+    expect(res.body.data[0].description).toBe('Normale');
+  });
+
+  it('inclut les virements avec exclude_transfers=false', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?account_id=${accountId}&exclude_transfers=false`,
+    );
+    expect(res.body.total).toBe(2);
+  });
+
+  it('retourne 400 pour exclude_transfers invalide', async () => {
+    const res = await ctx.agent.get('/api/transactions?exclude_transfers=oui');
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('/api/transactions — filtre category_id=none', () => {
+  let ctx: TestContext;
+  let accountId: number;
+  let uncategorizedId: number;
+
+  const body = (overrides: Record<string, unknown> = {}) => ({
+    account_id: accountId,
+    type: 'expense',
+    amount: 10,
+    description: 'Tx',
+    subcategory_id: SEED.SUBCAT_LOYER,
+    date: TODAY,
+    payment_method_id: SEED.PM_CARTE,
+    ...overrides,
+  });
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+    await ctx.agent.post('/api/transactions').send(body({ description: 'Catégorisée' }));
+    await ctx.agent.post('/api/transactions').send(
+      body({
+        description: 'Ventilée',
+        subcategory_id: null,
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 6 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, amount: 4 },
+        ],
+      }),
+    );
+    const res = await ctx.agent.post('/api/transactions').send(body({ description: 'Sans cat' }));
+    uncategorizedId = res.body.id;
+    ctx.db
+      .prepare('UPDATE transactions SET subcategory_id = NULL WHERE id = ?')
+      .run(uncategorizedId);
+  });
+
+  it('ne retourne que les transactions sans catégorie, parents ventilés exclus', async () => {
+    const res = await ctx.agent.get('/api/transactions?category_id=none');
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.data.map((t: { id: number }) => t.id)).toEqual([uncategorizedId]);
+  });
+
+  it('ignore subcategory_id quand category_id=none', async () => {
+    const res = await ctx.agent.get(
+      `/api/transactions?category_id=none&subcategory_id=${SEED.SUBCAT_LOYER}`,
+    );
+    expect(res.body.total).toBe(1);
   });
 });
 

@@ -18,8 +18,14 @@ export interface ReportData {
   income_total: number;
   expense_total: number;
   monthly: MonthlyStat[];
-  expense_by_category: Array<{ category: string; amount: number }>;
-  income_by_category: Array<{ category: string; amount: number }>;
+  expense_by_category: CategoryAmount[];
+  income_by_category: CategoryAmount[];
+}
+
+interface CategoryAmount {
+  category_id: number | null;
+  category: string;
+  amount: number;
 }
 
 export function createReportRepo(db: Database) {
@@ -84,29 +90,29 @@ export function createReportRepo(db: Database) {
       });
 
       const expenseByCat = db
-        .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
+        .prepare<unknown[], CategoryAmount>(
+          `SELECT c.id AS category_id, COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
            FROM transactions t
            ${EFFECTIVE_CATEGORY_JOIN}
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
              ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.type = 'expense'
              AND t.date >= ? AND t.date <= ? ${accountCond}
-           GROUP BY category
+           GROUP BY c.id
            ORDER BY amount DESC`,
         )
         .all(...filterParams);
 
       const incomeByCat = db
-        .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
+        .prepare<unknown[], CategoryAmount>(
+          `SELECT c.id AS category_id, COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
            FROM transactions t
            ${EFFECTIVE_CATEGORY_JOIN}
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
              ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.type = 'income'
              AND t.date >= ? AND t.date <= ? ${accountCond}
-           GROUP BY category
+           GROUP BY c.id
            ORDER BY amount DESC`,
         )
         .all(...filterParams);

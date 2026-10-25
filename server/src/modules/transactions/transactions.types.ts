@@ -84,7 +84,7 @@ export interface UpdateSharedTransactionInput {
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
-  category_id?: number;
+  category_id?: number | 'none';
   subcategory_id?: number;
   description_contains?: string;
   date_from?: string;
@@ -94,6 +94,7 @@ export interface TransactionFilters {
   payment_method_id?: number;
   validated?: boolean;
   scheduled_id?: number;
+  exclude_transfers?: boolean;
   exclude_linked_reimbursements?: boolean;
   page?: number;
   limit?: number;

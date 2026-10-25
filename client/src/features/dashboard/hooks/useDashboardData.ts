@@ -49,6 +49,7 @@ export function useDashboardData() {
     () =>
       (stats?.expenses_by_category ?? []).map((d) => ({
         name: d.category,
+        categoryId: d.category_id,
         value: d.amount,
         fill: colorMap[d.category],
       })),
