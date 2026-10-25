@@ -1,10 +1,12 @@
 import type { Transaction } from '@cashctrl/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TRANSACTIONS } from '@/tests/fixtures';
+import { CATEGORIES, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
+import { server } from '@/tests/msw/server';
 
 import { TxItem } from './TxItem';
 
@@ -75,6 +77,70 @@ describe('TxItem', () => {
     };
     renderTx(ventilatedTx);
     expect(screen.getByText(/Ventilée \(2\)/)).toBeInTheDocument();
+  });
+
+  describe('transaction ventilée', () => {
+    const ventilated = (splits: Transaction['splits']): Transaction => ({
+      ...baseTx,
+      validated: 0,
+      category_id: 0,
+      subcategory_id: null,
+      splits,
+    });
+
+    it('affiche les icônes, les sous-catégories et le détail des montants', async () => {
+      renderTx(
+        ventilated([
+          { id: 1, subcategory_id: 1, amount: 367.47 },
+          { id: 2, subcategory_id: 2, amount: 12 },
+        ]),
+      );
+      const subtitle = await screen.findByTitle(/Alimentation \/ Supermarché : 367,47/);
+      expect(subtitle).toHaveAttribute(
+        'title',
+        expect.stringContaining('Logement / Loyer : 12,00'),
+      );
+      expect(subtitle).toHaveTextContent('Ventilée : Alimentation / Supermarché');
+      expect(screen.getAllByText(/Supermarché/).length).toBeGreaterThan(0);
+      expect(
+        document.querySelector('[title^="Alimentation"][class*="rounded-full"]'),
+      ).toHaveAttribute('title', 'Alimentation\nLogement');
+      expect(screen.getByText('🍴', { selector: 'span.absolute' })).toBeInTheDocument();
+      expect(screen.getByText('🏠', { selector: 'span.absolute' })).toBeInTheDocument();
+      expect(screen.queryByText('+1')).not.toBeInTheDocument();
+    });
+
+    it('affiche le badge +1 pour 3 catégories et une barre à 4 segments', async () => {
+      server.use(
+        http.get('/api/categories', () =>
+          HttpResponse.json([
+            ...CATEGORIES,
+            { id: 3, name: 'Loisirs', icon: '🎮', subcategories: [{ id: 3, name: 'Jeux' }] },
+          ]),
+        ),
+      );
+      renderTx(
+        ventilated([
+          { id: 1, subcategory_id: 1, amount: 10 },
+          { id: 2, subcategory_id: 2, amount: 20 },
+          { id: 3, subcategory_id: 3, amount: 30 },
+          { id: 4, subcategory_id: 1, amount: 40 },
+        ]),
+      );
+      expect(await screen.findByText('+1')).toBeInTheDocument();
+      expect(screen.getAllByTestId('split-bar-segment')).toHaveLength(4);
+    });
+
+    it('garde le repli « Ventilée (n) » si aucune ligne ne se résout', async () => {
+      renderTx(ventilated([{ id: 1, subcategory_id: 999, amount: 5 }]));
+      expect(await screen.findByText(/Ventilée \(1\)/)).toBeInTheDocument();
+      expect(screen.queryByTestId('split-bar')).not.toBeInTheDocument();
+    });
+
+    it("n'affiche ni barre ni sous-titre détaillé pour une transaction normale", () => {
+      renderTx(baseTx);
+      expect(screen.queryByTestId('split-bar')).not.toBeInTheDocument();
+    });
   });
 
   it(`pas de badge "Ventilée" pour une transaction normale`, () => {

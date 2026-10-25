@@ -85,7 +85,8 @@
     "delete": "Supprimer",
     "actions": "Actions",
     "running_balance_title": "Solde courant",
-    "ventilated": "Ventilée ({{count}})"
+    "ventilated": "Ventilée ({{count}})",
+    "ventilated_prefix": "Ventilée : "
   },
   "tx_core": {
     "type_label": "Type",

@@ -1,12 +1,17 @@
-import type { Account, Transaction } from '@cashctrl/types';
+import type { Account, Category, Transaction } from '@cashctrl/types';
 import { ArrowLeftRight, Check, Loader2, MoreHorizontal, StickyNote } from 'lucide-react';
-import { memo, type ReactNode, useState } from 'react';
+import { Fragment, memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ItemActions } from '@/components/ItemActions';
 import { Badge } from '@/components/ui';
 import { Popover } from '@/components/ui/popover';
 import { AccountBadge } from '@/features/accounts/components/AccountBadge';
+import {
+  distinctSplitCategories,
+  resolveSplitParts,
+  type SplitPart,
+} from '@/features/transactions/lib/splitParts';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { parseLocalDate, today } from '@/lib/dateUtils';
@@ -120,8 +125,10 @@ function TxItemBody({
   accounts,
   logoMap,
   logo,
+  parts,
 }: Readonly<
   Pick<Props, 'tx' | 'accounts' | 'logoMap'> & {
+    parts: readonly SplitPart[];
     validated: boolean;
     isScheduled: boolean;
     isFuture: boolean;
@@ -150,12 +157,13 @@ function TxItemBody({
         <p className="sm:hidden text-[11px] text-content-subtle line-clamp-2">{tx.notes}</p>
       )}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <TxMeta tx={tx} accounts={accounts} logoMap={logoMap} logo={logo} />
+        <TxMeta tx={tx} parts={parts} accounts={accounts} logoMap={logoMap} logo={logo} />
         {/* Mobile : badges renvoyés sous la description pour ne pas l'écraser */}
         <div className="flex sm:hidden">
           <TxBadges tx={tx} validated={validated} isFuture={isFuture} />
         </div>
       </div>
+      {parts.length > 1 && <SplitBar parts={parts} />}
     </div>
   );
 }
@@ -220,18 +228,108 @@ function TxBadges({
   );
 }
 
+// Rond d'icône : icône de la catégorie, ou icônes empilées pour une ventilée.
+function TxCategoryIcon({
+  category,
+  parts,
+}: Readonly<{ category?: Category; parts: readonly SplitPart[] }>) {
+  const base =
+    'relative shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-surface-muted border border-line-subtle text-base leading-none cursor-default select-none';
+  const categories = distinctSplitCategories(parts);
+  if (categories.length < 2) {
+    const single = categories[0];
+    return (
+      <span title={single?.categoryName ?? (category?.name || undefined)} className={base}>
+        {single?.categoryIcon ?? category?.icon ?? ''}
+      </span>
+    );
+  }
+  const extra = categories.length - 2;
+  return (
+    <span title={categories.map((c) => c.categoryName).join('\n')} className={base}>
+      <span className="absolute top-0.5 left-1 text-[15px] leading-none">
+        {categories[0].categoryIcon}
+      </span>
+      <span className="absolute bottom-0.5 right-1 text-[15px] leading-none">
+        {categories[1].categoryIcon}
+      </span>
+      {extra > 0 && (
+        <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-surface border border-line-subtle text-[9px] font-bold leading-none text-content-secondary flex items-center justify-center">
+          +{extra}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Sous-titre d'une ventilée : icône + sous-catégorie de chaque ligne, détail complet au survol.
+function SplitSubtitle({ parts }: Readonly<{ parts: readonly SplitPart[] }>) {
+  const { t } = useTranslation('transactions');
+  const lines = parts.map(
+    (p) => `${p.categoryName} / ${p.subcategoryName} : ${fmtCurrency(p.amount)}`,
+  );
+  return (
+    <span
+      className="truncate min-w-0 max-w-full text-content-muted font-medium"
+      title={lines.join('\n')}
+    >
+      <span aria-hidden="true">
+        {parts.map((p, i) => (
+          <Fragment key={p.splitId}>
+            {i > 0 && ' · '}
+            {p.categoryIcon} {p.subcategoryName}
+          </Fragment>
+        ))}
+      </span>
+      <span className="sr-only">{t('tx_item.ventilated_prefix') + lines.join(', ')}</span>
+    </span>
+  );
+}
+
+// Barre de répartition décorative, découpée au prorata des montants.
+function SplitBar({ parts }: Readonly<{ parts: readonly SplitPart[] }>) {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="split-bar"
+      className="flex h-[3px] w-full mt-1 gap-px rounded-full overflow-hidden bg-surface"
+    >
+      {parts.map((p) => (
+        <span
+          key={p.splitId}
+          data-testid="split-bar-segment"
+          className="h-full min-w-px"
+          style={{ flex: `${Math.abs(p.amount) || 1} 1 0%`, backgroundColor: p.color }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function TxMeta({
   tx,
+  parts,
   accounts,
   logoMap,
   logo,
-}: Readonly<Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null }>) {
+}: Readonly<
+  Pick<Props, 'tx' | 'accounts' | 'logoMap'> & { logo: string | null; parts: readonly SplitPart[] }
+>) {
   const { t } = useTranslation('transactions');
+  let subtitle: ReactNode;
+  if (parts.length > 0) {
+    subtitle = <SplitSubtitle parts={parts} />;
+  } else {
+    const label = tx.splits?.length
+      ? t('tx_item.ventilated', { count: tx.splits.length })
+      : tx.subcategory;
+    subtitle = (
+      <span className="truncate min-w-0 max-w-full text-content-muted font-medium">{label}</span>
+    );
+  }
   return (
-    <p className="text-[11px] text-content-subtle flex items-center gap-1.5 flex-wrap">
-      <span className="truncate text-content-muted font-medium">
-        {tx.splits?.length ? t('tx_item.ventilated', { count: tx.splits.length }) : tx.subcategory}
-      </span>
+    <p className="text-[11px] text-content-subtle flex items-center gap-1.5 flex-wrap min-w-0 max-w-full">
+      {subtitle}
       {accounts && logoMap && (
         <>
           <span className="opacity-30">·</span>
@@ -340,6 +438,7 @@ function TxItemBase({
   const { data: categories = [] } = useCategories();
 
   const category = categories.find((c) => c.id === tx.category_id);
+  const parts = tx.splits?.length ? resolveSplitParts(tx.splits, categories) : [];
   const { rowClass, amountColor } = getTxClasses(isFuture, validated, tx.type);
 
   return (
@@ -349,15 +448,11 @@ function TxItemBase({
     >
       <TxDateBlock date={tx.date} />
 
-      <span
-        title={category?.name || undefined}
-        className="shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-surface-muted border border-line-subtle text-base leading-none cursor-default select-none"
-      >
-        {category?.icon ?? ''}
-      </span>
+      <TxCategoryIcon category={category} parts={parts} />
 
       <TxItemBody
         tx={tx}
+        parts={parts}
         validated={validated}
         isScheduled={isScheduled}
         isFuture={isFuture}
