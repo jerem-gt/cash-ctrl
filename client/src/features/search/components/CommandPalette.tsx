@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router';
 
 import { Badge, Empty, useModalDialog } from '@/components/ui';
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch';
+import { buildTransactionsUrl } from '@/features/transactions/lib/filtersUrl';
 import { useLogoMap } from '@/hooks/useLogoMap';
 import { fireAndForget } from '@/lib/async';
 import { fmtCurrency, fmtDateShort } from '@/lib/format';
@@ -133,7 +134,7 @@ export function CommandPalette({ onClose }: Readonly<Props>) {
 
     const transactions: Row[] = (data?.transactions ?? []).map((tx) => ({
       id: `transaction-${tx.id}`,
-      onSelect: () => goTo(`/transactions?q=${encodeURIComponent(query)}`),
+      onSelect: () => goTo(buildTransactionsUrl({ description_contains: query })),
       content: (
         <div className="flex items-center gap-2 min-w-0 flex-1 justify-between">
           <div className="min-w-0">

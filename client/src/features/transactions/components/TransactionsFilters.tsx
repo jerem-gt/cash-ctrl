@@ -14,6 +14,11 @@ function deriveDescription(s: string): string | undefined {
   return s.trim() || undefined;
 }
 
+function deriveAmount(s: string): number | undefined {
+  const v = Number.parseFloat(s);
+  return s.trim() && !Number.isNaN(v) ? v : undefined;
+}
+
 // Champ libellé du panneau de filtres avancés : libellé court au-dessus du contrôle.
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
@@ -78,6 +83,22 @@ export const TransactionsFilters = ({
     }
   }
 
+  const [prevExternalAmountMin, setPrevExternalAmountMin] = useState(filters.amount_min);
+  if (prevExternalAmountMin !== filters.amount_min) {
+    setPrevExternalAmountMin(filters.amount_min);
+    if (deriveAmount(amountMinInput) !== filters.amount_min) {
+      setAmountMinInput(filters.amount_min?.toString() ?? '');
+    }
+  }
+
+  const [prevExternalAmountMax, setPrevExternalAmountMax] = useState(filters.amount_max);
+  if (prevExternalAmountMax !== filters.amount_max) {
+    setPrevExternalAmountMax(filters.amount_max);
+    if (deriveAmount(amountMaxInput) !== filters.amount_max) {
+      setAmountMaxInput(filters.amount_max?.toString() ?? '');
+    }
+  }
+
   const activeAdvancedCount = ADVANCED_KEYS.filter((k) => {
     if (!showAccountSelect && k === 'account_id') return false;
     return filters[k] != null;
@@ -93,10 +114,7 @@ export const TransactionsFilters = ({
 
   useDebouncedSync(
     amountMinInput,
-    (s) => {
-      const v = Number.parseFloat(s);
-      return s.trim() && !Number.isNaN(v) ? v : undefined;
-    },
+    deriveAmount,
     filters.amount_min,
     (value) => onFilterChange({ amount_min: value }),
     400,
@@ -104,10 +122,7 @@ export const TransactionsFilters = ({
 
   useDebouncedSync(
     amountMaxInput,
-    (s) => {
-      const v = Number.parseFloat(s);
-      return s.trim() && !Number.isNaN(v) ? v : undefined;
-    },
+    deriveAmount,
     filters.amount_max,
     (value) => onFilterChange({ amount_max: value }),
     400,

@@ -1,5 +1,6 @@
-import { Filters, Transaction } from '@cashctrl/types';
+import { Transaction } from '@cashctrl/types';
 import { act, renderHook } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
@@ -13,6 +14,9 @@ let useUpdateTransfer: typeof import('@/hooks/useTransactions').useUpdateTransfe
 let useDeleteTransaction: typeof import('@/hooks/useTransactions').useDeleteTransaction;
 let useDeleteTransfer: typeof import('@/hooks/useTransactions').useDeleteTransfer;
 let useTransactionsManager: typeof import('./useTransactionsManager').useTransactionsManager;
+// react-router doit être importé après resetModules pour partager l'instance du SUT.
+let MemoryRouter: typeof import('react-router').MemoryRouter;
+let useLocation: typeof import('react-router').useLocation;
 
 beforeAll(async () => {
   // 1. Mock de tous les hooks dont dépend le manager
@@ -42,6 +46,7 @@ beforeAll(async () => {
     useDeleteTransfer,
   } = await import('@/hooks/useTransactions'));
   ({ useTransactionsManager } = await import('./useTransactionsManager'));
+  ({ MemoryRouter, useLocation } = await import('react-router'));
   await loadI18nForTests();
 });
 
@@ -54,13 +59,27 @@ afterAll(() => {
   vi.resetModules();
 });
 
+function renderManager(entry = '/transactions', accountId?: number) {
+  const location = { search: '' };
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(MemoryRouter, { initialEntries: [entry] }, children);
+  const utils = renderHook(
+    () => {
+      location.search = useLocation().search;
+      return useTransactionsManager(accountId);
+    },
+    { wrapper },
+  );
+  return { ...utils, location };
+}
+
 describe('useTransactionsManager', () => {
   // Setup des mocks avec des valeurs par défaut avant chaque test
   beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useTransactions).mockReturnValue({
-      data: { data: [], total: 0, totalPages: 1 },
+      data: { data: [], total: 0, totalPages: 10 },
       isLoading: false,
       isFetching: false,
     } as unknown as ReturnType<typeof useTransactions>);
@@ -102,24 +121,24 @@ describe('useTransactionsManager', () => {
     });
 
     it(`utilise 25 par defaut sans valeur en localStorage`, () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       expect(result.current.state.limit).toBe(25);
     });
 
     it(`lit la valeur initiale depuis localStorage`, () => {
       localStorage.setItem(`cashctrl.txLimit`, `50`);
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       expect(result.current.state.limit).toBe(50);
     });
 
     it(`retombe sur 25 si la valeur stockee est hors liste`, () => {
       localStorage.setItem(`cashctrl.txLimit`, `37`);
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       expect(result.current.state.limit).toBe(25);
     });
 
     it(`persiste le nouveau limit dans localStorage lors du changement`, () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       act(() => {
         result.current.actions.handleLimitChange(100);
       });
@@ -128,7 +147,7 @@ describe('useTransactionsManager', () => {
     });
 
     it(`reinitialise la page a 1 lors du changement de limit`, () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       act(() => {
         result.current.actions.setPage(3);
       });
@@ -141,12 +160,12 @@ describe('useTransactionsManager', () => {
 
   describe('Initialisation et Filtres', () => {
     it('devrait initialiser les filtres avec l’ID de compte fourni', () => {
-      const { result } = renderHook(() => useTransactionsManager(42));
+      const { result } = renderManager('/accounts/42', 42);
       expect(result.current.state.filters.account_id).toBe(42);
     });
 
     it('devrait réinitialiser la page à 1 lors du changement de filtre', () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
 
       act(() => {
         result.current.actions.setPage(5);
@@ -161,89 +180,94 @@ describe('useTransactionsManager', () => {
     });
   });
 
-  describe('Resynchronisation du filtre description via resyncKey (deep-link ?q=)', () => {
-    it("n'ajuste rien au premier rendu (l'init lazy des filtres couvre déjà le deep-link initial)", () => {
-      const { result } = renderHook(() =>
-        useTransactionsManager(undefined, { description_contains: 'chat' }, 'key-1'),
-      );
-      expect(result.current.state.filters.description_contains).toBe('chat');
-    });
-
-    it('réapplique le filtre description quand resyncKey change (nouvelle recherche depuis la palette)', () => {
-      const { result, rerender } = renderHook(
-        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
-          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
-        {
-          initialProps: {
-            initialFilters: { description_contains: 'chat' },
-            resyncKey: 'key-1',
-          },
-        },
-      );
-
-      rerender({ initialFilters: { description_contains: 'chien' }, resyncKey: 'key-2' });
-
-      expect(result.current.state.filters.description_contains).toBe('chien');
-    });
-
-    it('nettoie le filtre description quand resyncKey change vers une navigation sans ?q=', () => {
-      const { result, rerender } = renderHook<
-        ReturnType<typeof useTransactionsManager>,
-        { initialFilters: Partial<Filters>; resyncKey: string }
-      >((props) => useTransactionsManager(undefined, props.initialFilters, props.resyncKey), {
-        initialProps: {
-          initialFilters: { description_contains: 'chat' },
-          resyncKey: 'key-1',
-        },
-      });
-
-      rerender({ initialFilters: {}, resyncKey: 'key-2' });
-
-      expect(result.current.state.filters.description_contains).toBeUndefined();
-    });
-
-    it('réapplique le même ?q= après une divergence locale (retour sur le même deep-link)', () => {
-      const { result, rerender } = renderHook(
-        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
-          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
-        {
-          initialProps: {
-            initialFilters: { description_contains: 'chat' },
-            resyncKey: 'key-1',
-          },
-        },
-      );
-
-      act(() => {
-        result.current.actions.handleFilterChange({ description_contains: 'divergé' });
-      });
-      expect(result.current.state.filters.description_contains).toBe('divergé');
-
-      rerender({ initialFilters: { description_contains: 'chat' }, resyncKey: 'key-2' });
-
-      expect(result.current.state.filters.description_contains).toBe('chat');
-    });
-
-    it('réinitialise la page à 1 lors de la resynchronisation', () => {
-      const { result, rerender } = renderHook(
-        (props: { initialFilters: Partial<Filters>; resyncKey: string }) =>
-          useTransactionsManager(undefined, props.initialFilters, props.resyncKey),
-        {
-          initialProps: {
-            initialFilters: { description_contains: 'chat' },
-            resyncKey: 'key-1',
-          },
-        },
-      );
-
-      act(() => {
-        result.current.actions.setPage(3);
+  describe('URL comme source de vérité des filtres et de la page', () => {
+    it("lit les filtres et la page depuis l'URL", () => {
+      const { result } = renderManager('/transactions?q=chat&type=income&category_id=2&page=3');
+      expect(result.current.state.filters).toEqual({
+        description_contains: 'chat',
+        type: 'income',
+        category_id: 2,
       });
       expect(result.current.state.page).toBe(3);
+    });
 
-      rerender({ initialFilters: { description_contains: 'chien' }, resyncKey: 'key-2' });
+    it("handleFilterChange réécrit l'URL et retire page", () => {
+      const { result, location } = renderManager('/transactions?q=chat&page=3');
 
+      act(() => {
+        result.current.actions.handleFilterChange({ type: 'expense' });
+      });
+
+      expect(location.search).toBe('?q=chat&type=expense');
       expect(result.current.state.page).toBe(1);
+    });
+
+    it('handleFilterChange nettoie les paramètres inconnus et vides', () => {
+      const { result, location } = renderManager('/transactions?foo=bar&q=chat');
+
+      act(() => {
+        result.current.actions.handleFilterChange({ description_contains: undefined });
+      });
+
+      expect(location.search).toBe('');
+    });
+
+    it("setPage écrit page dans l'URL", () => {
+      const { result, location } = renderManager('/transactions?type=income');
+
+      act(() => {
+        result.current.actions.setPage(4);
+      });
+
+      expect(location.search).toBe('?type=income&page=4');
+      expect(result.current.state.page).toBe(4);
+    });
+
+    it("handleLimitChange retire page de l'URL", () => {
+      const { result, location } = renderManager('/transactions?type=income&page=4');
+
+      act(() => {
+        result.current.actions.handleLimitChange(50);
+      });
+
+      expect(location.search).toBe('?type=income');
+    });
+
+    it("n'écrit pas account_id sur la page d'un compte et ignore celui de l'URL", () => {
+      const { result, location } = renderManager('/accounts/7?account_id=99&q=chat', 7);
+      expect(result.current.state.filters.account_id).toBe(7);
+
+      act(() => {
+        result.current.actions.handleFilterChange({ type: 'expense' });
+      });
+
+      expect(location.search).toBe('?q=chat&type=expense');
+      expect(result.current.state.filters.account_id).toBe(7);
+    });
+
+    it('ramène une page hors limites à la dernière page', () => {
+      vi.mocked(useTransactions).mockReturnValue({
+        data: { data: [], total: 30, totalPages: 3 },
+        isLoading: false,
+        isFetching: false,
+      } as unknown as ReturnType<typeof useTransactions>);
+
+      const { result, location } = renderManager('/transactions?type=income&page=9');
+
+      expect(location.search).toBe('?type=income&page=3');
+      expect(result.current.state.page).toBe(3);
+    });
+
+    it('ne corrige pas la page tant que la requête est en cours', () => {
+      vi.mocked(useTransactions).mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isFetching: true,
+      } as unknown as ReturnType<typeof useTransactions>);
+
+      const { location } = renderManager('/transactions?page=9');
+
+      expect(location.search).toBe('?page=9');
     });
   });
 
@@ -256,7 +280,7 @@ describe('useTransactionsManager', () => {
         typeof useCategories
       >);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
 
       act(() => {
         result.current.actions.handleFilterChange({ category_id: 1 });
@@ -271,7 +295,7 @@ describe('useTransactionsManager', () => {
     const mockTx = { id: 99, description: 'Test Tx' } as Transaction;
 
     it('devrait passer de l’état none à edit avec la transaction associée', () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
 
       expect(result.current.state.modal.type).toBe('none');
 
@@ -286,7 +310,7 @@ describe('useTransactionsManager', () => {
     });
 
     it('devrait tout fermer avec closeAll', () => {
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       act(() => {
         result.current.actions.openAdd();
       });
@@ -305,7 +329,7 @@ describe('useTransactionsManager', () => {
         isPending: false,
       } as unknown as ReturnType<typeof useDeleteTransaction>);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       const tx = { id: 50, transfer_peer_id: null } as Transaction;
 
       act(() => {
@@ -325,7 +349,7 @@ describe('useTransactionsManager', () => {
         isPending: false,
       } as unknown as ReturnType<typeof useDeleteTransfer>);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       const tx = { id: 50, transfer_peer_id: 51 } as Transaction;
 
       act(() => {
@@ -345,7 +369,7 @@ describe('useTransactionsManager', () => {
         isPending: false,
       } as unknown as ReturnType<typeof useUpdateTransaction>);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       const tx = { id: 10, transfer_peer_id: null } as Transaction;
 
       act(() => {
@@ -392,7 +416,7 @@ describe('useTransactionsManager', () => {
         isPending: false,
       } as unknown as ReturnType<typeof useUpdateTransfer>);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       const tx = { id: 20, transfer_peer_id: 21, validated: 0 } as Transaction;
 
       act(() => {
@@ -428,7 +452,7 @@ describe('useTransactionsManager', () => {
         mutate: mockDelete,
       } as unknown as ReturnType<typeof useDeleteTransaction>);
 
-      const { result } = renderHook(() => useTransactionsManager());
+      const { result } = renderManager();
       act(() => {
         result.current.actions.handleDelete();
       });

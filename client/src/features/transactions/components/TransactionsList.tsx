@@ -1,4 +1,4 @@
-import type { Account, Filters } from '@cashctrl/types';
+import type { Account } from '@cashctrl/types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,8 +17,6 @@ interface Props {
   logoMap: Record<string, string | null>;
   emptyMessage?: string;
   readOnly?: boolean;
-  initialFilters?: Partial<Filters>;
-  resyncKey?: string;
 }
 
 export function TransactionsList({
@@ -26,11 +24,9 @@ export function TransactionsList({
   logoMap,
   emptyMessage,
   readOnly = false,
-  initialFilters,
-  resyncKey,
 }: Readonly<Props>) {
   const { t } = useTranslation('transactions');
-  const { state, actions } = useTransactionsManager(account?.id, initialFilters, resyncKey);
+  const { state, actions } = useTransactionsManager(account?.id);
   const resolvedEmptyMessage = emptyMessage ?? t('list.empty');
 
   const runningBalances = useMemo(() => {
