@@ -5,14 +5,14 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
-# Annule le run précédent du même groupe quand un nouveau démarre.
-# Pour un push sur develop avec une PR ouverte, les deux événements partagent
-# la même clé (head_ref=develop ou ref_name=develop) → un seul run actif à la fois.
+# Groupes séparés push / PR : seuls les runs de PR sont annulés (un run push peut être en pleine release)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 env:
   REGISTRY: ghcr.io
@@ -23,13 +23,12 @@ jobs:
     name: 🧪 CI & Tests
     runs-on: ubuntu-latest
     container: node:24.22.1-alpine
+    timeout-minutes: 15
     steps:
       - name: Install system deps
         run: apk add --no-cache git g++ make python3 tar
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
 
       # Remplacement de actions/setup-node par actions/cache
       - name: Cache npm dependencies
@@ -78,6 +77,7 @@ jobs:
           npm run build --workspace=client
 
       - name: Prune dev deps
+        if: github.event_name == 'push'
         run: npm prune --omit=dev
 
       # Artifact léger pour Sonar : uniquement les rapports de coverage
@@ -89,8 +89,9 @@ jobs:
             server/coverage/lcov.info
             client/coverage/lcov.info
 
-      # Artifact lourd pour le build Docker
+      # Artifact lourd pour le build Docker (jamais construit sur PR)
       - name: Upload artifacts
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: build-assets
@@ -105,6 +106,7 @@ jobs:
     # Le plan SonarCloud ne couvre que la branche main + les PR : pas d'analyse sur push develop.
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -126,6 +128,7 @@ jobs:
     needs: [ci]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       issues: write
@@ -152,12 +155,10 @@ jobs:
   build-and-push:
     name: 📦 Docker Build & Push
     needs: [ci, release]
-    # On build si on est sur PR, sur un déclenchement manuel, OU si une nouvelle release a été publiée
-    if: |
-      github.event_name == 'pull_request' ||
-      github.event_name == 'workflow_dispatch' ||
-      (needs.release.outputs.new_release_published == 'true')
+    # Uniquement si une nouvelle release a été publiée (release ne tourne que sur push)
+    if: needs.release.outputs.new_release_published == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -221,6 +222,7 @@ jobs:
     # On ne lance le ménage que si une nouvelle version stable est publiée sur main
     if: needs.release.outputs.new_release_published == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -253,6 +255,7 @@ jobs:
     name: 🧹 Prune Dev Images
     needs: [ build-and-push ]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       packages: write
     steps:
