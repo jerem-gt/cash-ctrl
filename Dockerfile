@@ -21,7 +21,7 @@ RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
 ENV APP_VERSION=$APP_VERSION
 
 # App
-COPY node_modules ./node_modules
+COPY deploy/node_modules ./node_modules
 COPY server/dist ./server/dist
 COPY client/dist ./client/dist
 

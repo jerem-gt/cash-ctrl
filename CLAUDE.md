@@ -30,7 +30,7 @@ Le job CI lance lint, vérification des types (client `typecheck:test`, server `
 - `--cache-strategy content` est **obligatoire** : le checkout réécrit les mtimes à chaque run, la stratégie `metadata` par défaut invaliderait tout.
 - Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans `ci.yml`.
 
-Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job SonarCloud) et `build-assets` (node_modules prunés + dists, consommé par le build Docker ; uploadé sur push uniquement, aucune image n'étant construite sur PR). Concurrence : groupes séparés push / PR, seuls les runs de PR sont annulés. Un nouveau rapport destiné à Sonar va dans `sonar-assets`.
+Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job SonarCloud) et `build-assets` (deps runtime extraites par `scripts/prepare-runtime-deps.mjs` dans `deploy/node_modules` + dists, serveur bundlé par `server/tsup.config.ts`, consommé par le build Docker ; uploadé sur push uniquement, aucune image n'étant construite sur PR). Concurrence : groupes séparés push / PR, seuls les runs de PR sont annulés. Un nouveau rapport destiné à Sonar va dans `sonar-assets`.
 
 ## TypeScript & Code Quality
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.

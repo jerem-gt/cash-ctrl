@@ -76,9 +76,10 @@ jobs:
           npm run build --workspace=server
           npm run build --workspace=client
 
-      - name: Prune dev deps
+      # Extrait les seules deps runtime (natifs musl/x64) dans deploy/node_modules
+      - name: Prepare runtime deps
         if: github.event_name == 'push'
-        run: npm prune --omit=dev
+        run: node scripts/prepare-runtime-deps.mjs
 
       # Artifact léger pour Sonar : uniquement les rapports de coverage
       - name: Upload coverage
@@ -96,7 +97,7 @@ jobs:
         with:
           name: build-assets
           path: |
-            node_modules
+            deploy/node_modules
             server/dist
             client/dist
 
