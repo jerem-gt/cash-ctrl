@@ -46,7 +46,7 @@ function TxDateBlock({ date }: Readonly<{ date: string }>) {
   const d = parseLocalDate(date);
   const isCurrentYear = d.getFullYear() === currentYear();
   return (
-    <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-line-subtle pr-3">
+    <div className="flex flex-col items-center justify-center shrink-0 w-10 py-1 border-r border-line-subtle pr-2 sm:pr-3">
       <span className="text-[9px] uppercase font-bold text-content-subtle leading-none tracking-tighter">
         {fmtMonthShort(d)}
       </span>
@@ -234,7 +234,7 @@ function TxCategoryIcon({
   parts,
 }: Readonly<{ category?: Category; parts: readonly SplitPart[] }>) {
   const base =
-    'relative shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-surface-muted border border-line-subtle text-base leading-none cursor-default select-none';
+    'relative shrink-0 flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-surface-muted border border-line-subtle text-sm sm:text-base leading-none cursor-default select-none';
   const categories = distinctSplitCategories(parts);
   if (categories.length < 2) {
     const single = categories[0];
@@ -247,10 +247,10 @@ function TxCategoryIcon({
   const extra = categories.length - 2;
   return (
     <span title={categories.map((c) => c.categoryName).join('\n')} className={base}>
-      <span className="absolute top-0.5 left-1 text-[15px] leading-none">
+      <span className="absolute top-0.5 left-0.5 sm:left-1 text-[12px] sm:text-[15px] leading-none">
         {categories[0].categoryIcon}
       </span>
-      <span className="absolute bottom-0.5 right-1 text-[15px] leading-none">
+      <span className="absolute bottom-0.5 right-0.5 sm:right-1 text-[12px] sm:text-[15px] leading-none">
         {categories[1].categoryIcon}
       </span>
       {extra > 0 && (
@@ -362,7 +362,7 @@ function TxItemTrailing({
   const delCb = onDelete ? () => onDelete(tx) : undefined;
   const sign = tx.type === 'income' ? '+' : '−';
   return (
-    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+    <div className="flex items-center gap-1 sm:gap-3 shrink-0">
       {/* Contrôles placés AVANT le montant : les actions desktop (cachées au
           repos) occupent un espace qui se fond dans le blanc de la description,
           au lieu de laisser un trou en bout de ligne. Le montant reste épinglé
@@ -377,7 +377,8 @@ function TxItemTrailing({
         {!readOnly && <ValidateButton tx={tx} validated={validated} />}
       </div>
 
-      <div className="text-right w-28 shrink-0 border-l border-line-subtle pl-2 sm:pl-3">
+      {/* Mobile : largeur minimale commune (alignement) qui s'élargit pour les gros montants. */}
+      <div className="text-right min-w-20 sm:w-28 shrink-0 border-l border-line-subtle pl-2 sm:pl-3">
         <div className={`text-sm font-bold tabular-nums ${amountColor}`}>
           {sign}
           {fmtCurrency(tx.amount)}
