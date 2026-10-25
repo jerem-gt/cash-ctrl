@@ -769,7 +769,7 @@ describe('/api/transactions — ventilations (filtres et cohérence)', () => {
   });
 
   it('le filtre category_id trouve une transaction ventilée', async () => {
-    const res = await ctx.agent.get('/api/transactions?category_id=3');
+    const res = await ctx.agent.get(`/api/transactions?category_id=${SEED.CAT_ALIMENTATION}`);
     expect(res.body.total).toBe(1);
     expect(res.body.data[0].id).toBe(splitId);
     expect(res.body.data[0].amount).toBe(100);
@@ -796,7 +796,9 @@ describe('/api/transactions — ventilations (filtres et cohérence)', () => {
         ],
       }),
     );
-    const res = await ctx.agent.get('/api/transactions?category_id=3&limit=25');
+    const res = await ctx.agent.get(
+      `/api/transactions?category_id=${SEED.CAT_ALIMENTATION}&limit=25`,
+    );
     expect(res.body.total).toBe(2);
     expect(res.body.data).toHaveLength(2);
     const dbl = res.body.data.find((t: { id: number }) => t.id === created.body.id);
@@ -846,6 +848,86 @@ describe('/api/transactions — ventilations (filtres et cohérence)', () => {
     expect(res.status).toBe(200);
     expect(splitCount(created.body.id)).toBe(0);
     expect(dbSubcategory(created.body.id)).toBe(SEED.SUBCAT_LOYER);
+  });
+});
+
+describe('/api/transactions — ventilations prioritaires et montant total', () => {
+  let ctx: TestContext;
+  let accountId: number;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+  });
+
+  const insertLegacy = () => {
+    const userId = (
+      ctx.db.prepare('SELECT user_id FROM accounts WHERE id = ?').get(accountId) as {
+        user_id: number;
+      }
+    ).user_id;
+    const txId = ctx.db
+      .prepare(
+        `INSERT INTO transactions (user_id, account_id, type, amount, description, subcategory_id, date, payment_method_id, validated)
+         VALUES (?, ?, 'expense', 10000, 'Legacy', ?, ?, ?, 1)`,
+      )
+      .run(userId, accountId, SEED.SUBCAT_SUPERMARCHE, TODAY, SEED.PM_CARTE).lastInsertRowid;
+    const insertSplit = ctx.db.prepare(
+      'INSERT INTO transaction_splits (user_id, transaction_id, subcategory_id, amount) VALUES (?, ?, ?, ?)',
+    );
+    insertSplit.run(userId, txId, SEED.SUBCAT_CINEMA, 6000);
+    insertSplit.run(userId, txId, SEED.SUBCAT_LOYER, 4000);
+    return Number(txId);
+  };
+
+  it('une transaction legacy ventilée ignore son subcategory_id pour les filtres', async () => {
+    const legacyId = insertLegacy();
+
+    const byLegacyCat = await ctx.agent.get(
+      `/api/transactions?category_id=${SEED.CAT_ALIMENTATION}`,
+    );
+    expect(byLegacyCat.body.total).toBe(0);
+
+    const byLegacySub = await ctx.agent.get(
+      `/api/transactions?subcategory_id=${SEED.SUBCAT_SUPERMARCHE}`,
+    );
+    expect(byLegacySub.body.total).toBe(0);
+
+    const bySplitCat = await ctx.agent.get(`/api/transactions?category_id=${SEED.CAT_LOISIRS}`);
+    expect(bySplitCat.body.total).toBe(1);
+    expect(bySplitCat.body.data[0].id).toBe(legacyId);
+
+    const byOtherSplitCat = await ctx.agent.get(
+      `/api/transactions?category_id=${SEED.CAT_LOGEMENT}`,
+    );
+    expect(byOtherSplitCat.body.total).toBe(1);
+  });
+
+  it('les filtres de montant portent sur le montant total de la transaction ventilée', async () => {
+    const created = await ctx.agent.post('/api/transactions').send({
+      account_id: accountId,
+      type: 'expense',
+      amount: 100,
+      description: 'Ventilée 100',
+      subcategory_id: null,
+      splits: [
+        { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+        { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40 },
+      ],
+      date: TODAY,
+      payment_method_id: SEED.PM_CARTE,
+    });
+    const id = created.body.id;
+
+    const min = await ctx.agent.get(
+      '/api/transactions?amount_min=80&description_contains=Ventilée',
+    );
+    expect(min.body.data.map((t: { id: number }) => t.id)).toContain(id);
+
+    const max = await ctx.agent.get(
+      '/api/transactions?amount_max=50&description_contains=Ventilée',
+    );
+    expect(max.body.data.map((t: { id: number }) => t.id)).not.toContain(id);
   });
 });
 

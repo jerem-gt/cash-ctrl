@@ -2,6 +2,7 @@ import supertest from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
+import { SEED } from '../../tests/helpers/testDb.js';
 
 describe('/api/categories', () => {
   let ctx: TestContext;
@@ -50,6 +51,39 @@ describe('/api/categories', () => {
     const res = await ctx.agent.delete(`/api/categories/${id}`);
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
+  });
+
+  it("DELETE /:id retourne 409 si la catégorie n'est utilisée que dans une ventilation", async () => {
+    const cat = await ctx.agent.post('/api/categories').send({ name: 'SplitCat', icon: '❓' });
+    const sub = await ctx.agent
+      .post('/api/subcategories')
+      .send({ category_id: cat.body.id, name: 'SplitSub' });
+    const acc = await ctx.agent.post('/api/accounts').send({
+      name: 'Split',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    const created = await ctx.agent.post('/api/transactions').send({
+      account_id: acc.body.id,
+      type: 'expense',
+      amount: 100,
+      description: 'Ventilée',
+      subcategory_id: null,
+      splits: [
+        { subcategory_id: sub.body.id, amount: 50 },
+        { subcategory_id: sub.body.id, amount: 50 },
+      ],
+      date: '2024-03-20',
+      payment_method_id: SEED.PM_CARTE,
+    });
+    expect(created.status).toBe(201);
+
+    const res = await ctx.agent.delete(`/api/categories/${cat.body.id}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('category.in_use');
+    expect(res.body.error.params).toEqual({ count: 1 });
   });
 
   it('DELETE /:id retourne 404 pour une catégorie inconnue', async () => {
