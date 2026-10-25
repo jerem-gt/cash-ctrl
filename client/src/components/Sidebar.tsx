@@ -324,11 +324,11 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
           {menuOpen && (
             <>
               <div
-                className="fixed inset-0 z-10"
+                className="fixed inset-0 z-10 bg-black/30"
                 onClick={() => setMenuOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute bottom-full left-0 right-0 z-20 bg-sidebar-bg border-t border-white/[0.07] py-1">
+              <div className="absolute bottom-full left-0 right-0 z-20 mx-3 mb-2 overflow-hidden rounded-xl bg-sidebar-elevated border border-white/10 shadow-xl shadow-black/40 py-1">
                 {NAV_BOTTOM_ITEMS.map(({ to, key, icon: Icon, end }) => (
                   <NavLink
                     key={to}
@@ -346,7 +346,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
             </>
           )}
 
-          <div className="p-4 flex items-center justify-between">
+          <div className="relative z-20 p-4 flex items-center justify-between">
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium text-white/70 truncate">{username}</span>
               <span className="text-xs text-white/30">{t('active_session')}</span>
@@ -356,11 +356,14 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
-                className={`p-2 transition-colors rounded-md hover:bg-white/5 ${menuOpen ? 'text-white/70' : 'text-white/30 hover:text-white/70'}`}
+                className={`p-2 transition-colors rounded-md ${menuOpen ? 'bg-white/10 text-white/90' : 'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
                 title={t('menu_title')}
                 aria-label={t('menu_title')}
+                aria-expanded={menuOpen}
               >
-                <Settings className="h-5 w-5" />
+                <Settings
+                  className={`h-5 w-5 transition-transform duration-200 ${menuOpen ? 'rotate-45' : ''}`}
+                />
               </button>
               <button
                 type="button"
