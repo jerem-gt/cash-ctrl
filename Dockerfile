@@ -10,10 +10,10 @@ ARG APP_VERSION=dev
 
 WORKDIR /app
 
-# Timezone
+# Timezone figée à Europe/Paris : seul ce fuseau est embarqué
 ENV TZ=Europe/Paris
 
-COPY --from=tz /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=tz /usr/share/zoneinfo/Europe/Paris /usr/share/zoneinfo/Europe/Paris
 RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
  && echo "$TZ" > /etc/timezone
 
