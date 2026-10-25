@@ -7,6 +7,7 @@ import { ScheduledTransaction } from '../modules/scheduled/scheduled.types.js';
 import { createSettingsRepo } from '../modules/settings/settings.repo.js';
 import { createTransactionsRepo } from '../modules/transactions/transactions.repo.js';
 import { createTransfersRepo } from '../modules/transfers/transfers.repo.js';
+import { getTransferIds } from './administrationDataConstants.js';
 import { dateStr } from './dateUtils.js';
 import { toCents } from './money.js';
 import { forEachOccurrence } from './scheduledLogic.js';
@@ -22,12 +23,24 @@ function generateInsuranceVersement(
   const amountCents = toCents(sched.amount);
   const feesCents = toCents(sched.insurance_fees);
 
+  const { subcategoryId, paymentMethodId } = getTransferIds(db, userId);
+
   const txResult = db
     .prepare(
-      `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated, scheduled_id)
-       VALUES (?, ?, 'expense', ?, ?, ?, 0, ?)`,
+      `INSERT INTO transactions
+         (user_id, account_id, type, amount, description, subcategory_id, payment_method_id, date, validated, scheduled_id)
+       VALUES (?, ?, 'expense', ?, ?, ?, ?, ?, 0, ?)`,
     )
-    .run(userId, sched.to_account_id!, amountCents, sched.description, actualStr, sched.id);
+    .run(
+      userId,
+      sched.to_account_id!,
+      amountCents,
+      sched.description,
+      subcategoryId ?? null,
+      sched.payment_method_id ?? paymentMethodId ?? null,
+      actualStr,
+      sched.id,
+    );
   const transactionId = Number(txResult.lastInsertRowid);
 
   // Fees are embedded in the versement amount — no separate source debit.

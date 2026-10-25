@@ -386,6 +386,74 @@ describe('generateScheduledTransactions', () => {
   });
 });
 
+describe('versement planifié (assurance-vie)', () => {
+  let f: Fixtures;
+  let avId: number;
+  let supportId: number;
+
+  beforeEach(() => {
+    f = setupFixtures();
+    avId = Number(
+      f.db
+        .prepare(
+          'INSERT INTO accounts (user_id, name, bank_id, account_type_id, opening_date) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(f.userId, 'AV', SEED.BANK_ID, SEED.AT_AV, '2020-01-01').lastInsertRowid,
+    );
+    supportId = Number(
+      f.db
+        .prepare(
+          `INSERT INTO insurance_supports (user_id, account_id, name, type) VALUES (?, ?, 'Fonds Euro', 'euro')`,
+        )
+        .run(f.userId, avId).lastInsertRowid,
+    );
+    // UPDATE (et non INSERT OR REPLACE) pour conserver les refs système de transfert
+    f.db.prepare('UPDATE user_settings SET lead_days = 0 WHERE user_id = ?').run(f.userId);
+  });
+
+  function insertVersement(paymentMethodId: number | null): number {
+    return Number(
+      f.db
+        .prepare(
+          `INSERT INTO scheduled_transactions
+             (user_id, account_id, type, amount, description, payment_method_id, recurrence_unit,
+              recurrence_interval, to_account_id, weekend_handling, start_date, active,
+              insurance_support_id, insurance_fees)
+           VALUES (?, ?, 'expense', 50, 'Versement', ?, 'month', 1, ?, 'allow', ?, 1, ?, 0)`,
+        )
+        .run(f.userId, avId, paymentMethodId, f.accountId, dateStr(new Date()), supportId)
+        .lastInsertRowid,
+    );
+  }
+
+  function getVersementTx(id: number) {
+    return f.db.prepare('SELECT * FROM transactions WHERE scheduled_id = ?').get(id) as {
+      subcategory_id: number | null;
+      payment_method_id: number | null;
+      validated: number;
+    };
+  }
+
+  it('porte la sous-catégorie et le moyen de paiement de transfert', () => {
+    const id = insertVersement(null);
+    generateScheduledTransactions(f.userId, f.db);
+
+    const tx = getVersementTx(id);
+    expect(tx.subcategory_id).toBe(SEED.SUBCAT_TRANSFERT);
+    expect(tx.payment_method_id).toBe(SEED.PM_TRANSFERT);
+    expect(tx.validated).toBe(0);
+  });
+
+  it('conserve le moyen de paiement de la planification s’il est défini', () => {
+    const id = insertVersement(SEED.PM_VIREMENT);
+    generateScheduledTransactions(f.userId, f.db);
+
+    const tx = getVersementTx(id);
+    expect(tx.subcategory_id).toBe(SEED.SUBCAT_TRANSFERT);
+    expect(tx.payment_method_id).toBe(SEED.PM_VIREMENT);
+  });
+});
+
 describe('startScheduledGenerationInterval', () => {
   let f: Fixtures;
 

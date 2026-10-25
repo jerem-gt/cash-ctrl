@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CATEGORIES, TRANSACTIONS } from '@/tests/fixtures';
+import { CATEGORIES, STOCK_OPERATIONS, STOCK_TX, TRANSACTIONS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -141,6 +141,27 @@ describe('TxItem', () => {
       renderTx(baseTx);
       expect(screen.queryByTestId('split-bar')).not.toBeInTheDocument();
     });
+  });
+
+  it("affiche l'icône 📈 et le sous-titre pour un achat de titres", () => {
+    renderTx(STOCK_TX);
+    expect(screen.getByText('📈')).toBeInTheDocument();
+    expect(screen.getByText('Achat · 10 × DCAM.PA')).toBeInTheDocument();
+  });
+
+  it("affiche l'icône 📉 et le sous-titre pour une vente de titres", () => {
+    renderTx({
+      ...STOCK_TX,
+      stock_operation: { ...STOCK_OPERATIONS[0], type: 'sell', quantity: 5 },
+    });
+    expect(screen.getByText('📉')).toBeInTheDocument();
+    expect(screen.getByText('Vente · 5 × DCAM.PA')).toBeInTheDocument();
+  });
+
+  it("n'affiche pas de sous-titre titres pour une transaction normale", () => {
+    renderTx(baseTx);
+    expect(screen.queryByText('📈')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Achat ·/)).not.toBeInTheDocument();
   });
 
   it(`pas de badge "Ventilée" pour une transaction normale`, () => {

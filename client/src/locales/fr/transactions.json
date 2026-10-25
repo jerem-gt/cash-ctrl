@@ -86,7 +86,9 @@
     "actions": "Actions",
     "running_balance_title": "Solde courant",
     "ventilated": "Ventilée ({{count}})",
-    "ventilated_prefix": "Ventilée : "
+    "ventilated_prefix": "Ventilée : ",
+    "stock_buy": "Achat · {{quantity}} × {{ticker}}",
+    "stock_sell": "Vente · {{quantity}} × {{ticker}}"
   },
   "tx_core": {
     "type_label": "Type",
