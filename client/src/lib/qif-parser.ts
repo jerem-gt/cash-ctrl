@@ -5,8 +5,19 @@ import {
   type ParsedTransaction,
 } from './import-model';
 
-const isAccountRef = (category: string): boolean =>
+export const isAccountRef = (category: string): boolean =>
   category.startsWith('[') && category.endsWith(']');
+
+/** Catégories distinctes des lignes de ventilation (hors renvois de compte). */
+export function uniqueSplitCategories(transactions: ParsedTransaction[]): string[] {
+  return [
+    ...new Set(
+      transactions.flatMap((t) =>
+        (t.splits ?? []).map((s) => s.category).filter((c) => c && !isAccountRef(c)),
+      ),
+    ),
+  ];
+}
 
 // Re-exports pour la compatibilité (les types pivots vivent maintenant dans import-model)
 
@@ -68,7 +79,7 @@ function finalizeTransaction(
   if (tx?.date === undefined || tx?.amount === undefined) return null;
   // Avec des lignes S, la ligne L (--Split-- ou première catégorie) est ignorée
   const category = splits.length > 0 ? '' : (tx.category ?? '');
-  const isTransfer = category.startsWith('[') && category.endsWith(']');
+  const isTransfer = isAccountRef(category);
   return {
     ...(splits.length > 0 && { splits }),
     accountName,
@@ -88,12 +99,10 @@ function buildQifResult(accountsSet: Set<string>, transactions: ParsedTransactio
   if (allAccounts.length === 0 && transactions.length > 0) allAccounts.push('');
 
   const uniqueCategories = [
-    ...new Set(
-      transactions.flatMap((t) => [
-        ...(!t.isTransfer && t.category ? [t.category] : []),
-        ...(t.splits ?? []).map((s) => s.category).filter((c) => c && !isAccountRef(c)),
-      ]),
-    ),
+    ...new Set([
+      ...transactions.flatMap((t) => (!t.isTransfer && t.category ? [t.category] : [])),
+      ...uniqueSplitCategories(transactions),
+    ]),
   ];
   const uniqueTransferTargets = [
     ...new Set(

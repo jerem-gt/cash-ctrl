@@ -690,6 +690,12 @@ export type UpdateLoanPayload = {
   source_account_id: number;
 };
 
+export interface ImportSplitInput {
+  subcategory_id: number | null;
+  new_subcategory_key: string | null;
+  amount: number;
+}
+
 export interface ImportExecuteBody {
   newAccounts: {
     source_name: string;
@@ -718,11 +724,7 @@ export interface ImportExecuteBody {
     notes: string | null;
     validated: boolean;
     payment_method_id: number | null;
-    splits?: {
-      subcategory_id: number | null;
-      new_subcategory_key: string | null;
-      amount: number;
-    }[];
+    splits?: ImportSplitInput[];
   }[];
   transfers: {
     from_account_id: number | null;

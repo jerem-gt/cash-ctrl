@@ -55,6 +55,15 @@ function buildSubcategoryMap(
   return subcategoryMap;
 }
 
+function resolveSubcategory(
+  map: Map<string, number>,
+  subcategoryId: number | null,
+  newSubcategoryKey: string | null,
+): number | null {
+  if (newSubcategoryKey === null) return subcategoryId;
+  return map.get(newSubcategoryKey) ?? null;
+}
+
 function insertImportSplits(
   deps: ImportDeps,
   userId: number,
@@ -63,10 +72,11 @@ function insertImportSplits(
   subcategoryMap: Map<string, number>,
 ): void {
   for (const split of splits) {
-    const subcategoryId =
-      split.new_subcategory_key === null
-        ? split.subcategory_id
-        : (subcategoryMap.get(split.new_subcategory_key) ?? null);
+    const subcategoryId = resolveSubcategory(
+      subcategoryMap,
+      split.subcategory_id,
+      split.new_subcategory_key,
+    );
     if (subcategoryId === null) throw new Error('Sous-catégorie de ventilation introuvable');
     deps.insertSplitStmt.run(userId, transactionId, subcategoryId, toCents(split.amount));
   }
@@ -86,10 +96,7 @@ function insertImportTransactions(
     const hasSplits = tx.splits !== undefined && tx.splits.length > 0;
     let subcategoryId: number | null = null;
     if (!hasSplits) {
-      subcategoryId =
-        tx.new_subcategory_key === null
-          ? tx.subcategory_id
-          : (subcategoryMap.get(tx.new_subcategory_key) ?? null);
+      subcategoryId = resolveSubcategory(subcategoryMap, tx.subcategory_id, tx.new_subcategory_key);
     }
     const res = deps.insertTxStmt.run({
       userId,

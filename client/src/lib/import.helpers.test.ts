@@ -9,6 +9,7 @@ import {
   findAutoCategory,
   likeMatch,
   type PreviewItem,
+  type PreviewOptions,
   resolveAccountInfo,
   resolveCategoryInfo,
   resolvePreview,
@@ -852,7 +853,7 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
       new Map(),
       [account],
       categories,
-      matcher,
+      { categoryMode: 'rules', descriptionRuleMatcher: matcher },
     );
     expect(items[0].kind).toBe('transaction');
     if (items[0].kind === 'transaction') {
@@ -860,8 +861,7 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
     }
   });
 
-  it('retourne null pour subcategoryId quand le matcher retourne null (mode sans catégorie)', () => {
-    const matcher = () => null;
+  it('retourne null pour subcategoryId en mode none', () => {
     const items = resolvePreview(
       makeParsed('Courses Leclerc', 'Alimentation:Supermarché'),
       'DD/MM',
@@ -869,7 +869,7 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
       new Map(),
       [account],
       categories,
-      matcher,
+      { categoryMode: 'none' },
     );
     expect(items[0].kind).toBe('transaction');
     if (items[0].kind === 'transaction') {
@@ -948,19 +948,24 @@ describe('ventilations', () => {
     { category: 'Loisirs:Nouveau', amount: -40, memo: null },
   ];
 
-  const runQif = (splits: ParsedSplit[], choices = catChoices, matcher?: () => number | null) =>
+  const runQif = (
+    splits: ParsedSplit[],
+    choices = catChoices,
+    options?: PreviewOptions,
+    amount = -100,
+  ) =>
     resolvePreview(
-      qifLedger({ ...makeTx({ amount: -100, memo: 'Note' }), splits }),
+      qifLedger({ ...makeTx({ amount, memo: 'Note' }), splits }),
       'DD/MM',
       accChoices,
       choices,
       [ACCOUNT],
       CATEGORIES,
-      matcher,
+      options,
     );
-  const runXhb = (splits: ParsedSplit[], choices = catChoices) =>
+  const runXhb = (splits: ParsedSplit[], choices = catChoices, amount = -100) =>
     resolveXhbPreview(
-      xhbParsed({ splits, notes: 'Note' }),
+      xhbParsed({ splits, amount, notes: 'Note' }),
       accChoices,
       choices,
       new Map(),
@@ -1026,10 +1031,46 @@ describe('ventilations', () => {
     expect(reasonOf(run(good, choices)[0])).toBe('skipped_category');
   });
 
-  it('QIF : une règle de catégorisation ne remplace pas la ventilation', () => {
-    const [item] = runQif(good, catChoices, () => 20);
-    expect(item.kind === 'transaction' && item.splits).toHaveLength(2);
+  it('QIF mode rules : la ventilation se résout par ses lignes, une règle ne la remplace pas', () => {
+    const [item] = runQif(good, catChoices, {
+      categoryMode: 'rules',
+      descriptionRuleMatcher: () => 20,
+    });
+    expect(item.kind === 'transaction' && item.splits).toEqual([
+      { subcategoryId: 10, newSubcategoryKey: null, amount: 60 },
+      { subcategoryId: null, newSubcategoryKey: 'Loisirs:Nouveau', amount: 40 },
+    ]);
     expect(item.kind === 'transaction' && item.subcategoryId).toBeNull();
+  });
+
+  it('QIF mode none : transaction simple sans catégorie ni splits, mémos dans les notes', () => {
+    const [item] = runQif(good, new Map(), { categoryMode: 'none' });
+    expect(item.kind).toBe('transaction');
+    if (item.kind !== 'transaction') return;
+    expect(item.subcategoryId).toBeNull();
+    expect(item.newSubcategoryKey).toBeNull();
+    expect(item.categoryLabel).toBe('');
+    expect(item.categoryIsNew).toBe(false);
+    expect(item.splits).toBeUndefined();
+    expect(item.notes).toBe('Note · Viande');
+    expect(item.amount).toBe(100);
+  });
+
+  it('QIF mode none : pas de contrôle invalid_split', () => {
+    const bad = [{ category: '', amount: -10, memo: null }];
+    const [item] = runQif(bad, new Map(), { categoryMode: 'none' });
+    expect(item.kind).toBe('transaction');
+  });
+
+  it.each([
+    ['QIF', (s: ParsedSplit[]) => runQif(s, catChoices, undefined, 0)],
+    ['XHB', (s: ParsedSplit[]) => runXhb(s, catChoices, 0)],
+  ])('%s : invalid_split si le total vaut 0', (_n, run) => {
+    const zero = [
+      { category: 'Alim', amount: 0, memo: null },
+      { category: 'Alim', amount: 0, memo: null },
+    ];
+    expect(reasonOf(run(zero)[0])).toBe('invalid_split');
   });
 
   it("l'ExecuteBody contient les splits et la nouvelle sous-catégorie", () => {

@@ -6,7 +6,8 @@ import {
   type ParsedTransaction,
   parseLedgerDate,
 } from '@/lib/import-model';
-import { findTransferPeer } from '@/lib/qif-parser';
+import { toCents } from '@/lib/money';
+import { findTransferPeer, isAccountRef } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';
 import type { XhbParseResult } from '@/lib/xhb-parser';
 
@@ -39,6 +40,9 @@ export type CategoryChoice =
 /** Motif d'exclusion d'un item du preview, traduit à l'affichage (cf. PreviewStep). */
 export type SkipReason =
   'unmapped_account' | 'skipped_category' | 'transfer_no_peer' | 'invalid_split';
+
+/** Origine des catégories d'un import QIF/CSV : fichier, règles de catégorisation ou aucune. */
+export type CategoryMode = 'file' | 'rules' | 'none';
 
 export type PreviewSplit = {
   subcategoryId: number | null;
@@ -188,12 +192,10 @@ export function resolveCategoryInfo(
   };
 }
 
-const toCents = (amount: number): number => Math.round(amount * 100);
-
 type SplitResolution =
-  | { status: 'invalid' | 'skipped' }
+  | { reason: Extract<SkipReason, 'invalid_split' | 'skipped_category'> }
   | {
-      status: 'ok';
+      reason?: undefined;
       splits: PreviewSplit[];
       categoryLabel: string;
       isNew: boolean;
@@ -201,15 +203,19 @@ type SplitResolution =
     };
 
 function isValidSplitSet(splits: ParsedSplit[], total: number): boolean {
+  const totalCents = toCents(total);
+  if (totalCents === 0) return false;
   const sign = Math.sign(total);
   const sumCents = splits.reduce((sum, s) => sum + toCents(s.amount), 0);
   const linesOk = splits.every(
-    (s) =>
-      s.category !== '' &&
-      !(s.category.startsWith('[') && s.category.endsWith(']')) &&
-      Math.sign(s.amount) === sign,
+    (s) => s.category !== '' && !isAccountRef(s.category) && Math.sign(s.amount) === sign,
   );
-  return linesOk && sumCents === toCents(total);
+  return linesOk && sumCents === totalCents;
+}
+
+function joinNotes(baseNotes: string | null, splits: ParsedSplit[]): string | null {
+  const memos = splits.flatMap((s) => (s.memo ? [s.memo] : []));
+  return [...(baseNotes ? [baseNotes] : []), ...memos].join(' · ') || null;
 }
 
 /** Valide et résout les lignes de ventilation ; les mémos non vides sont ajoutés aux notes. */
@@ -220,14 +226,14 @@ export function resolveSplits(
   categoryChoices: Map<string, CategoryChoice>,
   categories: Category[],
 ): SplitResolution {
-  if (!isValidSplitSet(splits, total)) return { status: 'invalid' };
+  if (!isValidSplitSet(splits, total)) return { reason: 'invalid_split' };
 
   const resolved: PreviewSplit[] = [];
   const labels: string[] = [];
   let isNew = false;
   for (const split of splits) {
     const info = resolveCategoryInfo(split.category, categoryChoices, categories);
-    if (info === null) return { status: 'skipped' };
+    if (info === null) return { reason: 'skipped_category' };
     resolved.push({
       subcategoryId: info.subcategoryId,
       newSubcategoryKey: info.newSubcategoryKey,
@@ -237,9 +243,8 @@ export function resolveSplits(
     isNew ||= info.isNew;
   }
 
-  const memos = splits.flatMap((s) => (s.memo ? [s.memo] : []));
-  const notes = [...(baseNotes ? [baseNotes] : []), ...memos].join(' · ') || null;
-  return { status: 'ok', splits: resolved, categoryLabel: labels.join(' + '), isNew, notes };
+  const notes = joinNotes(baseNotes, splits);
+  return { splits: resolved, categoryLabel: labels.join(' + '), isNew, notes };
 }
 
 export function safeParseDate(raw: string, format: 'MM/DD' | 'DD/MM'): string {
@@ -354,29 +359,36 @@ type ResolvedCategory = {
   isNew: boolean;
 };
 
+export type PreviewOptions = {
+  categoryMode?: CategoryMode;
+  /** Requis en mode `rules` ; ignoré dans les autres modes. */
+  descriptionRuleMatcher?: (description: string) => number | null;
+};
+
 function resolveTxCategory(
   description: string,
   categoryPath: string,
-  descriptionRuleMatcher: ((description: string) => number | null) | undefined,
+  { categoryMode = 'file', descriptionRuleMatcher }: PreviewOptions,
   categoryChoices: Map<string, CategoryChoice>,
   categories: Category[],
 ): ResolvedCategory | null {
-  if (descriptionRuleMatcher !== undefined) {
-    const matchedId = descriptionRuleMatcher(description);
-    const found =
-      matchedId === null
-        ? undefined
-        : categories
-            .flatMap((c) => c.subcategories.map((s) => ({ cat: c, sub: s })))
-            .find(({ sub }) => sub.id === matchedId);
-    return {
-      subcategoryId: matchedId,
-      newSubcategoryKey: null,
-      categoryLabel: found ? `${found.cat.name} / ${found.sub.name}` : '',
-      isNew: false,
-    };
-  }
-  return resolveCategoryInfo(categoryPath, categoryChoices, categories);
+  if (categoryMode === 'file')
+    return resolveCategoryInfo(categoryPath, categoryChoices, categories);
+
+  const matchedId =
+    categoryMode === 'rules' ? (descriptionRuleMatcher?.(description) ?? null) : null;
+  const found =
+    matchedId === null
+      ? undefined
+      : categories
+          .flatMap((c) => c.subcategories.map((s) => ({ cat: c, sub: s })))
+          .find(({ sub }) => sub.id === matchedId);
+  return {
+    subcategoryId: matchedId,
+    newSubcategoryKey: null,
+    categoryLabel: found ? `${found.cat.name} / ${found.sub.name}` : '',
+    isNew: false,
+  };
 }
 
 type SplitItemInput = {
@@ -395,17 +407,27 @@ function resolveSplitItem(
   input: SplitItemInput,
   categoryChoices: Map<string, CategoryChoice>,
   categories: Category[],
+  categoryMode: CategoryMode = 'file',
 ): PreviewItem {
   const { idx, date, total, description, accInfo } = input;
-  const res = resolveSplits(input.splits, total, input.baseNotes, categoryChoices, categories);
-  if (res.status !== 'ok') {
+  // Mode sans catégorie : transaction simple, les lignes ne sont ni validées ni importées.
+  const res: SplitResolution =
+    categoryMode === 'none'
+      ? {
+          splits: [],
+          categoryLabel: '',
+          isNew: false,
+          notes: joinNotes(input.baseNotes, input.splits),
+        }
+      : resolveSplits(input.splits, total, input.baseNotes, categoryChoices, categories);
+  if (res.reason !== undefined) {
     return {
       kind: 'skip',
       idx,
       date,
       amount: Math.abs(total),
       description,
-      reason: res.status === 'invalid' ? 'invalid_split' : 'skipped_category',
+      reason: res.reason,
     };
   }
   return {
@@ -425,7 +447,7 @@ function resolveSplitItem(
     notes: res.notes,
     validated: input.validated,
     paymentMethodId: input.paymentMethodId,
-    splits: res.splits,
+    ...(categoryMode !== 'none' && { splits: res.splits }),
   };
 }
 
@@ -436,8 +458,9 @@ export function resolvePreview(
   categoryChoices: Map<string, CategoryChoice>,
   accounts: Account[],
   categories: Category[],
-  descriptionRuleMatcher?: (description: string) => number | null,
+  options: PreviewOptions = {},
 ): PreviewItem[] {
+  const { categoryMode = 'file' } = options;
   const items: PreviewItem[] = [];
   const processed = new Set<number>();
 
@@ -485,6 +508,7 @@ export function resolvePreview(
           },
           categoryChoices,
           categories,
+          categoryMode,
         ),
       );
       continue;
@@ -493,7 +517,7 @@ export function resolvePreview(
     const catInfo = resolveTxCategory(
       tx.description,
       tx.category,
-      descriptionRuleMatcher,
+      options,
       categoryChoices,
       categories,
     );
