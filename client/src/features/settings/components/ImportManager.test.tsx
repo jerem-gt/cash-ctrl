@@ -13,7 +13,8 @@ let findTransferPeer: typeof import('@/lib/qif-parser.ts').findTransferPeer;
 let parseXhb: typeof import('@/lib/xhb-parser.ts').parseXhb;
 
 beforeAll(async () => {
-  vi.doMock('@/lib/qif-parser', () => ({
+  vi.doMock('@/lib/qif-parser', async () => ({
+    ...(await vi.importActual<typeof import('@/lib/qif-parser')>('@/lib/qif-parser')),
     parseQif: vi.fn(() => ({
       transactions: [
         {
@@ -148,6 +149,41 @@ async function goToPreviewNoMapping(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: /aperçu →/i }));
 }
 
+// Ledger avec une transaction simple (Alimentation) et une ventilée (Loisirs) ; `lineAmount` règle la cohérence.
+function splitLedger(total: number, lineAmount: number) {
+  return {
+    transactions: [
+      {
+        date: '15/01/2024',
+        amount: -50,
+        description: 'Courses',
+        accountName: 'ACC1',
+        category: 'Alimentation',
+        memo: null,
+        cleared: true,
+        isTransfer: false,
+        transferTarget: null,
+      },
+      {
+        date: '16/01/2024',
+        amount: total,
+        description: 'Mixte',
+        accountName: 'ACC1',
+        category: '',
+        memo: null,
+        cleared: true,
+        isTransfer: false,
+        transferTarget: null,
+        splits: [{ category: 'Loisirs', amount: lineAmount, memo: null }],
+      },
+    ],
+    accounts: ['ACC1'],
+    uniqueCategories: ['Alimentation', 'Loisirs'],
+    uniqueTransferTargets: [],
+    detectedDateFormat: 'DD/MM' as const,
+  };
+}
+
 // ─── Upload step ──────────────────────────────────────────────────────────────
 
 describe('ImportManager — étape Upload', () => {
@@ -245,6 +281,39 @@ describe('ImportManager — étape Catégories', () => {
     const catSelect = await screen.findByRole('combobox', { name: /action pour Alimentation/i });
     await user.selectOptions(catSelect, 'map');
     expect(screen.getByText(/supermarché/i)).toBeInTheDocument();
+  });
+});
+
+// ─── Mode règles + ventilations ───────────────────────────────────────────────
+
+describe('ImportManager — catégories en mode règles', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function goToRulesCategories(user: ReturnType<typeof userEvent.setup>) {
+    await uploadQif(user);
+    await user.click(await screen.findByRole('button', { name: /catégories →/i }));
+    await user.click(await screen.findByLabelText(/détecter avec mes règles/i));
+  }
+
+  it("n'affiche que les catégories des lignes de ventilation", async () => {
+    vi.mocked(parseQif).mockReturnValueOnce(splitLedger(-100, -100));
+    const user = userEvent.setup();
+    renderImportManager();
+    await goToRulesCategories(user);
+    expect(
+      await screen.findByRole('combobox', { name: /action pour Loisirs/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /action pour Alimentation/i })).toBeNull();
+  });
+
+  it("n'affiche pas l'étape sans transaction ventilée", async () => {
+    const user = userEvent.setup();
+    renderImportManager();
+    await goToRulesCategories(user);
+    expect(screen.getByRole('button', { name: /aperçu →/i })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /action pour Alimentation/i })).toBeNull();
   });
 });
 
@@ -778,6 +847,16 @@ describe('ImportManager — navigation et interactions QIF supplémentaires', ()
     renderImportManager();
     await goToPreviewNoMapping(user);
     expect(await screen.findByText(/catégorie ignorée/i)).toBeInTheDocument();
+  });
+
+  it('affiche le motif « Ventilation invalide » pour une ventilation incohérente', async () => {
+    vi.mocked(parseQif).mockReturnValueOnce(splitLedger(-100, -60));
+    const user = userEvent.setup();
+    renderImportManager();
+    await uploadQif(user);
+    await user.click(await screen.findByRole('button', { name: /catégories →/i }));
+    await user.click(await screen.findByRole('button', { name: /aperçu →/i }));
+    expect(await screen.findByText('Ventilation invalide')).toBeInTheDocument();
   });
 
   it('affiche et décoche un virement dans la table de prévisualisation', async () => {

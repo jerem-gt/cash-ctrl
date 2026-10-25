@@ -1,3 +1,5 @@
+import type { ImportSplitInput } from '@cashctrl/types';
+
 export interface NewAccountInput {
   source_name: string;
   name: string;
@@ -13,12 +15,6 @@ export interface NewSubcategoryInput {
   new_category_name?: string;
   new_category_icon?: string;
   subcategory_name: string;
-}
-
-export interface ImportSplitInput {
-  subcategory_id: number | null;
-  new_subcategory_key: string | null;
-  amount: number;
 }
 
 export interface ImportTransactionInput {
@@ -70,3 +66,5 @@ export interface JsonFullImportResult {
   insuranceSupports: number;
   insuranceOperations: number;
 }
+
+export { type ImportSplitInput } from '@cashctrl/types';

@@ -17,6 +17,7 @@ import {
   buildExecuteBody,
   buildRowIndex,
   type CategoryChoice,
+  type CategoryMode,
   findAutoCategory,
   findAutoPaymentMethod,
   type ImportErrors,
@@ -25,7 +26,7 @@ import {
   resolveXhbPreview,
 } from '@/lib/import.helpers';
 import { invalidateBalances, invalidateTransactions } from '@/lib/invalidate';
-import { parseQif } from '@/lib/qif-parser.ts';
+import { parseQif, uniqueSplitCategories } from '@/lib/qif-parser.ts';
 import { FileTooLargeError, MAX_IMPORT_FILE_BYTES, readFileText } from '@/lib/readFileText';
 import { parseXhb } from '@/lib/xhb-parser.ts';
 
@@ -40,10 +41,6 @@ import { findBankByName, type ParsedFile, type Step, StepIndicator } from './imp
 import { UploadStep } from './import/UploadStep';
 
 const NO_IMPORT_ERRORS: ImportErrors = { rows: new Map(), global: [] };
-
-function noMatcher(): null {
-  return null;
-}
 
 /** Remonte les erreurs de validation serveur (par champ) sur les lignes de l'aperçu. */
 function mapImportErrors(
@@ -90,7 +87,7 @@ export default function ImportManager() {
   const [csvRaw, setCsvRaw] = useState<CsvParseResult | null>(null);
   const [csvRawText, setCsvRawText] = useState('');
   const [csvMapping, setCsvMapping] = useState<Partial<CsvMapping>>({});
-  const [categoryMode, setCategoryMode] = useState<'file' | 'rules' | 'none'>('file');
+  const [categoryMode, setCategoryMode] = useState<CategoryMode>('file');
   const [fileName, setFileName] = useState('');
   const [parseError, setParseError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -338,13 +335,6 @@ export default function ImportManager() {
     [categorizationRules],
   );
 
-  let descriptionRuleMatcher: ((description: string) => number | null) | undefined;
-  if (categoryMode === 'none') {
-    descriptionRuleMatcher = noMatcher;
-  } else if (categoryMode === 'rules') {
-    descriptionRuleMatcher = rulesModeMatcher;
-  }
-
   const previewItems = useMemo(() => {
     if (!parsedFile) return [];
     if (parsedFile.format === 'qif') {
@@ -355,7 +345,7 @@ export default function ImportManager() {
         categoryChoices,
         activeAccounts,
         categories,
-        descriptionRuleMatcher,
+        { categoryMode, descriptionRuleMatcher: rulesModeMatcher },
       );
     }
     if (parsedFile.format === 'json') return [];
@@ -375,7 +365,8 @@ export default function ImportManager() {
     paymodeChoices,
     activeAccounts,
     categories,
-    descriptionRuleMatcher,
+    categoryMode,
+    rulesModeMatcher,
   ]);
 
   const importableCount = previewItems.filter((it) => it.kind !== 'skip').length;
@@ -462,6 +453,14 @@ export default function ImportManager() {
   if (parsedFile?.format === 'qif' || parsedFile?.format === 'xhb') {
     uniqueCategories = parsedFile.data.uniqueCategories;
   }
+
+  // En mode règles, seules les catégories des lignes de ventilation restent à mapper.
+  const splitCategories =
+    categoryMode === 'rules' && parsedFile?.format === 'qif'
+      ? uniqueSplitCategories(parsedFile.data.transactions)
+      : [];
+  const showCategoriesStep = categoryMode === 'file' || isXhb || splitCategories.length > 0;
+  if (categoryMode === 'rules' && !isXhb) uniqueCategories = splitCategories;
 
   const handleJsonImport = async () => {
     if (parsedFile?.format !== 'json') return;
@@ -591,7 +590,7 @@ export default function ImportManager() {
               </div>
             </div>
           )}
-          {categoryMode === 'file' || isXhb ? (
+          {showCategoriesStep ? (
             <CategoriesStep
               uniqueCategories={uniqueCategories}
               categoryChoices={categoryChoices}
