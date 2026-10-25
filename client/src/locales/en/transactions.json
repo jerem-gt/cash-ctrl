@@ -86,7 +86,9 @@
     "actions": "Actions",
     "running_balance_title": "Running balance",
     "ventilated": "Split ({{count}})",
-    "ventilated_prefix": "Split: "
+    "ventilated_prefix": "Split: ",
+    "stock_buy": "Buy · {{quantity}} × {{ticker}}",
+    "stock_sell": "Sell · {{quantity}} × {{ticker}}"
   },
   "tx_core": {
     "type_label": "Type",

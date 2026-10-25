@@ -12,6 +12,10 @@ import {
   resolveSplitParts,
   type SplitPart,
 } from '@/features/transactions/lib/splitParts';
+import {
+  getStockOperationDisplay,
+  type StockOperationDisplay,
+} from '@/features/transactions/lib/stockOperationDisplay';
 import { useCategories } from '@/hooks/useCategories.ts';
 import { useValidateTransaction } from '@/hooks/useTransactions';
 import { parseLocalDate, today } from '@/lib/dateUtils';
@@ -232,15 +236,21 @@ function TxBadges({
 function TxCategoryIcon({
   category,
   parts,
-}: Readonly<{ category?: Category; parts: readonly SplitPart[] }>) {
+  stockDisplay,
+}: Readonly<{
+  category?: Category;
+  parts: readonly SplitPart[];
+  stockDisplay: StockOperationDisplay | null;
+}>) {
   const base =
     'relative shrink-0 flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-surface-muted border border-line-subtle text-sm sm:text-base leading-none cursor-default select-none';
   const categories = distinctSplitCategories(parts);
   if (categories.length < 2) {
     const single = categories[0];
+    const icon = single?.categoryIcon ?? category?.icon ?? stockDisplay?.icon ?? '';
     return (
       <span title={single?.categoryName ?? (category?.name || undefined)} className={base}>
-        {single?.categoryIcon ?? category?.icon ?? ''}
+        {icon}
       </span>
     );
   }
@@ -320,9 +330,18 @@ function TxMeta({
   if (parts.length > 0) {
     subtitle = <SplitSubtitle parts={parts} />;
   } else {
-    const label = tx.splits?.length
-      ? t('tx_item.ventilated', { count: tx.splits.length })
-      : tx.subcategory;
+    const stockDisplay = getStockOperationDisplay(tx);
+    let label: string;
+    if (stockDisplay) {
+      label = t(stockDisplay.labelKey, {
+        quantity: stockDisplay.quantity,
+        ticker: stockDisplay.ticker,
+      });
+    } else if (tx.splits?.length) {
+      label = t('tx_item.ventilated', { count: tx.splits.length });
+    } else {
+      label = tx.subcategory;
+    }
     subtitle = (
       <span className="truncate min-w-0 max-w-full text-content-muted font-medium">{label}</span>
     );
@@ -449,7 +468,11 @@ function TxItemBase({
     >
       <TxDateBlock date={tx.date} />
 
-      <TxCategoryIcon category={category} parts={parts} />
+      <TxCategoryIcon
+        category={category}
+        parts={parts}
+        stockDisplay={getStockOperationDisplay(tx)}
+      />
 
       <TxItemBody
         tx={tx}
