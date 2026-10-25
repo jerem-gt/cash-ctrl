@@ -7,6 +7,17 @@ export function formatLocalDate(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+// Parse un datetime('now') SQLite (UTC, sans fuseau) ; les chaînes avec fuseau sont inchangées.
+export function parseSqliteUtc(s: string): Date {
+  if (/(Z|[+-]\d{2}:?\d{2})$/i.test(s)) return new Date(s);
+  return new Date(s.replace(' ', 'T') + 'Z');
+}
+
+// Jour local (YYYY-MM-DD) d'un datetime SQLite UTC.
+export function sqliteUtcToLocalDate(s: string): string {
+  return formatLocalDate(parseSqliteUtc(s));
+}
+
 export function today(): string {
   return formatLocalDate(new Date());
 }

@@ -61,6 +61,8 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
           ORDER BY p.id LIMIT 1
         );
     `),
+  // Historique annuel mal daté (bougie de janvier rangée en N-1) : purge, re-récupéré depuis Yahoo
+  (db) => db.exec('DELETE FROM stock_price_history;'),
 ];
 
 function runMigrations(db: DatabaseType) {

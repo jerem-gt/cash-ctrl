@@ -211,7 +211,7 @@ export const CACHED_STOCK_TICKERS: CachedStockTicker[] = [
     price: 42,
     currency: 'EUR',
     name: null,
-    fetched_at: '2026-05-01T10:00:00',
+    fetched_at: '2026-05-01 23:30:00',
     in_use: false,
     held_in: [],
     used_by_others: false,

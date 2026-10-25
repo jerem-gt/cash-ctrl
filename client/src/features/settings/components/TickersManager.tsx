@@ -9,6 +9,7 @@ import {
   useRenameTicker,
 } from '@/features/portfolio/hooks/useStocks';
 import { SettingsManagerSkeleton } from '@/features/settings/components/SettingsManager';
+import { sqliteUtcToLocalDate } from '@/lib/dateUtils';
 import { fmtCurrency, fmtDate } from '@/lib/format';
 
 const TICKER_MAX_LENGTH = 20;
@@ -104,7 +105,8 @@ export function TickersManager() {
                     </p>
                   )}
                   <p className="text-[10px] text-content-faint tabular-nums">
-                    {fmtCurrency(tk.price, tk.currency)} · {fmtDate(tk.fetched_at.slice(0, 10))}
+                    {fmtCurrency(tk.price, tk.currency)} ·{' '}
+                    {fmtDate(sqliteUtcToLocalDate(tk.fetched_at))}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">

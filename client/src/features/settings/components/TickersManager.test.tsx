@@ -14,6 +14,13 @@ describe('TickersManager', () => {
     expect(screen.getByText('Tickers actions')).toBeInTheDocument();
   });
 
+  it('affiche la date de cours en jour local (UTC 23:30 -> lendemain à Paris)', async () => {
+    renderWithProviders(<TickersManager />);
+    await screen.findByText('ORPHAN.PA');
+    expect(screen.getByText(/02 mai 2026/)).toBeInTheDocument();
+    expect(screen.getAllByText(/01 mai 2026/).length).toBeGreaterThan(0);
+  });
+
   it('supprime un ticker inutilisé après confirmation', async () => {
     const user = userEvent.setup();
     renderWithProviders(<TickersManager />);
