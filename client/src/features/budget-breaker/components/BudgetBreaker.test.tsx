@@ -14,16 +14,24 @@ let useBudgetBreaker: typeof import('../store').useBudgetBreaker;
 
 const collectBricksMock = vi.fn<() => CollectedBrick[]>();
 const stepMock = vi.fn<() => GameEvent[]>();
+const movePaddleMock = vi.fn();
 
 beforeAll(async () => {
   vi.doMock('../lib/bricks', async (importOriginal) => ({
     ...(await importOriginal<typeof import('../lib/bricks')>()),
     collectBricks: () => collectBricksMock(),
   }));
-  vi.doMock('../lib/engine', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('../lib/engine')>()),
-    step: () => stepMock(),
-  }));
+  vi.doMock('../lib/engine', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../lib/engine')>();
+    return {
+      ...original,
+      step: () => stepMock(),
+      movePaddle: (...args: Parameters<typeof original.movePaddle>) => {
+        movePaddleMock();
+        original.movePaddle(...args);
+      },
+    };
+  });
   vi.resetModules();
   ({ default: BudgetBreaker } = await import('./BudgetBreaker'));
   ({ MIN_RECORD_PLAY_SECONDS, BEST_KEY } = await import('../lib/record'));
@@ -88,9 +96,11 @@ beforeEach(() => {
   collectBricksMock.mockImplementation(() => [makeBrick()]);
   stepMock.mockReset();
   stepMock.mockReturnValue([]);
+  movePaddleMock.mockReset();
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   for (const el of document.body.querySelectorAll(':scope > button')) el.remove();
 });
 
@@ -99,10 +109,11 @@ describe('BudgetBreaker', () => {
     renderGame();
     expect(screen.getByRole('dialog', { name: 'Casse-budget' })).toBeInTheDocument();
     expect(screen.getByText(/avant qu'il ne te détruise/)).toBeInTheDocument();
-    expect(screen.queryByText('Dégâts')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Quitter le jeu' })).not.toBeInTheDocument();
     advance(800);
     expect(screen.getByText('Dégâts')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Quitter le jeu' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Vies : 3' })).toBeInTheDocument();
   });
 
   it('Échap appelle onClose', () => {
@@ -249,7 +260,7 @@ describe('BudgetBreaker - restauration', () => {
     return { reverse: vi.fn(), cancel: vi.fn() };
   }
 
-  it('rejoue les animations à l’envers avec le message de remboursement puis ferme', () => {
+  it("rejoue les animations à l'envers avec le message de remboursement puis ferme", () => {
     const anim = fakeAnimation();
     collectBricksMock.mockReturnValue([makeBrick(() => anim)]);
     const { onClose } = startPlaying();
@@ -284,5 +295,113 @@ describe('BudgetBreaker - restauration', () => {
     expect(anim.reverse).not.toHaveBeenCalled();
     expect(result.current.remainingRatio).toBe(1);
     unmount();
+  });
+
+  it('passe aussi par le remboursement (fondu court) avec prefers-reduced-motion', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true })),
+    );
+    const anim = fakeAnimation();
+    collectBricksMock.mockReturnValue([makeBrick(() => anim)]);
+    const { onClose } = startPlaying();
+    stepMock.mockReturnValueOnce([{ type: 'brick', id: 0 }]);
+    advance(100);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(anim.reverse).toHaveBeenCalledTimes(1);
+    expect(anim.cancel).not.toHaveBeenCalled();
+    expect(screen.getByText(/Remboursement en cours/)).toBeInTheDocument();
+    advance(300);
+    expect(anim.cancel).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BudgetBreaker - clavier', () => {
+  it.each(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown'])(
+    'bloque le défilement par %s pendant le jeu',
+    (key) => {
+      startPlaying();
+      expect(fireEvent.keyDown(document, { key })).toBe(false);
+    },
+  );
+
+  it('relâche la touche même pendant un remboursement', () => {
+    const anim = { reverse: vi.fn(), cancel: vi.fn() };
+    collectBricksMock.mockReturnValue([makeBrick(() => anim)]);
+    startPlaying();
+    stepMock.mockReturnValueOnce([{ type: 'brick', id: 0 }, { type: 'won' }]);
+    advance(100);
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.click(screen.getByRole('button', { name: 'Rejouer' }));
+    fireEvent.keyUp(document, { key: 'ArrowRight' });
+    advance(1100);
+    movePaddleMock.mockClear();
+    advance(100);
+    expect(movePaddleMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('BudgetBreaker - bulles', () => {
+  it("n'écrase pas la bulle de vie perdue par une bulle d'impact immédiate", () => {
+    startPlaying();
+    stepMock
+      .mockReturnValueOnce([{ type: 'lifeLost' }])
+      .mockReturnValueOnce([{ type: 'brick', id: 0 }]);
+    advance(100);
+    const text = screen.getByRole('status').textContent;
+    expect(text).toMatch(/Balle perdue|Raté|Une vie de moins/);
+    expect(text).not.toContain('Livret A');
+  });
+});
+
+describe('BudgetBreaker - redimensionnement', () => {
+  function placeBrick(brick: CollectedBrick) {
+    brick.el.getBoundingClientRect = () => ({
+      left: 100,
+      top: 150,
+      width: 80,
+      height: 30,
+      right: 180,
+      bottom: 180,
+      x: 100,
+      y: 150,
+      toJSON: () => ({}),
+    });
+    return brick;
+  }
+
+  it('retire sans dégât une brique détachée, et gagne quand il ne reste plus rien', () => {
+    const brick = placeBrick(makeBrick());
+    collectBricksMock.mockReturnValue([brick]);
+    startPlaying();
+    act(() => {
+      globalThis.dispatchEvent(new Event('resize'));
+    });
+    expect(screen.queryByText(/Patrimoine : 0 €/)).not.toBeInTheDocument();
+    brick.el.remove();
+    act(() => {
+      globalThis.dispatchEvent(new Event('resize'));
+    });
+    expect(screen.getByText(/Patrimoine : 0 €/)).toBeInTheDocument();
+    expect(screen.getAllByText(money(0)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('BudgetBreaker - démontage externe', () => {
+  it('enregistre la partie si elle a duré assez longtemps', () => {
+    const game = startPlaying();
+    stepMock.mockReturnValueOnce([{ type: 'brick', id: 0 }]);
+    advance(100);
+    advance((MIN_RECORD_PLAY_SECONDS + 1) * 1000);
+    game.unmount();
+    expect(localStorage.getItem(BEST_KEY)).toBe('500');
+  });
+
+  it("n'enregistre rien si la partie n'a pas démarré", () => {
+    const game = renderGame();
+    advance(800);
+    game.unmount();
+    expect(localStorage.getItem(BEST_KEY)).toBeNull();
   });
 });

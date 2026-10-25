@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clamp,
   createGame,
   type GameEvent,
   type GameState,
   launch,
   movePaddle,
   type Rect,
+  removeBrick,
   resize,
   step,
+  toRect,
 } from './engine';
 
 const W = 800;
@@ -225,5 +228,44 @@ describe('resize', () => {
     resize(state, 400, 600, [FAR_BRICK]);
     expect(state.ball.x).toBeLessThanOrEqual(400 - state.ball.r);
     expect(Math.hypot(state.ball.vx, state.ball.vy)).toBeCloseTo(state.baseSpeed);
+  });
+});
+
+describe('removeBrick', () => {
+  const TWO: Rect[] = [FAR_BRICK, { x: 100, y: 10, w: 40, h: 20 }];
+
+  it("retire une brique sans dégât ni victoire tant qu'il en reste", () => {
+    const state = playing(TWO);
+    expect(removeBrick(state, 0)).toEqual([]);
+    expect(state.bricks[0].alive).toBe(false);
+    expect(state.aliveCount).toBe(1);
+    expect(state.status).toBe('playing');
+  });
+
+  it('déclenche la victoire quand la dernière brique est retirée', () => {
+    const state = playing(TWO);
+    removeBrick(state, 0);
+    expect(removeBrick(state, 1)).toEqual([{ type: 'won' }]);
+    expect(state.status).toBe('won');
+  });
+
+  it('ignore une brique déjà morte ou inconnue', () => {
+    const state = playing(TWO);
+    removeBrick(state, 0);
+    expect(removeBrick(state, 0)).toEqual([]);
+    expect(removeBrick(state, 9)).toEqual([]);
+    expect(state.aliveCount).toBe(1);
+  });
+});
+
+describe('clamp / toRect', () => {
+  it('borne une valeur', () => {
+    expect(clamp(5, 0, 3)).toBe(3);
+    expect(clamp(-1, 0, 3)).toBe(0);
+    expect(clamp(2, 0, 3)).toBe(2);
+  });
+
+  it('convertit un DOMRect en Rect', () => {
+    expect(toRect({ left: 1, top: 2, width: 3, height: 4 })).toEqual({ x: 1, y: 2, w: 3, h: 4 });
   });
 });

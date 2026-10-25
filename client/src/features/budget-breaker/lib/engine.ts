@@ -48,9 +48,16 @@ const PADDLE_BOTTOM_OFFSET = 40;
 const MAX_PADDLE_ANGLE = (60 * Math.PI) / 180;
 const SPEED_GAIN = 0.03;
 const SPEED_CAP = 2;
-const INITIAL_LIVES = 3;
+export const INITIAL_LIVES = 3;
 
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+export const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+
+export const toRect = (r: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>): Rect => ({
+  x: r.left,
+  y: r.top,
+  w: r.width,
+  h: r.height,
+});
 
 const computeBaseSpeed = (width: number, height: number) =>
   clamp(Math.min(width, height) * 0.75, 380, 620);
@@ -137,6 +144,20 @@ export function resize(state: GameState, width: number, height: number, bricks: 
   rescaleVelocity(state, speed);
   state.ball.x = clamp(state.ball.x, state.ball.r, width - state.ball.r);
   state.ball.y = clamp(state.ball.y, state.ball.r, height);
+}
+
+// Retire une brique devenue invalide (sans dégât) ; 'won' quand c'était la dernière.
+export function removeBrick(state: GameState, id: number): GameEvent[] {
+  const brick = state.bricks.at(id);
+  if (brick === undefined || !brick.alive) return [];
+  brick.alive = false;
+  state.aliveCount -= 1;
+  const inPlay = state.status === 'serve' || state.status === 'playing';
+  if (state.aliveCount === 0 && inPlay) {
+    state.status = 'won';
+    return [{ type: 'won' }];
+  }
+  return [];
 }
 
 function hitsRect(ball: GameState['ball'], rect: Rect): boolean {
@@ -245,7 +266,7 @@ function substep(state: GameState, dt: number, events: GameEvent[]) {
 export function step(state: GameState, dt: number): GameEvent[] {
   const events: GameEvent[] = [];
   if (state.status !== 'playing') return events;
-  const clamped = Math.min(Math.max(dt, 0), MAX_DT);
+  const clamped = clamp(dt, 0, MAX_DT);
   const distance = Math.hypot(state.ball.vx, state.ball.vy) * clamped;
   const count = Math.max(1, Math.ceil(distance / state.ball.r));
   const sub = clamped / count;

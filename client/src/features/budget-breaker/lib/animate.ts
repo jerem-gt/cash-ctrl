@@ -1,4 +1,4 @@
-export const FALL_MS = 900;
+const FALL_MS = 900;
 
 export function prefersReducedMotion(): boolean {
   return (

@@ -7,7 +7,7 @@
   "serve_hint_short": "Tape pour lancer la balle",
   "damage": "Dégâts",
   "best": "Record",
-  "lives": "Vies",
+  "lives_label": "Vies : {{count}}",
   "close": "Quitter le jeu",
   "replay": "Rejouer",
   "quit": "Quitter",

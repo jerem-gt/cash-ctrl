@@ -38,6 +38,7 @@ export function Badge({ variant, children }: Readonly<BadgeProps>) {
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'primary' | 'danger';
   size?: 'sm' | 'md';
+  ref?: Ref<HTMLButtonElement>;
 }
 export function Button({
   variant = 'default',
@@ -67,6 +68,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
   size?: 'sm' | 'md';
   variant?: 'ghost' | 'default' | 'danger';
+  ref?: Ref<HTMLButtonElement>;
 }
 export function IconButton({
   label,

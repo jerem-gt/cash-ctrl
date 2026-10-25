@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
+import { clamp } from './lib/engine';
+
 export interface BudgetBreakerState {
   active: boolean;
   remainingRatio: number;
@@ -31,7 +33,7 @@ export function stopBudgetBreaker() {
 }
 
 export function setRemainingRatio(ratio: number) {
-  const clamped = Math.min(Math.max(ratio, 0), 1);
+  const clamped = clamp(ratio, 0, 1);
   if (clamped === current.remainingRatio) return;
   publish({ ...current, remainingRatio: clamped });
 }

@@ -7,7 +7,7 @@
   "serve_hint_short": "Tap to launch the ball",
   "damage": "Damage",
   "best": "Best",
-  "lives": "Lives",
+  "lives_label": "Lives: {{count}}",
   "close": "Quit the game",
   "replay": "Play again",
   "quit": "Quit",

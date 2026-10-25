@@ -1,4 +1,4 @@
-import type { Rect } from './engine';
+import { type Rect, toRect } from './engine';
 
 export type BrickCategory =
   'account' | 'button' | 'nav' | 'chart' | 'row' | 'amount' | 'heading' | 'generic';
@@ -11,8 +11,9 @@ export interface CollectedBrick {
 }
 
 export interface CollectOptions {
-  root?: ParentNode;
   viewport?: { width: number; height: number };
+  // Bas du HUD : les briques au-dessus sont exclues.
+  topInset?: number;
   isTopmost?: (el: Element, x: number, y: number) => boolean;
   max?: number;
 }
@@ -32,8 +33,7 @@ const CANDIDATES =
   'a, button, h1, h2, h3, h4, tr, [role="row"], li, label, input, select, textarea, img, .recharts-wrapper, td, th, p, span';
 const IGNORE = '[data-budget-breaker-ignore]';
 const PADDLE_ZONE = 120;
-// Bande masquée par le HUD du jeu.
-export const HUD_ZONE = 80;
+const DEFAULT_TOP_INSET = 80;
 const LABEL_MAX = 28;
 const AMOUNT_MAX_LENGTH = 24;
 const DEFAULT_MAX = 120;
@@ -98,7 +98,7 @@ function rowLabel(el: Element): string {
   return truncate(preferred ?? textOf(el));
 }
 
-export function labelOf(el: Element, category: BrickCategory): string {
+function labelOf(el: Element, category: BrickCategory): string {
   if (category === 'row') return rowLabel(el);
   return truncate(textOf(el));
 }
@@ -110,10 +110,20 @@ function fitsSize(rect: Rect, category: BrickCategory, vw: number, vh: number): 
   return rect.w <= maxW && rect.h <= maxH;
 }
 
-function inPlayZone(rect: Rect, vw: number, vh: number): boolean {
+function inPlayZone(rect: Rect, vw: number, vh: number, topInset: number): boolean {
   return (
-    rect.x >= 0 && rect.y >= HUD_ZONE && rect.x + rect.w <= vw && rect.y + rect.h < vh - PADDLE_ZONE
+    rect.x >= 0 && rect.y >= topInset && rect.x + rect.w <= vw && rect.y + rect.h < vh - PADDLE_ZONE
   );
+}
+
+// Une brique vivante reste jouable tant qu'elle a une taille et reste dans la zone de jeu.
+export function isBrickRectValid(
+  rect: Rect,
+  viewport: { width: number; height: number },
+  topInset: number = DEFAULT_TOP_INSET,
+): boolean {
+  if (rect.w <= 0 || rect.h <= 0) return false;
+  return inPlayZone(rect, viewport.width, viewport.height, topInset);
 }
 
 function evenlySpaced<T>(items: T[], max: number): T[] {
@@ -123,15 +133,15 @@ function evenlySpaced<T>(items: T[], max: number): T[] {
 
 export function collectBricks(options: CollectOptions = {}): CollectedBrick[] {
   const {
-    root = document,
     viewport = { width: globalThis.innerWidth, height: globalThis.innerHeight },
     isTopmost = defaultIsTopmost,
     max = DEFAULT_MAX,
+    topInset = DEFAULT_TOP_INSET,
   } = options;
   const kept = new Set<Element>();
   const result: CollectedBrick[] = [];
 
-  for (const el of root.querySelectorAll<HTMLElement>(CANDIDATES)) {
+  for (const el of document.querySelectorAll<HTMLElement>(CANDIDATES)) {
     let covered = false;
     for (let p = el.parentElement; p !== null; p = p.parentElement) {
       if (kept.has(p)) {
@@ -141,9 +151,8 @@ export function collectBricks(options: CollectOptions = {}): CollectedBrick[] {
     }
     if (covered || el.closest(IGNORE) !== null) continue;
 
-    const r = el.getBoundingClientRect();
-    const rect: Rect = { x: r.left, y: r.top, w: r.width, h: r.height };
-    if (!inPlayZone(rect, viewport.width, viewport.height) || !hasContent(el)) continue;
+    const rect = toRect(el.getBoundingClientRect());
+    if (!inPlayZone(rect, viewport.width, viewport.height, topInset) || !hasContent(el)) continue;
     const category = classify(el);
     if (!fitsSize(rect, category, viewport.width, viewport.height)) continue;
     if (!isTopmost(el, rect.x + rect.w / 2, rect.y + rect.h / 2)) continue;

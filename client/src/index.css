@@ -32,6 +32,9 @@
   --color-info: var(--c-info);
   --color-info-surface: var(--c-info-surface);
 
+  /* Danger lisible sur le fond sombre de la sidebar (identique dans les deux thèmes) */
+  --color-danger-on-dark: #f87171;
+
   /* Couleur de marque (identique dans les deux thèmes) */
   --color-brand-50: #ecfdfe;
   --color-brand-100: #cbf3f7;

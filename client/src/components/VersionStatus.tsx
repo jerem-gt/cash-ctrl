@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 
 import {
   startBudgetBreaker,
@@ -34,9 +34,17 @@ export function VersionStatus() {
     }, 2000);
   }, []);
 
+  // Démontage en cours de partie (déconnexion…) : remet le store à l'état inactif.
+  useEffect(() => stopBudgetBreaker, []);
+
   const handleClose = useCallback(() => {
     stopBudgetBreaker();
-    buttonRef.current?.focus();
+    const button = buttonRef.current;
+    const focusable =
+      button !== null &&
+      button.closest('[inert]') === null &&
+      button.getBoundingClientRect().width > 0;
+    if (focusable) button.focus();
   }, []);
 
   return (

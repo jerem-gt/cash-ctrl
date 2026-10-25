@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let VersionStatus: typeof import('./VersionStatus').VersionStatus;
 let useAppVersion: typeof import('../hooks/useAppVersion.ts').useAppVersion;
 let stopBudgetBreaker: typeof import('@/features/budget-breaker/store').stopBudgetBreaker;
 let startBudgetBreaker: typeof import('@/features/budget-breaker/store').startBudgetBreaker;
+let useBudgetBreaker: typeof import('@/features/budget-breaker/store').useBudgetBreaker;
 
 beforeAll(async () => {
   vi.doMock('../hooks/useAppVersion.ts', () => ({
@@ -27,7 +28,8 @@ beforeAll(async () => {
   vi.resetModules();
   ({ VersionStatus } = await import('./VersionStatus'));
   ({ useAppVersion } = await import('../hooks/useAppVersion.ts'));
-  ({ stopBudgetBreaker, startBudgetBreaker } = await import('@/features/budget-breaker/store'));
+  ({ stopBudgetBreaker, startBudgetBreaker, useBudgetBreaker } =
+    await import('@/features/budget-breaker/store'));
 });
 
 afterAll(() => {
@@ -120,12 +122,47 @@ describe('VersionStatus', () => {
     vi.useRealTimers();
   });
 
+  function mockVisible(el: HTMLElement) {
+    el.getBoundingClientRect = () => ({ width: 100, height: 20 }) as DOMRect;
+  }
+
   it('démonte le jeu et rend le focus au bouton à la fermeture', async () => {
     render(<VersionStatus />);
+    mockVisible(getVersionEl());
     clickTimes(getVersionEl(), 7);
     fireEvent.click(await screen.findByText('stub-close'));
     expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
     expect(getVersionEl()).toHaveFocus();
+  });
+
+  it('ne rend pas le focus au bouton quand il est dans un ancêtre inert', async () => {
+    render(
+      <div inert>
+        <VersionStatus />
+      </div>,
+    );
+    mockVisible(getVersionEl());
+    clickTimes(getVersionEl(), 7);
+    fireEvent.click(await screen.findByText('stub-close'));
+    expect(getVersionEl()).not.toHaveFocus();
+  });
+
+  it("ne rend pas le focus au bouton quand il n'est pas visible", async () => {
+    render(<VersionStatus />);
+    clickTimes(getVersionEl(), 7);
+    fireEvent.click(await screen.findByText('stub-close'));
+    expect(getVersionEl()).not.toHaveFocus();
+  });
+
+  it('remet le store à inactif quand il est démonté en cours de partie', async () => {
+    const { unmount } = render(<VersionStatus />);
+    clickTimes(getVersionEl(), 7);
+    await screen.findByTestId('game-stub');
+    const probe = renderHook(() => useBudgetBreaker());
+    expect(probe.result.current.active).toBe(true);
+    unmount();
+    expect(probe.result.current.active).toBe(false);
+    probe.unmount();
   });
 
   it('affiche le jeu quand le store est déjà actif', async () => {

@@ -244,7 +244,7 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
           </span>
           <span
             className={`font-display text-4xl font-bold tracking-tight tabular-nums transition-colors duration-500 ${
-              gameActive ? 'text-red-400' : 'text-white'
+              gameActive ? 'text-danger-on-dark' : 'text-white'
             }`}
           >
             {fmt(soldeTotal * remainingRatio)}

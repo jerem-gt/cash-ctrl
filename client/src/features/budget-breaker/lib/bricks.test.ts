@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { classify, collectBricks, type CollectOptions } from './bricks';
+import { classify, collectBricks, type CollectOptions, isBrickRectValid } from './bricks';
 import type { Rect } from './engine';
 
 const VIEWPORT = { width: 1000, height: 800 };
@@ -83,6 +83,13 @@ describe('collectBricks', () => {
     expect(result.map((r) => r.el.id)).toEqual(['b']);
   });
 
+  it('exclut les briques sous topInset (bas du HUD mesuré)', () => {
+    document.body.innerHTML = '<button id="a">A</button><button id="b">B</button>';
+    setRect(document.getElementById('a')!, box(100, 100));
+    setRect(document.getElementById('b')!, box(300, 200));
+    expect(collect({ topInset: 150 }).map((r) => r.el.id)).toEqual(['b']);
+  });
+
   it('plafonne le nombre de briques', () => {
     document.body.innerHTML = Array.from(
       { length: 20 },
@@ -119,6 +126,21 @@ describe('collectBricks', () => {
     const result = collect();
     expect(result[0].category).toBe('amount');
     expect(result[0].label).toBe('1 234 €');
+  });
+});
+
+describe('isBrickRectValid', () => {
+  it('accepte une brique dans la zone de jeu', () => {
+    expect(isBrickRectValid(box(), VIEWPORT, 80)).toBe(true);
+  });
+
+  it.each([
+    ['rect nul', { x: 0, y: 0, w: 0, h: 0 }],
+    ['sous le HUD', box(100, 40)],
+    ['hors écran', box(950, 100)],
+    ['dans la zone raquette', box(100, 700)],
+  ])('refuse %s', (_name, rect) => {
+    expect(isBrickRectValid(rect, VIEWPORT, 80)).toBe(false);
   });
 });
 

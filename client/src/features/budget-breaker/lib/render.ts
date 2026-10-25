@@ -16,15 +16,26 @@ export interface TrailPoint {
   y: number;
 }
 
-const BRAND = '#2cc5dd';
-const BRAND_DARK = '#0d8896';
-const PARTICLE_COLORS = [BRAND, '#a5e9f0', '#ffffff', '#f87171'];
+const FALLBACK_PALETTE = { brand: '#2cc5dd', brandDark: '#0d8896', brandLight: '#a5e9f0' };
+let palette = FALLBACK_PALETTE;
 const GRAVITY = 700;
 const TRAIL_LENGTH = 14;
+
+// Lit les tokens de marque une fois au montage ; valeurs de repli si absents (jsdom).
+export function loadPalette() {
+  const style = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+  palette = {
+    brand: read('--color-brand-400', FALLBACK_PALETTE.brand),
+    brandDark: read('--color-brand-600', FALLBACK_PALETTE.brandDark),
+    brandLight: read('--color-brand-200', FALLBACK_PALETTE.brandLight),
+  };
+}
 
 export function spawnParticles(list: Particle[], rect: Rect, random: () => number = Math.random) {
   const cx = rect.x + rect.w / 2;
   const cy = rect.y + rect.h / 2;
+  const colors = [palette.brand, palette.brandLight, '#ffffff', '#f87171'];
   for (let i = 0; i < 12; i++) {
     const angle = random() * Math.PI * 2;
     const speed = 60 + random() * 220;
@@ -36,7 +47,7 @@ export function spawnParticles(list: Particle[], rect: Rect, random: () => numbe
       life: 0.6,
       max: 0.6,
       size: 2 + random() * 3,
-      color: PARTICLE_COLORS[Math.floor(random() * PARTICLE_COLORS.length)],
+      color: colors[Math.floor(random() * colors.length)],
     });
   }
 }
@@ -64,8 +75,8 @@ function drawPaddle(ctx: CanvasRenderingContext2D, paddle: GameState['paddle']) 
   const x = paddle.x - paddle.w / 2;
   const y = paddle.y - paddle.h / 2;
   const gradient = ctx.createLinearGradient(x, y, x + paddle.w, y);
-  gradient.addColorStop(0, BRAND_DARK);
-  gradient.addColorStop(1, BRAND);
+  gradient.addColorStop(0, palette.brandDark);
+  gradient.addColorStop(1, palette.brand);
   ctx.fillStyle = gradient;
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
@@ -96,7 +107,7 @@ export function drawFrame(
     trail.forEach((point, i) => {
       const k = (i + 1) / trail.length;
       ctx.globalAlpha = k * 0.45;
-      ctx.fillStyle = BRAND;
+      ctx.fillStyle = palette.brand;
       ctx.beginPath();
       ctx.arc(point.x, point.y, game.ball.r * k, 0, Math.PI * 2);
       ctx.fill();
@@ -107,7 +118,7 @@ export function drawFrame(
   drawPaddle(ctx, game.paddle);
 
   ctx.save();
-  ctx.shadowColor = BRAND;
+  ctx.shadowColor = palette.brand;
   ctx.shadowBlur = reduced ? 0 : 16;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
