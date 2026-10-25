@@ -23,6 +23,7 @@ describe('seedTestData + generateScheduledTransactions', () => {
   let db: Database;
   let userId: number;
   let seededRecurringWithoutSchedule: number;
+  let seededLinkedIds: number[];
 
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -46,6 +47,12 @@ describe('seedTestData + generateScheduledTransactions', () => {
         .get(userId, description, amount, RECENT_FROM) as { n: number };
       return count + row.n;
     }, 0);
+
+    seededLinkedIds = (
+      db
+        .prepare('SELECT id FROM transactions WHERE user_id = ? AND scheduled_id IS NOT NULL')
+        .all(userId) as { id: number }[]
+    ).map((r) => r.id);
 
     generateScheduledTransactions(userId, db);
   });
@@ -87,6 +94,29 @@ describe('seedTestData + generateScheduledTransactions', () => {
       .all(userId);
 
     expect(duplicates).toEqual([]);
+  });
+
+  it('garde validées les occurrences du seed (le générateur ne les remplace pas)', () => {
+    expect(seededLinkedIds.length).toBeGreaterThan(0);
+    const notValidated = seededLinkedIds.filter(
+      (id) =>
+        (
+          db.prepare('SELECT validated FROM transactions WHERE id = ?').get(id) as {
+            validated: number;
+          }
+        ).validated !== 1,
+    );
+    expect(notValidated).toEqual([]);
+  });
+
+  it('ne rattrape aucun versement PER passé', () => {
+    const past = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM transactions WHERE user_id = ? AND description = 'Versement PER mensuel' AND date < ?",
+      )
+      .get(userId, TODAY) as { n: number };
+
+    expect(past.n).toBe(0);
   });
 
   it('génère des occurrences futures à la suite du seed', () => {

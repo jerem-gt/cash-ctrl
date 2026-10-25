@@ -1112,6 +1112,7 @@ export function seedTestData(db: Database) {
 
   // Versement PER planifié — débité du compte courant vers un support d'assurance.
   // account_id = compte AV/PER cible, to_account_id = compte source débité.
+  const perScheduleStart = TODAY.getDate() <= 15 ? monthDay(0, 15) : monthDay(1, 15);
   db.prepare(
     `
       INSERT INTO scheduled_transactions
@@ -1129,7 +1130,7 @@ export function seedTestData(db: Database) {
     'Versement PER mensuel',
     pmVirement,
     15,
-    yearsAgo(1, 2, 15), // après le versement initial de 1 500 € inséré par le seed
+    perScheduleStart, // prochain 15 : pas de rattrapage de versements passés non validés
     perFondsEuro.id,
     toCents(0),
   );
