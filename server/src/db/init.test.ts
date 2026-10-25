@@ -70,6 +70,23 @@ describe('initDatabase', () => {
     expect(db.pragma('user_version', { simple: true })).toBeGreaterThanOrEqual(6);
   });
 
+  it("migre une base v6 : vide l'historique des cours Yahoo", () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    db.prepare(
+      "INSERT INTO stock_price_history (ticker, date, price, currency) VALUES ('CW8.PA', '2023-12-31', 10, 'EUR')",
+    ).run();
+    db.pragma('user_version = 6');
+
+    initDatabase(db);
+
+    const cnt = db.prepare('SELECT COUNT(*) AS cnt FROM stock_price_history').get() as {
+      cnt: number;
+    };
+    expect(cnt.cnt).toBe(0);
+    expect(db.pragma('user_version', { simple: true })).toBe(7);
+  });
+
   it('laisse les références à null quand les noms sont introuvables', () => {
     const db = createDb(':memory:');
     initDatabase(db);

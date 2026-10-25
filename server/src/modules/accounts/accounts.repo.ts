@@ -1,6 +1,7 @@
 import type { FrequentTransaction } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
+import { dateStr } from '../../lib/dateUtils.js';
 import { toCents, toEuros } from '../../lib/money.js';
 import { VALIDATED_TX_SUM_SELECT } from '../../lib/sql.js';
 import type {
@@ -104,7 +105,14 @@ export function createAccountsRepo(db: Database) {
   );
 
   const frequentTransactionsStmt = db.prepare<
-    { accountId: number; userId: number; months: string; minCount: number; limit: number },
+    {
+      accountId: number;
+      userId: number;
+      today: string;
+      months: string;
+      minCount: number;
+      limit: number;
+    },
     FrequentTransaction
   >(`
     WITH base AS (
@@ -114,8 +122,8 @@ export function createAccountsRepo(db: Database) {
       JOIN subcategories sc ON sc.id = t.subcategory_id
       WHERE t.account_id = :accountId
         AND t.user_id = :userId
-        AND t.date >= date('now', :months)
-        AND t.date <= date('now')
+        AND t.date >= date(:today, :months)
+        AND t.date <= :today
         AND t.transfer_peer_id IS NULL
         AND NOT EXISTS (
           SELECT 1 FROM user_settings us
@@ -222,6 +230,7 @@ export function createAccountsRepo(db: Database) {
       frequentTransactionsStmt.all({
         accountId,
         userId,
+        today: dateStr(new Date()),
         months: `-${FREQUENT_TX_MONTHS} months`,
         minCount: FREQUENT_TX_MIN_COUNT,
         limit: FREQUENT_TX_LIMIT,

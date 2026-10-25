@@ -2,10 +2,12 @@ import type { StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
 import { mapInBatches } from '../../lib/batch.js';
+import { parseSqliteUtc } from '../../lib/dateUtils.js';
 import { logger } from '../../logger.js';
 import { createStocksRepo } from './stocks.repo.js';
 
 const PRICE_TTL_MS = 15 * 60 * 1000;
+const HALF_DAY_S = 12 * 3600;
 
 export interface StockSearchResult {
   symbol: string;
@@ -74,7 +76,7 @@ export async function fetchAndStorePriceHistory(
     const data = (await res.json()) as {
       chart?: {
         result?: Array<{
-          meta?: { currency?: string };
+          meta?: { currency?: string; gmtoffset?: number };
           timestamp?: number[];
           indicators?: { quote?: Array<{ close?: (number | null)[] }> };
         }>;
@@ -87,14 +89,16 @@ export async function fetchAndStorePriceHistory(
     const currency = result.meta?.currency ?? 'EUR';
     const timestamps = result.timestamp;
     const closes = result.indicators.quote[0].close;
-    const currentYear = new Date().getUTCFullYear();
+    const gmtOffset = result.meta?.gmtoffset ?? 0;
+    const currentYear = new Date().getFullYear();
 
     // Keep last available monthly close per calendar year (skip current year — use live prices)
     const yearData = new Map<number, number>();
     for (const [i, timestamp] of timestamps.entries()) {
       const close = closes[i];
       if (close == null || !Number.isFinite(close)) continue;
-      const year = new Date(timestamp * 1000).getUTCFullYear();
+      // Bougie à minuit heure de bourse : offset + 12 h de marge (DST) pour rester dans le bon jour
+      const year = new Date((timestamp + gmtOffset + HALF_DAY_S) * 1000).getUTCFullYear();
       if (year >= currentYear) continue;
       yearData.set(year, close); // later iterations overwrite → last close of the year
     }
@@ -163,7 +167,7 @@ export async function getOrRefreshPrice(
   const cached = stocksRepo.getStockPrice(ticker);
 
   if (cached) {
-    const age = Date.now() - new Date(cached.fetched_at).getTime();
+    const age = Date.now() - parseSqliteUtc(cached.fetched_at).getTime();
     if (age < PRICE_TTL_MS) return cached;
   }
 

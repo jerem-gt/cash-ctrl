@@ -1,6 +1,27 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { addDays, formatLocalDate } from './dateUtils';
+import { addDays, formatLocalDate, parseSqliteUtc, sqliteUtcToLocalDate } from './dateUtils';
+
+describe('parseSqliteUtc', () => {
+  it("lit le format SQLite et l'ISO sans fuseau comme de l'UTC", () => {
+    expect(parseSqliteUtc('2026-05-01 23:30:00').toISOString()).toBe('2026-05-01T23:30:00.000Z');
+    expect(parseSqliteUtc('2026-05-01T23:30:00').toISOString()).toBe('2026-05-01T23:30:00.000Z');
+  });
+
+  it('respecte Z et les offsets explicites', () => {
+    expect(parseSqliteUtc('2026-05-01T23:30:00Z').toISOString()).toBe('2026-05-01T23:30:00.000Z');
+    expect(parseSqliteUtc('2026-05-01T23:30:00+02:00').toISOString()).toBe(
+      '2026-05-01T21:30:00.000Z',
+    );
+  });
+});
+
+describe('sqliteUtcToLocalDate', () => {
+  it('renvoie le jour local (Paris) quand le jour UTC est la veille', () => {
+    expect(sqliteUtcToLocalDate('2026-05-01 23:30:00')).toBe('2026-05-02');
+    expect(sqliteUtcToLocalDate('2026-05-01 10:00:00')).toBe('2026-05-01');
+  });
+});
 
 describe('fuseau des tests', () => {
   it("est Europe/Paris (sinon les tests de changement d'heure passent à vide)", () => {

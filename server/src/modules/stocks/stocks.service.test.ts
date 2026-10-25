@@ -1,10 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { PriceRepository } from './stocks.service.js';
-import { getOrRefreshPrice, refreshPrice, searchByQuery } from './stocks.service.js';
+import {
+  fetchAndStorePriceHistory,
+  getOrRefreshPrice,
+  refreshPrice,
+  searchByQuery,
+} from './stocks.service.js';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 function makeRepo(cached?: {
@@ -132,6 +138,35 @@ describe('refreshPrice', () => {
   });
 });
 
+// ─── fetchAndStorePriceHistory ────────────────────────────────────────────────
+
+describe('fetchAndStorePriceHistory', () => {
+  it('range la bougie de décembre dans son année (horodatée la veille en UTC)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-06-01T12:00:00Z'));
+    mockFetchJson({
+      chart: {
+        result: [
+          {
+            meta: { currency: 'EUR', gmtoffset: 3600 },
+            timestamp: [1698793200, 1701385200, 1704063600, 1706742000, 1735686000],
+            indicators: { quote: [{ close: [10, 20, 30, 31, 40] }] },
+          },
+        ],
+      },
+    });
+    const repo = { upsertPriceHistory: vi.fn(), hasPriceHistory: vi.fn() };
+
+    await fetchAndStorePriceHistory(repo, 'CW8.PA');
+
+    expect(repo.upsertPriceHistory).toHaveBeenCalledWith('CW8.PA', [
+      { date: '2023-12-31', price: 20, currency: 'EUR' },
+      { date: '2024-12-31', price: 31, currency: 'EUR' },
+      { date: '2025-12-31', price: 40, currency: 'EUR' },
+    ]);
+  });
+});
+
 // ─── getOrRefreshPrice ────────────────────────────────────────────────────────
 
 describe('getOrRefreshPrice', () => {
@@ -164,6 +199,37 @@ describe('getOrRefreshPrice', () => {
     const result = await getOrRefreshPrice(repo, 'DCAM.PA');
     expect(result?.price).toBe(16);
     expect(fetch).toHaveBeenCalled();
+  });
+
+  describe('fetched_at au format SQLite (UTC sans fuseau)', () => {
+    const originalTz = process.env.TZ;
+    const sqliteUtc = (ms: number) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+
+    beforeAll(() => {
+      process.env.TZ = 'Europe/Paris';
+    });
+    afterAll(() => {
+      if (originalTz === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTz;
+    });
+
+    it('sert depuis le cache un cours récent', async () => {
+      const repo = makeRepo({ ...freshCached, fetched_at: sqliteUtc(Date.now() - 60 * 1000) });
+      vi.stubGlobal('fetch', vi.fn());
+      const result = await getOrRefreshPrice(repo, 'DCAM.PA');
+      expect(result?.price).toBe(15);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('rafraîchit un cours de plus de 15 minutes', async () => {
+      const repo = makeRepo({ ...freshCached, fetched_at: sqliteUtc(Date.now() - 20 * 60 * 1000) });
+      mockFetchJson({
+        chart: { result: [{ meta: { regularMarketPrice: 16, currency: 'EUR' } }] },
+      });
+      const result = await getOrRefreshPrice(repo, 'DCAM.PA');
+      expect(result?.price).toBe(16);
+      expect(fetch).toHaveBeenCalled();
+    });
   });
 
   it('retourne le cache périmé en fallback si le fetch échoue', async () => {
