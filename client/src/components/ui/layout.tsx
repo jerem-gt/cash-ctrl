@@ -1,8 +1,7 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
 
-import { LINK_CLASS } from './linkStyles';
+import { MaybeLink } from './MaybeLink';
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
@@ -111,13 +110,7 @@ export function Metric({
         )}
       </div>
       <p className={`font-display text-2xl tabular-nums ${METRIC_VALUE_COLORS[variant]}`}>
-        {to ? (
-          <Link to={to} className={LINK_CLASS}>
-            {value}
-          </Link>
-        ) : (
-          value
-        )}
+        <MaybeLink to={to}>{value}</MaybeLink>
       </p>
       {footer}
     </Card>

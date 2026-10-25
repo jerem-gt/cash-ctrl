@@ -1,8 +1,7 @@
-import type { Filters } from '@cashctrl/types';
+import { type Filters, NO_CATEGORY } from '@cashctrl/types';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const INT_RE = /^\d+$/;
-const NO_CATEGORY = 'none';
 
 type IdKey = 'account_id' | 'category_id' | 'subcategory_id' | 'payment_method_id';
 type DateKey = 'date_from' | 'date_to';

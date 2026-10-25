@@ -303,10 +303,12 @@ export interface PendingReimbursement {
   total_reimbursed: number;
 }
 
+export const NO_CATEGORY = 'none' as const;
+
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
-  category_id?: number | 'none';
+  category_id?: number | typeof NO_CATEGORY;
   subcategory_id?: number;
   description_contains?: string;
   date_from?: string;

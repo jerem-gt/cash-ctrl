@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   addToFlowMap,
@@ -328,16 +328,45 @@ describe('firstDayOfMonth', () => {
 
   it('retourne le 1er du mois courant pour monthsBack = 0', () => {
     const now = new Date();
-    const expected = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     expect(firstDayOfMonth(0)).toBe(expected);
   });
 
   it('retourne le mois précédent pour monthsBack = 1', () => {
     const prev = new Date();
     // Set to first day to avoid overflow when current day > target month's days (e.g., 31)
-    prev.setUTCDate(1);
-    prev.setUTCMonth(prev.getUTCMonth() - 1);
-    const expected = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-01`;
+    prev.setDate(1);
+    prev.setMonth(prev.getMonth() - 1);
+    const expected = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`;
     expect(firstDayOfMonth(1)).toBe(expected);
+  });
+
+  describe('près du changement de mois (date locale)', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // Dernier jour du mois à 23:30 locale : en UTC ce serait déjà le mois suivant à l'est de UTC
+    it('reste sur le mois local le 31 à 23:30', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 9, 31, 23, 30));
+      expect(firstDayOfMonth(0)).toBe('2026-10-01');
+      expect(firstDayOfMonth(-1)).toBe('2026-11-01');
+    });
+
+    // Premier jour du mois à 00:30 locale : en UTC ce serait encore le mois précédent à l'est de UTC
+    it('reste sur le mois local le 1er à 00:30', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 10, 1, 0, 30));
+      expect(firstDayOfMonth(0)).toBe('2026-11-01');
+      expect(firstDayOfMonth(5)).toBe('2026-06-01');
+    });
+
+    it('franchit le changement d’année', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 0, 1, 0, 30));
+      expect(firstDayOfMonth(1)).toBe('2025-12-01');
+      expect(firstDayOfMonth(-12)).toBe('2027-01-01');
+    });
   });
 });

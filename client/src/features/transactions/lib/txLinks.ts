@@ -1,17 +1,22 @@
-import type { Filters, TransactionType } from '@cashctrl/types';
+import { type Filters, NO_CATEGORY, type TransactionType } from '@cashctrl/types';
 
 import { formatLocalDate } from '@/lib/dateUtils';
 
 import { buildTransactionsUrl } from './filtersUrl';
 
-export function monthRange(now: Date = new Date()): { date_from: string; date_to: string } {
+export interface DateRange {
+  date_from: string;
+  date_to: string;
+}
+
+export function monthRange(now: Date = new Date()): DateRange {
   return {
     date_from: formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)),
     date_to: formatLocalDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
   };
 }
 
-export function yearRange(year: number): { date_from: string; date_to: string } {
+export function yearRange(year: number): DateRange {
   return { date_from: `${year}-01-01`, date_to: `${year}-12-31` };
 }
 
@@ -23,11 +28,10 @@ export function statsTransactionsUrl(filters: Filters): string {
 interface CategoryUrlOptions {
   type: TransactionType;
   categoryId: number | null;
-  range: { date_from: string; date_to: string };
+  range: DateRange;
   accountId?: number;
 }
 
-// Un category_id null (groupe sans catégorie) devient le filtre « none ».
 export function categoryTransactionsUrl({
   type,
   categoryId,
@@ -37,7 +41,7 @@ export function categoryTransactionsUrl({
   return statsTransactionsUrl({
     ...range,
     type,
-    category_id: categoryId ?? 'none',
+    category_id: categoryId ?? NO_CATEGORY,
     account_id: accountId,
   });
 }

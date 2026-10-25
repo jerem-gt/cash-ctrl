@@ -1,4 +1,11 @@
-import { Account, Category, Filters, PaymentMethod, Subcategory } from '@cashctrl/types';
+import {
+  Account,
+  Category,
+  Filters,
+  NO_CATEGORY,
+  PaymentMethod,
+  Subcategory,
+} from '@cashctrl/types';
 import { ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
@@ -222,13 +229,15 @@ export const TransactionsFilters = ({
                 onChange={(e) =>
                   onFilterChange({
                     category_id:
-                      e.target.value === 'none' ? 'none' : parseIdOrUndefined(e.target.value),
+                      e.target.value === NO_CATEGORY
+                        ? NO_CATEGORY
+                        : parseIdOrUndefined(e.target.value),
                     subcategory_id: undefined,
                   })
                 }
               >
                 <option value="">{t('filters.all_categories')}</option>
-                <option value="none">{t('filters.no_category')}</option>
+                <option value={NO_CATEGORY}>{t('filters.no_category')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.name}

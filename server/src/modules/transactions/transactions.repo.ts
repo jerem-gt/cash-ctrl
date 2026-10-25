@@ -1,3 +1,4 @@
+import { NO_CATEGORY } from '@cashctrl/types';
 import type { Database, Statement } from 'better-sqlite3';
 
 import { MAX_PAGE_SIZE, ReimbursementStatus } from '../../constants.js';
@@ -101,31 +102,29 @@ export const TX_WITH_DETAILS = `
   LEFT JOIN reimbursements r ON r.linked_transaction_id = t.id
 `;
 
+const NO_SPLITS = `NOT EXISTS (
+  SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+)`;
+
 function addCategoryConditions(
   filters: TransactionFilters,
   conditions: string[],
   params: QueryParams,
 ): void {
-  const noCategory = filters.category_id === 'none';
+  const noCategory = filters.category_id === NO_CATEGORY;
   if (noCategory) {
     // Les parents ventilés ont subcategory_id NULL mais ne sont pas « sans catégorie »
-    conditions.push(`t.subcategory_id IS NULL AND NOT EXISTS (
-      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
-    )`);
+    conditions.push(`t.subcategory_id IS NULL AND ${NO_SPLITS}`);
   } else if (filters.category_id) {
     // Les ventilations priment sur le subcategory_id legacy
-    conditions.push(`((sc.category_id = :category_id AND NOT EXISTS (
-      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
-    )) OR EXISTS (
+    conditions.push(`((sc.category_id = :category_id AND ${NO_SPLITS}) OR EXISTS (
       SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
       WHERE s.transaction_id = t.id AND ssc.category_id = :category_id
     ))`);
     params.category_id = filters.category_id;
   }
   if (filters.subcategory_id && !noCategory) {
-    conditions.push(`((t.subcategory_id = :subcategory_id AND NOT EXISTS (
-      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
-    )) OR EXISTS (
+    conditions.push(`((t.subcategory_id = :subcategory_id AND ${NO_SPLITS}) OR EXISTS (
       SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategory_id
     ))`);
     params.subcategory_id = filters.subcategory_id;

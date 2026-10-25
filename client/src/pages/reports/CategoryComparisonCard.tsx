@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
-import { Card, LINK_CLASS } from '@/components/ui';
+import { Card, MaybeLink } from '@/components/ui';
 import { categoryTransactionsUrl, yearRange } from '@/features/transactions/lib/txLinks';
+import { categoryLabel } from '@/lib/categoryLabel';
 import { fmt } from '@/lib/format';
 
 import type { CatRow } from './catComparison';
@@ -64,21 +64,20 @@ export function CategoryComparisonCard({
             return (
               <tr key={category} className="border-b border-line-subtle last:border-0">
                 <td className="py-2 text-content-secondary truncate max-w-[8rem]">
-                  {categoryId === undefined ? (
-                    category || '—'
-                  ) : (
-                    <Link
-                      to={categoryTransactionsUrl({
-                        type: catTab,
-                        categoryId,
-                        range: yearRange(year),
-                        accountId,
-                      })}
-                      className={LINK_CLASS}
-                    >
-                      {category || '—'}
-                    </Link>
-                  )}
+                  <MaybeLink
+                    to={
+                      categoryId === undefined
+                        ? undefined
+                        : categoryTransactionsUrl({
+                            type: catTab,
+                            categoryId,
+                            range: yearRange(year),
+                            accountId,
+                          })
+                    }
+                  >
+                    {categoryLabel(category)}
+                  </MaybeLink>
                 </td>
                 <td className="py-2 text-right tabular-nums text-content-secondary font-medium">
                   {fmt(current)}

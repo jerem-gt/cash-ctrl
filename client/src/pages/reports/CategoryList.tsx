@@ -1,6 +1,5 @@
-import { Link } from 'react-router';
-
-import { LINK_CLASS } from '@/components/ui';
+import { MaybeLink } from '@/components/ui';
+import { categoryLabel } from '@/lib/categoryLabel';
 import { fmt } from '@/lib/format';
 
 interface CategoryListProps {
@@ -17,13 +16,7 @@ export function CategoryList({ data, total }: Readonly<CategoryListProps>) {
           <div key={d.name} className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: d.fill }} />
             <span className="text-xs text-content-muted flex-1 truncate">
-              {d.to ? (
-                <Link to={d.to} className={LINK_CLASS}>
-                  {d.name || '—'}
-                </Link>
-              ) : (
-                d.name || '—'
-              )}
+              <MaybeLink to={d.to}>{categoryLabel(d.name)}</MaybeLink>
             </span>
             <span className="text-xs text-content-subtle tabular-nums">{pct}%</span>
             <span className="text-xs font-medium text-content-secondary tabular-nums w-20 text-right">
