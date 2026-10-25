@@ -43,45 +43,53 @@ export function TxSplitEditor({ splits, onChange, categories, totalAmount }: Rea
         const subcats: Subcategory[] =
           categories.find((c) => String(c.id) === s.category_id)?.subcategories ?? [];
         return (
-          <div key={s._key} className="flex gap-2 items-center">
-            <Select
-              value={s.category_id}
-              onChange={(e) => update(s._key, { category_id: e.target.value, subcategory_id: '' })}
-              className="flex-1"
-            >
-              <option value="">{t('split_editor.category_placeholder')}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={s.subcategory_id}
-              onChange={(e) => update(s._key, { subcategory_id: e.target.value })}
-              disabled={!s.category_id}
-              className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">{t('split_editor.subcategory_placeholder')}</option>
-              {subcats.map((sub) => (
-                <option key={sub.id} value={String(sub.id)}>
-                  {sub.name}
-                </option>
-              ))}
-            </Select>
-            <DecimalInput
-              value={s.amount}
-              onChange={(e) => update(s._key, { amount: e.target.value })}
-              placeholder="0,00"
-              className="w-20"
-            />
-            <button
-              type="button"
-              onClick={() => remove(s._key)}
-              className="text-content-faint hover:text-danger transition-colors text-lg leading-none px-1"
-            >
-              ×
-            </button>
+          <div key={s._key} className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-1 basis-56 gap-2 min-w-0">
+              <Select
+                value={s.category_id}
+                onChange={(e) =>
+                  update(s._key, { category_id: e.target.value, subcategory_id: '' })
+                }
+                className="flex-1 min-w-0"
+              >
+                <option value="">{t('split_editor.category_placeholder')}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={s.subcategory_id}
+                onChange={(e) => update(s._key, { subcategory_id: e.target.value })}
+                disabled={!s.category_id}
+                className="flex-1 min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">{t('split_editor.subcategory_placeholder')}</option>
+                {subcats.map((sub) => (
+                  <option key={sub.id} value={String(sub.id)}>
+                    {sub.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Input impose w-full : la largeur est portée par le conteneur. */}
+              <div className="w-24 shrink-0">
+                <DecimalInput
+                  value={s.amount}
+                  onChange={(e) => update(s._key, { amount: e.target.value })}
+                  placeholder="0,00"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => remove(s._key)}
+                className="text-content-faint hover:text-danger transition-colors text-lg leading-none px-1"
+              >
+                ×
+              </button>
+            </div>
           </div>
         );
       })}
