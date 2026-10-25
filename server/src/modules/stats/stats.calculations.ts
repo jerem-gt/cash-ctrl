@@ -1,3 +1,4 @@
+import { dateStr } from '../../lib/dateUtils.js';
 import { toEuros } from '../../lib/money.js';
 
 export interface YearlyReturn {
@@ -176,7 +177,5 @@ export function buildYearlyReturn(
 
 export function firstDayOfMonth(monthsBack: number): string {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthsBack, 1))
-    .toISOString()
-    .slice(0, 10);
+  return dateStr(new Date(now.getFullYear(), now.getMonth() - monthsBack, 1));
 }

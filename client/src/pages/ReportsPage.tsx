@@ -1,3 +1,4 @@
+import type { CategoryAmount, TransactionType } from '@cashctrl/types';
 import { Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -62,37 +63,24 @@ export default function ReportsPage() {
     [report],
   );
 
-  const expenseCatData = useMemo(
-    () =>
-      (report?.expense_by_category ?? []).map((d) => ({
+  const { expense: expenseCatData, income: incomeCatData } = useMemo(() => {
+    const toCatData = (rows: CategoryAmount[], type: TransactionType) =>
+      rows.map((d) => ({
         name: d.category,
         value: d.amount,
         fill: colorMap[d.category],
         to: categoryTransactionsUrl({
-          type: 'expense',
+          type,
           categoryId: d.category_id,
           range: yearRange(year),
           accountId,
         }),
-      })),
-    [report, colorMap, year, accountId],
-  );
-
-  const incomeCatData = useMemo(
-    () =>
-      (report?.income_by_category ?? []).map((d) => ({
-        name: d.category,
-        value: d.amount,
-        fill: colorMap[d.category],
-        to: categoryTransactionsUrl({
-          type: 'income',
-          categoryId: d.category_id,
-          range: yearRange(year),
-          accountId,
-        }),
-      })),
-    [report, colorMap, year, accountId],
-  );
+      }));
+    return {
+      expense: toCatData(report?.expense_by_category ?? [], 'expense'),
+      income: toCatData(report?.income_by_category ?? [], 'income'),
+    };
+  }, [report, colorMap, year, accountId]);
 
   const compareBarData = useMemo(
     () =>

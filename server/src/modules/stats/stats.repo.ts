@@ -5,7 +5,7 @@ import { parseSplits, TransactionRow, TX_WITH_DETAILS } from '../transactions/tr
 import type { Transaction } from '../transactions/transactions.types.js';
 import { marketValueByAccount } from './investment-profitability.repo.js';
 import { createProfitabilityRepo } from './profitability.repo.js';
-import { createReportRepo } from './report.repo.js';
+import { type CategoryAmount, createReportRepo } from './report.repo.js';
 import { buildPositionsAt, firstDayOfMonth, sumDeltasBefore } from './stats.calculations.js';
 import { EFFECTIVE_CATEGORY_JOIN, EXCLUDE_INSURANCE_TX, SUM_EFFECTIVE_AMOUNT } from './statsSql.js';
 
@@ -20,7 +20,7 @@ export interface DashboardStats {
   month_income: number;
   month_expense: number;
   monthly: import('./report.repo.js').MonthlyStat[];
-  expenses_by_category: Array<{ category_id: number | null; category: string; amount: number }>;
+  expenses_by_category: CategoryAmount[];
   recent: Transaction[];
   to_validate: Transaction[];
   upcoming: Transaction[];
@@ -144,10 +144,7 @@ export function createStatsRepo(db: Database) {
       });
 
       const catRows = db
-        .prepare<
-          [number, string, string],
-          { category_id: number | null; category: string; amount: number }
-        >(
+        .prepare<[number, string, string], CategoryAmount>(
           `SELECT c.id AS category_id, COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
           FROM transactions t
           ${EFFECTIVE_CATEGORY_JOIN}

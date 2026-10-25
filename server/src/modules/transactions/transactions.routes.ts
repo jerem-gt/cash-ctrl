@@ -1,3 +1,4 @@
+import { NO_CATEGORY } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -49,7 +50,7 @@ export const transactionSchema = z
 export const querySchema = z.object({
   account_id: z.coerce.number().int().optional(),
   type: z.enum(TRANSACTION_TYPES).optional(),
-  category_id: z.union([z.literal('none'), z.coerce.number().int()]).optional(),
+  category_id: z.union([z.literal(NO_CATEGORY), z.coerce.number().int()]).optional(),
   subcategory_id: z.coerce.number().int().optional(),
   description_contains: z.string().trim().optional(),
   date_from: dateSchema.optional(),

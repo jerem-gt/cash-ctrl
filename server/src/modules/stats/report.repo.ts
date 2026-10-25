@@ -22,7 +22,7 @@ export interface ReportData {
   income_by_category: CategoryAmount[];
 }
 
-interface CategoryAmount {
+export interface CategoryAmount {
   category_id: number | null;
   category: string;
   amount: number;

@@ -18,6 +18,7 @@ import {
   monthRange,
   statsTransactionsUrl,
 } from '@/features/transactions/lib/txLinks';
+import { categoryLabel } from '@/lib/categoryLabel';
 import { fmt } from '@/lib/format';
 
 const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
@@ -168,7 +169,7 @@ export default function DashboardPage() {
                       })}
                       className={LINK_CLASS}
                     >
-                      {d.name || '—'}
+                      {categoryLabel(d.name)}
                     </Link>{' '}
                     <strong className="text-content-secondary">{fmt(d.value)}</strong>
                   </div>

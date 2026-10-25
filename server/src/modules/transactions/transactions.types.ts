@@ -1,3 +1,5 @@
+import type { NO_CATEGORY } from '@cashctrl/types';
+
 import { ReimbursementStatus, StockOperationType, TransactionType } from '../../constants.js';
 
 export interface TransactionSplit {
@@ -84,7 +86,7 @@ export interface UpdateSharedTransactionInput {
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
-  category_id?: number | 'none';
+  category_id?: number | typeof NO_CATEGORY;
   subcategory_id?: number;
   description_contains?: string;
   date_from?: string;
