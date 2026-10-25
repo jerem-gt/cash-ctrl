@@ -85,7 +85,8 @@
     "delete": "Delete",
     "actions": "Actions",
     "running_balance_title": "Running balance",
-    "ventilated": "Split ({{count}})"
+    "ventilated": "Split ({{count}})",
+    "ventilated_prefix": "Split: "
   },
   "tx_core": {
     "type_label": "Type",
