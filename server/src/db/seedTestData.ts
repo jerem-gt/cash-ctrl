@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
@@ -944,26 +945,60 @@ export function seedTestData(db: Database) {
     active: 0 | 1;
   };
 
-  function insertScheduled(s: SchedInput): void {
-    stmtSched.run(
+  const stmtFindSeeded = db.prepare<
+    [number, number, string, number, string],
+    { id: number; peer: number | null; date: string }
+  >(`
+      SELECT id, transfer_peer_id AS peer, date FROM transactions
+      WHERE user_id = ? AND account_id = ? AND type = ? AND amount = ? AND description = ?
+        AND scheduled_id IS NULL
+  `);
+  const stmtLinkSched = db.prepare('UPDATE transactions SET scheduled_id = ? WHERE id = ?');
+  const stmtLastGenerated = db.prepare(
+    'UPDATE scheduled_transactions SET last_generated_until = ? WHERE id = ?',
+  );
+
+  // Rattache les occurrences du seed à leur planification : le générateur reprend après la dernière.
+  function linkSeededOccurrences(schedId: number, s: SchedInput): void {
+    const rows = stmtFindSeeded.all(
       USER_ID,
       s.account_id,
-      s.to_account_id,
       s.type,
       toCents(s.amount),
       s.description,
-      s.subcategory_id,
-      s.payment_method_id,
-      s.notes,
-      s.recurrence_unit,
-      s.recurrence_interval,
-      s.recurrence_day,
-      s.recurrence_month,
-      s.weekend_handling,
-      s.start_date,
-      s.end_date,
-      s.active,
     );
+    let last: string | null = null;
+    for (const row of rows) {
+      stmtLinkSched.run(schedId, row.id);
+      if (row.peer !== null) stmtLinkSched.run(schedId, row.peer);
+      if (last === null || row.date > last) last = row.date;
+    }
+    if (last !== null) stmtLastGenerated.run(last, schedId);
+  }
+
+  function insertScheduled(s: SchedInput): void {
+    const schedId = Number(
+      stmtSched.run(
+        USER_ID,
+        s.account_id,
+        s.to_account_id,
+        s.type,
+        toCents(s.amount),
+        s.description,
+        s.subcategory_id,
+        s.payment_method_id,
+        s.notes,
+        s.recurrence_unit,
+        s.recurrence_interval,
+        s.recurrence_day,
+        s.recurrence_month,
+        s.weekend_handling,
+        s.start_date,
+        s.end_date,
+        s.active,
+      ).lastInsertRowid,
+    );
+    linkSeededOccurrences(schedId, s);
   }
 
   insertScheduled({
@@ -1025,7 +1060,7 @@ export function seedTestData(db: Database) {
     to_account_id: accBNPLivret,
     type: 'expense',
     amount: 300,
-    description: 'Épargne mensuelle',
+    description: 'Épargne → Livret A', // même libellé que les virements du seed (rattachement)
     subcategory_id: subcatTransfert,
     payment_method_id: pmTransfert,
     notes: null,
@@ -1094,7 +1129,7 @@ export function seedTestData(db: Database) {
     'Versement PER mensuel',
     pmVirement,
     15,
-    yearsAgo(1, 1, 15),
+    yearsAgo(1, 2, 15), // après le versement initial de 1 500 € inséré par le seed
     perFondsEuro.id,
     toCents(0),
   );
@@ -1122,14 +1157,16 @@ export function seedTestData(db: Database) {
   console.log('  Identifiants  : test / test (admin inchangé)');
 }
 
-// ── Script standalone ─────────────────────────────────────────────────────────
-const DB_PATH = path.join(DATA_DIR, 'cashctrl.db');
+// ── Script standalone (`npm run db:seed:test`), pas à l'import ────────────────
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const DB_PATH = path.join(DATA_DIR, 'cashctrl.db');
 
-if (!fs.existsSync(DB_PATH)) {
-  console.error(
-    "Base de données introuvable. Lance d'abord `npm run db:reset` ou `npm run db:reset:dev`.",
-  );
-  process.exit(1);
+  if (!fs.existsSync(DB_PATH)) {
+    console.error(
+      "Base de données introuvable. Lance d'abord `npm run db:reset` ou `npm run db:reset:dev`.",
+    );
+    process.exit(1);
+  }
+
+  seedTestData(createDb());
 }
-
-seedTestData(createDb());
