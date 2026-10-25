@@ -1,5 +1,4 @@
-// Extrait dans deploy/node_modules les seules deps runtime du serveur bundlé (cible Docker : linux/x64/musl par défaut).
-// Usage : node scripts/prepare-runtime-deps.mjs [--platform win32] [--arch x64] [--libc glibc]
+// Extrait dans deploy/node_modules les deps runtime du serveur bundlé (cible Docker linux/x64/musl, voir --platform/--arch/--libc).
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,28 +22,40 @@ const externals = JSON.parse(readFileSync(join(root, 'server', 'runtime-external
 // Paquets jamais require au runtime : headers C++ (node-gyp) et télémétrie postinstall
 const BUILD_ONLY = new Set(['node-addon-api', '@scarf/scarf']);
 
-// Résolution Node standard : server/node_modules puis node_modules racine
-const searchDirs = [join(root, 'server', 'node_modules'), join(root, 'node_modules')];
-
-function findPackage(name) {
-  const dir = searchDirs.map((d) => join(d, name)).find((d) => existsSync(join(d, 'package.json')));
-  if (dir === undefined) throw new Error(`Paquet introuvable : ${name}`);
-  return dir;
+// Résolution Node : <fromDir>/node_modules/<name>, puis dossiers parents jusqu'à la racine du repo
+function findPackage(name, fromDir) {
+  for (let dir = fromDir; ; dir = dirname(dir)) {
+    const candidate = join(dir, 'node_modules', name);
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+    if (dir === root || dir === dirname(dir)) throw new Error(`Paquet introuvable : ${name} (depuis ${fromDir})`);
+  }
 }
 
 // Parcours récursif des `dependencies` et des peers non optionnels (swagger-ui-express require express)
 const packages = new Map();
-function collect(name) {
-  if (packages.has(name) || BUILD_ONLY.has(name)) return;
-  const dir = findPackage(name);
+function collect(name, fromDir) {
+  if (BUILD_ONLY.has(name)) return;
+  const dir = findPackage(name, fromDir);
+  const known = packages.get(name);
+  if (known === dir) return;
+  if (known !== undefined) throw new Error(`Versions multiples de ${name} : ${known}, ${dir}`);
   packages.set(name, dir);
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
   const peers = Object.keys(pkg.peerDependencies ?? {}).filter(
     (peer) => pkg.peerDependenciesMeta?.[peer]?.optional !== true,
   );
-  for (const dep of [...Object.keys(pkg.dependencies ?? {}), ...peers]) collect(dep);
+  for (const dep of [...Object.keys(pkg.dependencies ?? {}), ...peers]) collect(dep, dir);
 }
-externals.forEach(collect);
+externals.forEach((name) => collect(name, join(root, 'server')));
+
+// Parcours récursif : visit(cheminComplet) pour chaque fichier
+function walkFiles(dir, visit) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) walkFiles(full, visit);
+    else visit(full);
+  }
+}
 
 rmSync(join(root, 'deploy'), { recursive: true, force: true });
 for (const [name, dir] of packages) {
@@ -57,20 +68,15 @@ function remove(rel) {
   rmSync(join(outDir, rel), { recursive: true, force: true });
 }
 
-function walkMaps(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) walkMaps(full);
-    else if (entry.name.endsWith('.map')) rmSync(full);
-  }
-}
-
 // Sources de compilation inutiles avec les prebuilds
 ['better-sqlite3/deps', 'better-sqlite3/src', 'bcrypt/src', 'bcrypt/test', 'bcrypt/examples'].forEach(remove);
-walkMaps(outDir);
+walkFiles(outDir, (file) => {
+  if (file.endsWith('.map')) rmSync(file);
+});
 
 // better-sqlite3 (lib/binding.js) : prebuilds/<linuxmusl|platform>-<arch>.node
-const sqliteKey = `${target.platform === 'linux' && target.libc === 'musl' ? 'linuxmusl' : target.platform}-${target.arch}.node`;
+const sqlitePlatform = target.platform === 'linux' && target.libc === 'musl' ? 'linuxmusl' : target.platform;
+const sqliteKey = `${sqlitePlatform}-${target.arch}.node`;
 const sqlitePrebuilds = join(outDir, 'better-sqlite3', 'prebuilds');
 for (const file of readdirSync(sqlitePrebuilds)) {
   if (file !== sqliteKey) rmSync(join(sqlitePrebuilds, file));
@@ -90,29 +96,22 @@ for (const dir of readdirSync(bcryptPrebuilds)) {
   }
 }
 
-// Vérifie que les binaires attendus sont bien présents
+// Vérifie que les binaires attendus sont bien présents (bcrypt : avec ou sans suffixe libc, comme node-gyp-build)
 if (!existsSync(join(sqlitePrebuilds, sqliteKey))) throw new Error(`Prebuild better-sqlite3 absent : ${sqliteKey}`);
-if (readdirSync(join(bcryptPrebuilds)).length === 0) throw new Error('Prebuild bcrypt absent');
-
-function dirSize(dir) {
-  let total = 0;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    total += entry.isDirectory() ? dirSize(full) : statSync(full).size;
-  }
-  return total;
+const bcryptDir = join(bcryptPrebuilds, `${target.platform}-${target.arch}`);
+const bcryptFiles = [`bcrypt.${target.libc}.node`, 'bcrypt.node'];
+if (!bcryptFiles.some((file) => existsSync(join(bcryptDir, file)))) {
+  throw new Error(`Prebuild bcrypt absent : ${target.platform}-${target.arch}/${bcryptFiles.join(' ou ')}`);
 }
 
+let totalSize = 0;
 const natives = [];
-(function findNodeFiles(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) findNodeFiles(full);
-    else if (entry.name.endsWith('.node')) natives.push(full.slice(outDir.length + 1));
-  }
-})(outDir);
+walkFiles(outDir, (file) => {
+  totalSize += statSync(file).size;
+  if (file.endsWith('.node')) natives.push(file.slice(outDir.length + 1));
+});
 
 stdout.write(`Paquets : ${[...packages.keys()].join(', ')}\n`);
 stdout.write(`Binaires : ${natives.join(', ')}\n`);
 stdout.write(`Cible : ${target.platform}-${target.arch}-${target.libc}\n`);
-stdout.write(`Taille deploy/node_modules : ${(dirSize(outDir) / 1024 / 1024).toFixed(1)} Mo\n`);
+stdout.write(`Taille deploy/node_modules : ${(totalSize / 1024 / 1024).toFixed(1)} Mo\n`);
