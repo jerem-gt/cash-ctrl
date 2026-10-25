@@ -1,0 +1,62 @@
+{
+  "title": "Casse-budget",
+  "subtitle": "Détruis ton budget avant qu'il ne te détruise.",
+  "controls": "Souris, doigt ou ← → pour bouger · Espace ou tap pour lancer · Échap pour fuir tes responsabilités",
+  "controls_short": "Glisse pour bouger · Tape pour lancer",
+  "serve_hint": "Espace ou tap pour lancer la balle",
+  "serve_hint_short": "Tape pour lancer la balle",
+  "damage": "Dégâts",
+  "best": "Record",
+  "lives": "Vies",
+  "close": "Quitter le jeu",
+  "replay": "Rejouer",
+  "quit": "Quitter",
+  "new_record": "Nouveau record !",
+  "won": "Patrimoine : 0 €. Comme le 28 du mois.",
+  "lost": "Game over. Même ta ruine, tu la rates.",
+  "refund": "Remboursement en cours… (ne t'habitue pas)",
+  "empty": "Rien à casser ici. Ton budget est déjà vide ?",
+  "life_lost": [
+    "Balle perdue. Comme ton dernier remboursement d'impôts.",
+    "Raté ! Tu gères cette balle comme tes abonnements.",
+    "Une vie de moins. Au moins, celle-là n'est pas facturée."
+  ],
+  "hit": {
+    "account": [
+      "« {{label}} » s'est effondré. Ta banque appelle ça des frais de tenue de compte.",
+      "Adieu « {{label}} ». Il n'avait jamais été très positif de toute façon.",
+      "« {{label}} » : 0 €. Pour une fois, le solde est juste."
+    ],
+    "button": [
+      "Bouton « {{label}} » détruit. De toute façon tu ne cliquais jamais dessus.",
+      "« {{label}} » ne répond plus. Comme ton conseiller bancaire.",
+      "Tu as cassé « {{label}} ». Ça, c'est de la gestion active."
+    ],
+    "nav": [
+      "Plus de « {{label}} ». Tu vas naviguer à vue, comme pour ton budget.",
+      "« {{label}} » a disparu. Personne ne s'en rendra compte."
+    ],
+    "chart": [
+      "Le graphique baissait déjà, tu l'as juste aidé.",
+      "Enfin une courbe qui touche le fond pour de bon."
+    ],
+    "row": [
+      "Exit « {{label}} ». Ton banquier, lui, s'en souvient.",
+      "Exit « {{label}} » de l'écran. Malheureusement, pas de ton relevé.",
+      "Une dépense de moins à l'écran. Pas sur ton compte."
+    ],
+    "amount": [
+      "{{label}} en fumée. Comme tes bonnes résolutions de janvier.",
+      "Tu viens de pulvériser {{label}}. Ton toi du futur ne te remercie pas."
+    ],
+    "heading": [
+      "Titre « {{label}} » abattu. La page ne sait plus qui elle est.",
+      "« {{label}} » ? Connais pas."
+    ],
+    "generic": [
+      "Paf. Ça, c'était probablement important.",
+      "Encore un bout d'interface en moins. Le budget design est explosé.",
+      "Destruction réussie. Tu es plus doué pour ça que pour épargner."
+    ]
+  }
+}

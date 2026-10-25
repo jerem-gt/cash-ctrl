@@ -1,0 +1,117 @@
+import type { GameState, Rect } from './engine';
+
+export interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  max: number;
+  size: number;
+  color: string;
+}
+
+export interface TrailPoint {
+  x: number;
+  y: number;
+}
+
+const BRAND = '#2cc5dd';
+const BRAND_DARK = '#0d8896';
+const PARTICLE_COLORS = [BRAND, '#a5e9f0', '#ffffff', '#f87171'];
+const GRAVITY = 700;
+const TRAIL_LENGTH = 14;
+
+export function spawnParticles(list: Particle[], rect: Rect, random: () => number = Math.random) {
+  const cx = rect.x + rect.w / 2;
+  const cy = rect.y + rect.h / 2;
+  for (let i = 0; i < 12; i++) {
+    const angle = random() * Math.PI * 2;
+    const speed = 60 + random() * 220;
+    list.push({
+      x: cx + (random() - 0.5) * rect.w * 0.6,
+      y: cy + (random() - 0.5) * rect.h * 0.6,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 80,
+      life: 0.6,
+      max: 0.6,
+      size: 2 + random() * 3,
+      color: PARTICLE_COLORS[Math.floor(random() * PARTICLE_COLORS.length)],
+    });
+  }
+}
+
+export function updateParticles(list: Particle[], dt: number) {
+  for (let i = list.length - 1; i >= 0; i--) {
+    const p = list[i];
+    p.life -= dt;
+    if (p.life <= 0) {
+      list.splice(i, 1);
+      continue;
+    }
+    p.vy += GRAVITY * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+}
+
+export function pushTrail(trail: TrailPoint[], x: number, y: number) {
+  trail.push({ x, y });
+  if (trail.length > TRAIL_LENGTH) trail.shift();
+}
+
+function drawPaddle(ctx: CanvasRenderingContext2D, paddle: GameState['paddle']) {
+  const x = paddle.x - paddle.w / 2;
+  const y = paddle.y - paddle.h / 2;
+  const gradient = ctx.createLinearGradient(x, y, x + paddle.w, y);
+  gradient.addColorStop(0, BRAND_DARK);
+  gradient.addColorStop(1, BRAND);
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, paddle.w, paddle.h, paddle.h / 2);
+  } else {
+    ctx.rect(x, y, paddle.w, paddle.h);
+  }
+  ctx.fill();
+}
+
+export function drawFrame(
+  ctx: CanvasRenderingContext2D,
+  game: GameState,
+  trail: TrailPoint[],
+  particles: Particle[],
+  reduced: boolean,
+) {
+  ctx.clearRect(0, 0, game.width, game.height);
+
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(p.life / p.max, 0);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  if (!reduced) {
+    trail.forEach((point, i) => {
+      const k = (i + 1) / trail.length;
+      ctx.globalAlpha = k * 0.45;
+      ctx.fillStyle = BRAND;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, game.ball.r * k, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  drawPaddle(ctx, game.paddle);
+
+  ctx.save();
+  ctx.shadowColor = BRAND;
+  ctx.shadowBlur = reduced ? 0 : 16;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(game.ball.x, game.ball.y, game.ball.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}

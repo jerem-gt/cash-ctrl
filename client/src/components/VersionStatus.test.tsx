@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let VersionStatus: typeof import('./VersionStatus').VersionStatus;
 let useAppVersion: typeof import('../hooks/useAppVersion.ts').useAppVersion;
-let showToast: typeof import('./ui').showToast;
+let stopBudgetBreaker: typeof import('@/features/budget-breaker/store').stopBudgetBreaker;
+let startBudgetBreaker: typeof import('@/features/budget-breaker/store').startBudgetBreaker;
 
 beforeAll(async () => {
   vi.doMock('../hooks/useAppVersion.ts', () => ({
@@ -14,18 +15,24 @@ beforeAll(async () => {
       isLoading: false,
     })),
   }));
-  vi.doMock('./ui', () => ({
-    showToast: vi.fn(),
+  vi.doMock('@/features/budget-breaker/components/BudgetBreaker', () => ({
+    default: ({ onClose }: { onClose: () => void }) => (
+      <div data-testid="game-stub">
+        <button type="button" onClick={onClose}>
+          stub-close
+        </button>
+      </div>
+    ),
   }));
   vi.resetModules();
   ({ VersionStatus } = await import('./VersionStatus'));
   ({ useAppVersion } = await import('../hooks/useAppVersion.ts'));
-  ({ showToast } = await import('./ui'));
+  ({ stopBudgetBreaker, startBudgetBreaker } = await import('@/features/budget-breaker/store'));
 });
 
 afterAll(() => {
   vi.doUnmock('../hooks/useAppVersion.ts');
-  vi.doUnmock('./ui');
+  vi.doUnmock('@/features/budget-breaker/components/BudgetBreaker');
   vi.resetModules();
 });
 
@@ -37,20 +44,18 @@ function getVersionEl() {
   return screen.getByText(/version/).closest('button')!;
 }
 
-function countConfettiSpans(before: number) {
-  return [...document.body.children].filter((el) => el.tagName === 'SPAN').length - before;
-}
-
 describe('VersionStatus', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(useAppVersion).mockReturnValue({
       version: '1.2.3',
       isOnline: true,
       isDev: false,
       isLoading: false,
     });
-    document.body.querySelectorAll('span').forEach((el) => el.remove());
+  });
+
+  afterEach(() => {
+    act(() => stopBudgetBreaker());
   });
 
   it('affiche la version', () => {
@@ -76,63 +81,56 @@ describe('VersionStatus', () => {
     expect(container.querySelector('.bg-success')).not.toBeInTheDocument();
   });
 
-  it('ne déclenche rien avant 7 clics', () => {
+  it('est exclu du jeu via data-budget-breaker-ignore', () => {
+    render(<VersionStatus />);
+    expect(getVersionEl()).toHaveAttribute('data-budget-breaker-ignore');
+  });
+
+  it('ne lance pas le jeu avant 7 clics', () => {
     render(<VersionStatus />);
     clickTimes(getVersionEl(), 6);
-    expect(showToast).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
   });
 
-  it('déclenche le toast au 7e clic', () => {
+  it('lance le jeu au 7e clic', async () => {
     render(<VersionStatus />);
     clickTimes(getVersionEl(), 7);
-    expect(showToast).toHaveBeenCalledTimes(1);
-    expect(typeof vi.mocked(showToast).mock.calls[0][0]).toBe('string');
-    expect(vi.mocked(showToast).mock.calls[0][0].length).toBeGreaterThan(0);
+    expect(await screen.findByTestId('game-stub')).toBeInTheDocument();
   });
 
-  it('lance 35 confetti au 7e clic', () => {
-    render(<VersionStatus />);
-    const spansBefore = [...document.body.children].filter((el) => el.tagName === 'SPAN').length;
-    clickTimes(getVersionEl(), 7);
-    expect(countConfettiSpans(spansBefore)).toBe(35);
-  });
-
-  it('remet le compteur à zéro après déclenchement (7 clics supplémentaires ne suffisent pas)', () => {
+  it('remet le compteur à zéro après déclenchement (6 clics supplémentaires ne suffisent pas)', async () => {
     render(<VersionStatus />);
     clickTimes(getVersionEl(), 7);
-    vi.clearAllMocks();
+    await screen.findByTestId('game-stub');
+    act(() => stopBudgetBreaker());
+    expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
     clickTimes(getVersionEl(), 6);
-    expect(showToast).not.toHaveBeenCalled();
-  });
-
-  it('déclenche à nouveau après un 2e cycle complet de 7 clics', () => {
-    render(<VersionStatus />);
-    clickTimes(getVersionEl(), 7);
-    vi.clearAllMocks();
-    clickTimes(getVersionEl(), 7);
-    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
   });
 
   it("remet le compteur à zéro après 2 secondes d'inactivité", () => {
     vi.useFakeTimers();
     render(<VersionStatus />);
     clickTimes(getVersionEl(), 5);
-    vi.advanceTimersByTime(2000);
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     clickTimes(getVersionEl(), 6);
-    expect(showToast).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
     vi.useRealTimers();
   });
 
-  it("n'injecte pas un 2e style money-fall si le premier est déjà là", () => {
+  it('démonte le jeu et rend le focus au bouton à la fermeture', async () => {
     render(<VersionStatus />);
     clickTimes(getVersionEl(), 7);
-    const countAfterFirst = [...document.head.querySelectorAll('style')].filter((el) =>
-      el.textContent?.includes('money-fall'),
-    ).length;
-    clickTimes(getVersionEl(), 7);
-    const countAfterSecond = [...document.head.querySelectorAll('style')].filter((el) =>
-      el.textContent?.includes('money-fall'),
-    ).length;
-    expect(countAfterSecond).toBe(countAfterFirst);
+    fireEvent.click(await screen.findByText('stub-close'));
+    expect(screen.queryByTestId('game-stub')).not.toBeInTheDocument();
+    expect(getVersionEl()).toHaveFocus();
+  });
+
+  it('affiche le jeu quand le store est déjà actif', async () => {
+    act(() => startBudgetBreaker());
+    render(<VersionStatus />);
+    expect(await screen.findByTestId('game-stub')).toBeInTheDocument();
   });
 });

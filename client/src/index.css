@@ -124,6 +124,29 @@
   --c-info-surface: rgb(59 130 246 / 0.15);
 }
 
+/* Bulle du mini-jeu Casse-budget */
+@keyframes bb-pop {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.bb-pop {
+  animation: bb-pop 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-pop {
+    animation: none;
+  }
+}
+
 @layer base {
   body {
     @apply antialiased bg-canvas text-content;

@@ -1,8 +1,15 @@
-import { screen } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  setRemainingRatio,
+  startBudgetBreaker,
+  stopBudgetBreaker,
+} from '@/features/budget-breaker/store';
+import { accountDisplayBalance } from '@/lib/account';
+import { fmt } from '@/lib/format';
 import { ACCOUNTS } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
@@ -114,6 +121,50 @@ describe('Sidebar', () => {
     onClose.mockClear();
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Sidebar - Casse-budget', () => {
+  afterEach(() => {
+    act(() => stopBudgetBreaker());
+  });
+
+  const normalize = (s: string) => s.replaceAll(/\s/g, ' ');
+
+  function patrimonyText() {
+    return screen.getByText('Patrimoine Net').parentElement!.textContent ?? '';
+  }
+
+  it('multiplie le solde affiché par le ratio restant', async () => {
+    renderSidebar();
+    await screen.findByText('Compte test');
+    const total = ACCOUNTS.filter((a) => !a.closed_at).reduce(
+      (sum, a) => sum + accountDisplayBalance(a),
+      0,
+    );
+    await waitFor(() => expect(normalize(patrimonyText())).toContain(normalize(fmt(total))));
+    act(() => {
+      startBudgetBreaker();
+      setRemainingRatio(0.5);
+    });
+    expect(normalize(patrimonyText())).toContain(normalize(fmt(total * 0.5)));
+  });
+
+  it('protège le bloc solde du jeu', () => {
+    renderSidebar();
+    expect(screen.getByText('Patrimoine Net').parentElement).toHaveAttribute(
+      'data-budget-breaker-ignore',
+    );
+  });
+
+  it('ferme le tiroir mobile au démarrage du jeu', () => {
+    const onMobileClose = vi.fn();
+    renderWithProviders(
+      <Sidebar username="u" mobileOpen onMobileClose={onMobileClose} onOpenSearch={() => {}} />,
+    );
+    onMobileClose.mockClear();
+    act(() => startBudgetBreaker());
+    expect(onMobileClose).toHaveBeenCalledTimes(1);
   });
 });
 

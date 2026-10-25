@@ -21,6 +21,7 @@ import { nextEscapeOrder, pushEscape } from '@/components/ui/escapeStack';
 import { getFocusReturnTarget } from '@/components/ui/focusTracker';
 import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { APP_CONFIG } from '@/constants.ts';
+import { useBudgetBreaker } from '@/features/budget-breaker/store';
 import { useAccounts } from '@/hooks/useAccounts';
 import { setGroupBy, useAccountsGroupBy } from '@/hooks/useAccountsGroupBy';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
@@ -82,6 +83,11 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
   useEffect(() => {
     onMobileClose();
   }, [pathname, onMobileClose]);
+
+  const { active: gameActive, remainingRatio } = useBudgetBreaker();
+  useEffect(() => {
+    if (gameActive) onMobileClose();
+  }, [gameActive, onMobileClose]);
 
   const isDesktop = useMediaQuery('(min-width: 768px)', true);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -229,12 +235,19 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
         </button>
 
         {/* Solde */}
-        <div className="flex flex-col items-center py-6 border-y border-white/[0.07]">
+        <div
+          data-budget-breaker-ignore
+          className="flex flex-col items-center py-6 border-y border-white/[0.07]"
+        >
           <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">
             {t('patrimony_net')}
           </span>
-          <span className="font-display text-4xl font-bold text-white tracking-tight tabular-nums">
-            {fmt(soldeTotal)}
+          <span
+            className={`font-display text-4xl font-bold tracking-tight tabular-nums transition-colors duration-500 ${
+              gameActive ? 'text-red-400' : 'text-white'
+            }`}
+          >
+            {fmt(soldeTotal * remainingRatio)}
           </span>
         </div>
 

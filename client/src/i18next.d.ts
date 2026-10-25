@@ -5,6 +5,7 @@ import type adminFr from './locales/fr/admin.json';
 import type commonFr from './locales/fr/common.json';
 import type dashboardFr from './locales/fr/dashboard.json';
 import type errorsFr from './locales/fr/errors.json';
+import type gameFr from './locales/fr/game.json';
 import type insuranceFr from './locales/fr/insurance.json';
 import type loansFr from './locales/fr/loans.json';
 import type portfolioFr from './locales/fr/portfolio.json';
@@ -33,6 +34,7 @@ declare module 'i18next' {
       reports: typeof reportsFr;
       errors: typeof errorsFr;
       search: typeof searchFr;
+      game: typeof gameFr;
     };
   }
 }

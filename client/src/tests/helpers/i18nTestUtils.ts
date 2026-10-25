@@ -3,6 +3,7 @@ export const LAZY_NAMESPACES = [
   'accounts',
   'admin',
   'dashboard',
+  'game',
   'insurance',
   'loans',
   'portfolio',

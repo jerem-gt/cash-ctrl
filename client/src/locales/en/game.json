@@ -1,0 +1,62 @@
+{
+  "title": "Budget Breaker",
+  "subtitle": "Destroy your budget before it destroys you.",
+  "controls": "Mouse, finger or ← → to move · Space or tap to launch · Esc to run from your responsibilities",
+  "controls_short": "Drag to move · Tap to launch",
+  "serve_hint": "Space or tap to launch the ball",
+  "serve_hint_short": "Tap to launch the ball",
+  "damage": "Damage",
+  "best": "Best",
+  "lives": "Lives",
+  "close": "Quit the game",
+  "replay": "Play again",
+  "quit": "Quit",
+  "new_record": "New record!",
+  "won": "Net worth: €0. Just like the 28th of the month.",
+  "lost": "Game over. You can't even get going broke right.",
+  "refund": "Refund in progress… (don't get used to it)",
+  "empty": "Nothing to break here. Is your budget already empty?",
+  "life_lost": [
+    "Ball lost. Just like your last tax refund.",
+    "Missed! You handle this ball like your subscriptions.",
+    "One life down. At least this one isn't billed."
+  ],
+  "hit": {
+    "account": [
+      "“{{label}}” collapsed. Your bank calls that an account maintenance fee.",
+      "Farewell “{{label}}”. It was never very positive anyway.",
+      "“{{label}}”: €0. For once, the balance is accurate."
+    ],
+    "button": [
+      "“{{label}}” button destroyed. You never clicked it anyway.",
+      "“{{label}}” isn't responding. Just like your bank advisor.",
+      "You broke “{{label}}”. Now that's active management."
+    ],
+    "nav": [
+      "No more “{{label}}”. You'll navigate blind, like with your budget.",
+      "“{{label}}” is gone. Nobody will notice."
+    ],
+    "chart": [
+      "The chart was already going down, you just helped.",
+      "Finally, a curve that truly hits rock bottom."
+    ],
+    "row": [
+      "“{{label}}” erased. Your banker still remembers it.",
+      "“{{label}}” deleted. Sadly, not from your statement.",
+      "One less expense on screen. Not on your account."
+    ],
+    "amount": [
+      "{{label}} gone up in smoke. Like your New Year's resolutions.",
+      "You just obliterated {{label}}. Future you is not grateful."
+    ],
+    "heading": [
+      "“{{label}}” heading shot down. The page no longer knows who it is.",
+      "“{{label}}”? Never heard of it."
+    ],
+    "generic": [
+      "Boom. That was probably important.",
+      "Another piece of UI gone. The design budget is blown.",
+      "Destruction complete. You're better at this than at saving."
+    ]
+  }
+}
