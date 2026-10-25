@@ -120,9 +120,12 @@ export function validateSplits(rows: SplitInput[], total: number, t: TTx): strin
     if (!s.subcategory_id) return t('split_validation.err_no_subcat');
     if ((Number.parseFloat(s.amount) || 0) <= 0) return t('split_validation.err_no_amount');
   }
-  const sum = rows.reduce((acc, s) => acc + Number.parseFloat(s.amount), 0);
-  if (Math.abs(sum - total) > 0.01)
-    return t('split_validation.err_total', { sum: sum.toFixed(2), total: total.toFixed(2) });
+  const sumCents = rows.reduce((acc, s) => acc + Math.round(Number.parseFloat(s.amount) * 100), 0);
+  if (sumCents !== Math.round(total * 100))
+    return t('split_validation.err_total', {
+      sum: (sumCents / 100).toFixed(2),
+      total: total.toFixed(2),
+    });
   return null;
 }
 

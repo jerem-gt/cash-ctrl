@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 
 import { type EnvelopeType } from '../../constants.js';
 import { BadRequestError, HttpError, NotFoundError } from '../../lib/errors.js';
+import { toCents, toEuros } from '../../lib/money.js';
 import { createAccountsRepo } from '../accounts/accounts.repo.js';
 import { createScheduledRepo } from '../scheduled/scheduled.repo.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
@@ -23,10 +24,22 @@ function assertWritableAccount(
   return account;
 }
 
+function assertSplitsTotal(data: CreateTransactionInput) {
+  if (!data.splits?.length) return;
+  const sum = data.splits.reduce((acc, s) => acc + toCents(s.amount), 0);
+  if (sum !== toCents(data.amount)) {
+    throw new BadRequestError('transaction.splits_total_mismatch', {
+      sum: toEuros(sum),
+      total: data.amount,
+    });
+  }
+}
+
 export function transactionCreate(db: Database, userId: number, data: CreateTransactionInput) {
   const transactionsRepo = createTransactionsRepo(db);
   const accountsRepo = createAccountsRepo(db);
   assertWritableAccount(accountsRepo, data.account_id, userId);
+  assertSplitsTotal(data);
   const result = transactionsRepo.create(userId, {
     ...data,
     description: data.description.trim(),
@@ -49,6 +62,7 @@ export function transactionUpdate(
   if (tx.transfer_peer_id) throw new BadRequestError('transaction.use_transfers_update');
 
   assertWritableAccount(accountsRepo, data.account_id, userId);
+  assertSplitsTotal(data);
 
   if (data.scheduled_id != null) {
     if (!scheduledRepo.getById(data.scheduled_id, userId)) {

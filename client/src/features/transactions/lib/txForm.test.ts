@@ -200,8 +200,17 @@ describe('validateSplits', () => {
     expect(err).toContain('50');
   });
 
-  it('tolère une différence ≤ 0,01 (arrondi)', () => {
-    expect(validateSplits([{ ...baseRow, amount: '50.005' }], 50, t)).toBeNull();
+  it('refuse un écart de 0,01 €', () => {
+    expect(validateSplits([{ ...baseRow, amount: '50.01' }], 50, t)).toBeTruthy();
+    expect(validateSplits([{ ...baseRow, amount: '49.99' }], 50, t)).toBeTruthy();
+  });
+
+  it('accepte une somme égale malgré les flottants (0,1 + 0,2 = 0,3)', () => {
+    const rows = [
+      { ...baseRow, amount: '0.1' },
+      { ...baseRow, _key: 'b', amount: '0.2' },
+    ];
+    expect(validateSplits(rows, 0.3, t)).toBeNull();
   });
 
   it('renvoie null pour une ventilation valide', () => {

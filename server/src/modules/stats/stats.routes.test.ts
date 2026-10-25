@@ -70,6 +70,59 @@ describe('/api/stats', () => {
       expect(res.body.to_validate).toHaveLength(1);
       expect(res.body.to_validate[0].description).toBe('Cadeau non validé');
     });
+
+    it('répartit une dépense ventilée dans expenses_by_category', async () => {
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 100,
+        description: 'Ticket',
+        subcategory_id: null,
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40 },
+        ],
+        date: TODAY,
+        payment_method_id: SEED.PM_CARTE,
+        validated: true,
+      });
+      const res = await ctx.agent.get('/api/stats');
+      expect(res.body.month_expense).toBe(100);
+      expect(res.body.expenses_by_category).toEqual([
+        { category: 'Alimentation', amount: 60 },
+        { category: 'Loisirs', amount: 40 },
+      ]);
+    });
+
+    it('donne la priorité aux ventilations sur un subcategory_id legacy', async () => {
+      const created = await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 100,
+        description: 'Legacy',
+        subcategory_id: null,
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40 },
+        ],
+        date: TODAY,
+        payment_method_id: SEED.PM_CARTE,
+        validated: true,
+      });
+      ctx.db
+        .prepare('UPDATE transactions SET subcategory_id = ? WHERE id = ?')
+        .run(SEED.SUBCAT_LOYER, created.body.id);
+      const res = await ctx.agent.get('/api/stats');
+      expect(res.body.expenses_by_category).toEqual([
+        { category: 'Alimentation', amount: 60 },
+        { category: 'Loisirs', amount: 40 },
+      ]);
+      const report = await ctx.agent.get(`/api/stats/report?year=${CURRENT_YEAR_NUM}`);
+      expect(report.body.expense_by_category).toEqual([
+        { category: 'Alimentation', amount: 60 },
+        { category: 'Loisirs', amount: 40 },
+      ]);
+    });
   });
 
   it("getBalanceHistory : retourne vide quand l'utilisateur n'a aucun compte", async () => {
@@ -690,6 +743,47 @@ describe('/api/stats', () => {
       expect(res.body.expense_total).toBe(300);
       expect(res.body.income_by_category).toHaveLength(1);
       expect(res.body.expense_by_category).toHaveLength(1);
+    });
+
+    it('répartit les ventilations par catégorie (dépense et revenu)', async () => {
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 100,
+        description: 'Ticket',
+        subcategory_id: null,
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40 },
+        ],
+        date: TODAY,
+        payment_method_id: SEED.PM_CARTE,
+        validated: true,
+      });
+      await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'income',
+        amount: 100,
+        description: 'Revenus mixtes',
+        subcategory_id: null,
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SALAIRE, amount: 70 },
+          { subcategory_id: SEED.SUBCAT_INTERETS, amount: 30 },
+        ],
+        date: TODAY,
+        payment_method_id: SEED.PM_VIREMENT,
+        validated: true,
+      });
+      const res = await ctx.agent.get(`/api/stats/report?year=${CURRENT_YEAR_NUM}`);
+      expect(res.body.expense_total).toBe(100);
+      expect(res.body.expense_by_category).toEqual([
+        { category: 'Alimentation', amount: 60 },
+        { category: 'Loisirs', amount: 40 },
+      ]);
+      expect(res.body.income_by_category).toEqual([
+        { category: 'Revenus du travail', amount: 70 },
+        { category: 'Revenus financiers', amount: 30 },
+      ]);
     });
 
     it('exclut les virements inter-comptes', async () => {

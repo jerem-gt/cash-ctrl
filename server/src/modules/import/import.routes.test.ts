@@ -950,6 +950,42 @@ describe('POST /api/import/json-full', () => {
     expect(splits).toHaveLength(2);
   });
 
+  it('stocke subcategory_id à NULL pour une transaction importée avec subcategory_id et splits', async () => {
+    const body = {
+      ...EMPTY_EXPORT,
+      account_types: [courantAtExport],
+      banks: [defaultBankExport],
+      accounts: [makeExportAccount(EX_ACC1, 'Compte Legacy')],
+      categories: [
+        {
+          id: EX_CAT1,
+          name: 'Alimentation',
+          icon: '🍴',
+          subcategories: [
+            { id: EX_SC1, name: 'Supermarché' },
+            { id: EX_SC2, name: 'Restaurant' },
+          ],
+        },
+      ],
+      transactions: [
+        makeExportTx(EX_TX1, EX_ACC1, {
+          subcategory_id: EX_SC1,
+          splits: [
+            { subcategory_id: EX_SC1, amount: 3000 },
+            { subcategory_id: EX_SC2, amount: 2000 },
+          ],
+        }),
+      ],
+    };
+    const res = await ctx.agent.post('/api/import/json-full').send(body);
+    expect(res.status).toBe(201);
+    const tx = ctx.db.prepare('SELECT subcategory_id FROM transactions').get() as {
+      subcategory_id: number | null;
+    };
+    expect(tx.subcategory_id).toBeNull();
+    expect(ctx.db.prepare('SELECT * FROM transaction_splits').all()).toHaveLength(2);
+  });
+
   // ─── importScheduled ──────────────────────────────────────────────────────
 
   it('importe des transactions planifiées avec et sans to_account_id', async () => {

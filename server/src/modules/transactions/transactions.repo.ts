@@ -117,11 +117,16 @@ function buildFilterConditions(
     params.type = filters.type;
   }
   if (filters.category_id) {
-    conditions.push('sc.category_id = :category_id');
+    conditions.push(`(sc.category_id = :category_id OR EXISTS (
+      SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
+      WHERE s.transaction_id = t.id AND ssc.category_id = :category_id
+    ))`);
     params.category_id = filters.category_id;
   }
   if (filters.subcategory_id) {
-    conditions.push('t.subcategory_id = :subcategory_id');
+    conditions.push(`(t.subcategory_id = :subcategory_id OR EXISTS (
+      SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategory_id
+    ))`);
     params.subcategory_id = filters.subcategory_id;
   }
   if (filters.description_contains) {
