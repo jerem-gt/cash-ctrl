@@ -55,9 +55,32 @@ describe('parseTxSearch', () => {
     expect(parse(`page=${v}`).page).toBe(1);
   });
 
-  it('ignore validated=true et toute autre valeur', () => {
-    expect(parse('validated=true').filters).toEqual({});
-    expect(parse('validated=1').filters).toEqual({});
+  it('lit validated=true et validated=false', () => {
+    expect(parse('validated=true').filters).toEqual({ validated: true });
+    expect(parse('validated=false').filters).toEqual({ validated: false });
+  });
+
+  it.each(['1', 'oui', ''])('ignore validated invalide (%s)', (v) => {
+    expect(parse(`validated=${v}`).filters).toEqual({});
+  });
+
+  it('lit exclude_transfers=true et ignore toute autre valeur', () => {
+    expect(parse('exclude_transfers=true').filters).toEqual({ exclude_transfers: true });
+    expect(parse('exclude_transfers=false').filters).toEqual({});
+    expect(parse('exclude_transfers=1').filters).toEqual({});
+  });
+
+  it('omet exclude_transfers quand false ou absent', () => {
+    expect(toTxSearch({ exclude_transfers: false }, 1).toString()).toBe('');
+    expect(toTxSearch({ exclude_transfers: true }, 1).toString()).toBe('exclude_transfers=true');
+  });
+
+  it('lit category_id=none', () => {
+    expect(parse('category_id=none').filters).toEqual({ category_id: 'none' });
+  });
+
+  it('supprime subcategory_id avec category_id=none', () => {
+    expect(parse('category_id=none&subcategory_id=3').filters).toEqual({ category_id: 'none' });
   });
 
   it('trim q et traite le vide comme absent', () => {
@@ -92,6 +115,7 @@ describe('toTxSearch', () => {
 
   it('écrit les clés dans un ordre fixe, q en premier, page en dernier', () => {
     const filters: Filters = {
+      exclude_transfers: true,
       validated: false,
       amount_max: 20,
       amount_min: 5,
@@ -116,6 +140,7 @@ describe('toTxSearch', () => {
       'amount_min',
       'amount_max',
       'validated',
+      'exclude_transfers',
       'page',
     ]);
   });
@@ -142,6 +167,14 @@ describe('buildTransactionsUrl', () => {
   it('retourne /transactions sans filtre', () => {
     expect(buildTransactionsUrl({})).toBe('/transactions');
     expect(buildTransactionsUrl({ description_contains: '  ' })).toBe('/transactions');
+  });
+
+  it('sérialise validated true/false et category_id none', () => {
+    expect(buildTransactionsUrl({ validated: true })).toBe('/transactions?validated=true');
+    expect(buildTransactionsUrl({ validated: false })).toBe('/transactions?validated=false');
+    expect(buildTransactionsUrl({ type: 'expense', category_id: 'none', validated: true })).toBe(
+      '/transactions?type=expense&category_id=none&validated=true',
+    );
   });
 
   it('ajoute les filtres en query string', () => {

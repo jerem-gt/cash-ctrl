@@ -10,7 +10,7 @@ const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart
 
 interface CategoryPieCardProps {
   sectionLabel: string;
-  data: Array<{ name: string; value: number; fill: string | undefined }>;
+  data: Array<{ name: string; value: number; fill: string | undefined; to?: string }>;
   total: number;
   emptyMessage: string;
 }

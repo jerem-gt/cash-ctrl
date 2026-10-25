@@ -89,8 +89,28 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get('/api/stats');
       expect(res.body.month_expense).toBe(100);
       expect(res.body.expenses_by_category).toEqual([
-        { category: 'Alimentation', amount: 60 },
-        { category: 'Loisirs', amount: 40 },
+        { category_id: SEED.CAT_ALIMENTATION, category: 'Alimentation', amount: 60 },
+        { category_id: SEED.CAT_LOISIRS, category: 'Loisirs', amount: 40 },
+      ]);
+    });
+
+    it('renvoie category_id null pour le groupe sans catégorie', async () => {
+      const created = await ctx.agent.post('/api/transactions').send({
+        account_id: accountId,
+        type: 'expense',
+        amount: 25,
+        description: 'Orpheline',
+        subcategory_id: SEED.SUBCAT_AUTRE,
+        date: TODAY,
+        payment_method_id: SEED.PM_CARTE,
+        validated: true,
+      });
+      ctx.db
+        .prepare('UPDATE transactions SET subcategory_id = NULL WHERE id = ?')
+        .run(created.body.id);
+      const res = await ctx.agent.get('/api/stats');
+      expect(res.body.expenses_by_category).toEqual([
+        { category_id: null, category: '', amount: 25 },
       ]);
     });
 
@@ -114,13 +134,13 @@ describe('/api/stats', () => {
         .run(SEED.SUBCAT_LOYER, created.body.id);
       const res = await ctx.agent.get('/api/stats');
       expect(res.body.expenses_by_category).toEqual([
-        { category: 'Alimentation', amount: 60 },
-        { category: 'Loisirs', amount: 40 },
+        { category_id: SEED.CAT_ALIMENTATION, category: 'Alimentation', amount: 60 },
+        { category_id: SEED.CAT_LOISIRS, category: 'Loisirs', amount: 40 },
       ]);
       const report = await ctx.agent.get(`/api/stats/report?year=${CURRENT_YEAR_NUM}`);
       expect(report.body.expense_by_category).toEqual([
-        { category: 'Alimentation', amount: 60 },
-        { category: 'Loisirs', amount: 40 },
+        { category_id: SEED.CAT_ALIMENTATION, category: 'Alimentation', amount: 60 },
+        { category_id: SEED.CAT_LOISIRS, category: 'Loisirs', amount: 40 },
       ]);
     });
   });
@@ -777,12 +797,12 @@ describe('/api/stats', () => {
       const res = await ctx.agent.get(`/api/stats/report?year=${CURRENT_YEAR_NUM}`);
       expect(res.body.expense_total).toBe(100);
       expect(res.body.expense_by_category).toEqual([
-        { category: 'Alimentation', amount: 60 },
-        { category: 'Loisirs', amount: 40 },
+        { category_id: SEED.CAT_ALIMENTATION, category: 'Alimentation', amount: 60 },
+        { category_id: SEED.CAT_LOISIRS, category: 'Loisirs', amount: 40 },
       ]);
       expect(res.body.income_by_category).toEqual([
-        { category: 'Revenus du travail', amount: 70 },
-        { category: 'Revenus financiers', amount: 30 },
+        { category_id: expect.any(Number), category: 'Revenus du travail', amount: 70 },
+        { category_id: expect.any(Number), category: 'Revenus financiers', amount: 30 },
       ]);
     });
 

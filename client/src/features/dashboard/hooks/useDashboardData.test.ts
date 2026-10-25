@@ -15,8 +15,8 @@ const STATS = {
     { income: 3000, expense: 1200 },
   ],
   expenses_by_category: [
-    { category: 'Alimentation', amount: 500 },
-    { category: 'Transport', amount: 700 },
+    { category_id: 3, category: 'Alimentation', amount: 500 },
+    { category_id: null, category: '', amount: 700 },
   ],
   recent: [],
   to_validate: [],
@@ -47,8 +47,12 @@ describe('useDashboardData', () => {
     const { result } = renderHook(() => useDashboardData(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.catData).toHaveLength(2);
-    expect(result.current.catData[0]).toMatchObject({ name: 'Alimentation', value: 500 });
-    expect(result.current.catData[1]).toMatchObject({ name: 'Transport', value: 700 });
+    expect(result.current.catData[0]).toMatchObject({
+      name: 'Alimentation',
+      categoryId: 3,
+      value: 500,
+    });
+    expect(result.current.catData[1]).toMatchObject({ name: '', categoryId: null, value: 700 });
   });
 
   it('construit barData depuis monthly avec des libellés de mois', async () => {

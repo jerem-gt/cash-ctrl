@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { DecimalInput, Input, Select, Switch } from '@/components/ui';
+import { DecimalInput, Input, Select } from '@/components/ui';
 import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { parseIdOrUndefined } from '@/lib/parse';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
@@ -115,7 +115,10 @@ export const TransactionsFilters = ({
     const keys = showAccountSelect
       ? ADVANCED_KEYS
       : ADVANCED_KEYS.filter((k) => k !== 'account_id');
-    onFilterChange(Object.fromEntries(keys.map((k) => [k, undefined])));
+    onFilterChange({
+      ...Object.fromEntries(keys.map((k) => [k, undefined])),
+      exclude_transfers: undefined,
+    });
   };
 
   return (
@@ -178,6 +181,20 @@ export const TransactionsFilters = ({
           {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
+        {filters.exclude_transfers && (
+          <span className="inline-flex items-center gap-1 h-9 pl-3 pr-1.5 rounded-lg border border-brand-200 bg-brand-50 text-sm text-brand-700">
+            {t('filters.transfers_excluded')}
+            <button
+              type="button"
+              onClick={() => onFilterChange({ exclude_transfers: undefined })}
+              aria-label={t('filters.include_transfers')}
+              className="flex items-center justify-center w-5 h-5 rounded hover:bg-brand-100 transition-colors"
+            >
+              <X size={12} />
+            </button>
+          </span>
+        )}
+
         {rightSlot && <div className="flex items-center gap-3 ml-auto">{rightSlot}</div>}
       </div>
 
@@ -204,12 +221,14 @@ export const TransactionsFilters = ({
                 value={String(filters.category_id ?? '')}
                 onChange={(e) =>
                   onFilterChange({
-                    category_id: parseIdOrUndefined(e.target.value),
+                    category_id:
+                      e.target.value === 'none' ? 'none' : parseIdOrUndefined(e.target.value),
                     subcategory_id: undefined,
                   })
                 }
               >
                 <option value="">{t('filters.all_categories')}</option>
+                <option value="none">{t('filters.no_category')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.name}
@@ -221,7 +240,7 @@ export const TransactionsFilters = ({
             <Field label={t('filters.field_subcategory')}>
               <Select
                 aria-label={t('filters.subcategory_label')}
-                disabled={!filters.category_id}
+                disabled={typeof filters.category_id !== 'number'}
                 className="disabled:opacity-50 disabled:cursor-not-allowed"
                 value={String(filters.subcategory_id ?? '')}
                 onChange={(e) =>
@@ -236,6 +255,22 @@ export const TransactionsFilters = ({
                     {sub.name}
                   </option>
                 ))}
+              </Select>
+            </Field>
+
+            <Field label={t('filters.field_validation')}>
+              <Select
+                aria-label={t('filters.validation_label')}
+                value={filters.validated === undefined ? '' : String(filters.validated)}
+                onChange={(e) =>
+                  onFilterChange({
+                    validated: e.target.value === '' ? undefined : e.target.value === 'true',
+                  })
+                }
+              >
+                <option value="">{t('filters.all_validation')}</option>
+                <option value="true">{t('filters.validated_only')}</option>
+                <option value="false">{t('filters.not_validated_only')}</option>
               </Select>
             </Field>
 
@@ -299,13 +334,8 @@ export const TransactionsFilters = ({
             </Field>
           </div>
 
-          <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-line-subtle">
-            <Switch
-              checked={filters.validated === false}
-              onChange={(checked) => onFilterChange({ validated: checked ? false : undefined })}
-              label={t('filters.not_validated_only')}
-            />
-            {activeAdvancedCount > 0 && (
+          {activeAdvancedCount > 0 && (
+            <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-line-subtle">
               <button
                 type="button"
                 onClick={resetAdvanced}
@@ -314,8 +344,8 @@ export const TransactionsFilters = ({
                 <RotateCcw size={13} />
                 {t('filters.reset')}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

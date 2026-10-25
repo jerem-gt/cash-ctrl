@@ -1,7 +1,10 @@
+import { Link } from 'react-router';
+
+import { LINK_CLASS } from '@/components/ui';
 import { fmt } from '@/lib/format';
 
 interface CategoryListProps {
-  data: Array<{ name: string; value: number; fill: string | undefined }>;
+  data: Array<{ name: string; value: number; fill: string | undefined; to?: string }>;
   total: number;
 }
 
@@ -13,7 +16,15 @@ export function CategoryList({ data, total }: Readonly<CategoryListProps>) {
         return (
           <div key={d.name} className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: d.fill }} />
-            <span className="text-xs text-content-muted flex-1 truncate">{d.name || '—'}</span>
+            <span className="text-xs text-content-muted flex-1 truncate">
+              {d.to ? (
+                <Link to={d.to} className={LINK_CLASS}>
+                  {d.name || '—'}
+                </Link>
+              ) : (
+                d.name || '—'
+              )}
+            </span>
             <span className="text-xs text-content-subtle tabular-nums">{pct}%</span>
             <span className="text-xs font-medium text-content-secondary tabular-nums w-20 text-right">
               {fmt(d.value)}

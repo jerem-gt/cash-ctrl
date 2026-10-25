@@ -705,10 +705,10 @@ export const REPORT_DATA: ReportData = {
     expense: i === 0 ? 1200 : 0,
   })),
   expense_by_category: [
-    { category: 'Alimentation', amount: 700 },
-    { category: 'Transport', amount: 500 },
+    { category_id: 3, category: 'Alimentation', amount: 700 },
+    { category_id: 4, category: 'Transport', amount: 500 },
   ],
-  income_by_category: [{ category: 'Revenus du travail', amount: 3000 }],
+  income_by_category: [{ category_id: 5, category: 'Revenus du travail', amount: 3000 }],
 };
 
 // Format « fil » (centimes) tel que renvoyé par GET /api/search ;

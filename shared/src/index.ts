@@ -306,7 +306,7 @@ export interface PendingReimbursement {
 export interface TransactionFilters {
   account_id?: number;
   type?: TransactionType;
-  category_id?: number;
+  category_id?: number | 'none';
   subcategory_id?: number;
   description_contains?: string;
   date_from?: string;
@@ -316,6 +316,7 @@ export interface TransactionFilters {
   payment_method_id?: number;
   validated?: boolean;
   scheduled_id?: number;
+  exclude_transfers?: boolean;
   exclude_linked_reimbursements?: boolean;
   page?: number;
   limit?: number;
@@ -420,7 +421,7 @@ export interface DashboardStats {
   month_income: number;
   month_expense: number;
   monthly: MonthlyStat[];
-  expenses_by_category: Array<{ category: string; amount: number }>;
+  expenses_by_category: CategoryAmount[];
   recent: Transaction[];
   to_validate: Transaction[];
   upcoming: Transaction[];
@@ -460,8 +461,14 @@ export interface ReportData {
   income_total: number;
   expense_total: number;
   monthly: MonthlyStat[];
-  expense_by_category: Array<{ category: string; amount: number }>;
-  income_by_category: Array<{ category: string; amount: number }>;
+  expense_by_category: CategoryAmount[];
+  income_by_category: CategoryAmount[];
+}
+
+export interface CategoryAmount {
+  category_id: number | null;
+  category: string;
+  amount: number;
 }
 
 // ─── Forecast ─────────────────────────────────────────────────────────────────

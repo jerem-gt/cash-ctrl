@@ -17,6 +17,7 @@
   "chart_income": "Income",
   "chart_expenses": "Expenses",
   "to_validate": "To validate",
+  "view_all": "View all",
   "upcoming": "Upcoming",
   "forecast_alert_title": "Projected overdraft",
   "forecast_alert_item": "{{account}} expected negative on {{date}}",

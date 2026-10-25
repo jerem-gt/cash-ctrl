@@ -17,6 +17,7 @@
   "chart_income": "Revenus",
   "chart_expenses": "Dépenses",
   "to_validate": "À valider",
+  "view_all": "Voir tout",
   "upcoming": "À venir",
   "forecast_alert_title": "Découvert prévisionnel",
   "forecast_alert_item": "{{account}} en négatif prévu le {{date}}",

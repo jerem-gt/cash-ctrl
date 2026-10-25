@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
-import { Card } from '@/components/ui';
+import { Card, LINK_CLASS } from '@/components/ui';
+import { categoryTransactionsUrl, yearRange } from '@/features/transactions/lib/txLinks';
 import { fmt } from '@/lib/format';
 
 import type { CatRow } from './catComparison';
@@ -13,6 +15,7 @@ interface CategoryComparisonCardProps {
   mergedCatData: { expense: CatRow[]; income: CatRow[] };
   year: number;
   compareYear: number;
+  accountId?: number;
 }
 
 export function CategoryComparisonCard({
@@ -21,6 +24,7 @@ export function CategoryComparisonCard({
   mergedCatData,
   year,
   compareYear,
+  accountId,
 }: Readonly<CategoryComparisonCardProps>) {
   const { t } = useTranslation('reports');
   return (
@@ -51,7 +55,7 @@ export function CategoryComparisonCard({
           </tr>
         </thead>
         <tbody>
-          {mergedCatData[catTab].map(({ category, current, compare, delta }) => {
+          {mergedCatData[catTab].map(({ category, categoryId, current, compare, delta }) => {
             const isGood = catTab === 'expense' ? delta <= 0 : delta >= 0;
             let catDeltaColor = 'text-content-muted';
             if (delta !== 0) {
@@ -60,7 +64,21 @@ export function CategoryComparisonCard({
             return (
               <tr key={category} className="border-b border-line-subtle last:border-0">
                 <td className="py-2 text-content-secondary truncate max-w-[8rem]">
-                  {category || '—'}
+                  {categoryId === undefined ? (
+                    category || '—'
+                  ) : (
+                    <Link
+                      to={categoryTransactionsUrl({
+                        type: catTab,
+                        categoryId,
+                        range: yearRange(year),
+                        accountId,
+                      })}
+                      className={LINK_CLASS}
+                    >
+                      {category || '—'}
+                    </Link>
+                  )}
                 </td>
                 <td className="py-2 text-right tabular-nums text-content-secondary font-medium">
                   {fmt(current)}

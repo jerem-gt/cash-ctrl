@@ -1,8 +1,9 @@
 import { Scale, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
-import { Card, CardTitle, Empty, Metric, Skeleton } from '@/components/ui';
+import { Card, CardTitle, Empty, LINK_CLASS, Metric, Skeleton } from '@/components/ui';
 import { DashboardNav } from '@/features/dashboard/components/DashboardNav';
 import { DashboardSkeleton } from '@/features/dashboard/components/DashboardSkeleton';
 import { ForecastAlertCard } from '@/features/dashboard/components/ForecastAlertCard';
@@ -11,6 +12,12 @@ import { ReimbursementsCard } from '@/features/dashboard/components/Reimbursemen
 import { WealthCard } from '@/features/dashboard/components/WealthCard';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { TxItem } from '@/features/transactions/components/TxItem';
+import { buildTransactionsUrl } from '@/features/transactions/lib/filtersUrl';
+import {
+  categoryTransactionsUrl,
+  monthRange,
+  statsTransactionsUrl,
+} from '@/features/transactions/lib/txLinks';
 import { fmt } from '@/lib/format';
 
 const ExpensesPieChart = lazy(() => import('@/components/charts/ExpensesPieChart'));
@@ -60,6 +67,7 @@ export default function DashboardPage() {
 
   if (isLoading) return <DashboardSkeleton />;
 
+  const range = monthRange();
   const trendLabel = t('metric_trend_vs_last_month');
   const txItemProps = { accounts, logoMap };
 
@@ -109,6 +117,7 @@ export default function DashboardPage() {
           value={fmt(monthIncome)}
           variant="positive"
           icon={<TrendingUp size={15} />}
+          to={statsTransactionsUrl({ ...range, type: 'income' })}
           trend={incomeTrend}
           trendLabel={trendLabel}
         />
@@ -117,6 +126,7 @@ export default function DashboardPage() {
           value={fmt(monthExpense)}
           variant="negative"
           icon={<TrendingDown size={15} />}
+          to={statsTransactionsUrl({ ...range, type: 'expense' })}
           trend={expenseTrend}
           trendLabel={trendLabel}
         />
@@ -150,7 +160,17 @@ export default function DashboardPage() {
                       className="w-2 h-2 rounded-sm shrink-0"
                       style={{ background: colorMap[d.name] }}
                     />
-                    {d.name} <strong className="text-content-secondary">{fmt(d.value)}</strong>
+                    <Link
+                      to={categoryTransactionsUrl({
+                        type: 'expense',
+                        categoryId: d.categoryId,
+                        range,
+                      })}
+                      className={LINK_CLASS}
+                    >
+                      {d.name || '—'}
+                    </Link>{' '}
+                    <strong className="text-content-secondary">{fmt(d.value)}</strong>
                   </div>
                 ))}
               </div>
@@ -199,7 +219,15 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {toValidate.length > 0 && (
                 <Card>
-                  <CardTitle>{t('to_validate')}</CardTitle>
+                  <div className="flex items-start justify-between gap-3">
+                    <CardTitle>{t('to_validate')}</CardTitle>
+                    <Link
+                      to={buildTransactionsUrl({ validated: false })}
+                      className={`text-xs text-content-muted ${LINK_CLASS}`}
+                    >
+                      {t('view_all')}
+                    </Link>
+                  </div>
                   <div className="flex flex-col gap-2 mt-1">
                     {toValidate.map((tx) => (
                       <TxItem key={tx.id} tx={tx} {...txItemProps} />

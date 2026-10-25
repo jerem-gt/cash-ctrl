@@ -101,6 +101,37 @@ export const TX_WITH_DETAILS = `
   LEFT JOIN reimbursements r ON r.linked_transaction_id = t.id
 `;
 
+function addCategoryConditions(
+  filters: TransactionFilters,
+  conditions: string[],
+  params: QueryParams,
+): void {
+  const noCategory = filters.category_id === 'none';
+  if (noCategory) {
+    // Les parents ventilés ont subcategory_id NULL mais ne sont pas « sans catégorie »
+    conditions.push(`t.subcategory_id IS NULL AND NOT EXISTS (
+      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+    )`);
+  } else if (filters.category_id) {
+    // Les ventilations priment sur le subcategory_id legacy
+    conditions.push(`((sc.category_id = :category_id AND NOT EXISTS (
+      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+    )) OR EXISTS (
+      SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
+      WHERE s.transaction_id = t.id AND ssc.category_id = :category_id
+    ))`);
+    params.category_id = filters.category_id;
+  }
+  if (filters.subcategory_id && !noCategory) {
+    conditions.push(`((t.subcategory_id = :subcategory_id AND NOT EXISTS (
+      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+    )) OR EXISTS (
+      SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategory_id
+    ))`);
+    params.subcategory_id = filters.subcategory_id;
+  }
+}
+
 function buildFilterConditions(
   userId: number,
   filters: TransactionFilters,
@@ -116,24 +147,7 @@ function buildFilterConditions(
     conditions.push('t.type = :type');
     params.type = filters.type;
   }
-  if (filters.category_id) {
-    // Les ventilations priment sur le subcategory_id legacy
-    conditions.push(`((sc.category_id = :category_id AND NOT EXISTS (
-      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
-    )) OR EXISTS (
-      SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
-      WHERE s.transaction_id = t.id AND ssc.category_id = :category_id
-    ))`);
-    params.category_id = filters.category_id;
-  }
-  if (filters.subcategory_id) {
-    conditions.push(`((t.subcategory_id = :subcategory_id AND NOT EXISTS (
-      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
-    )) OR EXISTS (
-      SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategory_id
-    ))`);
-    params.subcategory_id = filters.subcategory_id;
-  }
+  addCategoryConditions(filters, conditions, params);
   if (filters.description_contains) {
     conditions.push(`(
       ${likeUnaccent('t.description', 'description_contains')}
@@ -168,6 +182,9 @@ function buildFilterConditions(
   if (filters.scheduled_id) {
     conditions.push('t.scheduled_id = :scheduled_id');
     params.scheduled_id = filters.scheduled_id;
+  }
+  if (filters.exclude_transfers) {
+    conditions.push('t.transfer_peer_id IS NULL');
   }
   if (filters.exclude_linked_reimbursements) {
     conditions.push(`t.id NOT IN (

@@ -2,6 +2,7 @@ import type { Filters } from '@cashctrl/types';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const INT_RE = /^\d+$/;
+const NO_CATEGORY = 'none';
 
 type IdKey = 'account_id' | 'category_id' | 'subcategory_id' | 'payment_method_id';
 type DateKey = 'date_from' | 'date_to';
@@ -23,6 +24,23 @@ function parseAmount(value: string | null): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function parseValidated(value: string | null): boolean | undefined {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+}
+
+function parseRangeFilters(params: URLSearchParams, filters: Filters): void {
+  for (const key of DATE_KEYS) {
+    const date = params.get(key);
+    if (date !== null && DATE_RE.test(date)) filters[key] = date;
+  }
+  for (const key of AMOUNT_KEYS) {
+    const amount = parseAmount(params.get(key));
+    if (amount !== undefined) filters[key] = amount;
+  }
+}
+
 export function parseTxSearch(params: URLSearchParams): { filters: Filters; page: number } {
   const filters: Filters = {};
 
@@ -36,20 +54,16 @@ export function parseTxSearch(params: URLSearchParams): { filters: Filters; page
     const id = parsePositiveInt(params.get(key));
     if (id !== undefined) filters[key] = id;
   }
-  // Une sous-catégorie sans catégorie n'a pas de sens.
-  if (filters.category_id === undefined) delete filters.subcategory_id;
+  if (params.get('category_id') === NO_CATEGORY) filters.category_id = NO_CATEGORY;
+  // Une sous-catégorie n'a de sens qu'avec une catégorie réelle.
+  if (typeof filters.category_id !== 'number') delete filters.subcategory_id;
 
-  for (const key of DATE_KEYS) {
-    const date = params.get(key);
-    if (date !== null && DATE_RE.test(date)) filters[key] = date;
-  }
+  parseRangeFilters(params, filters);
 
-  for (const key of AMOUNT_KEYS) {
-    const amount = parseAmount(params.get(key));
-    if (amount !== undefined) filters[key] = amount;
-  }
+  const validated = parseValidated(params.get('validated'));
+  if (validated !== undefined) filters.validated = validated;
 
-  if (params.get('validated') === 'false') filters.validated = false;
+  if (params.get('exclude_transfers') === 'true') filters.exclude_transfers = true;
 
   const page = parsePositiveInt(params.get('page')) ?? 1;
   return { filters, page };
@@ -72,7 +86,8 @@ export function toTxSearch(filters: Filters, page: number): URLSearchParams {
     const amount = filters[key];
     if (amount !== undefined) params.set(key, String(amount));
   }
-  if (filters.validated === false) params.set('validated', 'false');
+  if (filters.validated !== undefined) params.set('validated', String(filters.validated));
+  if (filters.exclude_transfers) params.set('exclude_transfers', 'true');
   if (page > 1) params.set('page', String(page));
   return params;
 }
