@@ -7,6 +7,7 @@ import { marketValueByAccount } from './investment-profitability.repo.js';
 import { createProfitabilityRepo } from './profitability.repo.js';
 import { createReportRepo } from './report.repo.js';
 import { buildPositionsAt, firstDayOfMonth, sumDeltasBefore } from './stats.calculations.js';
+import { EFFECTIVE_CATEGORY_JOIN, EXCLUDE_INSURANCE_TX, SUM_EFFECTIVE_AMOUNT } from './statsSql.js';
 
 export type { MonthlyStat, ReportData } from './report.repo.js';
 
@@ -104,32 +105,28 @@ export function createStatsRepo(db: Database) {
       const nextMonthStart = firstDayOfMonth(-1);
       const sixMonthsStart = firstDayOfMonth(5);
 
-      const EXCLUDE_INSURANCE_TX = `AND id NOT IN (
-        SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL
-      )`;
-
       const metricsRow = db
         .prepare<[number, string, string], { income: number; expense: number }>(
           `SELECT
-            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS income,
-            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS expense
-          FROM transactions
-          WHERE user_id = ? AND validated = 1 AND transfer_peer_id IS NULL
+            SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END) AS income,
+            SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) AS expense
+          FROM transactions t
+          WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
             ${EXCLUDE_INSURANCE_TX}
-            AND date >= ? AND date < ?`,
+            AND t.date >= ? AND t.date < ?`,
         )
         .get(userId, thisMonthStart, nextMonthStart) ?? { income: 0, expense: 0 };
 
       const monthlyRows = db
         .prepare<[number, string, string], { month: string; income: number; expense: number }>(
           `SELECT
-            strftime('%Y-%m', date) AS month,
-            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS income,
-            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS expense
-          FROM transactions
-          WHERE user_id = ? AND validated = 1 AND transfer_peer_id IS NULL
+            strftime('%Y-%m', t.date) AS month,
+            SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END) AS income,
+            SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) AS expense
+          FROM transactions t
+          WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
             ${EXCLUDE_INSURANCE_TX}
-            AND date >= ? AND date < ?
+            AND t.date >= ? AND t.date < ?
           GROUP BY month
           ORDER BY month`,
         )
@@ -148,13 +145,11 @@ export function createStatsRepo(db: Database) {
 
       const catRows = db
         .prepare<[number, string, string], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
+          `SELECT COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
           FROM transactions t
-          LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
-          LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
-          LEFT JOIN categories c ON sc.category_id = c.id
+          ${EFFECTIVE_CATEGORY_JOIN}
           WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
-            AND t.id NOT IN (SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL)
+            ${EXCLUDE_INSURANCE_TX}
             AND t.type = 'expense' AND t.date >= ? AND t.date < ?
           GROUP BY category
           ORDER BY amount DESC`,

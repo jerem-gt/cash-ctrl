@@ -118,4 +118,37 @@ describe('/api/subcategories', () => {
     expect(res.body.error.code).toBe('subcategory.in_use');
     expect(res.body.error.params).toEqual({ count: 1 });
   });
+
+  it('DELETE /:id returns 409 if subcategory is only used in a split', async () => {
+    const subRes = await ctx.agent
+      .post('/api/subcategories')
+      .send({ category_id: categoryId, name: 'Split Only' });
+    const subId = subRes.body.id;
+    const acc = await ctx.agent.post('/api/accounts').send({
+      name: 'Split',
+      bank_id: SEED.BANK_ID,
+      account_type_id: SEED.AT_COURANT,
+      opening_date: '2020-01-01',
+    });
+    const created = await ctx.agent.post('/api/transactions').send({
+      account_id: acc.body.id,
+      type: 'expense',
+      amount: 100,
+      description: 'Ventilée',
+      subcategory_id: null,
+      splits: [
+        { subcategory_id: subId, amount: 50 },
+        { subcategory_id: subId, amount: 50 },
+      ],
+      date: '2024-03-20',
+      payment_method_id: SEED.PM_CARTE,
+    });
+    expect(created.status).toBe(201);
+
+    const res = await ctx.agent.delete(`/api/subcategories/${subId}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('subcategory.in_use');
+    expect(res.body.error.params).toEqual({ count: 1 });
+  });
 });

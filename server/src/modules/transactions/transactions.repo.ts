@@ -117,14 +117,19 @@ function buildFilterConditions(
     params.type = filters.type;
   }
   if (filters.category_id) {
-    conditions.push(`(sc.category_id = :category_id OR EXISTS (
+    // Les ventilations priment sur le subcategory_id legacy
+    conditions.push(`((sc.category_id = :category_id AND NOT EXISTS (
+      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+    )) OR EXISTS (
       SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
       WHERE s.transaction_id = t.id AND ssc.category_id = :category_id
     ))`);
     params.category_id = filters.category_id;
   }
   if (filters.subcategory_id) {
-    conditions.push(`(t.subcategory_id = :subcategory_id OR EXISTS (
+    conditions.push(`((t.subcategory_id = :subcategory_id AND NOT EXISTS (
+      SELECT 1 FROM transaction_splits s0 WHERE s0.transaction_id = t.id
+    )) OR EXISTS (
       SELECT 1 FROM transaction_splits s WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategory_id
     ))`);
     params.subcategory_id = filters.subcategory_id;
@@ -180,12 +185,22 @@ function buildFilterConditions(
 export function createTransactionsRepo(db: Database) {
   const getCountByCategoryIdStmt = db
     .prepare<{ categoryId: number }, number>(
-      'SELECT COUNT(*) as n FROM transactions WHERE subcategory_id in (select id from subcategories where category_id = :categoryId)',
+      `SELECT COUNT(*) as n FROM transactions t
+       WHERE t.subcategory_id IN (SELECT id FROM subcategories WHERE category_id = :categoryId)
+          OR EXISTS (
+            SELECT 1 FROM transaction_splits s JOIN subcategories ssc ON ssc.id = s.subcategory_id
+            WHERE s.transaction_id = t.id AND ssc.category_id = :categoryId
+          )`,
     )
     .pluck();
   const getCountBySubcategoryIdStmt = db
     .prepare<{ subcategoryId: number }, number>(
-      'SELECT COUNT(*) as cnt FROM transactions WHERE subcategory_id = :subcategoryId',
+      `SELECT COUNT(*) as cnt FROM transactions t
+       WHERE t.subcategory_id = :subcategoryId
+          OR EXISTS (
+            SELECT 1 FROM transaction_splits s
+            WHERE s.transaction_id = t.id AND s.subcategory_id = :subcategoryId
+          )`,
     )
     .pluck();
   const getCountByPaymentMethodIdStmt = db

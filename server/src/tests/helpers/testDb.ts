@@ -13,6 +13,9 @@ export const SEED = {
   AT_BOURSE: 3, // 'Bourse'
   AT_AV: 4, // 'Assurance Vie'
   AT_PER: 5, // 'PER'
+  CAT_ALIMENTATION: 3,
+  CAT_LOISIRS: 4,
+  CAT_LOGEMENT: 5,
   SUBCAT_AUTRE: 1,
   SUBCAT_SALAIRE: 2,
   SUBCAT_SUPERMARCHE: 3,

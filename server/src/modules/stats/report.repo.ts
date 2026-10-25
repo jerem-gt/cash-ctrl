@@ -1,6 +1,12 @@
 import type { Database } from 'better-sqlite3';
 
 import { toEuros } from '../../lib/money.js';
+import {
+  EFFECTIVE_CATEGORY_JOIN,
+  EXCLUDE_INSURANCE_TX,
+  EXCLUDE_STOCK_TX,
+  SUM_EFFECTIVE_AMOUNT,
+} from './statsSql.js';
 
 export interface MonthlyStat {
   month: string; // YYYY-MM
@@ -35,12 +41,6 @@ export function createReportRepo(db: Database) {
       const dateTo = `${year}-12-31`;
       // accountCond placed AFTER date params so params order is always [userId, dateFrom, dateTo, (accountId?)]
       const accountCond = accountId == null ? '' : 'AND t.account_id = ?';
-      const insExcl = `AND t.id NOT IN (
-        SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL
-      )`;
-      const stockExcl = `AND t.id NOT IN (
-        SELECT transaction_id FROM stock_operations WHERE transaction_id IS NOT NULL
-      )`;
       const baseParams: unknown[] = [userId, dateFrom, dateTo];
       const filterParams: unknown[] = accountId == null ? baseParams : [...baseParams, accountId];
 
@@ -51,7 +51,7 @@ export function createReportRepo(db: Database) {
             SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) AS expense
            FROM transactions t
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
-             ${insExcl} ${stockExcl}
+             ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.date >= ? AND t.date <= ? ${accountCond}`,
         )
         .get(...filterParams) ?? { income: 0, expense: 0 };
@@ -64,7 +64,7 @@ export function createReportRepo(db: Database) {
             SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) AS expense
            FROM transactions t
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
-             ${insExcl} ${stockExcl}
+             ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.date >= ? AND t.date <= ? ${accountCond}
            GROUP BY month
            ORDER BY month`,
@@ -85,13 +85,11 @@ export function createReportRepo(db: Database) {
 
       const expenseByCat = db
         .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
+          `SELECT COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
            FROM transactions t
-           LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
-           LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
-           LEFT JOIN categories c ON sc.category_id = c.id
+           ${EFFECTIVE_CATEGORY_JOIN}
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
-             ${insExcl} ${stockExcl}
+             ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.type = 'expense'
              AND t.date >= ? AND t.date <= ? ${accountCond}
            GROUP BY category
@@ -101,13 +99,11 @@ export function createReportRepo(db: Database) {
 
       const incomeByCat = db
         .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
+          `SELECT COALESCE(c.name, '') AS category, ${SUM_EFFECTIVE_AMOUNT} AS amount
            FROM transactions t
-           LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
-           LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
-           LEFT JOIN categories c ON sc.category_id = c.id
+           ${EFFECTIVE_CATEGORY_JOIN}
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
-             ${insExcl} ${stockExcl}
+             ${EXCLUDE_INSURANCE_TX} ${EXCLUDE_STOCK_TX}
              AND t.type = 'income'
              AND t.date >= ? AND t.date <= ? ${accountCond}
            GROUP BY category
