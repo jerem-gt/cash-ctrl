@@ -37,7 +37,8 @@
     "no_direct_on_av_per": "Cannot create a transaction directly on a life-insurance/PER account",
     "use_transfers_update": "Use PUT /api/transfers/:id to update a transfer",
     "use_transfers_delete": "Use DELETE /api/transfers/:id to delete a transfer",
-    "is_stock_fees": "This transaction is the fee of a stock operation. Edit the operation to change the fee."
+    "is_stock_fees": "This transaction is the fee of a stock operation. Edit the operation to change the fee.",
+    "splits_total_mismatch": "The sum of the splits ({{sum}} €) must equal the amount ({{total}} €)"
   },
   "transfer": {
     "same_account": "The two accounts must be different",

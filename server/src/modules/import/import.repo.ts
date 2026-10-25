@@ -390,7 +390,7 @@ export function createImportRepo(db: Database) {
         tx.type,
         tx.amount,
         tx.description,
-        resolveFromMap(tx.subcategory_id, subcategoryMap),
+        tx.splits.length > 0 ? null : resolveFromMap(tx.subcategory_id, subcategoryMap),
         resolveFromMap(tx.payment_method_id, paymentMethodMap),
         tx.date,
         tx.validated,

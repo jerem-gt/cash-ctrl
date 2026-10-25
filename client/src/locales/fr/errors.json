@@ -37,7 +37,8 @@
     "no_direct_on_av_per": "Impossible de créer une transaction directement sur un compte AV/PER",
     "use_transfers_update": "Utilisez PUT /api/transfers/:id pour modifier un transfert",
     "use_transfers_delete": "Utilisez DELETE /api/transfers/:id pour supprimer un transfert",
-    "is_stock_fees": "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais."
+    "is_stock_fees": "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
+    "splits_total_mismatch": "La somme des ventilations ({{sum}} €) doit être égale au montant ({{total}} €)"
   },
   "transfer": {
     "same_account": "Les deux comptes doivent être différents",

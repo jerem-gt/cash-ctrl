@@ -50,6 +50,9 @@ export const ERROR_MESSAGES = {
   'transaction.is_stock_fees':
     "Cette transaction correspond aux frais d'une opération boursière. Modifiez l'opération pour changer les frais.",
 
+  'transaction.splits_total_mismatch':
+    'La somme des ventilations ({{sum}} €) doit être égale au montant ({{total}} €)',
+
   // ── Transferts ────────────────────────────────────────────────────────────
   'transfer.same_account': 'Les deux comptes doivent être différents',
   'transfer.not_a_transfer_update':

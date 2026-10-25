@@ -716,6 +716,139 @@ describe('/api/transactions — filtre scheduled_id', () => {
   });
 });
 
+describe('/api/transactions — ventilations (filtres et cohérence)', () => {
+  let ctx: TestContext;
+  let accountId: number;
+  let splitId: number;
+
+  const splitBody = (overrides: Record<string, unknown> = {}) => ({
+    account_id: accountId,
+    type: 'expense',
+    amount: 100,
+    description: 'Ticket ventilé',
+    subcategory_id: null,
+    splits: [
+      { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+      { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40 },
+    ],
+    date: TODAY,
+    payment_method_id: SEED.PM_CARTE,
+    ...overrides,
+  });
+
+  const simpleBody = (overrides: Record<string, unknown> = {}) => ({
+    account_id: accountId,
+    type: 'expense',
+    amount: 100,
+    description: 'Simple',
+    subcategory_id: SEED.SUBCAT_LOYER,
+    date: TODAY,
+    payment_method_id: SEED.PM_CARTE,
+    ...overrides,
+  });
+
+  const dbSubcategory = (id: number) =>
+    (
+      ctx.db.prepare('SELECT subcategory_id FROM transactions WHERE id = ?').get(id) as {
+        subcategory_id: number | null;
+      }
+    ).subcategory_id;
+
+  const splitCount = (id: number) =>
+    (
+      ctx.db
+        .prepare('SELECT COUNT(*) AS n FROM transaction_splits WHERE transaction_id = ?')
+        .get(id) as { n: number }
+    ).n;
+
+  beforeAll(async () => {
+    ctx = await createTestContext();
+    accountId = await setupWithAccount(ctx);
+    const res = await ctx.agent.post('/api/transactions').send(splitBody());
+    splitId = res.body.id;
+  });
+
+  it('le filtre category_id trouve une transaction ventilée', async () => {
+    const res = await ctx.agent.get('/api/transactions?category_id=3');
+    expect(res.body.total).toBe(1);
+    expect(res.body.data[0].id).toBe(splitId);
+    expect(res.body.data[0].amount).toBe(100);
+  });
+
+  it('le filtre subcategory_id trouve une transaction ventilée', async () => {
+    const res = await ctx.agent.get(`/api/transactions?subcategory_id=${SEED.SUBCAT_CINEMA}`);
+    expect(res.body.total).toBe(1);
+    expect(res.body.data[0].id).toBe(splitId);
+  });
+
+  it('ne renvoie pas la transaction pour une autre catégorie', async () => {
+    const res = await ctx.agent.get(`/api/transactions?subcategory_id=${SEED.SUBCAT_LOYER}`);
+    expect(res.body.total).toBe(0);
+  });
+
+  it("ne compte qu'une fois une transaction avec deux ventilations dans la même catégorie", async () => {
+    const created = await ctx.agent.post('/api/transactions').send(
+      splitBody({
+        description: 'Double alimentation',
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 50 },
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 50 },
+        ],
+      }),
+    );
+    const res = await ctx.agent.get('/api/transactions?category_id=3&limit=25');
+    expect(res.body.total).toBe(2);
+    expect(res.body.data).toHaveLength(2);
+    const dbl = res.body.data.find((t: { id: number }) => t.id === created.body.id);
+    expect(dbl.amount).toBe(100);
+    expect(dbl.splits).toHaveLength(2);
+  });
+
+  it('POST avec une somme de ventilations fausse renvoie 400', async () => {
+    const res = await ctx.agent.post('/api/transactions').send(
+      splitBody({
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 60 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, amount: 40.01 },
+        ],
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('transaction.splits_total_mismatch');
+    expect(res.body.error.params).toEqual({ sum: 100.01, total: 100 });
+  });
+
+  it('PUT avec une somme de ventilations fausse renvoie 400', async () => {
+    const res = await ctx.agent.put(`/api/transactions/${splitId}`).send(
+      splitBody({
+        splits: [{ subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 99.99 }],
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('transaction.splits_total_mismatch');
+  });
+
+  it('PUT simple vers ventilée met subcategory_id à NULL en base', async () => {
+    const created = await ctx.agent.post('/api/transactions').send(simpleBody());
+    expect(dbSubcategory(created.body.id)).toBe(SEED.SUBCAT_LOYER);
+    const res = await ctx.agent
+      .put(`/api/transactions/${created.body.id}`)
+      .send(splitBody({ description: 'Devenue ventilée' }));
+    expect(res.status).toBe(200);
+    expect(dbSubcategory(created.body.id)).toBeNull();
+    expect(splitCount(created.body.id)).toBe(2);
+  });
+
+  it('PUT ventilée vers simple supprime les ventilations', async () => {
+    const created = await ctx.agent.post('/api/transactions').send(splitBody());
+    expect(splitCount(created.body.id)).toBe(2);
+    const res = await ctx.agent.put(`/api/transactions/${created.body.id}`).send(simpleBody());
+    expect(res.status).toBe(200);
+    expect(splitCount(created.body.id)).toBe(0);
+    expect(dbSubcategory(created.body.id)).toBe(SEED.SUBCAT_LOYER);
+  });
+});
+
 describe('/api/transactions — pagination au-delà de 100', () => {
   let ctx: TestContext;
   let accountId: number;

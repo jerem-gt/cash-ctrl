@@ -175,7 +175,7 @@ export function seedTestData(db: Database) {
     type: TransactionType;
     amount: number;
     description: string;
-    subcategory_id: number;
+    subcategory_id: number | null;
     date: string;
     payment_method_id: number;
     validated: 0 | 1;
@@ -441,7 +441,7 @@ export function seedTestData(db: Database) {
     type: 'expense',
     amount: 82,
     description: 'Carrefour (courses + textile)',
-    subcategory_id: subcatSupermarche,
+    subcategory_id: null,
     date: monthDay(-1, 8),
     payment_method_id: pmCB,
     validated: 1,

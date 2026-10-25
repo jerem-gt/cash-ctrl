@@ -148,9 +148,10 @@ export function createStatsRepo(db: Database) {
 
       const catRows = db
         .prepare<[number, string, string], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(t.amount) AS amount
+          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
           FROM transactions t
-          LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+          LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
+          LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
           LEFT JOIN categories c ON sc.category_id = c.id
           WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
             AND t.id NOT IN (SELECT transaction_id FROM insurance_operations WHERE transaction_id IS NOT NULL)

@@ -85,9 +85,10 @@ export function createReportRepo(db: Database) {
 
       const expenseByCat = db
         .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(t.amount) AS amount
+          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
            FROM transactions t
-           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
+           LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
            LEFT JOIN categories c ON sc.category_id = c.id
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
              ${insExcl} ${stockExcl}
@@ -100,9 +101,10 @@ export function createReportRepo(db: Database) {
 
       const incomeByCat = db
         .prepare<unknown[], { category: string; amount: number }>(
-          `SELECT COALESCE(c.name, '') AS category, SUM(t.amount) AS amount
+          `SELECT COALESCE(c.name, '') AS category, SUM(COALESCE(ts.amount, t.amount)) AS amount
            FROM transactions t
-           LEFT JOIN subcategories sc ON t.subcategory_id = sc.id
+           LEFT JOIN transaction_splits ts ON ts.transaction_id = t.id
+           LEFT JOIN subcategories sc ON COALESCE(ts.subcategory_id, t.subcategory_id) = sc.id
            LEFT JOIN categories c ON sc.category_id = c.id
            WHERE t.user_id = ? AND t.validated = 1 AND t.transfer_peer_id IS NULL
              ${insExcl} ${stockExcl}
