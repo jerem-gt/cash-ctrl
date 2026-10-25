@@ -199,7 +199,7 @@ export function createStatsRepo(db: Database) {
         )
         .get(userId);
 
-      const currentYear = new Date().getUTCFullYear();
+      const currentYear = new Date().getFullYear();
       const startYear = firstYearRow?.year ? Number.parseInt(firstYearRow.year, 10) : currentYear;
 
       const years: string[] = [];

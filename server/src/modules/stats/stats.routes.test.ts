@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { dateStr } from '../../lib/dateUtils.js';
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 import { SEED } from '../../tests/helpers/testDb.js';
 
-const TODAY = new Date().toISOString().split('T')[0];
-const CURRENT_YEAR = new Date().getUTCFullYear().toString();
-const CURRENT_YEAR_NUM = new Date().getUTCFullYear();
+const TODAY = dateStr(new Date());
+const CURRENT_YEAR = new Date().getFullYear().toString();
+const CURRENT_YEAR_NUM = new Date().getFullYear();
 
 describe('/api/stats', () => {
   let ctx: TestContext;
