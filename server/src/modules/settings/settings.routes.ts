@@ -23,6 +23,8 @@ export const systemRefsSchema = z
     bank_fees_subcategory_id: z.number().int().positive().nullable().optional(),
     social_fees_subcategory_id: z.number().int().positive().nullable().optional(),
     prelevement_payment_method_id: z.number().int().positive().nullable().optional(),
+    interest_subcategory_id: z.number().int().positive().nullable().optional(),
+    wire_payment_method_id: z.number().int().positive().nullable().optional(),
   })
   .strict();
 
@@ -39,6 +41,8 @@ function formatSettings(s: ReturnType<ReturnType<typeof createSettingsRepo>['get
     bank_fees_subcategory_id: s.bank_fees_subcategory_id,
     social_fees_subcategory_id: s.social_fees_subcategory_id,
     prelevement_payment_method_id: s.prelevement_payment_method_id,
+    interest_subcategory_id: s.interest_subcategory_id,
+    wire_payment_method_id: s.wire_payment_method_id,
   };
 }
 
@@ -50,6 +54,8 @@ const COLUMN_TABLE: Record<SystemRefColumn, string> = {
   bank_fees_subcategory_id: 'subcategories',
   social_fees_subcategory_id: 'subcategories',
   prelevement_payment_method_id: 'payment_methods',
+  interest_subcategory_id: 'subcategories',
+  wire_payment_method_id: 'payment_methods',
 };
 
 export function createSettingsRouter(db: Database): Router {

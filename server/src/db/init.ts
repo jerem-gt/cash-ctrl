@@ -41,6 +41,26 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
       ALTER TABLE banks RENAME COLUMN domain TO login_url;
     `),
   (db) => db.exec('ALTER TABLE accounts ADD COLUMN favorite_order INTEGER;'),
+  (db) =>
+    db.exec(`
+      ALTER TABLE user_settings ADD COLUMN interest_subcategory_id INTEGER;
+      ALTER TABLE user_settings ADD COLUMN wire_payment_method_id INTEGER;
+      UPDATE user_settings
+      SET
+        interest_subcategory_id = (
+          SELECT s.id FROM subcategories s
+          WHERE s.user_id = user_settings.user_id
+            AND s.category_id = user_settings.financial_income_category_id
+            AND s.name IN ('Intérêts', 'Interest')
+          ORDER BY s.id LIMIT 1
+        ),
+        wire_payment_method_id = (
+          SELECT p.id FROM payment_methods p
+          WHERE p.user_id = user_settings.user_id
+            AND p.name IN ('Virement', 'Wire transfer')
+          ORDER BY p.id LIMIT 1
+        );
+    `),
 ];
 
 function runMigrations(db: DatabaseType) {

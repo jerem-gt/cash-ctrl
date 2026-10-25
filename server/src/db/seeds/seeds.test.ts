@@ -239,7 +239,7 @@ describe('seedDatabase', () => {
 });
 
 describe('seedUserData', () => {
-  it('seeds FR data and populates all 6 system refs in user_settings', () => {
+  it('seeds FR data and populates all 8 system refs in user_settings', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -248,7 +248,8 @@ describe('seedUserData', () => {
     const settings = db
       .prepare(
         `SELECT financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
-                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
+                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id,
+                interest_subcategory_id, wire_payment_method_id
          FROM user_settings WHERE user_id = ?`,
       )
       .get(userId) as
@@ -259,6 +260,8 @@ describe('seedUserData', () => {
           bank_fees_subcategory_id: number | null;
           social_fees_subcategory_id: number | null;
           prelevement_payment_method_id: number | null;
+          interest_subcategory_id: number | null;
+          wire_payment_method_id: number | null;
         }
       | undefined;
 
@@ -269,6 +272,8 @@ describe('seedUserData', () => {
     expect(settings?.bank_fees_subcategory_id).not.toBeNull();
     expect(settings?.social_fees_subcategory_id).not.toBeNull();
     expect(settings?.prelevement_payment_method_id).not.toBeNull();
+    expect(settings?.interest_subcategory_id).not.toBeNull();
+    expect(settings?.wire_payment_method_id).not.toBeNull();
 
     // Verify FR category name
     const cat = db
@@ -277,7 +282,7 @@ describe('seedUserData', () => {
     expect(cat?.name).toBe('Revenus financiers');
   });
 
-  it('seeds EN data and populates all 6 system refs in user_settings', () => {
+  it('seeds EN data and populates all 8 system refs in user_settings', () => {
     const db = createFreshDb();
     seedAdminUser(db);
     const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
@@ -286,7 +291,8 @@ describe('seedUserData', () => {
     const settings = db
       .prepare(
         `SELECT financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
-                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
+                bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id,
+                interest_subcategory_id, wire_payment_method_id
          FROM user_settings WHERE user_id = ?`,
       )
       .get(userId) as
@@ -297,6 +303,8 @@ describe('seedUserData', () => {
           bank_fees_subcategory_id: number | null;
           social_fees_subcategory_id: number | null;
           prelevement_payment_method_id: number | null;
+          interest_subcategory_id: number | null;
+          wire_payment_method_id: number | null;
         }
       | undefined;
 
@@ -307,6 +315,8 @@ describe('seedUserData', () => {
     expect(settings?.bank_fees_subcategory_id).not.toBeNull();
     expect(settings?.social_fees_subcategory_id).not.toBeNull();
     expect(settings?.prelevement_payment_method_id).not.toBeNull();
+    expect(settings?.interest_subcategory_id).not.toBeNull();
+    expect(settings?.wire_payment_method_id).not.toBeNull();
 
     // Verify EN category name
     const cat = db

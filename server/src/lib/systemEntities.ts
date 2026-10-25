@@ -9,6 +9,8 @@ export const SYSTEM_REF_COLUMNS = [
   'bank_fees_subcategory_id',
   'social_fees_subcategory_id',
   'prelevement_payment_method_id',
+  'interest_subcategory_id',
+  'wire_payment_method_id',
 ] as const;
 
 export type SystemRefColumn = (typeof SYSTEM_REF_COLUMNS)[number];
@@ -52,6 +54,12 @@ export const SYSTEM_ENTITIES_BY_TYPE: Record<EntityType, SystemEntityDef[]> = {
       fr: 'Prélèvements sociaux',
       en: 'Social charges',
     },
+    {
+      code: 'interests',
+      settingsColumn: 'interest_subcategory_id',
+      fr: 'Intérêts',
+      en: 'Interest',
+    },
   ],
   payment_method: [
     {
@@ -65,6 +73,12 @@ export const SYSTEM_ENTITIES_BY_TYPE: Record<EntityType, SystemEntityDef[]> = {
       settingsColumn: 'prelevement_payment_method_id',
       fr: 'Prélèvement',
       en: 'Direct debit',
+    },
+    {
+      code: 'wire',
+      settingsColumn: 'wire_payment_method_id',
+      fr: 'Virement',
+      en: 'Wire transfer',
     },
   ],
 };

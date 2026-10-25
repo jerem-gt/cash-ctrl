@@ -10,6 +10,8 @@ export interface SystemRefs {
   bankFeesSubcategoryId: number | null;
   socialFeesSubcategoryId: number | null;
   prelevementPaymentMethodId: number | null;
+  interestSubcategoryId: number | null;
+  wirePaymentMethodId: number | null;
 }
 
 /**
@@ -26,6 +28,8 @@ export function getSystemRefs(db: Database, userId: number): SystemRefs {
     bankFeesSubcategoryId: s.bank_fees_subcategory_id,
     socialFeesSubcategoryId: s.social_fees_subcategory_id,
     prelevementPaymentMethodId: s.prelevement_payment_method_id,
+    interestSubcategoryId: s.interest_subcategory_id,
+    wirePaymentMethodId: s.wire_payment_method_id,
   };
 }
 

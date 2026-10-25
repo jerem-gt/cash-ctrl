@@ -207,6 +207,8 @@
     "bank_fees_subcategory_id": "Bank fees sub-category",
     "social_fees_subcategory_id": "Social fees sub-category",
     "prelevement_payment_method_id": "Direct debit payment method",
+    "interest_subcategory_id": "Interest sub-category",
+    "wire_payment_method_id": "Wire transfer payment method",
     "success": "Reference updated ✓",
     "error": "Error updating reference"
   },

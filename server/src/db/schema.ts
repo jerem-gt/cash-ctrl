@@ -55,7 +55,9 @@ export function initSchema(db: Database) {
             transfer_payment_method_id    INTEGER,
             bank_fees_subcategory_id      INTEGER,
             social_fees_subcategory_id    INTEGER,
-            prelevement_payment_method_id INTEGER
+            prelevement_payment_method_id INTEGER,
+            interest_subcategory_id       INTEGER,
+            wire_payment_method_id        INTEGER
         );
 
         CREATE TABLE IF NOT EXISTS users
