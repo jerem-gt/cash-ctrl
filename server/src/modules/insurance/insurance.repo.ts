@@ -3,6 +3,7 @@ import type { Database } from 'better-sqlite3';
 import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import {
   getSocialFeesSubcategoryId,
+  getSystemRefs,
   getTransferIds,
 } from '../../lib/administrationDataConstants.js';
 import { BadRequestError, NotFoundError } from '../../lib/errors.js';
@@ -573,14 +574,23 @@ export function createInsuranceRepo(db: Database) {
       const support = this.getSupportById(input.support_id)!;
       const amountCents = toCents(input.amount);
       const description = `Intérêts — ${support.name}`;
+      const refs = getSystemRefs(db, userId);
 
       return db.transaction(() => {
         const txResult = db
           .prepare(
-            `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated)
-             VALUES (?, ?, 'income', ?, ?, ?, 1)`,
+            `INSERT INTO transactions (user_id, account_id, type, amount, description, date, validated, subcategory_id, payment_method_id)
+             VALUES (?, ?, 'income', ?, ?, ?, 1, ?, ?)`,
           )
-          .run(userId, input.account_id, amountCents, description, input.date);
+          .run(
+            userId,
+            input.account_id,
+            amountCents,
+            description,
+            input.date,
+            refs.interestSubcategoryId,
+            refs.wirePaymentMethodId,
+          );
         const transactionId = Number(txResult.lastInsertRowid);
 
         const opResult = db

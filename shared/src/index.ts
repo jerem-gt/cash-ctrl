@@ -376,6 +376,8 @@ export interface UserSettings {
   bank_fees_subcategory_id: number | null;
   social_fees_subcategory_id: number | null;
   prelevement_payment_method_id: number | null;
+  interest_subcategory_id: number | null;
+  wire_payment_method_id: number | null;
 }
 
 export type SettingsUpdate = Pick<
@@ -390,6 +392,8 @@ export type SystemRefsPayload = Partial<{
   bank_fees_subcategory_id: number | null;
   social_fees_subcategory_id: number | null;
   prelevement_payment_method_id: number | null;
+  interest_subcategory_id: number | null;
+  wire_payment_method_id: number | null;
 }>;
 
 // ─── Backup ───────────────────────────────────────────────────────────────────

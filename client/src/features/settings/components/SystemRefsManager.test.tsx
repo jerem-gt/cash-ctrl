@@ -8,7 +8,7 @@ import { server } from '@/tests/msw/server';
 import { SystemRefsManager } from './SystemRefsManager';
 
 describe('SystemRefsManager', () => {
-  it('affiche les 6 selects après chargement', async () => {
+  it('affiche les 8 selects après chargement', async () => {
     renderWithProviders(<SystemRefsManager />);
     expect(await screen.findByLabelText('Catégorie revenus financiers')).toBeInTheDocument();
     expect(screen.getByLabelText('Sous-catégorie transfert')).toBeInTheDocument();
@@ -16,6 +16,8 @@ describe('SystemRefsManager', () => {
     expect(screen.getByLabelText('Sous-catégorie frais bancaires')).toBeInTheDocument();
     expect(screen.getByLabelText('Sous-catégorie prélèvements sociaux')).toBeInTheDocument();
     expect(screen.getByLabelText('Moyen de paiement prélèvement')).toBeInTheDocument();
+    expect(screen.getByLabelText('Sous-catégorie intérêts')).toBeInTheDocument();
+    expect(screen.getByLabelText('Moyen de paiement virement')).toBeInTheDocument();
   });
 
   it('affiche les catégories dans le select catégorie revenus financiers', async () => {

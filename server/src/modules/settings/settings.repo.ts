@@ -16,6 +16,8 @@ const DEFAULTS: Omit<UserSettings, 'user_id'> = {
   bank_fees_subcategory_id: null,
   social_fees_subcategory_id: null,
   prelevement_payment_method_id: null,
+  interest_subcategory_id: null,
+  wire_payment_method_id: null,
 };
 
 export function createSettingsRepo(db: Database) {
@@ -23,7 +25,8 @@ export function createSettingsRepo(db: Database) {
     `SELECT lead_days, backup_enabled, backup_frequency_h, backup_max_files,
             backup_last_at, backup_last_hash,
             financial_income_category_id, transfer_subcategory_id, transfer_payment_method_id,
-            bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id
+            bank_fees_subcategory_id, social_fees_subcategory_id, prelevement_payment_method_id,
+            interest_subcategory_id, wire_payment_method_id
      FROM user_settings WHERE user_id = :userId`,
   );
 

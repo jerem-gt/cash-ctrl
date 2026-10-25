@@ -41,6 +41,8 @@ describe('/api/settings', () => {
     // transfer refs are also set
     expect(res.body.transfer_subcategory_id).not.toBeNull();
     expect(res.body.transfer_payment_method_id).not.toBeNull();
+    expect(res.body.interest_subcategory_id).toBe(SEED.SUBCAT_INTERETS);
+    expect(res.body.wire_payment_method_id).toBe(SEED.PM_VIREMENT);
   });
 
   it('PUT / met à jour lead_days', async () => {
@@ -173,6 +175,55 @@ describe('/api/settings', () => {
       expect(res.status).toBe(200);
       expect(res.body.transfer_subcategory_id).toBe(subcatId);
       expect(res.body.transfer_payment_method_id).toBe(pmId);
+    });
+
+    it('met à jour interest_subcategory_id et wire_payment_method_id', async () => {
+      const res = await ctx.agent.patch('/api/settings/system-refs').send({
+        interest_subcategory_id: SEED.SUBCAT_AUTRE,
+        wire_payment_method_id: SEED.PM_CARTE,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.interest_subcategory_id).toBe(SEED.SUBCAT_AUTRE);
+      expect(res.body.wire_payment_method_id).toBe(SEED.PM_CARTE);
+
+      const reset = await ctx.agent.patch('/api/settings/system-refs').send({
+        interest_subcategory_id: SEED.SUBCAT_INTERETS,
+        wire_payment_method_id: SEED.PM_VIREMENT,
+      });
+      expect(reset.status).toBe(200);
+    });
+
+    it("retourne 400 quand interest_subcategory_id / wire_payment_method_id n'appartiennent pas à l'utilisateur", async () => {
+      ctx.db
+        .prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)')
+        .run('other3', 'x');
+      const other = ctx.db.prepare("SELECT id FROM users WHERE username = 'other3'").get() as {
+        id: number;
+      };
+      const catId = Number(
+        ctx.db
+          .prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)')
+          .run(other.id, 'OtherCat3', '❓').lastInsertRowid,
+      );
+      const subId = Number(
+        ctx.db
+          .prepare('INSERT INTO subcategories (user_id, name, category_id) VALUES (?, ?, ?)')
+          .run(other.id, 'OtherSub3', catId).lastInsertRowid,
+      );
+      const pmId = Number(
+        ctx.db
+          .prepare('INSERT INTO payment_methods (user_id, name, icon) VALUES (?, ?, ?)')
+          .run(other.id, 'OtherPM3', '❓').lastInsertRowid,
+      );
+
+      const sub = await ctx.agent
+        .patch('/api/settings/system-refs')
+        .send({ interest_subcategory_id: subId });
+      expect(sub.status).toBe(400);
+      const pm = await ctx.agent
+        .patch('/api/settings/system-refs')
+        .send({ wire_payment_method_id: pmId });
+      expect(pm.status).toBe(400);
     });
 
     it('retourne 400 pour un champ inconnu (schema strict)', async () => {

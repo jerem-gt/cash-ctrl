@@ -455,6 +455,8 @@ describe('/api/insurance', () => {
       const tx = txRes.body.data.find((t: { id: number }) => t.id === res.body.transaction_id);
       expect(tx.type).toBe('income');
       expect(tx.amount).toBe(150);
+      expect(tx.subcategory_id).toBe(SEED.SUBCAT_INTERETS);
+      expect(tx.payment_method_id).toBe(SEED.PM_VIREMENT);
 
       const posRes = await ctx.agent.get(`/api/insurance/${avAccountId}/positions`);
       const pos = posRes.body.find((p: { id: number }) => p.id === euroSupportId);

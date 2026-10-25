@@ -22,6 +22,8 @@ const REFS: RefConfig[] = [
   { key: 'bank_fees_subcategory_id', type: 'subcategory' },
   { key: 'social_fees_subcategory_id', type: 'subcategory' },
   { key: 'prelevement_payment_method_id', type: 'payment_method' },
+  { key: 'interest_subcategory_id', type: 'subcategory' },
+  { key: 'wire_payment_method_id', type: 'payment_method' },
 ];
 
 // ─── SystemRefsManager ────────────────────────────────────────────────────────

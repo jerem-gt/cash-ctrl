@@ -207,6 +207,8 @@
     "bank_fees_subcategory_id": "Sous-catégorie frais bancaires",
     "social_fees_subcategory_id": "Sous-catégorie prélèvements sociaux",
     "prelevement_payment_method_id": "Moyen de paiement prélèvement",
+    "interest_subcategory_id": "Sous-catégorie intérêts",
+    "wire_payment_method_id": "Moyen de paiement virement",
     "success": "Référence mise à jour ✓",
     "error": "Erreur lors de la mise à jour"
   },

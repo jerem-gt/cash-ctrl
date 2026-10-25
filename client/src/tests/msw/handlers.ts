@@ -190,6 +190,8 @@ export const handlers = [
       bank_fees_subcategory_id: null,
       social_fees_subcategory_id: null,
       prelevement_payment_method_id: null,
+      interest_subcategory_id: null,
+      wire_payment_method_id: null,
     }),
   ),
   http.get('/api/settings', () =>
@@ -205,6 +207,8 @@ export const handlers = [
       bank_fees_subcategory_id: null,
       social_fees_subcategory_id: null,
       prelevement_payment_method_id: null,
+      interest_subcategory_id: null,
+      wire_payment_method_id: null,
     }),
   ),
   http.put('/api/settings', () =>
@@ -220,6 +224,8 @@ export const handlers = [
       bank_fees_subcategory_id: null,
       social_fees_subcategory_id: null,
       prelevement_payment_method_id: null,
+      interest_subcategory_id: null,
+      wire_payment_method_id: null,
     }),
   ),
 

@@ -143,10 +143,18 @@ export function seedTestReferenceData(db: Database, userId: number) {
   const transferPm = db
     .prepare('SELECT id FROM payment_methods WHERE user_id = ? AND name = ?')
     .get(userId, 'Transfert') as { id: number } | undefined;
+  const interestSubcat = db
+    .prepare('SELECT id FROM subcategories WHERE user_id = ? AND name = ?')
+    .get(userId, 'Intérêts') as { id: number } | undefined;
+  const wirePm = db
+    .prepare('SELECT id FROM payment_methods WHERE user_id = ? AND name = ?')
+    .get(userId, 'Virement') as { id: number } | undefined;
   settingsRepo.setSystemRefs(userId, {
     financial_income_category_id: finCat?.id ?? null,
     transfer_subcategory_id: transferSubcat?.id ?? null,
     transfer_payment_method_id: transferPm?.id ?? null,
+    interest_subcategory_id: interestSubcat?.id ?? null,
+    wire_payment_method_id: wirePm?.id ?? null,
   });
 }
 
