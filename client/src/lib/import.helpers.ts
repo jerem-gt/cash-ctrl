@@ -1,6 +1,11 @@
 import type { Account, Category, ImportExecuteBody, PaymentMethod } from '@cashctrl/types';
 
-import { type ParsedLedger, type ParsedTransaction, parseLedgerDate } from '@/lib/import-model';
+import {
+  type ParsedLedger,
+  type ParsedSplit,
+  type ParsedTransaction,
+  parseLedgerDate,
+} from '@/lib/import-model';
 import { findTransferPeer } from '@/lib/qif-parser';
 import { transferLabel } from '@/lib/transfer-label';
 import type { XhbParseResult } from '@/lib/xhb-parser';
@@ -32,7 +37,14 @@ export type CategoryChoice =
   | { action: 'skip' };
 
 /** Motif d'exclusion d'un item du preview, traduit à l'affichage (cf. PreviewStep). */
-export type SkipReason = 'unmapped_account' | 'skipped_category' | 'transfer_no_peer';
+export type SkipReason =
+  'unmapped_account' | 'skipped_category' | 'transfer_no_peer' | 'invalid_split';
+
+export type PreviewSplit = {
+  subcategoryId: number | null;
+  newSubcategoryKey: string | null;
+  amount: number;
+};
 
 export type PreviewItem =
   | {
@@ -52,6 +64,7 @@ export type PreviewItem =
       notes: string | null;
       validated: boolean;
       paymentMethodId: number | null;
+      splits?: PreviewSplit[];
     }
   | {
       kind: 'transfer';
@@ -173,6 +186,60 @@ export function resolveCategoryInfo(
     categoryLabel: `${catName} / ${catChoice.subcategory_name}`,
     isNew: true,
   };
+}
+
+const toCents = (amount: number): number => Math.round(amount * 100);
+
+type SplitResolution =
+  | { status: 'invalid' | 'skipped' }
+  | {
+      status: 'ok';
+      splits: PreviewSplit[];
+      categoryLabel: string;
+      isNew: boolean;
+      notes: string | null;
+    };
+
+function isValidSplitSet(splits: ParsedSplit[], total: number): boolean {
+  const sign = Math.sign(total);
+  const sumCents = splits.reduce((sum, s) => sum + toCents(s.amount), 0);
+  const linesOk = splits.every(
+    (s) =>
+      s.category !== '' &&
+      !(s.category.startsWith('[') && s.category.endsWith(']')) &&
+      Math.sign(s.amount) === sign,
+  );
+  return linesOk && sumCents === toCents(total);
+}
+
+/** Valide et résout les lignes de ventilation ; les mémos non vides sont ajoutés aux notes. */
+export function resolveSplits(
+  splits: ParsedSplit[],
+  total: number,
+  baseNotes: string | null,
+  categoryChoices: Map<string, CategoryChoice>,
+  categories: Category[],
+): SplitResolution {
+  if (!isValidSplitSet(splits, total)) return { status: 'invalid' };
+
+  const resolved: PreviewSplit[] = [];
+  const labels: string[] = [];
+  let isNew = false;
+  for (const split of splits) {
+    const info = resolveCategoryInfo(split.category, categoryChoices, categories);
+    if (info === null) return { status: 'skipped' };
+    resolved.push({
+      subcategoryId: info.subcategoryId,
+      newSubcategoryKey: info.newSubcategoryKey,
+      amount: Math.abs(split.amount),
+    });
+    labels.push(info.categoryLabel);
+    isNew ||= info.isNew;
+  }
+
+  const memos = splits.flatMap((s) => (s.memo ? [s.memo] : []));
+  const notes = [...(baseNotes ? [baseNotes] : []), ...memos].join(' · ') || null;
+  return { status: 'ok', splits: resolved, categoryLabel: labels.join(' + '), isNew, notes };
 }
 
 export function safeParseDate(raw: string, format: 'MM/DD' | 'DD/MM'): string {
@@ -312,6 +379,56 @@ function resolveTxCategory(
   return resolveCategoryInfo(categoryPath, categoryChoices, categories);
 }
 
+type SplitItemInput = {
+  idx: number;
+  date: string;
+  total: number;
+  description: string;
+  accInfo: ReturnType<typeof resolveAccountInfo>;
+  baseNotes: string | null;
+  validated: boolean;
+  paymentMethodId: number | null;
+  splits: ParsedSplit[];
+};
+
+function resolveSplitItem(
+  input: SplitItemInput,
+  categoryChoices: Map<string, CategoryChoice>,
+  categories: Category[],
+): PreviewItem {
+  const { idx, date, total, description, accInfo } = input;
+  const res = resolveSplits(input.splits, total, input.baseNotes, categoryChoices, categories);
+  if (res.status !== 'ok') {
+    return {
+      kind: 'skip',
+      idx,
+      date,
+      amount: Math.abs(total),
+      description,
+      reason: res.status === 'invalid' ? 'invalid_split' : 'skipped_category',
+    };
+  }
+  return {
+    kind: 'transaction',
+    idx,
+    date,
+    type: total >= 0 ? 'income' : 'expense',
+    amount: Math.abs(total),
+    description,
+    accountId: accInfo.accountId,
+    newAccountSourceName: accInfo.newAccountSourceName,
+    accountName: accInfo.accountName,
+    subcategoryId: null,
+    newSubcategoryKey: null,
+    categoryLabel: res.categoryLabel,
+    categoryIsNew: res.isNew,
+    notes: res.notes,
+    validated: input.validated,
+    paymentMethodId: input.paymentMethodId,
+    splits: res.splits,
+  };
+}
+
 export function resolvePreview(
   parsed: ParsedLedger,
   dateFormat: 'MM/DD' | 'DD/MM',
@@ -349,6 +466,27 @@ export function resolvePreview(
         description: tx.description,
         reason: 'unmapped_account',
       });
+      continue;
+    }
+
+    if (tx.splits && tx.splits.length > 0) {
+      items.push(
+        resolveSplitItem(
+          {
+            idx: i,
+            date,
+            total: tx.amount,
+            description: tx.description,
+            accInfo,
+            baseNotes: tx.memo,
+            validated: true,
+            paymentMethodId: null,
+            splits: tx.splits,
+          },
+          categoryChoices,
+          categories,
+        ),
+      );
       continue;
     }
 
@@ -457,6 +595,7 @@ export function buildExecuteBody(
     } else {
       ensureNewAccount(item.newAccountSourceName);
       ensureNewSubcategory(item.newSubcategoryKey);
+      for (const split of item.splits ?? []) ensureNewSubcategory(split.newSubcategoryKey);
       transactions.push({
         account_id: item.accountId,
         new_account_source_name: item.newAccountSourceName,
@@ -469,6 +608,13 @@ export function buildExecuteBody(
         notes: item.notes,
         validated: item.validated,
         payment_method_id: item.paymentMethodId,
+        ...(item.splits && {
+          splits: item.splits.map((s) => ({
+            subcategory_id: s.subcategoryId,
+            new_subcategory_key: s.newSubcategoryKey,
+            amount: s.amount,
+          })),
+        }),
       });
     }
   }
@@ -611,6 +757,27 @@ export function resolveXhbPreview(
         description: tx.description,
         reason: 'unmapped_account',
       });
+      continue;
+    }
+
+    if (tx.splits && tx.splits.length > 0) {
+      items.push(
+        resolveSplitItem(
+          {
+            idx: offset + i,
+            date: tx.date,
+            total: tx.amount,
+            description: tx.description,
+            accInfo,
+            baseNotes: tx.notes,
+            validated: tx.validated,
+            paymentMethodId: paymodeChoices.get(tx.paymode) ?? null,
+            splits: tx.splits,
+          },
+          categoryChoices,
+          categories,
+        ),
+      );
       continue;
     }
 

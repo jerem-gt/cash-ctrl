@@ -718,6 +718,11 @@ export interface ImportExecuteBody {
     notes: string | null;
     validated: boolean;
     payment_method_id: number | null;
+    splits?: {
+      subcategory_id: number | null;
+      new_subcategory_key: string | null;
+      amount: number;
+    }[];
   }[];
   transfers: {
     from_account_id: number | null;

@@ -15,6 +15,12 @@ export interface NewSubcategoryInput {
   subcategory_name: string;
 }
 
+export interface ImportSplitInput {
+  subcategory_id: number | null;
+  new_subcategory_key: string | null;
+  amount: number;
+}
+
 export interface ImportTransactionInput {
   account_id: number | null;
   new_account_source_name: string | null;
@@ -27,6 +33,7 @@ export interface ImportTransactionInput {
   notes: string | null;
   validated: boolean;
   payment_method_id: number | null;
+  splits?: ImportSplitInput[];
 }
 
 export interface ImportTransferInput {

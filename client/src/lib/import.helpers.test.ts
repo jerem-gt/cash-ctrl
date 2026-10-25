@@ -12,8 +12,11 @@ import {
   resolveAccountInfo,
   resolveCategoryInfo,
   resolvePreview,
+  resolveXhbPreview,
   safeParseDate,
 } from './import.helpers';
+import type { ParsedSplit } from './import-model';
+import type { XhbParseResult, XhbTransaction } from './xhb-parser';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -890,5 +893,153 @@ describe('resolvePreview — descriptionRuleMatcher', () => {
     if (items[0].kind === 'transaction') {
       expect(items[0].subcategoryId).toBe(10);
     }
+  });
+});
+
+// ─── Ventilations (QIF + XHB) ─────────────────────────────────────────────────
+
+describe('ventilations', () => {
+  const accChoices = new Map<string, AccountChoice>([['ACC1', { action: 'map', account_id: 1 }]]);
+  const catChoices = new Map<string, CategoryChoice>([
+    ['Alim', { action: 'map', subcategory_id: 10 }],
+    [
+      'Loisirs:Nouveau',
+      {
+        action: 'create',
+        existing_category_id: 2,
+        new_category_name: '',
+        new_category_icon: '',
+        subcategory_name: 'Nouveau',
+      },
+    ],
+  ]);
+
+  const qifLedger = (tx: ReturnType<typeof makeTx> & { splits?: ParsedSplit[] }) => ({
+    accounts: ['ACC1'],
+    uniqueCategories: [],
+    uniqueTransferTargets: [],
+    detectedDateFormat: 'DD/MM' as const,
+    transactions: [tx],
+  });
+
+  const xhbParsed = (tx: Partial<XhbTransaction>): XhbParseResult => ({
+    accounts: ['ACC1'],
+    accountDetails: new Map(),
+    transfers: [],
+    uniqueCategories: [],
+    uniquePaymodes: [],
+    transactions: [
+      {
+        accountName: 'ACC1',
+        date: '2024-01-15',
+        amount: -100,
+        description: 'Courses',
+        categoryString: '',
+        paymode: 0,
+        notes: null,
+        validated: true,
+        ...tx,
+      },
+    ],
+  });
+
+  const good: ParsedSplit[] = [
+    { category: 'Alim', amount: -60, memo: 'Viande' },
+    { category: 'Loisirs:Nouveau', amount: -40, memo: null },
+  ];
+
+  const runQif = (splits: ParsedSplit[], choices = catChoices, matcher?: () => number | null) =>
+    resolvePreview(
+      qifLedger({ ...makeTx({ amount: -100, memo: 'Note' }), splits }),
+      'DD/MM',
+      accChoices,
+      choices,
+      [ACCOUNT],
+      CATEGORIES,
+      matcher,
+    );
+  const runXhb = (splits: ParsedSplit[], choices = catChoices) =>
+    resolveXhbPreview(
+      xhbParsed({ splits, notes: 'Note' }),
+      accChoices,
+      choices,
+      new Map(),
+      [ACCOUNT],
+      CATEGORIES,
+    );
+
+  const reasonOf = (item: PreviewItem) => (item.kind === 'skip' ? item.reason : null);
+
+  it.each([
+    ['QIF', runQif],
+    ['XHB', runXhb],
+  ])('%s : produit un item ventilé avec libellé joint et mémos dans les notes', (_n, run) => {
+    const [item] = run(good);
+    expect(item.kind).toBe('transaction');
+    if (item.kind !== 'transaction') return;
+    expect(item.subcategoryId).toBeNull();
+    expect(item.newSubcategoryKey).toBeNull();
+    expect(item.categoryLabel).toBe('Alimentation / Supermarché + Loisirs / Nouveau');
+    expect(item.categoryIsNew).toBe(true);
+    expect(item.notes).toBe('Note · Viande');
+    expect(item.amount).toBe(100);
+    expect(item.type).toBe('expense');
+    expect(item.splits).toEqual([
+      { subcategoryId: 10, newSubcategoryKey: null, amount: 60 },
+      { subcategoryId: null, newSubcategoryKey: 'Loisirs:Nouveau', amount: 40 },
+    ]);
+  });
+
+  it.each([
+    ['QIF', runQif],
+    ['XHB', runXhb],
+  ])(
+    '%s : invalid_split pour somme fausse, signes mélangés, catégorie vide, [Compte]',
+    (_n, run) => {
+      const bad = [
+        [
+          { category: 'Alim', amount: -60, memo: null },
+          { category: 'Alim', amount: -30, memo: null },
+        ],
+        [
+          { category: 'Alim', amount: -150, memo: null },
+          { category: 'Alim', amount: 50, memo: null },
+        ],
+        [
+          { category: '', amount: -60, memo: null },
+          { category: 'Alim', amount: -40, memo: null },
+        ],
+        [
+          { category: '[Epargne]', amount: -60, memo: null },
+          { category: 'Alim', amount: -40, memo: null },
+        ],
+      ];
+      for (const splits of bad) expect(reasonOf(run(splits)[0])).toBe('invalid_split');
+    },
+  );
+
+  it.each([
+    ['QIF', runQif],
+    ['XHB', runXhb],
+  ])('%s : skipped_category si une ligne est ignorée', (_n, run) => {
+    const choices = new Map(catChoices).set('Alim', { action: 'skip' });
+    expect(reasonOf(run(good, choices)[0])).toBe('skipped_category');
+  });
+
+  it('QIF : une règle de catégorisation ne remplace pas la ventilation', () => {
+    const [item] = runQif(good, catChoices, () => 20);
+    expect(item.kind === 'transaction' && item.splits).toHaveLength(2);
+    expect(item.kind === 'transaction' && item.subcategoryId).toBeNull();
+  });
+
+  it("l'ExecuteBody contient les splits et la nouvelle sous-catégorie", () => {
+    const items = runQif(good);
+    const body = buildExecuteBody(items, new Set([0]), accChoices, catChoices, '(none)');
+    expect(body.transactions[0].subcategory_id).toBeNull();
+    expect(body.transactions[0].splits).toEqual([
+      { subcategory_id: 10, new_subcategory_key: null, amount: 60 },
+      { subcategory_id: null, new_subcategory_key: 'Loisirs:Nouveau', amount: 40 },
+    ]);
+    expect(body.newSubcategories.map((s) => s.source_key)).toEqual(['Loisirs:Nouveau']);
   });
 });

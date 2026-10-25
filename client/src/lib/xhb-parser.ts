@@ -1,3 +1,5 @@
+import type { ParsedSplit } from './import-model';
+
 export interface XhbAccount {
   key: number;
   name: string;
@@ -14,6 +16,7 @@ export interface XhbTransaction {
   paymode: number;
   notes: string | null;
   validated: boolean;
+  splits?: ParsedSplit[];
 }
 
 export interface XhbTransfer {
@@ -133,6 +136,18 @@ function buildTransfers(
   return transfers;
 }
 
+function buildSplits(el: Element, categoryMap: CategoryMap): ParsedSplit[] | undefined {
+  const scat = a(el, 'scat');
+  if (!scat) return undefined;
+  const amounts = a(el, 'samt').split('||');
+  const memos = a(el, 'smem').split('||');
+  return scat.split('||').map((key, i) => ({
+    category: buildCategoryString(Number.parseInt(key, 10) || 0, categoryMap),
+    amount: Number.parseFloat(amounts[i] ?? '0') || 0,
+    memo: memos[i]?.trim() || null,
+  }));
+}
+
 function buildTransactions(
   regularOps: Element[],
   accountMap: Map<number, XhbAccount>,
@@ -144,6 +159,7 @@ function buildTransactions(
     const acc = accountMap.get(n(el, 'account'));
     if (!acc) continue;
     const info = a(el, 'info');
+    const splits = buildSplits(el, categoryMap);
     transactions.push({
       accountName: acc.name,
       date: gDateToISO(n(el, 'date')),
@@ -153,6 +169,7 @@ function buildTransactions(
       paymode: resolvePaymode(el, payeeMap),
       notes: info || null,
       validated: n(el, 'st') > 0,
+      ...(splits && { splits }),
     });
   }
   return transactions;
@@ -214,7 +231,13 @@ export function parseXhb(content: string): XhbParseResult {
     accountDetails,
     transactions,
     transfers,
-    uniqueCategories: [...new Set(transactions.map((tx) => tx.categoryString).filter(Boolean))],
+    uniqueCategories: [
+      ...new Set(
+        transactions
+          .flatMap((tx) => [tx.categoryString, ...(tx.splits ?? []).map((s) => s.category)])
+          .filter(Boolean),
+      ),
+    ],
     uniquePaymodes: collectUniquePaymodes(transactions, transfers),
   };
 }

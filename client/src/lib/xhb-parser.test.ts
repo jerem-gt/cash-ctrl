@@ -145,6 +145,84 @@ describe('parseXhb', () => {
     });
   });
 
+  describe('ventilations', () => {
+    const SPLIT_CATS = `
+      <cat key="20" name="Logement"/>
+      <cat key="53" parent="20" flags="1" name="Loyer"/>
+      <cat key="60" name="Assurance"/>
+      <cat key="62" parent="60" flags="1" name="Habitation"/>
+    `;
+
+    it('parse une dépense ventilée en 4 lignes', () => {
+      const xhb = makeXhb(`
+        ${BASE_ACCOUNT}
+        ${SPLIT_CATS}
+        <ope date="734878" amount="-516.76999999999998" account="1" paymode="11" st="2" flags="256" scat="53||20||60||62" samt="-367.47000000000003||-118.31||-18.91||-12.08" smem="Loyer||Régularisation||||"/>
+      `);
+      const result = parseXhb(xhb);
+      const tx = result.transactions[0];
+      expect(tx.categoryString).toBe('');
+      expect(tx.splits).toEqual([
+        { category: 'Logement:Loyer', amount: -367.47000000000003, memo: 'Loyer' },
+        { category: 'Logement', amount: -118.31, memo: 'Régularisation' },
+        { category: 'Assurance', amount: -18.91, memo: null },
+        { category: 'Assurance:Habitation', amount: -12.08, memo: null },
+      ]);
+      expect(result.uniqueCategories).toEqual([
+        'Logement:Loyer',
+        'Logement',
+        'Assurance',
+        'Assurance:Habitation',
+      ]);
+    });
+
+    it('parse un revenu ventilé en 2 lignes avec mémos', () => {
+      const xhb = makeXhb(`
+        ${BASE_ACCOUNT}
+        ${SPLIT_CATS}
+        <ope date="734267" amount="61.43" account="1" st="2" flags="258" scat="60||20" samt="36.729999999999997||24.699999999999999" smem="Remise exceptionnelle 2011||Remise"/>
+      `);
+      const tx = parseXhb(xhb).transactions[0];
+      expect(tx.splits).toEqual([
+        { category: 'Assurance', amount: 36.73, memo: 'Remise exceptionnelle 2011' },
+        { category: 'Logement', amount: 24.7, memo: 'Remise' },
+      ]);
+    });
+
+    it('conserve une catégorie répétée et dédoublonne uniqueCategories', () => {
+      const xhb = makeXhb(`
+        ${BASE_ACCOUNT}
+        ${SPLIT_CATS}
+        <ope date="734869" amount="-30" account="1" st="0" flags="256" scat="60||60" samt="-10||-20" smem="||"/>
+      `);
+      const result = parseXhb(xhb);
+      expect(result.transactions[0].splits).toHaveLength(2);
+      expect(result.uniqueCategories).toEqual(['Assurance']);
+    });
+
+    it('donne une catégorie vide pour une clé à 0 ou inconnue, hors uniqueCategories', () => {
+      const xhb = makeXhb(`
+        ${BASE_ACCOUNT}
+        ${SPLIT_CATS}
+        <ope date="734869" amount="-30" account="1" st="0" flags="256" scat="0||999" samt="-10||-20" smem="||"/>
+      `);
+      const result = parseXhb(xhb);
+      expect(result.transactions[0].splits?.map((s) => s.category)).toEqual(['', '']);
+      expect(result.uniqueCategories).toEqual([]);
+    });
+
+    it("n'ajoute pas splits à une opération normale", () => {
+      const xhb = makeXhb(`
+        ${BASE_ACCOUNT}
+        ${SPLIT_CATS}
+        <ope date="734869" amount="-20" account="1" category="60" wording="T" st="0" flags="2"/>
+      `);
+      const tx = parseXhb(xhb).transactions[0];
+      expect(tx.splits).toBeUndefined();
+      expect('splits' in tx).toBe(false);
+    });
+  });
+
   describe('virements', () => {
     it('déduplique les virements par kxfer', () => {
       const xhb = makeXhb(`

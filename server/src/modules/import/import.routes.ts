@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
+import { toCents } from '../../lib/money.js';
 import { zodToApiError } from '../../lib/routeHelpers.js';
 import { dateSchema, optionalDateSchema } from '../../lib/validators.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -29,6 +30,16 @@ const newSubcategorySchema = z
     message: 'category_id ou new_category_name requis',
   });
 
+const importSplitSchema = z
+  .object({
+    subcategory_id: z.number().int().positive().nullable(),
+    new_subcategory_key: z.string().nullable(),
+    amount: z.number().positive(),
+  })
+  .refine((d) => d.subcategory_id !== null || d.new_subcategory_key !== null, {
+    message: 'subcategory_id ou new_subcategory_key requis',
+  });
+
 const transactionSchema = z
   .object({
     account_id: z.number().int().positive().nullable(),
@@ -42,10 +53,24 @@ const transactionSchema = z
     notes: z.string().max(1000).nullable(),
     validated: z.boolean(),
     payment_method_id: z.number().int().positive().nullable().default(null),
+    splits: z.array(importSplitSchema).min(1).optional(),
   })
   .refine((d) => d.account_id !== null || d.new_account_source_name !== null, {
     message: 'account_id ou new_account_source_name requis',
-  });
+  })
+  .refine(
+    (d) => d.splits === undefined || (d.subcategory_id === null && d.new_subcategory_key === null),
+    {
+      message: 'subcategory_id et new_subcategory_key doivent être null avec des splits',
+      path: ['splits'],
+    },
+  )
+  .refine(
+    (d) =>
+      d.splits === undefined ||
+      d.splits.reduce((sum, s) => sum + toCents(s.amount), 0) === toCents(d.amount),
+    { message: 'la somme des splits doit être égale au montant', path: ['splits'] },
+  );
 
 const transferSchema = z
   .object({
@@ -66,12 +91,24 @@ const transferSchema = z
     message: 'to_account_id ou to_account_source_name requis',
   });
 
-export const executeSchema = z.object({
-  newAccounts: z.array(newAccountSchema),
-  newSubcategories: z.array(newSubcategorySchema),
-  transactions: z.array(transactionSchema),
-  transfers: z.array(transferSchema),
-});
+export const executeSchema = z
+  .object({
+    newAccounts: z.array(newAccountSchema),
+    newSubcategories: z.array(newSubcategorySchema),
+    transactions: z.array(transactionSchema),
+    transfers: z.array(transferSchema),
+  })
+  .refine(
+    (d) => {
+      const keys = new Set(d.newSubcategories.map((ns) => ns.source_key));
+      return d.transactions.every((tx) =>
+        (tx.splits ?? []).every(
+          (s) => s.new_subcategory_key === null || keys.has(s.new_subcategory_key),
+        ),
+      );
+    },
+    { message: 'new_subcategory_key de split absent de newSubcategories', path: ['transactions'] },
+  );
 
 const splitSchema = z.object({
   subcategory_id: z.number().int().positive(),

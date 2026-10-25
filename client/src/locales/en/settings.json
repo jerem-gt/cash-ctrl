@@ -113,7 +113,8 @@
     "skip_reason": {
       "unmapped_account": "Unmapped account",
       "skipped_category": "Skipped category",
-      "transfer_no_peer": "Transfer without counterpart"
+      "transfer_no_peer": "Transfer without counterpart",
+      "invalid_split": "Invalid split"
     },
     "category_mode_title": "Category source",
     "category_mode_file": "Use categories from the imported file",

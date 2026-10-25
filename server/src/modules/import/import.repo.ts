@@ -6,6 +6,7 @@ import type { FullExport } from '../export/export.types.js';
 import type {
   ImportExecuteBody,
   ImportResult,
+  ImportSplitInput,
   ImportTransactionInput,
   ImportTransferInput,
   JsonFullImportResult,
@@ -28,6 +29,7 @@ type ImportDeps = {
   insertCategoryStmt: Statement;
   insertSubcategoryStmt: Statement;
   insertTxStmt: Statement;
+  insertSplitStmt: Statement;
   setPeerStmt: Statement;
 };
 
@@ -53,6 +55,23 @@ function buildSubcategoryMap(
   return subcategoryMap;
 }
 
+function insertImportSplits(
+  deps: ImportDeps,
+  userId: number,
+  transactionId: number,
+  splits: ImportSplitInput[],
+  subcategoryMap: Map<string, number>,
+): void {
+  for (const split of splits) {
+    const subcategoryId =
+      split.new_subcategory_key === null
+        ? split.subcategory_id
+        : (subcategoryMap.get(split.new_subcategory_key) ?? null);
+    if (subcategoryId === null) throw new Error('Sous-catégorie de ventilation introuvable');
+    deps.insertSplitStmt.run(userId, transactionId, subcategoryId, toCents(split.amount));
+  }
+}
+
 function insertImportTransactions(
   deps: ImportDeps,
   userId: number,
@@ -64,11 +83,15 @@ function insertImportTransactions(
   for (const tx of transactions) {
     const accountId = resolveAccount(accountMap, tx.account_id, tx.new_account_source_name);
     if (accountId === null) continue;
-    const subcategoryId =
-      tx.new_subcategory_key === null
-        ? tx.subcategory_id
-        : (subcategoryMap.get(tx.new_subcategory_key) ?? null);
-    deps.insertTxStmt.run({
+    const hasSplits = tx.splits !== undefined && tx.splits.length > 0;
+    let subcategoryId: number | null = null;
+    if (!hasSplits) {
+      subcategoryId =
+        tx.new_subcategory_key === null
+          ? tx.subcategory_id
+          : (subcategoryMap.get(tx.new_subcategory_key) ?? null);
+    }
+    const res = deps.insertTxStmt.run({
       userId,
       accountId,
       type: tx.type,
@@ -80,6 +103,7 @@ function insertImportTransactions(
       notes: tx.notes,
       validated: tx.validated ? 1 : 0,
     });
+    insertImportSplits(deps, userId, Number(res.lastInsertRowid), tx.splits ?? [], subcategoryMap);
     count++;
   }
   return count;
@@ -648,6 +672,7 @@ export function createImportRepo(db: Database) {
     insertCategoryStmt,
     insertSubcategoryStmt,
     insertTxStmt,
+    insertSplitStmt,
     setPeerStmt,
   };
 
