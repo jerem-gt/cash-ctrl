@@ -18,13 +18,14 @@
 
 ### Server (`/server`)
 - **Test**: `npm run test` (Vitest)
+- **Types (tests inclus)**: `npm run typecheck` (`tsc --noEmit` sur tout `src` ; Vitest et `tsup` ne vérifient pas les types)
 - *Note : Utilise les scripts npm définis dans `/server/package.json` pour le développement.*
 
 ### Hook pre-commit
 Le projet utilise Husky et lint-staged pour corriger automatiquement les problèmes de lint avant chaque commit. Le hook exécute `lint-staged` qui applique ESLint et Stylelint sur les fichiers stagés.
 
 ### CI (`.github/workflows/ci.yml`)
-Le job CI lance lint, vérification des types des tests client (`typecheck:test`) et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
+Le job CI lance lint, vérification des types (client `typecheck:test`, server `typecheck`) et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
 - Clé de cache : hash de `package-lock.json` + `eslint.config.js` → toute modification de l'un des deux invalide le cache (run suivant plus lent, le temps de le reconstruire).
 - `--cache-strategy content` est **obligatoire** : le checkout réécrit les mtimes à chaque run, la stratégie `metadata` par défaut invaliderait tout.
 - Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans `ci.yml`.
@@ -103,7 +104,7 @@ Pour tout ajout ou modification non trivial, mettre à jour systématiquement :
 
 ## Review après développement
 Toute implémentation non triviale (directe ou déléguée à un sous-agent) se termine par une review :
-1. Vérifications vertes : tests server + client, `typecheck:test`, build client, lint des fichiers touchés.
+1. Vérifications vertes : tests server + client, `typecheck:test` (client) + `typecheck` (server), build client, lint des fichiers touchés.
 2. Commit de la feature (après accord de l'utilisateur).
 3. Skill `mattpocock-skills:code-review` depuis le commit parent : source **Spec** = la spec validée (mémoire, issue ou ticket), source **Standards** = ce fichier.
 4. Présenter les deux axes, puis corriger les findings validés par l'utilisateur dans un commit dédié.

@@ -415,7 +415,7 @@ describe('favoris', () => {
     expect(byId(b).favorite_order).toBe(0);
   });
 
-  const reorder = (items: unknown) => ctx.agent.put('/api/accounts/favorites/reorder').send(items);
+  const reorder = (items: object[]) => ctx.agent.put('/api/accounts/favorites/reorder').send(items);
 
   it('PUT /favorites/reorder retourne 409 pour un compte non favori', async () => {
     const a = await createAccount('A');
