@@ -113,7 +113,8 @@
     "skip_reason": {
       "unmapped_account": "Compte non mappé",
       "skipped_category": "Catégorie ignorée",
-      "transfer_no_peer": "Virement sans contrepartie"
+      "transfer_no_peer": "Virement sans contrepartie",
+      "invalid_split": "Ventilation invalide"
     },
     "category_mode_title": "Source des catégories",
     "category_mode_file": "Utiliser les catégories du fichier importé",

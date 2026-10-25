@@ -319,3 +319,89 @@ describe('findTransferPeer', () => {
     expect(findTransferPeer(txs, 0, new Set())).toBe(-1);
   });
 });
+
+describe('parseQif — ventilations', () => {
+  it('parse une ventilation à 2 lignes en ignorant la ligne L', () => {
+    const qif = `
+D15/01/2024
+T-100.00
+PCourses
+LFood:Groceries
+SFood:Groceries
+$-60.00
+SHome:Cleaning
+$-40.00
+^
+`.trim();
+    const result = parseQif(qif);
+    const tx = result.transactions[0];
+    expect(tx.category).toBe('');
+    expect(tx.isTransfer).toBe(false);
+    expect(tx.splits).toEqual([
+      { category: 'Food:Groceries', amount: -60, memo: null },
+      { category: 'Home:Cleaning', amount: -40, memo: null },
+    ]);
+    expect(result.uniqueCategories).toEqual(['Food:Groceries', 'Home:Cleaning']);
+  });
+
+  it('gère L--Split-- sans le prendre pour une catégorie', () => {
+    const qif = `
+D15/01/2024
+T-100.00
+PCourses
+L--Split--
+SFood
+$-70.00
+SHome
+$-30.00
+^
+`.trim();
+    const result = parseQif(qif);
+    expect(result.transactions[0].category).toBe('');
+    expect(result.uniqueCategories).toEqual(['Food', 'Home']);
+  });
+
+  it("n'ajoute pas les catégories [Compte] des lignes à uniqueCategories", () => {
+    const qif = `
+D15/01/2024
+T-100.00
+PMixte
+L--Split--
+SFood
+$-70.00
+S[Savings]
+$-30.00
+^
+`.trim();
+    const result = parseQif(qif);
+    expect(result.transactions[0].splits?.[1].category).toBe('[Savings]');
+    expect(result.transactions[0].isTransfer).toBe(false);
+    expect(result.uniqueCategories).toEqual(['Food']);
+  });
+
+  it('récupère les mémos E de chaque ligne', () => {
+    const qif = `
+D15/01/2024
+T-100.00
+PCourses
+MNote globale
+SFood
+$-60.00
+EViande
+SHome
+$-40.00
+^
+`.trim();
+    const tx = parseQif(qif).transactions[0];
+    expect(tx.memo).toBe('Note globale');
+    expect(tx.splits).toEqual([
+      { category: 'Food', amount: -60, memo: 'Viande' },
+      { category: 'Home', amount: -40, memo: null },
+    ]);
+  });
+
+  it("n'ajoute pas splits à une transaction normale", () => {
+    const tx = parseQif(SIMPLE_QIF).transactions[0];
+    expect('splits' in tx).toBe(false);
+  });
+});

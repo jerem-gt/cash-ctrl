@@ -406,6 +406,105 @@ describe('POST /api/import/structured', () => {
     expect(sc?.category_id).toBe(cat?.id);
   });
 
+  // ─── Ventilations ─────────────────────────────────────────────────────────
+
+  describe('ventilations', () => {
+    const countTx = () =>
+      (ctx.db.prepare('SELECT COUNT(*) AS n FROM transactions').get() as { n: number }).n;
+
+    const splitTx = (overrides: Record<string, unknown> = {}) => ({
+      ...VALID_TX,
+      account_id: accountId,
+      amount: 100.1,
+      subcategory_id: null,
+      new_subcategory_key: null,
+      splits: [
+        { subcategory_id: SEED.SUBCAT_SUPERMARCHE, new_subcategory_key: null, amount: 60.05 },
+        { subcategory_id: null, new_subcategory_key: 'Food:Out', amount: 40.05 },
+      ],
+      ...overrides,
+    });
+    const newSubcat = { source_key: 'Food:Out', category_id: 3, subcategory_name: 'Restaurant' };
+
+    it('stocke la transaction sans sous-catégorie et ses lignes de ventilation', async () => {
+      const res = await ctx.agent
+        .post('/api/import/structured')
+        .send({ ...EMPTY_BODY, newSubcategories: [newSubcat], transactions: [splitTx()] });
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual({ transactions: 1, transfers: 0 });
+
+      const row = ctx.db
+        .prepare('SELECT id, amount, subcategory_id FROM transactions WHERE account_id = ?')
+        .get(accountId) as { id: number; amount: number; subcategory_id: number | null };
+      expect(row.subcategory_id).toBeNull();
+      expect(row.amount).toBe(10010);
+
+      const newSc = ctx.db
+        .prepare("SELECT id FROM subcategories WHERE name = 'Restaurant'")
+        .get() as {
+        id: number;
+      };
+      const splits = ctx.db
+        .prepare(
+          'SELECT subcategory_id, amount FROM transaction_splits WHERE transaction_id = ? ORDER BY id',
+        )
+        .all(row.id);
+      expect(splits).toEqual([
+        { subcategory_id: SEED.SUBCAT_SUPERMARCHE, amount: 6005 },
+        { subcategory_id: newSc.id, amount: 4005 },
+      ]);
+    });
+
+    it('retourne 400 sans rien écrire si la somme des ventilations est fausse', async () => {
+      const before = countTx();
+      const bad = splitTx({
+        splits: [
+          { subcategory_id: SEED.SUBCAT_SUPERMARCHE, new_subcategory_key: null, amount: 60 },
+          { subcategory_id: SEED.SUBCAT_CINEMA, new_subcategory_key: null, amount: 40 },
+        ],
+      });
+      const res = await ctx.agent
+        .post('/api/import/structured')
+        .send({ ...EMPTY_BODY, transactions: [{ ...VALID_TX, account_id: accountId }, bad] });
+      expect(res.status).toBe(400);
+      expect(countTx()).toBe(before);
+      const n = (
+        ctx.db.prepare('SELECT COUNT(*) AS n FROM transaction_splits').get() as { n: number }
+      ).n;
+      expect(n).toBe(0);
+    });
+
+    it('retourne 400 si une sous-catégorie et des ventilations sont fournies ensemble', async () => {
+      const before = countTx();
+      const res = await ctx.agent.post('/api/import/structured').send({
+        ...EMPTY_BODY,
+        newSubcategories: [newSubcat],
+        transactions: [splitTx({ subcategory_id: SEED.SUBCAT_SUPERMARCHE })],
+      });
+      expect(res.status).toBe(400);
+      expect(countTx()).toBe(before);
+    });
+
+    it('retourne 400 si une ligne n a ni sous-catégorie ni clé', async () => {
+      const res = await ctx.agent.post('/api/import/structured').send({
+        ...EMPTY_BODY,
+        transactions: [
+          splitTx({
+            splits: [{ subcategory_id: null, new_subcategory_key: null, amount: 100.1 }],
+          }),
+        ],
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si la clé de nouvelle sous-catégorie est inconnue', async () => {
+      const res = await ctx.agent
+        .post('/api/import/structured')
+        .send({ ...EMPTY_BODY, transactions: [splitTx()] });
+      expect(res.status).toBe(400);
+    });
+  });
+
   // ─── Cas mixte ────────────────────────────────────────────────────────────
 
   it('importe transactions et virements en une seule requête', async () => {

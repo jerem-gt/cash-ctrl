@@ -1,3 +1,10 @@
+/** Ligne de ventilation d'une transaction importée (montant signé). */
+export interface ParsedSplit {
+  category: string;
+  amount: number;
+  memo: string | null;
+}
+
 export interface ParsedTransaction {
   accountName: string;
   date: string;
@@ -8,6 +15,7 @@ export interface ParsedTransaction {
   cleared: boolean;
   isTransfer: boolean;
   transferTarget: string | null;
+  splits?: ParsedSplit[];
 }
 
 export interface ParsedLedger {
