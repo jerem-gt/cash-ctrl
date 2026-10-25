@@ -60,11 +60,11 @@ function parseSplits(lines: string[]): ParsedSplit[] {
   const splits: ParsedSplit[] = [];
   for (const l of lines) {
     const value = l.slice(1).trim();
-    if (l[0] === 'S') {
+    if (l.startsWith('S')) {
       splits.push({ category: value, amount: Number.NaN, memo: null });
-    } else if (splits.length > 0 && l[0] === '$') {
+    } else if (splits.length > 0 && l.startsWith('$')) {
       splits.at(-1)!.amount = Number.parseFloat(value.replaceAll(/[,\s]/g, ''));
-    } else if (splits.length > 0 && l[0] === 'E') {
+    } else if (splits.length > 0 && l.startsWith('E')) {
       splits.at(-1)!.memo = value || null;
     }
   }
