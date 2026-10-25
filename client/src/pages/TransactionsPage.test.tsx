@@ -17,6 +17,17 @@ describe('TransactionsPage', () => {
     expect(await screen.findByText('1 transaction(s)')).toBeInTheDocument();
   });
 
+  it("pré-remplit les champs de filtre depuis l'URL", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TransactionsPage />, {
+      initialEntries: ['/transactions?q=cafe&type=income&amount_min=12.5'],
+    });
+    expect(screen.getByPlaceholderText(/libellé ou notes/i)).toHaveValue('cafe');
+    expect(screen.getByLabelText(/choisir un type/i)).toHaveValue('income');
+    await user.click(screen.getByRole('button', { name: /filtres avancés/i }));
+    expect(screen.getByLabelText(/montant minimum/i)).toHaveValue('12.5');
+  });
+
   it("soumet le formulaire d'édition d'une transaction (intégration page → modal → API)", async () => {
     const user = userEvent.setup();
     renderWithProviders(<TransactionsPage />);

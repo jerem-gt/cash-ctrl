@@ -345,6 +345,23 @@ describe('TransactionsFilters', () => {
     vi.useRealTimers();
   });
 
+  it('met à jour les inputs montants quand la valeur externe change', () => {
+    const { rerender } = renderWithProviders(<TransactionsFilters {...defaultProps} />);
+    openAdvanced();
+
+    rerender(
+      <TransactionsFilters {...defaultProps} filters={{ amount_min: 10, amount_max: 99.5 }} />,
+    );
+
+    expect(screen.getByLabelText(/montant minimum/i)).toHaveValue('10');
+    expect(screen.getByLabelText(/montant maximum/i)).toHaveValue('99.5');
+
+    rerender(<TransactionsFilters {...defaultProps} filters={{}} />);
+
+    expect(screen.getByLabelText(/montant minimum/i)).toHaveValue('');
+    expect(screen.getByLabelText(/montant maximum/i)).toHaveValue('');
+  });
+
   // --- Moyen de paiement ---
 
   it('appelle onFilterChange lors du changement de moyen de paiement', () => {

@@ -1,8 +1,10 @@
 import { type Filters, Transaction } from '@cashctrl/types';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 
 import { showToast } from '@/components/ui';
+import { parseTxSearch, toTxSearch } from '@/features/transactions/lib/filtersUrl';
 import type { TxFormState } from '@/features/transactions/lib/txForm';
 import { useAccounts } from '@/hooks/useAccounts.ts';
 import { useCategories } from '@/hooks/useCategories.ts';
@@ -26,30 +28,27 @@ type ModalState =
 
 const initialModalsState: ModalState = { type: 'none' };
 
-export function useTransactionsManager(
-  initialAccountId?: number,
-  initialFilters?: Partial<Filters>,
-  resyncKey?: string,
-) {
+export function useTransactionsManager(initialAccountId?: number) {
   const { t } = useTranslation('transactions');
 
-  // --- ÉTATS DE NAVIGATION / DONNÉES ---
-  const [filters, setFilters] = useState<Filters>({
-    account_id: initialAccountId,
-    ...initialFilters,
-  });
-  const [page, setPage] = useState(1);
-
-  // Resynchronise le filtre description à chaque navigation (resyncKey = location.key), y compris son nettoyage.
-  const [lastResyncKey, setLastResyncKey] = useState(resyncKey);
-  if (lastResyncKey !== resyncKey) {
-    setLastResyncKey(resyncKey);
-    setFilters((prev) => ({
-      ...prev,
-      description_contains: initialFilters?.description_contains,
-    }));
-    setPage(1);
-  }
+  // --- ÉTATS DE NAVIGATION / DONNÉES (l'URL est la source de vérité) ---
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { filters, page } = useMemo(() => {
+    const parsed = parseTxSearch(searchParams);
+    // Sur la page d'un compte, account_id vient de la route et jamais de l'URL.
+    return {
+      filters:
+        initialAccountId === undefined
+          ? parsed.filters
+          : { ...parsed.filters, account_id: initialAccountId },
+      page: parsed.page,
+    };
+  }, [searchParams, initialAccountId]);
+  const writeUrl = (next: Filters, nextPage: number) => {
+    const toWrite = initialAccountId === undefined ? next : { ...next, account_id: undefined };
+    setSearchParams(toTxSearch(toWrite, nextPage), { replace: true });
+  };
+  const setPage = (p: number) => writeUrl(filters, p);
   const [limit, setLimit] = useState(() => {
     const stored = Number(safeStorage.getItem('cashctrl.txLimit'));
     return LIMIT_OPTIONS.includes(stored) ? stored : DEFAULT_LIMIT;
@@ -90,14 +89,29 @@ export function useTransactionsManager(
 
   // --- ACTIONS (Logique métier) ---
   const handleFilterChange = (patch: Partial<Filters>) => {
-    setFilters((prev) => ({ ...prev, ...patch }));
-    setPage(1); // On reset toujours la page lors d'un filtre
+    writeUrl({ ...filters, ...patch }, 1); // On reset toujours la page lors d'un filtre
   };
   const handleLimitChange = (newLimit: number) => {
     safeStorage.setItem('cashctrl.txLimit', String(newLimit));
     setLimit(newLimit);
     setPage(1);
   };
+
+  // Page hors limites (ex. URL périmée) : on revient à la dernière page une fois la réponse reçue.
+  const totalPagesKnown = result?.totalPages;
+  useEffect(() => {
+    if (isLoading || isFetching || totalPagesKnown === undefined) return;
+    const last = Math.max(1, totalPagesKnown);
+    if (page > last) {
+      setSearchParams(
+        toTxSearch(
+          initialAccountId === undefined ? filters : { ...filters, account_id: undefined },
+          last,
+        ),
+        { replace: true },
+      );
+    }
+  }, [isLoading, isFetching, totalPagesKnown, page, filters, initialAccountId, setSearchParams]);
 
   const handleDelete = () => {
     if (modal.type !== 'delete') return;
