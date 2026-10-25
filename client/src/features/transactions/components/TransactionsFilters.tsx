@@ -9,7 +9,6 @@ import { AccountSelect } from '@/features/accounts/components/AccountSelect';
 import { parseIdOrUndefined } from '@/lib/parse';
 import { useDebouncedSync } from '@/lib/useDebouncedSync';
 
-// Dérivation partagée avec useDebouncedSync (description_contains) pour comparer input local et filtre externe.
 function deriveDescription(s: string): string | undefined {
   return s.trim() || undefined;
 }
@@ -17,6 +16,23 @@ function deriveDescription(s: string): string | undefined {
 function deriveAmount(s: string): number | undefined {
   const v = Number.parseFloat(s);
   return s.trim() && !Number.isNaN(v) ? v : undefined;
+}
+
+// Input texte debouncé vers un filtre, resynchronisé si le filtre externe diverge de sa valeur dérivée (URL, reset…).
+function useFilterInput<T extends string | number>(
+  external: T | undefined,
+  derive: (s: string) => T | undefined,
+  onCommit: (value: T | undefined) => void,
+  delayMs: number,
+) {
+  const [input, setInput] = useState(external === undefined ? '' : String(external));
+  const [prevExternal, setPrevExternal] = useState(external);
+  if (prevExternal !== external) {
+    setPrevExternal(external);
+    if (derive(input) !== external) setInput(external === undefined ? '' : String(external));
+  }
+  useDebouncedSync(input, derive, external, onCommit, delayMs);
+  return [input, setInput] as const;
 }
 
 // Champ libellé du panneau de filtres avancés : libellé court au-dessus du contrôle.
@@ -67,66 +83,30 @@ export const TransactionsFilters = ({
   rightSlot,
 }: FilterProps) => {
   const { t } = useTranslation('transactions');
-  const [descriptionInput, setDescriptionInput] = useState(filters.description_contains ?? '');
-  const [amountMinInput, setAmountMinInput] = useState(filters.amount_min?.toString() ?? '');
-  const [amountMaxInput, setAmountMaxInput] = useState(filters.amount_max?.toString() ?? '');
-  const [open, setOpen] = useState(false);
-
-  // Resynchronise l'input si le filtre externe diverge de sa valeur dérivée (sinon le debounce trimé mangerait un espace final en cours de frappe).
-  const [prevExternalDescription, setPrevExternalDescription] = useState(
+  const [descriptionInput, setDescriptionInput] = useFilterInput(
     filters.description_contains,
+    deriveDescription,
+    (value) => onFilterChange({ description_contains: value }),
+    300,
   );
-  if (prevExternalDescription !== filters.description_contains) {
-    setPrevExternalDescription(filters.description_contains);
-    if (deriveDescription(descriptionInput) !== filters.description_contains) {
-      setDescriptionInput(filters.description_contains ?? '');
-    }
-  }
-
-  const [prevExternalAmountMin, setPrevExternalAmountMin] = useState(filters.amount_min);
-  if (prevExternalAmountMin !== filters.amount_min) {
-    setPrevExternalAmountMin(filters.amount_min);
-    if (deriveAmount(amountMinInput) !== filters.amount_min) {
-      setAmountMinInput(filters.amount_min?.toString() ?? '');
-    }
-  }
-
-  const [prevExternalAmountMax, setPrevExternalAmountMax] = useState(filters.amount_max);
-  if (prevExternalAmountMax !== filters.amount_max) {
-    setPrevExternalAmountMax(filters.amount_max);
-    if (deriveAmount(amountMaxInput) !== filters.amount_max) {
-      setAmountMaxInput(filters.amount_max?.toString() ?? '');
-    }
-  }
+  const [amountMinInput, setAmountMinInput] = useFilterInput(
+    filters.amount_min,
+    deriveAmount,
+    (value) => onFilterChange({ amount_min: value }),
+    400,
+  );
+  const [amountMaxInput, setAmountMaxInput] = useFilterInput(
+    filters.amount_max,
+    deriveAmount,
+    (value) => onFilterChange({ amount_max: value }),
+    400,
+  );
+  const [open, setOpen] = useState(false);
 
   const activeAdvancedCount = ADVANCED_KEYS.filter((k) => {
     if (!showAccountSelect && k === 'account_id') return false;
     return filters[k] != null;
   }).length;
-
-  useDebouncedSync(
-    descriptionInput,
-    deriveDescription,
-    filters.description_contains,
-    (value) => onFilterChange({ description_contains: value }),
-    300,
-  );
-
-  useDebouncedSync(
-    amountMinInput,
-    deriveAmount,
-    filters.amount_min,
-    (value) => onFilterChange({ amount_min: value }),
-    400,
-  );
-
-  useDebouncedSync(
-    amountMaxInput,
-    deriveAmount,
-    filters.amount_max,
-    (value) => onFilterChange({ amount_max: value }),
-    400,
-  );
 
   const resetAdvanced = () => {
     setAmountMinInput('');
