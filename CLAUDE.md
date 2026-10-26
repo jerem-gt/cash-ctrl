@@ -24,13 +24,15 @@
 ### Hook pre-commit
 Le projet utilise Husky et lint-staged pour corriger automatiquement les problèmes de lint avant chaque commit. Le hook exécute `lint-staged` qui applique ESLint et Stylelint sur les fichiers stagés.
 
-### CI (`.github/workflows/ci.yml`)
+### CI (`.github/workflows/ci.yml`) et fichiers communs avec shelf-ctrl
+Le workflow CI/Docker, le `Dockerfile`, le script `prepare-runtime-deps` et le preset Renovate sont **communs à cash-ctrl et shelf-ctrl** et vivent dans le dépôt [`jerem-gt/ctrl-shared`](https://github.com/jerem-gt/ctrl-shared) : `.github/workflows/ci.yml` appelle son workflow réutilisable `app.yml`, la devDependency `@jerem-gt/ctrl-shared` (**même tag que le workflow**) fournit script et `Dockerfile`, `renovate.json` étend `github>jerem-gt/ctrl-shared`. Ne pas les recopier ici : un changement se fait dans `ctrl-shared`, puis un nouveau tag que Renovate propose de monter dans les deux projets. Propre à cash-ctrl : `.github/smoke.env` (variables du conteneur) et `.github/smoke-test.sh` (login), lancés par le smoke test de l'image après santé, front et `/api/docs/`. Les checks s'appellent `app / 🧪 CI & Tests`, etc.
+
 Le job CI lance lint, vérification des types (client `typecheck:test`, server `typecheck`) et tests coverage (server + client) **en parallèle** dans un même step. Le lint utilise un cache ESLint (`.eslintcache`, gitignoré) persisté entre les runs via `actions/cache` :
 - Clé de cache : hash de `package-lock.json` + `eslint.config.js` → toute modification de l'un des deux invalide le cache (run suivant plus lent, le temps de le reconstruire).
 - `--cache-strategy content` est **obligatoire** : le checkout réécrit les mtimes à chaque run, la stratégie `metadata` par défaut invaliderait tout.
-- Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans `ci.yml`.
+- Si la config ESLint est renommée/éclatée en plusieurs fichiers, mettre à jour le `hashFiles(...)` de la clé dans le workflow de `ctrl-shared` (pour les deux projets).
 
-Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job SonarCloud) et `build-assets` (deps runtime extraites par `scripts/prepare-runtime-deps.mjs` dans `deploy/node_modules` + dists, serveur bundlé par `server/tsup.config.ts`, consommé par le build Docker ; uploadé sur push uniquement, aucune image n'étant construite sur PR). Concurrence : groupes séparés push / PR, seuls les runs de PR sont annulés. Un nouveau rapport destiné à Sonar va dans `sonar-assets`.
+Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job SonarCloud) et `build-assets` (`deploy/` : deps runtime extraites par `prepare-runtime-deps` + `Dockerfile` commun, et dists, serveur bundlé par `server/tsup.config.ts`, consommé par le build Docker ; uploadé sur push uniquement, aucune image n'étant construite sur PR). Concurrence : groupes séparés push / PR, seuls les runs de PR sont annulés. Un nouveau rapport destiné à Sonar va dans `sonar-assets`.
 
 ## TypeScript & Code Quality
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.
