@@ -38,7 +38,7 @@ Deux artifacts distincts : `sonar-assets` (lcov uniquement, consommé par le job
 - **Strict Mode**: Activé (`strict: true`). Ne jamais utiliser `any`, préférer `unknown`.
 - **Path Aliases**: Utiliser `@/*` pour les imports dans `src/` (configuré dans `tsconfig.json`).
 - **Pratiques TS**: Interdiction des variables locales/paramètres inutilisés et des cas de fallthrough dans les switchs.
-- **Target**: Client ES2023 / Server ES2024.
+- **Target**: Client ES2023 / Server ES2025.
 - **Ternaires imbriqués** (règle Sonar) : Ne jamais imbriquer des ternaires. Extraire dans une variable `let` avec `if/else`, ou dans une fonction nommée. Un seul niveau de ternaire est acceptable.
 - **Conditions négatives** (règle Sonar) : Dans un `if/else`, mettre la branche positive en premier (`=== null` plutôt que `!= null` comme condition principale).
 
