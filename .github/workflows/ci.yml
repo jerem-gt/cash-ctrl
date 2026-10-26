@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 # Groupes séparés push / PR : seuls les runs de PR sont annulés (un run push peut être en pleine release)
 concurrency:

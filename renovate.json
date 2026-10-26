@@ -11,6 +11,11 @@
   },
   "packageRules": [
     {
+      "description": "Mineures/patchs automergées une fois la CI verte (check requis sur develop)",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    },
+    {
       "description": "Dockerfile et ci.yml (container) montent de version Node ensemble",
       "matchPackageNames": ["node"],
       "matchDatasources": ["docker", "node-version"],
