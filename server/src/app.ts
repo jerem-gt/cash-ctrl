@@ -59,7 +59,6 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   // Parseur 10 Mo dédié aux imports, monté avant le parseur global (body-parser ignore un corps déjà parsé).
   app.use('/api/import', express.json({ limit: '10mb' }));
   app.use(express.json({ limit: '100kb' }));
-  app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
 
   app.use(

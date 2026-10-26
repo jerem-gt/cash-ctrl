@@ -108,6 +108,15 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(400);
   });
 
+  it('retourne 400 pour un corps de formulaire, même avec des identifiants valides (anti-CSRF)', async () => {
+    const { app } = setup();
+    const res = await supertest(app)
+      .post('/api/auth/login')
+      .type('form')
+      .send({ username: 'alice', password: 'password123' });
+    expect(res.status).toBe(400);
+  });
+
   it('retourne 429 après trop de tentatives échouées', async () => {
     const { app } = setup();
     const agent = supertest.agent(app);
