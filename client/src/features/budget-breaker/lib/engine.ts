@@ -149,7 +149,7 @@ export function resize(state: GameState, width: number, height: number, bricks: 
 // Retire une brique devenue invalide (sans dégât) ; 'won' quand c'était la dernière.
 export function removeBrick(state: GameState, id: number): GameEvent[] {
   const brick = state.bricks.at(id);
-  if (brick === undefined || !brick.alive) return [];
+  if (!brick?.alive) return [];
   brick.alive = false;
   state.aliveCount -= 1;
   const inPlay = state.status === 'serve' || state.status === 'playing';

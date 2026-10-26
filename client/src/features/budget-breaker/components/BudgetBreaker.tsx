@@ -122,7 +122,7 @@ export default function BudgetBreaker({ onClose }: Readonly<Props>) {
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [escapeOrder] = useState(nextEscapeOrder);
 
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDialogElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
@@ -456,20 +456,19 @@ export default function BudgetBreaker({ onClose }: Readonly<Props>) {
   const showHint = phase === 'playing' && hud.status === 'serve' && end === null && !refunding;
 
   return createPortal(
-    <div
+    <dialog
+      open
       ref={rootRef}
-      role="dialog"
       aria-modal="true"
       aria-label={t('title')}
       tabIndex={-1}
       data-budget-breaker-ignore
-      className={`fixed inset-0 z-[100] touch-none select-none outline-none ${
+      className={`fixed inset-0 z-[100] m-0 h-full max-h-none w-full max-w-none touch-none select-none border-0 bg-transparent p-0 text-inherit outline-none ${
         playing ? 'pointer-fine:cursor-none' : ''
       }`}
     >
       <canvas
         ref={canvasRef}
-        aria-hidden="true"
         className="absolute inset-0 h-full w-full"
         onPointerMove={(e) => moveTo(e.clientX)}
         onPointerDown={(e) => moveTo(e.clientX)}
@@ -545,23 +544,19 @@ export default function BudgetBreaker({ onClose }: Readonly<Props>) {
       )}
 
       {bubble !== null && (
-        <div
+        <output
           key={bubble.id}
-          role="status"
           style={bubbleStyle(bubble)}
           className="bb-pop pointer-events-none absolute z-10 w-max max-w-[260px] rounded-2xl bg-sidebar-bg px-3 py-2 text-sm leading-snug text-sidebar-fg shadow-xl ring-1 ring-white/10"
         >
           {bubble.text}
-        </div>
+        </output>
       )}
 
       {refunding && (
-        <p
-          role="status"
-          className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto w-fit max-w-[90vw] -translate-y-1/2 rounded-2xl bg-sidebar-bg px-5 py-3 text-center text-sidebar-fg shadow-2xl ring-1 ring-white/10"
-        >
+        <output className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto w-fit max-w-[90vw] -translate-y-1/2 rounded-2xl bg-sidebar-bg px-5 py-3 text-center text-sidebar-fg shadow-2xl ring-1 ring-white/10">
           {t('refund')}
-        </p>
+        </output>
       )}
 
       {end !== null && !refunding && (
@@ -581,7 +576,7 @@ export default function BudgetBreaker({ onClose }: Readonly<Props>) {
           </div>
         </CenterCard>
       )}
-    </div>,
+    </dialog>,
     document.body,
   );
 }
