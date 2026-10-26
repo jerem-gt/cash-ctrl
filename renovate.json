@@ -3,10 +3,11 @@
   "baseBranchPatterns": ["develop"],
   "semanticCommits": "enabled",
   "rangeStrategy": "bump",
+  "timezone": "Europe/Paris",
   "labels": ["dependencies"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 5am on monday"],
+    "schedule": ["on monday"],
     "automerge": true
   },
   "packageRules": [
