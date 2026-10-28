@@ -9,7 +9,7 @@ import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { createRequireAdmin, sessionUserId } from '../../middleware.js';
 import type { SQLiteSessionStore } from '../../session-store.js';
-import { createAuthRepo } from '../auth/auth.repo.js';
+import { revokeTrustedDevices } from '../auth/trustedDevices.js';
 import { createUsersRepo } from './users.repo.js';
 
 export const createUserSchema = z.object({
@@ -37,7 +37,6 @@ export const updateUserSchema = z
 
 export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore): Router {
   const repo = createUsersRepo(db);
-  const authRepo = createAuthRepo(db);
   const router = Router();
 
   router.use(createRequireAdmin(db));
@@ -115,7 +114,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
       if (isAdmin !== undefined) repo.updateAdmin(id, isAdmin);
       if (hash !== null) {
         repo.updatePassword(id, hash);
-        authRepo.deleteAllDevicesForUser(id);
+        revokeTrustedDevices(db, id);
       }
     })();
     if (hash !== null) closeSessionsAfterPasswordReset(id, sessionUserId(req), req.sessionID);
@@ -157,7 +156,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
     }
     db.transaction(() => {
       repo.disableTotp(id);
-      authRepo.deleteAllDevicesForUser(id);
+      revokeTrustedDevices(db, id);
     })();
     res.json({ ok: true });
   });

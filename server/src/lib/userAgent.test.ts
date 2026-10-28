@@ -31,8 +31,13 @@ describe('deviceLabel', () => {
     expect(deviceLabel(ua)).toBe(expected);
   });
 
-  it('retourne un libellé générique si le User-Agent est absent ou inconnu', () => {
-    expect(deviceLabel(undefined)).toBe('Navigateur · Appareil inconnu');
-    expect(deviceLabel('curl/8.0')).toBe('Navigateur · Appareil inconnu');
+  it("retourne une chaîne vide si le User-Agent est absent ou n'est pas reconnu", () => {
+    expect(deviceLabel(undefined)).toBe('');
+    expect(deviceLabel('curl/8.0')).toBe('');
+  });
+
+  it("n'affiche que la partie reconnue", () => {
+    expect(deviceLabel('Firefox/121.0')).toBe('Firefox');
+    expect(deviceLabel('Windows NT 10.0')).toBe('Windows');
   });
 });

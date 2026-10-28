@@ -13,17 +13,23 @@ import {
   useSetup2FA,
   useTrustedDevices,
 } from '@/hooks/useAuth';
-import { formatLocalDate } from '@/lib/dateUtils';
-import { fmtDate } from '@/lib/format';
+import { lastUsedParts } from '@/lib/lastUsed';
 
 type TotpStep = 'idle' | 'setup' | 'disable';
 
 function TrustedDevices() {
   const { t } = useTranslation('settings');
-  const { data: devices = [] } = useTrustedDevices(true);
+  const { data: devices = [] } = useTrustedDevices();
   const forgetDevice = useForgetDevice();
   const forgetAll = useForgetAllDevices();
   const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
+
+  const lastUsedText = (timestamp: number): string => {
+    const { kind, time, date } = lastUsedParts(timestamp);
+    if (kind === 'today') return t('totp.device_last_used_today', { time });
+    if (kind === 'yesterday') return t('totp.device_last_used_yesterday', { time });
+    return t('totp.device_last_used_date', { date, time });
+  };
 
   return (
     <div className="mb-4">
@@ -37,18 +43,16 @@ function TrustedDevices() {
               <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-content-primary">{d.label}</span>
+                    <span className="text-sm text-content-primary">
+                      {d.label === '' ? t('totp.device_unknown') : d.label}
+                    </span>
                     {d.current && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success">
                         {t('totp.device_current')}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-content-faint">
-                    {t('totp.device_last_used', {
-                      date: fmtDate(formatLocalDate(new Date(d.last_used_at))),
-                    })}
-                  </p>
+                  <p className="text-xs text-content-faint">{lastUsedText(d.last_used_at)}</p>
                 </div>
                 <Button
                   variant="default"

@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { ME } from '@/tests/fixtures';
+import { ME, TRUSTED_DEVICES } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
@@ -89,7 +89,19 @@ describe('TwoFactorCard — appareils mémorisés', () => {
     expect(await screen.findByText('Firefox · Linux')).toBeInTheDocument();
     expect(screen.getByText('Safari · iOS')).toBeInTheDocument();
     expect(screen.getAllByText('Cet appareil')).toHaveLength(1);
-    expect(screen.getAllByText(/Dernière utilisation/)).toHaveLength(2);
+    expect(screen.getAllByText(/Dernière utilisation : .+ à \d{2}:\d{2}/)).toHaveLength(2);
+  });
+
+  it('affiche « Appareil inconnu » pour un libellé vide et « aujourd’hui » pour un usage récent', async () => {
+    withTotp();
+    server.use(
+      http.get('/api/auth/devices', () =>
+        HttpResponse.json([{ ...TRUSTED_DEVICES[0], label: '', last_used_at: Date.now() }]),
+      ),
+    );
+    renderWithProviders(<TwoFactorCard />);
+    expect(await screen.findByText('Appareil inconnu')).toBeInTheDocument();
+    expect(screen.getByText(/aujourd'hui à \d{2}:\d{2}/)).toBeInTheDocument();
   });
 
   it('affiche un état vide sans appareil', async () => {

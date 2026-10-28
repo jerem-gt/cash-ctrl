@@ -273,14 +273,11 @@ describe('appareils mémorisés', () => {
     expect(body).toEqual({ code: '123456', remember: true });
   });
 
-  it('useTrustedDevices charge la liste, seulement si activé', async () => {
+  it('useTrustedDevices charge la liste', async () => {
     const { Wrapper } = createHookWrapper();
-    const { result } = renderHook(() => useTrustedDevices(true), { wrapper: Wrapper });
+    const { result } = renderHook(() => useTrustedDevices(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(TRUSTED_DEVICES);
-
-    const disabled = renderHook(() => useTrustedDevices(false), { wrapper: Wrapper });
-    expect(disabled.result.current.fetchStatus).toBe('idle');
   });
 
   it('useForgetDevice supprime un appareil et invalide la liste', async () => {

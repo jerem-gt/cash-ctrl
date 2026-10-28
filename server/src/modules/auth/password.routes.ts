@@ -1,10 +1,11 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { sha256Hex } from '../../lib/crypto.js';
 import type { Mailer } from '../../lib/mailer.js';
 import { MAIL_TEXTS } from '../../lib/mailTexts.js';
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
@@ -16,6 +17,7 @@ import type { SQLiteSessionStore } from '../../session-store.js';
 import type { createUsersRepo } from '../users/users.repo.js';
 import type { AuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';
+import { revokeTrustedDevices } from './trustedDevices.js';
 
 export interface PasswordRouterDeps {
   db: Database;
@@ -41,10 +43,6 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8),
 });
 
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
-
 export function createPasswordRouter(deps: PasswordRouterDeps): Router {
   const { db, repo, usersRepo, sessionStore, mailer, appUrl, log } = deps;
   const router = Router();
@@ -56,7 +54,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     repo.purgeExpiredResetTokens(now);
     repo.deleteResetTokensForUser(user.id);
     const token = randomBytes(32).toString('base64url');
-    repo.insertResetToken(hashToken(token), user.id, now + RESET_TOKEN_TTL_MS);
+    repo.insertResetToken(sha256Hex(token), user.id, now + RESET_TOKEN_TTL_MS);
 
     const path = `/reset-password?token=${token}`;
     const fallbackMessage = `Réinitialisation du mot de passe de "${user.username}" : ouvrir ${appUrl ?? ''}${path}`;
@@ -113,7 +111,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     if (!data) return;
 
     const hash = await bcrypt.hash(data.password, 12);
-    const row = repo.getResetToken(hashToken(data.token));
+    const row = repo.getResetToken(sha256Hex(data.token));
     if (!row || row.expires_at <= Date.now()) {
       resetLimiter.recordFailure(key);
       sendError(res, 400, 'auth.reset_token_invalid');
@@ -123,7 +121,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     db.transaction(() => {
       repo.updatePassword(row.user_id, hash);
       repo.deleteResetTokensForUser(row.user_id);
-      repo.deleteAllDevicesForUser(row.user_id);
+      revokeTrustedDevices(db, row.user_id);
     })();
     sessionStore.destroyAllSessions(row.user_id);
     resetLimiter.reset(key);

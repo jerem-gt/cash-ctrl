@@ -96,11 +96,10 @@ export function useDisable2FA() {
   });
 }
 
-export function useTrustedDevices(enabled: boolean) {
+export function useTrustedDevices() {
   return useQuery({
     queryKey: queryKeys.trustedDevices(),
     queryFn: authApi.devices,
-    enabled,
   });
 }
 

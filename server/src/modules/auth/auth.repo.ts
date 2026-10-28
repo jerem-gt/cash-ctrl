@@ -44,7 +44,6 @@ export function createAuthRepo(db: Database) {
     'SELECT * FROM trusted_devices WHERE id = ? AND user_id = ?',
   );
   const deleteDeviceStmt = db.prepare('DELETE FROM trusted_devices WHERE id = ? AND user_id = ?');
-  const deleteAllDevicesStmt = db.prepare('DELETE FROM trusted_devices WHERE user_id = ?');
 
   return {
     purgeExpiredDevices: (now: number) => purgeExpiredDevicesStmt.run(now),
@@ -64,8 +63,6 @@ export function createAuthRepo(db: Database) {
     getDevice: (id: number, userId: number): TrustedDeviceRow | undefined =>
       getDeviceStmt.get(id, userId),
     deleteDevice: (id: number, userId: number) => deleteDeviceStmt.run(id, userId),
-    /** Révoque tous les appareils mémorisés du compte (changement de secret ou de 2FA). */
-    deleteAllDevicesForUser: (userId: number) => deleteAllDevicesStmt.run(userId),
     getByUsername: (username: string): User | undefined =>
       getByUsernameStmt.get({ username }) ?? undefined,
     getById: (id: number): User | undefined => getByIdStmt.get({ id }) ?? undefined,

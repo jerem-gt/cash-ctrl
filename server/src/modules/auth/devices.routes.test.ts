@@ -404,6 +404,17 @@ describe('routes /api/auth/devices', () => {
     expect(deviceCount(db, 'bob')).toBe(1);
     expect((await s.agent.get('/api/auth/me')).status).toBe(200);
   });
+
+  it('oublier tous ne touche pas au cookie valide d’un autre compte', async () => {
+    const { app, db, secrets } = setup();
+    const bobCookie = await trustDevice(app, secrets, 'bob');
+    const s = await sessionAgent(app, secrets, 'alice', bobCookie);
+    const res = await s.del('/api/auth/devices');
+    expect(res.status).toBe(200);
+    expect(deviceSetCookie(res)).toBeUndefined();
+    expect(deviceCount(db, 'bob')).toBe(1);
+    expect((await login(app, 'bob', bobCookie)).body).not.toEqual({ totp_required: true });
+  });
 });
 
 describe('révocation des appareils', () => {

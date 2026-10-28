@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
 import { readCookie } from '../../lib/cookies.js';
+import { sha256Hex } from '../../lib/crypto.js';
 import { createMailer, type Mailer } from '../../lib/mailer.js';
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
@@ -22,6 +23,7 @@ import type { User } from './auth.types.js';
 import { createMailRouter } from './mail.routes.js';
 import { createPasswordRouter } from './password.routes.js';
 import { SetupToken } from './setup.js';
+import { revokeTrustedDevices } from './trustedDevices.js';
 
 export const loginSchema = z.object({
   username: z.string().min(1),
@@ -129,10 +131,6 @@ function profileOf(user: User) {
 const DEVICE_COOKIE = 'cashctrl_device';
 const DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
-
 export interface AuthRouterOptions {
   /** Cookie d'appareil mémorisé en `Secure` (SECURE_COOKIE=true). */
   secureCookies?: boolean;
@@ -182,11 +180,11 @@ export function createAuthRouter(
     const now = Date.now();
     authRepo.purgeExpiredDevices(now);
     const previous = deviceTokenOf(req);
-    if (previous) authRepo.deleteDeviceByHash(hashToken(previous));
+    if (previous) authRepo.deleteDeviceByHash(sha256Hex(previous));
     const token = randomBytes(32).toString('base64url');
     authRepo.insertDevice(
       userId,
-      hashToken(token),
+      sha256Hex(token),
       deviceLabel(req.get('user-agent')),
       now,
       now + DEVICE_TTL_MS,
@@ -200,7 +198,7 @@ export function createAuthRouter(
     if (!token) return false;
     const now = Date.now();
     authRepo.purgeExpiredDevices(now);
-    const device = authRepo.getDeviceByHash(hashToken(token));
+    const device = authRepo.getDeviceByHash(sha256Hex(token));
     if (device === undefined) {
       clearDeviceCookie(res);
       return false;
@@ -420,7 +418,7 @@ export function createAuthRouter(
     if (!(await checkCurrentPassword(res, user, parsed.data.current))) return;
 
     authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
-    authRepo.deleteAllDevicesForUser(userId);
+    revokeTrustedDevices(db, userId);
     sessionStore.destroyOtherSessions(userId, req.sessionID);
     res.json({ ok: true });
   });
@@ -478,7 +476,7 @@ export function createAuthRouter(
 
     db.transaction(() => {
       authRepo.enableTotp(userId, parsed.data.secret);
-      authRepo.deleteAllDevicesForUser(userId);
+      revokeTrustedDevices(db, userId);
     })();
     res.json({ ok: true });
   });
@@ -506,7 +504,7 @@ export function createAuthRouter(
 
     db.transaction(() => {
       usersRepo.disableTotp(userId);
-      authRepo.deleteAllDevicesForUser(userId);
+      revokeTrustedDevices(db, userId);
     })();
     res.json({ ok: true });
   });
@@ -515,7 +513,7 @@ export function createAuthRouter(
     const now = Date.now();
     authRepo.purgeExpiredDevices(now);
     const token = deviceTokenOf(req);
-    const currentHash = token ? hashToken(token) : null;
+    const currentHash = token ? sha256Hex(token) : null;
     res.json(
       authRepo.listDevices(sessionUserId(req), now).map((d) => ({
         id: d.id,
@@ -538,13 +536,17 @@ export function createAuthRouter(
     }
     authRepo.deleteDevice(id, device.user_id);
     const token = deviceTokenOf(req);
-    if (token && hashToken(token) === device.token_hash) clearDeviceCookie(res);
+    if (token && sha256Hex(token) === device.token_hash) clearDeviceCookie(res);
     res.json({ ok: true });
   });
 
   router.delete('/devices', requireAuth, (req, res) => {
-    authRepo.deleteAllDevicesForUser(sessionUserId(req));
-    clearDeviceCookie(res);
+    const userId = sessionUserId(req);
+    const token = deviceTokenOf(req);
+    const ownsCookie =
+      token !== undefined && authRepo.getDeviceByHash(sha256Hex(token))?.user_id === userId;
+    revokeTrustedDevices(db, userId);
+    if (ownsCookie) clearDeviceCookie(res);
     res.json({ ok: true });
   });
 
