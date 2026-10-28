@@ -116,6 +116,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
   app.use(
     '/api/auth',
     createAuthRouter(db, sessionStore, {
+      secureCookies: options?.secureCookies,
       mailer: options?.mailer,
       setupToken: options?.setupToken,
       appUrl: normalizeAppUrl(options?.appUrl ?? process.env.APP_URL),

@@ -38,6 +38,7 @@
     "totp_code": "6-digit code",
     "totp_submit": "Verify",
     "totp_back": "← Back",
+    "totp_remember": "Remember this device for 30 days",
     "forgot_link": "Forgot password?"
   },
   "forgot": {

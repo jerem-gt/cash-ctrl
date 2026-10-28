@@ -80,6 +80,19 @@ export function initSchema(db: Database) {
             expires_at INTEGER NOT NULL
         );
 
+        -- Appareils mémorisés (2FA sautée) : seule l'empreinte SHA-256 du jeton est stockée.
+        CREATE TABLE IF NOT EXISTS trusted_devices
+        (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            token_hash   TEXT    NOT NULL UNIQUE,
+            label        TEXT    NOT NULL,
+            created_at   INTEGER NOT NULL,
+            last_used_at INTEGER NOT NULL,
+            expires_at   INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_trusted_devices_user ON trusted_devices (user_id);
+
         CREATE TABLE IF NOT EXISTS accounts
         (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,

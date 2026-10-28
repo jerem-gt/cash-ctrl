@@ -123,6 +123,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     db.transaction(() => {
       repo.updatePassword(row.user_id, hash);
       repo.deleteResetTokensForUser(row.user_id);
+      repo.deleteAllDevicesForUser(row.user_id);
     })();
     sessionStore.destroyAllSessions(row.user_id);
     resetLimiter.reset(key);

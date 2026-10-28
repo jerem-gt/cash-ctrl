@@ -3,9 +3,87 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, CardTitle, FormGroup, Input, showToast } from '@/components/ui';
-import { useDisable2FA, useEnable2FA, useMe, useSetup2FA } from '@/hooks/useAuth';
+import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
+import {
+  useDisable2FA,
+  useEnable2FA,
+  useForgetAllDevices,
+  useForgetDevice,
+  useMe,
+  useSetup2FA,
+  useTrustedDevices,
+} from '@/hooks/useAuth';
+import { formatLocalDate } from '@/lib/dateUtils';
+import { fmtDate } from '@/lib/format';
 
 type TotpStep = 'idle' | 'setup' | 'disable';
+
+function TrustedDevices() {
+  const { t } = useTranslation('settings');
+  const { data: devices = [] } = useTrustedDevices(true);
+  const forgetDevice = useForgetDevice();
+  const forgetAll = useForgetAllDevices();
+  const { requestDelete, deleteConfirmModal } = useDeleteConfirmation(showToast);
+
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-content-primary mb-2">{t('totp.devices_title')}</h3>
+      {devices.length === 0 ? (
+        <p className="text-sm text-content-muted">{t('totp.devices_empty')}</p>
+      ) : (
+        <>
+          <ul className="divide-y divide-line-subtle mb-3">
+            {devices.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-content-primary">{d.label}</span>
+                    {d.current && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success">
+                        {t('totp.device_current')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-content-faint">
+                    {t('totp.device_last_used', {
+                      date: fmtDate(formatLocalDate(new Date(d.last_used_at))),
+                    })}
+                  </p>
+                </div>
+                <Button
+                  variant="default"
+                  onClick={() =>
+                    forgetDevice.mutate(d.id, {
+                      onSuccess: () => showToast(t('totp.device_forgotten')),
+                    })
+                  }
+                  disabled={forgetDevice.isPending}
+                >
+                  {t('totp.device_forget')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <Button
+            variant="default"
+            onClick={() =>
+              requestDelete(
+                t('totp.devices_forget_all_title'),
+                t('totp.devices_forget_all_body'),
+                0,
+                (_id, opts) => forgetAll.mutate(undefined, opts),
+                t('totp.devices_all_forgotten'),
+              )
+            }
+          >
+            {t('totp.devices_forget_all')}
+          </Button>
+        </>
+      )}
+      {deleteConfirmModal}
+    </div>
+  );
+}
 
 export function TwoFactorCard() {
   const { t } = useTranslation('settings');
@@ -154,6 +232,7 @@ export function TwoFactorCard() {
       <p className="text-sm text-content-muted mb-4">
         {totpEnabled ? t('totp.description_enabled') : t('totp.description_disabled')}
       </p>
+      {totpEnabled && <TrustedDevices />}
       {totpEnabled ? (
         <Button variant="danger" onClick={() => setStep('disable')}>
           {t('totp.disable_btn')}

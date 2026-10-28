@@ -159,7 +159,17 @@
     "password_label": "Current password",
     "success_enabled": "Two-factor authentication enabled ✓",
     "success_disabled": "Two-factor authentication disabled",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "devices_title": "Remembered devices",
+    "devices_empty": "No remembered devices.",
+    "device_current": "This device",
+    "device_last_used": "Last used: {{date}}",
+    "device_forget": "Forget",
+    "device_forgotten": "Device forgotten",
+    "devices_forget_all": "Forget all devices",
+    "devices_forget_all_title": "Forget all devices?",
+    "devices_forget_all_body": "The 2FA code will be requested again at the next sign-in on every device.",
+    "devices_all_forgotten": "All devices have been forgotten"
   },
   "profile": {
     "title": "Profile",

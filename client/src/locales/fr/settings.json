@@ -183,7 +183,17 @@
     "password_label": "Mot de passe actuel",
     "success_enabled": "Double authentification activée ✓",
     "success_disabled": "Double authentification désactivée",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "devices_title": "Appareils mémorisés",
+    "devices_empty": "Aucun appareil mémorisé.",
+    "device_current": "Cet appareil",
+    "device_last_used": "Dernière utilisation : {{date}}",
+    "device_forget": "Oublier",
+    "device_forgotten": "Appareil oublié",
+    "devices_forget_all": "Oublier tous les appareils",
+    "devices_forget_all_title": "Oublier tous les appareils ?",
+    "devices_forget_all_body": "Le code 2FA sera de nouveau demandé à la prochaine connexion sur chaque appareil.",
+    "devices_all_forgotten": "Tous les appareils ont été oubliés"
   },
   "backup": {
     "config_title": "Backup automatique",

@@ -263,7 +263,8 @@ export function buildOpenApiSpec() {
       '/api/auth/login': {
         post: {
           tags: ['Auth'],
-          summary: 'Connexion (renvoie { id, username, isAdmin, totpEnabled })',
+          summary:
+            "Connexion (renvoie { id, username, isAdmin, totpEnabled }, ou { totp_required: true } si la 2FA est active ; la session s'ouvre directement si le cookie cashctrl_device désigne un appareil mémorisé valide du compte)",
           requestBody: body(loginSchema),
           responses: { ...r200('Session started'), ...r400, ...r401 },
         },
@@ -322,9 +323,34 @@ export function buildOpenApiSpec() {
       '/api/auth/2fa/verify': {
         post: {
           tags: ['Auth'],
-          summary: 'Valider le code TOTP après login',
+          summary:
+            'Valider le code TOTP après login ; remember=true mémorise l’appareil 30 jours (cookie cashctrl_device)',
           requestBody: body(verifyTotpSchema),
           responses: { ...r200(), ...r400, ...r401 },
+        },
+      },
+      '/api/auth/devices': {
+        get: {
+          tags: ['Auth'],
+          summary:
+            'Appareils mémorisés du compte ([{ id, label, created_at, last_used_at, expires_at, current }])',
+          security: sessionAuth,
+          responses: { ...r200(), ...r401 },
+        },
+        delete: {
+          tags: ['Auth'],
+          summary: 'Oublier tous les appareils mémorisés du compte',
+          security: sessionAuth,
+          responses: { ...r200(), ...r401 },
+        },
+      },
+      '/api/auth/devices/{id}': {
+        delete: {
+          tags: ['Auth'],
+          summary: 'Oublier un appareil mémorisé',
+          security: sessionAuth,
+          parameters: pId,
+          responses: { ...r200(), ...r401, ...r404 },
         },
       },
 

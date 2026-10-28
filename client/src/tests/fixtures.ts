@@ -28,7 +28,7 @@ import type {
   UserPublic,
 } from '@cashctrl/types';
 
-import type { MeData } from '@/api/client';
+import type { MeData, TrustedDevice } from '@/api/client';
 
 // Profil par défaut renvoyé par /api/auth/me dans les tests
 export const ME: MeData = {
@@ -38,6 +38,25 @@ export const ME: MeData = {
   isAdmin: false,
   totpEnabled: false,
 };
+
+export const TRUSTED_DEVICES: TrustedDevice[] = [
+  {
+    id: 1,
+    label: 'Firefox · Linux',
+    created_at: Date.UTC(2026, 9, 1, 12),
+    last_used_at: Date.UTC(2026, 9, 20, 12),
+    expires_at: Date.UTC(2026, 10, 19, 12),
+    current: true,
+  },
+  {
+    id: 2,
+    label: 'Safari · iOS',
+    created_at: Date.UTC(2026, 9, 2, 12),
+    last_used_at: Date.UTC(2026, 9, 10, 12),
+    expires_at: Date.UTC(2026, 10, 1, 12),
+    current: false,
+  },
+];
 
 export const USERS: UserPublic[] = [
   {

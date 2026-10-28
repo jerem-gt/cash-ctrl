@@ -19,6 +19,7 @@ describe('shouldPersistQuery', () => {
 
   it.each([
     ['version', queryKeys.version()],
+    ['appareils mémorisés', queryKeys.trustedDevices()],
     ['recherche globale', queryKeys.search('abc')],
     ['recherche ISIN', queryKeys.stocks.search('FR00')],
   ])('exclut la query %s', (_label, key) => {

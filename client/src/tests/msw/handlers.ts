@@ -31,6 +31,7 @@ import {
   TAX_YEAR_DATA_2026,
   TAX_YEARS,
   TRANSACTIONS,
+  TRUSTED_DEVICES,
   USERS,
 } from '../fixtures';
 
@@ -88,6 +89,9 @@ export const handlers = [
   http.post('/api/auth/2fa/enable', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/2fa/disable', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/2fa/verify', () => HttpResponse.json({ ...ME, totpEnabled: true })),
+  http.get('/api/auth/devices', () => HttpResponse.json(TRUSTED_DEVICES)),
+  http.delete('/api/auth/devices', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/auth/devices/:id', () => HttpResponse.json({ ok: true })),
 
   // Users (admin)
   http.get('/api/users', () => HttpResponse.json(USERS)),

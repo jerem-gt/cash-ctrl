@@ -11,6 +11,7 @@ export const queryKeys = {
   users: () => ['users'] as const,
   me: () => ['me'] as const,
   setupStatus: () => ['setup-status'] as const,
+  trustedDevices: () => ['trusted-devices'] as const,
   version: () => ['version'] as const,
   dashboardStats: () => ['dashboard-stats'] as const,
   balanceHistory: () => ['balance-history'] as const,

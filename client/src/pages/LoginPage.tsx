@@ -13,6 +13,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
   const [totpRequired, setTotpRequired] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const login = useLogin();
   const verifyTotp = useVerifyTotp();
@@ -35,12 +36,13 @@ export function LoginPage() {
   const handleTotpSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     verifyTotp.reset();
-    verifyTotp.mutate({ code: totpCode });
+    verifyTotp.mutate({ code: totpCode, remember });
   };
 
   const handleBackToCredentials = () => {
     setTotpRequired(false);
     setTotpCode('');
+    setRemember(false);
     login.reset();
     verifyTotp.reset();
   };
@@ -70,6 +72,15 @@ export function LoginPage() {
               required
             />
           </FormGroup>
+          <label className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="size-4 shrink-0 accent-brand"
+            />
+            {t('login.totp_remember')}
+          </label>
           <Button
             type="submit"
             variant="primary"

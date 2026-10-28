@@ -84,7 +84,8 @@
     "reset_token_invalid": "Invalid or expired reset link",
     "email_missing": "No email address is set for this account",
     "smtp_not_configured": "Email sending is not configured on the server",
-    "email_send_failed": "Failed to send the email"
+    "email_send_failed": "Failed to send the email",
+    "device_not_found": "Remembered device not found"
   },
   "reimbursement": {
     "only_expense": "Only expenses can have reimbursements",

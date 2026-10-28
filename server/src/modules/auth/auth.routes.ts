@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from 'node:crypto';
+
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { type NextFunction, type Request, type Response, Router } from 'express';
@@ -5,9 +7,11 @@ import * as OTPAuth from 'otpauth';
 import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
+import { readCookie } from '../../lib/cookies.js';
 import { createMailer, type Mailer } from '../../lib/mailer.js';
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
-import { parseBody, sendError } from '../../lib/routeHelpers.js';
+import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
+import { deviceLabel } from '../../lib/userAgent.js';
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { type AuthLogger, logger } from '../../logger.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -40,6 +44,7 @@ export const disableTotpSchema = z.object({
 
 export const verifyTotpSchema = z.object({
   code: z.string().length(6),
+  remember: z.boolean().optional().default(false),
 });
 
 export const setupSchema = z.object({
@@ -121,7 +126,16 @@ function profileOf(user: User) {
   };
 }
 
+const DEVICE_COOKIE = 'cashctrl_device';
+const DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 export interface AuthRouterOptions {
+  /** Cookie d'appareil mémorisé en `Secure` (SECURE_COOKIE=true). */
+  secureCookies?: boolean;
   mailer?: Mailer;
   setupToken?: SetupToken;
   /** URL publique de l'application (sans slash final), pour les liens des e-mails. */
@@ -141,6 +155,60 @@ export function createAuthRouter(
   const mailer = options.mailer ?? createMailer();
   const setupToken = options.setupToken ?? new SetupToken();
   const log = options.log ?? logger;
+  // Comme le cookie de session (secure: 'auto') : Secure seulement si la requête est en HTTPS
+  function deviceCookieOptions(res: Response) {
+    return {
+      httpOnly: true,
+      sameSite: 'strict' as const,
+      secure: options.secureCookies === true && res.req.secure,
+      path: '/api/auth',
+    };
+  }
+
+  function setDeviceCookie(res: Response, token: string): void {
+    res.cookie(DEVICE_COOKIE, token, { ...deviceCookieOptions(res), maxAge: DEVICE_TTL_MS });
+  }
+
+  function clearDeviceCookie(res: Response): void {
+    res.clearCookie(DEVICE_COOKIE, deviceCookieOptions(res));
+  }
+
+  function deviceTokenOf(req: Request): string | undefined {
+    return readCookie(req.headers.cookie, DEVICE_COOKIE);
+  }
+
+  /** Mémorise l'appareil courant ; remplace l'éventuel appareil déjà porté par le cookie. */
+  function rememberDevice(req: Request, res: Response, userId: number): void {
+    const now = Date.now();
+    authRepo.purgeExpiredDevices(now);
+    const previous = deviceTokenOf(req);
+    if (previous) authRepo.deleteDeviceByHash(hashToken(previous));
+    const token = randomBytes(32).toString('base64url');
+    authRepo.insertDevice(
+      userId,
+      hashToken(token),
+      deviceLabel(req.get('user-agent')),
+      now,
+      now + DEVICE_TTL_MS,
+    );
+    setDeviceCookie(res, token);
+  }
+
+  /** Vrai si le cookie désigne un appareil valide du compte ; nettoie le cookie s'il est mort. */
+  function isTrustedDevice(req: Request, res: Response, userId: number): boolean {
+    const token = deviceTokenOf(req);
+    if (!token) return false;
+    const now = Date.now();
+    authRepo.purgeExpiredDevices(now);
+    const device = authRepo.getDeviceByHash(hashToken(token));
+    if (device === undefined) {
+      clearDeviceCookie(res);
+      return false;
+    }
+    if (device.user_id !== userId) return false;
+    authRepo.touchDevice(device.id, now);
+    return true;
+  }
 
   /** Vérifie le mot de passe actuel avec limitation des échecs ; répond 429/401 et renvoie false sinon. */
   async function checkCurrentPassword(
@@ -227,6 +295,11 @@ export function createAuthRouter(
     }
 
     if (user.totp_enabled === 1) {
+      if (isTrustedDevice(req, res, user.id)) {
+        loginLimiter.reset(key);
+        startSession(req, res, next, user, true);
+        return;
+      }
       req.session.pendingUserId = user.id;
       req.session.pendingTotpAt = Date.now();
       req.session.save(() => res.json({ totp_required: true }));
@@ -273,6 +346,7 @@ export function createAuthRouter(
     }
 
     loginLimiter.reset(key);
+    if (parsed.data.remember) rememberDevice(req, res, user.id);
     startSession(req, res, next, user, true);
   });
 
@@ -346,6 +420,7 @@ export function createAuthRouter(
     if (!(await checkCurrentPassword(res, user, parsed.data.current))) return;
 
     authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
+    authRepo.deleteAllDevicesForUser(userId);
     sessionStore.destroyOtherSessions(userId, req.sessionID);
     res.json({ ok: true });
   });
@@ -401,7 +476,10 @@ export function createAuthRouter(
       return;
     }
 
-    authRepo.enableTotp(userId, parsed.data.secret);
+    db.transaction(() => {
+      authRepo.enableTotp(userId, parsed.data.secret);
+      authRepo.deleteAllDevicesForUser(userId);
+    })();
     res.json({ ok: true });
   });
 
@@ -426,7 +504,47 @@ export function createAuthRouter(
 
     if (!(await checkCurrentPassword(res, user, parsed.data.password))) return;
 
-    usersRepo.disableTotp(userId);
+    db.transaction(() => {
+      usersRepo.disableTotp(userId);
+      authRepo.deleteAllDevicesForUser(userId);
+    })();
+    res.json({ ok: true });
+  });
+
+  router.get('/devices', requireAuth, (req, res) => {
+    const now = Date.now();
+    authRepo.purgeExpiredDevices(now);
+    const token = deviceTokenOf(req);
+    const currentHash = token ? hashToken(token) : null;
+    res.json(
+      authRepo.listDevices(sessionUserId(req), now).map((d) => ({
+        id: d.id,
+        label: d.label,
+        created_at: d.created_at,
+        last_used_at: d.last_used_at,
+        expires_at: d.expires_at,
+        current: d.token_hash === currentHash,
+      })),
+    );
+  });
+
+  router.delete('/devices/:id', requireAuth, (req, res) => {
+    const id = parseNumberParam(req, res, 'id');
+    if (id === null) return;
+    const device = authRepo.getDevice(id, sessionUserId(req));
+    if (!device) {
+      sendError(res, 404, 'auth.device_not_found');
+      return;
+    }
+    authRepo.deleteDevice(id, device.user_id);
+    const token = deviceTokenOf(req);
+    if (token && hashToken(token) === device.token_hash) clearDeviceCookie(res);
+    res.json({ ok: true });
+  });
+
+  router.delete('/devices', requireAuth, (req, res) => {
+    authRepo.deleteAllDevicesForUser(sessionUserId(req));
+    clearDeviceCookie(res);
     res.json({ ok: true });
   });
 

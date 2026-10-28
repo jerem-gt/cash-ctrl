@@ -99,6 +99,7 @@ export const ERROR_MESSAGES = {
   'auth.email_missing': "Aucune adresse e-mail n'est renseignée pour ce compte",
   'auth.smtp_not_configured': "L'envoi d'e-mails n'est pas configuré sur le serveur",
   'auth.email_send_failed': "Échec de l'envoi de l'e-mail",
+  'auth.device_not_found': 'Appareil mémorisé introuvable',
 
   // ── Remboursements ────────────────────────────────────────────────────────
   'reimbursement.only_expense': 'Seules les dépenses peuvent avoir des remboursements',

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Lang, MeData } from '@/api/client';
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
+import { fireAndForget } from '@/lib/async';
 import { queryKeys } from '@/lib/queryKeys';
 import { claimCacheOwner, purgePersistedCache } from '@/lib/queryPersister';
 
@@ -34,7 +35,8 @@ export function useVerifyTotp() {
   const qc = useQueryClient();
   return useMutation({
     meta: { suppressGlobalError: true },
-    mutationFn: ({ code }: { code: string }) => authApi.verifyTotp(code),
+    mutationFn: ({ code, remember }: { code: string; remember?: boolean }) =>
+      authApi.verifyTotp(code, remember),
     onSuccess: (data) => {
       claimCacheOwner(qc, data.username);
       qc.setQueryData(queryKeys.me(), data);
@@ -72,10 +74,12 @@ export function useEnable2FA() {
   return useMutation({
     mutationFn: ({ secret, code }: { secret: string; code: string }) =>
       authApi.enable2fa(secret, code),
-    onSuccess: () =>
+    onSuccess: () => {
       qc.setQueryData(queryKeys.me(), (old: MeData | null | undefined) =>
         old ? { ...old, totpEnabled: true } : old,
-      ),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.trustedDevices() }));
+    },
   });
 }
 
@@ -83,10 +87,36 @@ export function useDisable2FA() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ password }: { password: string }) => authApi.disable2fa(password),
-    onSuccess: () =>
+    onSuccess: () => {
       qc.setQueryData(queryKeys.me(), (old: MeData | null | undefined) =>
         old ? { ...old, totpEnabled: false } : old,
-      ),
+      );
+      fireAndForget(qc.invalidateQueries({ queryKey: queryKeys.trustedDevices() }));
+    },
+  });
+}
+
+export function useTrustedDevices(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.trustedDevices(),
+    queryFn: authApi.devices,
+    enabled,
+  });
+}
+
+export function useForgetDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.forgetDevice,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.trustedDevices() }),
+  });
+}
+
+export function useForgetAllDevices() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.forgetAllDevices,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.trustedDevices() }),
   });
 }
 

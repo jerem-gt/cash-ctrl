@@ -180,6 +180,15 @@ export interface UserUpdatePayload {
   is_admin?: boolean;
 }
 
+export interface TrustedDevice {
+  id: number;
+  label: string;
+  created_at: number;
+  last_used_at: number;
+  expires_at: number;
+  current: boolean;
+}
+
 export type LoginResponse = (MeData & { totp_required?: never }) | { totp_required: true };
 
 // Auth
@@ -195,7 +204,11 @@ export const authApi = {
     request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { secret, code }),
   disable2fa: (password: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
-  verifyTotp: (code: string) => request<MeData>('POST', '/api/auth/2fa/verify', { code }),
+  verifyTotp: (code: string, remember = false) =>
+    request<MeData>('POST', '/api/auth/2fa/verify', { code, remember }),
+  devices: () => request<TrustedDevice[]>('GET', '/api/auth/devices'),
+  forgetDevice: (id: number) => request<{ ok: boolean }>('DELETE', `/api/auth/devices/${id}`),
+  forgetAllDevices: () => request<{ ok: boolean }>('DELETE', '/api/auth/devices'),
   setupStatus: () => request<{ required: boolean }>('GET', '/api/auth/setup'),
   setup: (payload: { token: string; username: string; password: string; lang: Lang }) =>
     request<MeData>('POST', '/api/auth/setup', payload),

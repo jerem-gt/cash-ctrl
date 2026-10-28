@@ -84,7 +84,8 @@
     "reset_token_invalid": "Lien de réinitialisation invalide ou expiré",
     "email_missing": "Aucune adresse e-mail n'est renseignée pour ce compte",
     "smtp_not_configured": "L'envoi d'e-mails n'est pas configuré sur le serveur",
-    "email_send_failed": "Échec de l'envoi de l'e-mail"
+    "email_send_failed": "Échec de l'envoi de l'e-mail",
+    "device_not_found": "Appareil mémorisé introuvable"
   },
   "reimbursement": {
     "only_expense": "Seules les dépenses peuvent avoir des remboursements",

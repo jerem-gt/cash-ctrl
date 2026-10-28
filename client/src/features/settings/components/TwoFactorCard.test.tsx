@@ -77,3 +77,88 @@ describe('TwoFactorCard — 2FA activée', () => {
     );
   });
 });
+
+describe('TwoFactorCard — appareils mémorisés', () => {
+  function withTotp() {
+    server.use(http.get('/api/auth/me', () => HttpResponse.json({ ...ME, totpEnabled: true })));
+  }
+
+  it('liste les appareils avec le badge « Cet appareil »', async () => {
+    withTotp();
+    renderWithProviders(<TwoFactorCard />);
+    expect(await screen.findByText('Firefox · Linux')).toBeInTheDocument();
+    expect(screen.getByText('Safari · iOS')).toBeInTheDocument();
+    expect(screen.getAllByText('Cet appareil')).toHaveLength(1);
+    expect(screen.getAllByText(/Dernière utilisation/)).toHaveLength(2);
+  });
+
+  it('affiche un état vide sans appareil', async () => {
+    withTotp();
+    server.use(http.get('/api/auth/devices', () => HttpResponse.json([])));
+    renderWithProviders(<TwoFactorCard />);
+    expect(await screen.findByText('Aucun appareil mémorisé.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /oublier tous/i })).not.toBeInTheDocument();
+  });
+
+  it("n'affiche pas la liste quand la 2FA est désactivée", async () => {
+    renderWithProviders(<TwoFactorCard />);
+    await screen.findByText('Désactivée');
+    expect(screen.queryByText('Appareils mémorisés')).not.toBeInTheDocument();
+  });
+
+  it('oublie un appareil et affiche un toast', async () => {
+    withTotp();
+    let deletedId: string | undefined;
+    server.use(
+      http.delete('/api/auth/devices/:id', ({ params }) => {
+        deletedId = params.id as string;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<TwoFactorCard />);
+    await screen.findByText('Safari · iOS');
+    await user.click(screen.getAllByRole('button', { name: 'Oublier' })[1]);
+    await waitFor(() => expect(deletedId).toBe('2'));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Appareil oublié'),
+    );
+  });
+
+  it('oublie tous les appareils après confirmation', async () => {
+    withTotp();
+    let deleted = false;
+    server.use(
+      http.delete('/api/auth/devices', () => {
+        deleted = true;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<TwoFactorCard />);
+    await user.click(await screen.findByRole('button', { name: 'Oublier tous les appareils' }));
+    expect(deleted).toBe(false);
+    expect(screen.getByText('Oublier tous les appareils ?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Confirmer' }));
+    await waitFor(() => expect(deleted).toBe(true));
+    await waitFor(() =>
+      expect(document.getElementById('toast')?.textContent).toContain('Tous les appareils'),
+    );
+  });
+
+  it("n'appelle pas l'API quand la confirmation est annulée", async () => {
+    withTotp();
+    let deleted = false;
+    server.use(
+      http.delete('/api/auth/devices', () => {
+        deleted = true;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<TwoFactorCard />);
+    await user.click(await screen.findByRole('button', { name: 'Oublier tous les appareils' }));
+    await user.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(deleted).toBe(false);
+  });
+});

@@ -140,6 +140,40 @@ describe('LoginPage — flux TOTP', () => {
     await waitFor(() => expect(verifyCalled).toBe(true));
   });
 
+  it('propose « Se souvenir de cet appareil » décochée par défaut', async () => {
+    await loginAndGetToTotpScreen();
+    expect(screen.getByLabelText(/se souvenir de cet appareil/i)).not.toBeChecked();
+  });
+
+  it('envoie remember=false par défaut', async () => {
+    let body: unknown = null;
+    server.use(
+      http.post('/api/auth/2fa/verify', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...ME, totpEnabled: true });
+      }),
+    );
+    const user = await loginAndGetToTotpScreen();
+    await user.type(screen.getByPlaceholderText('000000'), '123456');
+    await user.click(screen.getByRole('button', { name: /vérifier/i }));
+    await waitFor(() => expect(body).toEqual({ code: '123456', remember: false }));
+  });
+
+  it('envoie remember=true une fois la case cochée', async () => {
+    let body: unknown = null;
+    server.use(
+      http.post('/api/auth/2fa/verify', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...ME, totpEnabled: true });
+      }),
+    );
+    const user = await loginAndGetToTotpScreen();
+    await user.click(screen.getByLabelText(/se souvenir de cet appareil/i));
+    await user.type(screen.getByPlaceholderText('000000'), '123456');
+    await user.click(screen.getByRole('button', { name: /vérifier/i }));
+    await waitFor(() => expect(body).toEqual({ code: '123456', remember: true }));
+  });
+
   it('affiche une erreur si le code TOTP est invalide', async () => {
     server.use(
       http.post('/api/auth/2fa/verify', () =>

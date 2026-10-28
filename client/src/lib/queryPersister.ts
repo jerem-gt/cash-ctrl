@@ -27,6 +27,7 @@ export const queryPersister = createAsyncStoragePersister({
 const NON_PERSISTED_ROOTS: ReadonlySet<unknown> = new Set([
   queryKeys.me()[0],
   queryKeys.setupStatus()[0],
+  queryKeys.trustedDevices()[0],
   queryKeys.version()[0],
   queryKeys.search('')[0],
   queryKeys.stocks.search('')[0],

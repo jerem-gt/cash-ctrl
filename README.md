@@ -51,7 +51,7 @@ L'interface suit la préférence système et se bascule manuellement (Clair / So
 | **Catégorisation auto** | Règles LIKE pour affecter automatiquement une catégorie aux transactions                                                                                                                            |
 | **Import / Export**     | Import QIF / XHB (Homebank) / CSV (wizard de mapping colonnes) ; export JSON toutes entités                                                                                                         |
 | **Sauvegarde**          | Sauvegardes incrémentales automatiques                                                                                                                                                              |
-| **2FA**                 | Double authentification TOTP (Google Authenticator, Authy…)                                                                                                                                         |
+| **2FA**                 | Double authentification TOTP (Google Authenticator, Authy…) ; « Se souvenir de cet appareil » 30 jours, révocable dans les Réglages                                                                |
 | **i18n**                | Interface disponible en français et en anglais via react-i18next — détection automatique de la langue du navigateur, sélecteur dans les Réglages, persistance localStorage ; namespaces par feature |
 
 ---

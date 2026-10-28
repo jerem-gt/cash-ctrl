@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import type { ResetTokenRow, User } from './auth.types.js';
+import type { ResetTokenRow, TrustedDeviceRow, User } from './auth.types.js';
 
 export function createAuthRepo(db: Database) {
   const getByUsernameStmt = db.prepare<{ username: string }, User>(
@@ -26,7 +26,46 @@ export function createAuthRepo(db: Database) {
     'SELECT user_id, expires_at FROM password_reset_tokens WHERE token_hash = ?',
   );
 
+  const purgeExpiredDevicesStmt = db.prepare('DELETE FROM trusted_devices WHERE expires_at <= ?');
+  const insertDeviceStmt = db.prepare(
+    `INSERT INTO trusted_devices (user_id, token_hash, label, created_at, last_used_at, expires_at)
+     VALUES (:userId, :tokenHash, :label, :now, :now, :expiresAt)`,
+  );
+  const getDeviceByHashStmt = db.prepare<[string], TrustedDeviceRow>(
+    'SELECT * FROM trusted_devices WHERE token_hash = ?',
+  );
+  const touchDeviceStmt = db.prepare('UPDATE trusted_devices SET last_used_at = ? WHERE id = ?');
+  const deleteDeviceByHashStmt = db.prepare('DELETE FROM trusted_devices WHERE token_hash = ?');
+  const listDevicesStmt = db.prepare<[number, number], TrustedDeviceRow>(
+    `SELECT * FROM trusted_devices WHERE user_id = ? AND expires_at > ?
+     ORDER BY last_used_at DESC, id DESC`,
+  );
+  const getDeviceStmt = db.prepare<[number, number], TrustedDeviceRow>(
+    'SELECT * FROM trusted_devices WHERE id = ? AND user_id = ?',
+  );
+  const deleteDeviceStmt = db.prepare('DELETE FROM trusted_devices WHERE id = ? AND user_id = ?');
+  const deleteAllDevicesStmt = db.prepare('DELETE FROM trusted_devices WHERE user_id = ?');
+
   return {
+    purgeExpiredDevices: (now: number) => purgeExpiredDevicesStmt.run(now),
+    insertDevice: (
+      userId: number,
+      tokenHash: string,
+      label: string,
+      now: number,
+      expiresAt: number,
+    ) => insertDeviceStmt.run({ userId, tokenHash, label, now, expiresAt }),
+    getDeviceByHash: (tokenHash: string): TrustedDeviceRow | undefined =>
+      getDeviceByHashStmt.get(tokenHash),
+    touchDevice: (id: number, now: number) => touchDeviceStmt.run(now, id),
+    deleteDeviceByHash: (tokenHash: string) => deleteDeviceByHashStmt.run(tokenHash),
+    listDevices: (userId: number, now: number): TrustedDeviceRow[] =>
+      listDevicesStmt.all(userId, now),
+    getDevice: (id: number, userId: number): TrustedDeviceRow | undefined =>
+      getDeviceStmt.get(id, userId),
+    deleteDevice: (id: number, userId: number) => deleteDeviceStmt.run(id, userId),
+    /** Révoque tous les appareils mémorisés du compte (changement de secret ou de 2FA). */
+    deleteAllDevicesForUser: (userId: number) => deleteAllDevicesStmt.run(userId),
     getByUsername: (username: string): User | undefined =>
       getByUsernameStmt.get({ username }) ?? undefined,
     getById: (id: number): User | undefined => getByIdStmt.get({ id }) ?? undefined,

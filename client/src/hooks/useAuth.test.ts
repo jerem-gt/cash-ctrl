@@ -2,13 +2,18 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { queryPersister } from '@/lib/queryPersister';
-import { ME } from '@/tests/fixtures';
+import { ME, TRUSTED_DEVICES } from '@/tests/fixtures';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
 import {
   useChangePassword,
+  useDisable2FA,
+  useEnable2FA,
+  useForgetAllDevices,
+  useForgetDevice,
   useForgotPassword,
   useLogin,
   useLogout,
@@ -17,6 +22,7 @@ import {
   useSendTestEmail,
   useSetup,
   useSetupStatus,
+  useTrustedDevices,
   useUpdateProfile,
   useVerifyTotp,
 } from './useAuth';
@@ -248,6 +254,80 @@ describe('useResetPassword', () => {
     const { result } = renderHook(() => useResetPassword(), { wrapper: Wrapper });
     result.current.mutate({ token: 'bad', password: 'password123' });
     await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('appareils mémorisés', () => {
+  it('useVerifyTotp envoie remember', async () => {
+    let body: unknown = null;
+    server.use(
+      http.post('/api/auth/2fa/verify', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...ME, totpEnabled: true });
+      }),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useVerifyTotp(), { wrapper: Wrapper });
+    result.current.mutate({ code: '123456', remember: true });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(body).toEqual({ code: '123456', remember: true });
+  });
+
+  it('useTrustedDevices charge la liste, seulement si activé', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useTrustedDevices(true), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(TRUSTED_DEVICES);
+
+    const disabled = renderHook(() => useTrustedDevices(false), { wrapper: Wrapper });
+    expect(disabled.result.current.fetchStatus).toBe('idle');
+  });
+
+  it('useForgetDevice supprime un appareil et invalide la liste', async () => {
+    let deletedId: string | undefined;
+    server.use(
+      http.delete('/api/auth/devices/:id', ({ params }) => {
+        deletedId = params.id as string;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const { Wrapper, qc } = createHookWrapper();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useForgetDevice(), { wrapper: Wrapper });
+    result.current.mutate(2);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(deletedId).toBe('2');
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.trustedDevices() });
+  });
+
+  it('useForgetAllDevices supprime tous les appareils et invalide la liste', async () => {
+    let called = false;
+    server.use(
+      http.delete('/api/auth/devices', () => {
+        called = true;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const { Wrapper, qc } = createHookWrapper();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useForgetAllDevices(), { wrapper: Wrapper });
+    result.current.mutate();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(called).toBe(true);
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.trustedDevices() });
+  });
+
+  it("l'activation et la désactivation de la 2FA invalident la liste", async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+    const enable = renderHook(() => useEnable2FA(), { wrapper: Wrapper });
+    enable.result.current.mutate({ secret: 'S', code: '123456' });
+    await waitFor(() => expect(enable.result.current.isSuccess).toBe(true));
+    const disable = renderHook(() => useDisable2FA(), { wrapper: Wrapper });
+    disable.result.current.mutate({ password: 'pw' });
+    await waitFor(() => expect(disable.result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.trustedDevices() });
   });
 });
 
