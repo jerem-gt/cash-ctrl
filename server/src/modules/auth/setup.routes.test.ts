@@ -41,7 +41,12 @@ describe('POST /api/auth/setup', () => {
     const agent = supertest.agent(app);
     const res = await agent.post('/api/auth/setup').send(body(token, { lang: 'en' }));
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ username: 'jerem', isAdmin: true, totpEnabled: false });
+    expect(res.body).toEqual({
+      id: expect.any(Number),
+      username: 'jerem',
+      isAdmin: true,
+      totpEnabled: false,
+    });
 
     const user = db.prepare('SELECT id, is_admin FROM users').get() as {
       id: number;

@@ -45,6 +45,12 @@ export const logger = {
   error: (msg: string): void => log('ERROR', msg),
 };
 
+export interface AuthLogger {
+  info: (msg: string) => void;
+  warn: (msg: string) => void;
+  error: (msg: string) => void;
+}
+
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   res.on('finish', () => {

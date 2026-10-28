@@ -1,9 +1,15 @@
+import type { Lang } from '@/api/client';
 import i18n from '@/i18n';
 
 import { parseLocalDate } from './dateUtils';
 
+/** Langue de l'interface réduite aux langues supportées (fr par défaut). */
+export function currentLang(): Lang {
+  return i18n.language.startsWith('en') ? 'en' : 'fr';
+}
+
 export function currentLocale(): string {
-  if (i18n.language.startsWith('en')) return 'en-GB';
+  if (currentLang() === 'en') return 'en-GB';
   return 'fr-FR';
 }
 

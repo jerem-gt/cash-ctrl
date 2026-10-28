@@ -57,8 +57,9 @@ export function createUsersRepo(db: Database) {
     getById: (id: number): UserPublic | undefined => getByIdStmt.get({ id }) ?? undefined,
     getByUsername: (username: string): { id: number } | undefined =>
       getByUsernameStmt.get({ username }) ?? undefined,
+    /** `email` doit être normalisé (emailSchema : trim + minuscules). */
     getByEmail: (email: string): { id: number } | undefined =>
-      getByEmailStmt.get({ email: email.toLowerCase() }) ?? undefined,
+      getByEmailStmt.get({ email }) ?? undefined,
     countAdmins: (): number => countAdminsStmt.get()?.n ?? 0,
     create: (username: string, hash: string, email: string | null = null): UserPublic => {
       const result = insertStmt.run({ username, hash, email });

@@ -32,6 +32,7 @@ import type { MeData } from '@/api/client';
 
 // Profil par défaut renvoyé par /api/auth/me dans les tests
 export const ME: MeData = {
+  id: 1,
   username: 'test',
   email: null,
   isAdmin: false,

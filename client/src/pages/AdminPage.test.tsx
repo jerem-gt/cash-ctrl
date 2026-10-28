@@ -11,7 +11,9 @@ import AdminPage from './AdminPage';
 
 async function setup() {
   server.use(
-    http.get('/api/auth/me', () => HttpResponse.json({ ...ME, username: 'admin', isAdmin: true })),
+    http.get('/api/auth/me', () =>
+      HttpResponse.json({ ...ME, id: 1, username: 'admin', isAdmin: true }),
+    ),
   );
   const utils = renderWithProviders(<AdminPage />);
   await screen.findByText('alice');
@@ -229,7 +231,9 @@ const ADMIN_ROW = {
 
 function renderAsAdmin() {
   server.use(
-    http.get('/api/auth/me', () => HttpResponse.json({ ...ME, username: 'admin', isAdmin: true })),
+    http.get('/api/auth/me', () =>
+      HttpResponse.json({ ...ME, id: 1, username: 'admin', isAdmin: true }),
+    ),
   );
   return renderWithProviders(<AdminPage />);
 }

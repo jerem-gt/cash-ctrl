@@ -3,7 +3,7 @@ import { Loader2, LockOpen, Pencil, Plus, ShieldMinus, ShieldPlus, Trash2, X } f
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { UserUpdatePayload } from '@/api/client';
+import type { Lang, UserUpdatePayload } from '@/api/client';
 import { Button, Card, Input, Select, showToast } from '@/components/ui';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
 import { useMe } from '@/hooks/useAuth';
@@ -26,7 +26,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [lang, setLang] = useState<'fr' | 'en'>('fr');
+  const [lang, setLang] = useState<Lang>('fr');
   const create = useCreateUser();
 
   const handleSubmit = (e: SubmitEvent) => {
@@ -85,7 +85,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
         <label className="text-xs text-content-muted">{t('add_form.language_label')}</label>
         <Select
           value={lang}
-          onChange={(e) => setLang(e.target.value as 'fr' | 'en')}
+          onChange={(e) => setLang(e.target.value as Lang)}
           aria-label={t('add_form.language_label')}
         >
           <option value="fr">{t('add_form.language_fr')}</option>
@@ -241,19 +241,27 @@ export default function AdminPage() {
           </div>
         )}
 
-        {isLoading ? (
-          <p className="text-sm text-content-subtle">{t('page.loading')}</p>
-        ) : (
+        {isLoading && <p className="text-sm text-content-subtle">{t('page.loading')}</p>}
+        {!isLoading && (
           <ul className="divide-y divide-line-subtle">
             {users.map((user) => {
-              const isSelf = user.username === me?.username;
+              const isSelf = user.id === me?.id;
+              const isAdminUser = user.is_admin === 1;
+              const adminToggleLabel = isAdminUser
+                ? t('user.demote_title')
+                : t('user.promote_title');
+              const AdminToggleIcon = isAdminUser ? ShieldMinus : ShieldPlus;
+              const DeleteIcon = isDeleting && deleteUser.variables === user.id ? Loader2 : Trash2;
+              const deleteIconClass =
+                DeleteIcon === Loader2 ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5';
               return (
                 <li key={user.id} className="py-3">
-                  {editingId === user.id ? (
+                  {editingId === user.id && (
                     <div className="p-3 bg-surface-muted rounded-xl border border-line-subtle">
                       <EditUserForm user={user} onClose={() => setEditingId(null)} />
                     </div>
-                  ) : (
+                  )}
+                  {editingId !== user.id && (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -301,18 +309,10 @@ export default function AdminPage() {
                             size="sm"
                             onClick={() => handleToggleAdmin(user)}
                             disabled={updateUser.isPending}
-                            title={
-                              user.is_admin === 1 ? t('user.demote_title') : t('user.promote_title')
-                            }
-                            aria-label={
-                              user.is_admin === 1 ? t('user.demote_title') : t('user.promote_title')
-                            }
+                            title={adminToggleLabel}
+                            aria-label={adminToggleLabel}
                           >
-                            {user.is_admin === 1 ? (
-                              <ShieldMinus className="h-3.5 w-3.5" />
-                            ) : (
-                              <ShieldPlus className="h-3.5 w-3.5" />
-                            )}
+                            <AdminToggleIcon className="h-3.5 w-3.5" />
                           </Button>
                         )}
                         {user.totp_enabled === 1 && (
@@ -335,11 +335,7 @@ export default function AdminPage() {
                             title={t('user.delete_title')}
                             aria-label={t('user.delete_title')}
                           >
-                            {isDeleting && deleteUser.variables === user.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
+                            <DeleteIcon className={deleteIconClass} />
                           </Button>
                         )}
                       </div>

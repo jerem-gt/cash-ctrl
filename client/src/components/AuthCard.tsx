@@ -9,6 +9,10 @@ interface Props {
   children: ReactNode;
 }
 
+// Classe du bouton-lien pleine largeur (retour, mot de passe oublié)
+export const authLinkButtonClass =
+  'w-full text-sm text-content-muted hover:text-content transition-colors text-center';
+
 // Cadre commun des écrans hors session (installation, mot de passe oublié, réinitialisation)
 export function AuthCard({ subtitle, error = null, children }: Readonly<Props>) {
   const { isDev } = useAppVersion();

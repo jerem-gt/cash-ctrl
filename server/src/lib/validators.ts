@@ -10,3 +10,6 @@ export const nameSchema = z.string().min(1).max(100);
 
 /** E-mail normalisé (trim + minuscules) et validé. */
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+export const usernameSchema = z.string().min(1).max(64);
+export const langSchema = z.enum(['fr', 'en']).default('fr');

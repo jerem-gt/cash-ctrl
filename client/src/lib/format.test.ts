@@ -1,7 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import i18n from '@/i18n';
+
 import { isSameMonth, isThisMonth, today } from './dateUtils';
-import { fmt, fmtCurrency, fmtDate, fmtDateShort, monthLabel } from './format';
+import { currentLang, fmt, fmtCurrency, fmtDate, fmtDateShort, monthLabel } from './format';
+
+describe('currentLang', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('fr');
+  });
+
+  it('renvoie en pour une langue anglaise (en, en-GB)', async () => {
+    await i18n.changeLanguage('en-GB');
+    expect(currentLang()).toBe('en');
+  });
+
+  it('renvoie fr pour le français ou une langue non supportée', async () => {
+    await i18n.changeLanguage('fr');
+    expect(currentLang()).toBe('fr');
+    await i18n.changeLanguage('de');
+    expect(currentLang()).toBe('fr');
+  });
+});
 
 describe('fmt', () => {
   it('formate un entier positif en euros sans décimales', () => {

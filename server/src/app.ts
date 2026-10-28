@@ -5,11 +5,10 @@ import session from 'express-session';
 import helmet from 'helmet';
 
 import type { Mailer } from './lib/mailer.js';
-import { globalErrorHandler, requestLogger } from './logger.js';
+import { type AuthLogger, globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
-import type { AuthLogger } from './modules/auth/password.routes.js';
 import type { SetupToken } from './modules/auth/setup.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';

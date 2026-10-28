@@ -65,6 +65,7 @@ describe('POST /api/auth/login', () => {
       .post('/api/auth/login')
       .send({ username: 'alice', password: 'password123' });
     expect(res.status).toBe(200);
+    expect(res.body.id).toEqual(expect.any(Number));
     expect(res.body.username).toBe('alice');
     expect(res.body.isAdmin).toBe(false);
     expect(res.body.totpEnabled).toBe(false);
@@ -155,6 +156,7 @@ describe('GET /api/auth/me', () => {
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
     const res = await agent.get('/api/auth/me');
     expect(res.status).toBe(200);
+    expect(res.body.id).toEqual(expect.any(Number));
     expect(res.body.username).toBe('alice');
     expect(res.body.isAdmin).toBe(false);
     expect(res.body.totpEnabled).toBe(false);

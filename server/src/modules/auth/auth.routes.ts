@@ -8,13 +8,15 @@ import { seedUserData } from '../../db/seed.js';
 import { createMailer, type Mailer } from '../../lib/mailer.js';
 import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { parseBody, sendError } from '../../lib/routeHelpers.js';
-import { emailSchema } from '../../lib/validators.js';
-import { logger } from '../../logger.js';
+import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
+import { type AuthLogger, logger } from '../../logger.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
 import type { SQLiteSessionStore } from '../../session-store.js';
+import { createUsersRepo } from '../users/users.repo.js';
 import { createAuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';
-import { type AuthLogger, createPasswordRouter } from './password.routes.js';
+import { createMailRouter } from './mail.routes.js';
+import { createPasswordRouter } from './password.routes.js';
 import { SetupToken } from './setup.js';
 
 export const loginSchema = z.object({
@@ -42,15 +44,15 @@ export const verifyTotpSchema = z.object({
 
 export const setupSchema = z.object({
   token: z.string().min(1),
-  username: z.string().min(1).max(64),
+  username: usernameSchema,
   password: z.string().min(8),
-  lang: z.enum(['fr', 'en']).default('fr'),
+  lang: langSchema,
 });
 
 export const profileSchema = z
   .object({
     current_password: z.string().min(1),
-    username: z.string().min(1).max(64).optional(),
+    username: usernameSchema.optional(),
     email: emailSchema.nullable().optional(),
   })
   .refine((d) => d.username !== undefined || d.email !== undefined, {
@@ -99,13 +101,19 @@ function startSession(
         next(saveErr);
         return;
       }
-      res.json({ username: user.username, isAdmin: user.is_admin === 1, totpEnabled });
+      res.json({
+        id: user.id,
+        username: user.username,
+        isAdmin: user.is_admin === 1,
+        totpEnabled,
+      });
     });
   });
 }
 
 function profileOf(user: User) {
   return {
+    id: user.id,
     username: user.username,
     email: user.email,
     isAdmin: user.is_admin === 1,
@@ -127,6 +135,7 @@ export function createAuthRouter(
   options: AuthRouterOptions = {},
 ): Router {
   const authRepo = createAuthRepo(db);
+  const usersRepo = createUsersRepo(db);
   const router = Router();
   const loginLimiter = new FailureRateLimiter(db);
   const mailer = options.mailer ?? createMailer();
@@ -298,25 +307,25 @@ export function createAuthRouter(
 
     const { username, email } = data;
     if (username !== undefined) {
-      const owner = authRepo.usernameOwner(username);
-      if (owner !== undefined && owner !== userId) {
+      const owner = usersRepo.getByUsername(username);
+      if (owner !== undefined && owner.id !== userId) {
         sendError(res, 409, 'user.username_taken');
         return;
       }
     }
     if (email !== undefined && email !== null) {
-      const owner = authRepo.emailOwner(email);
-      if (owner !== undefined && owner !== userId) {
+      const owner = usersRepo.getByEmail(email);
+      if (owner !== undefined && owner.id !== userId) {
         sendError(res, 409, 'user.email_taken');
         return;
       }
     }
 
     if (username !== undefined) {
-      authRepo.updateUsername(userId, username);
+      usersRepo.updateUsername(userId, username);
       req.session.username = username;
     }
-    if (email !== undefined) authRepo.updateEmail(userId, email);
+    if (email !== undefined) usersRepo.updateEmail(userId, email);
 
     res.json(profileOf(authRepo.getById(userId) as User));
   });
@@ -417,7 +426,7 @@ export function createAuthRouter(
 
     if (!(await checkCurrentPassword(res, user, parsed.data.password))) return;
 
-    authRepo.disableTotp(userId);
+    usersRepo.disableTotp(userId);
     res.json({ ok: true });
   });
 
@@ -425,12 +434,15 @@ export function createAuthRouter(
     createPasswordRouter({
       db,
       repo: authRepo,
+      usersRepo,
       sessionStore,
       mailer,
       appUrl: options.appUrl,
       log,
     }),
   );
+
+  router.use(createMailRouter({ db, repo: authRepo, mailer, log }));
 
   return router;
 }

@@ -1,29 +1,28 @@
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { AuthCard } from '@/components/AuthCard';
+import { AuthCard, authLinkButtonClass } from '@/components/AuthCard';
 import { Button, FormGroup, Input } from '@/components/ui';
 import { useForgotPassword } from '@/hooks/useAuth';
+import { currentLang } from '@/lib/format';
 
 export function ForgotPasswordPage({ onBack }: Readonly<{ onBack: () => void }>) {
-  const { t, i18n } = useTranslation('common');
+  const { t } = useTranslation('common');
   const [identifier, setIdentifier] = useState('');
   const [sent, setSent] = useState(false);
   const forgot = useForgotPassword();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    const lang = i18n.language.startsWith('en') ? 'en' : 'fr';
     // Message neutre identique quel que soit le résultat (pas d'énumération de comptes)
-    forgot.mutate({ identifier: identifier.trim(), lang }, { onSettled: () => setSent(true) });
+    forgot.mutate(
+      { identifier: identifier.trim(), lang: currentLang() },
+      { onSettled: () => setSent(true) },
+    );
   };
 
   const backButton = (
-    <button
-      type="button"
-      onClick={onBack}
-      className="w-full text-sm text-content-muted hover:text-content transition-colors text-center"
-    >
+    <button type="button" onClick={onBack} className={authLinkButtonClass}>
       {t('forgot.back')}
     </button>
   );

@@ -6,21 +6,21 @@ import { z } from 'zod';
 import { seedUserData } from '../../db/seed.js';
 import type { ErrorCode } from '../../lib/errorCodes.js';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
-import { emailSchema } from '../../lib/validators.js';
+import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { createRequireAdmin, sessionUserId } from '../../middleware.js';
 import type { SQLiteSessionStore } from '../../session-store.js';
 import { createUsersRepo } from './users.repo.js';
 
 export const createUserSchema = z.object({
-  username: z.string().min(1).max(64),
+  username: usernameSchema,
   password: z.string().min(8),
   email: emailSchema.nullable().optional(),
-  lang: z.enum(['fr', 'en']).default('fr'),
+  lang: langSchema,
 });
 
 export const updateUserSchema = z
   .object({
-    username: z.string().min(1).max(64).optional(),
+    username: usernameSchema.optional(),
     password: z.string().min(8).optional(),
     email: emailSchema.nullable().optional(),
     is_admin: z.boolean().optional(),
@@ -39,6 +39,15 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
   const router = Router();
 
   router.use(createRequireAdmin(db));
+
+  // Son propre mot de passe : on garde la session courante ; sinon toutes les sessions du compte.
+  function closeSessionsAfterPasswordReset(id: number, callerId: number, sessionId: string) {
+    if (id === callerId) {
+      sessionStore.destroyOtherSessions(id, sessionId);
+    } else {
+      sessionStore.destroyAllSessions(id);
+    }
+  }
 
   router.get('/', (_req, res) => {
     res.json(repo.list());
@@ -104,10 +113,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
       if (isAdmin !== undefined) repo.updateAdmin(id, isAdmin);
       if (hash !== null) repo.updatePassword(id, hash);
     })();
-    // Mot de passe d'un autre compte redéfini : ses sessions ouvertes sont fermées.
-    if (hash !== null && id !== sessionUserId(req)) {
-      sessionStore.destroyAllSessions(id);
-    }
+    if (hash !== null) closeSessionsAfterPasswordReset(id, sessionUserId(req), req.sessionID);
     res.json(repo.getById(id));
   });
 

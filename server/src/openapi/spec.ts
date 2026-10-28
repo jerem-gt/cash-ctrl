@@ -203,7 +203,7 @@ export function buildOpenApiSpec() {
         post: {
           tags: ['Auth'],
           summary:
-            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session',
+            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session ({ id, username, isAdmin, totpEnabled })',
           requestBody: body(setupSchema),
           responses: {
             ...r200('Account created, session started'),
@@ -263,7 +263,7 @@ export function buildOpenApiSpec() {
       '/api/auth/login': {
         post: {
           tags: ['Auth'],
-          summary: 'Connexion',
+          summary: 'Connexion (renvoie { id, username, isAdmin, totpEnabled })',
           requestBody: body(loginSchema),
           responses: { ...r200('Session started'), ...r400, ...r401 },
         },
@@ -279,7 +279,7 @@ export function buildOpenApiSpec() {
       '/api/auth/me': {
         get: {
           tags: ['Auth'],
-          summary: 'Utilisateur courant ({ username, email, isAdmin, totpEnabled })',
+          summary: 'Utilisateur courant ({ id, username, email, isAdmin, totpEnabled })',
           security: sessionAuth,
           responses: { ...r200(), ...r401 },
         },

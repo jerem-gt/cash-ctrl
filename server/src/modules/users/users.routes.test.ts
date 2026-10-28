@@ -277,6 +277,18 @@ describe('PATCH /api/users/:id', () => {
     expect((await admin.get('/api/auth/me')).status).toBe(200);
   });
 
+  it('redéfinir son propre mot de passe ferme ses autres sessions et garde la courante', async () => {
+    const { app, db } = setup();
+    const other = await loginAs(app, 'admin');
+    const current = await loginAs(app, 'admin');
+    const res = await current
+      .patch(`/api/users/${idOf(db, 'admin')}`)
+      .send({ password: 'brandnewpass1' });
+    expect(res.status).toBe(200);
+    expect((await other.get('/api/auth/me')).status).toBe(401);
+    expect((await current.get('/api/auth/me')).status).toBe(200);
+  });
+
   it('autorise un admin à renvoyer son propre nom sans conflit', async () => {
     const { app, db } = setup();
     const agent = await loginAs(app, 'admin');

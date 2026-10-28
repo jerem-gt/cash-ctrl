@@ -47,6 +47,7 @@ describe('PATCH /api/auth/profile', () => {
       .send({ current_password: 'password123', username: 'alicia' });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
+      id: expect.any(Number),
       username: 'alicia',
       email: 'alice@test.fr',
       isAdmin: false,

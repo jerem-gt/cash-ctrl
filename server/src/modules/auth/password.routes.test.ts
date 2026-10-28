@@ -131,6 +131,16 @@ describe('POST /api/auth/password/forgot', () => {
     await vi.waitFor(() => expect(log.error).toHaveBeenCalled());
   });
 
+  it('écrit le lien dans les logs si l’envoi échoue', async () => {
+    const { app, log } = setup({
+      appUrl: 'https://x.test',
+      mailer: createFakeMailer({ fail: true }),
+    });
+    await supertest(app).post('/api/auth/password/forgot').send({ identifier: 'alice' });
+    await vi.waitFor(() => expect(log.warn).toHaveBeenCalled());
+    expect(log.warn.mock.calls[0][0]).toContain('https://x.test/reset-password?token=');
+  });
+
   it('répond 200 pour un compte inconnu, sans jeton ni e-mail', async () => {
     const { app, db, mailer } = setup({ appUrl: 'https://x.test' });
     const res = await supertest(app)
@@ -264,55 +274,5 @@ describe('POST /api/auth/password/reset', () => {
       .post('/api/auth/password/reset')
       .send({ token: 'x', password: 'brandnewpass1' });
     expect(res.status).toBe(429);
-  });
-});
-
-describe('POST /api/auth/test-email', () => {
-  async function loginAs(app: ReturnType<typeof createApp>, username: string) {
-    const agent = supertest.agent(app);
-    await agent.post('/api/auth/login').send({ username, password: 'password123' });
-    return agent;
-  }
-
-  it('envoie un e-mail de test à l’adresse du compte courant', async () => {
-    const { app, mailer } = setup();
-    const agent = await loginAs(app, 'alice');
-    const res = await agent.post('/api/auth/test-email');
-    expect(res.status).toBe(200);
-    expect(mailer.sent).toHaveLength(1);
-    expect(mailer.sent[0].to).toBe('alice@test.fr');
-  });
-
-  it('retourne 400 auth.email_missing sans e-mail', async () => {
-    const { app, db } = setup();
-    db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'noemail'").run();
-    const agent = await loginAs(app, 'noemail');
-    const res = await agent.post('/api/auth/test-email');
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('auth.email_missing');
-  });
-
-  it('retourne 503 auth.smtp_not_configured si le mailer n’est pas configuré', async () => {
-    const { app } = setup({ mailer: createFakeMailer({ configured: false }) });
-    const agent = await loginAs(app, 'alice');
-    const res = await agent.post('/api/auth/test-email');
-    expect(res.status).toBe(503);
-    expect(res.body.error.code).toBe('auth.smtp_not_configured');
-  });
-
-  it('retourne 502 auth.email_send_failed si l’envoi échoue', async () => {
-    const { app } = setup({ mailer: createFakeMailer({ fail: true }) });
-    const agent = await loginAs(app, 'alice');
-    const res = await agent.post('/api/auth/test-email');
-    expect(res.status).toBe(502);
-    expect(res.body.error.code).toBe('auth.email_send_failed');
-  });
-
-  it('retourne 403 pour un non-admin et sans session', async () => {
-    const { app, db } = setup();
-    db.prepare("UPDATE users SET is_admin = 0 WHERE username = 'alice'").run();
-    const agent = await loginAs(app, 'alice');
-    expect((await agent.post('/api/auth/test-email')).status).toBe(403);
-    expect((await supertest(app).post('/api/auth/test-email')).status).toBe(401);
   });
 });

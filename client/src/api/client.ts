@@ -158,6 +158,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 }
 
 export interface MeData {
+  id: number;
   username: string;
   email: string | null;
   isAdmin: boolean;

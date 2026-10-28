@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { AuthCard } from '@/components/AuthCard';
 import { Button, FormGroup, Input } from '@/components/ui';
 import { useSetup } from '@/hooks/useAuth';
+import { currentLang } from '@/lib/format';
 
 export function SetupPage() {
-  const { t, i18n } = useTranslation('common');
+  const { t } = useTranslation('common');
   const [token, setToken] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,8 +27,12 @@ export function SetupPage() {
       return;
     }
     setLocalError(null);
-    const lang = i18n.language.startsWith('en') ? 'en' : 'fr';
-    setup.mutate({ token: token.trim(), username: username.trim(), password, lang });
+    setup.mutate({
+      token: token.trim(),
+      username: username.trim(),
+      password,
+      lang: currentLang(),
+    });
   };
 
   const canSubmit = token.trim() !== '' && username.trim() !== '' && password !== '';
