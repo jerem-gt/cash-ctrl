@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   Star,
+  Users,
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -36,10 +37,12 @@ import { prefetchAccountDetail, prefetchForRoute } from '@/lib/prefetch';
 
 const NAV_BOTTOM_ITEMS = [
   { to: '/transactions', key: 'all_transactions' as const, icon: LayoutGrid, end: true },
-  { to: '/scheduled', key: 'scheduled' as const, icon: Calendar },
-  { to: '/reports', key: 'reports' as const, icon: BarChart2 },
-  { to: '/settings', key: 'settings' as const, icon: Settings },
+  { to: '/scheduled', key: 'scheduled' as const, icon: Calendar, end: false },
+  { to: '/reports', key: 'reports' as const, icon: BarChart2, end: false },
+  { to: '/settings', key: 'settings' as const, icon: Settings, end: false },
 ];
+
+const NAV_ADMIN_ITEM = { to: '/admin', key: 'users' as const, icon: Users, end: false };
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-6 py-3 text-sm border-l-2 transition-all duration-100 ${
@@ -50,12 +53,19 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 
 interface Props {
   username: string;
+  isAdmin?: boolean;
   mobileOpen: boolean;
   onMobileClose: () => void;
   onOpenSearch: () => void;
 }
 
-export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: Readonly<Props>) {
+export function Sidebar({
+  username,
+  isAdmin = false,
+  mobileOpen,
+  onMobileClose,
+  onOpenSearch,
+}: Readonly<Props>) {
   const { t } = useTranslation('sidebar');
   const { t: ts } = useTranslation('search');
   const qc = useQueryClient();
@@ -342,19 +352,21 @@ export function Sidebar({ username, mobileOpen, onMobileClose, onOpenSearch }: R
                 aria-hidden="true"
               />
               <div className="absolute bottom-full left-0 right-0 z-20 mx-3 mb-2 overflow-hidden rounded-xl bg-sidebar-elevated border border-white/10 shadow-xl shadow-black/40 py-1">
-                {NAV_BOTTOM_ITEMS.map(({ to, key, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={navClass}
-                    onClick={() => setMenuOpen(false)}
-                    onMouseEnter={() => prefetchForRoute(qc, to)}
-                  >
-                    <Icon className="h-4 w-4 opacity-80 shrink-0" />
-                    {t(key)}
-                  </NavLink>
-                ))}
+                {(isAdmin ? [...NAV_BOTTOM_ITEMS, NAV_ADMIN_ITEM] : NAV_BOTTOM_ITEMS).map(
+                  ({ to, key, icon: Icon, end }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      className={navClass}
+                      onClick={() => setMenuOpen(false)}
+                      onMouseEnter={() => prefetchForRoute(qc, to)}
+                    >
+                      <Icon className="h-4 w-4 opacity-80 shrink-0" />
+                      {t(key)}
+                    </NavLink>
+                  ),
+                )}
               </div>
             </>
           )}

@@ -140,6 +140,19 @@
     "err_csv_no_rows": "Aucune ligne de données trouvée dans ce fichier CSV.",
     "err_csv_mapping": "Veuillez associer les colonnes Date, Libellé et Montant avant de continuer."
   },
+  "profile": {
+    "title": "Profil",
+    "username": "Nom d'utilisateur",
+    "email": "E-mail",
+    "email_placeholder": "nom@exemple.fr",
+    "clear_email": "Effacer",
+    "current_password": "Mot de passe actuel",
+    "submit": "Enregistrer",
+    "success": "Profil mis à jour ✓",
+    "test_email_help": "Vérifiez la configuration SMTP en vous envoyant un e-mail de test.",
+    "test_email_btn": "Envoyer un e-mail de test",
+    "test_email_sent": "E-mail de test envoyé ✓"
+  },
   "password": {
     "title": "Changer le mot de passe",
     "current": "Mot de passe actuel",
@@ -224,6 +237,7 @@
     "import": "Import",
     "backup": "Backup",
     "tickers": "Tickers",
+    "profile": "Profil",
     "password": "Mot de passe",
     "totp": "Double authentification",
     "system_refs": "Entités système",

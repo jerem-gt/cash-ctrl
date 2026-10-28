@@ -124,6 +124,31 @@ describe('Sidebar', () => {
   });
 });
 
+describe('Sidebar - lien Utilisateurs', () => {
+  it('affiche le lien /admin dans le menu pour un admin', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Sidebar
+        username="root"
+        isAdmin
+        mobileOpen={false}
+        onMobileClose={() => {}}
+        onOpenSearch={() => {}}
+      />,
+    );
+    await user.click(screen.getByTitle('Menu'));
+    expect(screen.getByRole('link', { name: /utilisateurs/i })).toHaveAttribute('href', '/admin');
+  });
+
+  it("n'affiche pas le lien pour un non-admin", async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    await user.click(screen.getByTitle('Menu'));
+    expect(screen.getByRole('link', { name: /configuration/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /utilisateurs/i })).toBeNull();
+  });
+});
+
 describe('Sidebar - Casse-budget', () => {
   afterEach(() => {
     act(() => stopBudgetBreaker());

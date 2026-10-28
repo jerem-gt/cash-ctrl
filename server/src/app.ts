@@ -4,10 +4,13 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 
+import type { Mailer } from './lib/mailer.js';
 import { globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
+import type { AuthLogger } from './modules/auth/password.routes.js';
+import type { SetupToken } from './modules/auth/setup.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
@@ -37,6 +40,20 @@ export interface AppOptions {
   backupDir?: string;
   /** Check de santé supplémentaire : renvoie une raison d'échec, ou null si OK. */
   healthExtraCheck?: () => string | null;
+  /** Envoi d'e-mails (par défaut : config SMTP_* de l'environnement). */
+  mailer?: Mailer;
+  /** Jeton de premier démarrage (par défaut : nouveau jeton aléatoire). */
+  setupToken?: SetupToken;
+  /** URL publique de l'application pour les liens des e-mails (par défaut : APP_URL). */
+  appUrl?: string;
+  /** Journal des événements d'authentification (par défaut : logger). */
+  authLogger?: AuthLogger;
+}
+
+function normalizeAppUrl(url: string | undefined): string | undefined {
+  let trimmed = url?.trim() ?? '';
+  while (trimmed.endsWith('/')) trimmed = trimmed.slice(0, -1);
+  return trimmed || undefined;
 }
 
 function resolveSessionSecret(secret: string | undefined): string {
@@ -97,8 +114,16 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
     });
   });
 
-  app.use('/api/auth', createAuthRouter(db, sessionStore));
-  app.use('/api/users', createUsersRouter(db));
+  app.use(
+    '/api/auth',
+    createAuthRouter(db, sessionStore, {
+      mailer: options?.mailer,
+      setupToken: options?.setupToken,
+      appUrl: normalizeAppUrl(options?.appUrl ?? process.env.APP_URL),
+      log: options?.authLogger,
+    }),
+  );
+  app.use('/api/users', createUsersRouter(db, sessionStore));
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));

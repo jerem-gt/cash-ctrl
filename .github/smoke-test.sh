@@ -4,7 +4,19 @@
 set -eu
 BASE_URL=$1
 
-# Login avec le compte par défaut : bcrypt et SQLite
+# Jeton de premier démarrage lu dans les logs du conteneur
+TOKEN=$(docker logs "$2" 2>&1 | grep -o 'setup token: [A-Za-z0-9_-]*' | tail -1 | cut -d' ' -f3)
+if [ -z "$TOKEN" ]; then
+  echo "Jeton de setup introuvable dans les logs" >&2
+  exit 1
+fi
+
+# Création du premier compte (admin) : bcrypt et SQLite
 curl -fsS -o /dev/null -X POST -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"changeme"}' \
+  -d "{\"token\":\"$TOKEN\",\"username\":\"smoke\",\"password\":\"smoke-password\"}" \
+  "$BASE_URL/api/auth/setup"
+
+# Login avec ce compte
+curl -fsS -o /dev/null -X POST -H 'Content-Type: application/json' \
+  -d '{"username":"smoke","password":"smoke-password"}' \
   "$BASE_URL/api/auth/login"

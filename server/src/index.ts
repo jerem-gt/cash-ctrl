@@ -11,6 +11,7 @@ import { startBackupInterval } from './lib/backup.js';
 import { startScheduledGenerationInterval } from './lib/generateScheduled.js';
 import { logger } from './logger.js';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
+import { announceSetupToken, SetupToken } from './modules/auth/setup.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '3000');
@@ -27,7 +28,17 @@ const db = createDb();
 initDatabase(db);
 const CLIENT_DIST = path.join(import.meta.dirname, '../../client/dist');
 
+if (process.env.ADMIN_USER || process.env.ADMIN_PASSWORD) {
+  logger.warn(
+    'ADMIN_USER / ADMIN_PASSWORD sont des variables obsolètes, ignorées : les comptes se gèrent dans l’application.',
+  );
+}
+
+const setupToken = new SetupToken();
+announceSetupToken(db, setupToken, logger.info);
+
 const app = createApp(db, {
+  setupToken,
   sessionSecret: SESSION_SECRET,
   secureCookies: process.env.SECURE_COOKIE === 'true',
   healthExtraCheck: IS_PROD

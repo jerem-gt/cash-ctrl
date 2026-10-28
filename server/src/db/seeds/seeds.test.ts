@@ -9,7 +9,10 @@ import { seedBanks } from './banks.seed.js';
 import { seedCategories } from './categories.seed.js';
 import { DEFAULT_PAYMENT_METHODS, seedPaymentMethods } from './paymentMethods.seed.js';
 import { seedSubcategories } from './subcategories.seed.js';
-import { seedAdminUser } from './users.seed.js';
+
+function insertUser(db: Database): void {
+  db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('alice', 'x');
+}
 
 function createFreshDb(): Database {
   const db = createDb(':memory:');
@@ -53,7 +56,7 @@ describe('seedBanks', () => {
 describe('seedAccountTypes', () => {
   it('inserts account types coherent with the schema', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedAccountTypes(db, id);
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
@@ -67,7 +70,7 @@ describe('seedAccountTypes', () => {
 
   it('inserts English account types when lang=en', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedAccountTypes(db, id, 'en');
     const rows = db.prepare('SELECT name FROM account_types').all() as { name: string }[];
@@ -80,7 +83,7 @@ describe('seedAccountTypes', () => {
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedAccountTypes(db, id);
     seedAccountTypes(db, id);
@@ -92,7 +95,7 @@ describe('seedAccountTypes', () => {
 describe('seedCategories', () => {
   it('inserts 14 categories with valid name coherent with the schema', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedCategories(db, id);
     const rows = db.prepare('SELECT name FROM categories').all() as {
@@ -104,7 +107,7 @@ describe('seedCategories', () => {
 
   it('inserts English category names when lang=en', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedCategories(db, id, 'en');
     const rows = db.prepare('SELECT name FROM categories').all() as { name: string }[];
@@ -118,7 +121,7 @@ describe('seedCategories', () => {
 describe('seedSubcategories', () => {
   it('inserts 71 subcategories with valid name and category_id coherent with the schema', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedCategories(db, id);
     seedSubcategories(db, id);
@@ -132,7 +135,7 @@ describe('seedSubcategories', () => {
 
   it('inserts English subcategory names when lang=en', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     const catMap = seedCategories(db, id, 'en');
     seedSubcategories(db, id, 'en', catMap);
@@ -148,7 +151,7 @@ describe('seedSubcategories', () => {
 describe('seedPaymentMethods', () => {
   it('inserts 6 payment methods with name and icon coherent with the schema', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedPaymentMethods(db, id);
     const rows = db.prepare('SELECT name, icon FROM payment_methods').all() as {
@@ -161,7 +164,7 @@ describe('seedPaymentMethods', () => {
 
   it('inserts English payment method names when lang=en', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedPaymentMethods(db, id, 'en');
     const rows = db.prepare('SELECT name FROM payment_methods').all() as { name: string }[];
@@ -172,7 +175,7 @@ describe('seedPaymentMethods', () => {
 
   it('is idempotent – INSERT OR IGNORE prevents duplicates', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedPaymentMethods(db, id);
     seedPaymentMethods(db, id);
@@ -182,56 +185,14 @@ describe('seedPaymentMethods', () => {
   });
 });
 
-describe('seedAdminUser', () => {
-  it('creates an admin user with default credentials', () => {
-    const db = createFreshDb();
-    seedAdminUser(db);
-    const user = db.prepare('SELECT username FROM users WHERE username = ?').get('admin') as
-      { username: string } | undefined;
-    expect(user?.username).toBe('admin');
-  });
-
-  it('uses ADMIN_USER / ADMIN_PASSWORD env vars when set', () => {
-    const db = createFreshDb();
-    process.env.ADMIN_USER = 'superadmin';
-    process.env.ADMIN_PASSWORD = 'S3cret!';
-    try {
-      seedAdminUser(db);
-      const user = db.prepare('SELECT username FROM users WHERE username = ?').get('superadmin') as
-        { username: string } | undefined;
-      expect(user?.username).toBe('superadmin');
-    } finally {
-      delete process.env.ADMIN_USER;
-      delete process.env.ADMIN_PASSWORD;
-    }
-  });
-
-  it('is idempotent – does not create a duplicate user on second call', () => {
-    const db = createFreshDb();
-    seedAdminUser(db);
-    seedAdminUser(db);
-    const count = (
-      db.prepare('SELECT COUNT(*) as c FROM users WHERE username = ?').get('admin') as { c: number }
-    ).c;
-    expect(count).toBe(1);
-  });
-});
-
 describe('seedDatabase', () => {
-  it("seeds global reference data and admin user, sans données financières pour l'admin", () => {
+  it('seeds global reference data without creating any user', () => {
     const db = createFreshDb();
     seedDatabase(db);
     const q = (table: string) =>
       (db.prepare(`SELECT COUNT(*) as c FROM ${table}`).get() as { c: number }).c;
     expect(q('banks')).toBeGreaterThan(0);
-    expect(
-      (
-        db
-          .prepare("SELECT COUNT(*) as c FROM users WHERE username = 'admin' AND is_admin = 1")
-          .get() as { c: number }
-      ).c,
-    ).toBe(1);
-    // L'admin est un compte de gestion : pas de données financières seedées
+    expect(q('users')).toBe(0);
     expect(q('account_types')).toBe(0);
     expect(q('categories')).toBe(0);
     expect(q('payment_methods')).toBe(0);
@@ -241,7 +202,7 @@ describe('seedDatabase', () => {
 describe('seedUserData', () => {
   it('seeds FR data and populates all 8 system refs in user_settings', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedUserData(db, userId, 'fr');
 
@@ -284,7 +245,7 @@ describe('seedUserData', () => {
 
   it('seeds EN data and populates all 8 system refs in user_settings', () => {
     const db = createFreshDb();
-    seedAdminUser(db);
+    insertUser(db);
     const { id: userId } = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number };
     seedUserData(db, userId, 'en');
 

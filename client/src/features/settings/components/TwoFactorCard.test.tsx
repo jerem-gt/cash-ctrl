@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
+import { ME } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders.tsx';
 import { server } from '@/tests/msw/server.ts';
 
@@ -57,22 +58,14 @@ describe('TwoFactorCard — 2FA désactivée', () => {
 
 describe('TwoFactorCard — 2FA activée', () => {
   it('affiche le statut activé et le bouton Désactiver', async () => {
-    server.use(
-      http.get('/api/auth/me', () =>
-        HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: true }),
-      ),
-    );
+    server.use(http.get('/api/auth/me', () => HttpResponse.json({ ...ME, totpEnabled: true })));
     renderWithProviders(<TwoFactorCard />);
     expect(await screen.findByText('Activée')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /désactiver/i })).toBeInTheDocument();
   });
 
   it('désactive la 2FA après confirmation du mot de passe', async () => {
-    server.use(
-      http.get('/api/auth/me', () =>
-        HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: true }),
-      ),
-    );
+    server.use(http.get('/api/auth/me', () => HttpResponse.json({ ...ME, totpEnabled: true })));
     const user = userEvent.setup();
     renderWithProviders(<TwoFactorCard />);
     await user.click(await screen.findByRole('button', { name: /désactiver/i }));

@@ -8,8 +8,11 @@ import {
   disableTotpSchema,
   enableTotpSchema,
   loginSchema,
+  profileSchema,
+  setupSchema,
   verifyTotpSchema,
 } from '../modules/auth/auth.routes.js';
+import { forgotPasswordSchema, resetPasswordSchema } from '../modules/auth/password.routes.js';
 import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
 import { categorySchema } from '../modules/categories/categories.routes.js';
 import {
@@ -191,6 +194,72 @@ export function buildOpenApiSpec() {
     },
     paths: {
       // ── Auth ─────────────────────────────────────────────────────────────
+      '/api/auth/setup': {
+        get: {
+          tags: ['Auth'],
+          summary: 'Premier démarrage requis ? ({ required: true } tant qu’aucun compte n’existe)',
+          responses: r200(),
+        },
+        post: {
+          tags: ['Auth'],
+          summary:
+            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session',
+          requestBody: body(setupSchema),
+          responses: {
+            ...r200('Account created, session started'),
+            ...r400,
+            403: { description: 'Invalid setup token' },
+            ...r409,
+            429: { description: 'Too many attempts' },
+          },
+        },
+      },
+      '/api/auth/password/forgot': {
+        post: {
+          tags: ['Auth'],
+          summary:
+            'Mot de passe oublié : répond toujours 200 { ok: true } (lien par e-mail ou dans les logs)',
+          requestBody: body(forgotPasswordSchema),
+          responses: { ...r200(), ...r400, 429: { description: 'Too many requests' } },
+        },
+      },
+      '/api/auth/password/reset': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Redéfinir le mot de passe avec le jeton reçu ; ferme toutes les sessions',
+          requestBody: body(resetPasswordSchema),
+          responses: { ...r200(), ...r400, 429: { description: 'Too many attempts' } },
+        },
+      },
+      '/api/auth/test-email': {
+        post: {
+          tags: ['Auth'],
+          summary: "Envoyer un e-mail de test à l'adresse du compte courant (admin)",
+          security: sessionAuth,
+          responses: {
+            ...r200(),
+            400: { description: 'No email on the account' },
+            403: { description: 'Forbidden' },
+            502: { description: 'Email sending failed' },
+            503: { description: 'SMTP not configured' },
+          },
+        },
+      },
+      '/api/auth/profile': {
+        patch: {
+          tags: ['Auth'],
+          summary: "Modifier son nom d'utilisateur et/ou son e-mail (mot de passe actuel requis)",
+          security: sessionAuth,
+          requestBody: body(profileSchema),
+          responses: {
+            ...r200('Same object as GET /api/auth/me'),
+            ...r400,
+            ...r401,
+            ...r409,
+            429: { description: 'Too many attempts' },
+          },
+        },
+      },
       '/api/auth/login': {
         post: {
           tags: ['Auth'],
@@ -210,7 +279,7 @@ export function buildOpenApiSpec() {
       '/api/auth/me': {
         get: {
           tags: ['Auth'],
-          summary: 'Utilisateur courant',
+          summary: 'Utilisateur courant ({ username, email, isAdmin, totpEnabled })',
           security: sessionAuth,
           responses: { ...r200(), ...r401 },
         },
@@ -702,24 +771,34 @@ export function buildOpenApiSpec() {
           summary: 'Créer un utilisateur (admin)',
           security: sessionAuth,
           requestBody: body(createUserSchema),
-          responses: { ...r201, ...r400 },
+          responses: { ...r201, ...r400, ...r409 },
         },
       },
       '/api/users/{id}': {
         patch: {
           tags: ['Users'],
-          summary: 'Modifier un utilisateur (admin)',
+          summary:
+            'Modifier un utilisateur (admin) : nom, mot de passe, e-mail, rôle admin (409 user.last_admin)',
           security: sessionAuth,
           parameters: pId,
           requestBody: body(updateUserSchema),
-          responses: { ...r200(), ...r400, ...r404 },
+          responses: { ...r200(), ...r400, ...r404, ...r409 },
         },
         delete: {
           tags: ['Users'],
-          summary: 'Supprimer un utilisateur (admin)',
+          summary: 'Supprimer un utilisateur (admin) ; 409 si soi-même ou dernier admin',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r404, ...r409 },
+        },
+      },
+      '/api/users/{id}/2fa': {
+        delete: {
+          tags: ['Users'],
+          summary: "Désactiver la 2FA d'un utilisateur (admin)",
+          security: sessionAuth,
+          parameters: pId,
+          responses: { ...r200(), ...r404, ...r409 },
         },
       },
 

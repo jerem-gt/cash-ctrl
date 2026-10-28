@@ -25,7 +25,13 @@ export function seedTestData(db: Database) {
   db.prepare("DELETE FROM users WHERE username = 'test'").run();
 
   const testHash = bcrypt.hashSync('test', 12);
-  db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('test', testHash);
+  // Le compte démo est admin s'il n'en existe aucun (la suppression ci-dessus a pu retirer le dernier).
+  const hasAdmin = db.prepare('SELECT 1 FROM users WHERE is_admin = 1').get() !== undefined;
+  db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)').run(
+    'test',
+    testHash,
+    hasAdmin ? 0 : 1,
+  );
   const testUser = db.prepare("SELECT id FROM users WHERE username = 'test'").get() as {
     id: number;
   };

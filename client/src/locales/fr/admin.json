@@ -1,14 +1,14 @@
 {
   "page": {
-    "title_suffix": "— Administration",
-    "users_title": "Utilisateurs",
+    "title": "Utilisateurs",
+    "subtitle": "Gérez les comptes, les rôles et la double authentification",
     "add_btn": "Ajouter",
-    "loading": "Chargement…",
-    "logout_title": "Se déconnecter"
+    "loading": "Chargement…"
   },
   "add_form": {
     "title": "Nouvel utilisateur",
     "username_placeholder": "Nom d'utilisateur",
+    "email_placeholder": "E-mail (facultatif)",
     "password_placeholder": "Mot de passe (min. 8 caractères)",
     "language_label": "Langue des données",
     "language_fr": "Français",
@@ -18,24 +18,36 @@
   "edit_form": {
     "title": "Modifier {{username}}",
     "username_placeholder": "Nom d'utilisateur",
+    "email_placeholder": "E-mail (laisser vide = aucun)",
     "password_placeholder": "Nouveau mot de passe (laisser vide = inchangé)",
     "submit": "Enregistrer"
   },
   "user": {
     "admin_badge": "admin",
+    "totp_badge": "2FA",
+    "you": "vous",
+    "no_email": "Aucun e-mail",
     "edit_title": "Modifier",
     "delete_title": "Supprimer",
+    "promote_title": "Promouvoir administrateur",
+    "demote_title": "Retirer le rôle administrateur",
+    "disable_2fa_title": "Désactiver la 2FA",
     "account_count_one": "1 compte",
     "account_count_other": "{{count}} comptes",
     "tx_count_one": "1 transaction",
     "tx_count_other": "{{count}} transactions",
     "last_tx": "dernière le {{date}}",
     "confirm_delete_title": "Supprimer l'utilisateur",
-    "confirm_delete": "Supprimer l'utilisateur \"{{username}}\" et toutes ses données ?"
+    "confirm_delete": "Supprimer l'utilisateur \"{{username}}\" et toutes ses données ?",
+    "confirm_2fa_title": "Désactiver la 2FA",
+    "confirm_2fa": "Désactiver la double authentification de \"{{username}}\" ?"
   },
   "toasts": {
     "created": "Utilisateur créé",
     "updated": "Utilisateur modifié",
-    "deleted": "Utilisateur supprimé"
+    "deleted": "Utilisateur supprimé",
+    "promoted": "Rôle administrateur accordé",
+    "demoted": "Rôle administrateur retiré",
+    "totp_disabled": "2FA désactivée"
   }
 }

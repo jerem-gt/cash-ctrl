@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import type { MeData } from '@/api/client';
+import type { Lang, MeData } from '@/api/client';
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
 import { queryKeys } from '@/lib/queryKeys';
@@ -88,4 +88,64 @@ export function useDisable2FA() {
         old ? { ...old, totpEnabled: false } : old,
       ),
   });
+}
+
+export function useSetupStatus(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.setupStatus(),
+    queryFn: authApi.setupStatus,
+    enabled,
+    retry: false,
+  });
+}
+
+export function useSetup() {
+  const qc = useQueryClient();
+  return useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: authApi.setup,
+    onSuccess: (data) => {
+      claimCacheOwner(qc, data.username);
+      qc.setQueryData(queryKeys.setupStatus(), { required: false });
+      qc.setQueryData(queryKeys.me(), data);
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.updateProfile,
+    onSuccess: (data) => {
+      claimCacheOwner(qc, data.username);
+      qc.setQueryData(queryKeys.me(), data);
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: ({ identifier, lang }: { identifier: string; lang: Lang }) =>
+      authApi.forgotPassword(identifier, lang),
+  });
+}
+
+export function useResetPassword() {
+  const qc = useQueryClient();
+  return useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: ({ token, password }: { token: string; password: string }) =>
+      authApi.resetPassword(token, password),
+    // La réinitialisation ferme toutes les sessions
+    onSuccess: () => {
+      qc.setQueryData(queryKeys.me(), null);
+      qc.removeQueries({ predicate: (query) => query.queryKey[0] !== queryKeys.me()[0] });
+      purgePersistedCache();
+    },
+  });
+}
+
+export function useSendTestEmail() {
+  return useMutation({ mutationFn: authApi.testEmail });
 }

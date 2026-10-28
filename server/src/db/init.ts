@@ -4,7 +4,7 @@ import path from 'node:path';
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 
 import { initSchema } from './schema.js';
-import { seedDatabase } from './seed.js';
+import { seedDatabase, seedUserData } from './seed.js';
 
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(import.meta.dirname, '../../data');
 
@@ -63,6 +63,18 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
     `),
   // Historique annuel mal daté (bougie de janvier rangée en N-1) : purge, re-récupéré depuis Yahoo
   (db) => db.exec('DELETE FROM stock_price_history;'),
+  // Admin = rôle sur un compte classique : l'ancien admin de gestion reçoit les données de départ
+  (db) => {
+    db.exec('ALTER TABLE users ADD COLUMN email TEXT;');
+    const admins = db
+      .prepare(
+        'SELECT id FROM users WHERE is_admin = 1 AND id NOT IN (SELECT user_id FROM user_settings)',
+      )
+      .all() as Array<{ id: number }>;
+    db.transaction(() => {
+      for (const { id } of admins) seedUserData(db, id);
+    })();
+  },
 ];
 
 function runMigrations(db: DatabaseType) {

@@ -28,11 +28,23 @@ import type {
   UserPublic,
 } from '@cashctrl/types';
 
+import type { MeData } from '@/api/client';
+
+// Profil par défaut renvoyé par /api/auth/me dans les tests
+export const ME: MeData = {
+  username: 'test',
+  email: null,
+  isAdmin: false,
+  totpEnabled: false,
+};
+
 export const USERS: UserPublic[] = [
   {
     id: 1,
     username: 'admin',
+    email: 'admin@example.com',
     is_admin: 1,
+    totp_enabled: 0,
     created_at: '2025-01-01T00:00:00',
     account_count: 0,
     tx_count: 0,
@@ -41,7 +53,9 @@ export const USERS: UserPublic[] = [
   {
     id: 2,
     username: 'alice',
+    email: null,
     is_admin: 0,
+    totp_enabled: 1,
     created_at: '2025-06-01T00:00:00',
     account_count: 3,
     tx_count: 47,

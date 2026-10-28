@@ -13,6 +13,7 @@ import {
   INSURANCE_POSITIONS,
   LOAN,
   LOAN_INSTALLMENTS,
+  ME,
   PAYMENT_METHODS,
   PENDING_REIMBURSEMENTS,
   PROFITABILITY_DATA,
@@ -35,14 +36,25 @@ import {
 
 export const handlers = [
   // Auth
-  http.get('/api/auth/me', () =>
-    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: false }),
-  ),
-  http.post('/api/auth/login', () =>
-    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: false }),
-  ),
+  http.get('/api/auth/me', () => HttpResponse.json(ME)),
+  http.post('/api/auth/login', () => HttpResponse.json(ME)),
   http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
+  http.get('/api/auth/setup', () => HttpResponse.json({ required: false })),
+  http.post('/api/auth/setup', () =>
+    HttpResponse.json({ ...ME, username: 'owner', isAdmin: true }),
+  ),
+  http.patch('/api/auth/profile', async ({ request }) => {
+    const body = (await request.json()) as { username?: string; email?: string | null };
+    return HttpResponse.json({
+      ...ME,
+      username: body.username ?? ME.username,
+      email: body.email === undefined ? ME.email : body.email,
+    });
+  }),
+  http.post('/api/auth/password/forgot', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/password/reset', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/test-email', () => HttpResponse.json({ ok: true })),
   // Categorization rules — before parametric auth routes to avoid masking
   http.get('/api/categorization-rules/match', () => HttpResponse.json(null)),
   http.post('/api/categorization-rules/init-from-history', () =>
@@ -75,18 +87,25 @@ export const handlers = [
   ),
   http.post('/api/auth/2fa/enable', () => HttpResponse.json({ ok: true })),
   http.post('/api/auth/2fa/disable', () => HttpResponse.json({ ok: true })),
-  http.post('/api/auth/2fa/verify', () =>
-    HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: true }),
-  ),
+  http.post('/api/auth/2fa/verify', () => HttpResponse.json({ ...ME, totpEnabled: true })),
 
   // Users (admin)
   http.get('/api/users', () => HttpResponse.json(USERS)),
   http.post('/api/users', () =>
     HttpResponse.json(
-      { id: 99, username: 'newuser', is_admin: 0, created_at: '2026-01-01' },
+      {
+        ...USERS[1],
+        id: 99,
+        username: 'newuser',
+        email: null,
+        totp_enabled: 0,
+        created_at: '2026-01-01',
+      },
       { status: 201 },
     ),
   ),
+  // Littéral avant le paramétrique /api/users/:id
+  http.delete('/api/users/:id/2fa', () => HttpResponse.json({ ok: true })),
   http.patch('/api/users/:id', () => HttpResponse.json({ ...USERS[1], username: 'updated' })),
   http.delete('/api/users/:id', () => HttpResponse.json({ ok: true })),
 

@@ -20,6 +20,10 @@ function setup() {
   return { db, app };
 }
 
+function idOf(db: ReturnType<typeof createTestDb>, username: string): number {
+  return (db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: number }).id;
+}
+
 async function loginAs(app: ReturnType<typeof createApp>, username: string) {
   const agent = supertest.agent(app);
   await agent.post('/api/auth/login').send({ username, password: 'password123' });
@@ -34,6 +38,9 @@ describe('GET /api/users', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
     expect(res.body[0]).not.toHaveProperty('password_hash');
+    expect(Object.keys(res.body[0])).toEqual(
+      expect.arrayContaining(['id', 'username', 'email', 'is_admin', 'totp_enabled', 'created_at']),
+    );
   });
 
   it('retourne 403 si non admin', async () => {
@@ -150,6 +157,31 @@ describe('POST /api/users', () => {
     const res = await agent.post('/api/users').send({ username: 'bob', password: 'password123' });
     expect(res.status).toBe(403);
   });
+
+  it('enregistre l’e-mail facultatif (normalisé)', async () => {
+    const { app } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent
+      .post('/api/users')
+      .send({ username: 'bob', password: 'password123', email: 'Bob@Test.fr' });
+    expect(res.status).toBe(201);
+    expect(res.body.email).toBe('bob@test.fr');
+  });
+
+  it('retourne 409 user.email_taken et 400 si e-mail invalide', async () => {
+    const { app, db } = setup();
+    db.prepare("UPDATE users SET email = 'alice@test.fr' WHERE username = 'alice'").run();
+    const agent = await loginAs(app, 'admin');
+    const taken = await agent
+      .post('/api/users')
+      .send({ username: 'bob', password: 'password123', email: 'ALICE@test.fr' });
+    expect(taken.status).toBe(409);
+    expect(taken.body.error.code).toBe('user.email_taken');
+    const bad = await agent
+      .post('/api/users')
+      .send({ username: 'bob', password: 'password123', email: 'nope' });
+    expect(bad.status).toBe(400);
+  });
 });
 
 describe('PATCH /api/users/:id', () => {
@@ -164,14 +196,92 @@ describe('PATCH /api/users/:id', () => {
     expect(res.body.username).toBe('alicia');
   });
 
-  it('retourne 403 si on tente de modifier le compte admin', async () => {
+  it('modifie l’e-mail (normalisé) puis l’efface avec null', async () => {
     const { app, db } = setup();
-    const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin') as {
-      id: number;
-    };
+    const alice = idOf(db, 'alice');
     const agent = await loginAs(app, 'admin');
-    const res = await agent.patch(`/api/users/${admin.id}`).send({ username: 'hacked' });
-    expect(res.status).toBe(403);
+    const res = await agent.patch(`/api/users/${alice}`).send({ email: ' Alice@Test.FR ' });
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe('alice@test.fr');
+    const cleared = await agent.patch(`/api/users/${alice}`).send({ email: null });
+    expect(cleared.body.email).toBeNull();
+  });
+
+  it('retourne 409 user.email_taken si l’e-mail est déjà utilisé (insensible à la casse)', async () => {
+    const { app, db } = setup();
+    db.prepare("UPDATE users SET email = 'bob@test.fr' WHERE username = 'admin'").run();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.patch(`/api/users/${idOf(db, 'alice')}`).send({ email: 'BOB@test.fr' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('user.email_taken');
+  });
+
+  it('retourne 400 pour un e-mail invalide, un corps vide ou is_admin non booléen', async () => {
+    const { app, db } = setup();
+    const alice = idOf(db, 'alice');
+    const agent = await loginAs(app, 'admin');
+    expect((await agent.patch(`/api/users/${alice}`).send({ email: 'nope' })).status).toBe(400);
+    expect((await agent.patch(`/api/users/${alice}`).send({})).status).toBe(400);
+    expect((await agent.patch(`/api/users/${alice}`).send({ is_admin: 'yes' })).status).toBe(400);
+  });
+
+  it('promeut un utilisateur admin, qui accède alors à /api/users sans reconnexion', async () => {
+    const { app, db } = setup();
+    const alice = await loginAs(app, 'alice');
+    expect((await alice.get('/api/users')).status).toBe(403);
+    const admin = await loginAs(app, 'admin');
+    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ is_admin: true });
+    expect(res.status).toBe(200);
+    expect(res.body.is_admin).toBe(1);
+    expect((await alice.get('/api/users')).status).toBe(200);
+  });
+
+  it('un admin rétrogradé perd ses droits immédiatement (session déjà ouverte)', async () => {
+    const { app, db } = setup();
+    const admin = await loginAs(app, 'admin');
+    db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
+    const alice = await loginAs(app, 'alice');
+    expect((await alice.get('/api/users')).status).toBe(200);
+    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ is_admin: false });
+    expect(res.status).toBe(200);
+    expect((await alice.get('/api/users')).status).toBe(403);
+  });
+
+  it('retourne 409 user.last_admin en rétrogradant le dernier admin', async () => {
+    const { app, db } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ is_admin: false });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('user.last_admin');
+  });
+
+  it('permet de se rétrograder s’il reste un autre admin', async () => {
+    const { app, db } = setup();
+    db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ is_admin: false });
+    expect(res.status).toBe(200);
+  });
+
+  it('redéfinir le mot de passe d’un autre compte ferme toutes ses sessions', async () => {
+    const { app, db } = setup();
+    const alice1 = await loginAs(app, 'alice');
+    const alice2 = await loginAs(app, 'alice');
+    const admin = await loginAs(app, 'admin');
+    const res = await admin
+      .patch(`/api/users/${idOf(db, 'alice')}`)
+      .send({ password: 'brandnewpass1' });
+    expect(res.status).toBe(200);
+    expect((await alice1.get('/api/auth/me')).status).toBe(401);
+    expect((await alice2.get('/api/auth/me')).status).toBe(401);
+    expect((await admin.get('/api/auth/me')).status).toBe(200);
+  });
+
+  it('autorise un admin à renvoyer son propre nom sans conflit', async () => {
+    const { app, db } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ username: 'admin' });
+    expect(res.status).toBe(200);
   });
 
   it('retourne 404 si utilisateur introuvable', async () => {
@@ -206,20 +316,68 @@ describe('DELETE /api/users/:id', () => {
     expect(res.body.ok).toBe(true);
   });
 
-  it('retourne 403 si on tente de supprimer le compte admin', async () => {
-    const { app, db } = setup();
-    const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin') as {
-      id: number;
-    };
-    const agent = await loginAs(app, 'admin');
-    const res = await agent.delete(`/api/users/${admin.id}`);
-    expect(res.status).toBe(403);
-  });
-
   it('retourne 404 si utilisateur introuvable', async () => {
     const { app } = setup();
     const agent = await loginAs(app, 'admin');
     const res = await agent.delete('/api/users/9999');
     expect(res.status).toBe(404);
+  });
+
+  it('retourne 409 user.cannot_delete_self pour son propre compte', async () => {
+    const { app, db } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.delete(`/api/users/${idOf(db, 'admin')}`);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('user.cannot_delete_self');
+  });
+
+  it('supprime un autre admin s’il en reste un, et ferme ses sessions', async () => {
+    const { app, db } = setup();
+    db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
+    const alice = await loginAs(app, 'alice');
+    const admin = await loginAs(app, 'admin');
+    const res = await admin.delete(`/api/users/${idOf(db, 'alice')}`);
+    expect(res.status).toBe(200);
+    expect((await alice.get('/api/auth/me')).status).toBe(401);
+  });
+
+  it('ferme les sessions de l’utilisateur supprimé', async () => {
+    const { app, db } = setup();
+    const alice = await loginAs(app, 'alice');
+    const admin = await loginAs(app, 'admin');
+    await admin.delete(`/api/users/${idOf(db, 'alice')}`);
+    expect((await alice.get('/api/auth/me')).status).toBe(401);
+  });
+});
+
+describe('DELETE /api/users/:id/2fa', () => {
+  it('désactive la 2FA du compte', async () => {
+    const { app, db } = setup();
+    db.prepare(
+      "UPDATE users SET totp_secret = 'JBSWY3DPEHPK3PXP', totp_enabled = 1 WHERE username = 'alice'",
+    ).run();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.delete(`/api/users/${idOf(db, 'alice')}/2fa`);
+    expect(res.status).toBe(200);
+    const row = db
+      .prepare("SELECT totp_enabled, totp_secret FROM users WHERE username = 'alice'")
+      .get();
+    expect(row).toEqual({ totp_enabled: 0, totp_secret: null });
+  });
+
+  it('retourne 409 auth.totp_not_enabled si la 2FA n’est pas activée', async () => {
+    const { app, db } = setup();
+    const agent = await loginAs(app, 'admin');
+    const res = await agent.delete(`/api/users/${idOf(db, 'alice')}/2fa`);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('auth.totp_not_enabled');
+  });
+
+  it('retourne 404 si inconnu et 403 si non admin', async () => {
+    const { app, db } = setup();
+    const admin = await loginAs(app, 'admin');
+    expect((await admin.delete('/api/users/9999/2fa')).status).toBe(404);
+    const alice = await loginAs(app, 'alice');
+    expect((await alice.delete(`/api/users/${idOf(db, 'admin')}/2fa`)).status).toBe(403);
   });
 });

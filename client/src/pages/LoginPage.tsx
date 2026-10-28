@@ -6,6 +6,7 @@ import { VersionStatus } from '@/components/VersionStatus.tsx';
 import { APP_CONFIG } from '@/constants.ts';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
 import { useLogin, useVerifyTotp } from '@/hooks/useAuth';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 
 export function LoginPage() {
   const { t } = useTranslation('common');
@@ -13,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
   const [totpRequired, setTotpRequired] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
   const login = useLogin();
   const verifyTotp = useVerifyTotp();
   const { isDev } = useAppVersion();
@@ -47,6 +49,10 @@ export function LoginPage() {
 
   const loginError = login.error?.message ?? null;
   const totpError = verifyTotp.error?.message ?? null;
+
+  if (forgotMode) {
+    return <ForgotPasswordPage onBack={() => setForgotMode(false)} />;
+  }
 
   if (totpRequired) {
     return (
@@ -149,6 +155,13 @@ export function LoginPage() {
           >
             {login.isPending ? t('login.submitting') : t('login.submit')}
           </Button>
+          <button
+            type="button"
+            onClick={() => setForgotMode(true)}
+            className="w-full text-sm text-content-muted hover:text-content transition-colors text-center"
+          >
+            {t('login.forgot_link')}
+          </button>
           <VersionStatus />
         </form>
       </div>

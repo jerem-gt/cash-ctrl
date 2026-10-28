@@ -14,6 +14,7 @@ export const routeChunk = {
   '/scheduled': () => import('@/pages/ScheduledPage'),
   '/settings': () => import('@/pages/SettingsPage'),
   '/reports': () => import('@/pages/ReportsPage'),
+  '/admin': () => import('@/pages/AdminPage'),
 } satisfies Record<string, () => Promise<LazyComponentModule>>;
 
 export type RouteChunkKey = keyof typeof routeChunk;

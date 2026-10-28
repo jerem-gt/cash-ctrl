@@ -161,6 +161,19 @@
     "success_disabled": "Two-factor authentication disabled",
     "cancel": "Cancel"
   },
+  "profile": {
+    "title": "Profile",
+    "username": "Username",
+    "email": "E-mail",
+    "email_placeholder": "name@example.com",
+    "clear_email": "Clear",
+    "current_password": "Current password",
+    "submit": "Save",
+    "success": "Profile updated ✓",
+    "test_email_help": "Check the SMTP configuration by sending yourself a test e-mail.",
+    "test_email_btn": "Send a test e-mail",
+    "test_email_sent": "Test e-mail sent ✓"
+  },
   "password": {
     "title": "Change password",
     "current": "Current password",
@@ -224,6 +237,7 @@
     "import": "Import",
     "backup": "Backup",
     "tickers": "Tickers",
+    "profile": "Profile",
     "password": "Password",
     "totp": "Two-factor authentication",
     "system_refs": "System entities",

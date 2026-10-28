@@ -12,7 +12,7 @@ import { Card, showToast, Skeleton, Toast } from '@/components/ui';
 import { APP_CONFIG } from '@/constants.ts';
 import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { useAppVersion } from '@/hooks/useAppVersion.ts';
-import { useMe } from '@/hooks/useAuth';
+import { useMe, useSetupStatus } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import i18n from '@/i18n';
 import { isMacPlatform } from '@/lib/platform';
@@ -41,9 +41,15 @@ const AccountDetailPage = lazyLoad(routeChunk['/accounts/:id']);
 const SettingsPage = lazyLoad(routeChunk['/settings']);
 const ScheduledPage = lazyLoad(routeChunk['/scheduled']);
 const ReportsPage = lazyLoad(routeChunk['/reports']);
-const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const AdminPage = lazyLoad(routeChunk['/admin']);
 const LoginPage = lazyLoad(() =>
   import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
+const SetupPage = lazyLoad(() =>
+  import('@/pages/SetupPage').then((m) => ({ default: m.SetupPage })),
+);
+const ResetPasswordPage = lazyLoad(() =>
+  import('@/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
 );
 
 const isMac = isMacPlatform();
@@ -91,7 +97,24 @@ function RoutedErrorBoundary({ children }: Readonly<{ children: ReactNode }>) {
   return <ErrorBoundary key={pathname}>{children}</ErrorBoundary>;
 }
 
+// Écrans hors session : installation initiale si aucun compte n'existe, sinon connexion
+function SignedOutScreen() {
+  const { t: tc } = useTranslation('common');
+  const { data: setup, isLoading } = useSetupStatus(true);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <p className="text-sm text-content-subtle">{tc('loading_text')}</p>
+      </div>
+    );
+  }
+
+  return <Suspense fallback={null}>{setup?.required ? <SetupPage /> : <LoginPage />}</Suspense>;
+}
+
 function AppShell() {
+  const { pathname } = useLocation();
   const { t } = useTranslation('sidebar');
   const { t: tc } = useTranslation('common');
   const { t: ts } = useTranslation('search');
@@ -138,19 +161,15 @@ function AppShell() {
     );
   }
 
-  if (!me)
+  // Accessible avec ou sans session (le lien arrive par e-mail ou depuis les logs)
+  if (pathname === '/reset-password')
     return (
       <Suspense fallback={null}>
-        <LoginPage />
+        <ResetPasswordPage />
       </Suspense>
     );
 
-  if (me.isAdmin)
-    return (
-      <Suspense fallback={null}>
-        <AdminPage username={me.username} />
-      </Suspense>
-    );
+  if (!me) return <SignedOutScreen />;
 
   return (
     <div className="flex min-h-screen bg-canvas overflow-x-hidden">
@@ -158,6 +177,7 @@ function AppShell() {
       <OfflineBanner />
       <Sidebar
         username={me.username}
+        isAdmin={me.isAdmin}
         mobileOpen={sidebarOpen}
         onMobileClose={closeSidebar}
         onOpenSearch={() => setPaletteOpen(true)}
@@ -218,6 +238,10 @@ function AppShell() {
               <Route path="/scheduled" element={<ScheduledPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route
+                path="/admin"
+                element={me.isAdmin ? <AdminPage /> : <Navigate to="/" replace />}
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

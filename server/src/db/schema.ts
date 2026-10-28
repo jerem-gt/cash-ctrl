@@ -68,7 +68,16 @@ export function initSchema(db: Database) {
             is_admin      INTEGER NOT NULL DEFAULT 0,
             totp_secret   TEXT,
             totp_enabled  INTEGER NOT NULL DEFAULT 0,
+            email         TEXT,
             created_at    TEXT           DEFAULT (datetime('now'))
+        );
+
+        -- Liens « mot de passe oublié » : seule l'empreinte SHA-256 du jeton est stockée.
+        CREATE TABLE IF NOT EXISTS password_reset_tokens
+        (
+            token_hash TEXT PRIMARY KEY,
+            user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+            expires_at INTEGER NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS accounts

@@ -12,6 +12,7 @@ describe('routeChunk', () => {
       '/reports',
       '/scheduled',
       '/settings',
+      '/admin',
     ];
     const byName = (a: string, b: string) => a.localeCompare(b);
     expect(Object.keys(routeChunk).sort(byName)).toEqual([...expected].sort(byName));

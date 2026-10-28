@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { ME } from '@/tests/fixtures';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 import { server } from '@/tests/msw/server';
 
@@ -44,6 +45,57 @@ describe('LoginPage', () => {
   });
 });
 
+describe('LoginPage — mot de passe oublié', () => {
+  async function openForgot() {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: /mot de passe oublié/i }));
+    return user;
+  }
+
+  it("affiche l'écran de demande depuis le lien", async () => {
+    await openForgot();
+    expect(screen.getByLabelText('Identifiant ou e-mail')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('••••••••')).toBeNull();
+  });
+
+  it('envoie la demande avec la langue courante puis affiche le message neutre', async () => {
+    let body: unknown;
+    server.use(
+      http.post('/api/auth/password/forgot', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const user = await openForgot();
+    await user.type(screen.getByLabelText('Identifiant ou e-mail'), 'alice');
+    await user.click(screen.getByRole('button', { name: /envoyer le lien/i }));
+    expect(await screen.findByText(/Si un compte correspond/)).toBeInTheDocument();
+    expect(body).toEqual({ identifier: 'alice', lang: 'fr' });
+  });
+
+  it('affiche le même message neutre même si la requête échoue (429)', async () => {
+    server.use(
+      http.post('/api/auth/password/forgot', () =>
+        HttpResponse.json(
+          { error: { code: 'common.rate_limited', message: 'x' } },
+          { status: 429 },
+        ),
+      ),
+    );
+    const user = await openForgot();
+    await user.type(screen.getByLabelText('Identifiant ou e-mail'), 'alice');
+    await user.click(screen.getByRole('button', { name: /envoyer le lien/i }));
+    expect(await screen.findByText(/Si un compte correspond/)).toBeInTheDocument();
+  });
+
+  it('revient à la connexion avec le lien de retour', async () => {
+    const user = await openForgot();
+    await user.click(screen.getByRole('button', { name: /retour à la connexion/i }));
+    expect(await screen.findByPlaceholderText('••••••••')).toBeInTheDocument();
+  });
+});
+
 describe('LoginPage — flux TOTP', () => {
   async function loginAndGetToTotpScreen() {
     server.use(
@@ -79,7 +131,7 @@ describe('LoginPage — flux TOTP', () => {
     server.use(
       http.post('/api/auth/2fa/verify', () => {
         verifyCalled = true;
-        return HttpResponse.json({ username: 'test', isAdmin: false, totpEnabled: true });
+        return HttpResponse.json({ ...ME, totpEnabled: true });
       }),
     );
     const user = await loginAndGetToTotpScreen();

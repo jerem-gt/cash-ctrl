@@ -3,10 +3,23 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import { queryPersister } from '@/lib/queryPersister';
+import { ME } from '@/tests/fixtures';
 import { createHookWrapper } from '@/tests/helpers/hookWrapper';
 import { server } from '@/tests/msw/server';
 
-import { useChangePassword, useLogin, useLogout, useMe, useVerifyTotp } from './useAuth';
+import {
+  useChangePassword,
+  useForgotPassword,
+  useLogin,
+  useLogout,
+  useMe,
+  useResetPassword,
+  useSendTestEmail,
+  useSetup,
+  useSetupStatus,
+  useUpdateProfile,
+  useVerifyTotp,
+} from './useAuth';
 
 describe('useMe', () => {
   it("charge les infos de l'utilisateur connecté", async () => {
@@ -33,11 +46,7 @@ describe('useLogin', () => {
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
     result.current.mutate({ username: 'test', password: 'pass' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(qc.getQueryData(['me'])).toEqual({
-      username: 'test',
-      isAdmin: false,
-      totpEnabled: false,
-    });
+    expect(qc.getQueryData(['me'])).toEqual(ME);
   });
 
   it('passe en erreur si identifiants incorrects', async () => {
@@ -134,5 +143,134 @@ describe('useChangePassword', () => {
     const { result } = renderHook(() => useChangePassword(), { wrapper: Wrapper });
     result.current.mutate({ current: 'old', next: 'newpass1' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useSetupStatus', () => {
+  it("indique si l'installation initiale est requise", async () => {
+    server.use(http.get('/api/auth/setup', () => HttpResponse.json({ required: true })));
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useSetupStatus(true), { wrapper: Wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({ required: true });
+  });
+
+  it('ne requête pas quand désactivé', () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useSetupStatus(false), { wrapper: Wrapper });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+});
+
+describe('useSetup', () => {
+  it('ouvre la session : injecte [me] et marque le setup comme fait', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const { result } = renderHook(() => useSetup(), { wrapper: Wrapper });
+    result.current.mutate({ token: 'T', username: 'owner', password: 'password123', lang: 'fr' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qc.getQueryData(['me'])).toMatchObject({ username: 'owner', isAdmin: true });
+    expect(qc.getQueryData(['setup-status'])).toEqual({ required: false });
+  });
+
+  it('passe en erreur si le jeton est invalide', async () => {
+    server.use(
+      http.post('/api/auth/setup', () =>
+        HttpResponse.json(
+          { error: { code: 'auth.setup_token_invalid', message: 'Jeton invalide' } },
+          { status: 403 },
+        ),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useSetup(), { wrapper: Wrapper });
+    result.current.mutate({ token: 'bad', username: 'owner', password: 'password123', lang: 'fr' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('useUpdateProfile', () => {
+  it('met à jour le cache [me] avec le profil renvoyé', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    const { result } = renderHook(() => useUpdateProfile(), { wrapper: Wrapper });
+    result.current.mutate({ current_password: 'pw', username: 'nouveau', email: 'a@b.fr' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qc.getQueryData(['me'])).toEqual({ ...ME, username: 'nouveau', email: 'a@b.fr' });
+  });
+
+  it('passe en erreur si le mot de passe actuel est incorrect', async () => {
+    server.use(
+      http.patch('/api/auth/profile', () =>
+        HttpResponse.json(
+          { error: { code: 'auth.current_password_incorrect', message: 'Incorrect' } },
+          { status: 401 },
+        ),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useUpdateProfile(), { wrapper: Wrapper });
+    result.current.mutate({ current_password: 'bad', email: null });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('useForgotPassword', () => {
+  it('envoie la demande de réinitialisation', async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useForgotPassword(), { wrapper: Wrapper });
+    result.current.mutate({ identifier: 'alice', lang: 'en' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({ ok: true });
+  });
+});
+
+describe('useResetPassword', () => {
+  it('réinitialise puis vide la session [me]', async () => {
+    const { Wrapper, qc } = createHookWrapper();
+    qc.setQueryData(['me'], ME);
+    const spy = vi.spyOn(queryPersister, 'removeClient').mockResolvedValue(undefined);
+    const { result } = renderHook(() => useResetPassword(), { wrapper: Wrapper });
+    result.current.mutate({ token: 'abc', password: 'password123' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(qc.getQueryData(['me'])).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('passe en erreur si le jeton est invalide', async () => {
+    server.use(
+      http.post('/api/auth/password/reset', () =>
+        HttpResponse.json(
+          { error: { code: 'auth.reset_token_invalid', message: 'Lien invalide' } },
+          { status: 400 },
+        ),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useResetPassword(), { wrapper: Wrapper });
+    result.current.mutate({ token: 'bad', password: 'password123' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('useSendTestEmail', () => {
+  it("envoie l'e-mail de test", async () => {
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useSendTestEmail(), { wrapper: Wrapper });
+    result.current.mutate();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('passe en erreur si le SMTP est absent', async () => {
+    server.use(
+      http.post('/api/auth/test-email', () =>
+        HttpResponse.json(
+          { error: { code: 'auth.smtp_not_configured', message: 'SMTP absent' } },
+          { status: 503 },
+        ),
+      ),
+    );
+    const { Wrapper } = createHookWrapper();
+    const { result } = renderHook(() => useSendTestEmail(), { wrapper: Wrapper });
+    result.current.mutate();
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });

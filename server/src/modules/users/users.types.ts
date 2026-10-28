@@ -1,7 +1,9 @@
 export interface UserPublic {
   id: number;
   username: string;
+  email: string | null;
   is_admin: number;
+  totp_enabled: number;
   created_at: string;
   account_count: number;
   tx_count: number;

@@ -9,7 +9,6 @@ import { seedCategories } from './seeds/categories.seed.js';
 import { seedPaymentMethods } from './seeds/paymentMethods.seed.js';
 import { seedSubcategories } from './seeds/subcategories.seed.js';
 import { seedTaxData } from './seeds/tax.seed.js';
-import { seedAdminUser } from './seeds/users.seed.js';
 
 export function seedUserData(db: Database, userId: number, lang: Lang = 'fr') {
   seedAccountTypes(db, userId, lang);
@@ -35,6 +34,5 @@ export function seedUserData(db: Database, userId: number, lang: Lang = 'fr') {
 
 export function seedDatabase(db: Database) {
   seedBanks(db);
-  seedAdminUser(db);
   seedTaxData(db);
 }

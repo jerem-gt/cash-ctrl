@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { server } from '@/tests/msw/server';
 
@@ -25,13 +26,73 @@ describe('App', () => {
     expect(screen.getByText('Suivi Personnel')).toBeInTheDocument();
   });
 
-  it("affiche l'interface admin si l'utilisateur est admin", async () => {
+  it("affiche l'écran d'installation si aucun compte n'existe", async () => {
     server.use(
-      http.get('/api/auth/me', () => HttpResponse.json({ username: 'admin', isAdmin: true })),
+      http.get('/api/auth/me', () => new HttpResponse(null, { status: 401 })),
+      http.get('/api/auth/setup', () => HttpResponse.json({ required: true })),
     );
     render(<App />);
-    expect(await screen.findByText(/Administration/)).toBeInTheDocument();
-    expect(screen.queryByText('Suivi Personnel')).toBeNull();
+    expect(await screen.findByRole('button', { name: /créer le compte/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /se connecter/i })).toBeNull();
+  });
+
+  it("un admin voit l'appli normale (sidebar) avec le lien Utilisateurs", async () => {
+    server.use(
+      http.get('/api/auth/me', () =>
+        HttpResponse.json({ username: 'admin', email: null, isAdmin: true, totpEnabled: false }),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText('Suivi Personnel');
+    await user.click(screen.getByTitle('Menu'));
+    expect(screen.getByRole('link', { name: /utilisateurs/i })).toBeInTheDocument();
+  });
+
+  it('un non-admin ne voit pas le lien Utilisateurs', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText('Suivi Personnel');
+    await user.click(screen.getByTitle('Menu'));
+    expect(screen.queryByRole('link', { name: /utilisateurs/i })).toBeNull();
+  });
+
+  describe('routes', () => {
+    afterEach(() => {
+      globalThis.history.pushState({}, '', '/');
+    });
+
+    it('redirige un non-admin de /admin vers /', async () => {
+      globalThis.history.pushState({}, '', '/admin');
+      render(<App />);
+      await screen.findByText('Suivi Personnel');
+      await waitFor(() => expect(globalThis.location.pathname).toBe('/'));
+    });
+
+    it('affiche la page Utilisateurs sur /admin pour un admin', async () => {
+      server.use(
+        http.get('/api/auth/me', () =>
+          HttpResponse.json({ username: 'admin', email: null, isAdmin: true, totpEnabled: false }),
+        ),
+      );
+      globalThis.history.pushState({}, '', '/admin');
+      render(<App />);
+      expect(await screen.findByRole('heading', { name: 'Utilisateurs' })).toBeInTheDocument();
+      expect(await screen.findByText('alice')).toBeInTheDocument();
+    });
+
+    it('affiche /reset-password hors session', async () => {
+      server.use(http.get('/api/auth/me', () => new HttpResponse(null, { status: 401 })));
+      globalThis.history.pushState({}, '', '/reset-password?token=abc');
+      render(<App />);
+      expect(await screen.findByRole('button', { name: /réinitialiser/i })).toBeInTheDocument();
+    });
+
+    it('affiche /reset-password aussi en session', async () => {
+      globalThis.history.pushState({}, '', '/reset-password?token=abc');
+      render(<App />);
+      expect(await screen.findByRole('button', { name: /réinitialiser/i })).toBeInTheDocument();
+    });
   });
 
   it('définit le titre du document après authentification', async () => {

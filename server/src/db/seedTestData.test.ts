@@ -64,6 +64,13 @@ describe('seedTestData + generateScheduledTransactions', () => {
     db.close();
   });
 
+  it('le compte test est admin quand il n’existe aucun autre admin', () => {
+    const row = db.prepare("SELECT is_admin FROM users WHERE username = 'test'").get() as {
+      is_admin: number;
+    };
+    expect(row.is_admin).toBe(1);
+  });
+
   it('rattache chaque transaction récurrente du seed à sa planification', () => {
     expect(seededRecurringWithoutSchedule).toBe(0);
   });

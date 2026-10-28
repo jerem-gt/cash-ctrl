@@ -1,3 +1,4 @@
+import type { Database } from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 
 import { createDb, initDatabase } from './init.js';
@@ -5,6 +6,24 @@ import { createDb, initDatabase } from './init.js';
 interface RefsRow {
   interest_subcategory_id: number | null;
   wire_payment_method_id: number | null;
+}
+
+function insertUser(db: Database, username = 'alice', isAdmin = 0): number {
+  return Number(
+    db
+      .prepare("INSERT INTO users (username, password_hash, is_admin) VALUES (?, 'x', ?)")
+      .run(username, isAdmin).lastInsertRowid,
+  );
+}
+
+// Retire les colonnes ajoutées par les migrations ≥ version, pour simuler une base plus ancienne.
+function rollbackTo(db: Database, version: number) {
+  if (version <= 5) {
+    db.exec('ALTER TABLE user_settings DROP COLUMN interest_subcategory_id');
+    db.exec('ALTER TABLE user_settings DROP COLUMN wire_payment_method_id');
+  }
+  if (version <= 7) db.exec('ALTER TABLE users DROP COLUMN email');
+  db.pragma(`user_version = ${version}`);
 }
 
 describe('initDatabase', () => {
@@ -23,7 +42,7 @@ describe('initDatabase', () => {
     const db = createDb(':memory:');
     initDatabase(db);
 
-    const userId = (db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number }).id;
+    const userId = insertUser(db);
     const catId = Number(
       db
         .prepare('INSERT INTO categories (user_id, name, icon) VALUES (?, ?, ?)')
@@ -53,10 +72,7 @@ describe('initDatabase', () => {
       'INSERT INTO user_settings (user_id, financial_income_category_id) VALUES (?, ?)',
     ).run(userId, catId);
 
-    // Retour à l'état de la version précédente
-    db.exec('ALTER TABLE user_settings DROP COLUMN interest_subcategory_id');
-    db.exec('ALTER TABLE user_settings DROP COLUMN wire_payment_method_id');
-    db.pragma('user_version = 5');
+    rollbackTo(db, 5);
 
     initDatabase(db);
 
@@ -76,7 +92,7 @@ describe('initDatabase', () => {
     db.prepare(
       "INSERT INTO stock_price_history (ticker, date, price, currency) VALUES ('CW8.PA', '2023-12-31', 10, 'EUR')",
     ).run();
-    db.pragma('user_version = 6');
+    rollbackTo(db, 6);
 
     initDatabase(db);
 
@@ -84,18 +100,43 @@ describe('initDatabase', () => {
       cnt: number;
     };
     expect(cnt.cnt).toBe(0);
-    expect(db.pragma('user_version', { simple: true })).toBe(7);
+    expect(db.pragma('user_version', { simple: true })).toBeGreaterThanOrEqual(7);
+  });
+
+  it("migre une base v7 : ajoute l'e-mail et donne les données de départ aux admins sans réglages", () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    const adminId = insertUser(db, 'root', 1);
+    const seededAdminId = insertUser(db, 'root2', 1);
+    db.prepare('INSERT INTO user_settings (user_id) VALUES (?)').run(seededAdminId);
+    const userId = insertUser(db, 'bob');
+
+    rollbackTo(db, 7);
+
+    initDatabase(db);
+
+    const cols = db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
+    expect(cols.map((c) => c.name)).toContain('email');
+    const countFor = (table: string, id: number) =>
+      (
+        db.prepare(`SELECT COUNT(*) AS cnt FROM ${table} WHERE user_id = ?`).get(id) as {
+          cnt: number;
+        }
+      ).cnt;
+    expect(countFor('user_settings', adminId)).toBe(1);
+    expect(countFor('categories', adminId)).toBeGreaterThan(0);
+    expect(countFor('categories', seededAdminId)).toBe(0);
+    expect(countFor('categories', userId)).toBe(0);
+    expect(db.pragma('user_version', { simple: true })).toBe(8);
   });
 
   it('laisse les références à null quand les noms sont introuvables', () => {
     const db = createDb(':memory:');
     initDatabase(db);
-    const userId = (db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number }).id;
+    const userId = insertUser(db);
     db.prepare('INSERT INTO user_settings (user_id) VALUES (?)').run(userId);
 
-    db.exec('ALTER TABLE user_settings DROP COLUMN interest_subcategory_id');
-    db.exec('ALTER TABLE user_settings DROP COLUMN wire_payment_method_id');
-    db.pragma('user_version = 5');
+    rollbackTo(db, 5);
 
     initDatabase(db);
 

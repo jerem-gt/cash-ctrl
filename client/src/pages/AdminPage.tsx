@@ -1,28 +1,44 @@
 import type { UserPublic } from '@cashctrl/types';
-import { Loader2, LogOut, Pencil, Plus, Shield, Trash2, X } from 'lucide-react';
+import { Loader2, LockOpen, Pencil, Plus, ShieldMinus, ShieldPlus, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Card, CardTitle, Input, Select, showToast } from '@/components/ui';
-import { APP_CONFIG } from '@/constants';
+import type { UserUpdatePayload } from '@/api/client';
+import { Button, Card, Input, Select, showToast } from '@/components/ui';
 import { useDeleteConfirmation } from '@/features/settings/hooks/useDeleteConfirmation';
-import { useLogout } from '@/hooks/useAuth';
-import { useCreateUser, useDeleteUser, useUpdateUser, useUsers } from '@/hooks/useUsers';
+import { useMe } from '@/hooks/useAuth';
+import {
+  useCreateUser,
+  useDeleteUser,
+  useDisableUser2fa,
+  useUpdateUser,
+  useUsers,
+} from '@/hooks/useUsers';
 import { fmtDate } from '@/lib/format';
+
+const badgeClass =
+  'text-[10px] font-medium uppercase tracking-wide bg-surface-emphasis text-content-muted border border-line rounded px-1.5 py-0.5';
 
 // ─── Add user form ─────────────────────────────────────────────────────────────
 
 function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
   const { t } = useTranslation('admin');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const create = useCreateUser();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
+    const trimmedEmail = email.trim();
     create.mutate(
-      { username, password, lang },
+      {
+        username,
+        password,
+        lang,
+        ...(trimmedEmail === '' ? {} : { email: trimmedEmail }),
+      },
       {
         onSuccess: () => {
           showToast(t('toasts.created'));
@@ -50,6 +66,12 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
         onChange={(e) => setUsername(e.target.value)}
         required
         autoFocus
+      />
+      <Input
+        type="email"
+        placeholder={t('add_form.email_placeholder')}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
       <Input
         type="password"
@@ -82,13 +104,17 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
 function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: () => void }>) {
   const { t } = useTranslation('admin');
   const [username, setUsername] = useState(user.username);
+  const [email, setEmail] = useState(user.email ?? '');
   const [password, setPassword] = useState('');
   const update = useUpdateUser();
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    const payload: { username?: string; password?: string } = {};
+    const payload: UserUpdatePayload = {};
     if (username !== user.username) payload.username = username;
+    const trimmedEmail = email.trim();
+    if (trimmedEmail !== (user.email ?? ''))
+      payload.email = trimmedEmail === '' ? null : trimmedEmail;
     if (password.length > 0) payload.password = password;
 
     update.mutate(
@@ -123,6 +149,12 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
         required
       />
       <Input
+        type="email"
+        placeholder={t('edit_form.email_placeholder')}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <Input
         type="password"
         placeholder={t('edit_form.password_placeholder')}
         value={password}
@@ -138,14 +170,18 @@ function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: (
 
 // ─── Main admin page ───────────────────────────────────────────────────────────
 
-export function AdminPage({ username }: Readonly<{ username: string }>) {
+export default function AdminPage() {
   const { t } = useTranslation('admin');
+  const { data: me } = useMe();
   const { data: users = [], isLoading } = useUsers();
   const deleteUser = useDeleteUser();
-  const logout = useLogout();
+  const updateUser = useUpdateUser();
+  const disable2fa = useDisableUser2fa();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const { requestDelete, isDeleting, deleteConfirmModal } = useDeleteConfirmation(showToast);
+  const { requestDelete: request2faDisable, deleteConfirmModal: disable2faModal } =
+    useDeleteConfirmation(showToast);
 
   const handleDelete = (user: UserPublic) => {
     requestDelete(
@@ -157,75 +193,88 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
     );
   };
 
+  const handleDisable2fa = (user: UserPublic) => {
+    request2faDisable(
+      t('user.confirm_2fa_title'),
+      t('user.confirm_2fa', { username: user.username }),
+      user.id,
+      disable2fa.mutate,
+      t('toasts.totp_disabled'),
+    );
+  };
+
+  const handleToggleAdmin = (user: UserPublic) => {
+    const promote = user.is_admin === 0;
+    updateUser.mutate(
+      { id: user.id, is_admin: promote },
+      { onSuccess: () => showToast(promote ? t('toasts.promoted') : t('toasts.demoted')) },
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
-      <header className="bg-sidebar-bg text-sidebar-fg px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-white/50" />
-          <span className="font-semibold">
-            {APP_CONFIG.name} {t('page.title_suffix')}
-          </span>
+    <div className="flex flex-col gap-6 max-w-3xl">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-display tracking-tight">{t('page.title')}</h1>
+          <p className="text-sm text-content-subtle">{t('page.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-white/50">{username}</span>
-          <button
-            type="button"
-            onClick={() => logout.mutate()}
-            className="text-white/50 hover:text-white transition-colors"
-            title={t('page.logout_title')}
-            aria-label={t('page.logout_title')}
+        {!showAdd && (
+          <Button
+            size="sm"
+            variant="primary"
+            className="shrink-0"
+            onClick={() => {
+              setShowAdd(true);
+              setEditingId(null);
+            }}
           >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {t('page.add_btn')}
+          </Button>
+        )}
+      </div>
 
-      <main className="flex-1 p-4 md:p-6 max-w-2xl mx-auto w-full">
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <CardTitle>{t('page.users_title')}</CardTitle>
-            {!showAdd && (
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => {
-                  setShowAdd(true);
-                  setEditingId(null);
-                }}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                {t('page.add_btn')}
-              </Button>
-            )}
+      <Card>
+        {showAdd && (
+          <div className="mb-4 p-4 bg-surface-muted rounded-xl border border-line-subtle">
+            <AddUserForm onClose={() => setShowAdd(false)} />
           </div>
+        )}
 
-          {showAdd && (
-            <div className="mb-4 p-4 bg-surface-muted rounded-xl border border-line-subtle">
-              <AddUserForm onClose={() => setShowAdd(false)} />
-            </div>
-          )}
-
-          {isLoading ? (
-            <p className="text-sm text-content-subtle">{t('page.loading')}</p>
-          ) : (
-            <ul className="divide-y divide-line-subtle">
-              {users.map((user) => (
+        {isLoading ? (
+          <p className="text-sm text-content-subtle">{t('page.loading')}</p>
+        ) : (
+          <ul className="divide-y divide-line-subtle">
+            {users.map((user) => {
+              const isSelf = user.username === me?.username;
+              return (
                 <li key={user.id} className="py-3">
                   {editingId === user.id ? (
                     <div className="p-3 bg-surface-muted rounded-xl border border-line-subtle">
                       <EditUserForm user={user} onClose={() => setEditingId(null)} />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-col gap-0.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-content">{user.username}</span>
-                          {user.is_admin === 1 && (
-                            <span className="text-[10px] font-medium uppercase tracking-wide bg-surface-emphasis text-content-muted border border-line rounded px-1.5 py-0.5">
-                              {t('user.admin_badge')}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-content break-all">
+                            {user.username}
+                          </span>
+                          {isSelf && (
+                            <span className="text-[11px] text-content-subtle">
+                              ({t('user.you')})
                             </span>
                           )}
+                          {user.is_admin === 1 && (
+                            <span className={badgeClass}>{t('user.admin_badge')}</span>
+                          )}
+                          {user.totp_enabled === 1 && (
+                            <span className={badgeClass}>{t('user.totp_badge')}</span>
+                          )}
                         </div>
+                        <span className="text-xs text-content-muted break-all">
+                          {user.email ?? t('user.no_email')}
+                        </span>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-content-subtle">
                           <span>{t('user.account_count', { count: user.account_count })}</span>
                           <span>{t('user.tx_count', { count: user.tx_count })}</span>
@@ -234,25 +283,57 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                           )}
                         </div>
                       </div>
-                      {user.is_admin === 0 && (
-                        <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex flex-wrap items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setEditingId(user.id);
+                            setShowAdd(false);
+                          }}
+                          disabled={isDeleting}
+                          title={t('user.edit_title')}
+                          aria-label={t('user.edit_title')}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {!isSelf && (
                           <Button
                             size="sm"
-                            onClick={() => {
-                              setEditingId(user.id);
-                              setShowAdd(false);
-                            }}
-                            disabled={isDeleting}
-                            title={t('user.edit_title')}
+                            onClick={() => handleToggleAdmin(user)}
+                            disabled={updateUser.isPending}
+                            title={
+                              user.is_admin === 1 ? t('user.demote_title') : t('user.promote_title')
+                            }
+                            aria-label={
+                              user.is_admin === 1 ? t('user.demote_title') : t('user.promote_title')
+                            }
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            {user.is_admin === 1 ? (
+                              <ShieldMinus className="h-3.5 w-3.5" />
+                            ) : (
+                              <ShieldPlus className="h-3.5 w-3.5" />
+                            )}
                           </Button>
+                        )}
+                        {user.totp_enabled === 1 && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleDisable2fa(user)}
+                            disabled={disable2fa.isPending}
+                            title={t('user.disable_2fa_title')}
+                            aria-label={t('user.disable_2fa_title')}
+                          >
+                            <LockOpen className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {!isSelf && (
                           <Button
                             size="sm"
                             variant="danger"
                             onClick={() => handleDelete(user)}
                             disabled={isDeleting}
                             title={t('user.delete_title')}
+                            aria-label={t('user.delete_title')}
                           >
                             {isDeleting && deleteUser.variables === user.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -260,17 +341,18 @@ export function AdminPage({ username }: Readonly<{ username: string }>) {
                               <Trash2 className="h-3.5 w-3.5" />
                             )}
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
                 </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </main>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
       {deleteConfirmModal}
+      {disable2faModal}
     </div>
   );
 }

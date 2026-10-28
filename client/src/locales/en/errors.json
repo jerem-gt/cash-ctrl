@@ -65,8 +65,9 @@
   "user": {
     "not_found": "User not found",
     "username_taken": "Username already taken",
-    "cannot_modify_admin": "Cannot modify the administrator account",
-    "cannot_delete_admin": "Cannot delete the administrator account"
+    "email_taken": "Email address already in use",
+    "last_admin": "At least one administrator must remain",
+    "cannot_delete_self": "You cannot delete your own account"
   },
   "auth": {
     "invalid_credentials": "Invalid credentials",
@@ -77,7 +78,13 @@
     "totp_invalid": "Invalid or expired code",
     "totp_token_invalid": "Authentication session expired, please log in again",
     "totp_already_enabled": "Two-factor authentication is already enabled",
-    "totp_not_enabled": "Two-factor authentication is not enabled"
+    "totp_not_enabled": "Two-factor authentication is not enabled",
+    "setup_done": "Initial setup is already complete",
+    "setup_token_invalid": "Invalid setup token",
+    "reset_token_invalid": "Invalid or expired reset link",
+    "email_missing": "No email address is set for this account",
+    "smtp_not_configured": "Email sending is not configured on the server",
+    "email_send_failed": "Failed to send the email"
   },
   "reimbursement": {
     "only_expense": "Only expenses can have reimbursements",

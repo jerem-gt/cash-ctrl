@@ -10,6 +10,7 @@ import { CategorizationRulesCard } from '@/features/settings/components/Categori
 import ExportManager from '@/features/settings/components/ExportManager';
 import { PasswordChangeCard } from '@/features/settings/components/PasswordChangeCard';
 import { PaymentMethodsManager } from '@/features/settings/components/PaymentMethodsManager';
+import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsManager, type SettingsTab } from '@/features/settings/components/SettingsManager';
 import { SystemRefsManager } from '@/features/settings/components/SystemRefsManager';
 import { TickersManager } from '@/features/settings/components/TickersManager';
@@ -56,6 +57,7 @@ export default function SettingsPage() {
           {activeTab === 'import' && <ImportManager />}
           {activeTab === 'backup' && <BackupManager />}
           {activeTab === 'tickers' && <TickersManager />}
+          {activeTab === 'profile' && <ProfileCard />}
           {activeTab === 'password' && <PasswordChangeCard />}
           {activeTab === 'totp' && <TwoFactorCard />}
           {activeTab === 'systemRefs' && <SystemRefsManager />}

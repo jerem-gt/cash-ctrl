@@ -10,6 +10,7 @@ export const queryKeys = {
   settings: () => ['settings'] as const,
   users: () => ['users'] as const,
   me: () => ['me'] as const,
+  setupStatus: () => ['setup-status'] as const,
   version: () => ['version'] as const,
   dashboardStats: () => ['dashboard-stats'] as const,
   balanceHistory: () => ['balance-history'] as const,

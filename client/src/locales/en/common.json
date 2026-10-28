@@ -37,7 +37,42 @@
     "totp_subtitle": "Enter the code shown in your authenticator app",
     "totp_code": "6-digit code",
     "totp_submit": "Verify",
-    "totp_back": "← Back"
+    "totp_back": "← Back",
+    "forgot_link": "Forgot password?"
+  },
+  "forgot": {
+    "subtitle": "Enter your username or e-mail to receive a reset link",
+    "identifier": "Username or e-mail",
+    "submit": "Send link",
+    "submitting": "Sending…",
+    "sent": "If an account matches, a reset link has been sent by e-mail. Without e-mail configured, ask the administrator: the link is written in the server logs.",
+    "back": "← Back to sign in"
+  },
+  "setup": {
+    "subtitle": "Welcome! Create the first (administrator) account to get started",
+    "token": "Setup token",
+    "token_help": "The token is written in the server logs at startup (e.g. docker logs <container>).",
+    "username": "Username",
+    "password": "Password",
+    "password_placeholder": "Min. 8 characters",
+    "confirm": "Confirm password",
+    "err_mismatch": "Passwords do not match.",
+    "err_too_short": "Minimum 8 characters.",
+    "submit": "Create account",
+    "submitting": "Creating…"
+  },
+  "reset": {
+    "subtitle": "Choose a new password",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "err_mismatch": "Passwords do not match.",
+    "err_too_short": "Minimum 8 characters.",
+    "submit": "Reset password",
+    "submitting": "Resetting…",
+    "success": "Password reset. You can now sign in.",
+    "to_login": "Go to sign in",
+    "invalid_token": "This link is invalid or has expired.",
+    "request_new": "Request a new link"
   },
   "pagination": {
     "first": "First page",

@@ -37,7 +37,42 @@
     "totp_subtitle": "Entrez le code affiché dans votre application d'authentification",
     "totp_code": "Code à 6 chiffres",
     "totp_submit": "Vérifier",
-    "totp_back": "← Retour"
+    "totp_back": "← Retour",
+    "forgot_link": "Mot de passe oublié ?"
+  },
+  "forgot": {
+    "subtitle": "Indiquez votre identifiant ou votre e-mail pour recevoir un lien de réinitialisation",
+    "identifier": "Identifiant ou e-mail",
+    "submit": "Envoyer le lien",
+    "submitting": "Envoi…",
+    "sent": "Si un compte correspond, un lien de réinitialisation a été envoyé par e-mail. Sans e-mail configuré, demandez-le à l'administrateur : le lien est écrit dans les logs du serveur.",
+    "back": "← Retour à la connexion"
+  },
+  "setup": {
+    "subtitle": "Bienvenue ! Créez le premier compte (administrateur) pour démarrer",
+    "token": "Jeton d'installation",
+    "token_help": "Le jeton est écrit dans les logs du serveur au démarrage (ex. docker logs <conteneur>).",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "password_placeholder": "Min. 8 caractères",
+    "confirm": "Confirmer le mot de passe",
+    "err_mismatch": "Les mots de passe ne correspondent pas.",
+    "err_too_short": "Minimum 8 caractères.",
+    "submit": "Créer le compte",
+    "submitting": "Création…"
+  },
+  "reset": {
+    "subtitle": "Choisissez un nouveau mot de passe",
+    "password": "Nouveau mot de passe",
+    "confirm": "Confirmer le mot de passe",
+    "err_mismatch": "Les mots de passe ne correspondent pas.",
+    "err_too_short": "Minimum 8 caractères.",
+    "submit": "Réinitialiser",
+    "submitting": "Réinitialisation…",
+    "success": "Mot de passe réinitialisé. Vous pouvez vous connecter.",
+    "to_login": "Aller à la connexion",
+    "invalid_token": "Ce lien est invalide ou a expiré.",
+    "request_new": "Refaire une demande"
   },
   "pagination": {
     "first": "Première page",

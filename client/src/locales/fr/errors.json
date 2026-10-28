@@ -65,8 +65,9 @@
   "user": {
     "not_found": "Utilisateur introuvable",
     "username_taken": "Nom d'utilisateur déjà utilisé",
-    "cannot_modify_admin": "Impossible de modifier le compte administrateur",
-    "cannot_delete_admin": "Impossible de supprimer le compte administrateur"
+    "email_taken": "Adresse e-mail déjà utilisée",
+    "last_admin": "Il doit rester au moins un administrateur",
+    "cannot_delete_self": "Vous ne pouvez pas supprimer votre propre compte"
   },
   "auth": {
     "invalid_credentials": "Identifiants invalides",
@@ -77,7 +78,13 @@
     "totp_invalid": "Code invalide ou expiré",
     "totp_token_invalid": "Session d'authentification expirée, reconnectez-vous",
     "totp_already_enabled": "La double authentification est déjà activée",
-    "totp_not_enabled": "La double authentification n'est pas activée"
+    "totp_not_enabled": "La double authentification n'est pas activée",
+    "setup_done": "La configuration initiale est déjà terminée",
+    "setup_token_invalid": "Jeton de configuration invalide",
+    "reset_token_invalid": "Lien de réinitialisation invalide ou expiré",
+    "email_missing": "Aucune adresse e-mail n'est renseignée pour ce compte",
+    "smtp_not_configured": "L'envoi d'e-mails n'est pas configuré sur le serveur",
+    "email_send_failed": "Échec de l'envoi de l'e-mail"
   },
   "reimbursement": {
     "only_expense": "Seules les dépenses peuvent avoir des remboursements",

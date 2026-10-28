@@ -79,8 +79,9 @@ export const ERROR_MESSAGES = {
   // ── Utilisateurs ──────────────────────────────────────────────────────────
   'user.not_found': 'Utilisateur introuvable',
   'user.username_taken': "Nom d'utilisateur déjà utilisé",
-  'user.cannot_modify_admin': 'Impossible de modifier le compte administrateur',
-  'user.cannot_delete_admin': 'Impossible de supprimer le compte administrateur',
+  'user.email_taken': 'Adresse e-mail déjà utilisée',
+  'user.last_admin': 'Il doit rester au moins un administrateur',
+  'user.cannot_delete_self': 'Vous ne pouvez pas supprimer votre propre compte',
 
   // ── Authentification ──────────────────────────────────────────────────────
   'auth.invalid_credentials': 'Identifiants invalides',
@@ -92,6 +93,12 @@ export const ERROR_MESSAGES = {
   'auth.totp_token_invalid': "Session d'authentification expirée, reconnectez-vous",
   'auth.totp_already_enabled': 'La double authentification est déjà activée',
   'auth.totp_not_enabled': "La double authentification n'est pas activée",
+  'auth.setup_done': 'La configuration initiale est déjà terminée',
+  'auth.setup_token_invalid': 'Jeton de configuration invalide',
+  'auth.reset_token_invalid': 'Lien de réinitialisation invalide ou expiré',
+  'auth.email_missing': "Aucune adresse e-mail n'est renseignée pour ce compte",
+  'auth.smtp_not_configured': "L'envoi d'e-mails n'est pas configuré sur le serveur",
+  'auth.email_send_failed': "Échec de l'envoi de l'e-mail",
 
   // ── Remboursements ────────────────────────────────────────────────────────
   'reimbursement.only_expense': 'Seules les dépenses peuvent avoir des remboursements',

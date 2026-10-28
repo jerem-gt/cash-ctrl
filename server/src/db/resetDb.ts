@@ -20,4 +20,5 @@ if (fs.existsSync(DB_PATH)) {
 const db = createDb();
 initDatabase(db);
 console.log('Schéma et données de référence initialisés.');
-console.log('Identifiants : admin / changeme');
+console.log('Aucun compte : créez le premier via le jeton affiché au démarrage du serveur.');
+console.log('(npm run db:seed:test crée le compte démo test / test.)');

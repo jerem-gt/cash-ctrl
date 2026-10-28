@@ -1,14 +1,14 @@
 {
   "page": {
-    "title_suffix": "— Administration",
-    "users_title": "Users",
+    "title": "Users",
+    "subtitle": "Manage accounts, roles and two-factor authentication",
     "add_btn": "Add",
-    "loading": "Loading…",
-    "logout_title": "Log out"
+    "loading": "Loading…"
   },
   "add_form": {
     "title": "New user",
     "username_placeholder": "Username",
+    "email_placeholder": "E-mail (optional)",
     "password_placeholder": "Password (min. 8 characters)",
     "language_label": "Data language",
     "language_fr": "Français",
@@ -18,24 +18,36 @@
   "edit_form": {
     "title": "Edit {{username}}",
     "username_placeholder": "Username",
-    "password_placeholder": "New password (leave blank = unchanged)",
+    "email_placeholder": "E-mail (leave empty = none)",
+    "password_placeholder": "New password (leave empty = unchanged)",
     "submit": "Save"
   },
   "user": {
     "admin_badge": "admin",
+    "totp_badge": "2FA",
+    "you": "you",
+    "no_email": "No e-mail",
     "edit_title": "Edit",
     "delete_title": "Delete",
+    "promote_title": "Grant administrator role",
+    "demote_title": "Remove administrator role",
+    "disable_2fa_title": "Disable 2FA",
     "account_count_one": "1 account",
     "account_count_other": "{{count}} accounts",
     "tx_count_one": "1 transaction",
     "tx_count_other": "{{count}} transactions",
     "last_tx": "last on {{date}}",
     "confirm_delete_title": "Delete user",
-    "confirm_delete": "Delete user \"{{username}}\" and all their data?"
+    "confirm_delete": "Delete user \"{{username}}\" and all their data?",
+    "confirm_2fa_title": "Disable 2FA",
+    "confirm_2fa": "Disable two-factor authentication for \"{{username}}\"?"
   },
   "toasts": {
     "created": "User created",
     "updated": "User updated",
-    "deleted": "User deleted"
+    "deleted": "User deleted",
+    "promoted": "Administrator role granted",
+    "demoted": "Administrator role removed",
+    "totp_disabled": "2FA disabled"
   }
 }

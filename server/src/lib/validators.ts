@@ -7,3 +7,6 @@ export const positiveAmountSchema = z.number().positive();
 export const feesSchema = z.number().min(0).default(0);
 export const descriptionSchema = z.string().min(1).max(200);
 export const nameSchema = z.string().min(1).max(100);
+
+/** E-mail normalisé (trim + minuscules) et validé. */
+export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));

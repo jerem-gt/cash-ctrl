@@ -16,10 +16,16 @@ services:
       - PORT=3000
       - DATA_DIR=/data
       - SESSION_SECRET=${SESSION_SECRET}
-      - ADMIN_USER=admin
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SECURE_COOKIE=true
       - LOG_LEVEL=INFO
+      # Facultatif : liens des e-mails « mot de passe oublié » (sans APP_URL ni SMTP, le lien est dans les logs)
+      # - APP_URL=https://cash.example.com
+      # - SMTP_HOST=smtp.example.com
+      # - SMTP_PORT=587
+      # - SMTP_SECURE=false
+      # - SMTP_USER=cashctrl@example.com
+      # - SMTP_PASS=${SMTP_PASS}
+      # - SMTP_FROM=cashctrl@example.com
     networks:
       mynet:
         ipv4_address: 172.18.0.2
@@ -40,10 +46,9 @@ services:
       - PORT=4000
       - DATA_DIR=/data
       - SESSION_SECRET=${SESSION_SECRET}
-      - ADMIN_USER=admin
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SECURE_COOKIE=true
       - LOG_LEVEL=INFO
+      # Facultatif : voir le service cashctrl (APP_URL, SMTP_*)
     networks:
       mynet:
         ipv4_address: 172.18.0.3

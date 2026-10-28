@@ -159,8 +159,24 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 
 export interface MeData {
   username: string;
+  email: string | null;
   isAdmin: boolean;
   totpEnabled: boolean;
+}
+
+export type Lang = 'fr' | 'en';
+
+export interface ProfileUpdatePayload {
+  current_password: string;
+  username?: string;
+  email?: string | null;
+}
+
+export interface UserUpdatePayload {
+  username?: string;
+  password?: string;
+  email?: string | null;
+  is_admin?: boolean;
 }
 
 export type LoginResponse = (MeData & { totp_required?: never }) | { totp_required: true };
@@ -179,16 +195,27 @@ export const authApi = {
   disable2fa: (password: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
   verifyTotp: (code: string) => request<MeData>('POST', '/api/auth/2fa/verify', { code }),
+  setupStatus: () => request<{ required: boolean }>('GET', '/api/auth/setup'),
+  setup: (payload: { token: string; username: string; password: string; lang: Lang }) =>
+    request<MeData>('POST', '/api/auth/setup', payload),
+  updateProfile: (payload: ProfileUpdatePayload) =>
+    request<MeData>('PATCH', '/api/auth/profile', payload),
+  forgotPassword: (identifier: string, lang: Lang) =>
+    request<{ ok: boolean }>('POST', '/api/auth/password/forgot', { identifier, lang }),
+  resetPassword: (token: string, password: string) =>
+    request<{ ok: boolean }>('POST', '/api/auth/password/reset', { token, password }),
+  testEmail: () => request<{ ok: boolean }>('POST', '/api/auth/test-email'),
 };
 
 // Users (admin only)
 export const usersApi = {
   list: () => request<UserPublic[]>('GET', '/api/users'),
-  create: (payload: { username: string; password: string; lang: 'fr' | 'en' }) =>
+  create: (payload: { username: string; password: string; email?: string; lang: Lang }) =>
     request<UserPublic>('POST', '/api/users', payload),
-  update: (id: number, payload: { username?: string; password?: string }) =>
+  update: (id: number, payload: UserUpdatePayload) =>
     request<UserPublic>('PATCH', `/api/users/${id}`, payload),
   remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/users/${id}`),
+  disable2fa: (id: number) => request<{ ok: boolean }>('DELETE', `/api/users/${id}/2fa`),
 };
 
 // Banks

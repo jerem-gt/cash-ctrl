@@ -68,7 +68,9 @@ npm run dev
 - Frontend : <http://localhost:5173>
 - Backend : <http://localhost:3000>
 
-**Login par défaut :** `admin / changeme`
+**Premier démarrage :** aucun compte n'existe. Le serveur écrit dans ses logs une ligne `setup token: <jeton>` (Docker : `docker logs cash-ctrl | grep "setup token"`) ; ouvrir l'application et saisir ce jeton pour créer le premier compte, qui est administrateur. Les autres comptes se gèrent ensuite dans l'application.
+
+**Mot de passe oublié :** un lien valable 30 minutes est envoyé par e-mail si le compte a une adresse et que le serveur a un SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) ainsi que `APP_URL` (URL publique, sans slash final). Sinon, le lien est écrit dans les logs du serveur. Voir `server/.env.example`.
 
 ---
 
