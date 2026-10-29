@@ -122,7 +122,7 @@ npm test --workspace=client   # Vitest + Testing Library + MSW
 
 ## 🚀 Déploiement
 
-Image Docker multi-stage via GitHub Actions. Compatible NAS Synology (docker-compose fourni).
+Image Docker multi-stage via GitHub Actions. Déployée sur NAS Synology par une stack Portainer qui lit `docker-compose.yml` depuis GitHub.
 
 ---
 

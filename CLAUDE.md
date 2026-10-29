@@ -127,6 +127,9 @@ node docs/take-screenshots.mjs
 
 Captures dans `docs/screenshots/` (clair + `-dark`). Pour une nouvelle page : ajouter `page.goto` + `shot(...)` dans `captureAll` et une ligne dans le tableau `## Aperçu` du README.
 
+## Déploiement
+Stack Portainer sur le NAS Synology, qui lit `docker-compose.yml` tel quel depuis GitHub : prod (`latest`, port 3000) et dev (`dev`, port 4000) dans la même stack, images mises à jour par Watchtower. Une variable ajoutée au compose se crée **d'abord** dans la stack Portainer, sinon elle arrive vide. Secrets : `SESSION_SECRET` (prod), `SESSION_SECRET_DEV` (dev, distinct : les cookies ne sont pas isolés par port), `SMTP_PASS` ; `APP_URL` propre à chaque service.
+
 ## Environnement
 - Utiliser l'outil **Bash** (pas PowerShell) pour les commandes shell.
 - Les chemins Windows doivent utiliser des slashes et être entre guillemets : `"C:/Users/jerem/WebstormProjects/cash-ctrl/client"`
