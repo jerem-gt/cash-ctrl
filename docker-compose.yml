@@ -1,14 +1,14 @@
 services:
   cashctrl:
     image: ghcr.io/jerem-gt/cash-ctrl:latest
-    user: "${PUID}:${PGID}"
+    user: '${PUID}:${PGID}'
     container_name: cash-ctrl
     labels:
       # Pour watchtower-fast
-      - "com.centurylinklabs.watchtower.scope=app-fast"
+      - 'com.centurylinklabs.watchtower.scope=app-fast'
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - /volume1/data/cash-ctrl:/data
     environment:
@@ -31,24 +31,32 @@ services:
         ipv4_address: 172.18.0.2
   cashctrl-dev:
     image: ghcr.io/jerem-gt/cash-ctrl:dev
-    user: "${PUID}:${PGID}"
+    user: '${PUID}:${PGID}'
     container_name: cash-ctrl-dev
     labels:
       # Pour watchtower-fast
-      - "com.centurylinklabs.watchtower.scope=app-fast"
+      - 'com.centurylinklabs.watchtower.scope=app-fast'
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - '4000:4000'
     volumes:
       - /volume1/data/cash-ctrl-dev:/data
     environment:
       - NODE_ENV=production
       - PORT=4000
       - DATA_DIR=/data
-      - SESSION_SECRET=${SESSION_SECRET}
+      # Secret distinct de la prod : les cookies ne sont pas isolés par port sur le même hôte
+      - SESSION_SECRET=${SESSION_SECRET_DEV}
       - SECURE_COOKIE=true
       - LOG_LEVEL=INFO
-      # Facultatif : voir le service cashctrl (APP_URL, SMTP_*)
+      # Facultatif : même SMTP que la prod, seule APP_URL change
+      # - APP_URL=https://cash-dev.example.com
+      # - SMTP_HOST=smtp.example.com
+      # - SMTP_PORT=587
+      # - SMTP_SECURE=false
+      # - SMTP_USER=cashctrl@example.com
+      # - SMTP_PASS=${SMTP_PASS}
+      # - SMTP_FROM=cashctrl@example.com
     networks:
       mynet:
         ipv4_address: 172.18.0.3
