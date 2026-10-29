@@ -32,7 +32,7 @@ describe('deviceLabel', () => {
   });
 
   it("retourne une chaîne vide si le User-Agent est absent ou n'est pas reconnu", () => {
-    expect(deviceLabel(undefined)).toBe('');
+    expect(deviceLabel()).toBe('');
     expect(deviceLabel('curl/8.0')).toBe('');
   });
 
