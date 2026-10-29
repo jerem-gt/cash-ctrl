@@ -131,6 +131,10 @@ function profileOf(user: User) {
 const DEVICE_COOKIE = 'cashctrl_device';
 const DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+function deviceTokenOf(req: Request): string | undefined {
+  return readCookie(req.headers.cookie, DEVICE_COOKIE);
+}
+
 export interface AuthRouterOptions {
   /** Cookie d'appareil mémorisé en `Secure` (SECURE_COOKIE=true). */
   secureCookies?: boolean;
@@ -169,10 +173,6 @@ export function createAuthRouter(
 
   function clearDeviceCookie(res: Response): void {
     res.clearCookie(DEVICE_COOKIE, deviceCookieOptions(res));
-  }
-
-  function deviceTokenOf(req: Request): string | undefined {
-    return readCookie(req.headers.cookie, DEVICE_COOKIE);
   }
 
   /** Mémorise l'appareil courant ; remplace l'éventuel appareil déjà porté par le cookie. */

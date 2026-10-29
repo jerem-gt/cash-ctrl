@@ -17,7 +17,6 @@ function osOf(ua: string): string | null {
 }
 
 /** Libellé « Navigateur · OS » déduit du User-Agent ; vide si rien n'est reconnu. */
-export function deviceLabel(userAgent: string | undefined): string {
-  const ua = userAgent ?? '';
-  return [browserOf(ua), osOf(ua)].filter((part) => part !== null).join(' · ');
+export function deviceLabel(userAgent = ''): string {
+  return [browserOf(userAgent), osOf(userAgent)].filter((part) => part !== null).join(' · ');
 }
