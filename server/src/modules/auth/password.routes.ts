@@ -49,6 +49,11 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
   const forgotLimiter = new FailureRateLimiter(db, FORGOT_MAX_REQUESTS);
   const resetLimiter = new FailureRateLimiter(db);
 
+  function validResetToken(tokenHash: string) {
+    const row = repo.getResetToken(tokenHash);
+    return row && row.expires_at > Date.now() ? row : undefined;
+  }
+
   function issueResetLink(user: User, lang: Lang): void {
     const now = Date.now();
     repo.purgeExpiredResetTokens(now);
@@ -110,20 +115,29 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     const data = parseBody(res, resetPasswordSchema, req.body);
     if (!data) return;
 
-    const hash = await bcrypt.hash(data.password, 12);
-    const row = repo.getResetToken(sha256Hex(data.token));
-    if (!row || row.expires_at <= Date.now()) {
+    const tokenHash = sha256Hex(data.token);
+    if (!validResetToken(tokenHash)) {
       resetLimiter.recordFailure(key);
       sendError(res, 400, 'auth.reset_token_invalid');
       return;
     }
 
-    db.transaction(() => {
+    // Haché après la vérification du jeton : un faux jeton ne coûte pas un bcrypt au serveur.
+    const hash = await bcrypt.hash(data.password, 12);
+    // Re-vérifié dans la transaction : un jeton consommé pendant le hachage ne sert pas deux fois.
+    const userId = db.transaction((): number | null => {
+      const row = validResetToken(tokenHash);
+      if (!row) return null;
       repo.updatePassword(row.user_id, hash);
       repo.deleteResetTokensForUser(row.user_id);
       revokeTrustedDevices(db, row.user_id);
+      return row.user_id;
     })();
-    sessionStore.destroyAllSessions(row.user_id);
+    if (userId === null) {
+      sendError(res, 400, 'auth.reset_token_invalid');
+      return;
+    }
+    sessionStore.destroyAllSessions(userId);
     resetLimiter.reset(key);
     res.json({ ok: true });
   });

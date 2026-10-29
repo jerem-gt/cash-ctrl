@@ -245,13 +245,30 @@ describe('POST /api/auth/password/reset', () => {
     expect(res.body.error.code).toBe('auth.reset_token_invalid');
   });
 
-  it('refuse un jeton inconnu', async () => {
+  it('refuse un jeton inconnu sans hacher le mot de passe', async () => {
     const { app } = setup();
-    const res = await supertest(app)
-      .post('/api/auth/password/reset')
-      .send({ token: 'inconnu', password: 'brandnewpass1' });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('auth.reset_token_invalid');
+    const hashSpy = vi.spyOn(bcrypt, 'hash');
+    try {
+      const res = await supertest(app)
+        .post('/api/auth/password/reset')
+        .send({ token: 'inconnu', password: 'brandnewpass1' });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('auth.reset_token_invalid');
+      expect(hashSpy).not.toHaveBeenCalled();
+    } finally {
+      hashSpy.mockRestore();
+    }
+  });
+
+  it('un jeton utilisé deux fois en même temps ne sert qu’une fois', async () => {
+    const { app, mailer } = setup({ appUrl: 'https://x.test' });
+    const token = await requestToken(app, mailer);
+    const send = (password: string) =>
+      supertest(app).post('/api/auth/password/reset').send({ token, password });
+    const statuses = (await Promise.all([send('brandnewpass1'), send('anotherpass12')]))
+      .map((res) => res.status)
+      .sort((a, b) => a - b);
+    expect(statuses).toEqual([200, 400]);
   });
 
   it('retourne 400 de validation si le mot de passe est trop court', async () => {
@@ -274,6 +291,5 @@ describe('POST /api/auth/password/reset', () => {
       .post('/api/auth/password/reset')
       .send({ token: 'x', password: 'brandnewpass1' });
     expect(res.status).toBe(429);
-    // 10 bcrypt.hash au coût de prod (12) : lent en CI chargée
-  }, 20_000);
+  });
 });
