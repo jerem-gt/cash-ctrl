@@ -183,7 +183,8 @@ describe('limitation partagée du mot de passe actuel', () => {
       .send({ current: 'password123', next: 'newpassword1' });
     expect(blocked.status).toBe(429);
     expect(blocked.body.error.code).toBe('auth.too_many_attempts');
-  });
+    // 10 bcrypt.compare au coût de prod (12) après le changement : lent en CI chargée
+  }, 20_000);
 
   it('2fa/disable est bloqué (429) après 10 mots de passe faux', async () => {
     const { app, db } = setup();

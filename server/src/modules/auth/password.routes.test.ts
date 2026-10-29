@@ -274,5 +274,6 @@ describe('POST /api/auth/password/reset', () => {
       .post('/api/auth/password/reset')
       .send({ token: 'x', password: 'brandnewpass1' });
     expect(res.status).toBe(429);
-  });
+    // 10 bcrypt.hash au coût de prod (12) : lent en CI chargée
+  }, 20_000);
 });
