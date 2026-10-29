@@ -128,7 +128,7 @@ node docs/take-screenshots.mjs
 Captures dans `docs/screenshots/` (clair + `-dark`). Pour une nouvelle page : ajouter `page.goto` + `shot(...)` dans `captureAll` et une ligne dans le tableau `## Aperçu` du README.
 
 ## Déploiement
-Stack Portainer sur le NAS Synology, qui lit `docker-compose.yml` tel quel sur la branche `develop` de GitHub : prod (`latest`, port 3000) et dev (`dev`, port 4000) dans la même stack. Watchtower met à jour les **images** automatiquement ; un changement du **compose** ne s'applique qu'au redéploiement manuel de la stack (pull and redeploy). Une variable ajoutée au compose se crée **d'abord** dans la stack Portainer, sinon elle arrive vide. Secrets : `SESSION_SECRET` (prod), `SESSION_SECRET_DEV` (dev, distinct : les cookies ne sont pas isolés par port), `SMTP_PASS` ; `APP_URL` propre à chaque service.
+Stack Portainer sur le NAS Synology, qui lit `docker-compose.yml` tel quel sur la branche `develop` de GitHub : prod (`latest`, port 3000) et dev (`dev`, port 4000) dans la même stack. Watchtower met à jour les **images** automatiquement ; un changement du **compose** ne s'applique qu'au redéploiement manuel de la stack (pull and redeploy). Une variable ajoutée au compose se crée **d'abord** dans la stack Portainer, sinon elle arrive vide. Variables de la stack : `SESSION_SECRET` (prod), `SESSION_SECRET_DEV` (dev, distinct : les cookies ne sont pas isolés par port), `APP_URL` / `APP_URL_DEV`, `SMTP_HOST`, `SMTP_PORT` (587 si vide), `SMTP_USER` et `SMTP_PASS` (mot de passe d'application Gmail), communs aux deux services ; l'expéditeur est `SMTP_USER`. Sans SMTP, le lien de réinitialisation est écrit dans les logs.
 
 ## Environnement
 - Utiliser l'outil **Bash** (pas PowerShell) pour les commandes shell.
