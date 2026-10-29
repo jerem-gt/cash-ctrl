@@ -263,6 +263,28 @@ describe('PATCH /api/users/:id', () => {
     expect(res.status).toBe(200);
   });
 
+  it('deux admins qui se rétrogradent l’un l’autre en même temps en laissent un', async () => {
+    const { app, db } = setup();
+    db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
+    const admin = await loginAs(app, 'admin');
+    const alice = await loginAs(app, 'alice');
+
+    // Le mot de passe impose un hachage asynchrone entre la vérification et l'écriture.
+    const results = await Promise.all([
+      admin
+        .patch(`/api/users/${idOf(db, 'alice')}`)
+        .send({ is_admin: false, password: 'brandnewpass1' }),
+      alice
+        .patch(`/api/users/${idOf(db, 'admin')}`)
+        .send({ is_admin: false, password: 'brandnewpass1' }),
+    ]);
+
+    expect(results.map((res) => res.status).sort((a, b) => a - b)).toEqual([200, 409]);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM users WHERE is_admin = 1').get()).toEqual({
+      n: 1,
+    });
+  }, 20_000);
+
   it('redéfinir le mot de passe d’un autre compte ferme toutes ses sessions', async () => {
     const { app, db } = setup();
     const alice1 = await loginAs(app, 'alice');

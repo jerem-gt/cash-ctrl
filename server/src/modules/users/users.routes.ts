@@ -11,6 +11,12 @@ import { createRequireAdmin, sessionUserId } from '../../middleware.js';
 import type { SQLiteSessionStore } from '../../session-store.js';
 import { revokeTrustedDevices } from '../auth/trustedDevices.js';
 import { createUsersRepo } from './users.repo.js';
+import type { UserPublic } from './users.types.js';
+
+type UserConflict = Extract<
+  ErrorCode,
+  'user.username_taken' | 'user.email_taken' | 'user.last_admin'
+>;
 
 export const createUserSchema = z.object({
   username: usernameSchema,
@@ -50,37 +56,58 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
     }
   }
 
+  /** Nom ou e-mail déjà pris par un autre compte que `id` (null : création). */
+  function identityConflict(
+    id: number | null,
+    username: string | undefined,
+    email: string | null | undefined,
+  ): UserConflict | null {
+    const usernameOwner = username === undefined ? undefined : repo.getByUsername(username);
+    if (usernameOwner && usernameOwner.id !== id) return 'user.username_taken';
+    const emailOwner = email ? repo.getByEmail(email) : undefined;
+    if (emailOwner && emailOwner.id !== id) return 'user.email_taken';
+    return null;
+  }
+
+  /** Retirer le rôle admin (rétrogradation ou suppression) au dernier admin est refusé. */
+  function removesLastAdmin(id: number): boolean {
+    return repo.getById(id)?.is_admin === 1 && repo.countAdmins() <= 1;
+  }
+
   router.get('/', (_req, res) => {
     res.json(repo.list());
   });
 
-  router.post('/', (req, res) => {
+  router.post('/', async (req, res) => {
     const data = parseBody(res, createUserSchema, req.body);
     if (!data) return;
     const { username, password, lang } = data;
     const email = data.email ?? null;
-    if (repo.getByUsername(username)) {
-      sendError(res, 409, 'user.username_taken');
+    const early = identityConflict(null, username, email);
+    if (early !== null) {
+      sendError(res, 409, early);
       return;
     }
-    if (email !== null && repo.getByEmail(email)) {
-      sendError(res, 409, 'user.email_taken');
-      return;
-    }
-    const hash = bcrypt.hashSync(password, 12);
-    const newUser = db.transaction(() => {
+    const hash = await bcrypt.hash(password, 12);
+    // Revérifié après le hachage (asynchrone) : une requête concurrente a pu prendre le nom.
+    const result = db.transaction((): { user: UserPublic } | { conflict: UserConflict } => {
+      const late = identityConflict(null, username, email);
+      if (late !== null) return { conflict: late };
       const created = repo.create(username, hash, email);
       seedUserData(db, created.id, lang);
-      return created;
+      return { user: created };
     })();
-    res.status(201).json(newUser);
+    if ('conflict' in result) {
+      sendError(res, 409, result.conflict);
+      return;
+    }
+    res.status(201).json(result.user);
   });
 
-  router.patch('/:id', (req, res) => {
+  router.patch('/:id', async (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    const user = repo.getById(id);
-    if (!user) {
+    if (!repo.getById(id)) {
       sendError(res, 404, 'user.not_found');
       return;
     }
@@ -90,25 +117,21 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
       return;
     }
     const { username, password, email, is_admin: isAdmin } = parsed.data;
+    const conflictOf = (): UserConflict | null =>
+      identityConflict(id, username, email) ??
+      (isAdmin === false && removesLastAdmin(id) ? 'user.last_admin' : null);
 
-    const usernameOwner = username === undefined ? undefined : repo.getByUsername(username);
-    const emailOwner = email ? repo.getByEmail(email) : undefined;
-    const demotesLastAdmin = isAdmin === false && user.is_admin === 1 && repo.countAdmins() <= 1;
-    let conflict: ErrorCode | null = null;
-    if (usernameOwner && usernameOwner.id !== id) {
-      conflict = 'user.username_taken';
-    } else if (emailOwner && emailOwner.id !== id) {
-      conflict = 'user.email_taken';
-    } else if (demotesLastAdmin) {
-      conflict = 'user.last_admin';
-    }
-    if (conflict !== null) {
-      sendError(res, 409, conflict);
+    const early = conflictOf();
+    if (early !== null) {
+      sendError(res, 409, early);
       return;
     }
-
-    const hash = password === undefined ? null : bcrypt.hashSync(password, 12);
-    db.transaction(() => {
+    const hash = password === undefined ? null : await bcrypt.hash(password, 12);
+    // Revérifié dans la transaction, après le hachage : deux admins qui se rétrogradent l'un
+    // l'autre en même temps ne laissent pas l'application sans admin.
+    const conflict = db.transaction((): UserConflict | null => {
+      const late = conflictOf();
+      if (late !== null) return late;
       if (username !== undefined) repo.updateUsername(id, username);
       if (email !== undefined) repo.updateEmail(id, email);
       if (isAdmin !== undefined) repo.updateAdmin(id, isAdmin);
@@ -116,7 +139,12 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
         repo.updatePassword(id, hash);
         revokeTrustedDevices(db, id);
       }
+      return null;
     })();
+    if (conflict !== null) {
+      sendError(res, 409, conflict);
+      return;
+    }
     if (hash !== null) closeSessionsAfterPasswordReset(id, sessionUserId(req), req.sessionID);
     res.json(repo.getById(id));
   });
@@ -124,8 +152,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
   router.delete('/:id', (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    const user = repo.getById(id);
-    if (!user) {
+    if (!repo.getById(id)) {
       sendError(res, 404, 'user.not_found');
       return;
     }
@@ -133,11 +160,15 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
       sendError(res, 409, 'user.cannot_delete_self');
       return;
     }
-    if (user.is_admin === 1 && repo.countAdmins() <= 1) {
+    const removed = db.transaction((): boolean => {
+      if (removesLastAdmin(id)) return false;
+      repo.remove(id);
+      return true;
+    })();
+    if (!removed) {
       sendError(res, 409, 'user.last_admin');
       return;
     }
-    repo.remove(id);
     sessionStore.destroyAllSessions(id);
     res.json({ ok: true });
   });
