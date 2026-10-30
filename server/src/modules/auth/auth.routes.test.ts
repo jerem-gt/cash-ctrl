@@ -393,6 +393,26 @@ describe('POST /api/auth/2fa/verify', () => {
     expect(res.status).toBe(401);
   });
 
+  it("régénère la session : une connexion précédente ne survit pas à l'attente du code", async () => {
+    const { app, db } = setup();
+    const hash = bcrypt.hashSync('password123', 4);
+    db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('carol', hash);
+    const secret = new OTPAuth.Secret();
+    db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1 WHERE username = ?').run(
+      secret.base32,
+      'alice',
+    );
+    const agent = supertest.agent(app);
+    await agent.post('/api/auth/login').send({ username: 'carol', password: 'password123' });
+    expect((await agent.get('/api/auth/me')).body.username).toBe('carol');
+
+    const res = await agent
+      .post('/api/auth/login')
+      .send({ username: 'alice', password: 'password123' });
+    expect(res.body).toEqual({ totp_required: true });
+    expect((await agent.get('/api/auth/me')).status).toBe(401);
+  });
+
   it('refuse un code déjà utilisé (anti-rejeu)', async () => {
     const { app, db } = setup();
     const { agent, secret } = await setupTotpAgent(app, db);

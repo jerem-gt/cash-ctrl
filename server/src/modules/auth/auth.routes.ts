@@ -74,7 +74,8 @@ const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Pas (numéro de la période de 30 s) du code s'il est valide à une période près, sinon null.
- * Le pas accepté est mémorisé : un code ne sert qu'une fois (anti-rejeu, RFC 6238 §5.2).
+ * L'appelant mémorise le pas accepté (consumeTotpStep, enableTotp) : un code ne sert qu'une fois
+ * (anti-rejeu, RFC 6238 §5.2).
  */
 function matchTotpStep(secret: string, code: string): number | null {
   const totp = new OTPAuth.TOTP({
@@ -304,9 +305,22 @@ export function createAuthRouter(
         startSession(req, res, next, user, true);
         return;
       }
-      req.session.pendingUserId = user.id;
-      req.session.pendingTotpAt = Date.now();
-      req.session.save(() => res.json({ totp_required: true }));
+      // Session neuve en attente du code : elle ne garde rien d'une connexion précédente.
+      req.session.regenerate((regenErr) => {
+        if (regenErr) {
+          next(regenErr);
+          return;
+        }
+        req.session.pendingUserId = user.id;
+        req.session.pendingTotpAt = Date.now();
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            next(saveErr);
+            return;
+          }
+          res.json({ totp_required: true });
+        });
+      });
       return;
     }
 
