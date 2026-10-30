@@ -29,11 +29,19 @@ export function sendError(
   res.status(status).json({ error: buildError(code, params) });
 }
 
+/**
+ * Champ absent : sans `reportInput`, Zod ne joint pas la valeur reçue (`issue.input` est toujours
+ * indéfini) ; son message par défaut, qu'aucun schéma ne remplace, se termine par « received undefined ».
+ */
+function isMissing(issue: z.core.$ZodIssueInvalidType): boolean {
+  return issue.message.endsWith('received undefined');
+}
+
 /** Mappe une issue Zod vers un code de validation traduisible + ses paramètres. */
 function classifyIssue(issue: z.core.$ZodIssue): { code: ErrorCode; params?: ErrorParams } {
   switch (issue.code) {
     case 'invalid_type':
-      return issue.input === undefined
+      return isMissing(issue)
         ? { code: 'validation.required' }
         : { code: 'validation.invalid_type' };
     case 'too_small': {

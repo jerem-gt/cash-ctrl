@@ -88,6 +88,15 @@ describe('zodToApiError', () => {
     // chaque champ porte un message FR de repli non vide
     for (const f of body.fields) expect(f.message.length).toBeGreaterThan(0);
   });
+
+  it('distingue une valeur du mauvais type d’un champ manquant', () => {
+    const parsed = schema.safeParse({ name: 'ok', amount: 'douze', type: 'a' });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) return;
+
+    const [field] = zodToApiError(parsed.error).fields;
+    expect(field).toMatchObject({ path: 'amount', code: 'validation.invalid_type' });
+  });
 });
 
 describe('handleHttpErrors', () => {
