@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { type Migration, runMigrations } from '@jerem-gt/ctrl-shared/server/migrations';
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 
 import { initSchema } from './schema.js';
@@ -9,7 +10,7 @@ import { seedDatabase, seedUserData } from './seed.js';
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(import.meta.dirname, '../../data');
 
 // Each entry converts the DB from version N to N+1.
-const MIGRATIONS: Array<(db: DatabaseType) => void> = [
+const MIGRATIONS: readonly Migration[] = [
   (db) =>
     db.exec(`
       UPDATE transactions
@@ -77,14 +78,6 @@ const MIGRATIONS: Array<(db: DatabaseType) => void> = [
   },
 ];
 
-function runMigrations(db: DatabaseType) {
-  const version = db.pragma('user_version', { simple: true }) as number;
-  for (let i = version; i < MIGRATIONS.length; i++) {
-    MIGRATIONS[i](db);
-    db.pragma(`user_version = ${i + 1}`);
-  }
-}
-
 /** Retire les diacritiques (accents) d'une chaîne ; null-safe pour usage direct en fonction SQLite. */
 export function unaccent(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -133,7 +126,8 @@ export function initDatabase(db: DatabaseType) {
     // Fresh DB: schema already includes all columns — skip migrations
     db.pragma(`user_version = ${MIGRATIONS.length}`);
   } else {
-    runMigrations(db);
+    // Une transaction par migration, clés étrangères coupées puis contrôlées (runner de ctrl-shared).
+    runMigrations(db, MIGRATIONS);
   }
 
   seedDatabase(db);
