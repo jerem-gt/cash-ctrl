@@ -1,19 +1,19 @@
 import { randomBytes } from 'node:crypto';
 
+import { sha256Hex } from '@jerem-gt/ctrl-shared/server/crypto';
+import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
+import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
+import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { sha256Hex } from '../../lib/crypto.js';
-import type { Mailer } from '../../lib/mailer.js';
 import { MAIL_TEXTS } from '../../lib/mailTexts.js';
-import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { parseBody, sendError } from '../../lib/routeHelpers.js';
 import type { Lang } from '../../lib/systemEntities.js';
 import { langSchema } from '../../lib/validators.js';
 import type { AuthLogger } from '../../logger.js';
-import type { SQLiteSessionStore } from '../../session-store.js';
 import type { createUsersRepo } from '../users/users.repo.js';
 import type { AuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';

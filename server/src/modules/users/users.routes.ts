@@ -1,3 +1,4 @@
+import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
@@ -8,7 +9,6 @@ import type { ErrorCode } from '../../lib/errorCodes.js';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { createRequireAdmin, sessionUserId } from '../../middleware.js';
-import type { SQLiteSessionStore } from '../../session-store.js';
 import { revokeTrustedDevices } from '../auth/trustedDevices.js';
 import { createUsersRepo } from './users.repo.js';
 import type { UserPublic } from './users.types.js';

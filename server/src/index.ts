@@ -3,6 +3,7 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { announceSetupToken, SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
 import express from 'express';
 
 import { createApp } from './app.js';
@@ -11,7 +12,6 @@ import { startBackupInterval } from './lib/backup.js';
 import { startScheduledGenerationInterval } from './lib/generateScheduled.js';
 import { logger } from './logger.js';
 import { downloadDefaultBankLogos, LOGOS_DIR } from './logoDownloader.js';
-import { announceSetupToken, SetupToken } from './modules/auth/setup.js';
 import { startPriceRefreshInterval } from './modules/stocks/stocks.service.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '3000');

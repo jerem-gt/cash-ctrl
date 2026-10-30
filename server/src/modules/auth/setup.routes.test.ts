@@ -1,9 +1,9 @@
+import { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
 import supertest from 'supertest';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../app.js';
 import { createTestDb } from '../../tests/helpers/testDb.js';
-import { SetupToken } from './setup.js';
 
 function setup() {
   const db = createTestDb();

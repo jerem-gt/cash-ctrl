@@ -1,5 +1,10 @@
 import { randomBytes } from 'node:crypto';
 
+import { sha256Hex } from '@jerem-gt/ctrl-shared/server/crypto';
+import { createMailer, type Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
+import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
+import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
+import { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { type NextFunction, type Request, type Response, Router } from 'express';
@@ -8,21 +13,16 @@ import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
 import { readCookie } from '../../lib/cookies.js';
-import { sha256Hex } from '../../lib/crypto.js';
-import { createMailer, type Mailer } from '../../lib/mailer.js';
-import { FailureRateLimiter } from '../../lib/rateLimit.js';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
 import { deviceLabel } from '../../lib/userAgent.js';
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { type AuthLogger, logger } from '../../logger.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
-import type { SQLiteSessionStore } from '../../session-store.js';
 import { createUsersRepo } from '../users/users.repo.js';
 import { createAuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';
 import { createMailRouter } from './mail.routes.js';
 import { createPasswordRouter } from './password.routes.js';
-import { SetupToken } from './setup.js';
 import { revokeTrustedDevices } from './trustedDevices.js';
 
 export const loginSchema = z.object({

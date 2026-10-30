@@ -1,4 +1,4 @@
-import type { Mailer, MailMessage } from '../../lib/mailer.js';
+import type { Mailer, MailMessage } from '@jerem-gt/ctrl-shared/server/mailer';
 
 export interface FakeMailer extends Mailer {
   sent: MailMessage[];

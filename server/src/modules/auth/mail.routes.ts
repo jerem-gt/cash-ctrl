@@ -1,7 +1,7 @@
+import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
-import type { Mailer } from '../../lib/mailer.js';
 import { MAIL_TEXTS } from '../../lib/mailTexts.js';
 import { sendError } from '../../lib/routeHelpers.js';
 import type { AuthLogger } from '../../logger.js';

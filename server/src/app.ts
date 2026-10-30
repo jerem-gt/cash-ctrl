@@ -1,15 +1,16 @@
+import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
+import { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
+import type { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
 import type { Database } from 'better-sqlite3';
 import compression from 'compression';
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 
-import type { Mailer } from './lib/mailer.js';
 import { type AuthLogger, globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
-import type { SetupToken } from './modules/auth/setup.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
@@ -31,7 +32,6 @@ import { createTransactionsRouter } from './modules/transactions/transactions.ro
 import { createTransfersRouter } from './modules/transfers/transfers.routes.js';
 import { createUsersRouter } from './modules/users/users.routes.js';
 import { createDocsRouter } from './openapi/router.js';
-import { SQLiteSessionStore } from './session-store.js';
 
 export interface AppOptions {
   sessionSecret?: string;
