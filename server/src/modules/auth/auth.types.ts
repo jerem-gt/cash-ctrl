@@ -6,6 +6,8 @@ export interface User {
   is_admin: number;
   totp_secret: string | null;
   totp_enabled: number;
+  /** Dernier pas TOTP accepté (anti-rejeu), null avant le premier code. */
+  totp_last_step: number | null;
   created_at: string;
 }
 

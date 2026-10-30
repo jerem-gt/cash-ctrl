@@ -23,6 +23,7 @@ function rollbackTo(db: Database, version: number) {
     db.exec('ALTER TABLE user_settings DROP COLUMN wire_payment_method_id');
   }
   if (version <= 7) db.exec('ALTER TABLE users DROP COLUMN email');
+  if (version <= 8) db.exec('ALTER TABLE users DROP COLUMN totp_last_step');
   db.pragma(`user_version = ${version}`);
 }
 
@@ -127,7 +128,21 @@ describe('initDatabase', () => {
     expect(countFor('categories', adminId)).toBeGreaterThan(0);
     expect(countFor('categories', seededAdminId)).toBe(0);
     expect(countFor('categories', userId)).toBe(0);
-    expect(db.pragma('user_version', { simple: true })).toBe(8);
+    expect(db.pragma('user_version', { simple: true })).toBe(9);
+  });
+
+  it('migre une base v8 : ajoute le dernier pas TOTP, nul pour les comptes existants', () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    const userId = insertUser(db);
+    rollbackTo(db, 8);
+
+    initDatabase(db);
+
+    expect(db.prepare('SELECT totp_last_step FROM users WHERE id = ?').get(userId)).toEqual({
+      totp_last_step: null,
+    });
+    expect(db.pragma('user_version', { simple: true })).toBe(9);
   });
 
   it('laisse les références à null quand les noms sont introuvables', () => {

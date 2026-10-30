@@ -72,8 +72,7 @@ export function useSetup2FA() {
 export function useEnable2FA() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ secret, code }: { secret: string; code: string }) =>
-      authApi.enable2fa(secret, code),
+    mutationFn: ({ code }: { code: string }) => authApi.enable2fa(code),
     onSuccess: () => {
       qc.setQueryData(queryKeys.me(), (old: MeData | null | undefined) =>
         old ? { ...old, totpEnabled: true } : old,

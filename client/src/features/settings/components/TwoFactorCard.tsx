@@ -116,7 +116,7 @@ export function TwoFactorCard() {
   const handleEnable = () => {
     if (!setupData) return;
     enable2fa.mutate(
-      { secret: setupData.secret, code },
+      { code },
       {
         onSuccess: () => {
           showToast(t('totp.success_enabled'));

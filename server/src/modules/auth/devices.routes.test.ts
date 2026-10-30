@@ -14,6 +14,9 @@ type App = ReturnType<typeof createApp>;
 const DAY = 24 * 60 * 60 * 1000;
 const UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0';
 
+/** Base et compte de chaque secret de test, pour que `codeFor` oublie le dernier pas accepté. */
+const owners = new WeakMap<OTPAuth.Secret, { db: Db; username: string }>();
+
 function setup(secureCookies = false) {
   const db = createTestDb();
   const app = createApp(db, { secureCookies });
@@ -26,6 +29,7 @@ function setup(secureCookies = false) {
   ] as const) {
     const secret = new OTPAuth.Secret();
     secrets[name] = secret;
+    owners.set(secret, { db, username: name });
     db.prepare(
       'INSERT INTO users (username, password_hash, is_admin, totp_secret, totp_enabled) VALUES (?, ?, ?, ?, 1)',
     ).run(name, hash, admin, secret.base32);
@@ -33,7 +37,12 @@ function setup(secureCookies = false) {
   return { db, app, secrets };
 }
 
+/** Code courant ; le dernier pas accepté est oublié (anti-rejeu), pour se reconnecter dans un même test. */
 function codeFor(secret: OTPAuth.Secret): string {
+  const owner = owners.get(secret);
+  owner?.db
+    .prepare('UPDATE users SET totp_last_step = NULL WHERE username = ?')
+    .run(owner.username);
   return new OTPAuth.TOTP({
     algorithm: 'SHA1',
     digits: 6,
@@ -514,10 +523,10 @@ describe('révocation des appareils', () => {
     ).run(aliceId, 'stale', 'x', 1, 1, Date.now() + DAY);
     const agent = supertest.agent(app);
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
-    const secret = new OTPAuth.Secret();
+    const { secret } = (await agent.post('/api/auth/2fa/setup')).body as { secret: string };
     const res = await agent
       .post('/api/auth/2fa/enable')
-      .send({ secret: secret.base32, code: codeFor(secret) });
+      .send({ code: codeFor(OTPAuth.Secret.fromBase32(secret)) });
     expect(res.status).toBe(200);
     expect(deviceCount(db, 'alice')).toBe(0);
   });

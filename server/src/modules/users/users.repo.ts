@@ -42,7 +42,7 @@ export function createUsersRepo(db: Database) {
     'UPDATE users SET password_hash = :hash WHERE id = :id',
   );
   const disableTotpStmt = db.prepare<{ id: number }>(
-    'UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = :id',
+    'UPDATE users SET totp_secret = NULL, totp_enabled = 0, totp_last_step = NULL WHERE id = :id',
   );
   const countAdminsStmt = db.prepare<[], { n: number }>(
     'SELECT COUNT(*) AS n FROM users WHERE is_admin = 1',

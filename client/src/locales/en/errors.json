@@ -79,6 +79,7 @@
     "totp_token_invalid": "Authentication session expired, please log in again",
     "totp_already_enabled": "Two-factor authentication is already enabled",
     "totp_not_enabled": "Two-factor authentication is not enabled",
+    "totp_setup_expired": "Two-factor setup expired, please start again",
     "setup_done": "Initial setup is already complete",
     "setup_token_invalid": "Invalid setup token",
     "reset_token_invalid": "Invalid or expired reset link",

@@ -79,6 +79,7 @@
     "totp_token_invalid": "Session d'authentification expirée, reconnectez-vous",
     "totp_already_enabled": "La double authentification est déjà activée",
     "totp_not_enabled": "La double authentification n'est pas activée",
+    "totp_setup_expired": "Configuration de la 2FA expirée, recommencez",
     "setup_done": "La configuration initiale est déjà terminée",
     "setup_token_invalid": "Jeton de configuration invalide",
     "reset_token_invalid": "Lien de réinitialisation invalide ou expiré",

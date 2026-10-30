@@ -79,6 +79,7 @@ export const ERROR_MESSAGES = {
   'auth.totp_token_invalid': "Session d'authentification expirée, reconnectez-vous",
   'auth.totp_already_enabled': 'La double authentification est déjà activée',
   'auth.totp_not_enabled': "La double authentification n'est pas activée",
+  'auth.totp_setup_expired': 'Configuration de la 2FA expirée, recommencez',
   'auth.setup_done': 'La configuration initiale est déjà terminée',
   'auth.setup_token_invalid': 'Jeton de configuration invalide',
   'auth.reset_token_invalid': 'Lien de réinitialisation invalide ou expiré',

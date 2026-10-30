@@ -276,9 +276,47 @@ describe('POST /api/auth/2fa/enable', () => {
     const setupRes = await agent.post('/api/auth/2fa/setup');
     const { secret } = setupRes.body as { secret: string };
     const code = makeTotp(secret).generate();
-    const res = await agent.post('/api/auth/2fa/enable').send({ secret, code });
+    const res = await agent.post('/api/auth/2fa/enable').send({ code });
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
+  });
+
+  it('ignore un secret envoyé par le client : seul celui de la session compte', async () => {
+    const { app } = setup();
+    const agent = supertest.agent(app);
+    await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    await agent.post('/api/auth/2fa/setup');
+    const own = new OTPAuth.Secret().base32;
+    // Le code d'un autre secret ne vaut rien (sauf collision improbable de 6 chiffres).
+    const res = await agent
+      .post('/api/auth/2fa/enable')
+      .send({ secret: own, code: makeTotp(own).generate() });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('auth.totp_invalid');
+  });
+
+  it('retourne 400 sans secret proposé par /2fa/setup', async () => {
+    const { app } = setup();
+    const agent = supertest.agent(app);
+    await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    const res = await agent.post('/api/auth/2fa/enable').send({ code: '123456' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('auth.totp_setup_expired');
+  });
+
+  it('le code de confirmation ne sert pas à se connecter', async () => {
+    const { app } = setup();
+    const agent = supertest.agent(app);
+    await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    const { secret } = (await agent.post('/api/auth/2fa/setup')).body as { secret: string };
+    const code = makeTotp(secret).generate();
+    await agent.post('/api/auth/2fa/enable').send({ code });
+
+    const other = supertest.agent(app);
+    await other.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    const res = await other.post('/api/auth/2fa/verify').send({ code });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('auth.totp_invalid');
   });
 
   it('retourne 401 si le code est invalide', async () => {
@@ -287,7 +325,8 @@ describe('POST /api/auth/2fa/enable', () => {
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
     const setupRes = await agent.post('/api/auth/2fa/setup');
     const { secret } = setupRes.body as { secret: string };
-    const res = await agent.post('/api/auth/2fa/enable').send({ secret, code: '000000' });
+    const wrong = makeTotp(secret).generate() === '000000' ? '111111' : '000000';
+    const res = await agent.post('/api/auth/2fa/enable').send({ code: wrong });
     expect(res.status).toBe(401);
   });
 });
@@ -352,6 +391,59 @@ describe('POST /api/auth/2fa/verify', () => {
     const { agent } = await setupTotpAgent(app, db);
     const res = await agent.post('/api/auth/2fa/verify').send({ code: '000000' });
     expect(res.status).toBe(401);
+  });
+
+  it('refuse un code déjà utilisé (anti-rejeu)', async () => {
+    const { app, db } = setup();
+    const { agent, secret } = await setupTotpAgent(app, db);
+    const code = makeTotp(secret.base32).generate();
+    expect((await agent.post('/api/auth/2fa/verify').send({ code })).status).toBe(200);
+
+    const second = supertest.agent(app);
+    await second.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    const res = await second.post('/api/auth/2fa/verify').send({ code });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('auth.totp_invalid');
+  });
+
+  it('accepte le code suivant après un code utilisé', async () => {
+    const { app, db } = setup();
+    const { agent, secret } = await setupTotpAgent(app, db);
+    const totp = makeTotp(secret.base32);
+    await agent.post('/api/auth/2fa/verify').send({ code: totp.generate() });
+
+    const second = supertest.agent(app);
+    await second.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
+    const next = totp.generate({ timestamp: Date.now() + 30_000 });
+    expect((await second.post('/api/auth/2fa/verify').send({ code: next })).status).toBe(200);
+  });
+
+  it('bloque le compte après 10 codes faux, même depuis des adresses différentes', async () => {
+    const { app, db } = setup();
+    app.set('trust proxy', true);
+    const { secret } = await setupTotpAgent(app, db);
+    const clientIp = (n: number) => `10.0.0.${n}`;
+    for (let i = 0; i < 10; i++) {
+      const agent = supertest.agent(app);
+      await agent
+        .post('/api/auth/login')
+        .set('X-Forwarded-For', clientIp(i))
+        .send({ username: 'alice', password: 'password123' });
+      await agent
+        .post('/api/auth/2fa/verify')
+        .set('X-Forwarded-For', clientIp(i))
+        .send({ code: 'abcdef' });
+    }
+    const agent = supertest.agent(app);
+    await agent
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', clientIp(99))
+      .send({ username: 'alice', password: 'password123' });
+    const res = await agent
+      .post('/api/auth/2fa/verify')
+      .set('X-Forwarded-For', clientIp(99))
+      .send({ code: makeTotp(secret.base32).generate() });
+    expect(res.status).toBe(429);
   });
 
   it('retourne 401 sans session TOTP en attente', async () => {

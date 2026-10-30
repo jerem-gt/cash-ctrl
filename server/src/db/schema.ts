@@ -68,6 +68,8 @@ export function initSchema(db: Database) {
             is_admin      INTEGER NOT NULL DEFAULT 0,
             totp_secret   TEXT,
             totp_enabled  INTEGER NOT NULL DEFAULT 0,
+            -- Dernier pas TOTP (période de 30 s) accepté : un code déjà utilisé est refusé.
+            totp_last_step INTEGER,
             email         TEXT,
             created_at    TEXT           DEFAULT (datetime('now'))
         );

@@ -9,6 +9,8 @@ declare module 'express-session' {
     username?: string;
     pendingUserId?: number;
     pendingTotpAt?: number;
+    /** Secret proposé par /2fa/setup, en attente de confirmation par /2fa/enable. */
+    pendingTotpSecret?: string;
   }
 }
 

@@ -200,8 +200,7 @@ export const authApi = {
   changePassword: (current: string, next: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/change-password', { current, next }),
   setup2fa: () => request<{ uri: string; secret: string }>('POST', '/api/auth/2fa/setup'),
-  enable2fa: (secret: string, code: string) =>
-    request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { secret, code }),
+  enable2fa: (code: string) => request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { code }),
   disable2fa: (password: string) =>
     request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
   verifyTotp: (code: string, remember = false) =>

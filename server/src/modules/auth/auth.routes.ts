@@ -35,8 +35,8 @@ export const changePasswordSchema = z.object({
   next: z.string().min(8),
 });
 
+// Le secret à confirmer est gardé en session par /2fa/setup : seul le code est envoyé.
 export const enableTotpSchema = z.object({
-  secret: z.string().min(1),
   code: z.string().length(6),
 });
 
@@ -72,14 +72,20 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync('cashctrl-nonexistent-user', 12);
 
 const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
 
-function verifyTotpCode(secret: string, code: string): boolean {
+/**
+ * Pas (numéro de la période de 30 s) du code s'il est valide à une période près, sinon null.
+ * Le pas accepté est mémorisé : un code ne sert qu'une fois (anti-rejeu, RFC 6238 §5.2).
+ */
+function matchTotpStep(secret: string, code: string): number | null {
   const totp = new OTPAuth.TOTP({
     algorithm: 'SHA1',
     digits: 6,
     period: 30,
     secret: OTPAuth.Secret.fromBase32(secret),
   });
-  return totp.validate({ token: code, window: 1 }) !== null;
+  const now = Date.now();
+  const delta = totp.validate({ token: code, timestamp: now, window: 1 });
+  return delta === null ? null : totp.counter({ timestamp: now }) + delta;
 }
 
 interface SessionUser {
@@ -337,13 +343,23 @@ export function createAuthRouter(
       return;
     }
 
-    if (!verifyTotpCode(user.totp_secret, parsed.data.code)) {
+    // Limité par compte en plus de l'IP : un attaquant qui a le mot de passe et change d'adresse.
+    const accountKey = `totp:${user.id}`;
+    if (!loginLimiter.isAllowed(accountKey)) {
+      sendError(res, 429, 'auth.too_many_attempts');
+      return;
+    }
+
+    const step = matchTotpStep(user.totp_secret, parsed.data.code);
+    if (step === null || !authRepo.consumeTotpStep(user.id, step)) {
       loginLimiter.recordFailure(key);
+      loginLimiter.recordFailure(accountKey);
       sendError(res, 401, 'auth.totp_invalid');
       return;
     }
 
     loginLimiter.reset(key);
+    loginLimiter.reset(accountKey);
     if (parsed.data.remember) rememberDevice(req, res, user.id);
     startSession(req, res, next, user, true);
   });
@@ -424,7 +440,7 @@ export function createAuthRouter(
   });
 
   // Génère un nouveau secret TOTP et retourne l'URI pour le QR code.
-  // Le secret n'est PAS encore enregistré — il faut confirmer avec /2fa/enable.
+  // Le secret est gardé en session, pas encore enregistré : il faut confirmer avec /2fa/enable.
   router.post('/2fa/setup', requireAuth, (req, res) => {
     const userId = sessionUserId(req);
     const user = authRepo.getById(userId);
@@ -447,6 +463,7 @@ export function createAuthRouter(
       secret,
     });
 
+    req.session.pendingTotpSecret = secret.base32;
     res.json({ uri: totp.toString(), secret: secret.base32 });
   });
 
@@ -469,15 +486,23 @@ export function createAuthRouter(
       return;
     }
 
-    if (!verifyTotpCode(parsed.data.secret, parsed.data.code)) {
+    const secret = req.session.pendingTotpSecret;
+    if (!secret) {
+      sendError(res, 400, 'auth.totp_setup_expired');
+      return;
+    }
+
+    const step = matchTotpStep(secret, parsed.data.code);
+    if (step === null) {
       sendError(res, 401, 'auth.totp_invalid');
       return;
     }
 
     db.transaction(() => {
-      authRepo.enableTotp(userId, parsed.data.secret);
+      authRepo.enableTotp(userId, secret, step);
       revokeTrustedDevices(db, userId);
     })();
+    delete req.session.pendingTotpSecret;
     res.json({ ok: true });
   });
 

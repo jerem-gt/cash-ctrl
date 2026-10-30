@@ -318,7 +318,7 @@ describe('appareils mémorisés', () => {
     const { Wrapper, qc } = createHookWrapper();
     const spy = vi.spyOn(qc, 'invalidateQueries');
     const enable = renderHook(() => useEnable2FA(), { wrapper: Wrapper });
-    enable.result.current.mutate({ secret: 'S', code: '123456' });
+    enable.result.current.mutate({ code: '123456' });
     await waitFor(() => expect(enable.result.current.isSuccess).toBe(true));
     const disable = renderHook(() => useDisable2FA(), { wrapper: Wrapper });
     disable.result.current.mutate({ password: 'pw' });

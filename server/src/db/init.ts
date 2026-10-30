@@ -76,6 +76,8 @@ const MIGRATIONS: readonly Migration[] = [
       for (const { id } of admins) seedUserData(db, id);
     })();
   },
+  // 2FA : dernier pas TOTP accepté (anti-rejeu, un code ne sert qu'une fois)
+  (db) => db.exec('ALTER TABLE users ADD COLUMN totp_last_step INTEGER;'),
 ];
 
 /** Retire les diacritiques (accents) d'une chaîne ; null-safe pour usage direct en fonction SQLite. */
