@@ -100,6 +100,9 @@ function accountIdPost(
   };
 }
 
+/** Réponses d'une création CRUD (sauf ressource qui dépend d'une autre : 404 en plus). */
+const CRUD_CREATE_RESPONSES = { ...r201, ...r400 };
+
 // Génère les 4 opérations standard (list / create / update / delete) pour une ressource CRUD.
 function crudPaths(
   base: string,
@@ -107,7 +110,7 @@ function crudPaths(
   labels: { list: string; create: string; update: string; remove: string },
   createSchema: ZodType,
   updateSchema: ZodType = createSchema,
-  createResponses: Record<number, unknown> = { ...r201, ...r400 },
+  createResponses: Record<number, unknown> = CRUD_CREATE_RESPONSES,
 ) {
   return {
     [base]: {
