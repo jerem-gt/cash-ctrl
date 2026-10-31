@@ -51,18 +51,12 @@ export default defineConfig({
         background_color: '#141210',
         display: 'standalone',
         start_url: '/',
+        // Tirées de favicon.svg ; la variante maskable a un fond plein bord et un dessin réduit à
+        // 80 % pour rester dans la zone visible quelle que soit la forme découpée par Android.
         icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
