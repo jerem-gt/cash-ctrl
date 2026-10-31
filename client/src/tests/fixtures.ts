@@ -67,9 +67,7 @@ export const USERS: UserItem[] = [
     isAdmin: true,
     totpEnabled: false,
     createdAt: '2025-01-01T00:00:00',
-    accountCount: 0,
-    txCount: 0,
-    lastTxDate: null,
+    stats: { accountCount: 0, txCount: 0, lastTxDate: null },
   },
   {
     id: 2,
@@ -78,9 +76,7 @@ export const USERS: UserItem[] = [
     isAdmin: false,
     totpEnabled: true,
     createdAt: '2025-06-01T00:00:00',
-    accountCount: 3,
-    txCount: 47,
-    lastTxDate: '2026-05-15',
+    stats: { accountCount: 3, txCount: 47, lastTxDate: '2026-05-15' },
   },
 ];
 

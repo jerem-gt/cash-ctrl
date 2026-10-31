@@ -1,3 +1,6 @@
+// Types de réponse de l'auth : module commun de ctrl-shared (fichier de types seul, sans dépendance).
+import type { UserItem as AuthUserItem } from '@jerem-gt/ctrl-shared/server/auth/types';
+
 // ─── Constants / Union types ──────────────────────────────────────────────────
 
 export type TransactionType = 'income' | 'expense';
@@ -9,59 +12,26 @@ export type InsuranceOperationType =
   'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets' | 'revalorisation';
 export type StockOperationType = 'buy' | 'sell' | 'transfer_in' | 'transfer_out';
 
-// ─── Auth & users (iso shelf-ctrl) ────────────────────────────────────────────
+// ─── Auth & users : types du module commun de ctrl-shared ─────────────────────
 
-/** Utilisateur connecté (réponse de `/api/auth/me` et de la connexion). */
-export interface SessionResponse {
-  id: number;
-  username: string;
-  email: string | null;
-  isAdmin: boolean;
-  totpEnabled: boolean;
-}
+export type {
+  LoginResponse,
+  SessionResponse,
+  SetupStatusResponse,
+  TotpSetupResponse,
+  TrustedDeviceItem,
+} from '@jerem-gt/ctrl-shared/server/auth/types';
 
-/**
- * Réponse de la connexion : la session, ou `totpRequired` quand la 2FA est active et l'appareil
- * inconnu (le code se donne ensuite à `POST /api/auth/2fa/verify`).
- */
-export type LoginResponse = SessionResponse | { totpRequired: true };
-
-/** Activation de la 2FA : URI `otpauth://` (QR code) et secret en base32 pour la saisie manuelle. */
-export interface TotpSetupResponse {
-  uri: string;
-  secret: string;
-}
-
-/** Appareil mémorisé (2FA sautée pendant 30 jours) ; horodatages en millisecondes. */
-export interface TrustedDeviceItem {
-  id: number;
-  /** « Navigateur · OS » déduit du User-Agent, vide si rien n'est reconnu. */
-  label: string;
-  createdAt: number;
-  lastUsedAt: number;
-  expiresAt: number;
-  /** L'appareil de la requête (son cookie). */
-  current: boolean;
-}
-
-/** `required` : aucun compte, l'application attend la création du premier (admin). */
-export interface SetupStatusResponse {
-  required: boolean;
-}
-
-/** Compte vu par un admin (page Utilisateurs). */
-export interface UserItem {
-  id: number;
-  username: string;
-  email: string | null;
-  isAdmin: boolean;
-  totpEnabled: boolean;
-  createdAt: string;
+/** Statistiques d'un compte sur la page Utilisateurs. */
+export interface UserStats {
   accountCount: number;
   txCount: number;
   /** Date de la dernière opération, `null` sans opération. */
   lastTxDate: string | null;
 }
+
+/** Compte vu par un admin (page Utilisateurs). */
+export type UserItem = AuthUserItem<UserStats>;
 
 // ─── Banks ────────────────────────────────────────────────────────────────────
 

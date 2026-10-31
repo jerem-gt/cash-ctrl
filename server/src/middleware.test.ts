@@ -20,11 +20,11 @@ describe('requireAuth', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('returns 401 when session has no userId', () => {
-    const res = mockRes();
+  it('lève 401 common.unauthorized sans compte en session', () => {
     const next = vi.fn() as unknown as NextFunction;
-    requireAuth(mockReq(), res, next);
-    expect(res.status as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(401);
+    expect(() => requireAuth(mockReq(), mockRes(), next)).toThrow(
+      expect.objectContaining({ status: 401, code: 'common.unauthorized' }),
+    );
     expect(next).not.toHaveBeenCalled();
   });
 });

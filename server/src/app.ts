@@ -1,5 +1,4 @@
-import fs from 'node:fs';
-
+import { createAuthModule } from '@jerem-gt/ctrl-shared/server/auth';
 import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import type { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
@@ -9,11 +8,10 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 
-import { BACKUP_DIR, userBackupDir } from './lib/backup.js';
 import { type AuthLogger, globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
+import { cashAuthOptions, SESSION_COOKIE } from './modules/accounts/accounts.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
-import { createAuthRouter, SESSION_COOKIE } from './modules/auth/auth.routes.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
@@ -33,7 +31,6 @@ import { createSubcategoriesRouter } from './modules/subcategories/subcategories
 import { createTaxRouter } from './modules/tax/tax.routes.js';
 import { createTransactionsRouter } from './modules/transactions/transactions.routes.js';
 import { createTransfersRouter } from './modules/transfers/transfers.routes.js';
-import { createUsersRouter } from './modules/users/users.routes.js';
 import { createDocsRouter } from './openapi/router.js';
 
 export interface AppOptions {
@@ -117,28 +114,20 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
     });
   });
 
-  app.use(
-    '/api/auth',
-    createAuthRouter(db, sessionStore, {
+  const auth = createAuthModule(
+    db,
+    sessionStore,
+    cashAuthOptions(db, {
       secureCookies: options?.secureCookies,
       mailer: options?.mailer,
       setupToken: options?.setupToken,
       appUrl: normalizeAppUrl(options?.appUrl ?? process.env.APP_URL),
       log: options?.authLogger,
+      backupDir: options?.backupDir,
     }),
   );
-  app.use(
-    '/api/users',
-    createUsersRouter(db, {
-      sessionStore,
-      // Les sauvegardes du compte supprimé ne restent pas sur le disque.
-      removeAccountFiles: (userId) =>
-        fs.promises.rm(userBackupDir(options?.backupDir ?? BACKUP_DIR, userId), {
-          recursive: true,
-          force: true,
-        }),
-    }),
-  );
+  app.use('/api/auth', auth.authRouter);
+  app.use('/api/users', auth.usersRouter);
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));

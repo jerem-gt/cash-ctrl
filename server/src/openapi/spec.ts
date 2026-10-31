@@ -1,19 +1,20 @@
+import {
+  changePasswordSchema,
+  createLangSchemas,
+  disableTotpSchema,
+  enableTotpSchema,
+  loginSchema,
+  profileSchema,
+  resetPasswordSchema,
+  updateUserSchema,
+  verifyTotpSchema,
+} from '@jerem-gt/ctrl-shared/server/auth';
 import type { ZodType } from 'zod';
 import { toJSONSchema } from 'zod';
 
 import { accountTypeSchema } from '../modules/account-types/account-types.routes.js';
+import { LANGUAGES } from '../modules/accounts/accounts.js';
 import { accountSchema, closeSchema } from '../modules/accounts/accounts.routes.js';
-import {
-  changePasswordSchema,
-  disableTotpSchema,
-  enableTotpSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  profileSchema,
-  resetPasswordSchema,
-  setupSchema,
-  verifyTotpSchema,
-} from '../modules/auth/auth.schema.js';
 import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
 import { categorySchema } from '../modules/categories/categories.routes.js';
 import {
@@ -58,7 +59,9 @@ import {
   validateSchema,
 } from '../modules/transactions/transactions.routes.js';
 import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes.js';
-import { createUserSchema, updateUserSchema } from '../modules/users/users.schema.js';
+
+// Schémas qui portent la langue : mêmes langues que le module d'auth (`cashAuthOptions`).
+const { setupSchema, forgotPasswordSchema, createUserSchema } = createLangSchemas(LANGUAGES);
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 

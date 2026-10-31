@@ -226,9 +226,7 @@ const ADMIN_ROW = {
   isAdmin: true,
   totpEnabled: false,
   createdAt: '2025-01-01T00:00:00',
-  accountCount: 0,
-  txCount: 0,
-  lastTxDate: null,
+  stats: { accountCount: 0, txCount: 0, lastTxDate: null },
 };
 
 function renderAsAdmin() {

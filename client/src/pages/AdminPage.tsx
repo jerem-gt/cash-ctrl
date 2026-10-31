@@ -284,10 +284,12 @@ export default function AdminPage() {
                           {user.email ?? t('user.no_email')}
                         </span>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-content-subtle">
-                          <span>{t('user.account_count', { count: user.accountCount })}</span>
-                          <span>{t('user.tx_count', { count: user.txCount })}</span>
-                          {user.lastTxDate !== null && (
-                            <span>{t('user.last_tx', { date: fmtDate(user.lastTxDate) })}</span>
+                          <span>{t('user.account_count', { count: user.stats.accountCount })}</span>
+                          <span>{t('user.tx_count', { count: user.stats.txCount })}</span>
+                          {user.stats.lastTxDate !== null && (
+                            <span>
+                              {t('user.last_tx', { date: fmtDate(user.stats.lastTxDate) })}
+                            </span>
                           )}
                         </div>
                       </div>
