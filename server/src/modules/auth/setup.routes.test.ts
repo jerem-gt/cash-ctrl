@@ -44,6 +44,7 @@ describe('POST /api/auth/setup', () => {
     expect(res.body).toEqual({
       id: expect.any(Number),
       username: 'jerem',
+      email: null,
       isAdmin: true,
       totpEnabled: false,
     });

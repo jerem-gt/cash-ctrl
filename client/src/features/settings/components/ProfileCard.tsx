@@ -32,7 +32,7 @@ function ProfileForm({ me }: Readonly<{ me: MeData }>) {
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    const payload: ProfileUpdatePayload = { current_password: currentPassword };
+    const payload: ProfileUpdatePayload = { currentPassword };
     if (usernameChanged) payload.username = username.trim();
     if (emailChanged) payload.email = trimmedEmail === '' ? null : trimmedEmail;
     updateProfile.mutate(payload, {

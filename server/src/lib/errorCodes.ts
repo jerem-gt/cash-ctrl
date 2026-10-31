@@ -72,9 +72,7 @@ export const ERROR_MESSAGES = {
   // ── Authentification ──────────────────────────────────────────────────────
   'auth.invalid_credentials': 'Identifiants invalides',
   'auth.too_many_attempts': 'Trop de tentatives. Réessayez plus tard.',
-  'auth.password_too_short': 'Le mot de passe doit contenir au moins 8 caractères',
   'auth.current_password_incorrect': 'Mot de passe actuel incorrect',
-  'auth.totp_required': "Code d'authentification requis",
   'auth.totp_invalid': 'Code invalide ou expiré',
   'auth.totp_token_invalid': "Session d'authentification expirée, reconnectez-vous",
   'auth.totp_already_enabled': 'La double authentification est déjà activée',

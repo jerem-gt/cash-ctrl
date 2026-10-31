@@ -198,7 +198,7 @@ describe('useUpdateProfile', () => {
   it('met à jour le cache [me] avec le profil renvoyé', async () => {
     const { Wrapper, qc } = createHookWrapper();
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: Wrapper });
-    result.current.mutate({ current_password: 'pw', username: 'nouveau', email: 'a@b.fr' });
+    result.current.mutate({ currentPassword: 'pw', username: 'nouveau', email: 'a@b.fr' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(qc.getQueryData(['me'])).toEqual({ ...ME, username: 'nouveau', email: 'a@b.fr' });
   });
@@ -214,7 +214,7 @@ describe('useUpdateProfile', () => {
     );
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: Wrapper });
-    result.current.mutate({ current_password: 'bad', email: null });
+    result.current.mutate({ currentPassword: 'bad', email: null });
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
@@ -225,7 +225,7 @@ describe('useForgotPassword', () => {
     const { result } = renderHook(() => useForgotPassword(), { wrapper: Wrapper });
     result.current.mutate({ identifier: 'alice', lang: 'en' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({ ok: true });
+    expect(result.current.data).toBeUndefined();
   });
 });
 
@@ -285,7 +285,7 @@ describe('appareils mémorisés', () => {
     server.use(
       http.delete('/api/auth/devices/:id', ({ params }) => {
         deletedId = params.id as string;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const { Wrapper, qc } = createHookWrapper();
@@ -302,7 +302,7 @@ describe('appareils mémorisés', () => {
     server.use(
       http.delete('/api/auth/devices', () => {
         called = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const { Wrapper, qc } = createHookWrapper();

@@ -3,194 +3,154 @@ import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDe
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
-import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
-import type { ErrorCode } from '../../lib/errorCodes.js';
-import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
-import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
-import { createRequireAdmin, sessionUserId } from '../../middleware.js';
+import { ConflictError, NotFoundError } from '../../lib/errors.js';
+import { createRequireAdmin, currentUserId, requireAuth } from '../../middleware.js';
+import { BCRYPT_COST } from '../auth/auth.repo.js';
 import { createUsersRepo } from './users.repo.js';
-import type { UserPublic } from './users.types.js';
+import { createUserSchema, updateUserSchema, userIdSchema } from './users.schema.js';
 
-type UserConflict = Extract<
-  ErrorCode,
-  'user.username_taken' | 'user.email_taken' | 'user.last_admin'
->;
+export interface UsersRouterDeps {
+  sessionStore: SQLiteSessionStore;
+  /** Efface les fichiers d'un compte supprimé (ses sauvegardes) ; absent : rien sur le disque. */
+  removeAccountFiles?: (userId: number) => Promise<void>;
+}
 
-export const createUserSchema = z.object({
-  username: usernameSchema,
-  password: z.string().min(8),
-  email: emailSchema.nullable().optional(),
-  lang: langSchema,
-});
-
-export const updateUserSchema = z
-  .object({
-    username: usernameSchema.optional(),
-    password: z.string().min(8).optional(),
-    email: emailSchema.nullable().optional(),
-    is_admin: z.boolean().optional(),
-  })
-  .refine(
-    (d) =>
-      d.username !== undefined ||
-      d.password !== undefined ||
-      d.email !== undefined ||
-      d.is_admin !== undefined,
-    { message: 'At least one field required' },
-  );
-
-export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore): Router {
+/** Monté sur `/api/users`, réservé aux admins : gestion des comptes. */
+export function createUsersRouter(db: Database, deps: UsersRouterDeps): Router {
+  const { sessionStore, removeAccountFiles } = deps;
   const repo = createUsersRepo(db);
-  const router = Router();
   const devices = createTrustedDevicesRepo(db);
+  const router = Router();
 
-  router.use(createRequireAdmin(db));
+  router.use(requireAuth, createRequireAdmin(db));
 
-  // Son propre mot de passe : on garde la session courante ; sinon toutes les sessions du compte.
-  function closeSessionsAfterPasswordReset(id: number, callerId: number, sessionId: string) {
-    if (id === callerId) {
-      sessionStore.destroyOtherSessions(id, sessionId);
-    } else {
-      sessionStore.destroyAllSessions(id);
-    }
-  }
+  router.get('/', (_req, res) => {
+    res.json({ items: repo.list() });
+  });
 
-  /** Nom ou e-mail déjà pris par un autre compte que `id` (null : création). */
-  function identityConflict(
+  /** Lève 409 si le nom ou l'e-mail est déjà pris par un autre compte que `id` (null : création). */
+  const assertIdentityFree = (
     id: number | null,
     username: string | undefined,
     email: string | null | undefined,
-  ): UserConflict | null {
+  ): void => {
     const usernameOwner = username === undefined ? undefined : repo.getByUsername(username);
-    if (usernameOwner && usernameOwner.id !== id) return 'user.username_taken';
+    if (usernameOwner && usernameOwner.id !== id) {
+      throw new ConflictError('user.username_taken');
+    }
     const emailOwner = email ? repo.getByEmail(email) : undefined;
-    if (emailOwner && emailOwner.id !== id) return 'user.email_taken';
-    return null;
-  }
+    if (emailOwner && emailOwner.id !== id) {
+      throw new ConflictError('user.email_taken');
+    }
+  };
 
   /** Retirer le rôle admin (rétrogradation ou suppression) au dernier admin est refusé. */
-  function removesLastAdmin(id: number): boolean {
-    return repo.getById(id)?.is_admin === 1 && repo.countAdmins() <= 1;
-  }
+  const assertNotLastAdmin = (id: number): void => {
+    if (repo.getById(id)?.isAdmin === true && repo.countAdmins() <= 1) {
+      throw new ConflictError('user.last_admin');
+    }
+  };
 
-  router.get('/', (_req, res) => {
-    res.json(repo.list());
-  });
+  const assertExists = (id: number): void => {
+    if (!repo.getById(id)) {
+      throw new NotFoundError('user.not_found');
+    }
+  };
 
   router.post('/', async (req, res) => {
-    const data = parseBody(res, createUserSchema, req.body);
-    if (!data) return;
-    const { username, password, lang } = data;
-    const email = data.email ?? null;
-    const early = identityConflict(null, username, email);
-    if (early !== null) {
-      sendError(res, 409, early);
-      return;
-    }
-    const hash = await bcrypt.hash(password, 12);
+    const {
+      username,
+      password,
+      email = null,
+      isAdmin = false,
+      lang,
+    } = createUserSchema.parse(req.body);
+    assertIdentityFree(null, username, email);
+    const hash = await bcrypt.hash(password, BCRYPT_COST);
     // Revérifié après le hachage (asynchrone) : une requête concurrente a pu prendre le nom.
-    const result = db.transaction((): { user: UserPublic } | { conflict: UserConflict } => {
-      const late = identityConflict(null, username, email);
-      if (late !== null) return { conflict: late };
-      const created = repo.create(username, hash, email);
+    const user = db.transaction(() => {
+      assertIdentityFree(null, username, email);
+      const created = repo.create(username, hash, email, isAdmin);
       seedUserData(db, created.id, lang);
-      return { user: created };
+      return created;
     })();
-    if ('conflict' in result) {
-      sendError(res, 409, result.conflict);
-      return;
-    }
-    res.status(201).json(result.user);
+    res.status(201).json(user);
   });
 
   router.patch('/:id', async (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    if (!repo.getById(id)) {
-      sendError(res, 404, 'user.not_found');
-      return;
-    }
-    const parsed = updateUserSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    const { username, password, email, is_admin: isAdmin } = parsed.data;
-    const conflictOf = (): UserConflict | null =>
-      identityConflict(id, username, email) ??
-      (isAdmin === false && removesLastAdmin(id) ? 'user.last_admin' : null);
+    const id = userIdSchema.parse(req.params.id);
+    assertExists(id);
+    const { username, password, email, isAdmin } = updateUserSchema.parse(req.body);
+    const assertAllowed = () => {
+      assertIdentityFree(id, username, email);
+      if (isAdmin === false) {
+        assertNotLastAdmin(id);
+      }
+    };
 
-    const early = conflictOf();
-    if (early !== null) {
-      sendError(res, 409, early);
-      return;
-    }
-    const hash = password === undefined ? null : await bcrypt.hash(password, 12);
+    assertAllowed();
+    const hash = password === undefined ? null : await bcrypt.hash(password, BCRYPT_COST);
     // Revérifié dans la transaction, après le hachage : deux admins qui se rétrogradent l'un
     // l'autre en même temps ne laissent pas l'application sans admin.
-    const conflict = db.transaction((): UserConflict | null => {
-      const late = conflictOf();
-      if (late !== null) return late;
-      if (username !== undefined) repo.updateUsername(id, username);
-      if (email !== undefined) repo.updateEmail(id, email);
-      if (isAdmin !== undefined) repo.updateAdmin(id, isAdmin);
+    db.transaction(() => {
+      assertAllowed();
+      if (username !== undefined) {
+        repo.updateUsername(id, username);
+      }
+      if (email !== undefined) {
+        repo.updateEmail(id, email);
+      }
+      if (isAdmin !== undefined) {
+        repo.updateAdmin(id, isAdmin);
+      }
       if (hash !== null) {
         repo.updatePassword(id, hash);
         devices.revokeAll(id);
       }
-      return null;
     })();
-    if (conflict !== null) {
-      sendError(res, 409, conflict);
-      return;
+    // Mot de passe changé : son propre compte garde la session courante, un autre les perd toutes.
+    if (hash !== null) {
+      if (id === currentUserId(res)) {
+        sessionStore.destroyOtherSessions(id, req.sessionID);
+      } else {
+        sessionStore.destroyAllSessions(id);
+      }
     }
-    if (hash !== null) closeSessionsAfterPasswordReset(id, sessionUserId(req), req.sessionID);
     res.json(repo.getById(id));
   });
 
-  router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    if (!repo.getById(id)) {
-      sendError(res, 404, 'user.not_found');
-      return;
-    }
-    if (id === sessionUserId(req)) {
-      sendError(res, 409, 'user.cannot_delete_self');
-      return;
-    }
-    const removed = db.transaction((): boolean => {
-      if (removesLastAdmin(id)) return false;
-      repo.remove(id);
-      return true;
-    })();
-    if (!removed) {
-      sendError(res, 409, 'user.last_admin');
-      return;
-    }
-    sessionStore.destroyAllSessions(id);
-    res.json({ ok: true });
-  });
-
+  /** Téléphone perdu : l'admin désactive la 2FA du compte, ses appareils mémorisés tombent. */
   router.delete('/:id/2fa', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
+    const id = userIdSchema.parse(req.params.id);
     const user = repo.getById(id);
     if (!user) {
-      sendError(res, 404, 'user.not_found');
-      return;
+      throw new NotFoundError('user.not_found');
     }
-    if (user.totp_enabled !== 1) {
-      sendError(res, 409, 'auth.totp_not_enabled');
-      return;
+    if (!user.totpEnabled) {
+      throw new ConflictError('auth.totp_not_enabled');
     }
     db.transaction(() => {
       repo.disableTotp(id);
       devices.revokeAll(id);
     })();
-    res.json({ ok: true });
+    res.status(204).end();
+  });
+
+  router.delete('/:id', async (req, res) => {
+    const id = userIdSchema.parse(req.params.id);
+    assertExists(id);
+    if (id === currentUserId(res)) {
+      throw new ConflictError('user.cannot_delete_self');
+    }
+    db.transaction(() => {
+      assertNotLastAdmin(id);
+      repo.remove(id);
+    })();
+    sessionStore.destroyAllSessions(id);
+    await removeAccountFiles?.(id);
+    res.status(204).end();
   });
 
   return router;

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import type { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
@@ -7,10 +9,11 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 
+import { BACKUP_DIR, userBackupDir } from './lib/backup.js';
 import { type AuthLogger, globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
-import { createAuthRouter } from './modules/auth/auth.routes.js';
+import { createAuthRouter, SESSION_COOKIE } from './modules/auth/auth.routes.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
@@ -79,6 +82,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
 
   app.use(
     session({
+      name: SESSION_COOKIE,
       store: sessionStore,
       secret: sessionSecret,
       resave: false,
@@ -123,7 +127,18 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
       log: options?.authLogger,
     }),
   );
-  app.use('/api/users', createUsersRouter(db, sessionStore));
+  app.use(
+    '/api/users',
+    createUsersRouter(db, {
+      sessionStore,
+      // Les sauvegardes du compte supprimé ne restent pas sur le disque.
+      removeAccountFiles: (userId) =>
+        fs.promises.rm(userBackupDir(options?.backupDir ?? BACKUP_DIR, userId), {
+          recursive: true,
+          force: true,
+        }),
+    }),
+  );
   app.use('/api/accounts', createAccountsRouter(db));
   app.use('/api/transactions', createTransactionsRouter(db));
   app.use('/api/transfers', createTransfersRouter(db));

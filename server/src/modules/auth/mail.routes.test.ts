@@ -30,7 +30,7 @@ describe('POST /api/auth/test-email', () => {
     const { app, mailer } = setup();
     const agent = await loginAs(app, 'alice');
     const res = await agent.post('/api/auth/test-email');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(mailer.sent).toHaveLength(1);
     expect(mailer.sent[0].to).toBe('alice@test.fr');
   });

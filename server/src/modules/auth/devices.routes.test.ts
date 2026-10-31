@@ -235,7 +235,7 @@ describe('POST /api/auth/login avec appareil mémorisé', () => {
     const res = await login(app, 'alice', cookie);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ username: 'alice', totpEnabled: true });
-    expect(res.body.totp_required).toBeUndefined();
+    expect(res.body.totpRequired).toBeUndefined();
     const row = db.prepare('SELECT last_used_at FROM trusted_devices').get() as {
       last_used_at: number;
     };
@@ -271,7 +271,7 @@ describe('POST /api/auth/login avec appareil mémorisé', () => {
     db.prepare('UPDATE trusted_devices SET expires_at = ?').run(Date.now() - 1);
 
     const res = await login(app, 'alice', cookie);
-    expect(res.body).toEqual({ totp_required: true });
+    expect(res.body).toEqual({ totpRequired: true });
     const cleared = deviceSetCookie(res) as string;
     expect(cleared).toContain('cashctrl_device=;');
     expect(cleared).toContain('Path=/api/auth');
@@ -284,14 +284,14 @@ describe('POST /api/auth/login avec appareil mémorisé', () => {
     db.prepare('DELETE FROM trusted_devices').run();
 
     const res = await login(app, 'alice', cookie);
-    expect(res.body).toEqual({ totp_required: true });
+    expect(res.body).toEqual({ totpRequired: true });
     expect(deviceSetCookie(res)).toContain('cashctrl_device=;');
   });
 
   it('demande le TOTP et efface un cookie inconnu', async () => {
     const { app } = setup();
     const res = await login(app, 'alice', 'cashctrl_device=garbage');
-    expect(res.body).toEqual({ totp_required: true });
+    expect(res.body).toEqual({ totpRequired: true });
     expect(deviceSetCookie(res)).toContain('cashctrl_device=;');
   });
 
@@ -300,17 +300,17 @@ describe('POST /api/auth/login avec appareil mémorisé', () => {
     const bobCookie = await trustDevice(app, secrets, 'bob');
 
     const res = await login(app, 'alice', bobCookie);
-    expect(res.body).toEqual({ totp_required: true });
+    expect(res.body).toEqual({ totpRequired: true });
     expect(deviceSetCookie(res)).toBeUndefined();
     expect(deviceCount(db, 'bob')).toBe(1);
-    expect((await login(app, 'bob', bobCookie)).body.totp_required).toBeUndefined();
+    expect((await login(app, 'bob', bobCookie)).body.totpRequired).toBeUndefined();
   });
 
   it('ne touche ni appareils ni cookie à la déconnexion', async () => {
     const { app, db, secrets } = setup();
     const cookie = await trustDevice(app, secrets, 'alice');
     const res = await supertest(app).post('/api/auth/logout').set('Cookie', cookie);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceSetCookie(res)).toBeUndefined();
     expect(deviceCount(db, 'alice')).toBe(1);
   });
@@ -343,18 +343,18 @@ describe('routes /api/auth/devices', () => {
     const s = await sessionAgent(app, secrets, 'alice', current);
     const res = await s.get('/api/auth/devices');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
-    expect(res.body[0]).toEqual({
+    expect(res.body.items).toHaveLength(2);
+    expect(res.body.items[0]).toEqual({
       id: expect.any(Number),
       label: 'Firefox · Linux',
-      created_at: expect.any(Number),
-      last_used_at: expect.any(Number),
-      expires_at: expect.any(Number),
+      createdAt: expect.any(Number),
+      lastUsedAt: expect.any(Number),
+      expiresAt: expect.any(Number),
       current: true,
     });
-    expect(res.body[1].current).toBe(false);
-    expect(res.body[0].last_used_at).toBeGreaterThanOrEqual(res.body[1].last_used_at);
-    expect(res.body[0]).not.toHaveProperty('token_hash');
+    expect(res.body.items[1].current).toBe(false);
+    expect(res.body.items[0].lastUsedAt).toBeGreaterThanOrEqual(res.body.items[1].lastUsedAt);
+    expect(res.body.items[0]).not.toHaveProperty('token_hash');
   });
 
   it('current est faux sans cookie correspondant', async () => {
@@ -362,8 +362,8 @@ describe('routes /api/auth/devices', () => {
     await trustDevice(app, secrets, 'alice');
     const s = await sessionAgent(app, secrets, 'alice');
     const res = await s.get('/api/auth/devices');
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].current).toBe(false);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].current).toBe(false);
   });
 
   it('oublie un appareil du compte sans effacer le cookie si ce n’est pas le courant', async () => {
@@ -372,10 +372,10 @@ describe('routes /api/auth/devices', () => {
     const s = await sessionAgent(app, secrets, 'alice');
     const id = (db.prepare('SELECT id FROM trusted_devices').get() as { id: number }).id;
     const res = await s.del(`/api/auth/devices/${id}`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceSetCookie(res)).toBeUndefined();
     expect(deviceCount(db)).toBe(0);
-    expect((await login(app, 'alice', cookie)).body).toEqual({ totp_required: true });
+    expect((await login(app, 'alice', cookie)).body).toEqual({ totpRequired: true });
   });
 
   it('efface aussi le cookie quand l’appareil oublié est le courant', async () => {
@@ -384,7 +384,7 @@ describe('routes /api/auth/devices', () => {
     const s = await sessionAgent(app, secrets, 'alice', cookie);
     const id = (db.prepare('SELECT id FROM trusted_devices').get() as { id: number }).id;
     const res = await s.del(`/api/auth/devices/${id}`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceSetCookie(res)).toContain('cashctrl_device=;');
   });
 
@@ -407,7 +407,7 @@ describe('routes /api/auth/devices', () => {
     await trustDevice(app, secrets, 'bob');
     const s = await sessionAgent(app, secrets, 'alice', cookie);
     const res = await s.del('/api/auth/devices');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceSetCookie(res)).toContain('cashctrl_device=;');
     expect(deviceCount(db, 'alice')).toBe(0);
     expect(deviceCount(db, 'bob')).toBe(1);
@@ -419,10 +419,10 @@ describe('routes /api/auth/devices', () => {
     const bobCookie = await trustDevice(app, secrets, 'bob');
     const s = await sessionAgent(app, secrets, 'alice', bobCookie);
     const res = await s.del('/api/auth/devices');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceSetCookie(res)).toBeUndefined();
     expect(deviceCount(db, 'bob')).toBe(1);
-    expect((await login(app, 'bob', bobCookie)).body).not.toEqual({ totp_required: true });
+    expect((await login(app, 'bob', bobCookie)).body).not.toEqual({ totpRequired: true });
   });
 });
 
@@ -443,7 +443,7 @@ describe('révocation des appareils', () => {
     const res = await s.agent
       .post('/api/auth/change-password')
       .send({ current: 'password123', next: 'newpassword1' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db, 'alice')).toBe(0);
     expect(deviceCount(db, 'bob')).toBe(1);
   });
@@ -456,7 +456,7 @@ describe('révocation des appareils', () => {
     const res = await supertest(app)
       .post('/api/auth/password/reset')
       .send({ token, password: 'newpassword1' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db, 'alice')).toBe(0);
     expect(deviceCount(db, 'bob')).toBe(1);
   });
@@ -498,7 +498,7 @@ describe('révocation des appareils', () => {
     const s = await sessionAgent(app, secrets, 'alice');
     const res = await s.agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'alicia', email: 'a@test.fr' });
+      .send({ currentPassword: 'password123', username: 'alicia', email: 'a@test.fr' });
     expect(res.status).toBe(200);
     expect(deviceCount(db)).toBe(1);
   });
@@ -509,7 +509,7 @@ describe('révocation des appareils', () => {
     await trustDevice(app, secrets, 'bob');
     const s = await sessionAgent(app, secrets, 'alice');
     const res = await s.agent.post('/api/auth/2fa/disable').send({ password: 'password123' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db, 'alice')).toBe(0);
     expect(deviceCount(db, 'bob')).toBe(1);
   });
@@ -527,7 +527,7 @@ describe('révocation des appareils', () => {
     const res = await agent
       .post('/api/auth/2fa/enable')
       .send({ code: codeFor(OTPAuth.Secret.fromBase32(secret)) });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db, 'alice')).toBe(0);
   });
 
@@ -537,7 +537,7 @@ describe('révocation des appareils', () => {
     await trustDevice(app, secrets, 'bob');
     const s = await sessionAgent(app, secrets, 'root');
     const res = await s.agent.delete(`/api/users/${idOf(db, 'alice')}/2fa`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db, 'alice')).toBe(0);
     expect(deviceCount(db, 'bob')).toBe(1);
   });
@@ -547,7 +547,7 @@ describe('révocation des appareils', () => {
     await trustDevice(app, secrets, 'alice');
     const s = await sessionAgent(app, secrets, 'root');
     const res = await s.agent.delete(`/api/users/${idOf(db, 'alice')}`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(deviceCount(db)).toBe(0);
   });
 });

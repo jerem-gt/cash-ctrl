@@ -131,14 +131,14 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(429);
   });
 
-  it('retourne totp_required si la 2FA est activée', async () => {
+  it('retourne totpRequired si la 2FA est activée', async () => {
     const { app, db } = setup();
     const { agent } = await setupTotpAgent(app, db);
     const res = await agent
       .post('/api/auth/login')
       .send({ username: 'alice', password: 'password123' });
     expect(res.status).toBe(200);
-    expect(res.body.totp_required).toBe(true);
+    expect(res.body.totpRequired).toBe(true);
     expect(res.body.pending_token).toBeUndefined();
   });
 });
@@ -164,27 +164,28 @@ describe('GET /api/auth/me', () => {
 });
 
 describe('POST /api/auth/logout', () => {
-  it('détruit la session et retourne ok', async () => {
+  it('détruit la session et retourne 204', async () => {
     const { app } = setup();
     const agent = supertest.agent(app);
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
     const logout = await agent.post('/api/auth/logout');
-    expect(logout.status).toBe(200);
+    expect(logout.status).toBe(204);
     const me = await agent.get('/api/auth/me');
     expect(me.status).toBe(401);
   });
 });
 
 describe('POST /api/auth/change-password', () => {
-  it("modifie le mot de passe si l'ancien est correct", async () => {
+  it.each([
+    ["modifie le mot de passe si l'ancien est correct", 'password123', 'newpassword456', 204],
+    ["retourne 401 si l'ancien mot de passe est incorrect", 'wrongpass', 'newpassword456', 401],
+    ['retourne 400 si le nouveau mot de passe est trop court', 'password123', 'short', 400],
+  ])('%s', async (_title, current, next, status) => {
     const { app } = setup();
     const agent = supertest.agent(app);
     await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
-    const res = await agent
-      .post('/api/auth/change-password')
-      .send({ current: 'password123', next: 'newpassword456' });
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    const res = await agent.post('/api/auth/change-password').send({ current, next });
+    expect(res.status).toBe(status);
   });
 
   it('invalide les autres sessions du user mais garde la courante et celles des autres', async () => {
@@ -204,31 +205,11 @@ describe('POST /api/auth/change-password', () => {
     const res = await current
       .post('/api/auth/change-password')
       .send({ current: 'password123', next: 'newpassword456' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
 
     expect((await current.get('/api/auth/me')).status).toBe(200);
     expect((await other.get('/api/auth/me')).status).toBe(401);
     expect((await bob.get('/api/auth/me')).status).toBe(200);
-  });
-
-  it("retourne 401 si l'ancien mot de passe est incorrect", async () => {
-    const { app } = setup();
-    const agent = supertest.agent(app);
-    await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
-    const res = await agent
-      .post('/api/auth/change-password')
-      .send({ current: 'wrongpass', next: 'newpassword456' });
-    expect(res.status).toBe(401);
-  });
-
-  it('retourne 400 si le nouveau mot de passe est trop court', async () => {
-    const { app } = setup();
-    const agent = supertest.agent(app);
-    await agent.post('/api/auth/login').send({ username: 'alice', password: 'password123' });
-    const res = await agent
-      .post('/api/auth/change-password')
-      .send({ current: 'password123', next: 'short' });
-    expect(res.status).toBe(400);
   });
 
   it('retourne 401 sans session', async () => {
@@ -277,8 +258,7 @@ describe('POST /api/auth/2fa/enable', () => {
     const { secret } = setupRes.body as { secret: string };
     const code = makeTotp(secret).generate();
     const res = await agent.post('/api/auth/2fa/enable').send({ code });
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('ignore un secret envoyé par le client : seul celui de la session compte', async () => {
@@ -338,8 +318,7 @@ describe('POST /api/auth/2fa/disable', () => {
     const code = makeTotp(secret.base32).generate();
     await agent.post('/api/auth/2fa/verify').send({ code });
     const res = await agent.post('/api/auth/2fa/disable').send({ password: 'password123' });
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('retourne 401 si le mot de passe est incorrect', async () => {
@@ -409,7 +388,7 @@ describe('POST /api/auth/2fa/verify', () => {
     const res = await agent
       .post('/api/auth/login')
       .send({ username: 'alice', password: 'password123' });
-    expect(res.body).toEqual({ totp_required: true });
+    expect(res.body).toEqual({ totpRequired: true });
     expect((await agent.get('/api/auth/me')).status).toBe(401);
   });
 

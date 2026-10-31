@@ -2,10 +2,10 @@ import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
+import { BadRequestError, HttpError } from '../../lib/errors.js';
 import { MAIL_TEXTS } from '../../lib/mailTexts.js';
-import { sendError } from '../../lib/routeHelpers.js';
 import type { AuthLogger } from '../../logger.js';
-import { createRequireAdmin, requireAuth, sessionUserId } from '../../middleware.js';
+import { createRequireAdmin, currentUserId, requireAuth } from '../../middleware.js';
 import type { AuthRepo } from './auth.repo.js';
 
 export interface MailRouterDeps {
@@ -15,33 +15,31 @@ export interface MailRouterDeps {
   log: AuthLogger;
 }
 
+/** E-mail de test envoyé à l'admin connecté : vérifie la configuration SMTP. */
 export function createMailRouter(deps: MailRouterDeps): Router {
   const { db, repo, mailer, log } = deps;
   const router = Router();
-  const requireAdmin = createRequireAdmin(db);
 
-  router.post('/test-email', requireAuth, requireAdmin, async (req, res) => {
-    const user = repo.getById(sessionUserId(req));
+  router.post('/test-email', requireAuth, createRequireAdmin(db), async (_req, res) => {
+    const user = repo.getById(currentUserId(res));
     if (!user?.email) {
-      sendError(res, 400, 'auth.email_missing');
-      return;
+      throw new BadRequestError('auth.email_missing');
     }
     if (!mailer.isConfigured()) {
-      sendError(res, 503, 'auth.smtp_not_configured');
-      return;
+      throw new HttpError(503, 'auth.smtp_not_configured');
     }
     try {
+      // La langue du compte n'est pas connue : le message est bilingue.
       await mailer.send({
         to: user.email,
         subject: 'CashCtrl',
         text: `${MAIL_TEXTS.fr.test}\n\n${MAIL_TEXTS.en.test}`,
       });
     } catch (err) {
-      log.error(`Envoi de l'e-mail de test échoué : ${String(err)}`);
-      sendError(res, 502, 'auth.email_send_failed');
-      return;
+      log.error(`[auth] envoi de l'e-mail de test échoué : ${String(err)}`);
+      throw new HttpError(502, 'auth.email_send_failed');
     }
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

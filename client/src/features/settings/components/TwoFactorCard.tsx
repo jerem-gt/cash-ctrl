@@ -52,7 +52,7 @@ function TrustedDevices() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-content-faint">{lastUsedText(d.last_used_at)}</p>
+                  <p className="text-xs text-content-faint">{lastUsedText(d.lastUsedAt)}</p>
                 </div>
                 <Button
                   variant="default"

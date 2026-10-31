@@ -1,4 +1,4 @@
-import type { UserPublic } from '@cashctrl/types';
+import type { UserItem } from '@cashctrl/types';
 import { Loader2, LockOpen, Pencil, Plus, ShieldMinus, ShieldPlus, Trash2, X } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -101,7 +101,7 @@ function AddUserForm({ onClose }: Readonly<{ onClose: () => void }>) {
 
 // ─── Edit user form ────────────────────────────────────────────────────────────
 
-function EditUserForm({ user, onClose }: Readonly<{ user: UserPublic; onClose: () => void }>) {
+function EditUserForm({ user, onClose }: Readonly<{ user: UserItem; onClose: () => void }>) {
   const { t } = useTranslation('admin');
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email ?? '');
@@ -183,7 +183,7 @@ export default function AdminPage() {
   const { requestDelete: request2faDisable, deleteConfirmModal: disable2faModal } =
     useDeleteConfirmation(showToast);
 
-  const handleDelete = (user: UserPublic) => {
+  const handleDelete = (user: UserItem) => {
     requestDelete(
       t('user.confirm_delete_title'),
       t('user.confirm_delete', { username: user.username }),
@@ -193,7 +193,7 @@ export default function AdminPage() {
     );
   };
 
-  const handleDisable2fa = (user: UserPublic) => {
+  const handleDisable2fa = (user: UserItem) => {
     request2faDisable(
       t('user.confirm_2fa_title'),
       t('user.confirm_2fa', { username: user.username }),
@@ -203,10 +203,10 @@ export default function AdminPage() {
     );
   };
 
-  const handleToggleAdmin = (user: UserPublic) => {
-    const promote = user.is_admin === 0;
+  const handleToggleAdmin = (user: UserItem) => {
+    const promote = !user.isAdmin;
     updateUser.mutate(
-      { id: user.id, is_admin: promote },
+      { id: user.id, isAdmin: promote },
       { onSuccess: () => showToast(promote ? t('toasts.promoted') : t('toasts.demoted')) },
     );
   };
@@ -246,7 +246,7 @@ export default function AdminPage() {
           <ul className="divide-y divide-line-subtle">
             {users.map((user) => {
               const isSelf = user.id === me?.id;
-              const isAdminUser = user.is_admin === 1;
+              const isAdminUser = user.isAdmin;
               const adminToggleLabel = isAdminUser
                 ? t('user.demote_title')
                 : t('user.promote_title');
@@ -273,10 +273,10 @@ export default function AdminPage() {
                               ({t('user.you')})
                             </span>
                           )}
-                          {user.is_admin === 1 && (
+                          {user.isAdmin && (
                             <span className={badgeClass}>{t('user.admin_badge')}</span>
                           )}
-                          {user.totp_enabled === 1 && (
+                          {user.totpEnabled && (
                             <span className={badgeClass}>{t('user.totp_badge')}</span>
                           )}
                         </div>
@@ -284,10 +284,10 @@ export default function AdminPage() {
                           {user.email ?? t('user.no_email')}
                         </span>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-content-subtle">
-                          <span>{t('user.account_count', { count: user.account_count })}</span>
-                          <span>{t('user.tx_count', { count: user.tx_count })}</span>
-                          {user.last_tx_date !== null && (
-                            <span>{t('user.last_tx', { date: fmtDate(user.last_tx_date) })}</span>
+                          <span>{t('user.account_count', { count: user.accountCount })}</span>
+                          <span>{t('user.tx_count', { count: user.txCount })}</span>
+                          {user.lastTxDate !== null && (
+                            <span>{t('user.last_tx', { date: fmtDate(user.lastTxDate) })}</span>
                           )}
                         </div>
                       </div>
@@ -315,7 +315,7 @@ export default function AdminPage() {
                             <AdminToggleIcon className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        {user.totp_enabled === 1 && (
+                        {user.totpEnabled && (
                           <Button
                             size="sm"
                             onClick={() => handleDisable2fa(user)}

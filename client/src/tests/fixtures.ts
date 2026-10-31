@@ -25,10 +25,11 @@ import type {
   Subcategory,
   TaxYearData,
   Transaction,
-  UserPublic,
+  TrustedDeviceItem,
+  UserItem,
 } from '@cashctrl/types';
 
-import type { MeData, TrustedDevice } from '@/api/client';
+import type { MeData } from '@/api/client';
 
 // Profil par défaut renvoyé par /api/auth/me dans les tests
 export const ME: MeData = {
@@ -39,47 +40,47 @@ export const ME: MeData = {
   totpEnabled: false,
 };
 
-export const TRUSTED_DEVICES: TrustedDevice[] = [
+export const TRUSTED_DEVICES: TrustedDeviceItem[] = [
   {
     id: 1,
     label: 'Firefox · Linux',
-    created_at: Date.UTC(2026, 9, 1, 12),
-    last_used_at: Date.UTC(2026, 9, 20, 12),
-    expires_at: Date.UTC(2026, 10, 19, 12),
+    createdAt: Date.UTC(2026, 9, 1, 12),
+    lastUsedAt: Date.UTC(2026, 9, 20, 12),
+    expiresAt: Date.UTC(2026, 10, 19, 12),
     current: true,
   },
   {
     id: 2,
     label: 'Safari · iOS',
-    created_at: Date.UTC(2026, 9, 2, 12),
-    last_used_at: Date.UTC(2026, 9, 10, 12),
-    expires_at: Date.UTC(2026, 10, 1, 12),
+    createdAt: Date.UTC(2026, 9, 2, 12),
+    lastUsedAt: Date.UTC(2026, 9, 10, 12),
+    expiresAt: Date.UTC(2026, 10, 1, 12),
     current: false,
   },
 ];
 
-export const USERS: UserPublic[] = [
+export const USERS: UserItem[] = [
   {
     id: 1,
     username: 'admin',
     email: 'admin@example.com',
-    is_admin: 1,
-    totp_enabled: 0,
-    created_at: '2025-01-01T00:00:00',
-    account_count: 0,
-    tx_count: 0,
-    last_tx_date: null,
+    isAdmin: true,
+    totpEnabled: false,
+    createdAt: '2025-01-01T00:00:00',
+    accountCount: 0,
+    txCount: 0,
+    lastTxDate: null,
   },
   {
     id: 2,
     username: 'alice',
     email: null,
-    is_admin: 0,
-    totp_enabled: 1,
-    created_at: '2025-06-01T00:00:00',
-    account_count: 3,
-    tx_count: 47,
-    last_tx_date: '2026-05-15',
+    isAdmin: false,
+    totpEnabled: true,
+    createdAt: '2025-06-01T00:00:00',
+    accountCount: 3,
+    txCount: 47,
+    lastTxDate: '2026-05-15',
   },
 ];
 

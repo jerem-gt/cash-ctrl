@@ -64,7 +64,7 @@ describe('LoginPage — mot de passe oublié', () => {
     server.use(
       http.post('/api/auth/password/forgot', async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = await openForgot();
@@ -98,11 +98,7 @@ describe('LoginPage — mot de passe oublié', () => {
 
 describe('LoginPage — flux TOTP', () => {
   async function loginAndGetToTotpScreen() {
-    server.use(
-      http.post('/api/auth/login', () =>
-        HttpResponse.json({ totp_required: true, pending_token: 'TOKEN123' }),
-      ),
-    );
+    server.use(http.post('/api/auth/login', () => HttpResponse.json({ totpRequired: true })));
     const user = userEvent.setup();
     renderWithProviders(<LoginPage />);
     await user.type(screen.getByPlaceholderText('admin'), 'testuser');
@@ -112,7 +108,7 @@ describe('LoginPage — flux TOTP', () => {
     return user;
   }
 
-  it('affiche le formulaire TOTP après un login avec totp_required', async () => {
+  it('affiche le formulaire TOTP après un login avec totpRequired', async () => {
     await loginAndGetToTotpScreen();
     expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /vérifier/i })).toBeInTheDocument();

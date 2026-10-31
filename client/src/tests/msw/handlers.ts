@@ -39,8 +39,8 @@ export const handlers = [
   // Auth
   http.get('/api/auth/me', () => HttpResponse.json(ME)),
   http.post('/api/auth/login', () => HttpResponse.json(ME)),
-  http.post('/api/auth/logout', () => HttpResponse.json({ ok: true })),
-  http.post('/api/auth/change-password', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
+  http.post('/api/auth/change-password', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/auth/setup', () => HttpResponse.json({ required: false })),
   http.post('/api/auth/setup', () =>
     HttpResponse.json({ ...ME, username: 'owner', isAdmin: true }),
@@ -53,9 +53,9 @@ export const handlers = [
       email: body.email === undefined ? ME.email : body.email,
     });
   }),
-  http.post('/api/auth/password/forgot', () => HttpResponse.json({ ok: true })),
-  http.post('/api/auth/password/reset', () => HttpResponse.json({ ok: true })),
-  http.post('/api/auth/test-email', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/password/forgot', () => new HttpResponse(null, { status: 204 })),
+  http.post('/api/auth/password/reset', () => new HttpResponse(null, { status: 204 })),
+  http.post('/api/auth/test-email', () => new HttpResponse(null, { status: 204 })),
   // Categorization rules — before parametric auth routes to avoid masking
   http.get('/api/categorization-rules/match', () => HttpResponse.json(null)),
   http.post('/api/categorization-rules/init-from-history', () =>
@@ -78,7 +78,7 @@ export const handlers = [
     }),
   ),
   http.delete('/api/categorization-rules', () => HttpResponse.json({ deleted: 0 })),
-  http.delete('/api/categorization-rules/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/categorization-rules/:id', () => new HttpResponse(null, { status: 204 })),
 
   http.post('/api/auth/2fa/setup', () =>
     HttpResponse.json({
@@ -86,15 +86,15 @@ export const handlers = [
       secret: 'BASE32SECRET',
     }),
   ),
-  http.post('/api/auth/2fa/enable', () => HttpResponse.json({ ok: true })),
-  http.post('/api/auth/2fa/disable', () => HttpResponse.json({ ok: true })),
+  http.post('/api/auth/2fa/enable', () => new HttpResponse(null, { status: 204 })),
+  http.post('/api/auth/2fa/disable', () => new HttpResponse(null, { status: 204 })),
   http.post('/api/auth/2fa/verify', () => HttpResponse.json({ ...ME, totpEnabled: true })),
-  http.get('/api/auth/devices', () => HttpResponse.json(TRUSTED_DEVICES)),
-  http.delete('/api/auth/devices', () => HttpResponse.json({ ok: true })),
-  http.delete('/api/auth/devices/:id', () => HttpResponse.json({ ok: true })),
+  http.get('/api/auth/devices', () => HttpResponse.json({ items: TRUSTED_DEVICES })),
+  http.delete('/api/auth/devices', () => new HttpResponse(null, { status: 204 })),
+  http.delete('/api/auth/devices/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Users (admin)
-  http.get('/api/users', () => HttpResponse.json(USERS)),
+  http.get('/api/users', () => HttpResponse.json({ items: USERS })),
   http.post('/api/users', () =>
     HttpResponse.json(
       {
@@ -109,9 +109,9 @@ export const handlers = [
     ),
   ),
   // Littéral avant le paramétrique /api/users/:id
-  http.delete('/api/users/:id/2fa', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/users/:id/2fa', () => new HttpResponse(null, { status: 204 })),
   http.patch('/api/users/:id', () => HttpResponse.json({ ...USERS[1], username: 'updated' })),
-  http.delete('/api/users/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/users/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Version
   http.get('/api/version', () => HttpResponse.json({ version: 'development' })),

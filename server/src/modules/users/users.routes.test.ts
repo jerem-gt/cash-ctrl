@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import bcrypt from 'bcrypt';
 import supertest from 'supertest';
 import { describe, expect, it } from 'vitest';
@@ -5,9 +9,9 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../app.js';
 import { createTestDb } from '../../tests/helpers/testDb.js';
 
-function setup() {
+function setup(backupDir?: string) {
   const db = createTestDb();
-  const app = createApp(db);
+  const app = createApp(db, { backupDir });
   const hash = bcrypt.hashSync('password123', 4);
   db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)').run(
     'admin',
@@ -36,10 +40,10 @@ describe('GET /api/users', () => {
     const agent = await loginAs(app, 'admin');
     const res = await agent.get('/api/users');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
-    expect(res.body[0]).not.toHaveProperty('password_hash');
-    expect(Object.keys(res.body[0])).toEqual(
-      expect.arrayContaining(['id', 'username', 'email', 'is_admin', 'totp_enabled', 'created_at']),
+    expect(res.body.items).toHaveLength(2);
+    expect(res.body.items[0]).not.toHaveProperty('password_hash');
+    expect(Object.keys(res.body.items[0])).toEqual(
+      expect.arrayContaining(['id', 'username', 'email', 'isAdmin', 'totpEnabled', 'createdAt']),
     );
   });
 
@@ -50,10 +54,10 @@ describe('GET /api/users', () => {
     expect(res.status).toBe(403);
   });
 
-  it('retourne 403 sans session', async () => {
+  it('retourne 401 sans session', async () => {
     const { app } = setup();
     const res = await supertest(app).get('/api/users');
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 });
 
@@ -64,7 +68,7 @@ describe('POST /api/users', () => {
     const res = await agent.post('/api/users').send({ username: 'bob', password: 'password123' });
     expect(res.status).toBe(201);
     expect(res.body.username).toBe('bob');
-    expect(res.body.is_admin).toBe(0);
+    expect(res.body.isAdmin).toBe(false);
   });
 
   it('seed les données statiques du nouvel utilisateur (défaut FR)', async () => {
@@ -222,7 +226,7 @@ describe('PATCH /api/users/:id', () => {
     const agent = await loginAs(app, 'admin');
     expect((await agent.patch(`/api/users/${alice}`).send({ email: 'nope' })).status).toBe(400);
     expect((await agent.patch(`/api/users/${alice}`).send({})).status).toBe(400);
-    expect((await agent.patch(`/api/users/${alice}`).send({ is_admin: 'yes' })).status).toBe(400);
+    expect((await agent.patch(`/api/users/${alice}`).send({ isAdmin: 'yes' })).status).toBe(400);
   });
 
   it('promeut un utilisateur admin, qui accède alors à /api/users sans reconnexion', async () => {
@@ -230,9 +234,9 @@ describe('PATCH /api/users/:id', () => {
     const alice = await loginAs(app, 'alice');
     expect((await alice.get('/api/users')).status).toBe(403);
     const admin = await loginAs(app, 'admin');
-    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ is_admin: true });
+    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ isAdmin: true });
     expect(res.status).toBe(200);
-    expect(res.body.is_admin).toBe(1);
+    expect(res.body.isAdmin).toBe(true);
     expect((await alice.get('/api/users')).status).toBe(200);
   });
 
@@ -242,7 +246,7 @@ describe('PATCH /api/users/:id', () => {
     db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
     const alice = await loginAs(app, 'alice');
     expect((await alice.get('/api/users')).status).toBe(200);
-    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ is_admin: false });
+    const res = await admin.patch(`/api/users/${idOf(db, 'alice')}`).send({ isAdmin: false });
     expect(res.status).toBe(200);
     expect((await alice.get('/api/users')).status).toBe(403);
   });
@@ -250,7 +254,7 @@ describe('PATCH /api/users/:id', () => {
   it('retourne 409 user.last_admin en rétrogradant le dernier admin', async () => {
     const { app, db } = setup();
     const agent = await loginAs(app, 'admin');
-    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ is_admin: false });
+    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ isAdmin: false });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('user.last_admin');
   });
@@ -259,7 +263,7 @@ describe('PATCH /api/users/:id', () => {
     const { app, db } = setup();
     db.prepare("UPDATE users SET is_admin = 1 WHERE username = 'alice'").run();
     const agent = await loginAs(app, 'admin');
-    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ is_admin: false });
+    const res = await agent.patch(`/api/users/${idOf(db, 'admin')}`).send({ isAdmin: false });
     expect(res.status).toBe(200);
   });
 
@@ -273,10 +277,10 @@ describe('PATCH /api/users/:id', () => {
     const results = await Promise.all([
       admin
         .patch(`/api/users/${idOf(db, 'alice')}`)
-        .send({ is_admin: false, password: 'brandnewpass1' }),
+        .send({ isAdmin: false, password: 'brandnewpass1' }),
       alice
         .patch(`/api/users/${idOf(db, 'admin')}`)
-        .send({ is_admin: false, password: 'brandnewpass1' }),
+        .send({ isAdmin: false, password: 'brandnewpass1' }),
     ]);
 
     expect(results.map((res) => res.status).sort((a, b) => a - b)).toEqual([200, 409]);
@@ -346,8 +350,7 @@ describe('DELETE /api/users/:id', () => {
     };
     const agent = await loginAs(app, 'admin');
     const res = await agent.delete(`/api/users/${alice.id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('retourne 404 si utilisateur introuvable', async () => {
@@ -371,7 +374,7 @@ describe('DELETE /api/users/:id', () => {
     const alice = await loginAs(app, 'alice');
     const admin = await loginAs(app, 'admin');
     const res = await admin.delete(`/api/users/${idOf(db, 'alice')}`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect((await alice.get('/api/auth/me')).status).toBe(401);
   });
 
@@ -392,7 +395,7 @@ describe('DELETE /api/users/:id/2fa', () => {
     ).run();
     const agent = await loginAs(app, 'admin');
     const res = await agent.delete(`/api/users/${idOf(db, 'alice')}/2fa`);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     const row = db
       .prepare("SELECT totp_enabled, totp_secret FROM users WHERE username = 'alice'")
       .get();
@@ -413,5 +416,26 @@ describe('DELETE /api/users/:id/2fa', () => {
     expect((await admin.delete('/api/users/9999/2fa')).status).toBe(404);
     const alice = await loginAs(app, 'alice');
     expect((await alice.delete(`/api/users/${idOf(db, 'admin')}/2fa`)).status).toBe(403);
+  });
+});
+
+describe('DELETE /api/users/:id : fichiers du compte', () => {
+  it('efface les sauvegardes du compte supprimé, pas celles des autres', async () => {
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cash-users-'));
+    try {
+      const { app, db } = setup(backupDir);
+      const aliceDir = path.join(backupDir, String(idOf(db, 'alice')));
+      const adminDir = path.join(backupDir, String(idOf(db, 'admin')));
+      for (const dir of [aliceDir, adminDir]) {
+        fs.mkdirSync(dir);
+        fs.writeFileSync(path.join(dir, 'cashctrl-backup.json'), '{}');
+      }
+      const agent = await loginAs(app, 'admin');
+      expect((await agent.delete(`/api/users/${idOf(db, 'alice')}`)).status).toBe(204);
+      expect(fs.existsSync(aliceDir)).toBe(false);
+      expect(fs.existsSync(adminDir)).toBe(true);
+    } finally {
+      fs.rmSync(backupDir, { recursive: true, force: true });
+    }
   });
 });

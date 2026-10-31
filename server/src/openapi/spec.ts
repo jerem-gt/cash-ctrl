@@ -7,12 +7,13 @@ import {
   changePasswordSchema,
   disableTotpSchema,
   enableTotpSchema,
+  forgotPasswordSchema,
   loginSchema,
   profileSchema,
+  resetPasswordSchema,
   setupSchema,
   verifyTotpSchema,
-} from '../modules/auth/auth.routes.js';
-import { forgotPasswordSchema, resetPasswordSchema } from '../modules/auth/password.routes.js';
+} from '../modules/auth/auth.schema.js';
 import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
 import { categorySchema } from '../modules/categories/categories.routes.js';
 import {
@@ -57,7 +58,7 @@ import {
   validateSchema,
 } from '../modules/transactions/transactions.routes.js';
 import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes.js';
-import { createUserSchema, updateUserSchema } from '../modules/users/users.routes.js';
+import { createUserSchema, updateUserSchema } from '../modules/users/users.schema.js';
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function queryParams(zod: ZodType) {
 
 const r200 = (description = 'OK') => ({ 200: { description } });
 const r201 = { 201: { description: 'Created' } };
+const r204 = { 204: { description: 'No content' } };
 const r400 = { 400: { description: 'Validation error' } };
 const r401 = { 401: { description: 'Unauthorized' } };
 const r404 = { 404: { description: 'Not found' } };
@@ -203,7 +205,7 @@ export function buildOpenApiSpec() {
         post: {
           tags: ['Auth'],
           summary:
-            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session ({ id, username, isAdmin, totpEnabled })',
+            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session ({ id, username, email, isAdmin, totpEnabled })',
           requestBody: body(setupSchema),
           responses: {
             ...r200('Account created, session started'),
@@ -218,9 +220,9 @@ export function buildOpenApiSpec() {
         post: {
           tags: ['Auth'],
           summary:
-            'Mot de passe oublié : répond toujours 200 { ok: true } (lien par e-mail ou dans les logs)',
+            'Mot de passe oublié : répond toujours 204 (lien par e-mail ou dans les logs ; lang : langue de l’e-mail)',
           requestBody: body(forgotPasswordSchema),
-          responses: { ...r200(), ...r400, 429: { description: 'Too many requests' } },
+          responses: { ...r204, ...r400, 429: { description: 'Too many requests' } },
         },
       },
       '/api/auth/password/reset': {
@@ -228,7 +230,7 @@ export function buildOpenApiSpec() {
           tags: ['Auth'],
           summary: 'Redéfinir le mot de passe avec le jeton reçu ; ferme toutes les sessions',
           requestBody: body(resetPasswordSchema),
-          responses: { ...r200(), ...r400, 429: { description: 'Too many attempts' } },
+          responses: { ...r204, ...r400, 429: { description: 'Too many attempts' } },
         },
       },
       '/api/auth/test-email': {
@@ -237,7 +239,7 @@ export function buildOpenApiSpec() {
           summary: "Envoyer un e-mail de test à l'adresse du compte courant (admin)",
           security: sessionAuth,
           responses: {
-            ...r200(),
+            ...r204,
             400: { description: 'No email on the account' },
             403: { description: 'Forbidden' },
             502: { description: 'Email sending failed' },
@@ -264,7 +266,7 @@ export function buildOpenApiSpec() {
         post: {
           tags: ['Auth'],
           summary:
-            "Connexion (renvoie { id, username, isAdmin, totpEnabled }, ou { totp_required: true } si la 2FA est active ; la session s'ouvre directement si le cookie cashctrl_device désigne un appareil mémorisé valide du compte)",
+            "Connexion (renvoie { id, username, email, isAdmin, totpEnabled }, ou { totpRequired: true } si la 2FA est active ; la session s'ouvre directement si le cookie cashctrl_device désigne un appareil mémorisé valide du compte)",
           requestBody: body(loginSchema),
           responses: { ...r200('Session started'), ...r400, ...r401 },
         },
@@ -274,7 +276,7 @@ export function buildOpenApiSpec() {
           tags: ['Auth'],
           summary: 'Déconnexion',
           security: sessionAuth,
-          responses: r200(),
+          responses: r204,
         },
       },
       '/api/auth/me': {
@@ -288,16 +290,17 @@ export function buildOpenApiSpec() {
       '/api/auth/change-password': {
         post: {
           tags: ['Auth'],
-          summary: 'Changer le mot de passe',
+          summary: 'Changer le mot de passe ; ferme les autres sessions',
           security: sessionAuth,
           requestBody: body(changePasswordSchema),
-          responses: { ...r200(), ...r400, ...r401 },
+          responses: { ...r204, ...r400, ...r401 },
         },
       },
       '/api/auth/2fa/setup': {
         post: {
           tags: ['Auth'],
-          summary: 'Préparer la 2FA (génère secret + URI)',
+          summary:
+            'Préparer la 2FA ({ uri, secret } ; le secret reste en session jusqu’à /2fa/enable)',
           security: sessionAuth,
           responses: { ...r200(), ...r401, ...r409 },
         },
@@ -308,7 +311,7 @@ export function buildOpenApiSpec() {
           summary: 'Activer la 2FA',
           security: sessionAuth,
           requestBody: body(enableTotpSchema),
-          responses: { ...r200(), ...r400, ...r401, ...r409 },
+          responses: { ...r204, ...r400, ...r401, ...r409 },
         },
       },
       '/api/auth/2fa/disable': {
@@ -317,7 +320,7 @@ export function buildOpenApiSpec() {
           summary: 'Désactiver la 2FA',
           security: sessionAuth,
           requestBody: body(disableTotpSchema),
-          responses: { ...r200(), ...r400, ...r401, ...r409 },
+          responses: { ...r204, ...r400, ...r401, ...r409 },
         },
       },
       '/api/auth/2fa/verify': {
@@ -333,7 +336,7 @@ export function buildOpenApiSpec() {
         get: {
           tags: ['Auth'],
           summary:
-            'Appareils mémorisés du compte ([{ id, label, created_at, last_used_at, expires_at, current }])',
+            'Appareils mémorisés du compte ({ items: [{ id, label, createdAt, lastUsedAt, expiresAt, current }] })',
           security: sessionAuth,
           responses: { ...r200(), ...r401 },
         },
@@ -341,7 +344,7 @@ export function buildOpenApiSpec() {
           tags: ['Auth'],
           summary: 'Oublier tous les appareils mémorisés du compte',
           security: sessionAuth,
-          responses: { ...r200(), ...r401 },
+          responses: { ...r204, ...r401 },
         },
       },
       '/api/auth/devices/{id}': {
@@ -350,7 +353,7 @@ export function buildOpenApiSpec() {
           summary: 'Oublier un appareil mémorisé',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r401, ...r404 },
+          responses: { ...r204, ...r401, ...r404 },
         },
       },
 
@@ -788,7 +791,8 @@ export function buildOpenApiSpec() {
       '/api/users': {
         get: {
           tags: ['Users'],
-          summary: 'Liste des utilisateurs (admin)',
+          summary:
+            'Liste des utilisateurs (admin) : { items: [{ id, username, email, isAdmin, totpEnabled, createdAt, accountCount, txCount, lastTxDate }] }',
           security: sessionAuth,
           responses: r200(),
         },
@@ -812,10 +816,11 @@ export function buildOpenApiSpec() {
         },
         delete: {
           tags: ['Users'],
-          summary: 'Supprimer un utilisateur (admin) ; 409 si soi-même ou dernier admin',
+          summary:
+            'Supprimer un utilisateur (admin), avec ses données et ses sauvegardes ; 409 si soi-même ou dernier admin',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
+          responses: { ...r204, ...r404, ...r409 },
         },
       },
       '/api/users/{id}/2fa': {
@@ -824,7 +829,7 @@ export function buildOpenApiSpec() {
           summary: "Désactiver la 2FA d'un utilisateur (admin)",
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
+          responses: { ...r204, ...r404, ...r409 },
         },
       },
 

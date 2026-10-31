@@ -40,8 +40,8 @@ describe('POST /api/auth/password/forgot', () => {
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
       .send({ identifier: 'alice' });
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
     expect(mailer.sent).toHaveLength(1);
     expect(mailer.sent[0].to).toBe('alice@test.fr');
     expect(mailer.sent[0].text).toContain('https://cash.example.com/reset-password?token=');
@@ -62,7 +62,7 @@ describe('POST /api/auth/password/forgot', () => {
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
       .send({ identifier: 'ALICE@test.fr', lang: 'en' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(mailer.sent[0].subject).toContain('password reset');
     // Slash final d'APP_URL retiré
     expect(mailer.sent[0].text).toContain('https://cash.example.com/reset-password?token=');
@@ -96,7 +96,7 @@ describe('POST /api/auth/password/forgot', () => {
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
       .send({ identifier: 'alice' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(mailer.sent).toHaveLength(0);
     expect(log.warn).toHaveBeenCalledOnce();
     expect(log.warn.mock.calls[0][0]).toMatch(/ \/reset-password\?token=[\w-]+/);
@@ -127,7 +127,7 @@ describe('POST /api/auth/password/forgot', () => {
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
       .send({ identifier: 'alice' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     await vi.waitFor(() => expect(log.error).toHaveBeenCalled());
   });
 
@@ -146,8 +146,8 @@ describe('POST /api/auth/password/forgot', () => {
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
       .send({ identifier: 'ghost' });
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
     expect(tokenCount(db)).toBe(0);
     expect(mailer.sent).toHaveLength(0);
   });
@@ -164,7 +164,7 @@ describe('POST /api/auth/password/forgot', () => {
       const ok = await supertest(app)
         .post('/api/auth/password/forgot')
         .send({ identifier: 'ghost' });
-      expect(ok.status).toBe(200);
+      expect(ok.status).toBe(204);
     }
     const res = await supertest(app)
       .post('/api/auth/password/forgot')
@@ -194,8 +194,8 @@ describe('POST /api/auth/password/reset', () => {
     const res = await supertest(app)
       .post('/api/auth/password/reset')
       .send({ token, password: 'brandnewpass1' });
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
     expect(tokenCount(db)).toBe(0);
     expect((await s1.get('/api/auth/me')).status).toBe(401);
     expect((await s2.get('/api/auth/me')).status).toBe(401);
@@ -268,7 +268,7 @@ describe('POST /api/auth/password/reset', () => {
     const statuses = (await Promise.all([send('brandnewpass1'), send('anotherpass12')]))
       .map((res) => res.status)
       .sort((a, b) => a - b);
-    expect(statuses).toEqual([200, 400]);
+    expect(statuses).toEqual([204, 400]);
   });
 
   it('retourne 400 de validation si le mot de passe est trop court', async () => {

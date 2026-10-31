@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '@/i18n';
 import { server } from '@/tests/msw/server';
 
-import { transactionsApi } from './client';
+import { authApi, transactionsApi } from './client';
 
 describe('parseResponse / extractError', () => {
   // i18n est un singleton partagé (isolate: false) : toujours revenir au FR.
@@ -126,5 +126,11 @@ describe('parseResponse / extractError', () => {
     expect(err).toBeInstanceOf(Error);
     expect((err as Error).message).toBe('Serveur inaccessible. Vérifiez votre connexion.');
     expect((err as { status: number }).status).toBe(0);
+  });
+});
+
+describe('réponse sans corps', () => {
+  it('résout sans valeur sur un 204', async () => {
+    await expect(authApi.logout()).resolves.toBeUndefined();
   });
 });

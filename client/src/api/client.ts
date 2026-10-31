@@ -28,6 +28,7 @@ import type {
   JsonFullImportResult,
   Loan,
   LoanInstallment,
+  LoginResponse,
   PaginatedTransactions,
   PaymentMethod,
   PendingReimbursement,
@@ -38,7 +39,9 @@ import type {
   ScheduledPayload,
   ScheduledTransaction,
   SearchResponse,
+  SessionResponse,
   SettingsUpdate,
+  SetupStatusResponse,
   StockOperation,
   StockOperationPayload,
   StockPosition,
@@ -47,14 +50,16 @@ import type {
   Subcategory,
   SystemRefsPayload,
   TaxYearData,
+  TotpSetupResponse,
   Transaction,
   TransactionFilters,
   TransferStockPayload,
+  TrustedDeviceItem,
   UpdateLoanPayload,
   UpdateOperationPayload,
   UpdateTransactionPayload,
   UpdateTransferPayload,
-  UserPublic,
+  UserItem,
   UserSettings,
 } from '@cashctrl/types';
 
@@ -134,6 +139,10 @@ function formatError(error: unknown): string {
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {
+  // Pas de corps (204) : la promesse se résout sans valeur.
+  if (res.status === 204) {
+    return undefined as T;
+  }
   const data: unknown = await res.json().catch(() => ({}));
   if (!res.ok) {
     const raw = (data as { error?: unknown }).error;
@@ -157,18 +166,13 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   return parseResponse<T>(res);
 }
 
-export interface MeData {
-  id: number;
-  username: string;
-  email: string | null;
-  isAdmin: boolean;
-  totpEnabled: boolean;
-}
+/** Utilisateur connecté (iso shelf-ctrl). */
+export type MeData = SessionResponse;
 
 export type Lang = 'fr' | 'en';
 
 export interface ProfileUpdatePayload {
-  current_password: string;
+  currentPassword: string;
   username?: string;
   email?: string | null;
 }
@@ -177,58 +181,47 @@ export interface UserUpdatePayload {
   username?: string;
   password?: string;
   email?: string | null;
-  is_admin?: boolean;
+  isAdmin?: boolean;
 }
-
-export interface TrustedDevice {
-  id: number;
-  label: string;
-  created_at: number;
-  last_used_at: number;
-  expires_at: number;
-  current: boolean;
-}
-
-export type LoginResponse = (MeData & { totp_required?: never }) | { totp_required: true };
 
 // Auth
 export const authApi = {
   me: () => request<MeData>('GET', '/api/auth/me'),
   login: (username: string, password: string) =>
     request<LoginResponse>('POST', '/api/auth/login', { username, password }),
-  logout: () => request<{ ok: boolean }>('POST', '/api/auth/logout'),
+  logout: () => request<void>('POST', '/api/auth/logout'),
   changePassword: (current: string, next: string) =>
-    request<{ ok: boolean }>('POST', '/api/auth/change-password', { current, next }),
-  setup2fa: () => request<{ uri: string; secret: string }>('POST', '/api/auth/2fa/setup'),
-  enable2fa: (code: string) => request<{ ok: boolean }>('POST', '/api/auth/2fa/enable', { code }),
-  disable2fa: (password: string) =>
-    request<{ ok: boolean }>('POST', '/api/auth/2fa/disable', { password }),
+    request<void>('POST', '/api/auth/change-password', { current, next }),
+  setup2fa: () => request<TotpSetupResponse>('POST', '/api/auth/2fa/setup'),
+  enable2fa: (code: string) => request<void>('POST', '/api/auth/2fa/enable', { code }),
+  disable2fa: (password: string) => request<void>('POST', '/api/auth/2fa/disable', { password }),
   verifyTotp: (code: string, remember = false) =>
     request<MeData>('POST', '/api/auth/2fa/verify', { code, remember }),
-  devices: () => request<TrustedDevice[]>('GET', '/api/auth/devices'),
-  forgetDevice: (id: number) => request<{ ok: boolean }>('DELETE', `/api/auth/devices/${id}`),
-  forgetAllDevices: () => request<{ ok: boolean }>('DELETE', '/api/auth/devices'),
-  setupStatus: () => request<{ required: boolean }>('GET', '/api/auth/setup'),
+  devices: async () =>
+    (await request<{ items: TrustedDeviceItem[] }>('GET', '/api/auth/devices')).items,
+  forgetDevice: (id: number) => request<void>('DELETE', `/api/auth/devices/${id}`),
+  forgetAllDevices: () => request<void>('DELETE', '/api/auth/devices'),
+  setupStatus: () => request<SetupStatusResponse>('GET', '/api/auth/setup'),
   setup: (payload: { token: string; username: string; password: string; lang: Lang }) =>
     request<MeData>('POST', '/api/auth/setup', payload),
   updateProfile: (payload: ProfileUpdatePayload) =>
     request<MeData>('PATCH', '/api/auth/profile', payload),
   forgotPassword: (identifier: string, lang: Lang) =>
-    request<{ ok: boolean }>('POST', '/api/auth/password/forgot', { identifier, lang }),
+    request<void>('POST', '/api/auth/password/forgot', { identifier, lang }),
   resetPassword: (token: string, password: string) =>
-    request<{ ok: boolean }>('POST', '/api/auth/password/reset', { token, password }),
-  testEmail: () => request<{ ok: boolean }>('POST', '/api/auth/test-email'),
+    request<void>('POST', '/api/auth/password/reset', { token, password }),
+  testEmail: () => request<void>('POST', '/api/auth/test-email'),
 };
 
 // Users (admin only)
 export const usersApi = {
-  list: () => request<UserPublic[]>('GET', '/api/users'),
+  list: async () => (await request<{ items: UserItem[] }>('GET', '/api/users')).items,
   create: (payload: { username: string; password: string; email?: string; lang: Lang }) =>
-    request<UserPublic>('POST', '/api/users', payload),
+    request<UserItem>('POST', '/api/users', payload),
   update: (id: number, payload: UserUpdatePayload) =>
-    request<UserPublic>('PATCH', `/api/users/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/users/${id}`),
-  disable2fa: (id: number) => request<{ ok: boolean }>('DELETE', `/api/users/${id}/2fa`),
+    request<UserItem>('PATCH', `/api/users/${id}`, payload),
+  remove: (id: number) => request<void>('DELETE', `/api/users/${id}`),
+  disable2fa: (id: number) => request<void>('DELETE', `/api/users/${id}/2fa`),
 };
 
 // Banks

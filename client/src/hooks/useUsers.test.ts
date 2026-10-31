@@ -59,7 +59,7 @@ describe('useUpdateUser', () => {
 });
 
 describe('useUpdateUser — rôle et e-mail', () => {
-  it('envoie is_admin et email au serveur', async () => {
+  it('envoie isAdmin et email au serveur', async () => {
     let body: unknown;
     server.use(
       http.patch('/api/users/:id', async ({ request }) => {
@@ -69,9 +69,9 @@ describe('useUpdateUser — rôle et e-mail', () => {
     );
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateUser(), { wrapper: Wrapper });
-    result.current.mutate({ id: 2, is_admin: true, email: null });
+    result.current.mutate({ id: 2, isAdmin: true, email: null });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(body).toEqual({ is_admin: true, email: null });
+    expect(body).toEqual({ isAdmin: true, email: null });
   });
 
   it('passe en erreur sur user.last_admin (409)', async () => {
@@ -85,7 +85,7 @@ describe('useUpdateUser — rôle et e-mail', () => {
     );
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useUpdateUser(), { wrapper: Wrapper });
-    result.current.mutate({ id: 1, is_admin: false });
+    result.current.mutate({ id: 1, isAdmin: false });
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
@@ -97,7 +97,7 @@ describe('useDisableUser2fa', () => {
     const { result } = renderHook(() => useDisableUser2fa(), { wrapper: Wrapper });
     result.current.mutate(2);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({ ok: true });
+    expect(result.current.data).toBeUndefined();
   });
 
   it('passe en erreur si la 2FA est déjà désactivée (409)', async () => {

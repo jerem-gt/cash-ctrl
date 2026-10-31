@@ -44,7 +44,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'alicia' });
+      .send({ currentPassword: 'password123', username: 'alicia' });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       id: expect.any(Number),
@@ -61,7 +61,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', email: '  New.Alice@Test.FR ' });
+      .send({ currentPassword: 'password123', email: '  New.Alice@Test.FR ' });
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('new.alice@test.fr');
   });
@@ -71,7 +71,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', email: null });
+      .send({ currentPassword: 'password123', email: null });
     expect(res.status).toBe(200);
     expect(res.body.email).toBeNull();
   });
@@ -82,7 +82,7 @@ describe('PATCH /api/auth/profile', () => {
     const other = await loginAlice(app);
     await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'alicia' });
+      .send({ currentPassword: 'password123', username: 'alicia' });
     expect((await other.get('/api/auth/me')).status).toBe(200);
   });
 
@@ -91,7 +91,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'alice', email: 'ALICE@test.fr' });
+      .send({ currentPassword: 'password123', username: 'alice', email: 'ALICE@test.fr' });
     expect(res.status).toBe(200);
   });
 
@@ -100,7 +100,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'wrong', username: 'alicia' });
+      .send({ currentPassword: 'wrong', username: 'alicia' });
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('auth.current_password_incorrect');
   });
@@ -110,7 +110,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'bob' });
+      .send({ currentPassword: 'password123', username: 'bob' });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('user.username_taken');
   });
@@ -120,7 +120,7 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', email: 'BOB@test.fr' });
+      .send({ currentPassword: 'password123', email: 'BOB@test.fr' });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('user.email_taken');
   });
@@ -130,9 +130,9 @@ describe('PATCH /api/auth/profile', () => {
     const agent = await loginAlice(app);
     const bad = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', email: 'pas-un-email' });
+      .send({ currentPassword: 'password123', email: 'pas-un-email' });
     expect(bad.status).toBe(400);
-    const none = await agent.patch('/api/auth/profile').send({ current_password: 'password123' });
+    const none = await agent.patch('/api/auth/profile').send({ currentPassword: 'password123' });
     expect(none.status).toBe(400);
     const noPwd = await agent.patch('/api/auth/profile').send({ username: 'x' });
     expect(noPwd.status).toBe(400);
@@ -142,7 +142,7 @@ describe('PATCH /api/auth/profile', () => {
     const { app } = setup();
     const res = await supertest(app)
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'x' });
+      .send({ currentPassword: 'password123', username: 'x' });
     expect(res.status).toBe(401);
   });
 
@@ -150,11 +150,11 @@ describe('PATCH /api/auth/profile', () => {
     const { app } = setup();
     const agent = await loginAlice(app);
     for (let i = 0; i < 10; i++) {
-      await agent.patch('/api/auth/profile').send({ current_password: 'wrong', username: 'x' });
+      await agent.patch('/api/auth/profile').send({ currentPassword: 'wrong', username: 'x' });
     }
     const res = await agent
       .patch('/api/auth/profile')
-      .send({ current_password: 'password123', username: 'alicia' });
+      .send({ currentPassword: 'password123', username: 'alicia' });
     expect(res.status).toBe(429);
   });
 });
@@ -172,7 +172,7 @@ describe('limitation partagée du mot de passe actuel', () => {
     const ok = await agent
       .post('/api/auth/change-password')
       .send({ current: 'password123', next: 'password123' });
-    expect(ok.status).toBe(200);
+    expect(ok.status).toBe(204);
     for (let i = 0; i < 10; i++) {
       await agent
         .post('/api/auth/change-password')

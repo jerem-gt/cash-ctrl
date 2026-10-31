@@ -23,7 +23,7 @@ export function useLogin() {
     mutationFn: ({ username, password }: { username: string; password: string }) =>
       authApi.login(username, password),
     onSuccess: (data) => {
-      if (!data.totp_required) {
+      if (!('totpRequired' in data)) {
         claimCacheOwner(qc, data.username);
         qc.setQueryData(queryKeys.me(), data satisfies MeData);
       }

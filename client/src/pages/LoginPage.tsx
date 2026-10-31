@@ -25,7 +25,7 @@ export function LoginPage() {
       { username, password },
       {
         onSuccess: (data) => {
-          if (data.totp_required) {
+          if ('totpRequired' in data) {
             setTotpRequired(true);
           }
         },

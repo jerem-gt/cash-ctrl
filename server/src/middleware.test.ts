@@ -1,14 +1,14 @@
 import type { NextFunction, Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 
-import { requireAuth } from './middleware.js';
+import { currentUserId, requireAuth } from './middleware.js';
 
-function mockReq(session: Partial<{ userId: number; username: string }> = {}): Request {
+function mockReq(session: Partial<{ userId: number }> = {}): Request {
   return { session } as unknown as Request;
 }
 
 function mockRes() {
-  const res = { status: vi.fn(), json: vi.fn() };
+  const res = { status: vi.fn(), json: vi.fn(), locals: {} as Record<string, unknown> };
   res.status.mockReturnValue(res);
   return res as unknown as Response;
 }
@@ -26,5 +26,13 @@ describe('requireAuth', () => {
     requireAuth(mockReq(), res, next);
     expect(res.status as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe('currentUserId', () => {
+  it('lit le compte posé par requireAuth', () => {
+    const res = mockRes();
+    requireAuth(mockReq({ userId: 7 }), res, vi.fn());
+    expect(currentUserId(res)).toBe(7);
   });
 });

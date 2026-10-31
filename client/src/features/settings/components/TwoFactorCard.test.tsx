@@ -96,7 +96,9 @@ describe('TwoFactorCard — appareils mémorisés', () => {
     withTotp();
     server.use(
       http.get('/api/auth/devices', () =>
-        HttpResponse.json([{ ...TRUSTED_DEVICES[0], label: '', last_used_at: Date.now() }]),
+        HttpResponse.json({
+          items: [{ ...TRUSTED_DEVICES[0], label: '', lastUsedAt: Date.now() }],
+        }),
       ),
     );
     renderWithProviders(<TwoFactorCard />);
@@ -106,7 +108,7 @@ describe('TwoFactorCard — appareils mémorisés', () => {
 
   it('affiche un état vide sans appareil', async () => {
     withTotp();
-    server.use(http.get('/api/auth/devices', () => HttpResponse.json([])));
+    server.use(http.get('/api/auth/devices', () => HttpResponse.json({ items: [] })));
     renderWithProviders(<TwoFactorCard />);
     expect(await screen.findByText('Aucun appareil mémorisé.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /oublier tous/i })).not.toBeInTheDocument();
@@ -124,7 +126,7 @@ describe('TwoFactorCard — appareils mémorisés', () => {
     server.use(
       http.delete('/api/auth/devices/:id', ({ params }) => {
         deletedId = params.id as string;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();
@@ -143,7 +145,7 @@ describe('TwoFactorCard — appareils mémorisés', () => {
     server.use(
       http.delete('/api/auth/devices', () => {
         deleted = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();
@@ -164,7 +166,7 @@ describe('TwoFactorCard — appareils mémorisés', () => {
     server.use(
       http.delete('/api/auth/devices', () => {
         deleted = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();

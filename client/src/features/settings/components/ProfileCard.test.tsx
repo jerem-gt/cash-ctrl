@@ -44,7 +44,7 @@ describe('ProfileCard', () => {
 
     await waitFor(() => expect(toastText()).toContain('Profil mis à jour'));
     expect(body).toEqual({
-      current_password: 'secret123',
+      currentPassword: 'secret123',
       username: 'nouveau',
       email: 'n@example.com',
     });
@@ -64,7 +64,7 @@ describe('ProfileCard', () => {
     await user.click(await screen.findByRole('button', { name: 'Effacer' }));
     await user.type(screen.getByLabelText('Mot de passe actuel'), 'secret123');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() => expect(body).toEqual({ current_password: 'secret123', email: null }));
+    await waitFor(() => expect(body).toEqual({ currentPassword: 'secret123', email: null }));
   });
 
   it("affiche l'erreur si le mot de passe actuel est incorrect", async () => {

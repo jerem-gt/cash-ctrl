@@ -1,112 +1,42 @@
+import type { LoginResponse, SessionResponse, SetupStatusResponse } from '@cashctrl/types';
 import { createDeviceCookies } from '@jerem-gt/ctrl-shared/server/deviceCookie';
 import { createMailer, type Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
 import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
-import { matchTotpStep, newTotpSecret } from '@jerem-gt/ctrl-shared/server/totp';
+import { matchTotpStep } from '@jerem-gt/ctrl-shared/server/totp';
 import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { type NextFunction, type Request, type Response, Router } from 'express';
-import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
-import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
+import { ConflictError, HttpError } from '../../lib/errors.js';
 import { type AuthLogger, logger } from '../../logger.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createUsersRepo } from '../users/users.repo.js';
-import { createAuthRepo } from './auth.repo.js';
+import { BCRYPT_COST, createAuthRepo } from './auth.repo.js';
+import {
+  changePasswordSchema,
+  loginSchema,
+  profileSchema,
+  setupSchema,
+  verifyTotpSchema,
+} from './auth.schema.js';
 import type { User } from './auth.types.js';
 import { createMailRouter } from './mail.routes.js';
 import { createPasswordRouter } from './password.routes.js';
+import { createTotpRouter } from './totp.routes.js';
 
-export const loginSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
-});
+/** Nom par défaut d'express-session, gardé tel quel pour ne pas fermer les sessions ouvertes. */
+export const SESSION_COOKIE = 'connect.sid';
 
-export const changePasswordSchema = z.object({
-  current: z.string().min(1),
-  next: z.string().min(8),
-});
+// Hash factice, du même coût que les vrais, comparé quand l'identifiant est inconnu : égalise le
+// temps de réponse pour ne pas révéler si le compte existe. Calculé à la première utilisation.
+let dummyHash: string | undefined;
+const getDummyHash = () => (dummyHash ??= bcrypt.hashSync('cashctrl-unknown-user', BCRYPT_COST));
 
-// Le secret à confirmer est gardé en session par /2fa/setup : seul le code est envoyé.
-export const enableTotpSchema = z.object({
-  code: z.string().length(6),
-});
-
-export const disableTotpSchema = z.object({
-  password: z.string().min(1),
-});
-
-export const verifyTotpSchema = z.object({
-  code: z.string().length(6),
-  remember: z.boolean().optional().default(false),
-});
-
-export const setupSchema = z.object({
-  token: z.string().min(1),
-  username: usernameSchema,
-  password: z.string().min(8),
-  lang: langSchema,
-});
-
-export const profileSchema = z
-  .object({
-    current_password: z.string().min(1),
-    username: usernameSchema.optional(),
-    email: emailSchema.nullable().optional(),
-  })
-  .refine((d) => d.username !== undefined || d.email !== undefined, {
-    message: 'At least one field required',
-  });
-
-// Hash factice (même coût que les vrais) comparé quand l'utilisateur est inconnu,
-// pour égaliser le temps de réponse et éviter l'énumération de comptes par timing.
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync('cashctrl-nonexistent-user', 12);
-
-const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
-/** Nom affiché par l'application d'authentification. */
-const TOTP_ISSUER = 'CashCtrl';
-
-interface SessionUser {
-  id: number;
-  username: string;
-  is_admin: number;
-}
-
-/** Régénère la session (anti-fixation) puis y pose l'utilisateur authentifié. */
-function startSession(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-  user: SessionUser,
-  totpEnabled: boolean,
-): void {
-  req.session.regenerate((regenErr) => {
-    if (regenErr) {
-      next(regenErr);
-      return;
-    }
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    req.session.save((saveErr) => {
-      if (saveErr) {
-        next(saveErr);
-        return;
-      }
-      res.json({
-        id: user.id,
-        username: user.username,
-        isAdmin: user.is_admin === 1,
-        totpEnabled,
-      });
-    });
-  });
-}
-
-function profileOf(user: User) {
+export function sessionResponse(user: User): SessionResponse {
   return {
     id: user.id,
     username: user.username,
@@ -116,14 +46,36 @@ function profileOf(user: User) {
   };
 }
 
+/** Délai pour donner le code TOTP après le mot de passe. */
+const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
+
+/** Régénère la session (anti-fixation) puis y pose l'utilisateur authentifié. */
+function startSession(req: Request, res: Response, next: NextFunction, user: User): void {
+  req.session.regenerate((regenerateError) => {
+    if (regenerateError) {
+      next(regenerateError);
+      return;
+    }
+    req.session.userId = user.id;
+    req.session.save((saveError) => {
+      if (saveError) {
+        next(saveError);
+        return;
+      }
+      res.json(sessionResponse(user));
+    });
+  });
+}
+
 export interface AuthRouterOptions {
-  /** Cookie d'appareil mémorisé en `Secure` (SECURE_COOKIE=true). */
+  /** Cookie d'appareil mémorisé en `Secure` derrière HTTPS (SECURE_COOKIE=true). */
   secureCookies?: boolean;
   mailer?: Mailer;
   setupToken?: SetupToken;
   /** URL publique de l'application (sans slash final), pour les liens des e-mails. */
   appUrl?: string;
   log?: AuthLogger;
+  limiter?: FailureRateLimiter;
 }
 
 export function createAuthRouter(
@@ -131,10 +83,10 @@ export function createAuthRouter(
   sessionStore: SQLiteSessionStore,
   options: AuthRouterOptions = {},
 ): Router {
-  const authRepo = createAuthRepo(db);
+  const repo = createAuthRepo(db);
   const usersRepo = createUsersRepo(db);
   const router = Router();
-  const loginLimiter = new FailureRateLimiter(db);
+  const limiter = options.limiter ?? new FailureRateLimiter(db);
   const mailer = options.mailer ?? createMailer();
   const setupToken = options.setupToken ?? new SetupToken();
   const log = options.log ?? logger;
@@ -145,381 +97,215 @@ export function createAuthRouter(
     secure: options.secureCookies === true,
   });
 
-  /** Vérifie le mot de passe actuel avec limitation des échecs ; répond 429/401 et renvoie false sinon. */
-  async function checkCurrentPassword(
-    res: Response,
-    user: User,
-    candidate: string,
-  ): Promise<boolean> {
+  /** Vérifie le mot de passe actuel, échecs limités ; lève 429/401 sinon. */
+  async function checkCurrentPassword(user: User, candidate: string): Promise<void> {
     const key = `password:${user.id}`;
-    if (!loginLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return false;
+    if (!limiter.isAllowed(key)) {
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
     if (!(await bcrypt.compare(candidate, user.password_hash))) {
-      loginLimiter.recordFailure(key);
-      sendError(res, 401, 'auth.current_password_incorrect');
-      return false;
+      limiter.recordFailure(key);
+      throw new HttpError(401, 'auth.current_password_incorrect');
     }
-    loginLimiter.reset(key);
-    return true;
+    limiter.reset(key);
+  }
+
+  /** Le compte de la session ; supprimé entre-temps : 401. */
+  function sessionUser(res: Response): User {
+    const user = repo.getById(currentUserId(res));
+    if (!user) {
+      throw new HttpError(401, 'common.unauthorized');
+    }
+    return user;
   }
 
   router.get('/setup', (_req, res) => {
-    res.json({ required: authRepo.countUsers() === 0 });
+    const body: SetupStatusResponse = { required: repo.countUsers() === 0 };
+    res.json(body);
   });
 
   router.post('/setup', async (req, res, next) => {
-    if (authRepo.countUsers() > 0) {
-      sendError(res, 409, 'auth.setup_done');
-      return;
+    if (repo.countUsers() > 0) {
+      throw new ConflictError('auth.setup_done');
     }
     const key = `setup:${req.ip ?? 'unknown'}`;
-    if (!loginLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+    if (!limiter.isAllowed(key)) {
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
-    const data = parseBody(res, setupSchema, req.body);
-    if (!data) return;
-
+    const data = setupSchema.parse(req.body);
     if (!setupToken.verify(data.token)) {
-      loginLimiter.recordFailure(key);
-      sendError(res, 403, 'auth.setup_token_invalid');
-      return;
+      limiter.recordFailure(key);
+      throw new HttpError(403, 'auth.setup_token_invalid');
     }
 
-    const hash = await bcrypt.hash(data.password, 12);
-    // Re-vérifie dans la transaction : deux requêtes simultanées ne créent qu'un compte.
+    const hash = await bcrypt.hash(data.password, BCRYPT_COST);
+    // Revérifié dans la transaction : deux requêtes simultanées ne créent qu'un compte.
     const userId = db.transaction((): number | null => {
-      if (authRepo.countUsers() > 0) return null;
-      const id = authRepo.createAdmin(data.username, hash);
+      if (repo.countUsers() > 0) {
+        return null;
+      }
+      const id = repo.createAdmin(data.username, hash);
       seedUserData(db, id, data.lang);
       return id;
     })();
     if (userId === null) {
-      sendError(res, 409, 'auth.setup_done');
-      return;
+      throw new ConflictError('auth.setup_done');
     }
     setupToken.consume();
-    loginLimiter.reset(key);
-    startSession(req, res, next, { id: userId, username: data.username, is_admin: 1 }, false);
+    limiter.reset(key);
+    log.info(`[auth] premier compte créé : « ${data.username} » (admin)`);
+    startSession(req, res, next, repo.getById(userId) as User);
   });
 
   router.post('/login', async (req, res, next) => {
     const key = req.ip ?? 'unknown';
-    if (!loginLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+    if (!limiter.isAllowed(key)) {
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
-
-    const parsed = loginSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 400, 'common.invalid_request');
-      return;
-    }
-
-    const { username, password } = parsed.data;
-    const user = authRepo.getByUsername(username);
-    // Toujours comparer (hash factice si user absent) pour un temps constant.
-    const passwordOk = await bcrypt.compare(password, user?.password_hash ?? DUMMY_PASSWORD_HASH);
-
+    const { username, password } = loginSchema.parse(req.body);
+    const user = repo.getByUsername(username);
+    const passwordOk = await bcrypt.compare(password, user?.password_hash ?? getDummyHash());
     if (!user || !passwordOk) {
-      loginLimiter.recordFailure(key);
-      sendError(res, 401, 'auth.invalid_credentials');
-      return;
+      limiter.recordFailure(key);
+      log.warn(`[auth] échec de connexion depuis ${key}`);
+      throw new HttpError(401, 'auth.invalid_credentials');
     }
-
     if (user.totp_enabled === 1) {
       if (deviceCookies.isTrusted(req, res, user.id)) {
-        loginLimiter.reset(key);
-        startSession(req, res, next, user, true);
+        limiter.reset(key);
+        startSession(req, res, next, user);
         return;
       }
-      // Session neuve en attente du code : elle ne garde rien d'une connexion précédente.
-      req.session.regenerate((regenErr) => {
-        if (regenErr) {
-          next(regenErr);
+      // Mot de passe vérifié : une session neuve attend le code (le limiteur se remet à zéro
+      // après lui). Régénérée, elle ne garde rien d'une connexion précédente (autre compte).
+      req.session.regenerate((regenerateError) => {
+        if (regenerateError) {
+          next(regenerateError);
           return;
         }
         req.session.pendingUserId = user.id;
         req.session.pendingTotpAt = Date.now();
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            next(saveErr);
+        req.session.save((saveError) => {
+          if (saveError) {
+            next(saveError);
             return;
           }
-          res.json({ totp_required: true });
+          const body: LoginResponse = { totpRequired: true };
+          res.json(body);
         });
       });
       return;
     }
-
-    loginLimiter.reset(key);
-    startSession(req, res, next, user, false);
+    limiter.reset(key);
+    startSession(req, res, next, user);
   });
 
+  /** Second temps de la connexion : échecs limités par IP et par compte, code à usage unique. */
   router.post('/2fa/verify', (req, res, next) => {
     const key = req.ip ?? 'unknown';
-    if (!loginLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+    if (!limiter.isAllowed(key)) {
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
-
-    const parsed = verifyTotpSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 400, 'common.invalid_request');
-      return;
-    }
-
+    const { code, remember } = verifyTotpSchema.parse(req.body);
     const { pendingUserId, pendingTotpAt } = req.session;
-    if (
-      pendingUserId == null ||
-      pendingTotpAt == null ||
-      Date.now() - pendingTotpAt > TOTP_PENDING_TTL_MS
-    ) {
-      sendError(res, 401, 'auth.totp_token_invalid');
-      return;
+    const expired =
+      pendingUserId === undefined ||
+      pendingTotpAt === undefined ||
+      Date.now() - pendingTotpAt > TOTP_PENDING_TTL_MS;
+    const user = expired ? undefined : repo.getById(pendingUserId);
+    if (user?.totp_enabled !== 1 || !user.totp_secret) {
+      throw new HttpError(401, 'auth.totp_token_invalid');
     }
-
-    const user = authRepo.getById(pendingUserId);
-    if (user?.totp_enabled !== 1 || !user?.totp_secret) {
-      sendError(res, 401, 'auth.totp_token_invalid');
-      return;
-    }
-
-    // Limité par compte en plus de l'IP : un attaquant qui a le mot de passe et change d'adresse.
     const accountKey = `totp:${user.id}`;
-    if (!loginLimiter.isAllowed(accountKey)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+    if (!limiter.isAllowed(accountKey)) {
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
-
-    const step = matchTotpStep(user.totp_secret, parsed.data.code);
-    if (step === null || !authRepo.consumeTotpStep(user.id, step)) {
-      loginLimiter.recordFailure(key);
-      loginLimiter.recordFailure(accountKey);
-      sendError(res, 401, 'auth.totp_invalid');
-      return;
+    const step = matchTotpStep(user.totp_secret, code);
+    if (step === null || !repo.consumeTotpStep(user.id, step)) {
+      limiter.recordFailure(key);
+      limiter.recordFailure(accountKey);
+      log.warn(`[auth] code 2FA refusé pour « ${user.username} » depuis ${key}`);
+      throw new HttpError(401, 'auth.totp_invalid');
     }
-
-    loginLimiter.reset(key);
-    loginLimiter.reset(accountKey);
-    if (parsed.data.remember) deviceCookies.remember(req, res, user.id);
-    startSession(req, res, next, user, true);
+    limiter.reset(key);
+    limiter.reset(accountKey);
+    if (remember) {
+      deviceCookies.remember(req, res, user.id);
+    }
+    startSession(req, res, next, user);
   });
 
   router.post('/logout', (req, res) => {
-    req.session.destroy(() => res.json({ ok: true }));
+    req.session.destroy(() => {
+      res.clearCookie(SESSION_COOKIE);
+      res.status(204).end();
+    });
   });
 
   router.get('/me', (req, res) => {
-    if (!req.session?.userId) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
-    }
-    const user = authRepo.getById(req.session.userId);
+    const user = req.session?.userId ? repo.getById(req.session.userId) : undefined;
     if (!user) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
+      throw new HttpError(401, 'common.unauthorized');
     }
-    res.json(profileOf(user));
+    res.json(sessionResponse(user));
   });
 
+  /** Nom d'utilisateur et e-mail : le mot de passe actuel est requis. */
   router.patch('/profile', requireAuth, async (req, res) => {
-    const data = parseBody(res, profileSchema, req.body);
-    if (!data) return;
-
-    const userId = sessionUserId(req);
-    const user = authRepo.getById(userId);
-    if (!user) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
-    }
-    if (!(await checkCurrentPassword(res, user, data.current_password))) return;
+    const data = profileSchema.parse(req.body);
+    const user = sessionUser(res);
+    const userId = user.id;
+    await checkCurrentPassword(user, data.currentPassword);
 
     const { username, email } = data;
-    if (username !== undefined) {
-      const owner = usersRepo.getByUsername(username);
-      if (owner !== undefined && owner.id !== userId) {
-        sendError(res, 409, 'user.username_taken');
-        return;
+    const usernameOwner = username === undefined ? undefined : usersRepo.getByUsername(username);
+    if (usernameOwner && usernameOwner.id !== userId) {
+      throw new ConflictError('user.username_taken');
+    }
+    const emailOwner = email ? usersRepo.getByEmail(email) : undefined;
+    if (emailOwner && emailOwner.id !== userId) {
+      throw new ConflictError('user.email_taken');
+    }
+    db.transaction(() => {
+      if (username !== undefined) {
+        usersRepo.updateUsername(userId, username);
       }
-    }
-    if (email !== undefined && email !== null) {
-      const owner = usersRepo.getByEmail(email);
-      if (owner !== undefined && owner.id !== userId) {
-        sendError(res, 409, 'user.email_taken');
-        return;
+      if (email !== undefined) {
+        usersRepo.updateEmail(userId, email);
       }
-    }
-
-    if (username !== undefined) {
-      usersRepo.updateUsername(userId, username);
-      req.session.username = username;
-    }
-    if (email !== undefined) usersRepo.updateEmail(userId, email);
-
-    res.json(profileOf(authRepo.getById(userId) as User));
+    })();
+    res.json(sessionResponse(repo.getById(userId) as User));
   });
 
+  /** Ferme les autres sessions du compte, garde la session courante. */
   router.post('/change-password', requireAuth, async (req, res) => {
-    const parsed = changePasswordSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 400, 'auth.password_too_short');
-      return;
-    }
-
-    const userId = sessionUserId(req);
-    const user = authRepo.getById(userId);
-    if (!user) {
-      sendError(res, 401, 'auth.current_password_incorrect');
-      return;
-    }
-    if (!(await checkCurrentPassword(res, user, parsed.data.current))) return;
-
-    authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
-    devices.revokeAll(userId);
-    sessionStore.destroyOtherSessions(userId, req.sessionID);
-    res.json({ ok: true });
-  });
-
-  // Génère un nouveau secret TOTP et retourne l'URI pour le QR code.
-  // Le secret est gardé en session, pas encore enregistré : il faut confirmer avec /2fa/enable.
-  router.post('/2fa/setup', requireAuth, (req, res) => {
-    const userId = sessionUserId(req);
-    const user = authRepo.getById(userId);
-    if (!user) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
-    }
-    if (user.totp_enabled === 1) {
-      sendError(res, 409, 'auth.totp_already_enabled');
-      return;
-    }
-
-    const { uri, secret } = newTotpSecret(TOTP_ISSUER, user.username);
-    req.session.pendingTotpSecret = secret;
-    res.json({ uri, secret });
-  });
-
-  // Vérifie le premier code et active la 2FA.
-  router.post('/2fa/enable', requireAuth, (req, res) => {
-    const parsed = enableTotpSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 400, 'common.invalid_request');
-      return;
-    }
-
-    const userId = sessionUserId(req);
-    const user = authRepo.getById(userId);
-    if (!user) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
-    }
-    if (user.totp_enabled === 1) {
-      sendError(res, 409, 'auth.totp_already_enabled');
-      return;
-    }
-
-    const secret = req.session.pendingTotpSecret;
-    if (!secret) {
-      sendError(res, 400, 'auth.totp_setup_expired');
-      return;
-    }
-
-    const step = matchTotpStep(secret, parsed.data.code);
-    if (step === null) {
-      sendError(res, 401, 'auth.totp_invalid');
-      return;
-    }
-
+    const data = changePasswordSchema.parse(req.body);
+    const user = sessionUser(res);
+    await checkCurrentPassword(user, data.current);
+    const hash = await bcrypt.hash(data.next, BCRYPT_COST);
     db.transaction(() => {
-      authRepo.enableTotp(userId, secret, step);
-      devices.revokeAll(userId);
+      repo.updatePassword(user.id, hash);
+      devices.revokeAll(user.id);
     })();
-    delete req.session.pendingTotpSecret;
-    res.json({ ok: true });
-  });
-
-  // Désactive la 2FA après vérification du mot de passe.
-  router.post('/2fa/disable', requireAuth, async (req, res) => {
-    const parsed = disableTotpSchema.safeParse(req.body);
-    if (!parsed.success) {
-      sendError(res, 400, 'common.invalid_request');
-      return;
-    }
-
-    const userId = sessionUserId(req);
-    const user = authRepo.getById(userId);
-    if (!user) {
-      sendError(res, 401, 'common.unauthorized');
-      return;
-    }
-    if (user.totp_enabled !== 1) {
-      sendError(res, 409, 'auth.totp_not_enabled');
-      return;
-    }
-
-    if (!(await checkCurrentPassword(res, user, parsed.data.password))) return;
-
-    db.transaction(() => {
-      usersRepo.disableTotp(userId);
-      devices.revokeAll(userId);
-    })();
-    res.json({ ok: true });
-  });
-
-  router.get('/devices', requireAuth, (req, res) => {
-    const now = Date.now();
-    devices.purgeExpired(now);
-    const currentHash = deviceCookies.currentHash(req);
-    res.json(
-      devices.list(sessionUserId(req), now).map((d) => ({
-        id: d.id,
-        label: d.label,
-        created_at: d.created_at,
-        last_used_at: d.last_used_at,
-        expires_at: d.expires_at,
-        current: d.token_hash === currentHash,
-      })),
-    );
-  });
-
-  router.delete('/devices/:id', requireAuth, (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const device = devices.get(id, sessionUserId(req));
-    if (!device) {
-      sendError(res, 404, 'auth.device_not_found');
-      return;
-    }
-    devices.remove(id, device.user_id);
-    if (deviceCookies.currentHash(req) === device.token_hash) deviceCookies.clear(req, res);
-    res.json({ ok: true });
-  });
-
-  router.delete('/devices', requireAuth, (req, res) => {
-    const userId = sessionUserId(req);
-    const ownsCookie = deviceCookies.belongsTo(req, userId);
-    devices.revokeAll(userId);
-    if (ownsCookie) deviceCookies.clear(req, res);
-    res.json({ ok: true });
+    sessionStore.destroyOtherSessions(user.id, req.sessionID);
+    res.status(204).end();
   });
 
   router.use(
-    createPasswordRouter({
+    createTotpRouter({
       db,
-      repo: authRepo,
+      repo,
       usersRepo,
       devices,
-      sessionStore,
-      mailer,
-      appUrl: options.appUrl,
-      log,
+      deviceCookies,
+      sessionUser,
+      checkCurrentPassword,
     }),
   );
-
-  router.use(createMailRouter({ db, repo: authRepo, mailer, log }));
+  router.use(
+    createPasswordRouter({ db, repo, devices, sessionStore, mailer, appUrl: options.appUrl, log }),
+  );
+  router.use(createMailRouter({ db, repo, mailer, log }));
 
   return router;
 }

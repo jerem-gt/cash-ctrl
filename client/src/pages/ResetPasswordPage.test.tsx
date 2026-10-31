@@ -29,7 +29,7 @@ describe('ResetPasswordPage', () => {
     server.use(
       http.post('/api/auth/password/reset', async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();

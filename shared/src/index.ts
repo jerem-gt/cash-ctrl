@@ -9,18 +9,58 @@ export type InsuranceOperationType =
   'versement' | 'rachat' | 'arbitrage_in' | 'arbitrage_out' | 'interets' | 'revalorisation';
 export type StockOperationType = 'buy' | 'sell' | 'transfer_in' | 'transfer_out';
 
-// ─── Users ────────────────────────────────────────────────────────────────────
+// ─── Auth & users (iso shelf-ctrl) ────────────────────────────────────────────
 
-export interface UserPublic {
+/** Utilisateur connecté (réponse de `/api/auth/me` et de la connexion). */
+export interface SessionResponse {
   id: number;
   username: string;
   email: string | null;
-  is_admin: number;
-  totp_enabled: number;
-  created_at: string;
-  account_count: number;
-  tx_count: number;
-  last_tx_date: string | null;
+  isAdmin: boolean;
+  totpEnabled: boolean;
+}
+
+/**
+ * Réponse de la connexion : la session, ou `totpRequired` quand la 2FA est active et l'appareil
+ * inconnu (le code se donne ensuite à `POST /api/auth/2fa/verify`).
+ */
+export type LoginResponse = SessionResponse | { totpRequired: true };
+
+/** Activation de la 2FA : URI `otpauth://` (QR code) et secret en base32 pour la saisie manuelle. */
+export interface TotpSetupResponse {
+  uri: string;
+  secret: string;
+}
+
+/** Appareil mémorisé (2FA sautée pendant 30 jours) ; horodatages en millisecondes. */
+export interface TrustedDeviceItem {
+  id: number;
+  /** « Navigateur · OS » déduit du User-Agent, vide si rien n'est reconnu. */
+  label: string;
+  createdAt: number;
+  lastUsedAt: number;
+  expiresAt: number;
+  /** L'appareil de la requête (son cookie). */
+  current: boolean;
+}
+
+/** `required` : aucun compte, l'application attend la création du premier (admin). */
+export interface SetupStatusResponse {
+  required: boolean;
+}
+
+/** Compte vu par un admin (page Utilisateurs). */
+export interface UserItem {
+  id: number;
+  username: string;
+  email: string | null;
+  isAdmin: boolean;
+  totpEnabled: boolean;
+  createdAt: string;
+  accountCount: number;
+  txCount: number;
+  /** Date de la dernière opération, `null` sans opération. */
+  lastTxDate: string | null;
 }
 
 // ─── Banks ────────────────────────────────────────────────────────────────────

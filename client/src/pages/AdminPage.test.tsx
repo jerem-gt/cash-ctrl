@@ -191,16 +191,18 @@ describe('AdminPage — rôle administrateur', () => {
     await setup();
     await user.click(screen.getByTitle('Promouvoir administrateur'));
     await waitFor(() => expect(toastText()).toContain('accordé'));
-    expect(body).toEqual({ is_admin: true });
+    expect(body).toEqual({ isAdmin: true });
   });
 
   it("affiche l'erreur quand on retire le dernier admin (409)", async () => {
     server.use(
       http.get('/api/users', () =>
-        HttpResponse.json([
-          { ...ADMIN_ROW, id: 1, username: 'admin' },
-          { ...ADMIN_ROW, id: 3, username: 'bob' },
-        ]),
+        HttpResponse.json({
+          items: [
+            { ...ADMIN_ROW, id: 1, username: 'admin' },
+            { ...ADMIN_ROW, id: 3, username: 'bob' },
+          ],
+        }),
       ),
       http.patch('/api/users/:id', () =>
         HttpResponse.json(
@@ -221,12 +223,12 @@ const ADMIN_ROW = {
   id: 1,
   username: 'admin',
   email: null,
-  is_admin: 1,
-  totp_enabled: 0,
-  created_at: '2025-01-01T00:00:00',
-  account_count: 0,
-  tx_count: 0,
-  last_tx_date: null,
+  isAdmin: true,
+  totpEnabled: false,
+  createdAt: '2025-01-01T00:00:00',
+  accountCount: 0,
+  txCount: 0,
+  lastTxDate: null,
 };
 
 function renderAsAdmin() {
@@ -244,7 +246,7 @@ describe('AdminPage — 2FA', () => {
     server.use(
       http.delete('/api/users/:id/2fa', () => {
         called = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();
@@ -260,7 +262,7 @@ describe('AdminPage — 2FA', () => {
     server.use(
       http.delete('/api/users/:id/2fa', () => {
         called = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();

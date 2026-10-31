@@ -8,21 +8,18 @@ import type { TrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDev
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
-import { z } from 'zod';
 
+import { BadRequestError, HttpError } from '../../lib/errors.js';
 import { MAIL_TEXTS } from '../../lib/mailTexts.js';
-import { parseBody, sendError } from '../../lib/routeHelpers.js';
 import type { Lang } from '../../lib/systemEntities.js';
-import { langSchema } from '../../lib/validators.js';
 import type { AuthLogger } from '../../logger.js';
-import type { createUsersRepo } from '../users/users.repo.js';
-import type { AuthRepo } from './auth.repo.js';
+import { type AuthRepo, BCRYPT_COST } from './auth.repo.js';
+import { emailSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema.js';
 import type { User } from './auth.types.js';
 
 export interface PasswordRouterDeps {
   db: Database;
   repo: AuthRepo;
-  usersRepo: ReturnType<typeof createUsersRepo>;
   devices: TrustedDevicesRepo;
   sessionStore: SQLiteSessionStore;
   mailer: Mailer;
@@ -34,18 +31,9 @@ export interface PasswordRouterDeps {
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 const FORGOT_MAX_REQUESTS = 5;
 
-export const forgotPasswordSchema = z.object({
-  identifier: z.string().trim().min(1).max(254),
-  lang: langSchema,
-});
-
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1),
-  password: z.string().min(8),
-});
-
+/** Mot de passe oublié : lien à usage unique par e-mail (ou dans les logs, sans SMTP). */
 export function createPasswordRouter(deps: PasswordRouterDeps): Router {
-  const { db, repo, usersRepo, devices, sessionStore, mailer, appUrl, log } = deps;
+  const { db, repo, devices, sessionStore, mailer, appUrl, log } = deps;
   const router = Router();
   const forgotLimiter = new FailureRateLimiter(db, FORGOT_MAX_REQUESTS);
   const resetLimiter = new FailureRateLimiter(db);
@@ -63,7 +51,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     repo.insertResetToken(sha256Hex(token), user.id, now + RESET_TOKEN_TTL_MS);
 
     const path = `/reset-password?token=${token}`;
-    const fallbackMessage = `Réinitialisation du mot de passe de "${user.username}" : ouvrir ${appUrl ?? ''}${path}`;
+    const fallbackMessage = `[auth] réinitialisation du mot de passe de « ${user.username} » : ouvrir ${appUrl ?? ''}${path}`;
     if (mailer.isConfigured() && user.email && appUrl) {
       const texts = MAIL_TEXTS[lang];
       mailer
@@ -73,7 +61,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
           text: texts.reset(`${appUrl}${path}`, RESET_TOKEN_TTL_MS / 60_000),
         })
         .catch((err: unknown) => {
-          log.error(`Envoi de l'e-mail de réinitialisation échoué : ${String(err)}`);
+          log.error(`[auth] envoi de l'e-mail de réinitialisation échoué : ${String(err)}`);
           log.warn(fallbackMessage);
         });
       return;
@@ -81,66 +69,62 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
     log.warn(fallbackMessage);
   }
 
+  /** Réponse identique que le compte existe ou non : ne révèle ni les noms ni les e-mails. */
   router.post('/password/forgot', (req, res) => {
     const key = `forgot:${req.ip ?? 'unknown'}`;
     if (!forgotLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
     // Chaque requête compte, qu'elle aboutisse ou non.
     forgotLimiter.recordFailure(key);
 
-    const data = parseBody(res, forgotPasswordSchema, req.body);
-    if (!data) return;
-
-    const emailOwnerId = usersRepo.getByEmail(data.identifier.toLowerCase())?.id;
+    const { identifier, lang } = forgotPasswordSchema.parse(req.body);
+    const email = emailSchema.safeParse(identifier);
     const user =
-      repo.getByUsername(data.identifier) ??
-      (emailOwnerId === undefined ? undefined : repo.getById(emailOwnerId));
+      repo.getByUsername(identifier) ?? (email.success ? repo.getByEmail(email.data) : undefined);
     if (user) {
       try {
-        issueResetLink(user, data.lang);
+        issueResetLink(user, lang);
       } catch (err) {
-        log.error(`Création du lien de réinitialisation échouée : ${String(err)}`);
+        log.error(`[auth] création du lien de réinitialisation échouée : ${String(err)}`);
       }
     }
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.post('/password/reset', async (req, res) => {
     const key = `reset:${req.ip ?? 'unknown'}`;
     if (!resetLimiter.isAllowed(key)) {
-      sendError(res, 429, 'auth.too_many_attempts');
-      return;
+      throw new HttpError(429, 'auth.too_many_attempts');
     }
-    const data = parseBody(res, resetPasswordSchema, req.body);
-    if (!data) return;
+    const data = resetPasswordSchema.parse(req.body);
 
     const tokenHash = sha256Hex(data.token);
     if (!validResetToken(tokenHash)) {
       resetLimiter.recordFailure(key);
-      sendError(res, 400, 'auth.reset_token_invalid');
-      return;
+      throw new BadRequestError('auth.reset_token_invalid');
     }
 
     // Haché après la vérification du jeton : un faux jeton ne coûte pas un bcrypt au serveur.
-    const hash = await bcrypt.hash(data.password, 12);
-    // Re-vérifié dans la transaction : un jeton consommé pendant le hachage ne sert pas deux fois.
+    const hash = await bcrypt.hash(data.password, BCRYPT_COST);
+    // Revérifié dans la transaction : un jeton consommé pendant le hachage ne sert pas deux fois.
     const userId = db.transaction((): number | null => {
       const row = validResetToken(tokenHash);
-      if (!row) return null;
+      if (!row) {
+        return null;
+      }
       repo.updatePassword(row.user_id, hash);
       repo.deleteResetTokensForUser(row.user_id);
+      // Les appareils mémorisés tombent ; la 2FA reste active (un admin peut la désactiver).
       devices.revokeAll(row.user_id);
       return row.user_id;
     })();
     if (userId === null) {
-      sendError(res, 400, 'auth.reset_token_invalid');
-      return;
+      throw new BadRequestError('auth.reset_token_invalid');
     }
     sessionStore.destroyAllSessions(userId);
     resetLimiter.reset(key);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;
