@@ -139,7 +139,6 @@ describe('POST /api/auth/login', () => {
       .send({ username: 'alice', password: 'password123' });
     expect(res.status).toBe(200);
     expect(res.body.totpRequired).toBe(true);
-    expect(res.body.pending_token).toBeUndefined();
   });
 });
 

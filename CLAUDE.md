@@ -64,6 +64,7 @@ Le formatage des montants/dates suit la langue via `currentLocale()` de `client/
 
 ### Backend (Node.js)
 - **Logic**: Séparer les responsabilités entre les routes, les services et la validation des données.
+- **Auth et comptes** (`modules/auth`, `modules/users`, iso shelf-ctrl, à mettre en commun dans ctrl-shared) : routeurs `auth`, `totp`, `password`, `mail` et `users` ; ils **lèvent** des `HttpError` et valident par `schema.parse` (traduits par le gestionnaire global), répondent `204` sans corps, en camelCase, listes en `{ items }`, types de réponse dans `@cashctrl/types`. Le compte de la requête est posé par `requireAuth` et lu par `currentUserId(res)` (les autres modules utilisent encore `sessionUserId(req)` et `sendError`). Particularités de cash : `lang` à la création d'un compte et au mot de passe oublié (données initiales, e-mails), statistiques de la page Utilisateurs ; supprimer un compte efface aussi ses sauvegardes (`<BACKUP_DIR>/<id>`).
 - **Export/Import** : Tout ajout ou modification de champ sur une entité exportée (`insurance_operations`, `stock_operations`, `loans`, `transactions`, etc.) doit être répercuté dans les trois endroits suivants :
   1. `export.types.ts` — interface `FullExport*`
   2. `export.repo.ts` — requête SQL `SELECT`

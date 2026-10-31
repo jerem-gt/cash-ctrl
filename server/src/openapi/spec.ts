@@ -794,14 +794,15 @@ export function buildOpenApiSpec() {
           summary:
             'Liste des utilisateurs (admin) : { items: [{ id, username, email, isAdmin, totpEnabled, createdAt, accountCount, txCount, lastTxDate }] }',
           security: sessionAuth,
-          responses: r200(),
+          responses: { ...r200(), ...r401 },
         },
         post: {
           tags: ['Users'],
-          summary: 'Créer un utilisateur (admin)',
+          summary:
+            'Créer un utilisateur (admin) ; isAdmin facultatif, lang : langue des données initiales',
           security: sessionAuth,
           requestBody: body(createUserSchema),
-          responses: { ...r201, ...r400, ...r409 },
+          responses: { ...r201, ...r400, ...r401, ...r409 },
         },
       },
       '/api/users/{id}': {
@@ -812,7 +813,7 @@ export function buildOpenApiSpec() {
           security: sessionAuth,
           parameters: pId,
           requestBody: body(updateUserSchema),
-          responses: { ...r200(), ...r400, ...r404, ...r409 },
+          responses: { ...r200(), ...r400, ...r401, ...r404, ...r409 },
         },
         delete: {
           tags: ['Users'],
@@ -820,7 +821,7 @@ export function buildOpenApiSpec() {
             'Supprimer un utilisateur (admin), avec ses données et ses sauvegardes ; 409 si soi-même ou dernier admin',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404, ...r409 },
+          responses: { ...r204, ...r401, ...r404, ...r409 },
         },
       },
       '/api/users/{id}/2fa': {
@@ -829,7 +830,7 @@ export function buildOpenApiSpec() {
           summary: "Désactiver la 2FA d'un utilisateur (admin)",
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404, ...r409 },
+          responses: { ...r204, ...r401, ...r404, ...r409 },
         },
       },
 

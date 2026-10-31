@@ -78,7 +78,7 @@ export const handlers = [
     }),
   ),
   http.delete('/api/categorization-rules', () => HttpResponse.json({ deleted: 0 })),
-  http.delete('/api/categorization-rules/:id', () => new HttpResponse(null, { status: 204 })),
+  http.delete('/api/categorization-rules/:id', () => HttpResponse.json({ ok: true })),
 
   http.post('/api/auth/2fa/setup', () =>
     HttpResponse.json({
