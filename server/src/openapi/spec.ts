@@ -1,19 +1,30 @@
+import { createAuthOpenApiPaths } from '@jerem-gt/ctrl-shared/server/auth';
 import {
-  changePasswordSchema,
-  createLangSchemas,
-  disableTotpSchema,
-  enableTotpSchema,
-  loginSchema,
-  profileSchema,
-  resetPasswordSchema,
-  updateUserSchema,
-  verifyTotpSchema,
-} from '@jerem-gt/ctrl-shared/server/auth';
+  body,
+  errorResponse,
+  errorSchema,
+  pathInt,
+  pId,
+  queryParams,
+  r200,
+  r201,
+  r204,
+  r400,
+  r404,
+  r409,
+  sessionAuth,
+  sessionCookieScheme,
+} from '@jerem-gt/ctrl-shared/server/openapi';
 import type { ZodType } from 'zod';
-import { toJSONSchema } from 'zod';
 
+import { ERROR_MESSAGES } from '../lib/errorCodes.js';
 import { accountTypeSchema } from '../modules/account-types/account-types.routes.js';
-import { accountSchema, closeSchema } from '../modules/accounts/accounts.routes.js';
+import {
+  accountSchema,
+  closeSchema,
+  favoriteSchema,
+  favoritesReorderSchema,
+} from '../modules/accounts/accounts.routes.js';
 import { LANGUAGES, SESSION_COOKIE } from '../modules/auth/authOptions.js';
 import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
 import { categorySchema } from '../modules/categories/categories.routes.js';
@@ -45,6 +56,10 @@ import {
 import { scheduledSchema } from '../modules/scheduled/scheduled.routes.js';
 import { settingsSchema, systemRefsSchema } from '../modules/settings/settings.routes.js';
 import {
+  accountBalanceHistoryQuerySchema,
+  forecastQuerySchema,
+} from '../modules/stats/stats.routes.js';
+import {
   buySchema,
   editOperationSchema,
   stockTransferSchema,
@@ -60,53 +75,7 @@ import {
 } from '../modules/transactions/transactions.routes.js';
 import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes.js';
 
-// Schémas qui portent la langue : mêmes langues que le module d'auth.
-const { setupSchema, forgotPasswordSchema, createUserSchema } = createLangSchemas(LANGUAGES);
-
-// ─── helpers ───────────────────────────────────────────────────────────────
-
-const TO_JSON_OPTS = { unrepresentable: 'any' } as const;
-
-function schema(zod: ZodType) {
-  return toJSONSchema(zod, TO_JSON_OPTS);
-}
-
-function body(zod: ZodType) {
-  return {
-    required: true,
-    content: { 'application/json': { schema: schema(zod) } },
-  };
-}
-
-// Converts a Zod object schema's properties into OpenAPI query parameters.
-function queryParams(zod: ZodType) {
-  const js = toJSONSchema(zod, TO_JSON_OPTS) as {
-    properties?: Record<string, unknown>;
-    required?: string[];
-  };
-  if (!js.properties) return [];
-  return Object.entries(js.properties).map(([name, propSchema]) => ({
-    name,
-    in: 'query',
-    required: (js.required ?? []).includes(name),
-    schema: propSchema,
-  }));
-}
-
-const r200 = (description = 'OK') => ({ 200: { description } });
-const r201 = { 201: { description: 'Created' } };
-const r204 = { 204: { description: 'No content' } };
-const r400 = { 400: { description: 'Validation error' } };
-const r401 = { 401: { description: 'Unauthorized' } };
-const r404 = { 404: { description: 'Not found' } };
-const r409 = { 409: { description: 'Conflict' } };
-
-const sessionAuth = [{ sessionCookie: [] }];
-
-// Path parameter helpers — avoids repeating the same schema object on every route.
-function pathInt(name: string) {
-  return { name, in: 'path', required: true, schema: { type: 'integer' } };
-}
+// ─── helpers (communs : @jerem-gt/ctrl-shared/server/openapi) ──────────────
 
 // Génère un POST sur /api/<module>/{accountId}/<action> (insurance, stocks…).
 function accountIdPost(
@@ -138,6 +107,7 @@ function crudPaths(
   labels: { list: string; create: string; update: string; remove: string },
   createSchema: ZodType,
   updateSchema: ZodType = createSchema,
+  createResponses: Record<number, unknown> = { ...r201, ...r400 },
 ) {
   return {
     [base]: {
@@ -147,7 +117,7 @@ function crudPaths(
         summary: labels.create,
         security: sessionAuth,
         requestBody: body(createSchema),
-        responses: { ...r201, ...r400 },
+        responses: createResponses,
       },
     },
     [`${base}/{id}`]: {
@@ -164,12 +134,11 @@ function crudPaths(
         summary: labels.remove,
         security: sessionAuth,
         parameters: pId,
-        responses: { ...r204, ...r404, ...r409 },
+        responses: { ...r204, ...r400, ...r404, ...r409 },
       },
     },
   };
 }
-const pId = [pathInt('id')];
 const pAccountId = [pathInt('accountId')];
 const pLoanId = [pathInt('loanId')];
 const pTransactionId = [pathInt('transactionId')];
@@ -189,177 +158,12 @@ export function buildOpenApiSpec() {
       description: 'API REST interne de CashCtrl (gestion financière personnelle).',
     },
     components: {
-      securitySchemes: {
-        sessionCookie: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: SESSION_COOKIE,
-          description: 'Session cookie set by POST /api/auth/login.',
-        },
-      },
+      schemas: { Error: errorSchema(Object.keys(ERROR_MESSAGES)) },
+      securitySchemes: sessionCookieScheme(SESSION_COOKIE),
     },
     paths: {
-      // ── Auth ─────────────────────────────────────────────────────────────
-      '/api/auth/setup': {
-        get: {
-          tags: ['Auth'],
-          summary: 'Premier démarrage requis ? ({ required: true } tant qu’aucun compte n’existe)',
-          responses: r200(),
-        },
-        post: {
-          tags: ['Auth'],
-          summary:
-            'Créer le premier compte (admin) avec le jeton affiché dans les logs ; ouvre la session ({ id, username, email, isAdmin, totpEnabled })',
-          requestBody: body(setupSchema),
-          responses: {
-            ...r200('Account created, session started'),
-            ...r400,
-            403: { description: 'Invalid setup token' },
-            ...r409,
-            429: { description: 'Too many attempts' },
-          },
-        },
-      },
-      '/api/auth/password/forgot': {
-        post: {
-          tags: ['Auth'],
-          summary:
-            'Mot de passe oublié : répond toujours 204 (lien par e-mail ou dans les logs ; lang : langue de l’e-mail)',
-          requestBody: body(forgotPasswordSchema),
-          responses: { ...r204, ...r400, 429: { description: 'Too many requests' } },
-        },
-      },
-      '/api/auth/password/reset': {
-        post: {
-          tags: ['Auth'],
-          summary: 'Redéfinir le mot de passe avec le jeton reçu ; ferme toutes les sessions',
-          requestBody: body(resetPasswordSchema),
-          responses: { ...r204, ...r400, 429: { description: 'Too many attempts' } },
-        },
-      },
-      '/api/auth/test-email': {
-        post: {
-          tags: ['Auth'],
-          summary: "Envoyer un e-mail de test à l'adresse du compte courant (admin)",
-          security: sessionAuth,
-          responses: {
-            ...r204,
-            400: { description: 'No email on the account' },
-            403: { description: 'Forbidden' },
-            502: { description: 'Email sending failed' },
-            503: { description: 'SMTP not configured' },
-          },
-        },
-      },
-      '/api/auth/profile': {
-        patch: {
-          tags: ['Auth'],
-          summary: "Modifier son nom d'utilisateur et/ou son e-mail (mot de passe actuel requis)",
-          security: sessionAuth,
-          requestBody: body(profileSchema),
-          responses: {
-            ...r200('Same object as GET /api/auth/me'),
-            ...r400,
-            ...r401,
-            ...r409,
-            429: { description: 'Too many attempts' },
-          },
-        },
-      },
-      '/api/auth/login': {
-        post: {
-          tags: ['Auth'],
-          summary:
-            "Connexion (renvoie { id, username, email, isAdmin, totpEnabled }, ou { totpRequired: true } si la 2FA est active ; la session s'ouvre directement si le cookie cashctrl_device désigne un appareil mémorisé valide du compte)",
-          requestBody: body(loginSchema),
-          responses: { ...r200('Session started'), ...r400, ...r401 },
-        },
-      },
-      '/api/auth/logout': {
-        post: {
-          tags: ['Auth'],
-          summary: 'Déconnexion',
-          security: sessionAuth,
-          responses: r204,
-        },
-      },
-      '/api/auth/me': {
-        get: {
-          tags: ['Auth'],
-          summary: 'Utilisateur courant ({ id, username, email, isAdmin, totpEnabled })',
-          security: sessionAuth,
-          responses: { ...r200(), ...r401 },
-        },
-      },
-      '/api/auth/change-password': {
-        post: {
-          tags: ['Auth'],
-          summary: 'Changer le mot de passe ; ferme les autres sessions',
-          security: sessionAuth,
-          requestBody: body(changePasswordSchema),
-          responses: { ...r204, ...r400, ...r401 },
-        },
-      },
-      '/api/auth/2fa/setup': {
-        post: {
-          tags: ['Auth'],
-          summary:
-            'Préparer la 2FA ({ uri, secret } ; le secret reste en session jusqu’à /2fa/enable)',
-          security: sessionAuth,
-          responses: { ...r200(), ...r401, ...r409 },
-        },
-      },
-      '/api/auth/2fa/enable': {
-        post: {
-          tags: ['Auth'],
-          summary: 'Activer la 2FA',
-          security: sessionAuth,
-          requestBody: body(enableTotpSchema),
-          responses: { ...r204, ...r400, ...r401, ...r409 },
-        },
-      },
-      '/api/auth/2fa/disable': {
-        post: {
-          tags: ['Auth'],
-          summary: 'Désactiver la 2FA',
-          security: sessionAuth,
-          requestBody: body(disableTotpSchema),
-          responses: { ...r204, ...r400, ...r401, ...r409 },
-        },
-      },
-      '/api/auth/2fa/verify': {
-        post: {
-          tags: ['Auth'],
-          summary:
-            'Valider le code TOTP après login ; remember=true mémorise l’appareil 30 jours (cookie cashctrl_device)',
-          requestBody: body(verifyTotpSchema),
-          responses: { ...r200(), ...r400, ...r401 },
-        },
-      },
-      '/api/auth/devices': {
-        get: {
-          tags: ['Auth'],
-          summary:
-            'Appareils mémorisés du compte ({ items: [{ id, label, createdAt, lastUsedAt, expiresAt, current }] })',
-          security: sessionAuth,
-          responses: { ...r200(), ...r401 },
-        },
-        delete: {
-          tags: ['Auth'],
-          summary: 'Oublier tous les appareils mémorisés du compte',
-          security: sessionAuth,
-          responses: { ...r204, ...r401 },
-        },
-      },
-      '/api/auth/devices/{id}': {
-        delete: {
-          tags: ['Auth'],
-          summary: 'Oublier un appareil mémorisé',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r204, ...r401, ...r404 },
-        },
-      },
+      // ── Auth et utilisateurs (admin) : module d'auth de ctrl-shared ─────
+      ...createAuthOpenApiPaths({ languages: LANGUAGES, tags: { auth: 'Auth', users: 'Users' } }),
 
       // ── Accounts ─────────────────────────────────────────────────────────
       '/api/accounts': {
@@ -391,7 +195,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un compte',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
       '/api/accounts/{id}/frequent-transactions': {
@@ -400,7 +204,26 @@ export function buildOpenApiSpec() {
           summary: 'Transactions fréquentes du compte (6 derniers mois)',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
+        },
+      },
+      '/api/accounts/favorites/reorder': {
+        put: {
+          tags: ['Accounts'],
+          summary: 'Réordonner les comptes favoris (liste complète des favoris actifs)',
+          security: sessionAuth,
+          requestBody: body(favoritesReorderSchema),
+          responses: { ...r204, ...r400, 409: errorResponse('Favorites out of sync') },
+        },
+      },
+      '/api/accounts/{id}/favorite': {
+        put: {
+          tags: ['Accounts'],
+          summary: 'Ajouter ou retirer un compte des favoris (pas un compte clôturé)',
+          security: sessionAuth,
+          parameters: pId,
+          requestBody: body(favoriteSchema),
+          responses: { ...r200(), ...r400, ...r404, ...r409 },
         },
       },
       '/api/accounts/{id}/close': {
@@ -475,7 +298,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une banque',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404, ...r409 },
+          responses: { ...r204, ...r400, ...r404, ...r409 },
         },
       },
       '/api/banks/{id}/logo': {
@@ -495,7 +318,7 @@ export function buildOpenApiSpec() {
               },
             },
           },
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
 
@@ -524,6 +347,8 @@ export function buildOpenApiSpec() {
         },
         createSubcategorySchema,
         updateSubcategorySchema,
+        // 404 : catégorie parente inconnue.
+        { ...r201, ...r400, ...r404 },
       ),
 
       // ── Payment Methods ───────────────────────────────────────────────────
@@ -546,14 +371,14 @@ export function buildOpenApiSpec() {
           summary: 'Liste des transactions (paginée)',
           security: sessionAuth,
           parameters: queryParams(transactionQuerySchema),
-          responses: r200('Paginated transaction list'),
+          responses: { ...r200('Paginated transaction list'), ...r400 },
         },
         post: {
           tags: ['Transactions'],
           summary: 'Créer une transaction',
           security: sessionAuth,
           requestBody: body(transactionSchema),
-          responses: { ...r201, ...r400 },
+          responses: { ...r201, ...r400, ...r404 },
         },
       },
       '/api/transactions/{id}': {
@@ -570,7 +395,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une transaction',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
       '/api/transactions/{id}/validate': {
@@ -591,7 +416,7 @@ export function buildOpenApiSpec() {
           summary: 'Créer un virement',
           security: sessionAuth,
           requestBody: body(transferSchema),
-          responses: { ...r201, ...r400 },
+          responses: { ...r201, ...r400, ...r404 },
         },
       },
       '/api/transfers/{id}': {
@@ -608,7 +433,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un virement',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
 
@@ -635,7 +460,7 @@ export function buildOpenApiSpec() {
           summary: "Remboursements d'une transaction",
           security: sessionAuth,
           parameters: pTransactionId,
-          responses: r200(),
+          responses: { ...r200(), ...r400 },
         },
         post: {
           tags: ['Reimbursements'],
@@ -643,7 +468,7 @@ export function buildOpenApiSpec() {
           security: sessionAuth,
           parameters: pTransactionId,
           requestBody: body(linkSchema),
-          responses: { ...r201, ...r400 },
+          responses: { ...r201, ...r400, ...r404 },
         },
       },
       '/api/reimbursements/{transactionId}/status': {
@@ -670,7 +495,7 @@ export function buildOpenApiSpec() {
           summary: 'Délier un remboursement',
           security: sessionAuth,
           parameters: pTransactionIdLinkedId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
 
@@ -704,7 +529,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une opération récurrente',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
 
@@ -744,7 +569,7 @@ export function buildOpenApiSpec() {
           tags: ['Categorization Rules'],
           summary: "Initialiser les règles depuis l'historique",
           security: sessionAuth,
-          responses: r200(),
+          responses: r201,
         },
       },
       '/api/categorization-rules/{id}': {
@@ -761,7 +586,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une règle',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
 
@@ -791,53 +616,6 @@ export function buildOpenApiSpec() {
         },
       },
 
-      // ── Users ─────────────────────────────────────────────────────────────
-      '/api/users': {
-        get: {
-          tags: ['Users'],
-          summary:
-            'Liste des utilisateurs (admin) : { items: [{ id, username, email, isAdmin, totpEnabled, createdAt, stats: { accountCount, txCount, lastTxDate } }] }',
-          security: sessionAuth,
-          responses: { ...r200(), ...r401 },
-        },
-        post: {
-          tags: ['Users'],
-          summary:
-            'Créer un utilisateur (admin) ; isAdmin facultatif, lang : langue des données initiales',
-          security: sessionAuth,
-          requestBody: body(createUserSchema),
-          responses: { ...r201, ...r400, ...r401, ...r409 },
-        },
-      },
-      '/api/users/{id}': {
-        patch: {
-          tags: ['Users'],
-          summary:
-            'Modifier un utilisateur (admin) : nom, mot de passe, e-mail, rôle admin (409 user.last_admin)',
-          security: sessionAuth,
-          parameters: pId,
-          requestBody: body(updateUserSchema),
-          responses: { ...r200(), ...r400, ...r401, ...r404, ...r409 },
-        },
-        delete: {
-          tags: ['Users'],
-          summary:
-            'Supprimer un utilisateur (admin), avec ses données et ses sauvegardes ; 409 si soi-même ou dernier admin',
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r204, ...r401, ...r404, ...r409 },
-        },
-      },
-      '/api/users/{id}/2fa': {
-        delete: {
-          tags: ['Users'],
-          summary: "Désactiver la 2FA d'un utilisateur (admin)",
-          security: sessionAuth,
-          parameters: pId,
-          responses: { ...r204, ...r401, ...r404, ...r409 },
-        },
-      },
-
       // ── Stocks ────────────────────────────────────────────────────────────
       '/api/stocks/{accountId}/positions': {
         get: {
@@ -845,7 +623,7 @@ export function buildOpenApiSpec() {
           summary: "Positions d'un compte investissement",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r404 },
         },
       },
       '/api/stocks/{accountId}/operations': {
@@ -854,7 +632,7 @@ export function buildOpenApiSpec() {
           summary: "Opérations d'un compte investissement",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r404 },
         },
       },
       ...accountIdPost('stocks', 'Stocks', 'buy', 'Acheter des titres', buySchema),
@@ -901,7 +679,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer la cotation en cache d’un ticker inutilisé',
           security: sessionAuth,
           parameters: [{ name: 'ticker', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: { ...r204, ...r404, ...r409 },
+          responses: { ...r204, ...r400, ...r404, ...r409 },
         },
         put: {
           tags: ['Stocks'],
@@ -948,7 +726,7 @@ export function buildOpenApiSpec() {
           summary: "Supports d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r404 },
         },
         post: {
           tags: ['Insurance'],
@@ -956,7 +734,7 @@ export function buildOpenApiSpec() {
           security: sessionAuth,
           parameters: pAccountId,
           requestBody: body(createSupportSchema),
-          responses: { ...r201, ...r400 },
+          responses: { ...r201, ...r400, ...r404 },
         },
       },
       '/api/insurance/{accountId}/supports/{supportId}': {
@@ -965,7 +743,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un support',
           security: sessionAuth,
           parameters: pAccountIdSupportId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
       '/api/insurance/{accountId}/positions': {
@@ -974,7 +752,7 @@ export function buildOpenApiSpec() {
           summary: "Positions d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r404 },
         },
       },
       '/api/insurance/{accountId}/operations': {
@@ -983,7 +761,7 @@ export function buildOpenApiSpec() {
           summary: "Opérations d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r404 },
         },
       },
       '/api/insurance/{accountId}/operations/{operationId}': {
@@ -1000,7 +778,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une opération assurance',
           security: sessionAuth,
           parameters: pAccountIdOperationId,
-          responses: { ...r204, ...r404 },
+          responses: { ...r204, ...r400, ...r404 },
         },
       },
       ...accountIdPost(
@@ -1049,7 +827,7 @@ export function buildOpenApiSpec() {
           summary: "Prêts d'un compte",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: r200(),
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
       '/api/loans/{loanId}': {
@@ -1068,7 +846,7 @@ export function buildOpenApiSpec() {
           summary: "Échéancier d'un prêt",
           security: sessionAuth,
           parameters: pLoanId,
-          responses: r200(),
+          responses: { ...r200(), ...r400 },
         },
       },
       '/api/loans/{loanId}/installments/{installmentId}': {
@@ -1099,6 +877,24 @@ export function buildOpenApiSpec() {
           responses: r200(),
         },
       },
+      '/api/stats/forecast': {
+        get: {
+          tags: ['Stats'],
+          summary: 'Prévision du solde (opérations planifiées), tous comptes ou un seul',
+          security: sessionAuth,
+          parameters: queryParams(forecastQuerySchema),
+          responses: { ...r200(), ...r400, ...r404 },
+        },
+      },
+      '/api/stats/accounts/{accountId}/balance-history': {
+        get: {
+          tags: ['Stats'],
+          summary: "Historique du solde d'un compte",
+          security: sessionAuth,
+          parameters: [...pAccountId, ...queryParams(accountBalanceHistoryQuerySchema)],
+          responses: { ...r200(), ...r400, ...r404 },
+        },
+      },
       '/api/stats/report-years': {
         get: {
           tags: ['Stats'],
@@ -1116,7 +912,7 @@ export function buildOpenApiSpec() {
             { name: 'year', in: 'query', required: true, schema: { type: 'integer' } },
             { name: 'account_id', in: 'query', required: false, schema: { type: 'integer' } },
           ],
-          responses: r200(),
+          responses: { ...r200(), ...r400 },
         },
       },
       '/api/stats/profitability': {
@@ -1143,7 +939,7 @@ export function buildOpenApiSpec() {
           summary: 'Simulateur fiscal pour une année',
           security: sessionAuth,
           parameters: [{ name: 'year', in: 'path', required: true, schema: { type: 'integer' } }],
-          responses: r200(),
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
 
@@ -1166,7 +962,7 @@ export function buildOpenApiSpec() {
           tags: ['Export / Import'],
           summary: 'Export complet en JSON',
           security: sessionAuth,
-          responses: r200('Full JSON export'),
+          responses: { ...r200('Full JSON export'), ...r400 },
         },
       },
 
@@ -1177,7 +973,7 @@ export function buildOpenApiSpec() {
           summary: 'Importer des transactions structurées (wizard CSV)',
           security: sessionAuth,
           requestBody: body(executeSchema),
-          responses: { ...r200(), ...r400 },
+          responses: { ...r201, ...r400 },
         },
       },
       '/api/import/json-full': {
@@ -1186,7 +982,7 @@ export function buildOpenApiSpec() {
           summary: 'Importer un export JSON complet',
           security: sessionAuth,
           requestBody: body(jsonFullSchema),
-          responses: { ...r200(), ...r400 },
+          responses: { ...r201, ...r400 },
         },
       },
 
@@ -1204,7 +1000,7 @@ export function buildOpenApiSpec() {
           tags: ['Backup'],
           summary: 'Lancer une sauvegarde manuelle',
           security: sessionAuth,
-          responses: r200(),
+          responses: { ...r200('Nothing changed since the last backup'), ...r201 },
         },
       },
       '/api/backup/{filename}': {
@@ -1215,7 +1011,7 @@ export function buildOpenApiSpec() {
           parameters: [
             { name: 'filename', in: 'path', required: true, schema: { type: 'string' } },
           ],
-          responses: { ...r200('Backup file download'), ...r404 },
+          responses: { ...r200('Backup file download'), ...r400, ...r404 },
         },
       },
 
