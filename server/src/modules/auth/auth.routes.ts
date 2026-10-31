@@ -511,6 +511,7 @@ export function createAuthRouter(
       db,
       repo: authRepo,
       usersRepo,
+      devices,
       sessionStore,
       mailer,
       appUrl: options.appUrl,

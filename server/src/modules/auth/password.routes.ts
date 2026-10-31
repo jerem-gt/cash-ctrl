@@ -4,7 +4,7 @@ import { sha256Hex } from '@jerem-gt/ctrl-shared/server/crypto';
 import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
 import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
-import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
+import type { TrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
@@ -23,6 +23,7 @@ export interface PasswordRouterDeps {
   db: Database;
   repo: AuthRepo;
   usersRepo: ReturnType<typeof createUsersRepo>;
+  devices: TrustedDevicesRepo;
   sessionStore: SQLiteSessionStore;
   mailer: Mailer;
   /** URL publique de l'application, sans slash final (jamais déduite de l'en-tête Host). */
@@ -44,9 +45,8 @@ export const resetPasswordSchema = z.object({
 });
 
 export function createPasswordRouter(deps: PasswordRouterDeps): Router {
-  const { db, repo, usersRepo, sessionStore, mailer, appUrl, log } = deps;
+  const { db, repo, usersRepo, devices, sessionStore, mailer, appUrl, log } = deps;
   const router = Router();
-  const devices = createTrustedDevicesRepo(db);
   const forgotLimiter = new FailureRateLimiter(db, FORGOT_MAX_REQUESTS);
   const resetLimiter = new FailureRateLimiter(db);
 
