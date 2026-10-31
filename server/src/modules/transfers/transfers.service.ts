@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import { BadRequestError, HttpError, NotFoundError } from '../../lib/errors.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { createAccountsRepo } from '../accounts/accounts.repo.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
@@ -29,7 +29,7 @@ export function transferCreate(db: Database, userId: number, data: TransferInput
     !accountsRepo.exists(data.from_account_id, userId) ||
     !accountsRepo.exists(data.to_account_id, userId)
   ) {
-    throw new HttpError(403, 'account.not_found');
+    throw new NotFoundError('account.not_found');
   }
 
   return transfersRepo.create(userId, data);
@@ -50,10 +50,10 @@ export function transferUpdate(
   if (!tx.transfer_peer_id) throw new BadRequestError('transfer.not_a_transfer_update');
 
   if (data.from_account_id && !accountsRepo.exists(data.from_account_id, userId)) {
-    throw new HttpError(403, 'account.not_found');
+    throw new NotFoundError('account.not_found');
   }
   if (data.to_account_id && !accountsRepo.exists(data.to_account_id, userId)) {
-    throw new HttpError(403, 'account.not_found');
+    throw new NotFoundError('account.not_found');
   }
 
   const { thisAccountId, peerAccountId } = resolveTransferAccountIds(

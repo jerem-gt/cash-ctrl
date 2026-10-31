@@ -75,8 +75,8 @@ describe('makeCheckAccount', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('lève 403 account.not_found pour le compte d’un autre utilisateur', () => {
-    expect(thrown(() => run('8'))).toMatchObject({ status: 403, code: 'account.not_found' });
+  it('lève 404 account.not_found pour le compte d’un autre utilisateur', () => {
+    expect(thrown(() => run('8'))).toMatchObject({ status: 404, code: 'account.not_found' });
   });
 });
 

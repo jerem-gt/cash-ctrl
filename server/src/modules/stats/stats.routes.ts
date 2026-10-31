@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { checkAccountOwnership } from '../../lib/accountHelpers.js';
 import { dateStr } from '../../lib/dateUtils.js';
-import { NotFoundError } from '../../lib/errors.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { parseIdParam } from '../../lib/routeHelpers.js';
 import { currentUserId, requireAuth } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
@@ -59,8 +59,7 @@ export function createStatsRouter(db: Database): Router {
     const yearParam = typeof req.query.year === 'string' ? req.query.year : undefined;
     const year = yearParam ? Number.parseInt(yearParam, 10) : new Date().getFullYear();
     if (Number.isNaN(year) || year < 2000 || year > 2100) {
-      res.status(400).json({ error: 'Invalid year' });
-      return;
+      throw new BadRequestError('common.invalid_param', { param: 'year' });
     }
     const accountIdParam =
       typeof req.query.account_id === 'string' ? req.query.account_id : undefined;

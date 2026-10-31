@@ -2,7 +2,7 @@ import type { Request, RequestHandler } from 'express';
 
 import { currentUserId } from '../middleware.js';
 import type { ErrorCode } from './errorCodes.js';
-import { BadRequestError, HttpError, NotFoundError } from './errors.js';
+import { BadRequestError, NotFoundError } from './errors.js';
 
 declare module 'express-serve-static-core' {
   interface Locals {
@@ -23,7 +23,7 @@ export function parseIdParam(req: Request, paramName = 'id'): number {
   return value;
 }
 
-/** Compte de la route (`:accountId`) appartenant à l'utilisateur, sinon 403 `account.not_found`. */
+/** Compte de la route (`:accountId`) appartenant à l'utilisateur, sinon 404 `account.not_found`. */
 export function makeCheckAccount(
   belongsToUser: (accountId: number, userId: number) => boolean,
 ): RequestHandler {
@@ -31,7 +31,7 @@ export function makeCheckAccount(
     const accountId = Number.parseInt(req.params.accountId as string, 10);
     const userId = currentUserId(res);
     if (!belongsToUser(accountId, userId)) {
-      throw new HttpError(403, 'account.not_found');
+      throw new NotFoundError('account.not_found');
     }
     res.locals.accountId = accountId;
     next();

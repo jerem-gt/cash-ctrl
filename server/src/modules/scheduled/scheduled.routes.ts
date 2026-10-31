@@ -76,7 +76,7 @@ export function createScheduledRouter(db: Database): Router {
     }
 
     scheduledRepo.delete(userId, id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

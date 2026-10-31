@@ -71,7 +71,7 @@ export function createCategorizationRulesRouter(db: Database): Router {
     if (!repo.delete(id)) {
       throw new NotFoundError('categorization_rule.not_found');
     }
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

@@ -58,7 +58,6 @@ describe('/api/payment-methods', () => {
   it('DELETE /:id removes a payment method', async () => {
     const create = await ctx.agent.post('/api/payment-methods').send({ name: 'ToDelete2' });
     const res = await ctx.agent.delete(`/api/payment-methods/${create.body.id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 });

@@ -2,7 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { BadRequestError, ConflictError, HttpError, NotFoundError } from '../../lib/errors.js';
+import { BadRequestError, ConflictError, NotFoundError } from '../../lib/errors.js';
 import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
 import { makeCheckAccount, parseIdParam } from '../../lib/routeHelpers.js';
 import {
@@ -87,7 +87,7 @@ export function createStocksRouter(db: Database): Router {
     const userId = currentUserId(res);
 
     if (!repo.accountBelongsToUser(fromAccountId, userId)) {
-      throw new HttpError(403, 'stock.source_account_not_found');
+      throw new NotFoundError('stock.source_account_not_found');
     }
     if (!repo.isInvestmentAccount(fromAccountId)) {
       throw new BadRequestError('stock.source_not_investment');
@@ -97,7 +97,7 @@ export function createStocksRouter(db: Database): Router {
 
     const { to_account_id } = data;
     if (!repo.accountBelongsToUser(to_account_id, userId)) {
-      throw new HttpError(403, 'stock.dest_account_not_found');
+      throw new NotFoundError('stock.dest_account_not_found');
     }
     if (!repo.isInvestmentAccount(to_account_id)) {
       throw new BadRequestError('stock.dest_not_investment');
@@ -157,7 +157,7 @@ export function createStocksRouter(db: Database): Router {
     if (!repo.deleteCachedTicker(ticker)) {
       throw new NotFoundError('stock.ticker_not_cached', { ticker });
     }
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.put('/tickers/:ticker', (req, res) => {
@@ -183,7 +183,7 @@ export function createStocksRouter(db: Database): Router {
       throw new ConflictError('stock.ticker_exists', { ticker: data.new_ticker });
     }
     repo.renameTicker(ticker, data.new_ticker);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.get('/price/:ticker', async (req, res) => {
@@ -197,7 +197,7 @@ export function createStocksRouter(db: Database): Router {
 
   router.post('/prices/refresh', async (_req, res) => {
     await refreshUserPrices(db, currentUserId(res));
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

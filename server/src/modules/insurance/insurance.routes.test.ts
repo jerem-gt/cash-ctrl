@@ -68,12 +68,12 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(400);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.post('/api/insurance/99999/supports').send({
         name: 'Test',
         type: 'euro',
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -556,9 +556,9 @@ describe('/api/insurance', () => {
       expect(Array.isArray(res.body)).toBe(true);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.get('/api/insurance/99999/positions');
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -597,7 +597,7 @@ describe('/api/insurance', () => {
         type: 'euro',
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(204);
     });
 
     it('retourne 400 si solde non nul', async () => {
@@ -621,7 +621,7 @@ describe('/api/insurance', () => {
         type: 'uc',
       });
       const res = await ctx.agent.delete(`/api/insurance/${avAccountId}/supports/${sup.body.id}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(204);
     });
 
     it('retourne 400 pour une UC avec un solde positif', async () => {
@@ -661,9 +661,9 @@ describe('/api/insurance', () => {
       expect(res.body.error.code).toBe('insurance.support_has_operations');
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.delete('/api/insurance/99999/supports/1');
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it('retourne 404 pour un support inconnu', async () => {
@@ -816,7 +816,7 @@ describe('/api/insurance', () => {
       const txId = vers.body.transaction_id;
 
       const del = await ctx.agent.delete(`/api/insurance/${avAccountId}/operations/${opId}`);
-      expect(del.status).toBe(200);
+      expect(del.status).toBe(204);
 
       const ops = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
       expect(ops.body.find((o: { id: number }) => o.id === opId)).toBeUndefined();
@@ -851,7 +851,7 @@ describe('/api/insurance', () => {
       const inId = arb.body.inOperation.id;
 
       const del = await ctx.agent.delete(`/api/insurance/${avAccountId}/operations/${outId}`);
-      expect(del.status).toBe(200);
+      expect(del.status).toBe(204);
 
       const ops = await ctx.agent.get(`/api/insurance/${avAccountId}/operations`);
       expect(ops.body.find((o: { id: number }) => o.id === outId)).toBeUndefined();
@@ -863,9 +863,9 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(404);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.delete('/api/insurance/99999/operations/1');
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("supprimer la transaction supprime l'opération associée", async () => {
@@ -1034,11 +1034,11 @@ describe('/api/insurance', () => {
       expect(res.status).toBe(404);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent
         .put(`/api/insurance/99999/operations/${versementOpId}`)
         .send({ amount: 100, fees: 0, date: TODAY });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 

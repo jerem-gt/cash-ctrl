@@ -171,7 +171,8 @@ describe('useUnlinkReimbursement', () => {
       result.current.mutate(20);
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.ok).toBe(true);
+    // 204 : pas de corps.
+    expect(result.current.data).toBeUndefined();
   });
 });
 

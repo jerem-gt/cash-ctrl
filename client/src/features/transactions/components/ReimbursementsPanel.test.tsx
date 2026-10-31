@@ -109,7 +109,7 @@ describe('ReimbursementsPanel — actif (en_attente)', () => {
     renderWithProviders(<ReimbursementsPanel tx={activeTx} />);
     expect(await screen.findByTitle('Délier')).toBeInTheDocument();
     await user.click(screen.getByTitle('Délier'));
-    // handler responds with { ok: true }, no error toast expected
+    // handler responds 204, no error toast expected
     expect(screen.queryByText(/erreur/i)).not.toBeInTheDocument();
   });
 });

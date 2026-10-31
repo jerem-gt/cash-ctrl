@@ -99,8 +99,7 @@ describe('/api/accounts', () => {
     });
     const id = create.body.id;
     const del = await ctx.agent.delete(`/api/accounts/${id}`);
-    expect(del.status).toBe(200);
-    expect(del.body.ok).toBe(true);
+    expect(del.status).toBe(204);
     const get = await ctx.agent.get('/api/accounts');
     expect(get.body.find((a: { id: number }) => a.id === id)).toBeUndefined();
   });
@@ -146,7 +145,7 @@ describe('/api/accounts', () => {
     const loanAccountId = loan.body.account_id;
 
     const del = await ctx.agent.delete(`/api/accounts/${loanAccountId}`);
-    expect(del.status).toBe(200);
+    expect(del.status).toBe(204);
 
     // La transaction de versement sur le compte crédité est supprimée
     const depTxs = await ctx.agent.get(`/api/transactions?account_id=${dep.body.id}`);
@@ -407,7 +406,7 @@ describe('favoris', () => {
       { id: a, favorite_order: 1 },
       { id: b, favorite_order: 0 },
     ]);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     const list = await ctx.agent.get('/api/accounts');
     const byId = (id: number) =>
       (list.body as { id: number; favorite_order: number | null }[]).find((x) => x.id === id)!;

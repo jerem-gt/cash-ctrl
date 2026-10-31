@@ -232,8 +232,8 @@ export const banksApi = {
   update: (id: number, payload: { name: string; login_url?: string | null }) =>
     request<Bank>('PUT', `/api/banks/${id}`, payload),
   reorder: (items: { id: number; sort_order: number }[]) =>
-    request<{ ok: boolean }>('PUT', '/api/banks/reorder', items),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/banks/${id}`),
+    request<void>('PUT', '/api/banks/reorder', items),
+  remove: (id: number) => request<void>('DELETE', `/api/banks/${id}`),
   uploadLogo: async (id: number, file: File): Promise<Bank> => {
     const fd = new FormData();
     fd.append('logo', file);
@@ -249,7 +249,7 @@ export const accountTypesApi = {
     request<AccountType>('POST', '/api/account-types', payload),
   update: (id: number, payload: { name: string; envelope_type: string | null }) =>
     request<AccountType>('PUT', `/api/account-types/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/account-types/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/account-types/${id}`),
 };
 
 type AccountPayload = {
@@ -266,7 +266,7 @@ export const accountsApi = {
   create: (payload: AccountPayload) => request<Account>('POST', '/api/accounts', payload),
   update: (id: number, payload: AccountPayload) =>
     request<Account>('PUT', `/api/accounts/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/accounts/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/accounts/${id}`),
   close: (id: number, payload: { closed_at: string; transfer_to_account_id?: number }) =>
     request<Account>('POST', `/api/accounts/${id}/close`, payload),
   reopen: (id: number) => request<Account>('POST', `/api/accounts/${id}/reopen`),
@@ -275,7 +275,7 @@ export const accountsApi = {
   setFavorite: (id: number, favorite: boolean) =>
     request<Account>('PUT', `/api/accounts/${id}/favorite`, { favorite }),
   reorderFavorites: (items: { id: number; favorite_order: number }[]) =>
-    request<{ ok: boolean }>('PUT', '/api/accounts/favorites/reorder', items),
+    request<void>('PUT', '/api/accounts/favorites/reorder', items),
 };
 
 // Categories
@@ -285,7 +285,7 @@ export const categoriesApi = {
     request<Category>('POST', '/api/categories', payload),
   update: (id: number, payload: { name: string; icon: string }) =>
     request<Category>('PUT', `/api/categories/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categories/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/categories/${id}`),
 };
 
 // Subcategories
@@ -295,7 +295,7 @@ export const subcategoriesApi = {
     request<Subcategory>('POST', '/api/subcategories', payload),
   update: (id: number, payload: { name: string }) =>
     request<Subcategory>('PUT', `/api/subcategories/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/subcategories/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/subcategories/${id}`),
 };
 
 // Payment methods
@@ -305,7 +305,7 @@ export const paymentMethodsApi = {
     request<PaymentMethod>('POST', '/api/payment-methods', payload),
   update: (id: number, payload: { name: string; icon: string }) =>
     request<PaymentMethod>('PUT', `/api/payment-methods/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/payment-methods/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/payment-methods/${id}`),
 };
 
 // Transfers
@@ -314,7 +314,7 @@ export const transfersApi = {
     request<{ expense: Transaction; income: Transaction }>('POST', '/api/transfers', payload),
   update: (id: number, payload: UpdateTransferPayload) =>
     request<Transaction>('PUT', `/api/transfers/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transfers/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/transfers/${id}`),
 };
 
 // Scheduled transactions
@@ -324,7 +324,7 @@ export const scheduledApi = {
     request<ScheduledTransaction>('POST', '/api/scheduled', payload),
   update: (id: number, payload: ScheduledPayload) =>
     request<ScheduledTransaction>('PUT', `/api/scheduled/${id}`, payload),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/scheduled/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/scheduled/${id}`),
 };
 
 // User settings
@@ -368,12 +368,12 @@ export const stocksApi = {
   search: (q: string) =>
     request<StockSearchResult[]>('GET', `/api/stocks/search?q=${encodeURIComponent(q)}`),
   price: (ticker: string) => request<StockPrice>('GET', `/api/stocks/price/${ticker}`),
-  refreshPrices: () => request<{ ok: boolean }>('POST', '/api/stocks/prices/refresh'),
+  refreshPrices: () => request<void>('POST', '/api/stocks/prices/refresh'),
   cachedTickers: () => request<CachedStockTicker[]>('GET', '/api/stocks/tickers'),
   deleteTicker: (ticker: string) =>
-    request<{ ok: boolean }>('DELETE', `/api/stocks/tickers/${encodeURIComponent(ticker)}`),
+    request<void>('DELETE', `/api/stocks/tickers/${encodeURIComponent(ticker)}`),
   renameTicker: (ticker: string, newTicker: string) =>
-    request<{ ok: boolean }>('PUT', `/api/stocks/tickers/${encodeURIComponent(ticker)}`, {
+    request<void>('PUT', `/api/stocks/tickers/${encodeURIComponent(ticker)}`, {
       new_ticker: newTicker,
     }),
   updateOperation: (accountId: number, operationId: number, payload: UpdateOperationPayload) =>
@@ -393,9 +393,9 @@ export const insuranceApi = {
   createSupport: (accountId: number, payload: CreateSupportPayload) =>
     request<InsuranceSupport>('POST', `/api/insurance/${accountId}/supports`, payload),
   deleteSupport: (accountId: number, supportId: number) =>
-    request<{ ok: boolean }>('DELETE', `/api/insurance/${accountId}/supports/${supportId}`),
+    request<void>('DELETE', `/api/insurance/${accountId}/supports/${supportId}`),
   deleteOperation: (accountId: number, operationId: number) =>
-    request<{ ok: boolean }>('DELETE', `/api/insurance/${accountId}/operations/${operationId}`),
+    request<void>('DELETE', `/api/insurance/${accountId}/operations/${operationId}`),
   updateOperation: (
     accountId: number,
     operationId: number,
@@ -524,7 +524,7 @@ export const reimbursementsApi = {
       attributed_amount,
     }),
   unlink: (transactionId: number, linkedId: number) =>
-    request<{ ok: boolean }>('DELETE', `/api/reimbursements/${transactionId}/${linkedId}`),
+    request<void>('DELETE', `/api/reimbursements/${transactionId}/${linkedId}`),
   setStatus: (transactionId: number, reimbursement_status: ReimbursementStatus) =>
     request<Transaction>('PATCH', `/api/reimbursements/${transactionId}/status`, {
       reimbursement_status,
@@ -580,7 +580,7 @@ export const transactionsApi = {
     request<Transaction>('PUT', `/api/transactions/${id}`, payload),
   validate: (id: number, validated: boolean) =>
     request<Transaction>('PATCH', `/api/transactions/${id}/validate`, { validated }),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/transactions/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/transactions/${id}`),
 };
 
 // Categorization rules
@@ -609,7 +609,7 @@ export const categorizationRulesApi = {
       pattern,
       subcategory_id: subcategoryId,
     }),
-  remove: (id: number) => request<{ ok: boolean }>('DELETE', `/api/categorization-rules/${id}`),
+  remove: (id: number) => request<void>('DELETE', `/api/categorization-rules/${id}`),
   removeAll: () => request<{ deleted: number }>('DELETE', '/api/categorization-rules'),
   initFromHistory: () =>
     request<{ inserted: number }>('POST', '/api/categorization-rules/init-from-history'),

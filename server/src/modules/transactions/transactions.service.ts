@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
 import { type EnvelopeType } from '../../constants.js';
-import { BadRequestError, HttpError, NotFoundError } from '../../lib/errors.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { toCents, toEuros } from '../../lib/money.js';
 import { createAccountsRepo } from '../accounts/accounts.repo.js';
 import { createScheduledRepo } from '../scheduled/scheduled.repo.js';
@@ -17,7 +17,7 @@ function assertWritableAccount(
   userId: number,
 ) {
   const account = accountsRepo.getById(accountId, userId);
-  if (!account) throw new HttpError(403, 'account.not_found_or_not_owned');
+  if (!account) throw new NotFoundError('account.not_found_or_not_owned');
   if (NO_DIRECT_WRITE_ENVELOPES.has(account.envelope_type as EnvelopeType)) {
     throw new BadRequestError('transaction.no_direct_on_av_per');
   }

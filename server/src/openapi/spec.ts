@@ -124,7 +124,8 @@ function accountIdPost(
         security: sessionAuth,
         parameters: pAccountId,
         requestBody: body(actionSchema),
-        responses: { ...r201, ...r400 },
+        // 404 : compte inconnu ou d'un autre utilisateur.
+        responses: { ...r201, ...r400, ...r404 },
       },
     },
   };
@@ -163,7 +164,7 @@ function crudPaths(
         summary: labels.remove,
         security: sessionAuth,
         parameters: pId,
-        responses: { ...r200(), ...r404, ...r409 },
+        responses: { ...r204, ...r404, ...r409 },
       },
     },
   };
@@ -390,7 +391,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un compte',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
       '/api/accounts/{id}/frequent-transactions': {
@@ -457,7 +458,7 @@ export function buildOpenApiSpec() {
           summary: 'Réordonner les banques',
           security: sessionAuth,
           requestBody: body(reorderSchema),
-          responses: { ...r200(), ...r400 },
+          responses: { ...r204, ...r400 },
         },
       },
       '/api/banks/{id}': {
@@ -474,7 +475,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une banque',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404, ...r409 },
+          responses: { ...r204, ...r404, ...r409 },
         },
       },
       '/api/banks/{id}/logo': {
@@ -569,7 +570,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une transaction',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
       '/api/transactions/{id}/validate': {
@@ -607,7 +608,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un virement',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
 
@@ -669,7 +670,7 @@ export function buildOpenApiSpec() {
           summary: 'Délier un remboursement',
           security: sessionAuth,
           parameters: pTransactionIdLinkedId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
 
@@ -703,7 +704,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une opération récurrente',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
 
@@ -760,7 +761,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une règle',
           security: sessionAuth,
           parameters: pId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
 
@@ -900,7 +901,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer la cotation en cache d’un ticker inutilisé',
           security: sessionAuth,
           parameters: [{ name: 'ticker', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: { ...r200(), ...r404, ...r409 },
+          responses: { ...r204, ...r404, ...r409 },
         },
         put: {
           tags: ['Stocks'],
@@ -919,7 +920,7 @@ export function buildOpenApiSpec() {
               },
             },
           },
-          responses: { ...r200(), ...r400, ...r404, ...r409 },
+          responses: { ...r204, ...r400, ...r404, ...r409 },
         },
       },
       '/api/stocks/price/{ticker}': {
@@ -936,7 +937,7 @@ export function buildOpenApiSpec() {
           tags: ['Stocks'],
           summary: "Rafraîchir les prix de l'utilisateur",
           security: sessionAuth,
-          responses: r200(),
+          responses: r204,
         },
       },
 
@@ -964,7 +965,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer un support',
           security: sessionAuth,
           parameters: pAccountIdSupportId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
       '/api/insurance/{accountId}/positions': {
@@ -999,7 +1000,7 @@ export function buildOpenApiSpec() {
           summary: 'Supprimer une opération assurance',
           security: sessionAuth,
           parameters: pAccountIdOperationId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r204, ...r404 },
         },
       },
       ...accountIdPost(

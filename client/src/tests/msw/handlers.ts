@@ -78,7 +78,7 @@ export const handlers = [
     }),
   ),
   http.delete('/api/categorization-rules', () => HttpResponse.json({ deleted: 0 })),
-  http.delete('/api/categorization-rules/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/categorization-rules/:id', () => new HttpResponse(null, { status: 204 })),
 
   http.post('/api/auth/2fa/setup', () =>
     HttpResponse.json({
@@ -120,14 +120,14 @@ export const handlers = [
   http.get('/api/accounts', () => HttpResponse.json(ACCOUNTS)),
   http.post('/api/accounts', () => HttpResponse.json({ ...ACCOUNTS[0], id: 99, name: 'Nouveau' })),
   http.get('/api/accounts/:id/frequent-transactions', () => HttpResponse.json([])),
-  http.put('/api/accounts/favorites/reorder', () => HttpResponse.json({ ok: true })),
+  http.put('/api/accounts/favorites/reorder', () => new HttpResponse(null, { status: 204 })),
   http.put('/api/accounts/:id/favorite', async ({ request, params }) => {
     const { favorite } = (await request.json()) as { favorite: boolean };
     const base = ACCOUNTS.find((a) => a.id === Number(params.id)) ?? ACCOUNTS[0];
     return HttpResponse.json({ ...base, favorite_order: favorite ? 0 : null });
   }),
   http.put('/api/accounts/:id', () => HttpResponse.json(ACCOUNTS[0])),
-  http.delete('/api/accounts/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/accounts/:id', () => new HttpResponse(null, { status: 204 })),
   http.post('/api/accounts/:id/close', () =>
     HttpResponse.json({ ...ACCOUNTS[0], closed_at: '2025-01-01' }),
   ),
@@ -139,7 +139,7 @@ export const handlers = [
   http.get('/api/account-types', () => HttpResponse.json(ACCOUNT_TYPES)),
   http.post('/api/account-types', () => HttpResponse.json({ id: 99, name: 'Nouveau type' })),
   http.put('/api/account-types/:id', () => HttpResponse.json(ACCOUNT_TYPES[0])),
-  http.delete('/api/account-types/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/account-types/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Banks
   http.get('/api/banks', () => HttpResponse.json(BANKS)),
@@ -152,22 +152,22 @@ export const handlers = [
       sort_order: 1,
     }),
   ),
-  http.put('/api/banks/reorder', () => HttpResponse.json({ ok: true })),
+  http.put('/api/banks/reorder', () => new HttpResponse(null, { status: 204 })),
   http.put('/api/banks/:id', () => HttpResponse.json(BANKS[0])),
-  http.delete('/api/banks/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/banks/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Categories
   http.get('/api/categories', () => HttpResponse.json(CATEGORIES)),
   http.post('/api/categories', () => HttpResponse.json({ id: 99, name: 'Nouvelle cat' })),
   http.put('/api/categories/:id', () => HttpResponse.json(CATEGORIES[0])),
-  http.delete('/api/categories/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/categories/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Subcategories
   http.post('/api/subcategories', () =>
     HttpResponse.json({ id: 99, name: 'Nouvelle subcat', category_id: 99 }),
   ),
   http.put('/api/subcategories/:id', () => HttpResponse.json(SUBCATEGORIES[0])),
-  http.delete('/api/subcategories/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/subcategories/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Payment methods
   http.get('/api/payment-methods', () => HttpResponse.json(PAYMENT_METHODS)),
@@ -175,7 +175,7 @@ export const handlers = [
     HttpResponse.json({ id: 99, name: 'Nouveau PM', icon: '💰' }),
   ),
   http.put('/api/payment-methods/:id', () => HttpResponse.json(PAYMENT_METHODS[0])),
-  http.delete('/api/payment-methods/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/payment-methods/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Transactions
   http.get('/api/transactions', () => HttpResponse.json(TRANSACTIONS)),
@@ -184,20 +184,20 @@ export const handlers = [
   http.patch('/api/transactions/:id/validate', () =>
     HttpResponse.json({ ...TRANSACTIONS.data[0], validated: 1 }),
   ),
-  http.delete('/api/transactions/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/transactions/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Transfers
   http.post('/api/transfers', () =>
     HttpResponse.json({ expense: TRANSACTIONS.data[0], income: TRANSACTIONS.data[0] }),
   ),
   http.put('/api/transfers/:id', () => HttpResponse.json(TRANSACTIONS.data[0])),
-  http.delete('/api/transfers/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/transfers/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Scheduled
   http.get('/api/scheduled', () => HttpResponse.json(SCHEDULED)),
   http.post('/api/scheduled', () => HttpResponse.json({ ...SCHEDULED[0], id: 99 })),
   http.put('/api/scheduled/:id', () => HttpResponse.json(SCHEDULED[0])),
-  http.delete('/api/scheduled/:id', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/scheduled/:id', () => new HttpResponse(null, { status: 204 })),
 
   // Settings
   http.patch('/api/settings/system-refs', () =>
@@ -282,8 +282,9 @@ export const handlers = [
   http.patch('/api/reimbursements/:transactionId/:linkedId', () =>
     HttpResponse.json(REIMBURSEMENTS),
   ),
-  http.delete('/api/reimbursements/:transactionId/:linkedId', () =>
-    HttpResponse.json({ ok: true }),
+  http.delete(
+    '/api/reimbursements/:transactionId/:linkedId',
+    () => new HttpResponse(null, { status: 204 }),
   ),
 
   // Import
@@ -325,14 +326,16 @@ export const handlers = [
       { status: 201 },
     ),
   ),
-  http.delete('/api/insurance/:accountId/supports/:supportId', () =>
-    HttpResponse.json({ ok: true }),
+  http.delete(
+    '/api/insurance/:accountId/supports/:supportId',
+    () => new HttpResponse(null, { status: 204 }),
   ),
   http.put('/api/insurance/:accountId/operations/:operationId', () =>
     HttpResponse.json({ ...INSURANCE_OPERATIONS[0], amount: 2000 }),
   ),
-  http.delete('/api/insurance/:accountId/operations/:operationId', () =>
-    HttpResponse.json({ ok: true }),
+  http.delete(
+    '/api/insurance/:accountId/operations/:operationId',
+    () => new HttpResponse(null, { status: 204 }),
   ),
   http.get('/api/insurance/:accountId/positions', () => HttpResponse.json(INSURANCE_POSITIONS)),
   http.get('/api/insurance/:accountId/operations', () => HttpResponse.json(INSURANCE_OPERATIONS)),
@@ -428,9 +431,9 @@ export const handlers = [
     }),
   ),
   http.get('/api/stocks/tickers', () => HttpResponse.json(CACHED_STOCK_TICKERS)),
-  http.delete('/api/stocks/tickers/:ticker', () => HttpResponse.json({ ok: true })),
-  http.put('/api/stocks/tickers/:ticker', () => HttpResponse.json({ ok: true })),
-  http.post('/api/stocks/prices/refresh', () => HttpResponse.json({ ok: true })),
+  http.delete('/api/stocks/tickers/:ticker', () => new HttpResponse(null, { status: 204 })),
+  http.put('/api/stocks/tickers/:ticker', () => new HttpResponse(null, { status: 204 })),
+  http.post('/api/stocks/prices/refresh', () => new HttpResponse(null, { status: 204 })),
   http.post('/api/stocks/:accountId/transfer', () =>
     HttpResponse.json(
       {

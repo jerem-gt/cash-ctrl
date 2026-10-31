@@ -76,7 +76,7 @@ describe('/api/categorization-rules', () => {
   it('DELETE /:id supprime une règle', async () => {
     const list = await ctx.agent.get('/api/categorization-rules');
     const id = list.body[0].id;
-    expect((await ctx.agent.delete(`/api/categorization-rules/${id}`)).status).toBe(200);
+    expect((await ctx.agent.delete(`/api/categorization-rules/${id}`)).status).toBe(204);
   });
 
   it('DELETE /:id retourne 404 pour une règle inconnue', async () => {

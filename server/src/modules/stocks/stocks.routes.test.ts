@@ -60,9 +60,9 @@ describe('/api/stocks', () => {
       expect(res.body).toEqual([]);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.get('/api/stocks/99999/positions');
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -157,7 +157,7 @@ describe('/api/stocks', () => {
       expect(res.status).toBe(400);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent.post('/api/stocks/99999/buy').send({
         ticker: 'AAPL',
         quantity: 1,
@@ -165,7 +165,7 @@ describe('/api/stocks', () => {
         fees: 0,
         date: TODAY,
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it('retourne 400 sur paramètres invalides', async () => {
@@ -390,7 +390,7 @@ describe('/api/stocks', () => {
       const delRes = await ctx.agent.delete(
         `/api/transfers/${transferRes.body.outOperation.transaction_id}`,
       );
-      expect(delRes.status).toBe(200);
+      expect(delRes.status).toBe(204);
 
       // Positions recalculées : source revient à 10, destination n'a plus le titre
       const fromAfter = await ctx.agent.get(`/api/stocks/${bourseAccountId}/positions`);
@@ -441,14 +441,14 @@ describe('/api/stocks', () => {
       expect(res.status).toBe(400);
     });
 
-    it('retourne 403 pour un compte source inconnu', async () => {
+    it('retourne 404 pour un compte source inconnu', async () => {
       const res = await ctx.agent.post('/api/stocks/99999/transfer').send({
         to_account_id: bourseAccountId2,
         ticker: 'TRF.PA',
         quantity: 1,
         date: TODAY,
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -523,11 +523,11 @@ describe('/api/stocks', () => {
       expect(res.status).toBe(404);
     });
 
-    it('retourne 403 pour un compte inconnu', async () => {
+    it('retourne 404 pour un compte inconnu', async () => {
       const res = await ctx.agent
         .put(`/api/stocks/99999/operations/1`)
         .send({ quantity: 1, price_per_share: 10, fees: 0, date: TODAY });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it('retourne 400 sur paramètres invalides', async () => {
@@ -559,11 +559,10 @@ describe('/api/stocks', () => {
   // ─── Refresh ──────────────────────────────────────────────────────────────
 
   describe('POST /prices/refresh', () => {
-    it('retourne ok: true', async () => {
+    it('répond 204', async () => {
       mockFetchSuccess();
       const res = await ctx.agent.post('/api/stocks/prices/refresh');
-      expect(res.status).toBe(200);
-      expect(res.body.ok).toBe(true);
+      expect(res.status).toBe(204);
     });
   });
 
@@ -647,8 +646,7 @@ describe('/api/stocks', () => {
     it('supprime un ticker inutilisé du cache', async () => {
       seedPrice('ORPHAN.PA');
       const res = await ctx.agent.delete('/api/stocks/tickers/ORPHAN.PA');
-      expect(res.status).toBe(200);
-      expect(res.body.ok).toBe(true);
+      expect(res.status).toBe(204);
 
       const list = await ctx.agent.get('/api/stocks/tickers');
       expect(list.body.find((t: { ticker: string }) => t.ticker === 'ORPHAN.PA')).toBeUndefined();
@@ -692,8 +690,7 @@ describe('/api/stocks', () => {
       const res = await ctx.agent
         .put('/api/stocks/tickers/RENAMED.PA')
         .send({ new_ticker: 'REN2.PA' });
-      expect(res.status).toBe(200);
-      expect(res.body.ok).toBe(true);
+      expect(res.status).toBe(204);
 
       const price = ctx.db
         .prepare('SELECT ticker FROM stock_prices WHERE ticker = ?')

@@ -81,8 +81,7 @@ describe('/api/subcategories', () => {
     const id = create.body.id;
     const res = await ctx.agent.delete(`/api/subcategories/${id}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('DELETE /:id returns 409 if subcategory has transactions', async () => {

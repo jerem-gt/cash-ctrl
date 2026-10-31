@@ -53,14 +53,14 @@ describe('/api/transfers', () => {
     expect(res.status).toBe(400);
   });
 
-  it('POST / returns 403 when account does not belong to user', async () => {
+  it('POST / returns 404 when account does not belong to user', async () => {
     const res = await ctx.agent.post('/api/transfers').send({
       from_account_id: fromId,
       to_account_id: 99999,
       amount: 100,
       date: TODAY,
     });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('POST / returns 400 on missing fields', async () => {
@@ -121,7 +121,7 @@ describe('/api/transfers', () => {
     const incomeId = create.body.income.id;
 
     const del = await ctx.agent.delete(`/api/transfers/${expenseId}`);
-    expect(del.status).toBe(200);
+    expect(del.status).toBe(204);
 
     const check = await ctx.agent.get('/api/transactions');
     const ids = check.body.data.map((t: { id: number }) => t.id);
@@ -185,7 +185,7 @@ describe('/api/transfers', () => {
     expect(updatedIncome.account_id).toBe(toId);
   });
 
-  it('PUT /:id returns 403 if the new account does not belong to user', async () => {
+  it('PUT /:id returns 404 if the new account does not belong to user', async () => {
     const create = await ctx.agent.post('/api/transfers').send({
       from_account_id: fromId,
       to_account_id: toId,
@@ -200,7 +200,7 @@ describe('/api/transfers', () => {
       from_account_id: 99999, // ID inexistant ou appartenant à autrui
     });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('PUT /:id returns 404 for non-existent transfer', async () => {

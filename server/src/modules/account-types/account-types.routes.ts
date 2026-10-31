@@ -50,7 +50,7 @@ export function createAccountTypesRouter(db: Database): Router {
       throw new ConflictError('account_type.in_use', { count: cnt });
     }
     repo.delete(id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

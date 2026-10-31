@@ -116,7 +116,7 @@ export function createReimbursementsRouter(db: Database): Router {
     }
 
     repo.unlink(transactionId, linkedId);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

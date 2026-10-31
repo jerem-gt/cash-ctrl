@@ -61,7 +61,7 @@ export function createSubcategoriesRouter(db: Database): Router {
       throw new ConflictError('subcategory.in_use', { count: n });
     }
     repo.delete(id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

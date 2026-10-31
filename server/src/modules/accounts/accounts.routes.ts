@@ -67,7 +67,7 @@ export function createAccountsRouter(db: Database): Router {
       throw new ConflictError('account.favorites_out_of_sync');
     }
     accountsRepo.reorderFavorites(userId, data);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.get('/:id/frequent-transactions', (req, res) => {
@@ -116,7 +116,7 @@ export function createAccountsRouter(db: Database): Router {
       loansRepo.cleanupTransactions(id);
     }
     accountsRepo.delete(userId, id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.post('/:id/close', (req, res) => {

@@ -50,8 +50,7 @@ describe('/api/banks', () => {
   it('DELETE /:id supprime une banque', async () => {
     const create = await ctx.agent.post('/api/banks').send({ name: 'ToDeleteBank' });
     const res = await ctx.agent.delete(`/api/banks/${create.body.id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('DELETE /:id retourne 404 pour une banque inconnue', async () => {
@@ -67,8 +66,7 @@ describe('/api/banks', () => {
         { id: b2.id, sort_order: 0 },
         { id: b1.id, sort_order: 1 },
       ]);
-      expect(res.status).toBe(200);
-      expect(res.body.ok).toBe(true);
+      expect(res.status).toBe(204);
 
       const list = (await ctx.agent.get('/api/banks')).body as { id: number }[];
       const ids = list.map((b) => b.id);

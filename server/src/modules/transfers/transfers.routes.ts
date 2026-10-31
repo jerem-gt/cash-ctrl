@@ -44,7 +44,7 @@ export function createTransfersRouter(db: Database): Router {
   router.delete('/:id', (req, res) => {
     const id = parseIdParam(req);
     transferDelete(db, currentUserId(res), id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

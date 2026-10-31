@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { currentUserId } from '../middleware.js';
 import { type ErrorCode } from './errorCodes.js';
-import { BadRequestError, HttpError } from './errors.js';
+import { BadRequestError, NotFoundError } from './errors.js';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
@@ -22,7 +22,7 @@ export function handleAccountAction<T>(
   }
   const userId = currentUserId(res);
   if (!belongsToUser(accountId, userId)) {
-    throw new HttpError(403, 'account.not_found');
+    throw new NotFoundError('account.not_found');
   }
   if (!isValidType(accountId)) {
     throw new BadRequestError(typeErrorCode);

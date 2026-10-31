@@ -713,10 +713,17 @@ describe('/api/stats', () => {
   });
 
   describe('getReport', () => {
-    it('retourne 400 si year est invalide', async () => {
-      const res = await ctx.agent.get('/api/stats/report?year=abc');
-      expect(res.status).toBe(400);
-    });
+    it.each(['abc', '1999', '2101'])(
+      'retourne 400 common.invalid_param si year vaut %s',
+      async (year) => {
+        const res = await ctx.agent.get(`/api/stats/report?year=${year}`);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatchObject({
+          code: 'common.invalid_param',
+          params: { param: 'year' },
+        });
+      },
+    );
 
     it('retourne des zéros et 12 mois quand aucune transaction', async () => {
       const res = await ctx.agent.get(`/api/stats/report?year=${CURRENT_YEAR_NUM}`);

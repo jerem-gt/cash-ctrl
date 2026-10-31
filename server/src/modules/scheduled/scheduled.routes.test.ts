@@ -161,8 +161,7 @@ describe('/api/scheduled', () => {
   it('DELETE /:id removes a scheduled transaction', async () => {
     const create = await ctx.agent.post('/api/scheduled').send({ ...base, account_id: accountId });
     const res = await ctx.agent.delete(`/api/scheduled/${create.body.id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('DELETE /:id returns 404 for unknown schedule', async () => {

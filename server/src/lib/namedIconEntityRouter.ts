@@ -75,7 +75,7 @@ export function createNamedIconEntityRouter(
       throw new ConflictError(config.usageConflictCode, { count: n });
     }
     repo.delete(id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

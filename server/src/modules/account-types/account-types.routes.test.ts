@@ -47,8 +47,7 @@ describe('/api/account-types', () => {
   it('DELETE /:id removes an account type', async () => {
     const create = await ctx.agent.post('/api/account-types').send({ name: 'ToRemove' });
     const res = await ctx.agent.delete(`/api/account-types/${create.body.id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it('DELETE /:id returns 404 for unknown type', async () => {

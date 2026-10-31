@@ -117,7 +117,7 @@ describe('CategorizationRulesCard — édition de règle', () => {
     server.use(
       http.delete('/api/categorization-rules/:id', () => {
         deleteCalled = true;
-        return HttpResponse.json({ ok: true });
+        return new HttpResponse(null, { status: 204 });
       }),
     );
     const user = userEvent.setup();

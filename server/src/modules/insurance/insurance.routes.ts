@@ -133,7 +133,7 @@ export function createInsuranceRouter(db: Database): Router {
     }
 
     repo.deleteSupport(supportId);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   // ─── Positions ─────────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ export function createInsuranceRouter(db: Database): Router {
     const operationId = parseIdParam(req, 'operationId');
     const userId = res.locals.userId;
     repo.deleteOperation(operationId, userId);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.post('/:accountId/versement', (req, res) => {

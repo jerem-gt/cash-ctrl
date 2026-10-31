@@ -49,8 +49,7 @@ describe('/api/categories', () => {
     const create = await ctx.agent.post('/api/categories').send({ name: 'ToDelete', icon: '❓' });
     const id = create.body.id;
     const res = await ctx.agent.delete(`/api/categories/${id}`);
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
+    expect(res.status).toBe(204);
   });
 
   it("DELETE /:id retourne 409 si la catégorie n'est utilisée que dans une ventilation", async () => {

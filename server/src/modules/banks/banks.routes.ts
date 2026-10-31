@@ -42,7 +42,7 @@ export function createBanksRouter(db: Database): Router {
   router.put('/reorder', (req, res) => {
     const data = reorderSchema.parse(req.body);
     banksRepo.reorder(data);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   router.post('/', (req, res) => {
@@ -86,7 +86,7 @@ export function createBanksRouter(db: Database): Router {
       throw new ConflictError('bank.in_use', { count: cnt });
     }
     banksRepo.delete(id);
-    res.json({ ok: true });
+    res.status(204).end();
   });
 
   return router;

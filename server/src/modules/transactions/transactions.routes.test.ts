@@ -54,7 +54,7 @@ describe('/api/transactions', () => {
     expect(res.body.account_name).toBe('Main');
   });
 
-  it('POST / retourne 403 pour un compte non possédé', async () => {
+  it('POST / retourne 404 pour un compte non possédé', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
       account_id: 99999,
       type: 'income',
@@ -64,7 +64,7 @@ describe('/api/transactions', () => {
       date: TODAY,
       payment_method_id: SEED.PM_VIREMENT,
     });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('POST / retourne 400 pour données invalides', async () => {
@@ -153,7 +153,7 @@ describe('/api/transactions', () => {
     });
     const id = create.body.id;
     const del = await ctx.agent.delete(`/api/transactions/${id}`);
-    expect(del.status).toBe(200);
+    expect(del.status).toBe(204);
   });
 
   it('DELETE /:id retourne 404 pour une transaction inconnue', async () => {
@@ -320,12 +320,12 @@ describe('/api/transactions', () => {
     expect(res.status).toBe(400);
   });
 
-  it('PUT /:id retourne 403 pour un compte non possédé', async () => {
+  it('PUT /:id retourne 404 pour un compte non possédé', async () => {
     const create = await ctx.agent.post('/api/transactions').send({
       account_id: accountId,
       type: 'expense',
       amount: 10,
-      description: 'Test403',
+      description: 'Autre compte',
       subcategory_id: SEED.SUBCAT_AUTRE,
       date: TODAY,
       payment_method_id: SEED.PM_CARTE,
@@ -335,12 +335,12 @@ describe('/api/transactions', () => {
       account_id: 99999,
       type: 'expense',
       amount: 10,
-      description: 'Test403',
+      description: 'Autre compte',
       subcategory_id: SEED.SUBCAT_AUTRE,
       date: TODAY,
       payment_method_id: SEED.PM_CARTE,
     });
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   // ─── PATCH /:id/validate cas limites ──────────────────────────────────────

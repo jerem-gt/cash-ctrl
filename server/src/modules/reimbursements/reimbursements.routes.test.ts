@@ -225,8 +225,7 @@ describe('/api/reimbursements', () => {
       .send({ linked_transaction_id: incomeId });
 
     const del = await ctx.agent.delete(`/api/reimbursements/${expenseId}/${incomeId}`);
-    expect(del.status).toBe(200);
-    expect(del.body.ok).toBe(true);
+    expect(del.status).toBe(204);
 
     const list = await ctx.agent.get(`/api/reimbursements/${expenseId}`);
     expect(list.body).toHaveLength(0);
