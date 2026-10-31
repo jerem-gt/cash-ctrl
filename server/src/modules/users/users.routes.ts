@@ -1,4 +1,5 @@
 import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
+import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
@@ -9,7 +10,6 @@ import type { ErrorCode } from '../../lib/errorCodes.js';
 import { parseBody, parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { createRequireAdmin, sessionUserId } from '../../middleware.js';
-import { revokeTrustedDevices } from '../auth/trustedDevices.js';
 import { createUsersRepo } from './users.repo.js';
 import type { UserPublic } from './users.types.js';
 
@@ -44,6 +44,7 @@ export const updateUserSchema = z
 export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore): Router {
   const repo = createUsersRepo(db);
   const router = Router();
+  const devices = createTrustedDevicesRepo(db);
 
   router.use(createRequireAdmin(db));
 
@@ -137,7 +138,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
       if (isAdmin !== undefined) repo.updateAdmin(id, isAdmin);
       if (hash !== null) {
         repo.updatePassword(id, hash);
-        revokeTrustedDevices(db, id);
+        devices.revokeAll(id);
       }
       return null;
     })();
@@ -187,7 +188,7 @@ export function createUsersRouter(db: Database, sessionStore: SQLiteSessionStore
     }
     db.transaction(() => {
       repo.disableTotp(id);
-      revokeTrustedDevices(db, id);
+      devices.revokeAll(id);
     })();
     res.json({ ok: true });
   });

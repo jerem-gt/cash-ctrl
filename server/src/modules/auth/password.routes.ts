@@ -4,6 +4,7 @@ import { sha256Hex } from '@jerem-gt/ctrl-shared/server/crypto';
 import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
 import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
+import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
@@ -17,7 +18,6 @@ import type { AuthLogger } from '../../logger.js';
 import type { createUsersRepo } from '../users/users.repo.js';
 import type { AuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';
-import { revokeTrustedDevices } from './trustedDevices.js';
 
 export interface PasswordRouterDeps {
   db: Database;
@@ -46,6 +46,7 @@ export const resetPasswordSchema = z.object({
 export function createPasswordRouter(deps: PasswordRouterDeps): Router {
   const { db, repo, usersRepo, sessionStore, mailer, appUrl, log } = deps;
   const router = Router();
+  const devices = createTrustedDevicesRepo(db);
   const forgotLimiter = new FailureRateLimiter(db, FORGOT_MAX_REQUESTS);
   const resetLimiter = new FailureRateLimiter(db);
 
@@ -130,7 +131,7 @@ export function createPasswordRouter(deps: PasswordRouterDeps): Router {
       if (!row) return null;
       repo.updatePassword(row.user_id, hash);
       repo.deleteResetTokensForUser(row.user_id);
-      revokeTrustedDevices(db, row.user_id);
+      devices.revokeAll(row.user_id);
       return row.user_id;
     })();
     if (userId === null) {

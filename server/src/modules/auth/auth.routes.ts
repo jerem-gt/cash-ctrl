@@ -1,20 +1,17 @@
-import { randomBytes } from 'node:crypto';
-
-import { sha256Hex } from '@jerem-gt/ctrl-shared/server/crypto';
+import { createDeviceCookies } from '@jerem-gt/ctrl-shared/server/deviceCookie';
 import { createMailer, type Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { FailureRateLimiter } from '@jerem-gt/ctrl-shared/server/rateLimit';
 import type { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
+import { matchTotpStep, newTotpSecret } from '@jerem-gt/ctrl-shared/server/totp';
+import { createTrustedDevicesRepo } from '@jerem-gt/ctrl-shared/server/trustedDevices';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import { type NextFunction, type Request, type Response, Router } from 'express';
-import * as OTPAuth from 'otpauth';
 import { z } from 'zod';
 
 import { seedUserData } from '../../db/seed.js';
-import { readCookie } from '../../lib/cookies.js';
 import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
-import { deviceLabel } from '../../lib/userAgent.js';
 import { emailSchema, langSchema, usernameSchema } from '../../lib/validators.js';
 import { type AuthLogger, logger } from '../../logger.js';
 import { requireAuth, sessionUserId } from '../../middleware.js';
@@ -23,7 +20,6 @@ import { createAuthRepo } from './auth.repo.js';
 import type { User } from './auth.types.js';
 import { createMailRouter } from './mail.routes.js';
 import { createPasswordRouter } from './password.routes.js';
-import { revokeTrustedDevices } from './trustedDevices.js';
 
 export const loginSchema = z.object({
   username: z.string().min(1),
@@ -71,23 +67,8 @@ export const profileSchema = z
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('cashctrl-nonexistent-user', 12);
 
 const TOTP_PENDING_TTL_MS = 5 * 60 * 1000;
-
-/**
- * Pas (numéro de la période de 30 s) du code s'il est valide à une période près, sinon null.
- * L'appelant mémorise le pas accepté (consumeTotpStep, enableTotp) : un code ne sert qu'une fois
- * (anti-rejeu, RFC 6238 §5.2).
- */
-function matchTotpStep(secret: string, code: string): number | null {
-  const totp = new OTPAuth.TOTP({
-    algorithm: 'SHA1',
-    digits: 6,
-    period: 30,
-    secret: OTPAuth.Secret.fromBase32(secret),
-  });
-  const now = Date.now();
-  const delta = totp.validate({ token: code, timestamp: now, window: 1 });
-  return delta === null ? null : totp.counter({ timestamp: now }) + delta;
-}
+/** Nom affiché par l'application d'authentification. */
+const TOTP_ISSUER = 'CashCtrl';
 
 interface SessionUser {
   id: number;
@@ -135,13 +116,6 @@ function profileOf(user: User) {
   };
 }
 
-const DEVICE_COOKIE = 'cashctrl_device';
-const DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-function deviceTokenOf(req: Request): string | undefined {
-  return readCookie(req.headers.cookie, DEVICE_COOKIE);
-}
-
 export interface AuthRouterOptions {
   /** Cookie d'appareil mémorisé en `Secure` (SECURE_COOKIE=true). */
   secureCookies?: boolean;
@@ -164,56 +138,12 @@ export function createAuthRouter(
   const mailer = options.mailer ?? createMailer();
   const setupToken = options.setupToken ?? new SetupToken();
   const log = options.log ?? logger;
-  // Comme le cookie de session (secure: 'auto') : Secure seulement si la requête est en HTTPS
-  function deviceCookieOptions(res: Response) {
-    return {
-      httpOnly: true,
-      sameSite: 'strict' as const,
-      secure: options.secureCookies === true && res.req.secure,
-      path: '/api/auth',
-    };
-  }
-
-  function setDeviceCookie(res: Response, token: string): void {
-    res.cookie(DEVICE_COOKIE, token, { ...deviceCookieOptions(res), maxAge: DEVICE_TTL_MS });
-  }
-
-  function clearDeviceCookie(res: Response): void {
-    res.clearCookie(DEVICE_COOKIE, deviceCookieOptions(res));
-  }
-
-  /** Mémorise l'appareil courant ; remplace l'éventuel appareil déjà porté par le cookie. */
-  function rememberDevice(req: Request, res: Response, userId: number): void {
-    const now = Date.now();
-    authRepo.purgeExpiredDevices(now);
-    const previous = deviceTokenOf(req);
-    if (previous) authRepo.deleteDeviceByHash(sha256Hex(previous));
-    const token = randomBytes(32).toString('base64url');
-    authRepo.insertDevice(
-      userId,
-      sha256Hex(token),
-      deviceLabel(req.get('user-agent')),
-      now,
-      now + DEVICE_TTL_MS,
-    );
-    setDeviceCookie(res, token);
-  }
-
-  /** Vrai si le cookie désigne un appareil valide du compte ; nettoie le cookie s'il est mort. */
-  function isTrustedDevice(req: Request, res: Response, userId: number): boolean {
-    const token = deviceTokenOf(req);
-    if (!token) return false;
-    const now = Date.now();
-    authRepo.purgeExpiredDevices(now);
-    const device = authRepo.getDeviceByHash(sha256Hex(token));
-    if (device === undefined) {
-      clearDeviceCookie(res);
-      return false;
-    }
-    if (device.user_id !== userId) return false;
-    authRepo.touchDevice(device.id, now);
-    return true;
-  }
+  const devices = createTrustedDevicesRepo(db);
+  // Nom propre à l'appli : cookies et noms d'hôte sont partagés avec shelf-ctrl sur le NAS.
+  const deviceCookies = createDeviceCookies(devices, {
+    name: 'cashctrl_device',
+    secure: options.secureCookies === true,
+  });
 
   /** Vérifie le mot de passe actuel avec limitation des échecs ; répond 429/401 et renvoie false sinon. */
   async function checkCurrentPassword(
@@ -300,7 +230,7 @@ export function createAuthRouter(
     }
 
     if (user.totp_enabled === 1) {
-      if (isTrustedDevice(req, res, user.id)) {
+      if (deviceCookies.isTrusted(req, res, user.id)) {
         loginLimiter.reset(key);
         startSession(req, res, next, user, true);
         return;
@@ -374,7 +304,7 @@ export function createAuthRouter(
 
     loginLimiter.reset(key);
     loginLimiter.reset(accountKey);
-    if (parsed.data.remember) rememberDevice(req, res, user.id);
+    if (parsed.data.remember) deviceCookies.remember(req, res, user.id);
     startSession(req, res, next, user, true);
   });
 
@@ -448,7 +378,7 @@ export function createAuthRouter(
     if (!(await checkCurrentPassword(res, user, parsed.data.current))) return;
 
     authRepo.updatePassword(userId, await bcrypt.hash(parsed.data.next, 12));
-    revokeTrustedDevices(db, userId);
+    devices.revokeAll(userId);
     sessionStore.destroyOtherSessions(userId, req.sessionID);
     res.json({ ok: true });
   });
@@ -467,18 +397,9 @@ export function createAuthRouter(
       return;
     }
 
-    const secret = new OTPAuth.Secret();
-    const totp = new OTPAuth.TOTP({
-      issuer: 'CashCtrl',
-      label: user.username,
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-      secret,
-    });
-
-    req.session.pendingTotpSecret = secret.base32;
-    res.json({ uri: totp.toString(), secret: secret.base32 });
+    const { uri, secret } = newTotpSecret(TOTP_ISSUER, user.username);
+    req.session.pendingTotpSecret = secret;
+    res.json({ uri, secret });
   });
 
   // Vérifie le premier code et active la 2FA.
@@ -514,7 +435,7 @@ export function createAuthRouter(
 
     db.transaction(() => {
       authRepo.enableTotp(userId, secret, step);
-      revokeTrustedDevices(db, userId);
+      devices.revokeAll(userId);
     })();
     delete req.session.pendingTotpSecret;
     res.json({ ok: true });
@@ -543,18 +464,17 @@ export function createAuthRouter(
 
     db.transaction(() => {
       usersRepo.disableTotp(userId);
-      revokeTrustedDevices(db, userId);
+      devices.revokeAll(userId);
     })();
     res.json({ ok: true });
   });
 
   router.get('/devices', requireAuth, (req, res) => {
     const now = Date.now();
-    authRepo.purgeExpiredDevices(now);
-    const token = deviceTokenOf(req);
-    const currentHash = token ? sha256Hex(token) : null;
+    devices.purgeExpired(now);
+    const currentHash = deviceCookies.currentHash(req);
     res.json(
-      authRepo.listDevices(sessionUserId(req), now).map((d) => ({
+      devices.list(sessionUserId(req), now).map((d) => ({
         id: d.id,
         label: d.label,
         created_at: d.created_at,
@@ -568,24 +488,21 @@ export function createAuthRouter(
   router.delete('/devices/:id', requireAuth, (req, res) => {
     const id = parseNumberParam(req, res, 'id');
     if (id === null) return;
-    const device = authRepo.getDevice(id, sessionUserId(req));
+    const device = devices.get(id, sessionUserId(req));
     if (!device) {
       sendError(res, 404, 'auth.device_not_found');
       return;
     }
-    authRepo.deleteDevice(id, device.user_id);
-    const token = deviceTokenOf(req);
-    if (token && sha256Hex(token) === device.token_hash) clearDeviceCookie(res);
+    devices.remove(id, device.user_id);
+    if (deviceCookies.currentHash(req) === device.token_hash) deviceCookies.clear(req, res);
     res.json({ ok: true });
   });
 
   router.delete('/devices', requireAuth, (req, res) => {
     const userId = sessionUserId(req);
-    const token = deviceTokenOf(req);
-    const ownsCookie =
-      token !== undefined && authRepo.getDeviceByHash(sha256Hex(token))?.user_id === userId;
-    revokeTrustedDevices(db, userId);
-    if (ownsCookie) clearDeviceCookie(res);
+    const ownsCookie = deviceCookies.belongsTo(req, userId);
+    devices.revokeAll(userId);
+    if (ownsCookie) deviceCookies.clear(req, res);
     res.json({ ok: true });
   });
 
