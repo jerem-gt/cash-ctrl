@@ -13,8 +13,8 @@ import type { ZodType } from 'zod';
 import { toJSONSchema } from 'zod';
 
 import { accountTypeSchema } from '../modules/account-types/account-types.routes.js';
-import { LANGUAGES } from '../modules/accounts/accounts.js';
 import { accountSchema, closeSchema } from '../modules/accounts/accounts.routes.js';
+import { LANGUAGES, SESSION_COOKIE } from '../modules/auth/authOptions.js';
 import { bankSchema, reorderSchema } from '../modules/banks/banks.routes.js';
 import { categorySchema } from '../modules/categories/categories.routes.js';
 import {
@@ -60,7 +60,7 @@ import {
 } from '../modules/transactions/transactions.routes.js';
 import { transferSchema, transferUpdateSchema } from '../modules/transfers/transfers.routes.js';
 
-// Schémas qui portent la langue : mêmes langues que le module d'auth (`cashAuthOptions`).
+// Schémas qui portent la langue : mêmes langues que le module d'auth.
 const { setupSchema, forgotPasswordSchema, createUserSchema } = createLangSchemas(LANGUAGES);
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -192,7 +192,7 @@ export function buildOpenApiSpec() {
         sessionCookie: {
           type: 'apiKey',
           in: 'cookie',
-          name: 'connect.sid',
+          name: SESSION_COOKIE,
           description: 'Session cookie set by POST /api/auth/login.',
         },
       },
@@ -795,7 +795,7 @@ export function buildOpenApiSpec() {
         get: {
           tags: ['Users'],
           summary:
-            'Liste des utilisateurs (admin) : { items: [{ id, username, email, isAdmin, totpEnabled, createdAt, accountCount, txCount, lastTxDate }] }',
+            'Liste des utilisateurs (admin) : { items: [{ id, username, email, isAdmin, totpEnabled, createdAt, stats: { accountCount, txCount, lastTxDate } }] }',
           security: sessionAuth,
           responses: { ...r200(), ...r401 },
         },

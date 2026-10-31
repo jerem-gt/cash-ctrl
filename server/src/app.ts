@@ -1,4 +1,4 @@
-import { createAuthModule } from '@jerem-gt/ctrl-shared/server/auth';
+import { type AuthLogger, createAuthModule } from '@jerem-gt/ctrl-shared/server/auth';
 import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
 import { SQLiteSessionStore } from '@jerem-gt/ctrl-shared/server/session-store';
 import type { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
@@ -8,10 +8,10 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 
-import { type AuthLogger, globalErrorHandler, requestLogger } from './logger.js';
+import { globalErrorHandler, requestLogger } from './logger.js';
 import { createAccountTypesRouter } from './modules/account-types/account-types.routes.js';
-import { cashAuthOptions, SESSION_COOKIE } from './modules/accounts/accounts.js';
 import { createAccountsRouter } from './modules/accounts/accounts.routes.js';
+import { cashAuthOptions, SESSION_COOKIE } from './modules/auth/authOptions.js';
 import { createBackupRouter } from './modules/backup/backup.routes.js';
 import { createBanksRouter } from './modules/banks/banks.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';

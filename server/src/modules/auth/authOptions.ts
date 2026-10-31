@@ -1,9 +1,7 @@
 import fs from 'node:fs';
 
 import type { UserStats } from '@cashctrl/types';
-import type { AuthLogger, AuthModuleOptions } from '@jerem-gt/ctrl-shared/server/auth';
-import type { Mailer } from '@jerem-gt/ctrl-shared/server/mailer';
-import type { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
+import type { AuthModuleOptions, AuthRuntimeOptions } from '@jerem-gt/ctrl-shared/server/auth';
 import type { Database } from 'better-sqlite3';
 
 import { seedUserData } from '../../db/seed.js';
@@ -19,12 +17,7 @@ export const SESSION_COOKIE = 'connect.sid';
 /** Langues de l'interface : `lang` choisit les données initiales d'un compte et ses e-mails. */
 export const LANGUAGES = ['fr', 'en'] as const satisfies readonly Lang[];
 
-export interface AccountsOptions {
-  secureCookies?: boolean;
-  appUrl?: string;
-  mailer?: Mailer;
-  setupToken?: SetupToken;
-  log?: AuthLogger;
+export interface CashAuthOptions extends AuthRuntimeOptions {
   /** Racine des sauvegardes (`<backupDir>/<id du compte>`). */
   backupDir?: string;
 }
@@ -32,7 +25,7 @@ export interface AccountsOptions {
 /** Options du module d'auth de ctrl-shared propres à CashCtrl. */
 export function cashAuthOptions(
   db: Database,
-  options: AccountsOptions = {},
+  options: CashAuthOptions = {},
 ): AuthModuleOptions<Lang, UserStats> {
   const { backupDir = BACKUP_DIR, log = logger, ...auth } = options;
   const statsStmt = db.prepare<
@@ -50,14 +43,7 @@ export function cashAuthOptions(
     sessionCookie: SESSION_COOKIE,
     deviceCookie: 'cashctrl_device',
     languages: LANGUAGES,
-    mailTexts: {
-      reset: (lang, link, minutes) => ({
-        subject: MAIL_TEXTS[lang].subject,
-        text: MAIL_TEXTS[lang].reset(link, minutes),
-      }),
-      // La langue du compte n'est pas connue : le message est bilingue.
-      test: () => ({ subject: 'CashCtrl', text: `${MAIL_TEXTS.fr.test}\n\n${MAIL_TEXTS.en.test}` }),
-    },
+    mailTexts: MAIL_TEXTS,
     userStats: (userId) => {
       const row = statsStmt.get(userId, userId);
       return {

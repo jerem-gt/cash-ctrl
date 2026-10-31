@@ -12,4 +12,3 @@ export const nameSchema = z.string().min(1).max(100);
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
 export const usernameSchema = z.string().trim().min(1).max(64);
-export const langSchema = z.enum(['fr', 'en']).default('fr');

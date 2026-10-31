@@ -46,9 +46,6 @@ export const logger = {
   error: (msg: string): void => log('ERROR', msg),
 };
 
-/** Journal des événements d'authentification (module d'auth de ctrl-shared). */
-export type { AuthLogger } from '@jerem-gt/ctrl-shared/server/auth';
-
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   res.on('finish', () => {
