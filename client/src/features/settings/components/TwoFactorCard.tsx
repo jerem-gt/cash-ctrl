@@ -169,7 +169,6 @@ export function TwoFactorCard() {
             value={code}
             onChange={(e) => setCode(e.target.value.replaceAll(/\D/g, ''))}
             placeholder={t('totp.code_placeholder')}
-            autoFocus
             autoComplete="one-time-code"
           />
         </FormGroup>
@@ -201,7 +200,6 @@ export function TwoFactorCard() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
-            autoFocus
           />
         </FormGroup>
         <div className="flex gap-2 mt-3">
