@@ -2,8 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { zodToApiError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createSearchRepo } from './search.repo.js';
 
 export const searchQuerySchema = z.object({
@@ -16,13 +15,9 @@ export function createSearchRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    const userId = sessionUserId(req);
-    const parsed = searchQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    res.json(repo.search(userId, parsed.data.q));
+    const userId = currentUserId(res);
+    const query = searchQuerySchema.parse(req.query);
+    res.json(repo.search(userId, query.q));
   });
 
   return router;

@@ -2,8 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createCategorizationRulesRepo } from './categorization-rules.repo.js';
 
 export const ruleSchema = z.object({
@@ -19,8 +20,8 @@ export function createCategorizationRulesRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (req, res) => {
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+  router.get('/', (_req, res) => {
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     res.json(repo.getAll());
   });
 
@@ -30,51 +31,45 @@ export function createCategorizationRulesRouter(db: Database): Router {
       res.json(null);
       return;
     }
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     res.json(repo.match(parsed.data.description) ?? null);
   });
 
-  router.delete('/', (req, res) => {
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+  router.delete('/', (_req, res) => {
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     const deleted = repo.deleteAll();
     res.json({ deleted });
   });
 
-  router.post('/init-from-history', (req, res) => {
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+  router.post('/init-from-history', (_req, res) => {
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     const inserted = repo.initFromHistory();
     res.status(201).json({ inserted });
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, ruleSchema, req.body);
-    if (!data) return;
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+    const data = ruleSchema.parse(req.body);
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     const rule = repo.create(data);
     res.status(201).json(rule);
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res);
-    if (id === null) return;
-    const data = parseBody(res, ruleSchema, req.body);
-    if (!data) return;
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+    const id = parseIdParam(req);
+    const data = ruleSchema.parse(req.body);
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     const rule = repo.update(id, data);
     if (!rule) {
-      sendError(res, 404, 'categorization_rule.not_found');
-      return;
+      throw new NotFoundError('categorization_rule.not_found');
     }
     res.json(rule);
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res);
-    if (id === null) return;
-    const repo = createCategorizationRulesRepo(db, sessionUserId(req));
+    const id = parseIdParam(req);
+    const repo = createCategorizationRulesRepo(db, currentUserId(res));
     if (!repo.delete(id)) {
-      sendError(res, 404, 'categorization_rule.not_found');
-      return;
+      throw new NotFoundError('categorization_rule.not_found');
     }
     res.json({ ok: true });
   });

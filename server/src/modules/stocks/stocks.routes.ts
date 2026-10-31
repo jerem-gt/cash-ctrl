@@ -2,21 +2,16 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { BadRequestError, ConflictError, HttpError, NotFoundError } from '../../lib/errors.js';
 import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
-import {
-  handleHttpErrors,
-  makeCheckAccount,
-  parseBody,
-  parseNumberParam,
-  sendError,
-} from '../../lib/routeHelpers.js';
+import { makeCheckAccount, parseIdParam } from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   descriptionSchema,
   feesSchema,
   positiveAmountSchema,
 } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createStocksRepo } from './stocks.repo.js';
 import { getOrRefreshPrice, refreshUserPrices, searchByQuery } from './stocks.service.js';
 
@@ -88,67 +83,53 @@ export function createStocksRouter(db: Database): Router {
   });
 
   router.post('/:accountId/transfer', (req, res) => {
-    const fromAccountId = parseNumberParam(req, res, 'accountId');
-    if (fromAccountId === null) return;
-    const userId = sessionUserId(req);
+    const fromAccountId = parseIdParam(req, 'accountId');
+    const userId = currentUserId(res);
 
     if (!repo.accountBelongsToUser(fromAccountId, userId)) {
-      sendError(res, 403, 'stock.source_account_not_found');
-      return;
+      throw new HttpError(403, 'stock.source_account_not_found');
     }
     if (!repo.isInvestmentAccount(fromAccountId)) {
-      sendError(res, 400, 'stock.source_not_investment');
-      return;
+      throw new BadRequestError('stock.source_not_investment');
     }
 
-    const data = parseBody(res, stockTransferSchema, req.body);
-    if (!data) return;
+    const data = stockTransferSchema.parse(req.body);
 
     const { to_account_id } = data;
     if (!repo.accountBelongsToUser(to_account_id, userId)) {
-      sendError(res, 403, 'stock.dest_account_not_found');
-      return;
+      throw new HttpError(403, 'stock.dest_account_not_found');
     }
     if (!repo.isInvestmentAccount(to_account_id)) {
-      sendError(res, 400, 'stock.dest_not_investment');
-      return;
+      throw new BadRequestError('stock.dest_not_investment');
     }
     if (to_account_id === fromAccountId) {
-      sendError(res, 400, 'stock.accounts_must_differ');
-      return;
+      throw new BadRequestError('stock.accounts_must_differ');
     }
 
-    handleHttpErrors(res, () => {
-      const result = repo.transfer(userId, { from_account_id: fromAccountId, ...data });
-      repo.recalcPosition(fromAccountId, data.ticker, userId);
-      repo.recalcPosition(data.to_account_id, data.ticker, userId);
-      res.status(201).json(result);
-    });
+    const result = repo.transfer(userId, { from_account_id: fromAccountId, ...data });
+    repo.recalcPosition(fromAccountId, data.ticker, userId);
+    repo.recalcPosition(data.to_account_id, data.ticker, userId);
+    res.status(201).json(result);
   });
 
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
     const accountId = res.locals.accountId;
     const userId = res.locals.userId;
-    const operationId = parseNumberParam(req, res, 'operationId');
-    if (operationId === null) return;
+    const operationId = parseIdParam(req, 'operationId');
 
     const op = repo.getOperationById(operationId);
     if (op?.account_id !== accountId) {
-      sendError(res, 404, 'stock.operation_not_found');
-      return;
+      throw new NotFoundError('stock.operation_not_found');
     }
 
-    const data = parseBody(res, editOperationSchema, req.body);
-    if (!data) return;
+    const data = editOperationSchema.parse(req.body);
 
-    handleHttpErrors(res, () => {
-      const operation = repo.updateOperation(operationId, userId, {
-        account_id: accountId,
-        ...data,
-      });
-      repo.recalcPosition(accountId, op.ticker, userId);
-      res.json(operation);
+    const operation = repo.updateOperation(operationId, userId, {
+      account_id: accountId,
+      ...data,
     });
+    repo.recalcPosition(accountId, op.ticker, userId);
+    res.json(operation);
   });
 
   router.get('/search', async (req, res) => {
@@ -161,23 +142,20 @@ export function createStocksRouter(db: Database): Router {
     res.json(results);
   });
 
-  router.get('/tickers', (req, res) => {
-    res.json(repo.getCachedTickers(sessionUserId(req)));
+  router.get('/tickers', (_req, res) => {
+    res.json(repo.getCachedTickers(currentUserId(res)));
   });
 
   router.delete('/tickers/:ticker', (req, res) => {
     const { ticker } = req.params;
     if (!ticker) {
-      sendError(res, 400, 'stock.ticker_required');
-      return;
+      throw new BadRequestError('stock.ticker_required');
     }
     if (repo.isTickerUsed(ticker)) {
-      sendError(res, 409, 'stock.ticker_in_use', { ticker });
-      return;
+      throw new ConflictError('stock.ticker_in_use', { ticker });
     }
     if (!repo.deleteCachedTicker(ticker)) {
-      sendError(res, 404, 'stock.ticker_not_cached', { ticker });
-      return;
+      throw new NotFoundError('stock.ticker_not_cached', { ticker });
     }
     res.json({ ok: true });
   });
@@ -185,50 +163,40 @@ export function createStocksRouter(db: Database): Router {
   router.put('/tickers/:ticker', (req, res) => {
     const { ticker } = req.params;
     if (!ticker) {
-      sendError(res, 400, 'stock.ticker_required');
-      return;
+      throw new BadRequestError('stock.ticker_required');
     }
-    const data = parseBody(res, renameTickerSchema, req.body);
-    if (!data) return;
+    const data = renameTickerSchema.parse(req.body);
 
     if (data.new_ticker === ticker) {
-      sendError(res, 400, 'stock.ticker_same');
-      return;
+      throw new BadRequestError('stock.ticker_same');
     }
     if (repo.isCachedTicker(data.new_ticker)) {
-      sendError(res, 409, 'stock.ticker_exists', { ticker: data.new_ticker });
-      return;
+      throw new ConflictError('stock.ticker_exists', { ticker: data.new_ticker });
     }
     if (!repo.isCachedTicker(ticker)) {
-      sendError(res, 404, 'stock.ticker_not_cached', { ticker });
-      return;
+      throw new NotFoundError('stock.ticker_not_cached', { ticker });
     }
-    if (repo.isTickerUsedByOthers(ticker, sessionUserId(req))) {
-      sendError(res, 409, 'stock.ticker_used_by_others', { ticker });
-      return;
+    if (repo.isTickerUsedByOthers(ticker, currentUserId(res))) {
+      throw new ConflictError('stock.ticker_used_by_others', { ticker });
     }
     if (repo.hasPositionCollision(ticker, data.new_ticker)) {
-      sendError(res, 409, 'stock.ticker_exists', { ticker: data.new_ticker });
-      return;
+      throw new ConflictError('stock.ticker_exists', { ticker: data.new_ticker });
     }
-    handleHttpErrors(res, () => {
-      repo.renameTicker(ticker, data.new_ticker);
-      res.json({ ok: true });
-    });
+    repo.renameTicker(ticker, data.new_ticker);
+    res.json({ ok: true });
   });
 
   router.get('/price/:ticker', async (req, res) => {
     const { ticker } = req.params;
     const price = await getOrRefreshPrice(repo, ticker);
     if (!price) {
-      sendError(res, 404, 'stock.price_not_found', { ticker });
-      return;
+      throw new NotFoundError('stock.price_not_found', { ticker });
     }
     res.json(price);
   });
 
-  router.post('/prices/refresh', async (req, res) => {
-    await refreshUserPrices(db, sessionUserId(req));
+  router.post('/prices/refresh', async (_req, res) => {
+    await refreshUserPrices(db, currentUserId(res));
     res.json({ ok: true });
   });
 

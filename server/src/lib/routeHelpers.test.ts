@@ -1,70 +1,86 @@
-import type { Request, Response } from 'express';
+import { zodToApiError } from '@jerem-gt/ctrl-shared/server/apiErrors';
+import type { NextFunction, Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { HttpError } from './errors.js';
-import { handleHttpErrors, parseNumberParam, zodToApiError } from './routeHelpers.js';
-
-function mockRes() {
-  const res = {
-    statusCode: 0,
-    body: undefined as unknown,
-    status(code: number) {
-      this.statusCode = code;
-      return this;
-    },
-    json(payload: unknown) {
-      this.body = payload;
-      return this;
-    },
-  };
-  return res as unknown as Response & { statusCode: number; body: unknown };
-}
+import { assertFound, makeCheckAccount, parseIdParam } from './routeHelpers.js';
 
 function mockReq(params: Record<string, string>): Request {
   return { params } as unknown as Request;
 }
 
-describe('parseNumberParam', () => {
+/** L'erreur levée par `fn`, pour en vérifier le statut, le code et les paramètres. */
+function thrown(fn: () => unknown): HttpError {
+  try {
+    fn();
+  } catch (err) {
+    if (err instanceof HttpError) return err;
+    throw err;
+  }
+  throw new Error('aucune erreur levée');
+}
+
+describe('parseIdParam', () => {
   it('retourne le nombre pour un id numérique valide', () => {
-    const res = mockRes();
-    expect(parseNumberParam(mockReq({ id: '42' }), res)).toBe(42);
-    expect(res.statusCode).toBe(0);
+    expect(parseIdParam(mockReq({ id: '42' }))).toBe(42);
   });
 
   it('utilise le radix 10 (pas d’octal sur les zéros initiaux)', () => {
-    const res = mockRes();
-    expect(parseNumberParam(mockReq({ id: '011' }), res)).toBe(11);
+    expect(parseIdParam(mockReq({ id: '011' }))).toBe(11);
   });
 
-  it('répond 400 et renvoie null pour une valeur non numérique', () => {
-    const res = mockRes();
-    const json = vi.spyOn(res, 'json');
-    expect(parseNumberParam(mockReq({ id: 'abc' }), res)).toBeNull();
-    expect(res.statusCode).toBe(400);
-    expect(json).toHaveBeenCalledWith({
-      error: {
-        code: 'common.invalid_param',
-        message: 'Paramètre id invalide',
-        params: { param: 'id' },
-      },
+  it('lève 400 common.invalid_param pour une valeur non numérique', () => {
+    const err = thrown(() => parseIdParam(mockReq({ id: 'abc' })));
+    expect(err).toMatchObject({
+      status: 400,
+      code: 'common.invalid_param',
+      params: { param: 'id' },
     });
   });
 
-  it('respecte le nom de paramètre fourni dans le message', () => {
-    const res = mockRes();
-    expect(parseNumberParam(mockReq({ year: 'xx' }), res, 'year')).toBeNull();
-    expect(res.body).toEqual({
-      error: {
-        code: 'common.invalid_param',
-        message: 'Paramètre year invalide',
-        params: { param: 'year' },
-      },
+  it('nomme le paramètre fourni', () => {
+    const err = thrown(() => parseIdParam(mockReq({ year: 'xx' }), 'year'));
+    expect(err.params).toEqual({ param: 'year' });
+  });
+});
+
+describe('assertFound', () => {
+  const repo = { getById: (id: number) => (id === 1 ? { id } : undefined) };
+
+  it('laisse passer un objet existant', () => {
+    expect(() => assertFound(repo, 1, 'category.not_found')).not.toThrow();
+  });
+
+  it('lève 404 avec le code fourni sinon', () => {
+    expect(thrown(() => assertFound(repo, 2, 'category.not_found'))).toMatchObject({
+      status: 404,
+      code: 'category.not_found',
     });
   });
 });
 
-describe('zodToApiError', () => {
+describe('makeCheckAccount', () => {
+  const check = makeCheckAccount((accountId, userId) => accountId === 7 && userId === 1);
+  const run = (accountId: string) => {
+    const res = { locals: { userId: 1 } } as unknown as Response;
+    const next = vi.fn();
+    check({ params: { accountId } } as unknown as Request, res, next as NextFunction);
+    return { res, next };
+  };
+
+  it('pose le compte de la route et passe la main s’il appartient à l’utilisateur', () => {
+    const { res, next } = run('7');
+    expect(res.locals.accountId).toBe(7);
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('lève 403 account.not_found pour le compte d’un autre utilisateur', () => {
+    expect(thrown(() => run('8'))).toMatchObject({ status: 403, code: 'account.not_found' });
+  });
+});
+
+describe('zodToApiError (ctrl-shared, codes du registre)', () => {
   const schema = z.object({
     name: z.string().min(2),
     amount: z.number().positive(),
@@ -96,26 +112,5 @@ describe('zodToApiError', () => {
 
     const [field] = zodToApiError(parsed.error).fields;
     expect(field).toMatchObject({ path: 'amount', code: 'validation.invalid_type' });
-  });
-});
-
-describe('handleHttpErrors', () => {
-  it('répond avec le status et le code d’une HttpError', () => {
-    const res = mockRes();
-    handleHttpErrors(res, () => {
-      throw new HttpError(409, 'common.invalid_request');
-    });
-    expect(res.statusCode).toBe(409);
-  });
-
-  it('relance les erreurs qui ne sont pas des HttpError', () => {
-    const res = mockRes();
-    const boom = new Error('boom');
-    expect(() =>
-      handleHttpErrors(res, () => {
-        throw boom;
-      }),
-    ).toThrow(boom);
-    expect(res.statusCode).toBe(0);
   });
 });

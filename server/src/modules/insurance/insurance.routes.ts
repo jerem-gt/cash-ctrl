@@ -1,16 +1,11 @@
 import type { Database } from 'better-sqlite3';
-import { type Response, Router } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 
 import type { ErrorCode } from '../../lib/errorCodes.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
-import {
-  handleHttpErrors,
-  makeCheckAccount,
-  parseNumberParam,
-  sendError,
-  zodToApiError,
-} from '../../lib/routeHelpers.js';
+import { makeCheckAccount, parseIdParam } from '../../lib/routeHelpers.js';
 import { dateSchema, feesSchema, nameSchema, positiveAmountSchema } from '../../lib/validators.js';
 import { requireAuth } from '../../middleware.js';
 import { createInsuranceRepo } from './insurance.repo.js';
@@ -18,19 +13,17 @@ import type { InsuranceSupport } from './insurance.types.js';
 
 /**
  * Récupère un support et vérifie qu'il appartient bien au compte ciblé.
- * Répond 404 et renvoie null sinon.
+ * Lève 404 (`errorCode`) sinon.
  */
 function requireSupport(
-  res: Response,
   repo: ReturnType<typeof createInsuranceRepo>,
   supportId: number,
   accountId: number,
   errorCode: ErrorCode = 'insurance.support_not_found',
-): InsuranceSupport | null {
+): InsuranceSupport {
   const support = repo.getSupportById(supportId);
   if (support?.account_id !== accountId) {
-    sendError(res, 404, errorCode);
-    return null;
+    throw new NotFoundError(errorCode);
   }
   return support;
 }
@@ -131,14 +124,12 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.delete('/:accountId/supports/:supportId', checkAccount, (req, res) => {
     const accountId = res.locals.accountId;
-    const supportId = parseNumberParam(req, res, 'supportId');
-    if (supportId === null) return;
+    const supportId = parseIdParam(req, 'supportId');
 
-    if (!requireSupport(res, repo, supportId, accountId)) return;
+    requireSupport(repo, supportId, accountId);
 
     if (repo.hasOperations(supportId)) {
-      sendError(res, 400, 'insurance.support_has_operations');
-      return;
+      throw new BadRequestError('insurance.support_has_operations');
     }
 
     repo.deleteSupport(supportId);
@@ -158,35 +149,25 @@ export function createInsuranceRouter(db: Database): Router {
   });
 
   router.put('/:accountId/operations/:operationId', checkAccount, (req, res) => {
-    const operationId = parseNumberParam(req, res, 'operationId');
-    if (operationId === null) return;
+    const operationId = parseIdParam(req, 'operationId');
     const userId = res.locals.userId;
 
-    const parsed = updateOperationSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
+    const input = updateOperationSchema.parse(req.body);
 
-    handleHttpErrors(res, () => {
-      const operation = repo.updateOperation(operationId, userId, parsed.data);
-      res.json(operation);
-    });
+    const operation = repo.updateOperation(operationId, userId, input);
+    res.json(operation);
   });
 
   router.delete('/:accountId/operations/:operationId', checkAccount, (req, res) => {
-    const operationId = parseNumberParam(req, res, 'operationId');
-    if (operationId === null) return;
+    const operationId = parseIdParam(req, 'operationId');
     const userId = res.locals.userId;
-    handleHttpErrors(res, () => {
-      repo.deleteOperation(operationId, userId);
-      res.json({ ok: true });
-    });
+    repo.deleteOperation(operationId, userId);
+    res.json({ ok: true });
   });
 
   router.post('/:accountId/versement', (req, res) => {
     handleInsuranceAction(req, res, versementSchema, ({ userId, data }) => {
-      if (!requireSupport(res, repo, data.support_id, data.account_id)) return;
+      requireSupport(repo, data.support_id, data.account_id);
       const result = repo.versement(userId, data);
       res.status(201).json(result);
     });
@@ -194,7 +175,7 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.post('/:accountId/rachat', (req, res) => {
     handleInsuranceAction(req, res, rachatSchema, ({ userId, data }) => {
-      if (!requireSupport(res, repo, data.support_id, data.account_id)) return;
+      requireSupport(repo, data.support_id, data.account_id);
       const result = repo.rachat(userId, data);
       res.status(201).json(result);
     });
@@ -203,29 +184,15 @@ export function createInsuranceRouter(db: Database): Router {
   router.post('/:accountId/arbitrage', (req, res) => {
     handleInsuranceAction(req, res, arbitrageSchema, ({ userId, data }) => {
       if (data.from_support_id === data.to_support_id) {
-        sendError(res, 400, 'insurance.supports_must_differ');
-        return;
+        throw new BadRequestError('insurance.supports_must_differ');
       }
-      if (
-        !requireSupport(
-          res,
-          repo,
-          data.from_support_id,
-          data.account_id,
-          'insurance.support_source_not_found',
-        )
-      )
-        return;
-      if (
-        !requireSupport(
-          res,
-          repo,
-          data.to_support_id,
-          data.account_id,
-          'insurance.support_dest_not_found',
-        )
-      )
-        return;
+      requireSupport(
+        repo,
+        data.from_support_id,
+        data.account_id,
+        'insurance.support_source_not_found',
+      );
+      requireSupport(repo, data.to_support_id, data.account_id, 'insurance.support_dest_not_found');
       const result = repo.arbitrage(userId, data);
       res.status(201).json(result);
     });
@@ -233,11 +200,9 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.post('/:accountId/interets', (req, res) => {
     handleInsuranceAction(req, res, interetsSchema, ({ userId, data }) => {
-      const support = requireSupport(res, repo, data.support_id, data.account_id);
-      if (!support) return;
+      const support = requireSupport(repo, data.support_id, data.account_id);
       if (support.type !== 'euro') {
-        sendError(res, 400, 'insurance.interets_euro_only');
-        return;
+        throw new BadRequestError('insurance.interets_euro_only');
       }
       const result = repo.interets(userId, data);
       res.status(201).json(result);
@@ -246,11 +211,9 @@ export function createInsuranceRouter(db: Database): Router {
 
   router.post('/:accountId/revalorisation', (req, res) => {
     handleInsuranceAction(req, res, revaloriserSchema, ({ userId, data }) => {
-      const support = requireSupport(res, repo, data.support_id, data.account_id);
-      if (!support) return;
+      const support = requireSupport(repo, data.support_id, data.account_id);
       if (support.type !== 'uc') {
-        sendError(res, 400, 'insurance.revalorisation_uc_only');
-        return;
+        throw new BadRequestError('insurance.revalorisation_uc_only');
       }
       const operation = repo.revaloriser(userId, data);
       res.status(201).json({ operation });

@@ -3,8 +3,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { dateStr } from '../../lib/dateUtils.js';
-import { sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { BadRequestError } from '../../lib/errors.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createExportRepo } from './export.repo.js';
 
 export function createExportRouter(db: Database): Router {
@@ -15,8 +15,7 @@ export function createExportRouter(db: Database): Router {
   router.get('/json-full', (req, res) => {
     const parsed = z.object({ accountIds: z.string().optional() }).safeParse(req.query);
     if (!parsed.success) {
-      sendError(res, 400, 'common.invalid_request');
-      return;
+      throw new BadRequestError('common.invalid_request');
     }
     const accountIds = parsed.data.accountIds
       ? parsed.data.accountIds
@@ -25,7 +24,7 @@ export function createExportRouter(db: Database): Router {
           .filter((n) => Number.isInteger(n) && n > 0)
       : undefined;
 
-    const userId = sessionUserId(req);
+    const userId = currentUserId(res);
     const date = dateStr(new Date());
     res.setHeader('Content-Disposition', `attachment; filename="cashctrl-full-${date}.json"`);
     res.json(exportRepo.getFullExport(userId, accountIds));

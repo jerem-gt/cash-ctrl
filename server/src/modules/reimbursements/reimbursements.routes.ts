@@ -4,9 +4,10 @@ import { z } from 'zod';
 
 import { REIMBURSEMENT_STATUSES } from '../../constants.js';
 import { dateStr } from '../../lib/dateUtils.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { toCents } from '../../lib/money.js';
-import { parseBody, parseNumberParam, sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createReimbursementsRepo } from './reimbursements.repo.js';
 
@@ -29,50 +30,43 @@ export function createReimbursementsRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/pending', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/pending', (_req, res) => {
+    const userId = currentUserId(res);
     res.json(repo.getPendingWithSummary(userId));
   });
 
-  router.get('/recent', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/recent', (_req, res) => {
+    const userId = currentUserId(res);
     const since = dateStr(new Date(Date.now() - 180 * 24 * 60 * 60 * 1000));
     res.json(repo.getRecentCompleted(userId, since));
   });
 
   router.get('/:transactionId', (req, res) => {
-    const transactionId = parseNumberParam(req, res, 'transactionId');
-    if (transactionId === null) return;
-    const userId = sessionUserId(req);
+    const transactionId = parseIdParam(req, 'transactionId');
+    const userId = currentUserId(res);
     res.json(repo.getByTransactionId(transactionId, userId));
   });
 
   router.post('/:transactionId', (req, res) => {
-    const transactionId = parseNumberParam(req, res, 'transactionId');
-    if (transactionId === null) return;
-    const userId = sessionUserId(req);
+    const transactionId = parseIdParam(req, 'transactionId');
+    const userId = currentUserId(res);
 
-    const data = parseBody(res, linkSchema, req.body);
-    if (!data) return;
+    const data = linkSchema.parse(req.body);
 
     const tx = txRepo.getById(transactionId, userId);
     if (!tx) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
+      throw new NotFoundError('transaction.not_found');
     }
     if (tx.type !== 'expense') {
-      sendError(res, 400, 'reimbursement.only_expense');
-      return;
+      throw new BadRequestError('reimbursement.only_expense');
     }
 
     const linkedTx = txRepo.getById(data.linked_transaction_id, userId);
     if (!linkedTx) {
-      sendError(res, 404, 'reimbursement.linked_not_found');
-      return;
+      throw new NotFoundError('reimbursement.linked_not_found');
     }
     if (linkedTx.type !== 'income') {
-      sendError(res, 400, 'reimbursement.linked_must_be_income');
-      return;
+      throw new BadRequestError('reimbursement.linked_must_be_income');
     }
 
     const attributedAmount =
@@ -82,16 +76,13 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.patch('/:transactionId/status', (req, res) => {
-    const transactionId = parseNumberParam(req, res, 'transactionId');
-    if (transactionId === null) return;
-    const userId = sessionUserId(req);
+    const transactionId = parseIdParam(req, 'transactionId');
+    const userId = currentUserId(res);
 
-    const data = parseBody(res, statusSchema, req.body);
-    if (!data) return;
+    const data = statusSchema.parse(req.body);
 
     if (!txRepo.getById(transactionId, userId)) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
+      throw new NotFoundError('transaction.not_found');
     }
 
     txRepo.setReimbursementStatus(userId, transactionId, data.reimbursement_status);
@@ -99,18 +90,14 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.patch('/:transactionId/:linkedId', (req, res) => {
-    const transactionId = parseNumberParam(req, res, 'transactionId');
-    if (transactionId === null) return;
-    const linkedId = parseNumberParam(req, res, 'linkedId');
-    if (linkedId === null) return;
-    const userId = sessionUserId(req);
+    const transactionId = parseIdParam(req, 'transactionId');
+    const linkedId = parseIdParam(req, 'linkedId');
+    const userId = currentUserId(res);
 
-    const data = parseBody(res, attributedAmountSchema, req.body);
-    if (!data) return;
+    const data = attributedAmountSchema.parse(req.body);
 
     if (!txRepo.getById(transactionId, userId)) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
+      throw new NotFoundError('transaction.not_found');
     }
 
     const attributedAmount =
@@ -120,15 +107,12 @@ export function createReimbursementsRouter(db: Database): Router {
   });
 
   router.delete('/:transactionId/:linkedId', (req, res) => {
-    const transactionId = parseNumberParam(req, res, 'transactionId');
-    if (transactionId === null) return;
-    const linkedId = parseNumberParam(req, res, 'linkedId');
-    if (linkedId === null) return;
-    const userId = sessionUserId(req);
+    const transactionId = parseIdParam(req, 'transactionId');
+    const linkedId = parseIdParam(req, 'linkedId');
+    const userId = currentUserId(res);
 
     if (!txRepo.getById(transactionId, userId)) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
+      throw new NotFoundError('transaction.not_found');
     }
 
     repo.unlink(transactionId, linkedId);

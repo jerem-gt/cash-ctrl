@@ -2,9 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { handleHttpErrors, parseBody, parseNumberParam } from '../../lib/routeHelpers.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
 import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { transferCreate, transferDelete, transferUpdate } from './transfers.service.js';
 
 export const transferSchema = z.object({
@@ -31,30 +31,20 @@ export function createTransfersRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, transferSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.status(201).json(transferCreate(db, sessionUserId(req), data));
-    });
+    const data = transferSchema.parse(req.body);
+    res.status(201).json(transferCreate(db, currentUserId(res), data));
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const data = parseBody(res, transferUpdateSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.json(transferUpdate(db, sessionUserId(req), id, data));
-    });
+    const id = parseIdParam(req);
+    const data = transferUpdateSchema.parse(req.body);
+    res.json(transferUpdate(db, currentUserId(res), id, data));
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    handleHttpErrors(res, () => {
-      transferDelete(db, sessionUserId(req), id);
-      res.json({ ok: true });
-    });
+    const id = parseIdParam(req);
+    transferDelete(db, currentUserId(res), id);
+    res.json({ ok: true });
   });
 
   return router;

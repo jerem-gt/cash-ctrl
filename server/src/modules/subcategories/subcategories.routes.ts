@@ -1,9 +1,10 @@
 import type { Database } from 'better-sqlite3';
-import { Request, Router } from 'express';
+import { type Response, Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { ConflictError, NotFoundError } from '../../lib/errors.js';
+import { assertFound, parseIdParam } from '../../lib/routeHelpers.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createCategoriesRepo } from '../categories/categories.repo.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createSubcategoriesRepo } from './subcategories.repo.js';
@@ -22,21 +23,19 @@ export function createSubcategoriesRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  const getRepo = (req: Request) => createSubcategoriesRepo(db, sessionUserId(req));
-  const getCatsRepo = (req: Request) => createCategoriesRepo(db, sessionUserId(req));
+  const getRepo = (res: Response) => createSubcategoriesRepo(db, currentUserId(res));
+  const getCatsRepo = (res: Response) => createCategoriesRepo(db, currentUserId(res));
 
-  router.get('/', (req, res) => {
-    res.json(getRepo(req).getAll());
+  router.get('/', (_req, res) => {
+    res.json(getRepo(res).getAll());
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, createSubcategorySchema, req.body);
-    if (!data) return;
-    if (!getCatsRepo(req).getById(data.category_id)) {
-      sendError(res, 404, 'category.not_found');
-      return;
+    const data = createSubcategorySchema.parse(req.body);
+    if (!getCatsRepo(res).getById(data.category_id)) {
+      throw new NotFoundError('category.not_found');
     }
-    const repo = getRepo(req);
+    const repo = getRepo(res);
     const result = repo.create({
       category_id: data.category_id,
       name: data.name.trim(),
@@ -45,25 +44,21 @@ export function createSubcategoriesRouter(db: Database): Router {
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'subcategory.not_found')) return;
-    const data = parseBody(res, updateSubcategorySchema, req.body);
-    if (!data) return;
+    const id = parseIdParam(req);
+    const repo = getRepo(res);
+    assertFound(repo, id, 'subcategory.not_found');
+    const data = updateSubcategorySchema.parse(req.body);
     repo.update(id, data.name.trim());
     res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'subcategory.not_found')) return;
+    const id = parseIdParam(req);
+    const repo = getRepo(res);
+    assertFound(repo, id, 'subcategory.not_found');
     const n = txRepo.getCountBySubcategoryId(id);
     if (n > 0) {
-      sendError(res, 409, 'subcategory.in_use', { count: n });
-      return;
+      throw new ConflictError('subcategory.in_use', { count: n });
     }
     repo.delete(id);
     res.json({ ok: true });

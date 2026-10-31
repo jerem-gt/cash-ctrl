@@ -2,9 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { parseBody, sendError } from '../../lib/routeHelpers.js';
+import { BadRequestError } from '../../lib/errors.js';
 import { SYSTEM_REF_COLUMNS, type SystemRefColumn } from '../../lib/systemEntities.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createSettingsRepo } from './settings.repo.js';
 
 export const settingsSchema = z.object({
@@ -63,15 +63,14 @@ export function createSettingsRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (req, res) => {
-    const s = settingsRepo.get(sessionUserId(req));
+  router.get('/', (_req, res) => {
+    const s = settingsRepo.get(currentUserId(res));
     res.json(formatSettings(s));
   });
 
   router.put('/', (req, res) => {
-    const data = parseBody(res, settingsSchema, req.body);
-    if (!data) return;
-    const userId = sessionUserId(req);
+    const data = settingsSchema.parse(req.body);
+    const userId = currentUserId(res);
     const { lead_days, backup_enabled, backup_frequency_h, backup_max_files } = data;
     settingsRepo.upsert(userId, {
       leadDays: lead_days,
@@ -84,9 +83,8 @@ export function createSettingsRouter(db: Database): Router {
   });
 
   router.patch('/system-refs', (req, res) => {
-    const data = parseBody(res, systemRefsSchema, req.body);
-    if (!data) return;
-    const userId = sessionUserId(req);
+    const data = systemRefsSchema.parse(req.body);
+    const userId = currentUserId(res);
 
     // Validate each provided id belongs to the user
     const refs: Partial<Record<SystemRefColumn, number | null>> = {};
@@ -99,8 +97,7 @@ export function createSettingsRouter(db: Database): Router {
       }
       const table = COLUMN_TABLE[col];
       if (!settingsRepo.entityBelongsToUser(table, val, userId)) {
-        sendError(res, 400, 'settings.ref_not_owned', { col, id: val });
-        return;
+        throw new BadRequestError('settings.ref_not_owned', { col, id: val });
       }
       refs[col] = val;
     }

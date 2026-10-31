@@ -1,10 +1,11 @@
 import type { Database } from 'better-sqlite3';
-import { Request, Router } from 'express';
+import { type Response, Router } from 'express';
 import { z } from 'zod';
 
 import { ENVELOPE_TYPES } from '../../constants.js';
-import { parseBody, parseNumberParam, requireById, sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { ConflictError } from '../../lib/errors.js';
+import { assertFound, parseIdParam } from '../../lib/routeHelpers.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createAccountsRepo } from '../accounts/accounts.repo.js';
 import { createAccountTypesRepo } from './account-types.repo.js';
 
@@ -18,40 +19,35 @@ export function createAccountTypesRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  const getRepo = (req: Request) => createAccountTypesRepo(db, sessionUserId(req));
+  const getRepo = (res: Response) => createAccountTypesRepo(db, currentUserId(res));
 
-  router.get('/', (req, res) => {
-    res.json(getRepo(req).getAll());
+  router.get('/', (_req, res) => {
+    res.json(getRepo(res).getAll());
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, accountTypeSchema, req.body);
-    if (!data) return;
-    const repo = getRepo(req);
+    const data = accountTypeSchema.parse(req.body);
+    const repo = getRepo(res);
     const result = repo.create(data.name.trim(), data.envelope_type);
     res.status(201).json(repo.getById(Number(result.lastInsertRowid)));
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'account_type.not_found')) return;
-    const data = parseBody(res, accountTypeSchema, req.body);
-    if (!data) return;
+    const id = parseIdParam(req);
+    const repo = getRepo(res);
+    assertFound(repo, id, 'account_type.not_found');
+    const data = accountTypeSchema.parse(req.body);
     repo.update(id, data.name.trim(), data.envelope_type);
     res.json(repo.getById(id));
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const repo = getRepo(req);
-    if (!requireById(res, repo, id, 'account_type.not_found')) return;
+    const id = parseIdParam(req);
+    const repo = getRepo(res);
+    assertFound(repo, id, 'account_type.not_found');
     const cnt = accountsRepo.countByAccountTypeId(id);
     if (cnt > 0) {
-      sendError(res, 409, 'account_type.in_use', { count: cnt });
-      return;
+      throw new ConflictError('account_type.in_use', { count: cnt });
     }
     repo.delete(id);
     res.json({ ok: true });

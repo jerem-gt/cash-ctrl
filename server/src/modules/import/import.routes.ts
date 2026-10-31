@@ -4,9 +4,8 @@ import { z } from 'zod';
 
 import { INSURANCE_OPERATION_TYPES, INSURANCE_SUPPORT_TYPES } from '../../constants.js';
 import { toCents } from '../../lib/money.js';
-import { zodToApiError } from '../../lib/routeHelpers.js';
 import { dateSchema, optionalDateSchema } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createImportRepo } from './import.repo.js';
 
 const newAccountSchema = z.object({
@@ -288,24 +287,16 @@ export function createImportRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.post('/structured', (req, res) => {
-    const parsed = executeSchema.safeParse(req.body);
-    if (!parsed.success) {
-      // Forme structurée : les `path` (transactions.K.field / transfers.K.field)
-      // permettent au client de remonter l'erreur sur la bonne ligne de l'aperçu.
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    const result = repo.execute(sessionUserId(req), parsed.data);
+    // Erreur de validation : 400 avec les `path` (transactions.K.field / transfers.K.field), qui
+    // permettent au client de remonter l'erreur sur la bonne ligne de l'aperçu.
+    const input = executeSchema.parse(req.body);
+    const result = repo.execute(currentUserId(res), input);
     res.status(201).json(result);
   });
 
   router.post('/json-full', (req, res) => {
-    const parsed = jsonFullSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    const result = repo.executeJsonFull(sessionUserId(req), parsed.data);
+    const input = jsonFullSchema.parse(req.body);
+    const result = repo.executeJsonFull(currentUserId(res), input);
     res.status(201).json(result);
   });
 

@@ -1,8 +1,8 @@
-import { zodToApiError } from '@jerem-gt/ctrl-shared/server/apiErrors';
-import type { Request, RequestHandler, Response } from 'express';
-import type { z } from 'zod';
+import type { Request, RequestHandler } from 'express';
 
-import { HttpError } from './errors.js';
+import { currentUserId } from '../middleware.js';
+import type { ErrorCode } from './errorCodes.js';
+import { BadRequestError, HttpError, NotFoundError } from './errors.js';
 
 declare module 'express-serve-static-core' {
   interface Locals {
@@ -11,73 +11,40 @@ declare module 'express-serve-static-core' {
   }
 }
 
-import { sessionUserId } from '../middleware.js';
-import { type ErrorCode, sendError } from './errorCodes.js';
-
-// Partagés avec shelf-ctrl (ctrl-shared) : réexportés pour les routes.
-export { sendError } from './errorCodes.js';
-export { zodToApiError } from '@jerem-gt/ctrl-shared/server/apiErrors';
-
 /**
- * Parse un paramètre de route numérique (radix 10). Répond 400 et renvoie null
- * si la valeur n'est pas un entier valide. À utiliser avec `if (value === null) return;`.
+ * Paramètre de route numérique (radix 10, `parseInt` : « 12abc » vaut 12). Lève 400
+ * `common.invalid_param` si ce n'est pas un nombre.
  */
-export function parseNumberParam(req: Request, res: Response, paramName = 'id'): number | null {
+export function parseIdParam(req: Request, paramName = 'id'): number {
   const value = Number.parseInt(req.params[paramName] as string, 10);
   if (Number.isNaN(value)) {
-    sendError(res, 400, 'common.invalid_param', { param: paramName });
-    return null;
+    throw new BadRequestError('common.invalid_param', { param: paramName });
   }
   return value;
 }
 
+/** Compte de la route (`:accountId`) appartenant à l'utilisateur, sinon 403 `account.not_found`. */
 export function makeCheckAccount(
   belongsToUser: (accountId: number, userId: number) => boolean,
 ): RequestHandler {
   return (req, res, next) => {
     const accountId = Number.parseInt(req.params.accountId as string, 10);
-    const userId = sessionUserId(req);
+    const userId = currentUserId(res);
     if (!belongsToUser(accountId, userId)) {
-      sendError(res, 403, 'account.not_found');
-      return;
+      throw new HttpError(403, 'account.not_found');
     }
     res.locals.accountId = accountId;
-    res.locals.userId = userId;
     next();
   };
 }
 
-export function requireById<T>(
-  res: Response,
-  repo: { getById: (id: number) => T | null | undefined },
+/** L'objet `id` existe dans le repo (scopé à l'utilisateur), sinon 404 avec `notFoundCode`. */
+export function assertFound(
+  repo: { getById: (id: number) => unknown },
   id: number,
   notFoundCode: ErrorCode,
-): boolean {
+): void {
   if (!repo.getById(id)) {
-    sendError(res, 404, notFoundCode);
-    return false;
+    throw new NotFoundError(notFoundCode);
   }
-  return true;
-}
-
-export function handleHttpErrors(res: Response, fn: () => void): void {
-  try {
-    fn();
-  } catch (err) {
-    if (err instanceof HttpError) {
-      sendError(res, err.status, err.code, err.params);
-      return;
-    }
-    // Erreur inattendue : remontée au globalErrorHandler (500 + log).
-    throw err;
-  }
-}
-
-export function parseBody<T>(res: Response, schema: z.ZodType<T>, body: unknown): T | null {
-  const parsed = schema.safeParse(body);
-  if (!parsed.success) {
-    res.status(400).json({ error: zodToApiError(parsed.error) });
-    return null;
-  }
-  return parsed.data;
 }

@@ -4,15 +4,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { MAX_PAGE_SIZE, REIMBURSEMENT_STATUSES, TRANSACTION_TYPES } from '../../constants.js';
-import {
-  handleHttpErrors,
-  parseBody,
-  parseNumberParam,
-  sendError,
-  zodToApiError,
-} from '../../lib/routeHelpers.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
 import { dateSchema, descriptionSchema, positiveAmountSchema } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createTransactionsRepo } from './transactions.repo.js';
 import { transactionCreate, transactionDelete, transactionUpdate } from './transactions.service.js';
 
@@ -83,43 +78,29 @@ export function createTransactionsRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.get('/', (req, res) => {
-    const userId = sessionUserId(req);
-    const parsed = querySchema.safeParse(req.query);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    res.json(transactionsRepo.getByUserId(userId, parsed.data));
+    const userId = currentUserId(res);
+    const query = querySchema.parse(req.query);
+    res.json(transactionsRepo.getByUserId(userId, query));
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, transactionSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.status(201).json(transactionCreate(db, sessionUserId(req), data));
-    });
+    const data = transactionSchema.parse(req.body);
+    res.status(201).json(transactionCreate(db, currentUserId(res), data));
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const data = parseBody(res, transactionSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.json(transactionUpdate(db, sessionUserId(req), id, data));
-    });
+    const id = parseIdParam(req);
+    const data = transactionSchema.parse(req.body);
+    res.json(transactionUpdate(db, currentUserId(res), id, data));
   });
 
   router.patch('/:id/validate', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const userId = sessionUserId(req);
-    const data = parseBody(res, validateSchema, req.body);
-    if (!data) return;
+    const id = parseIdParam(req);
+    const userId = currentUserId(res);
+    const data = validateSchema.parse(req.body);
 
     if (!transactionsRepo.getById(id, userId)) {
-      sendError(res, 404, 'transaction.not_found');
-      return;
+      throw new NotFoundError('transaction.not_found');
     }
 
     transactionsRepo.setValidated(userId, id, data.validated);
@@ -127,12 +108,9 @@ export function createTransactionsRouter(db: Database): Router {
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    handleHttpErrors(res, () => {
-      transactionDelete(db, sessionUserId(req), id);
-      res.json({ ok: true });
-    });
+    const id = parseIdParam(req);
+    transactionDelete(db, currentUserId(res), id);
+    res.json({ ok: true });
   });
 
   return router;

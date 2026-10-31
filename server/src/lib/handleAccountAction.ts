@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { sessionUserId } from '../middleware.js';
+import { currentUserId } from '../middleware.js';
 import { type ErrorCode } from './errorCodes.js';
-import { handleHttpErrors, sendError, zodToApiError } from './routeHelpers.js';
+import { BadRequestError, HttpError } from './errors.js';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
@@ -17,30 +17,18 @@ export function handleAccountAction<T>(
   handler: Handler<T>,
 ) {
   const accountId = Number.parseInt(req.params.accountId, 10);
-
   if (Number.isNaN(accountId)) {
-    return sendError(res, 400, 'common.invalid_param', { param: 'accountId' });
+    throw new BadRequestError('common.invalid_param', { param: 'accountId' });
   }
-
-  const userId = sessionUserId(req);
-
+  const userId = currentUserId(res);
   if (!belongsToUser(accountId, userId)) {
-    return sendError(res, 403, 'account.not_found');
+    throw new HttpError(403, 'account.not_found');
   }
-
   if (!isValidType(accountId)) {
-    return sendError(res, 400, typeErrorCode);
+    throw new BadRequestError(typeErrorCode);
   }
-
-  const parsed = schema.safeParse({ ...req.body, account_id: accountId });
-
-  if (!parsed.success) {
-    return res.status(400).json({ error: zodToApiError(parsed.error) });
-  }
-
-  handleHttpErrors(res, () => {
-    handler({ userId, data: parsed.data }, req, res);
-  });
+  const data = schema.parse({ ...req.body, account_id: accountId });
+  handler({ userId, data }, req, res);
 }
 
 export function createAccountActionHandler<

@@ -2,19 +2,15 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import {
-  handleHttpErrors,
-  parseBody,
-  parseNumberParam,
-  sendError,
-} from '../../lib/routeHelpers.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   nameSchema,
   optionalDateSchema,
   positiveAmountSchema,
 } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createLoansRepo } from './loans.repo.js';
 import { loanCreate, loanUpdate } from './loans.service.js';
 
@@ -48,51 +44,37 @@ export function createLoansRouter(db: Database): Router {
   router.use(requireAuth);
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, createLoanSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.status(201).json(loanCreate(db, sessionUserId(req), data));
-    });
+    const data = createLoanSchema.parse(req.body);
+    res.status(201).json(loanCreate(db, currentUserId(res), data));
   });
 
   router.patch('/:loanId', (req, res) => {
-    const loanId = parseNumberParam(req, res, 'loanId');
-    if (loanId === null) return;
-    const data = parseBody(res, updateLoanSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.json(loanUpdate(db, sessionUserId(req), loanId, data));
-    });
+    const loanId = parseIdParam(req, 'loanId');
+    const data = updateLoanSchema.parse(req.body);
+    res.json(loanUpdate(db, currentUserId(res), loanId, data));
   });
 
   router.get('/account/:accountId', (req, res) => {
-    const accountId = parseNumberParam(req, res, 'accountId');
-    if (accountId === null) return;
-    const loan = loansRepo.getByAccountId(accountId, sessionUserId(req));
+    const accountId = parseIdParam(req, 'accountId');
+    const loan = loansRepo.getByAccountId(accountId, currentUserId(res));
     if (!loan) {
-      sendError(res, 404, 'loan.not_found');
-      return;
+      throw new NotFoundError('loan.not_found');
     }
     res.json(loan);
   });
 
   router.get('/:loanId/installments', (req, res) => {
-    const loanId = parseNumberParam(req, res, 'loanId');
-    if (loanId === null) return;
-    res.json(loansRepo.getInstallments(loanId, sessionUserId(req)));
+    const loanId = parseIdParam(req, 'loanId');
+    res.json(loansRepo.getInstallments(loanId, currentUserId(res)));
   });
 
   router.patch('/:loanId/installments/:installmentId', (req, res) => {
-    const loanId = parseNumberParam(req, res, 'loanId');
-    if (loanId === null) return;
-    const installmentId = parseNumberParam(req, res, 'installmentId');
-    if (installmentId === null) return;
-    const data = parseBody(res, updateInstallmentSchema, req.body);
-    if (!data) return;
-    const result = loansRepo.updateInstallment(sessionUserId(req), loanId, installmentId, data);
+    const loanId = parseIdParam(req, 'loanId');
+    const installmentId = parseIdParam(req, 'installmentId');
+    const data = updateInstallmentSchema.parse(req.body);
+    const result = loansRepo.updateInstallment(currentUserId(res), loanId, installmentId, data);
     if (!result) {
-      sendError(res, 404, 'loan.installment_not_found');
-      return;
+      throw new NotFoundError('loan.installment_not_found');
     }
     res.json(result);
   });

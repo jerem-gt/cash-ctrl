@@ -4,8 +4,9 @@ import { z } from 'zod';
 
 import { checkAccountOwnership } from '../../lib/accountHelpers.js';
 import { dateStr } from '../../lib/dateUtils.js';
-import { parseNumberParam, sendError, zodToApiError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
 import { fetchAndStorePriceHistory } from '../stocks/stocks.service.js';
 import { createAccountBalanceHistoryRepo } from './account-balance-history.repo.js';
@@ -37,24 +38,24 @@ export function createStatsRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/', (_req, res) => {
+    const userId = currentUserId(res);
     const today = dateStr(new Date());
     res.json(repo.getDashboardStats(userId, today));
   });
 
-  router.get('/balance-history', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/balance-history', (_req, res) => {
+    const userId = currentUserId(res);
     res.json(repo.getBalanceHistory(userId));
   });
 
-  router.get('/report-years', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/report-years', (_req, res) => {
+    const userId = currentUserId(res);
     res.json(repo.getReportYears(userId));
   });
 
   router.get('/report', (req, res) => {
-    const userId = sessionUserId(req);
+    const userId = currentUserId(res);
     const yearParam = typeof req.query.year === 'string' ? req.query.year : undefined;
     const year = yearParam ? Number.parseInt(yearParam, 10) : new Date().getFullYear();
     if (Number.isNaN(year) || year < 2000 || year > 2100) {
@@ -70,40 +71,29 @@ export function createStatsRouter(db: Database): Router {
   });
 
   router.get('/forecast', (req, res) => {
-    const userId = sessionUserId(req);
-    const parsed = forecastQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
-    const { account_id: accountId } = parsed.data;
+    const userId = currentUserId(res);
+    const query = forecastQuerySchema.parse(req.query);
+    const { account_id: accountId } = query;
     if (accountId !== undefined && !checkAccountOwnership(db, accountId, userId)) {
-      sendError(res, 404, 'account.not_found');
-      return;
+      throw new NotFoundError('account.not_found');
     }
     const today = dateStr(new Date());
-    res.json(forecastRepo.getForecast(userId, parsed.data.horizon, today, accountId));
+    res.json(forecastRepo.getForecast(userId, query.horizon, today, accountId));
   });
 
   router.get('/accounts/:accountId/balance-history', (req, res) => {
-    const userId = sessionUserId(req);
-    const accountId = parseNumberParam(req, res, 'accountId');
-    if (accountId === null) return;
-    const parsed = accountBalanceHistoryQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      res.status(400).json({ error: zodToApiError(parsed.error) });
-      return;
-    }
+    const userId = currentUserId(res);
+    const accountId = parseIdParam(req, 'accountId');
+    const query = accountBalanceHistoryQuerySchema.parse(req.query);
     if (!checkAccountOwnership(db, accountId, userId)) {
-      sendError(res, 404, 'account.not_found');
-      return;
+      throw new NotFoundError('account.not_found');
     }
     const today = dateStr(new Date());
-    res.json(accountBalanceHistoryRepo.getBalanceHistory(accountId, parsed.data.days, today));
+    res.json(accountBalanceHistoryRepo.getBalanceHistory(accountId, query.days, today));
   });
 
-  router.get('/profitability', async (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/profitability', async (_req, res) => {
+    const userId = currentUserId(res);
     const tickers = stocksRepo.getTickersForUser(userId);
     await Promise.all(
       tickers

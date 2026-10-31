@@ -11,8 +11,8 @@ import {
   runBackup,
   userBackupDir,
 } from '../../lib/backup.js';
-import { sendError } from '../../lib/routeHelpers.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { BadRequestError, NotFoundError } from '../../lib/errors.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createSettingsRepo } from '../settings/settings.repo.js';
 
 const FILENAME_RE = /^cashctrl-backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(-\d{3})?\.json$/;
@@ -21,13 +21,13 @@ export function createBackupRouter(db: Database, backupDir = BACKUP_DIR): Router
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/list', (req, res) => {
-    const userId = sessionUserId(req);
+  router.get('/list', (_req, res) => {
+    const userId = currentUserId(res);
     res.json(listBackups(userBackupDir(backupDir, userId)));
   });
 
-  router.post('/run', (req, res) => {
-    const userId = sessionUserId(req);
+  router.post('/run', (_req, res) => {
+    const userId = currentUserId(res);
     const result = runBackup(db, userId, backupDir);
     if (result.skipped) {
       res.status(200).json({ skipped: true, filename: null });
@@ -40,16 +40,14 @@ export function createBackupRouter(db: Database, backupDir = BACKUP_DIR): Router
   });
 
   router.get('/:filename', (req, res) => {
-    const userId = sessionUserId(req);
+    const userId = currentUserId(res);
     const { filename } = req.params;
     if (!FILENAME_RE.test(filename)) {
-      sendError(res, 400, 'backup.invalid_filename');
-      return;
+      throw new BadRequestError('backup.invalid_filename');
     }
     const filePath = path.join(userBackupDir(backupDir, userId), filename);
     if (!fs.existsSync(filePath)) {
-      sendError(res, 404, 'backup.not_found');
-      return;
+      throw new NotFoundError('backup.not_found');
     }
     res.download(filePath, filename);
   });

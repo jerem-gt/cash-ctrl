@@ -3,12 +3,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { RECURRENCE_UNITS, TRANSACTION_TYPES, WEEKEND_HANDLING } from '../../constants.js';
-import {
-  handleHttpErrors,
-  parseBody,
-  parseNumberParam,
-  sendError,
-} from '../../lib/routeHelpers.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
 import {
   dateSchema,
   descriptionSchema,
@@ -16,7 +12,7 @@ import {
   optionalDateSchema,
   positiveAmountSchema,
 } from '../../lib/validators.js';
-import { requireAuth, sessionUserId } from '../../middleware.js';
+import { currentUserId, requireAuth } from '../../middleware.js';
 import { createScheduledRepo } from './scheduled.repo.js';
 import { scheduledCreate, scheduledUpdate } from './scheduled.service.js';
 
@@ -46,46 +42,37 @@ export function createScheduledRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (req, res) => {
-    res.json(scheduledRepo.getByUserId(sessionUserId(req)));
+  router.get('/', (_req, res) => {
+    res.json(scheduledRepo.getByUserId(currentUserId(res)));
   });
 
   router.post('/', (req, res) => {
-    const data = parseBody(res, scheduledSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.status(201).json(
-        scheduledCreate(db, sessionUserId(req), {
-          ...data,
-          description: data.description.trim(),
-        }),
-      );
-    });
+    const data = scheduledSchema.parse(req.body);
+    res.status(201).json(
+      scheduledCreate(db, currentUserId(res), {
+        ...data,
+        description: data.description.trim(),
+      }),
+    );
   });
 
   router.put('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const data = parseBody(res, scheduledSchema, req.body);
-    if (!data) return;
-    handleHttpErrors(res, () => {
-      res.json(
-        scheduledUpdate(db, sessionUserId(req), id, {
-          ...data,
-          description: data.description.trim(),
-        }),
-      );
-    });
+    const id = parseIdParam(req);
+    const data = scheduledSchema.parse(req.body);
+    res.json(
+      scheduledUpdate(db, currentUserId(res), id, {
+        ...data,
+        description: data.description.trim(),
+      }),
+    );
   });
 
   router.delete('/:id', (req, res) => {
-    const id = parseNumberParam(req, res, 'id');
-    if (id === null) return;
-    const userId = sessionUserId(req);
+    const id = parseIdParam(req);
+    const userId = currentUserId(res);
 
     if (!scheduledRepo.exists(id, userId)) {
-      sendError(res, 404, 'scheduled.not_found');
-      return;
+      throw new NotFoundError('scheduled.not_found');
     }
 
     scheduledRepo.delete(userId, id);

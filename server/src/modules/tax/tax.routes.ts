@@ -1,7 +1,8 @@
 import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 
-import { parseNumberParam, sendError } from '../../lib/routeHelpers.js';
+import { NotFoundError } from '../../lib/errors.js';
+import { parseIdParam } from '../../lib/routeHelpers.js';
 import { requireAuth } from '../../middleware.js';
 import { createTaxRepo } from './tax.repo.js';
 
@@ -15,12 +16,10 @@ export function createTaxRouter(db: Database): Router {
   });
 
   router.get('/:year', (req, res) => {
-    const year = parseNumberParam(req, res, 'year');
-    if (year === null) return;
+    const year = parseIdParam(req, 'year');
     const data = repo.getYearData(year);
     if (!data) {
-      sendError(res, 404, 'tax.bracket_not_found', { year });
-      return;
+      throw new NotFoundError('tax.bracket_not_found', { year });
     }
     res.json(data);
   });
