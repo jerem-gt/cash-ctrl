@@ -1,13 +1,16 @@
 import fs from 'node:fs';
 
 import type { UserStats } from '@cashctrl/types';
-import type { AuthModuleOptions, AuthRuntimeOptions } from '@jerem-gt/ctrl-shared/server/auth';
+import {
+  type AuthModuleOptions,
+  type AuthRuntimeOptions,
+  createMailTexts,
+} from '@jerem-gt/ctrl-shared/server/auth';
 import type { Database } from 'better-sqlite3';
 
 import { seedUserData } from '../../db/seed.js';
 import { BACKUP_DIR, userBackupDir } from '../../lib/backup.js';
 import { HttpError } from '../../lib/errors.js';
-import { MAIL_TEXTS } from '../../lib/mailTexts.js';
 import type { Lang } from '../../lib/systemEntities.js';
 import { logger } from '../../logger.js';
 
@@ -20,14 +23,19 @@ export const LANGUAGES = ['fr', 'en'] as const satisfies readonly Lang[];
 export interface CashAuthOptions extends AuthRuntimeOptions {
   /** Racine des sauvegardes (`<backupDir>/<id du compte>`). */
   backupDir?: string;
+  /** Logo PNG des e-mails (absent ou illisible : sans logo). */
+  mailLogoPath?: string;
 }
+
+/** Couleurs des e-mails, reprises de l'interface (barre latérale, bleu-vert de la marque). */
+const MAIL_COLORS = { headerColor: '#102e3a', buttonColor: '#0d8896' };
 
 /** Options du module d'auth de ctrl-shared propres à CashCtrl. */
 export function cashAuthOptions(
   db: Database,
   options: CashAuthOptions = {},
 ): AuthModuleOptions<Lang, UserStats> {
-  const { backupDir = BACKUP_DIR, log = logger, ...auth } = options;
+  const { backupDir = BACKUP_DIR, log = logger, mailLogoPath, ...auth } = options;
   const statsStmt = db.prepare<
     [number, number],
     { account_count: number; tx_count: number; last_tx_date: string | null }
@@ -43,7 +51,7 @@ export function cashAuthOptions(
     sessionCookie: SESSION_COOKIE,
     deviceCookie: 'cashctrl_device',
     languages: LANGUAGES,
-    mailTexts: MAIL_TEXTS,
+    mailTexts: createMailTexts({ appName: 'CashCtrl', ...MAIL_COLORS, logoPath: mailLogoPath }),
     userStats: (userId) => {
       const row = statsStmt.get(userId, userId);
       return {

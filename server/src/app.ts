@@ -47,6 +47,8 @@ export interface AppOptions {
   appUrl?: string;
   /** Journal des événements d'authentification (par défaut : logger). */
   authLogger?: AuthLogger;
+  /** Logo PNG des e-mails (icône du client construit). */
+  mailLogoPath?: string;
 }
 
 function normalizeAppUrl(url: string | undefined): string | undefined {
@@ -124,6 +126,7 @@ export function createApp(db: Database, options?: AppOptions): express.Applicati
       appUrl: normalizeAppUrl(options?.appUrl ?? process.env.APP_URL),
       log: options?.authLogger,
       backupDir: options?.backupDir,
+      mailLogoPath: options?.mailLogoPath,
     }),
   );
   app.use('/api/auth', auth.authRouter);

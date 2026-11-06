@@ -6,7 +6,7 @@ import { SetupToken } from '@jerem-gt/ctrl-shared/server/setup';
 import bcrypt from 'bcrypt';
 import type { Database } from 'better-sqlite3';
 import supertest from 'supertest';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../app.js';
 import { createFakeMailer } from '../../tests/helpers/fakeMailer.js';
@@ -89,29 +89,52 @@ describe('données initiales d’un compte', () => {
 });
 
 describe('e-mails', () => {
-  it.each([
-    [undefined, 'réinitialisation'],
-    ['en', 'password reset'],
-  ])('mot de passe oublié (lang=%s) : e-mail dans la langue demandée', async (lang, subject) => {
-    const { app, db, mailer } = setup({ appUrl: 'https://cash.example.com/' });
-    addUser(db, 'alice', { email: 'alice@test.fr' });
-    const res = await supertest(app)
-      .post('/api/auth/password/forgot')
-      .send({ identifier: 'alice', lang });
-    expect(res.status).toBe(204);
-    expect(mailer.sent[0].subject).toContain(subject);
-    // Slash final d'APP_URL retiré.
-    expect(mailer.sent[0].text).toContain('https://cash.example.com/reset-password?token=');
+  const dirs: string[] = [];
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    for (const dir of dirs.splice(0)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
-  it('l’e-mail de test est bilingue', async () => {
-    const { app, db, mailer } = setup();
+  it.each([
+    [undefined, '', 'CashCtrl : réinitialisation du mot de passe'],
+    ['en', '', 'CashCtrl: password reset'],
+    [undefined, 'Dev', 'CashCtrl Dev : réinitialisation du mot de passe'],
+  ])(
+    'mot de passe oublié (lang=%s, APP_INSTANCE=%j) : objet dans la langue demandée',
+    async (lang, instance, subject) => {
+      vi.stubEnv('APP_INSTANCE', instance);
+      const { app, db, mailer } = setup({ appUrl: 'https://cash.example.com/' });
+      addUser(db, 'alice', { email: 'alice@test.fr' });
+      const res = await supertest(app)
+        .post('/api/auth/password/forgot')
+        .send({ identifier: 'alice', lang });
+      expect(res.status).toBe(204);
+      expect(mailer.sent[0].subject).toBe(subject);
+      // Slash final d'APP_URL retiré.
+      expect(mailer.sent[0].text).toContain('https://cash.example.com/reset-password?token=');
+    },
+  );
+
+  it('l’e-mail de test est bilingue, aux couleurs et avec le logo de CashCtrl', async () => {
+    vi.stubEnv('APP_INSTANCE', '');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cashctrl-mail-'));
+    dirs.push(dir);
+    const mailLogoPath = path.join(dir, 'logo.png');
+    fs.writeFileSync(mailLogoPath, 'png');
+    const { app, db, mailer } = setup({ mailLogoPath });
     addUser(db, 'alice', { isAdmin: true, email: 'alice@test.fr' });
     const agent = await loginAs(app, 'alice');
     expect((await agent.post('/api/auth/test-email')).status).toBe(204);
-    expect(mailer.sent[0]).toMatchObject({ to: 'alice@test.fr', subject: 'CashCtrl' });
+    expect(mailer.sent[0]).toMatchObject({
+      to: 'alice@test.fr',
+      subject: 'CashCtrl : E-mail de test / Test email',
+    });
     expect(mailer.sent[0].text).toContain('CashCtrl fonctionne');
-    expect(mailer.sent[0].text).toContain('sending from CashCtrl works');
+    expect(mailer.sent[0].text).toContain('from CashCtrl works');
+    expect(mailer.sent[0].html).toContain('background:#102e3a');
+    expect(mailer.sent[0].attachments?.[0].content.toString()).toBe('png');
   });
 });
 

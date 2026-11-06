@@ -47,7 +47,8 @@ services:
       - SESSION_SECRET=${SESSION_SECRET_DEV}
       - SECURE_COOKIE=true
       - LOG_LEVEL=INFO
-      # Même SMTP que la prod, seule l'URL publique change
+      # Même SMTP que la prod ; l'URL publique change et le nom des e-mails devient « CashCtrl Dev »
+      - APP_INSTANCE=Dev
       - APP_URL=${APP_URL_DEV:-}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-}

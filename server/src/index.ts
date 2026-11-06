@@ -27,6 +27,10 @@ if (!SESSION_SECRET) {
 const db = createDb();
 initDatabase(db);
 const CLIENT_DIST = path.join(import.meta.dirname, '../../client/dist');
+const MAIL_LOGO = path.join(CLIENT_DIST, 'apple-touch-icon.png');
+if (IS_PROD && !fs.existsSync(MAIL_LOGO)) {
+  logger.warn(`[auth] logo des e-mails introuvable (${MAIL_LOGO}) : e-mails sans logo.`);
+}
 
 if (process.env.ADMIN_USER || process.env.ADMIN_PASSWORD) {
   logger.warn(
@@ -41,6 +45,7 @@ const app = createApp(db, {
   setupToken,
   sessionSecret: SESSION_SECRET,
   secureCookies: process.env.SECURE_COOKIE === 'true',
+  mailLogoPath: MAIL_LOGO,
   healthExtraCheck: IS_PROD
     ? () => (fs.existsSync(path.join(CLIENT_DIST, 'index.html')) ? null : 'frontend')
     : undefined,
