@@ -22,6 +22,7 @@ function rollbackTo(db: Database, version: number) {
     db.exec('ALTER TABLE user_settings DROP COLUMN interest_subcategory_id');
     db.exec('ALTER TABLE user_settings DROP COLUMN wire_payment_method_id');
   }
+  if (version <= 9) db.exec('DROP INDEX idx_users_email');
   if (version <= 7) db.exec('ALTER TABLE users DROP COLUMN email');
   if (version <= 8) db.exec('ALTER TABLE users DROP COLUMN totp_last_step');
   db.pragma(`user_version = ${version}`);
@@ -128,7 +129,7 @@ describe('initDatabase', () => {
     expect(countFor('categories', adminId)).toBeGreaterThan(0);
     expect(countFor('categories', seededAdminId)).toBe(0);
     expect(countFor('categories', userId)).toBe(0);
-    expect(db.pragma('user_version', { simple: true })).toBe(9);
+    expect(db.pragma('user_version', { simple: true })).toBe(10);
   });
 
   it('migre une base v8 : ajoute le dernier pas TOTP, nul pour les comptes existants', () => {
@@ -142,6 +143,48 @@ describe('initDatabase', () => {
     expect(db.prepare('SELECT totp_last_step FROM users WHERE id = ?').get(userId)).toEqual({
       totp_last_step: null,
     });
+    expect(db.pragma('user_version', { simple: true })).toBe(10);
+  });
+
+  it('une base neuve refuse deux comptes avec le même e-mail, pas deux sans e-mail', () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    const insert = db.prepare(
+      "INSERT INTO users (username, password_hash, email) VALUES (?, 'x', ?)",
+    );
+    insert.run('a', 'same@test.fr');
+    insert.run('b', null);
+    insert.run('c', null);
+
+    expect(() => insert.run('d', 'same@test.fr')).toThrow(/UNIQUE/);
+  });
+
+  it("migre une base v9 : rend l'e-mail unique", () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    const insert = db.prepare(
+      "INSERT INTO users (username, password_hash, email) VALUES (?, 'x', ?)",
+    );
+    insert.run('a', 'same@test.fr');
+    rollbackTo(db, 9);
+
+    initDatabase(db);
+
+    expect(db.pragma('user_version', { simple: true })).toBe(10);
+    expect(() => insert.run('b', 'same@test.fr')).toThrow(/UNIQUE/);
+  });
+
+  it('refuse de migrer une base v9 avec des e-mails en double, en les nommant', () => {
+    const db = createDb(':memory:');
+    initDatabase(db);
+    rollbackTo(db, 9);
+    const insert = db.prepare(
+      "INSERT INTO users (username, password_hash, email) VALUES (?, 'x', ?)",
+    );
+    insert.run('a', 'same@test.fr');
+    insert.run('b', 'same@test.fr');
+
+    expect(() => initDatabase(db)).toThrow(/same@test\.fr/);
     expect(db.pragma('user_version', { simple: true })).toBe(9);
   });
 

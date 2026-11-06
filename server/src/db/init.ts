@@ -9,6 +9,25 @@ import { seedDatabase, seedUserData } from './seed.js';
 
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(import.meta.dirname, '../../data');
 
+/**
+ * E-mail unique entre comptes (plusieurs NULL permis) : le « mot de passe oublié » cherche un compte
+ * par e-mail. Base neuve et migration 10 ; hors de `schema.ts`, qui s'exécute aussi sur une base
+ * antérieure à la colonne.
+ */
+function createUsersEmailIndex(db: DatabaseType) {
+  const duplicates = db
+    .prepare('SELECT email FROM users WHERE email IS NOT NULL GROUP BY email HAVING COUNT(*) > 1')
+    .all() as Array<{ email: string }>;
+  if (duplicates.length > 0) {
+    throw new Error(
+      `E-mails en double entre comptes, à corriger avant de démarrer : ${duplicates.map((d) => d.email).join(', ')}`,
+    );
+  }
+  db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE email IS NOT NULL;',
+  );
+}
+
 // Each entry converts the DB from version N to N+1.
 const MIGRATIONS: readonly Migration[] = [
   (db) =>
@@ -78,6 +97,7 @@ const MIGRATIONS: readonly Migration[] = [
   },
   // 2FA : dernier pas TOTP accepté (anti-rejeu, un code ne sert qu'une fois)
   (db) => db.exec('ALTER TABLE users ADD COLUMN totp_last_step INTEGER;'),
+  createUsersEmailIndex,
 ];
 
 /** Retire les diacritiques (accents) d'une chaîne ; null-safe pour usage direct en fonction SQLite. */
@@ -126,6 +146,7 @@ export function initDatabase(db: DatabaseType) {
 
   if (isFresh) {
     // Fresh DB: schema already includes all columns — skip migrations
+    createUsersEmailIndex(db);
     db.pragma(`user_version = ${MIGRATIONS.length}`);
   } else {
     // Une transaction par migration, clés étrangères coupées puis contrôlées (runner de ctrl-shared).
