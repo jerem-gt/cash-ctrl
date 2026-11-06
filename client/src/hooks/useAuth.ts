@@ -5,6 +5,7 @@ import type { Lang, MeData } from '@/api/client';
 import { authApi } from '@/api/client';
 import { showToast } from '@/components/ui';
 import { fireAndForget } from '@/lib/async';
+import { currentLang } from '@/lib/format';
 import { queryKeys } from '@/lib/queryKeys';
 import { claimCacheOwner, purgePersistedCache } from '@/lib/queryPersister';
 
@@ -175,5 +176,6 @@ export function useResetPassword() {
 }
 
 export function useSendTestEmail() {
-  return useMutation({ mutationFn: authApi.testEmail });
+  // E-mail dans la langue de l'interface.
+  return useMutation({ mutationFn: () => authApi.testEmail(currentLang()) });
 }

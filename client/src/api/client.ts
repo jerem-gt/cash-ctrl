@@ -210,7 +210,7 @@ export const authApi = {
     request<void>('POST', '/api/auth/password/forgot', { identifier, lang }),
   resetPassword: (token: string, password: string) =>
     request<void>('POST', '/api/auth/password/reset', { token, password }),
-  testEmail: () => request<void>('POST', '/api/auth/test-email'),
+  testEmail: (lang: Lang) => request<void>('POST', '/api/auth/test-email', { lang }),
 };
 
 // Users (admin only)

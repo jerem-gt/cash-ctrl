@@ -117,7 +117,7 @@ describe('e-mails', () => {
     },
   );
 
-  it('l’e-mail de test est bilingue, aux couleurs et avec le logo de CashCtrl', async () => {
+  it('l’e-mail de test suit la langue demandée, aux couleurs et avec le logo de CashCtrl', async () => {
     vi.stubEnv('APP_INSTANCE', '');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cashctrl-mail-'));
     dirs.push(dir);
@@ -129,12 +129,15 @@ describe('e-mails', () => {
     expect((await agent.post('/api/auth/test-email')).status).toBe(204);
     expect(mailer.sent[0]).toMatchObject({
       to: 'alice@test.fr',
-      subject: 'CashCtrl : E-mail de test / Test email',
+      subject: 'CashCtrl : e-mail de test',
     });
     expect(mailer.sent[0].text).toContain('CashCtrl fonctionne');
-    expect(mailer.sent[0].text).toContain('from CashCtrl works');
     expect(mailer.sent[0].html).toContain('background:#102e3a');
     expect(mailer.sent[0].attachments?.[0].content.toString()).toBe('png');
+
+    expect((await agent.post('/api/auth/test-email').send({ lang: 'en' })).status).toBe(204);
+    expect(mailer.sent[1].subject).toBe('CashCtrl: test email');
+    expect(mailer.sent[1].text).toContain('from CashCtrl works');
   });
 });
 

@@ -329,11 +329,19 @@ describe('appareils mémorisés', () => {
 });
 
 describe('useSendTestEmail', () => {
-  it("envoie l'e-mail de test", async () => {
+  it("envoie l'e-mail de test dans la langue de l'interface", async () => {
+    let body: unknown;
+    server.use(
+      http.post('/api/auth/test-email', async ({ request }) => {
+        body = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
     const { Wrapper } = createHookWrapper();
     const { result } = renderHook(() => useSendTestEmail(), { wrapper: Wrapper });
     result.current.mutate();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(body).toEqual({ lang: 'fr' });
   });
 
   it('passe en erreur si le SMTP est absent', async () => {
