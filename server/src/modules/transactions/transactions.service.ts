@@ -17,7 +17,7 @@ function assertWritableAccount(
   userId: number,
 ) {
   const account = accountsRepo.getById(accountId, userId);
-  if (!account) throw new NotFoundError('account.not_found_or_not_owned');
+  if (!account) throw new NotFoundError('account.not_found');
   if (NO_DIRECT_WRITE_ENVELOPES.has(account.envelope_type as EnvelopeType)) {
     throw new BadRequestError('transaction.no_direct_on_av_per');
   }

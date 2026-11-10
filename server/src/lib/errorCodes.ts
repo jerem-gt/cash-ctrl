@@ -17,7 +17,6 @@ export const ERROR_MESSAGES = {
 
   // ── Comptes ───────────────────────────────────────────────────────────────
   'account.not_found': 'Compte introuvable',
-  'account.not_found_or_not_owned': "Compte introuvable ou n'appartenant pas à l'utilisateur",
   'account.already_closed': 'Ce compte est déjà clôturé',
   'account.not_closed': "Ce compte n'est pas clôturé",
   'account.favorite_closed': 'Un compte clôturé ne peut pas être favori',
