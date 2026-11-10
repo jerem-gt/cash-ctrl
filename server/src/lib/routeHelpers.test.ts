@@ -27,18 +27,16 @@ describe('parseIdParam', () => {
     expect(parseIdParam(mockReq({ id: '42' }))).toBe(42);
   });
 
-  it('utilise le radix 10 (pas d’octal sur les zéros initiaux)', () => {
-    expect(parseIdParam(mockReq({ id: '011' }))).toBe(11);
-  });
-
-  it('lève 400 common.invalid_param pour une valeur non numérique', () => {
-    const err = thrown(() => parseIdParam(mockReq({ id: 'abc' })));
-    expect(err).toMatchObject({
-      status: 400,
-      code: 'common.invalid_param',
-      params: { param: 'id' },
-    });
-  });
+  it.each(['abc', '12abc', '011', '0', '-3', '1.5'])(
+    'lève 400 common.invalid_param pour « %s »',
+    (id) => {
+      expect(thrown(() => parseIdParam(mockReq({ id })))).toMatchObject({
+        status: 400,
+        code: 'common.invalid_param',
+        params: { param: 'id' },
+      });
+    },
+  );
 
   it('nomme le paramètre fourni', () => {
     const err = thrown(() => parseIdParam(mockReq({ year: 'xx' }), 'year'));
@@ -85,6 +83,14 @@ describe('makeCheckAccount', () => {
     expect(thrown(() => run(String(accountId), userId + 1))).toMatchObject({
       status: 404,
       code: 'account.not_found',
+    });
+  });
+
+  it('lève 400 common.invalid_param pour un compte mal formé', () => {
+    expect(thrown(() => run(`${accountId}abc`))).toMatchObject({
+      status: 400,
+      code: 'common.invalid_param',
+      params: { param: 'accountId' },
     });
   });
 });

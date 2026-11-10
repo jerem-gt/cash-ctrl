@@ -6,6 +6,7 @@ import { currentUserId } from '../middleware.js';
 import { assertOwnedAccount } from './accountHelpers.js';
 import { type ErrorCode } from './errorCodes.js';
 import { BadRequestError } from './errors.js';
+import { parseIdParam } from './routeHelpers.js';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
@@ -21,10 +22,7 @@ export function createAccountActionHandler(
     schema: z.ZodType<T>,
     handler: Handler<T>,
   ) => {
-    const accountId = Number.parseInt(req.params.accountId, 10);
-    if (Number.isNaN(accountId)) {
-      throw new BadRequestError('common.invalid_param', { param: 'accountId' });
-    }
+    const accountId = parseIdParam(req, 'accountId');
     const userId = currentUserId(res);
     assertOwnedAccount(db, accountId, userId);
     if (!isValidType(accountId)) {

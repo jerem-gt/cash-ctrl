@@ -1,10 +1,11 @@
+import { createIdParamParser } from '@jerem-gt/ctrl-shared/server/params';
 import type { Database } from 'better-sqlite3';
-import type { Request, RequestHandler } from 'express';
+import type { RequestHandler } from 'express';
 
 import { currentUserId } from '../middleware.js';
 import { assertOwnedAccount } from './accountHelpers.js';
 import type { ErrorCode } from './errorCodes.js';
-import { BadRequestError, NotFoundError } from './errors.js';
+import { HttpError, NotFoundError } from './errors.js';
 
 declare module 'express-serve-static-core' {
   interface Locals {
@@ -13,22 +14,13 @@ declare module 'express-serve-static-core' {
   }
 }
 
-/**
- * Paramètre de route numérique (radix 10, `parseInt` : « 12abc » vaut 12). Lève 400
- * `common.invalid_param` si ce n'est pas un nombre.
- */
-export function parseIdParam(req: Request, paramName = 'id'): number {
-  const value = Number.parseInt(req.params[paramName] as string, 10);
-  if (Number.isNaN(value)) {
-    throw new BadRequestError('common.invalid_param', { param: paramName });
-  }
-  return value;
-}
+/** Paramètre de route entier strictement positif (`id` par défaut), sinon 400 `common.invalid_param`. */
+export const parseIdParam = createIdParamParser(HttpError);
 
-/** Compte de la route (`:accountId`) appartenant à l'utilisateur, sinon 404 `account.not_found`. */
+/** Compte de la route (`:accountId`, 400 s'il est mal formé) appartenant à l'utilisateur, sinon 404 `account.not_found`. */
 export function makeCheckAccount(db: Database): RequestHandler {
   return (req, res, next) => {
-    const accountId = Number.parseInt(req.params.accountId as string, 10);
+    const accountId = parseIdParam(req, 'accountId');
     assertOwnedAccount(db, accountId, currentUserId(res));
     res.locals.accountId = accountId;
     next();
