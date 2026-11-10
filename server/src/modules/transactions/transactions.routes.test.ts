@@ -54,7 +54,7 @@ describe('/api/transactions', () => {
     expect(res.body.account_name).toBe('Main');
   });
 
-  it('POST / retourne 404 pour un compte non possédé', async () => {
+  it('POST / retourne 404 account.not_found pour un compte non possédé', async () => {
     const res = await ctx.agent.post('/api/transactions').send({
       account_id: 99999,
       type: 'income',
@@ -65,6 +65,7 @@ describe('/api/transactions', () => {
       payment_method_id: SEED.PM_VIREMENT,
     });
     expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('account.not_found');
   });
 
   it('POST / retourne 400 pour données invalides', async () => {
@@ -341,6 +342,7 @@ describe('/api/transactions', () => {
       payment_method_id: SEED.PM_CARTE,
     });
     expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('account.not_found');
   });
 
   // ─── PATCH /:id/validate cas limites ──────────────────────────────────────
