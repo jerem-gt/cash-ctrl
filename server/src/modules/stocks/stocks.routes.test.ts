@@ -64,6 +64,15 @@ describe('/api/stocks', () => {
       const res = await ctx.agent.get('/api/stocks/99999/positions');
       expect(res.status).toBe(404);
     });
+
+    it('retourne 400 common.invalid_param pour un compte mal formé', async () => {
+      const res = await ctx.agent.get(`/api/stocks/${bourseAccountId}abc/positions`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatchObject({
+        code: 'common.invalid_param',
+        params: { param: 'accountId' },
+      });
+    });
   });
 
   // ─── Opérations ───────────────────────────────────────────────────────────
@@ -166,6 +175,18 @@ describe('/api/stocks', () => {
         date: TODAY,
       });
       expect(res.status).toBe(404);
+    });
+
+    it('retourne 400 common.invalid_param pour un compte mal formé (et non tronqué)', async () => {
+      const res = await ctx.agent.post(`/api/stocks/${bourseAccountId}abc/buy`).send({
+        ticker: 'AAPL',
+        quantity: 1,
+        price_per_share: 200,
+        fees: 0,
+        date: TODAY,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('common.invalid_param');
     });
 
     it('retourne 400 sur paramètres invalides', async () => {

@@ -626,7 +626,7 @@ export function buildOpenApiSpec() {
           summary: "Positions d'un compte investissement",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
       '/api/stocks/{accountId}/operations': {
@@ -635,7 +635,7 @@ export function buildOpenApiSpec() {
           summary: "Opérations d'un compte investissement",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
       ...accountIdPost('stocks', 'Stocks', 'buy', 'Acheter des titres', buySchema),
@@ -729,7 +729,7 @@ export function buildOpenApiSpec() {
           summary: "Supports d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
         post: {
           tags: ['Insurance'],
@@ -755,7 +755,7 @@ export function buildOpenApiSpec() {
           summary: "Positions d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
       '/api/insurance/{accountId}/operations': {
@@ -764,7 +764,7 @@ export function buildOpenApiSpec() {
           summary: "Opérations d'un contrat",
           security: sessionAuth,
           parameters: pAccountId,
-          responses: { ...r200(), ...r404 },
+          responses: { ...r200(), ...r400, ...r404 },
         },
       },
       '/api/insurance/{accountId}/operations/{operationId}': {

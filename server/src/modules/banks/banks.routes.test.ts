@@ -1,5 +1,8 @@
+import fs from 'node:fs';
+
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { LOGOS_DIR } from '../../logoDownloader.js';
 import { createTestContext, type TestContext } from '../../tests/helpers/testApp.js';
 
 describe('/api/banks', () => {
@@ -45,6 +48,20 @@ describe('/api/banks', () => {
     const id = create.body.id;
     const res = await ctx.agent.post(`/api/banks/${id}/logo`);
     expect(res.status).toBe(400);
+  });
+
+  it.each([
+    ['abc', 400, 'common.invalid_param'],
+    ['99999', 404, 'bank.not_found'],
+  ])('POST /:id/logo refuse la banque « %s » sans écrire le fichier', async (id, status, code) => {
+    const before = fs.existsSync(LOGOS_DIR) ? fs.readdirSync(LOGOS_DIR).length : 0;
+    const res = await ctx.agent
+      .post(`/api/banks/${id}/logo`)
+      .attach('logo', Buffer.from('png'), { filename: 'logo.png', contentType: 'image/png' });
+    expect(res.status).toBe(status);
+    expect(res.body.error.code).toBe(code);
+    const after = fs.existsSync(LOGOS_DIR) ? fs.readdirSync(LOGOS_DIR).length : 0;
+    expect(after).toBe(before);
   });
 
   it('DELETE /:id supprime une banque', async () => {

@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { Router } from 'express';
+import { type RequestHandler, Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 
@@ -65,7 +65,13 @@ export function createBanksRouter(db: Database): Router {
     res.json(banksRepo.getById(id));
   });
 
-  router.post('/:id/logo', upload.single('logo'), (req, res) => {
+  // Banque vérifiée avant multer, qui écrit le fichier dès sa réception.
+  const checkBank: RequestHandler = (req, _res, next) => {
+    assertFound(banksRepo, parseIdParam(req), 'bank.not_found');
+    next();
+  };
+
+  router.post('/:id/logo', checkBank, upload.single('logo'), (req, res) => {
     const id = parseIdParam(req);
     const bank = banksRepo.getById(id);
     if (!bank) {
