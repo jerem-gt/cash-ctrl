@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
 
-import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
+import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import {
   getSocialFeesSubcategoryId,
   getSystemRefs,
@@ -194,9 +194,6 @@ export function createInsuranceRepo(db: Database) {
   );
 
   return {
-    accountBelongsToUser: (accountId: number, userId: number): boolean =>
-      checkAccountOwnership(db, accountId, userId),
-
     isInsuranceAccount(accountId: number): boolean {
       const type = getAccountEnvelopeType(db, accountId);
       return type === 'life_insurance' || type === 'per';

@@ -102,12 +102,12 @@ export function createInsuranceRouter(db: Database): Router {
   router.use(requireAuth);
 
   const handleInsuranceAction = createAccountActionHandler(
-    repo,
+    db,
     (id) => repo.isInsuranceAccount(id),
     'insurance.account_not_insurance',
   );
 
-  const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
+  const checkAccount = makeCheckAccount(db);
 
   // ─── Supports ──────────────────────────────────────────────────────────────
 

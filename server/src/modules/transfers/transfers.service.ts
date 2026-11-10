@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 
+import { assertOwnedAccount } from '../../lib/accountHelpers.js';
 import { BadRequestError, NotFoundError } from '../../lib/errors.js';
-import { createAccountsRepo } from '../accounts/accounts.repo.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
 import { createTransactionsRepo } from '../transactions/transactions.repo.js';
 import { createTransfersRepo } from './transfers.repo.js';
@@ -20,17 +20,12 @@ function resolveTransferAccountIds(
 
 export function transferCreate(db: Database, userId: number, data: TransferInput) {
   const transfersRepo = createTransfersRepo(db);
-  const accountsRepo = createAccountsRepo(db);
 
   if (data.from_account_id === data.to_account_id) {
     throw new BadRequestError('transfer.same_account');
   }
-  if (
-    !accountsRepo.exists(data.from_account_id, userId) ||
-    !accountsRepo.exists(data.to_account_id, userId)
-  ) {
-    throw new NotFoundError('account.not_found');
-  }
+  assertOwnedAccount(db, data.from_account_id, userId);
+  assertOwnedAccount(db, data.to_account_id, userId);
 
   return transfersRepo.create(userId, data);
 }
@@ -43,18 +38,13 @@ export function transferUpdate(
 ) {
   const transactionsRepo = createTransactionsRepo(db);
   const transfersRepo = createTransfersRepo(db);
-  const accountsRepo = createAccountsRepo(db);
 
   const tx = transactionsRepo.getById(id, userId);
   if (!tx) throw new NotFoundError('transaction.not_found');
   if (!tx.transfer_peer_id) throw new BadRequestError('transfer.not_a_transfer_update');
 
-  if (data.from_account_id && !accountsRepo.exists(data.from_account_id, userId)) {
-    throw new NotFoundError('account.not_found');
-  }
-  if (data.to_account_id && !accountsRepo.exists(data.to_account_id, userId)) {
-    throw new NotFoundError('account.not_found');
-  }
+  if (data.from_account_id) assertOwnedAccount(db, data.from_account_id, userId);
+  if (data.to_account_id) assertOwnedAccount(db, data.to_account_id, userId);
 
   const { thisAccountId, peerAccountId } = resolveTransferAccountIds(
     tx.type === 'expense',

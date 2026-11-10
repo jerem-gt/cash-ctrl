@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { setupFixtures } from '../tests/helpers/testDb.js';
 import { HttpError } from './errors.js';
 import { assertFound, makeCheckAccount, parseIdParam } from './routeHelpers.js';
 
@@ -61,22 +62,30 @@ describe('assertFound', () => {
 });
 
 describe('makeCheckAccount', () => {
-  const check = makeCheckAccount((accountId, userId) => accountId === 7 && userId === 1);
-  const run = (accountId: string) => {
-    const res = { locals: { userId: 1 } } as unknown as Response;
+  const { db, userId, accountId } = setupFixtures();
+  const check = makeCheckAccount(db);
+  const run = (routeAccountId: string, uid = userId) => {
+    const res = { locals: { userId: uid } } as unknown as Response;
     const next = vi.fn();
-    check({ params: { accountId } } as unknown as Request, res, next as NextFunction);
+    check(
+      { params: { accountId: routeAccountId } } as unknown as Request,
+      res,
+      next as NextFunction,
+    );
     return { res, next };
   };
 
   it('pose le compte de la route et passe la main s’il appartient à l’utilisateur', () => {
-    const { res, next } = run('7');
-    expect(res.locals.accountId).toBe(7);
+    const { res, next } = run(String(accountId));
+    expect(res.locals.accountId).toBe(accountId);
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('lève 404 account.not_found pour le compte d’un autre utilisateur', () => {
-    expect(thrown(() => run('8'))).toMatchObject({ status: 404, code: 'account.not_found' });
+    expect(thrown(() => run(String(accountId), userId + 1))).toMatchObject({
+      status: 404,
+      code: 'account.not_found',
+    });
   });
 });
 

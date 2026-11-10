@@ -1,16 +1,18 @@
+import type { Database } from 'better-sqlite3';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { currentUserId } from '../middleware.js';
+import { assertOwnedAccount } from './accountHelpers.js';
 import { type ErrorCode } from './errorCodes.js';
-import { BadRequestError, NotFoundError } from './errors.js';
+import { BadRequestError } from './errors.js';
 
 export type Handler<T> = (ctx: { userId: number; data: T }, req: Request, res: Response) => void;
 
 export function handleAccountAction<T>(
   req: Request<{ accountId: string }>,
   res: Response,
-  belongsToUser: (accountId: number, userId: number) => boolean,
+  db: Database,
   isValidType: (accountId: number) => boolean,
   typeErrorCode: ErrorCode,
   schema: z.ZodType<T>,
@@ -21,9 +23,7 @@ export function handleAccountAction<T>(
     throw new BadRequestError('common.invalid_param', { param: 'accountId' });
   }
   const userId = currentUserId(res);
-  if (!belongsToUser(accountId, userId)) {
-    throw new NotFoundError('account.not_found');
-  }
+  assertOwnedAccount(db, accountId, userId);
   if (!isValidType(accountId)) {
     throw new BadRequestError(typeErrorCode);
   }
@@ -31,22 +31,15 @@ export function handleAccountAction<T>(
   handler({ userId, data }, req, res);
 }
 
-export function createAccountActionHandler<
-  TRepo extends { accountBelongsToUser: (id: number, uid: number) => boolean },
->(repo: TRepo, isValidType: (id: number) => boolean, typeErrorCode: ErrorCode) {
+export function createAccountActionHandler(
+  db: Database,
+  isValidType: (id: number) => boolean,
+  typeErrorCode: ErrorCode,
+) {
   return <T>(
     req: Request<{ accountId: string }>,
     res: Response,
     schema: z.ZodType<T>,
     handler: Handler<T>,
-  ) =>
-    handleAccountAction(
-      req,
-      res,
-      (id, uid) => repo.accountBelongsToUser(id, uid),
-      isValidType,
-      typeErrorCode,
-      schema,
-      handler,
-    );
+  ) => handleAccountAction(req, res, db, isValidType, typeErrorCode, schema, handler);
 }

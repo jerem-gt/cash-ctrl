@@ -2,9 +2,9 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { checkAccountOwnership } from '../../lib/accountHelpers.js';
+import { assertOwnedAccount } from '../../lib/accountHelpers.js';
 import { dateStr } from '../../lib/dateUtils.js';
-import { BadRequestError, NotFoundError } from '../../lib/errors.js';
+import { BadRequestError } from '../../lib/errors.js';
 import { parseIdParam } from '../../lib/routeHelpers.js';
 import { currentUserId, requireAuth } from '../../middleware.js';
 import { createStocksRepo } from '../stocks/stocks.repo.js';
@@ -73,9 +73,7 @@ export function createStatsRouter(db: Database): Router {
     const userId = currentUserId(res);
     const query = forecastQuerySchema.parse(req.query);
     const { account_id: accountId } = query;
-    if (accountId !== undefined && !checkAccountOwnership(db, accountId, userId)) {
-      throw new NotFoundError('account.not_found');
-    }
+    if (accountId !== undefined) assertOwnedAccount(db, accountId, userId);
     const today = dateStr(new Date());
     res.json(forecastRepo.getForecast(userId, query.horizon, today, accountId));
   });
@@ -84,9 +82,7 @@ export function createStatsRouter(db: Database): Router {
     const userId = currentUserId(res);
     const accountId = parseIdParam(req, 'accountId');
     const query = accountBalanceHistoryQuerySchema.parse(req.query);
-    if (!checkAccountOwnership(db, accountId, userId)) {
-      throw new NotFoundError('account.not_found');
-    }
+    assertOwnedAccount(db, accountId, userId);
     const today = dateStr(new Date());
     res.json(accountBalanceHistoryRepo.getBalanceHistory(accountId, query.days, today));
   });

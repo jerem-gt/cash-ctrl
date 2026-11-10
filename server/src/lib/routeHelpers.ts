@@ -1,6 +1,8 @@
+import type { Database } from 'better-sqlite3';
 import type { Request, RequestHandler } from 'express';
 
 import { currentUserId } from '../middleware.js';
+import { assertOwnedAccount } from './accountHelpers.js';
 import type { ErrorCode } from './errorCodes.js';
 import { BadRequestError, NotFoundError } from './errors.js';
 
@@ -24,15 +26,10 @@ export function parseIdParam(req: Request, paramName = 'id'): number {
 }
 
 /** Compte de la route (`:accountId`) appartenant à l'utilisateur, sinon 404 `account.not_found`. */
-export function makeCheckAccount(
-  belongsToUser: (accountId: number, userId: number) => boolean,
-): RequestHandler {
+export function makeCheckAccount(db: Database): RequestHandler {
   return (req, res, next) => {
     const accountId = Number.parseInt(req.params.accountId as string, 10);
-    const userId = currentUserId(res);
-    if (!belongsToUser(accountId, userId)) {
-      throw new NotFoundError('account.not_found');
-    }
+    assertOwnedAccount(db, accountId, currentUserId(res));
     res.locals.accountId = accountId;
     next();
   };

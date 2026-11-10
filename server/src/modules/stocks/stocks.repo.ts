@@ -1,7 +1,7 @@
 import type { CachedStockTicker, StockOperation, StockPosition, StockPrice } from '@cashctrl/types';
 import type { Database } from 'better-sqlite3';
 
-import { checkAccountOwnership, getAccountEnvelopeType } from '../../lib/accountHelpers.js';
+import { getAccountEnvelopeType } from '../../lib/accountHelpers.js';
 import { getSystemRefs, getTransferIds } from '../../lib/administrationDataConstants.js';
 import { BadRequestError, NotFoundError } from '../../lib/errors.js';
 import { insertFeesTransaction } from '../../lib/insertFeesTransaction.js';
@@ -217,9 +217,6 @@ export function createStocksRepo(db: Database) {
   );
 
   return {
-    accountBelongsToUser: (accountId: number, userId: number): boolean =>
-      checkAccountOwnership(db, accountId, userId),
-
     isInvestmentAccount: (accountId: number): boolean =>
       getAccountEnvelopeType(db, accountId) === 'investment',
 

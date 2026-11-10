@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { assertOwnedAccount } from '../../lib/accountHelpers.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../../lib/errors.js';
 import { toCents, toEuros } from '../../lib/money.js';
 import { parseIdParam } from '../../lib/routeHelpers.js';
@@ -73,9 +74,7 @@ export function createAccountsRouter(db: Database): Router {
   router.get('/:id/frequent-transactions', (req, res) => {
     const id = parseIdParam(req);
     const userId = currentUserId(res);
-    if (!accountsRepo.exists(id, userId)) {
-      throw new NotFoundError('account.not_found');
-    }
+    assertOwnedAccount(db, id, userId);
     res.json(accountsRepo.getFrequentTransactions(userId, id));
   });
 

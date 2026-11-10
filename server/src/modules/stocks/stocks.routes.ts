@@ -2,6 +2,7 @@ import type { Database } from 'better-sqlite3';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { assertOwnedAccount } from '../../lib/accountHelpers.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../../lib/errors.js';
 import { createAccountActionHandler } from '../../lib/handleAccountAction.js';
 import { makeCheckAccount, parseIdParam } from '../../lib/routeHelpers.js';
@@ -51,9 +52,9 @@ export function createStocksRouter(db: Database): Router {
   const router = Router();
   router.use(requireAuth);
 
-  const checkAccount = makeCheckAccount((id, uid) => repo.accountBelongsToUser(id, uid));
+  const checkAccount = makeCheckAccount(db);
   const handleStockAction = createAccountActionHandler(
-    repo,
+    db,
     (id) => repo.isInvestmentAccount(id),
     'stock.account_not_investment',
   );
@@ -86,9 +87,7 @@ export function createStocksRouter(db: Database): Router {
     const fromAccountId = parseIdParam(req, 'accountId');
     const userId = currentUserId(res);
 
-    if (!repo.accountBelongsToUser(fromAccountId, userId)) {
-      throw new NotFoundError('stock.source_account_not_found');
-    }
+    assertOwnedAccount(db, fromAccountId, userId, 'stock.source_account_not_found');
     if (!repo.isInvestmentAccount(fromAccountId)) {
       throw new BadRequestError('stock.source_not_investment');
     }
@@ -96,9 +95,7 @@ export function createStocksRouter(db: Database): Router {
     const data = stockTransferSchema.parse(req.body);
 
     const { to_account_id } = data;
-    if (!repo.accountBelongsToUser(to_account_id, userId)) {
-      throw new NotFoundError('stock.dest_account_not_found');
-    }
+    assertOwnedAccount(db, to_account_id, userId, 'stock.dest_account_not_found');
     if (!repo.isInvestmentAccount(to_account_id)) {
       throw new BadRequestError('stock.dest_not_investment');
     }

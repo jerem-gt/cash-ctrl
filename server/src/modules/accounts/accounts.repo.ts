@@ -86,7 +86,6 @@ const FREQUENT_TX_MIN_COUNT = 2;
 const FREQUENT_TX_LIMIT = 5;
 
 export function createAccountsRepo(db: Database) {
-  const existsStmt = db.prepare('SELECT 1 FROM accounts WHERE id = :id AND user_id = :userId');
   const getCountByAccountTypeIdStmt = db
     .prepare<{ accountTypeId: number }, number>(
       'SELECT COUNT(*) as cnt FROM accounts WHERE account_type_id = :accountTypeId',
@@ -179,7 +178,6 @@ export function createAccountsRepo(db: Database) {
   const deleteStmt = db.prepare('DELETE FROM accounts WHERE id = :id AND user_id = :userId');
 
   return {
-    exists: (id: number, userId: number) => !!existsStmt.get({ id, userId }),
     countByAccountTypeId: (accountTypeId: number): number =>
       getCountByAccountTypeIdStmt.get({ accountTypeId }) ?? 0,
     countByBankId: (bankId: number): number => getCountByBankIdStmt.get({ bankId }) ?? 0,
