@@ -29,12 +29,12 @@ function resolveDark(mode: ThemeMode): boolean {
 /** Applique (ou retire) la classe `.dark` sur <html> selon le mode courant. */
 function applyTheme() {
   document.documentElement.classList.toggle('dark', resolveDark(current));
-  // Retire le backgroundColor inline posé par le script anti-FOUC ; les variables
+  // Retire le backgroundColor inline posé par public/theme-init.js (anti-FOUC) ; les variables
   // CSS prennent le relai dès que ce module est chargé.
   document.documentElement.style.removeProperty('background-color');
 }
 
-// Sync DOM to stored preference on module load (reinforces the anti-FOUC inline script).
+// Sync DOM to stored preference on module load (reinforces public/theme-init.js).
 applyTheme();
 
 // En mode système, suivre les changements de préférence de l'OS en direct.

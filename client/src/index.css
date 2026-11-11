@@ -154,4 +154,10 @@
   body {
     @apply antialiased bg-canvas text-content;
   }
+
+  /* Tailwind 4 ne met plus le pointeur sur les boutons : on le rétablit, sauf désactivés. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
 }

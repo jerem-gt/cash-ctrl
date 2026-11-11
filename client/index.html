@@ -11,27 +11,8 @@
     <meta name="theme-color" content="#eaeef2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0c1a21" media="(prefers-color-scheme: dark)" />
     <title>CashCtrl</title>
-    <script>
-      // Anti-FOUC : applique le thème avant le premier paint.
-      // En dev la CSS arrive via JS (non render-blocking), donc on pose aussi
-      // le background-color directement sur <html> — les valeurs doivent rester
-      // en sync avec --c-canvas dans index.css.
-      (function () {
-        try {
-          const stored = localStorage.getItem('cashctrl.theme');
-          const mode = stored === 'light' || stored === 'dark' ? stored : 'system';
-          const dark =
-            mode === 'dark' ||
-            (mode === 'system' &&
-              globalThis.matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.classList.toggle('dark', dark);
-          document.documentElement.style.backgroundColor = dark ? '#0c1a21' : '#eaeef2';
-        } catch {
-          // localStorage indisponible ou bloqué : repli explicite en mode clair.
-          document.documentElement.classList.remove('dark');
-        }
-      })();
-    </script>
+    <!-- Anti-FOUC : fichier séparé, la CSP de helmet bloque les scripts inline -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
