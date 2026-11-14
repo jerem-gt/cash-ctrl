@@ -57,8 +57,13 @@ export default function SettingsPage() {
           {activeTab === 'import' && <ImportManager />}
           {activeTab === 'backup' && <BackupManager />}
           {activeTab === 'tickers' && <TickersManager />}
-          {activeTab === 'profile' && <ProfileCard />}
-          {activeTab === 'password' && <PasswordChangeCard />}
+          {activeTab === 'profile' && (
+            // Profil et mot de passe réunis dans une rubrique (même regroupement que shelf-ctrl).
+            <div className="flex flex-col gap-6">
+              <ProfileCard />
+              <PasswordChangeCard />
+            </div>
+          )}
           {activeTab === 'totp' && <TwoFactorCard />}
           {activeTab === 'systemRefs' && <SystemRefsManager />}
           {activeTab === 'categorizationRules' && <CategorizationRulesCard />}
