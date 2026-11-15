@@ -166,7 +166,7 @@ export function DateInput({
     ? 'border-danger focus-within:border-danger focus-within:ring-danger/20'
     : 'border-line focus-within:border-brand-500 focus-within:ring-brand-500/20';
   const stepButtonClass =
-    'flex w-10 shrink-0 items-center justify-center border-line text-content-secondary transition-colors enabled:hover:bg-surface-emphasis focus-visible:outline-none focus-visible:bg-surface-emphasis disabled:cursor-not-allowed';
+    'flex w-8 sm:w-10 shrink-0 items-center justify-center border-line text-content-secondary transition-colors enabled:hover:bg-surface-emphasis focus-visible:outline-none focus-visible:bg-surface-emphasis disabled:cursor-not-allowed';
   return (
     <div
       className={`flex items-stretch overflow-hidden rounded-lg border bg-surface-muted transition-all focus-within:ring-1 has-disabled:opacity-60 ${borderClass}`}
@@ -189,13 +189,13 @@ export function DateInput({
         required={required}
         aria-describedby={weekday === null ? undefined : weekdayId}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 min-w-0 px-3 py-2 text-sm bg-transparent outline-none disabled:cursor-not-allowed"
+        className="flex-1 min-w-0 px-2 sm:px-3 py-2 text-sm bg-transparent outline-none disabled:cursor-not-allowed"
       />
       {weekday !== null && (
         <>
           <span
             aria-hidden="true"
-            className="flex shrink-0 items-center pr-3 text-sm text-content-secondary"
+            className="flex shrink-0 items-center pr-2 sm:pr-3 text-sm text-content-secondary"
           >
             {weekday.short}
           </span>
