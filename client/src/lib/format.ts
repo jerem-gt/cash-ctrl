@@ -1,7 +1,7 @@
 import type { Lang } from '@/api/client';
 import i18n from '@/i18n';
 
-import { parseLocalDate } from './dateUtils';
+import { formatLocalDate, parseLocalDate } from './dateUtils';
 
 /** Langue de l'interface réduite aux langues supportées (fr par défaut). */
 export function currentLang(): Lang {
@@ -50,11 +50,12 @@ export const fmtCurrency = (n: number, currency = 'EUR') =>
 export const fmtDate = (s: string) =>
   df({ day: '2-digit', month: 'short', year: 'numeric' }).format(parseLocalDate(s));
 
-/** Jour de la semaine d'une date ISO (aaaa-mm-jj), null si vide ou invalide. */
-export function fmtWeekday(s: string, weekday: 'long' | 'short'): string | null {
+/** Jour de la semaine d'une date ISO (aaaa-mm-jj), null si vide, mal formée ou inexistante. */
+export function fmtWeekday(s: string): { short: string; long: string } | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
   const d = parseLocalDate(s);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(d.getTime())) return null;
-  return df({ weekday }).format(d);
+  if (formatLocalDate(d) !== s) return null;
+  return { short: df({ weekday: 'short' }).format(d), long: df({ weekday: 'long' }).format(d) };
 }
 
 export const fmtDateShort = (s: string) =>

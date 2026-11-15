@@ -3,7 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '@/i18n';
 
 import { isSameMonth, isThisMonth, today } from './dateUtils';
-import { currentLang, fmt, fmtCurrency, fmtDate, fmtDateShort, monthLabel } from './format';
+import {
+  currentLang,
+  fmt,
+  fmtCurrency,
+  fmtDate,
+  fmtDateShort,
+  fmtWeekday,
+  monthLabel,
+} from './format';
 
 describe('currentLang', () => {
   afterEach(async () => {
@@ -85,6 +93,28 @@ describe('fmtDateShort', () => {
     expect(result).not.toContain('2026');
     expect(result).toMatch(/avr/i);
   });
+});
+
+describe('fmtWeekday', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('fr');
+  });
+
+  it('renvoie le jour abrégé et complet en français', () => {
+    expect(fmtWeekday('2026-11-15')).toEqual({ short: 'dim.', long: 'dimanche' });
+  });
+
+  it('renvoie le jour en anglais', async () => {
+    await i18n.changeLanguage('en');
+    expect(fmtWeekday('2026-11-15')).toEqual({ short: 'Sun', long: 'Sunday' });
+  });
+
+  it.each(['', '2026-11', '15/11/2026', '2026-13-01', '2026-02-30', '2026-04-31'])(
+    'renvoie null pour %j',
+    (value) => {
+      expect(fmtWeekday(value)).toBeNull();
+    },
+  );
 });
 
 describe('today', () => {
