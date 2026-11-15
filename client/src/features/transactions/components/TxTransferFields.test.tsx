@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ACCOUNTS, BANKS } from '@/tests/fixtures';
+import { loadI18nForTests } from '@/tests/helpers/i18nTestUtils';
 import { renderWithProviders } from '@/tests/helpers/renderWithProviders';
 
 import type { TxCoreState } from './TxCoreFields';
@@ -16,6 +17,7 @@ beforeAll(async () => {
   }));
   vi.resetModules();
   ({ TxTransferFields } = await import('./TxTransferFields'));
+  await loadI18nForTests();
 });
 
 afterAll(() => {

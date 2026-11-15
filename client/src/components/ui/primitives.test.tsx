@@ -64,6 +64,28 @@ describe('DateInput', () => {
     await user.click(screen.getByRole('button', { name: 'Jour suivant' }));
     expect(onChange).toHaveBeenCalledWith('2026-06-14');
   });
+
+  it('affiche le jour de la semaine abrégé', () => {
+    render(<DateInput value="2026-11-15" onChange={vi.fn()} />);
+    expect(screen.getByText('dim.')).toBeInTheDocument();
+  });
+
+  it('relie le nom complet du jour au champ', () => {
+    render(<DateInput id="d" value="2026-11-15" onChange={vi.fn()} />);
+    expect(document.getElementById('d')).toHaveAccessibleDescription('dimanche');
+  });
+
+  it("n'affiche aucun jour quand la date est vide", () => {
+    render(<DateInput id="d" value="" onChange={vi.fn()} />);
+    expect(screen.queryByText('dim.')).not.toBeInTheDocument();
+    expect(document.getElementById('d')).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('met à jour le jour quand la valeur change', () => {
+    const { rerender } = render(<DateInput value="2026-11-15" onChange={vi.fn()} />);
+    rerender(<DateInput value="2026-11-16" onChange={vi.fn()} />);
+    expect(screen.getByText('lun.')).toBeInTheDocument();
+  });
 });
 
 describe('Badge', () => {

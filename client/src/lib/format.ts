@@ -50,6 +50,13 @@ export const fmtCurrency = (n: number, currency = 'EUR') =>
 export const fmtDate = (s: string) =>
   df({ day: '2-digit', month: 'short', year: 'numeric' }).format(parseLocalDate(s));
 
+/** Jour de la semaine d'une date ISO (aaaa-mm-jj), null si vide ou invalide. */
+export function fmtWeekday(s: string, weekday: 'long' | 'short'): string | null {
+  const d = parseLocalDate(s);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(d.getTime())) return null;
+  return df({ weekday }).format(d);
+}
+
 export const fmtDateShort = (s: string) =>
   df({ day: '2-digit', month: 'short' }).format(parseLocalDate(s));
 

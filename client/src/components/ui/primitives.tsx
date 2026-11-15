@@ -7,9 +7,11 @@ import type {
   Ref,
   SelectHTMLAttributes,
 } from 'react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { addDays } from '@/lib/dateUtils';
+import { fmtWeekday } from '@/lib/format';
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 interface BadgeProps {
@@ -158,6 +160,9 @@ export function DateInput({
   required,
 }: Readonly<DateInputProps>) {
   const { t } = useTranslation('common');
+  const weekdayId = useId();
+  const weekdayShort = fmtWeekday(value, 'short');
+  const weekdayLong = fmtWeekday(value, 'long');
   const borderClass = error
     ? 'border-danger focus-within:border-danger focus-within:ring-danger/20'
     : 'border-line focus-within:border-brand-500 focus-within:ring-brand-500/20';
@@ -183,9 +188,23 @@ export function DateInput({
         value={value}
         disabled={disabled}
         required={required}
+        aria-describedby={weekdayLong === null ? undefined : weekdayId}
         onChange={(e) => onChange(e.target.value)}
         className="flex-1 min-w-0 px-3 py-2 text-sm bg-transparent outline-none disabled:cursor-not-allowed"
       />
+      {weekdayShort !== null && (
+        <span
+          aria-hidden="true"
+          className="flex shrink-0 items-center pr-3 text-sm text-content-secondary"
+        >
+          {weekdayShort}
+        </span>
+      )}
+      {weekdayLong !== null && (
+        <span id={weekdayId} className="sr-only">
+          {weekdayLong}
+        </span>
+      )}
       <button
         type="button"
         aria-label={t('date_next_day')}
